@@ -1,0 +1,586 @@
+TABLE OF CONTENTS
+How to Release Your Flutter App on the iOS App Store
+
+1
+
+What You’ll Learn:
+
+1
+
+Should You Sell Apps on the App Store?
+
+2
+
+1. Enroll in the Apple Developer Program
+
+2
+
+Enrollment Steps
+
+3
+
+What Happens Next?
+
+4
+
+2. Register Your App ID
+
+4
+
+How to Register Your App ID
+3. Create your app in App Store Connect
+How to Create a New App in App Store Connect
+4. Prepare your App For Review
+
+5
+5
+6
+8
+
+Sections to Complete
+
+9
+
+Before Submitting for Review
+
+10
+
+5. Create a Privacy Manifest in Xcode
+
+11
+
+What is a Privacy Manifest?
+
+12
+
+How to Create a Privacy Manifest in Xcode
+
+12
+
+What to Add to the Privacy Manifest
+
+12
+
+Example File
+
+13
+
+6. Update the Xcode project settings
+
+13
+
+Key Xcode project settings
+
+14
+
+Code Signing
+
+14
+
+App Version and Build Number
+
+15
+
+7. Build, upload, and submit your app to App Store Connect
+
+16
+
+Building the iOS App Bundle
+
+16
+
+Uploading the App Bundle to App Store Connect
+
+17
+
+Submitting Your App for Review
+
+18
+
+What Happens Next?
+
+19
+
+Wrapping Up
+
+19
+
+What’s Next?
+
+19
+
+Submitting App Updates to App Store Connect
+
+20
+
+Scaling with CI/CD Pipelines
+
+20
+
+New Course: Flutter in Production
+
+20
+
+Flutter In Production
+
+21
+
+Want More?
+
+21
+
+Flutter Foundations Course
+
+21
+
+Flutter & Firebase Masterclass
+
+21
+
+The Complete Dart Developer Guide
+
+22
+
+Flutter Animations Masterclass
+
+22
+
+CODE WITH ANDREA
+
+How to Release Your Flutter App on the
+iOS App Store
+#dart
+
+#flutter
+
+#production
+
+Andrea Bizzotto
+Dec 3, 2024
+
+13 min read
+
+Your Flutter app is ready, and you’ve completed all the important pre-release steps. Now it’s
+time for the final step: publishing it on the App Store and sharing it with the world. But where
+do you start?
+Sure, the Flutter documentation provides a technical guide for building and releasing an iOS
+app. But publishing your first app involves more than just building and uploading—it’s a process
+filled with red tape, guidelines, and steps that aren’t always obvious.
+If you’re new to this, don’t worry. This article will provide a high-level roadmap for releasing
+your Flutter app on the App Store. Even if you’re familiar with this process, you may discover a
+trick or two along the way.
+
+👍
+
+What You’ll Learn:
+1. How to enroll in the Apple Developer Program.
+2. How to register your App ID in the Apple Developer Portal.
+3. How to create your app in App Store Connect.
+4. How to prepare your app for review, including metadata, privacy, and compliance.
+5. How to create a Privacy Manifest in Xcode.
+6. How to update the Xcode project settings, including code signing.
+7. How to build, upload, and submit your app for App Store review.
+
+Want a more detailed, hands-on guide? My Flutter in Production course includes a
+complete module with 20 lessons that cover each step in depth—from account setup to
+submission and beyond.
+Let’s dive in!
+
+🚀
+
+Should You Sell Apps on the App Store?
+For many developers, the App Store is the ultimate platform for reaching a high-quality
+audience. Apple users are far more willing to pay for apps compared to Android users (it’s not
+even close). And with payments seamlessly linked to their Apple ID, purchasing is frictionless.
+However, joining Apple’s walled garden comes with trade-offs:
+15% revenue cut: Even with the small business program, Apple takes a significant cut of your
+earnings.
+No direct customer ownership: Apple controls the relationship with your customers, making
+it harder to connect with them or market additional products.
+App review delays: The app review process can take hours or days—and even longer if your
+app is rejected, causing delays in your release timeline.
+The App Store offers real opportunities, but remember that Apple stands between you and
+your users. If your app fits Apple’s ecosystem and you’re prepared to work within its
+constraints, the App Store can be a powerful platform to reach millions of users worldwide.
+
+1. Enroll in the Apple Developer Program
+To publish apps on the App Store, you’ll need to join the Apple Developer Program:
+
+Apple Developer Program: enrollment page
+
+Cost: $99 per year.
+Who can enroll: Individuals or organizations.
+How to enroll: Start the process at developer.apple.com/programs/enroll/.
+Reduce fees: Join the Small Business Program to pay a 15% commission instead of 30%
+(eligibility applies).
+
+Enrollment Steps
+The enrollment process is fairly simple and involves the following steps:
+Start your Enrollment
+Sign in with your Apple ID (or create an account)
+Agree to the Apple Developer Agreement
+Confirm your personal information
+Select your entity type (individual, organization, or others)
+Obtain a D-U-N-S Number using this service (organizations only - can take up to 30 business
+days, or up to 8 business days for the expedited service)
+Agree to the legal terms
+Purchase your membership
+Complete the verification process
+
+What Happens Next?
+Once you’ve submitted all the required information:
+Verification: Apple may take a few days to verify your enrollment.
+Activation: Once verified, you’ll receive an activation email.
+Access to Resources: With your membership, you’ll have access to your Apple Developer
+Account, documentation, and additional resources.
+
+2. Register Your App ID
+After enrolling in the Apple Developer Program, you'll get access to your Apple Developer
+Account:
+
+Apple Developer Account page
+
+The next step is to register your App ID, which uniquely identifies your app within Apple’s
+ecosystem.
+
+How to Register Your App ID
+1. Open the identifiers page of your Apple Developer account.
+2. Click + to register a new App ID.
+3. Enter an app name, select Explicit App ID, and enter the Bundle ID (e.g.,
+com.yourcompany.yourapp ).
+
+4. Select the capabilities your app requires (e.g., Push Notifications, In-App Purchases), then
+click Continue.
+5. Click Register to confirm your App ID.
+Note that the Bundle ID must match the Bundle Identifier property in Xcode under Runner >
+General > Identity:
+
+Where to find the Bundle Identifier in Xcode
+
+3. Create your app in App Store Connect
+
+After registering your App ID, the next step is to create your app in App Store Connect.
+
+How to Create a New App in App Store Connect
+Go to App Store Connect > Apps, then add a new app:
+
+To create a new app, click the "+" button
+
+Fill in the required details:
+
+Adding the new app details
+
+These include:
+Platforms: Ensure iOS is selected.
+Name: The app name displayed to users on the App Store.
+Primary Language: The default language for your app’s metadata.
+Bundle ID: Select the App ID you registered in the previous step.
+SKU: A unique internal ID for your app (not visible to users).
+User Access: Decide which App Store Connect users can manage the app.
+When you're done, click Create to finalize the setup.
+
+4. Prepare your App For Review
+After clicking Create, you’ll land on the app’s overview page:
+
+Main page for a new app in App Store Connect
+
+Note that entering all the information is long process and you'll need to fill multiple pages:
+
+Fill all the data in "App Information", "App Privacy", "Pricing and Availability", before adding your app for review
+
+Here’s what you’ll need to provide and where to find it.
+
+Sections to Complete
+Main Page
+Preview and Screenshots: up to 3 app previews (optional), and up to 10 screenshots
+App Metadata: description, keywords, support URL, marketing URL, version, copyright
+App Review Information: Provide:
+Sign-in Information: If your app requires login credentials for testing, create a test
+account and share them here.
+Contact Information: Provide details for Apple to contact you during the review
+process.
+
+Notes: Add any additional context for the App Review team.
+App Information
+Localizable Information: your app's name and subtitle
+General Information: bundle ID, primary and secondary category, content rights
+information
+Age Rating: a questionnaire with multiple selections and yes/no questions
+App Encryption Documentation: specify whether your app uses non-exempt encryption
+(see tip below for most cases).
+Pricing and Availability
+Price Schedule: starting price for your app (free or paid)
+App Availability: countries where your app will be available to purchase or download
+App Privacy
+Privacy Policy: a link to your app’s Privacy Policy (required).
+Data Collection: Specify your app’s data collection and usage practices. This is a multistep process where you’ll need to disclose:
+Types of data collected (e.g., location, identifiers).
+How the data is used (e.g., analytics, advertising).
+Whether the data is linked to user identity or used for tracking.
+Tip: If your app doesn’t use non-exempt encryption (this applies to most apps), add a
+ITSAppUsesNonExemptEncryption key and set the value to NO in your Info.plist
+
+file in Xcode. This will prevent extra encryption documentation steps when uploading your
+builds to App Store Connect. Read this tip for more details.
+
+Before Submitting for Review
+Make sure you’ve entered all the required app details. If any information is missing, you’ll see an
+error when you click Add for Review:
+
+Warning about required items before the app can be added for review
+
+5. Create a Privacy Manifest in Xcode
+When you specify your data collection practices in App Store Connect, Apple generates
+privacy labels for your app, which are displayed on your App Store listing. For example:
+
+App Store privacy labels
+
+Starting November 12, 2024, Apple also requires you to add a Privacy Manifest to your app
+before submitting it to App Store Connect.
+
+What is a Privacy Manifest?
+
+A Privacy Manifest is a file named PrivacyInfo.xcprivacy that documents your app's data
+collection practices and API usage. This file helps Apple understand what data your app
+collects, how it’s used, and why.
+
+How to Create a Privacy Manifest in Xcode
+Follow these steps to create a Privacy Manifest for your app:
+Open the ios/Runner.xcworkspace project in Xcode.
+Right-click the Runner folder and select New File from Template...
+Scroll down to the Resource section, choose App Privacy, and click Next.
+Create the file with the default name PrivacyInfo .
+
+What to Add to the Privacy Manifest
+Once the file is created, add the following values to the App Privacy Configuration section:
+NSPrivacyTracking: Indicates whether your app uses tracking, as defined by Apple’s App
+Tracking Transparency framework.
+NSPrivacyTrackingDomains: Lists internet domains your app uses for tracking purposes.
+NSPrivacyCollectedDataTypes: Details the types of data collected by your app (e.g.,
+location, identifiers).
+NSPrivacyAccessedAPITypes: Describes the APIs your app accesses and the reasons for
+their use (e.g., User Defaults for local storage).
+These should match the data collection types you declared in App Store Connect.
+Once all the information is complete, your PrivacyInfo file should look similar to this:
+
+Xcode privacy manifest file
+
+Example File
+Here's an example of the completed PrivacyInfo.xcprivacy for one of my apps:
+Example PrivacyInfo.xcprivacy
+To learn more, read the official Apple docs about User privacy and data use and Privacy
+manifest files.
+
+6. Update the Xcode project settings
+Before building and submitting your app to App Store Connect, review your Xcode project
+settings to ensure everything is configured correctly. You can find these settings in Runner >
+General:
+
+Xcode project settings (General tab)
+
+Key Xcode project settings
+Here are the key settings you need to review and update:
+Supported Destinations: In addition to iPhone, decide if your app should support iPad, Mac,
+and Apple Vision
+Minimum Deployment Version: Targeting an iOS version that is 2 years old ensures your
+app will be compatible with over 90% of devices (source).
+Identity: Double-check the App Category, as it impacts your app’s discoverability on the App
+Store. Other fields like Display Name, Bundle Identifier, Version, and Build Number are
+derived from your pubspec.yaml , file, so there should be no need to change them.
+Deployment Info: Review and update the supported orientations based on your app’s
+design.
+App Icons and Launch Screen: Verify that they look as intended.
+Tip: use packages like flutter_launcher_icons and flutter_native_splash to generate
+consistent app icons and launch screens for all platforms.
+
+Code Signing
+In addition to the general settings, you’ll need to review the Signing & Capabilities tab:
+
+Signing & Capabilities tab in Xcode
+
+Enable Automatic Signing: Ensure Automatically manage signing is enabled.
+Select Your Team: In the dropdown, choose your Team. This allows Xcode to automatically
+generate the necessary certificate and provisioning profile (if they don’t already exist).
+By default, a development certificate is created (rather than a distribution one). This is
+normal and won’t prevent you from uploading your app to App Store Connect. You can find
+all your certificates in the Apple Developer Portal.
+
+App Version and Build Number
+In Flutter, the version and build number are defined in the pubspec.yaml file under the
+version key:
+
+version: 0.3.4+18
+
+In App Store Connect, you’ll need to manually set the app version number to match the version
+in your pubspec.yaml . Here’s how:
+1. Go to App Store Connect > My Apps > Your App.
+
+2. Scroll down to the metadata and set the correct version number to match what’s in your
+pubspec.yaml :
+
+Setting the version number in App Store Connect
+
+7. Build, upload, and submit your app to App Store
+Connect
+Once you’ve verified your Xcode settings and versioning, it’s time to build your app bundle and
+upload it to App Store Connect for review.
+
+Building the iOS App Bundle
+To build the iOS app bundle, run the following command:
+flutter build ipa
+
+Depending on your app’s configuration, you might need to pass additional flags. To see all
+supported arguments, run: flutter build ipa --help .
+If your app supports multiple flavors, specify the flavor using the --flavor flag. For example:
+# To build the prod flavor
+flutter build ipa --flavor prod -t lib/main_prod.dart --dart-define-fromfile=.env.prod
+
+This command will generate an IPA file (iOS App Archive) in the build/ios/ipa/ directory.
+The IPA is the format used to distribute iOS apps.
+
+Uploading the App Bundle to App Store Connect
+There are multiple ways to upload your app bundle, but for first-time uploads, I recommend
+using the Apple Transporter app. Transporter simplifies the upload process by handling both
+the upload and validation for you.
+How to Use Transporter:
+Open the Apple Transporter app and sign in with your Apple ID.
+Drag and drop the build/ios/ipa/*.ipa file into the app.
+Click Deliver to upload your app bundle:
+
+After a few minutes, Transporter will show the app as Ready for Internal Testing:
+
+Submitting Your App for Review
+Go to your app in App Store Connect, scroll down to Build, click the + icon, select your build,
+and click Done:
+
+Then, click Add for Review at the top of the page, then Submit to App Review:
+
+What Happens Next?
+Your app will now enter Apple’s review queue. Apple’s review team will assess your app for
+compliance with their guidelines. If everything checks out, you’ll receive a notification, and your
+app will be ready for release!
+
+Wrapping Up
+Congratulations! You’ve successfully submitted your iOS app to App Store Connect—the final
+step before Apple reviews it for release on the App Store.
+
+🎉
+
+What’s Next?
+While waiting for App Review, it’s a good idea to get familiar with Apple’s review guidelines and
+resources to ensure a smooth approval process. Start with the App Review page, which
+includes helpful documentation like:
+App Review Guidelines
+Human Interface Guidelines
+Guidelines for Using Apple Trademarks and Copyrights
+Submitting for review
+Avoiding common issues
+
+Submitting App Updates to App Store Connect
+Once your app is approved, you’ll likely submit updates to add new features and fix bugs. While
+using the Transporter app works for occasional uploads, it can quickly become tedious if you
+update your app frequently.
+A better solution? Automate the process with a build script that uses the xcrun command to
+automatically build and upload your app to App Store Connect.
+To learn more about this, read:
+iOS App Store: Build and Upload Script
+
+Scaling with CI/CD Pipelines
+If you work as part of a team or release updates often, consider setting up CI/CD pipelines to
+automate your app builds, testing, and releases. CI/CD enables you to:
+Save time by automating repetitive tasks.
+Run specific workflows (e.g. run tests) when certain events are triggered (e.g. when pushing a
+branch).
+Distribute apps more efficiently via TestFlight or the App Store.
+To dive deeper into these topics, and many more, you can explore my new course.
+
+👇
+
+New Course: Flutter in Production
+When it comes to shipping and maintaining apps in production, there are many important
+aspects to consider:
+Preparing for release: splash screens, flavors, environments, error reporting, analytics, force
+update, privacy, T&Cs.
+App Submissions: app store metadata & screenshots, compliance, testing vs distribution
+tracks, dealing with rejections.
+Release automation: CI workflows, environment variables, custom build steps, code signing,
+uploading to the stores.
+Post-release: error monitoring, bug fixes, addressing user feedback, over-the-air updates,
+feature flags & A/B testing.
+
+My latest course will help you get your app to the stores faster and with fewer headaches.
+If you’re interested, you can learn more and enroll here.
+
+👇
+
+Flutter In Production
+I N T E R M E D I AT E TO A DVA N C E D
+
+Learn about flavors, environments, error monitoring, analytics,
+release management, CI/CD, and finally ship your Flutter apps to the
+stores.
+
+🚀
+
+Want More?
+Invest in yourself with my high-quality Flutter courses.
+
+Flutter Foundations Course
+I N T E R M E D I AT E TO A DVA N C E D
+
+Learn about State Management, App
+Architecture, Navigation, Testing, and much
+
+Flutter & Firebase
+Masterclass
+I N T E R M E D I AT E TO A DVA N C E D
+
+more by building a Flutter eCommerce app
+
+Learn about Firebase Auth, Cloud Firestore,
+
+on iOS, Android, and web.
+
+Cloud Functions, Stripe payments, and much
+more by building a full-stack eCommerce app
+
+The Complete Dart
+Developer Guide
+
+Flutter Animations
+Masterclass
+
+BEGINNER
+
+I N T E R M E D I AT E
+
+Learn Dart Programming in depth. Includes:
+basic to advanced topics, exercises, and
+
+Master Flutter animations and build a
+completely custom habit tracking
+
+projects. Last updated to Dart 2.15.
+
+application.
+
+CODE WITH ANDREA
+Copyright © 2020-present Coding With Flutter Limited
+
+Contact
+
+Twitter
+
+Discord
+
+GitHub
+
+RSS
+
+Meta
+
+Privacy Policy
+
+Terms of Use
+
+

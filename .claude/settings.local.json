@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pandoc:*)",
+      "Bash(python3:*)",
+      "Bash(brew install:*)",
+      "Bash(pdftotext:*)",
+      "Bash(for:*)",
+      "Bash(do pdftotext:*)",
+      "Bash(done)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(ls:*)",
+      "Bash(env)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "WebSearch",
+      "Bash(flutter pub:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter packages pub run:*)",
+      "Bash(flutter run:*)",
+      "Bash(pkill:*)",
+      "Bash(rm:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "defaultMode": "acceptEdits"
+  }
+}

@@ -1,0 +1,145 @@
+Generating Custom Splash Screens with Flutter Native Splash
+When your app is launched from a cold start, the native app shows a splash screen until runApp is called and Flutter takes over.
+
+If you want to change the splash screen (which is white by default), you need some platform-specific configuration. And thanks to the flutter_native_splash package, you can customize the background color, splash image, dark mode, and other options.
+
+And in this lesson, we’ll learn how to use it by changing the splash screen of the Flutter Ship app:
+
+Transition from the native splash screen to the Flutter welcome screen
+How to use flutter_native_splash
+First, add flutter_native_splash as a dev dependency and install the latest packages:
+
+
+Copy
+dart pub add dev:flutter_native_splash
+flutter pub get
+Then, go to the bottom of the pubspec.yaml file and add this code:
+
+
+Copy
+# Flutter Native Splash configuration
+flutter_native_splash:
+  color: "#ffffff"
+  image: "assets/android/app-icon-foreground.png"
+  android_12:
+    color: "#ffffff"
+    icon_background_color: "#FFFFFF"
+    image: "assets/android/app-icon-foreground.png"
+From Android 12 onwards, the splash screen is handled differently than in previous versions, as explained here. As a result, you can set some specific parameters for Android 12+. Read the package instructions about setting the splash screen for all the details.
+
+After saving, run this:
+
+
+Copy
+dart run flutter_native_splash:create
+This will add a bunch of new files will be added to the Android, iOS, and web folders:
+
+
+Copy
+Building package executable... 
+Built flutter_native_splash:create.
+[Android] Creating default splash images
+[Android] Creating default android12splash images
+[Android] Creating dark mode android12splash images
+[Android] Updating launch background(s) with splash image path...
+[Android]  - android/app/src/main/res/drawable/launch_background.xml
+[Android]  - android/app/src/main/res/drawable-v21/launch_background.xml
+[Android] Updating styles...
+[Android]  - android/app/src/main/res/values-v31/styles.xml
+[Android] No android/app/src/main/res/values-v31/styles.xml found in your Android project
+[Android] Creating android/app/src/main/res/values-v31/styles.xml and adding it to your Android project
+[Android]  - android/app/src/main/res/values-night-v31/styles.xml
+[Android] No android/app/src/main/res/values-night-v31/styles.xml found in your Android project
+[Android] Creating android/app/src/main/res/values-night-v31/styles.xml and adding it to your Android project
+[Android]  - android/app/src/main/res/values/styles.xml
+[Android]  - android/app/src/main/res/values-night/styles.xml
+[iOS] Creating  images
+[iOS] Updating ios/Runner/Info.plist for status bar hidden/visible
+[Web] Creating images
+[Web] Creating images
+[Web] Creating background images
+[Web] Creating CSS
+[Web] Updating index.html
+ 
+✅ Native splash complete.
+Now go finish building something awesome! 💪 You rock! 🤘🤩
+Like the package? Please give it a 👍 here: https://pub.dev/packages/flutter_native_splash
+At this stage, you can already run the app on iOS and Android and verify that the splash screen is shown before Flutter takes over:
+
+Transition from the native splash screen to the Flutter welcome screen
+Light and Dark Mode
+Showing the app icon on a plain background is easy enough, but flutter_native_splash can do much more than that.
+
+For example, you can customize the background colors in light and dark mode on Android, iOS, and web:
+
+
+Copy
+# Flutter Native Splash configuration
+flutter_native_splash:
+  color: "#ffffff"
+  color_android: "#ffffff"
+  color_dark_android: "#121212"
+  color_ios: "#ffffff"
+  color_dark_ios: "#121212"
+  color_web: "#ffffff"
+  color_dark_web: "#121212"
+  image: "assets/android/app-icon-foreground.png"
+  android_12:
+    color: "#ffffff"
+    icon_background_color: "#FFFFFF"
+    image: "assets/android/app-icon-foreground.png"
+    color_dark: "#121212"
+    icon_background_color_dark: "#121212"
+    image_dark: "assets/android/app-icon-foreground.png"
+Then, you can run this command again to update the splash screens:
+
+
+Copy
+dart run flutter_native_splash:create
+As a result, whenever you use your device or browser in dark mode, the dark launch screen will show as well:
+
+Transition from the native splash screen to the Flutter welcome screen (web, dark mode)
+You can toggle between light and dark mode on iOS and Android by following these steps:
+
+iOS (simulator): go to Settings > Developer > Dark Appearance
+iOS (real device): go to Settings > Display & Brightness > Appearance
+Android: go to Settings > Display > Dark Theme
+More info here:
+
+Use Dark Mode on your iPhone and iPad
+Change to dark or color mode on your Android device
+Additional configuration
+In addition to the above, Flutter Native Splash also supports many extra features, including:
+
+Custom background image
+Branding image
+Android 12 splash screens
+Preserving the splash screen while the Flutter app is initializing, as described here.
+To learn about all the supported parameters, read: Setting the splash screen
+
+If your Flutter app has multiple flavors or environments, you can configure a different splash screen for each, and the documentation about Flavor Support explains how. In practice, I find it’s enough to have a flavored app icon and name, as shown in the next module.
+
+Note about native iOS launch screens
+
+Show more
+
+
+
+Time for a quiz to test your knowledge:
+
+Question 1 of 3
+Which of these steps is *incorrect* when setting up flutter_native_splash?
+
+Add flutter_native_splash as a dev dependency
+
+Configure the package in analysis_options.yaml
+
+Provide a splash image and/or background color
+
+Run dart run flutter_native_splash:create
+
+Submit
+Resources
+Adding a splash screen to your Android app
+flutter_native_splash package
+Submit Feedback
