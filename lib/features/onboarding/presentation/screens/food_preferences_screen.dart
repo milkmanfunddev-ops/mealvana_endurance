@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/onboarding_controller.dart';
-import '../../../auth/data/models/user_preferences.dart';
+import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/data/food_database.dart';
-import '../../../nutrition_plan/data/models/food_item.dart';
+import '../../../nutrition_plan/domain/food_item.dart';
 
 /// Food preferences screen - final step of onboarding
-/// Users select their preferences for each of the 12 food items
+/// Users select their food preferences using a checkbox list
 class FoodPreferencesScreen extends ConsumerStatefulWidget {
   const FoodPreferencesScreen({super.key});
 
@@ -17,60 +17,53 @@ class FoodPreferencesScreen extends ConsumerStatefulWidget {
 }
 
 class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
-  final Map<String, FoodPreference> _preferences = {};
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+  final Map<String, bool> _selectedFoods = {};
 
   @override
   void initState() {
     super.initState();
-    // Initialize all preferences to neutral
+    // Initialize all foods as unchecked (disliked)
     for (final food in FoodDatabase.getAllFoods()) {
-      _preferences[food.id] = FoodPreference.neutral;
+      _selectedFoods[food.id] = false;
     }
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _updatePreference(String foodId, FoodPreference preference) {
+  void _selectAll() {
     setState(() {
-      _preferences[foodId] = preference;
+      for (final key in _selectedFoods.keys) {
+        _selectedFoods[key] = true;
+      }
     });
   }
 
-  void _nextPage() {
-    if (_currentPage < FoodDatabase.getAllFoods().length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+  void _clearAll() {
+    setState(() {
+      for (final key in _selectedFoods.keys) {
+        _selectedFoods[key] = false;
+      }
+    });
   }
 
-  void _previousPage() {
-    if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+  void _showFoodDetails(FoodItem food) {
+    showDialog(
+      context: context,
+      builder: (context) => _FoodDetailDialog(food: food),
+    );
   }
 
   Future<void> _completeOnboarding() async {
-    // Filter out neutral preferences to only save actual choices
-    final actualPreferences = Map<String, FoodPreference>.fromEntries(
-      _preferences.entries.where((entry) => entry.value != FoodPreference.neutral),
-    );
+    // Convert checkbox selections to FoodPreference enum
+    final preferences = <String, FoodPreference>{};
+    
+    _selectedFoods.forEach((foodId, isSelected) {
+      preferences[foodId] = isSelected ? FoodPreference.like : FoodPreference.dislike;
+    });
 
     final controller = ref.read(onboardingControllerProvider.notifier);
-    final success = await controller.saveFoodPreferences(actualPreferences);
+    final success = await controller.saveFoodPreferences(preferences);
 
     if (success && mounted) {
-      context.go('/home');
+      context.go('/main');
     }
   }
 
@@ -84,13 +77,6 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       appBar: AppBar(
         title: const Text('Food Preferences'),
         centerTitle: true,
-        actions: [
-          if (_currentPage > 0)
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: _previousPage,
-            ),
-        ],
       ),
       body: Column(
         children: [
@@ -105,7 +91,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  '${_currentPage + 1} of ${foods.length}',
+                  'Final Step: Food Preferences',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -114,50 +100,124 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
             ),
           ),
 
-          // Food preference cards
+          // Header and instructions
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Choose the foods you like',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                
+                SizedBox(height: 8.h),
+                
+                Text(
+                  'Check the foods you enjoy eating. Unchecked foods will be avoided in your nutrition plans.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                
+                SizedBox(height: 16.h),
+                
+                // Select All / Clear All buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _selectAll,
+                        icon: const Icon(Icons.check_box, size: 18),
+                        label: const Text('Select All'),
+                      ),
+                    ),
+                    
+                    SizedBox(width: 12.w),
+                    
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _clearAll,
+                        icon: const Icon(Icons.check_box_outline_blank, size: 18),
+                        label: const Text('Clear All'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 16.h),
+
+          // Food checklist
           Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (page) {
-                setState(() {
-                  _currentPage = page;
-                });
-              },
+            child: ListView.separated(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
               itemCount: foods.length,
+              separatorBuilder: (context, index) => SizedBox(height: 8.h),
               itemBuilder: (context, index) {
                 final food = foods[index];
-                return _FoodPreferenceCard(
+                final isSelected = _selectedFoods[food.id] ?? false;
+                
+                return _FoodChecklistItem(
                   food: food,
-                  preference: _preferences[food.id]!,
-                  onPreferenceChanged: (preference) => _updatePreference(food.id, preference),
+                  isSelected: isSelected,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedFoods[food.id] = value ?? false;
+                    });
+                  },
+                  onTapDetails: () => _showFoodDetails(food),
                 );
               },
             ),
           ),
 
-          // Navigation buttons
+          // Bottom actions
           Padding(
             padding: EdgeInsets.all(24.w),
-            child: Row(
+            child: Column(
               children: [
-                if (_currentPage > 0)
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _previousPage,
-                      child: const Text('Previous'),
-                    ),
+                // Summary
+                Container(
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.favorite,
+                        color: theme.colorScheme.primary,
+                        size: 20.w,
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        '${_selectedFoods.values.where((v) => v).length} foods selected',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 
-                if (_currentPage > 0) SizedBox(width: 16.w),
+                SizedBox(height: 16.h),
                 
-                Expanded(
+                // Complete button
+                SizedBox(
+                  width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: asyncState.isLoading 
-                        ? null 
-                        : (_currentPage == foods.length - 1 ? _completeOnboarding : _nextPage),
+                    onPressed: asyncState.isLoading ? null : _completeOnboarding,
                     child: asyncState.isLoading
                         ? const CircularProgressIndicator()
-                        : Text(_currentPage == foods.length - 1 ? 'Complete Setup' : 'Next'),
+                        : const Text('Complete Setup'),
                   ),
                 ),
               ],
@@ -169,183 +229,177 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   }
 }
 
-class _FoodPreferenceCard extends StatelessWidget {
+class _FoodChecklistItem extends StatelessWidget {
   final FoodItem food;
-  final FoodPreference preference;
-  final ValueChanged<FoodPreference> onPreferenceChanged;
+  final bool isSelected;
+  final ValueChanged<bool?> onChanged;
+  final VoidCallback onTapDetails;
 
-  const _FoodPreferenceCard({
+  const _FoodChecklistItem({
     required this.food,
-    required this.preference,
-    required this.onPreferenceChanged,
+    required this.isSelected,
+    required this.onChanged,
+    required this.onTapDetails,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      child: Column(
-        children: [
-          SizedBox(height: 24.h),
-          
-          // Food image placeholder
-          Container(
-            width: 200.w,
-            height: 200.h,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            child: Icon(
-              _getCategoryIcon(food.category),
-              size: 80.w,
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
-          ),
-          
-          SizedBox(height: 24.h),
-          
-          // Food name and category
-          Text(
-            food.name,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          SizedBox(height: 8.h),
-          
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Text(
-              _getCategoryDisplayName(food.category),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSecondaryContainer,
-                fontWeight: FontWeight.w500,
+    return Container(
+      decoration: BoxDecoration(
+        color: isSelected 
+            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+            : theme.colorScheme.surface,
+        border: Border.all(
+          color: isSelected 
+              ? theme.colorScheme.primary 
+              : theme.colorScheme.outline.withValues(alpha: 0.3),
+          width: isSelected ? 1.5 : 1,
+        ),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: CheckboxListTile(
+        value: isSelected,
+        onChanged: onChanged,
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                food.name,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
               ),
             ),
-          ),
-          
-          SizedBox(height: 16.h),
-          
-          // Description
-          Text(
-            food.description,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          SizedBox(height: 8.h),
-          
-          // Serving size
-          Text(
-            'Serving: ${food.servingSize}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          SizedBox(height: 32.h),
-          
-          // Additional info if available
-          if (food.additionalInfo != null) ...[
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12.r),
+            
+            // Info button
+            IconButton(
+              onPressed: onTapDetails,
+              icon: Icon(
+                Icons.info_outline,
+                size: 20.w,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: theme.colorScheme.primary,
-                    size: 20.w,
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Text(
-                      food.additionalInfo!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              tooltip: 'More info',
             ),
-            SizedBox(height: 32.h),
           ],
-          
-          // Preference selection
-          Text(
-            'How do you feel about this food?',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
+        ),
+        subtitle: Text(
+          _getCategoryDisplayName(food.category),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-          
-          SizedBox(height: 20.h),
-          
-          // Preference buttons
-          Column(
-            children: [
-              _PreferenceButton(
-                label: 'Like',
-                description: 'I enjoy eating this',
-                icon: Icons.thumb_up,
-                isSelected: preference == FoodPreference.like,
-                onTap: () => onPreferenceChanged(FoodPreference.like),
-              ),
-              
-              SizedBox(height: 12.h),
-              
-              _PreferenceButton(
-                label: 'Open to Try',
-                description: 'I\'m willing to give it a try',
-                icon: Icons.help_outline,
-                isSelected: preference == FoodPreference.willingToTry,
-                onTap: () => onPreferenceChanged(FoodPreference.willingToTry),
-              ),
-              
-              SizedBox(height: 12.h),
-              
-              _PreferenceButton(
-                label: 'Dislike',
-                description: 'I prefer not to eat this',
-                icon: Icons.thumb_down,
-                isSelected: preference == FoodPreference.dislike,
-                onTap: () => onPreferenceChanged(FoodPreference.dislike),
-              ),
-            ],
-          ),
-          
-          SizedBox(height: 40.h),
-        ],
+        ),
+        controlAffinity: ListTileControlAffinity.leading,
+        contentPadding: EdgeInsets.only(left: 8.w, right: 4.w),
       ),
     );
   }
 
-  IconData _getCategoryIcon(FoodCategory category) {
+  String _getCategoryDisplayName(FoodCategory category) {
     switch (category) {
       case FoodCategory.preRun:
-        return Icons.breakfast_dining;
+        return 'Pre-Run';
       case FoodCategory.duringRun:
-        return Icons.sports_bar;
+        return 'During-Run';
       case FoodCategory.postRun:
-        return Icons.local_drink;
+        return 'Post-Run';
     }
+  }
+}
+
+class _FoodDetailDialog extends StatelessWidget {
+  final FoodItem food;
+
+  const _FoodDetailDialog({required this.food});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: Text(food.name),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Category badge
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Text(
+                _getCategoryDisplayName(food.category),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSecondaryContainer,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            
+            SizedBox(height: 16.h),
+            
+            // Description
+            Text(
+              food.description,
+              style: theme.textTheme.bodyMedium,
+            ),
+            
+            SizedBox(height: 12.h),
+            
+            // Serving size
+            Text(
+              'Serving: ${food.servingSize}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            
+            SizedBox(height: 16.h),
+            
+            // Additional info if available
+            if (food.additionalInfo != null) ...[
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      color: theme.colorScheme.primary,
+                      size: 16.w,
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        food.additionalInfo!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    );
   }
 
   String _getCategoryDisplayName(FoodCategory category) {
@@ -357,80 +411,5 @@ class _FoodPreferenceCard extends StatelessWidget {
       case FoodCategory.postRun:
         return 'Post-Run Food';
     }
-  }
-}
-
-class _PreferenceButton extends StatelessWidget {
-  final String label;
-  final String description;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PreferenceButton({
-    required this.label,
-    required this.description,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: isSelected ? theme.colorScheme.primaryContainer : theme.colorScheme.surface,
-          border: Border.all(
-            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-              size: 24.w,
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    description,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: isSelected 
-                          ? theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8)
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: theme.colorScheme.primary,
-                size: 20.w,
-              ),
-          ],
-        ),
-      ),
-    );
   }
 }

@@ -1,47 +1,51 @@
-# CI/CD Implementation - Mealvana Endurance
+# CI/CD Implementation - Mealvana Run
 
 ## Overview
 
-Codemagic CI/CD implementation for deploying the Mealvana Endurance nutrition planning app to iOS App Store and Google Play Store. The pipeline handles automated testing, building, and deployment while managing environment-specific configurations for development, staging, and production releases.
+Comprehensive Codemagic CI/CD implementation for building, testing, and deploying the Mealvana Run nutrition planning app to iOS App Store and Google Play Store. This offline-first Flutter application uses local storage only and integrates with Shorebird for over-the-air code push capabilities.
 
-## Project-Specific Pipeline Configuration
+## Project Architecture
 
-### Workflow Structure
+### Application Profile
+- **App Name**: Mealvana Run
+- **Bundle ID**: `com.milkman.mealvanaendurance`
+- **Architecture**: Offline-first Flutter app with FOA (Feature-Oriented Architecture)
+- **State Management**: Riverpod v2 with code generation
+- **Local Storage**: Hive database (no backend services)
+- **Code Push**: Shorebird for instant updates
+- **Platforms**: iOS (App Store/TestFlight) and Android (Play Store)
 
-The Mealvana Endurance app requires three distinct deployment tracks:
+### Technology Stack
+- **Flutter**: 3.24.0 stable
+- **Dart**: Latest stable
+- **Local Storage**: Hive with type adapters
+- **Theming**: Material Design 3 with Google Fonts
+- **Code Push**: Shorebird CLI integration
+- **Privacy Compliance**: iOS Privacy Manifest included
 
-**Development Track**: Continuous deployment for internal testing and feature validation. Builds trigger on every commit to develop branch and deploy to Firebase App Distribution for internal team testing.
+## Codemagic Workflow Configuration
 
-**Staging Track**: Pre-production validation environment that mirrors production configuration. Builds trigger on commits to staging branch and deploy to TestFlight (iOS) and Google Play Internal Testing track for stakeholder review.
-
-**Production Track**: Live app store releases that require manual approval. Builds trigger on tagged releases and deploy to App Store Connect and Google Play Console production tracks.
-
-### Environment Configuration
-
-Each deployment environment requires specific configuration for the nutrition app:
+### Environment Setup
 
 ```yaml
 # codemagic.yaml
 workflows:
-  mealvana-development:
-    name: Development Build
+  ios-workflow:
+    name: iOS Production Build
     instance_type: mac_mini_m1
-    max_build_duration: 60
+    max_build_duration: 120
+    integrations:
+      app_store_connect: mealvana_app_store_connect
     environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.milkman.mealvanaendurance
       vars:
-        FLUTTER_VERSION: 3.24.0
+        APP_STORE_APPLE_ID: "REPLACE_WITH_ACTUAL_ID"
         XCODE_WORKSPACE: ios/Runner.xcworkspace
         XCODE_SCHEME: Runner
-        BUNDLE_ID: com.mealvana.endurance.dev
-        APP_STORE_CONNECT_ISSUER_ID: $APP_STORE_CONNECT_ISSUER_ID
-        APP_STORE_CONNECT_KEY_IDENTIFIER: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        APP_STORE_CONNECT_PRIVATE_KEY: $APP_STORE_CONNECT_PRIVATE_KEY
-        GOOGLE_CREDENTIALS: $GOOGLE_CREDENTIALS
-        SUPABASE_URL: https://dev-nutrition.supabase.co
-        SUPABASE_ANON_KEY: $SUPABASE_DEV_ANON_KEY
-        MIXPANEL_TOKEN: $MIXPANEL_DEV_TOKEN
-        SENTRY_DSN: $SENTRY_DEV_DSN
-        REVENUECAT_API_KEY: $REVENUECAT_DEV_KEY
+        SHOREBIRD_TOKEN: $SHOREBIRD_TOKEN
+      flutter: "3.24.0"
     cache:
       cache_paths:
         - $FLUTTER_ROOT/.pub-cache
@@ -49,92 +53,440 @@ workflows:
         - ~/Library/Caches/CocoaPods
 ```
 
-### Build Process Automation
+### Android Workflow Configuration
 
-The pipeline automates the complete build process for both platforms:
+```yaml
+  android-workflow:
+    name: Android Production Build
+    instance_type: linux_x2
+    max_build_duration: 120
+    environment:
+      android_signing:
+        - keystore_credentials
+      groups:
+        - google_play_credentials
+      vars:
+        PACKAGE_NAME: "com.milkman.mealvanaendurance"
+        GOOGLE_PLAY_TRACK: "production"
+        SHOREBIRD_TOKEN: $SHOREBIRD_TOKEN
+      flutter: "3.24.0"
+    cache:
+      cache_paths:
+        - $FLUTTER_ROOT/.pub-cache
+        - ~/.gradle/caches
+```
 
-**Pre-build Setup**: Installs Flutter SDK, configures Xcode for iOS builds, and sets up Android SDK with proper signing configurations. Environment-specific values are injected into the app configuration during this phase.
+## Build Process Automation
 
-**Code Quality Checks**: Runs `flutter analyze` for static analysis, executes unit tests with `flutter test`, and performs widget tests to ensure UI components function correctly. Any failures in this stage halt the deployment process.
+### Pre-build Setup
 
-**Asset Generation**: Automatically generates app icons using `flutter_launcher_icons` configuration and creates native splash screens using `flutter_native_splash`. This ensures consistent branding across all deployment environments.
+```yaml
+scripts:
+  - name: Setup environment
+    script: |
+      # Set up local.properties for Android
+      echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+      
+      # Install Shorebird CLI
+      curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf | bash
+      echo 'export PATH="$HOME/.shorebird/bin:$PATH"' >> $HOME/.bashrc
+      source $HOME/.bashrc
+      
+      # Login to Shorebird (token from environment)
+      shorebird login --token $SHOREBIRD_TOKEN
+```
 
-**Platform Builds**: Builds iOS .ipa files with proper provisioning profiles and Android .aab bundles with release signing. Build artifacts include debug symbols for crash analysis and ProGuard mapping files for Android.
+### Code Quality and Testing
 
-### Testing Integration
+```yaml
+  - name: Get Flutter packages
+    script: flutter pub get
+    
+  - name: Generate code
+    script: |
+      flutter packages pub run build_runner build --delete-conflicting-outputs
+      
+  - name: Flutter analyze
+    script: flutter analyze
+    
+  - name: Flutter unit tests
+    script: |
+      mkdir -p test-results
+      flutter test --machine > test-results/flutter.json
+    ignore_failure: false
+    
+  - name: Install pods (iOS only)
+    script: |
+      find . -name "Podfile" -execdir pod install \;
+```
 
-Automated testing ensures nutrition plan generation and user onboarding flows work correctly:
+### Build Versioning Strategy
 
-**Unit Tests**: Validate nutrition calculation algorithms, food preference logic, and data synchronization mechanisms. Tests run against mock data to ensure consistent results across different user profiles and run parameters.
+#### iOS Build with Auto-Versioning
 
-**Widget Tests**: Verify onboarding flow UI, nutrition plan display components, and feedback collection interfaces. These tests ensure the user experience remains consistent across app updates.
+```yaml
+  - name: Flutter build iOS with auto-versioning
+    script: |
+      # Get latest build number from App Store Connect and increment
+      BUILD_NUMBER=$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1))
+      
+      # Build IPA with dynamic versioning
+      flutter build ipa --release \
+        --build-name=1.0.$BUILD_NUMBER \
+        --build-number=$BUILD_NUMBER \
+        --export-options-plist=/Users/builder/export_options.plist
+        
+      # Create Shorebird release if this is a tagged build
+      if [ ! -z ${CM_TAG} ]; then
+        shorebird release ios --no-confirm
+      fi
+```
 
-**Integration Tests**: Test complete user journeys from onboarding through plan generation and feedback submission. These tests use real Supabase connections to validate end-to-end functionality.
+#### Android Build with Auto-Versioning
+
+```yaml
+  - name: Flutter build Android with auto-versioning
+    script: |
+      # Get latest build number from Google Play and increment
+      BUILD_NUMBER=$(($(google-play get-latest-build-number --package-name "$PACKAGE_NAME" --tracks="$GOOGLE_PLAY_TRACK") + 1))
+      
+      # Build AAB with dynamic versioning
+      flutter build appbundle --release \
+        --build-name=1.0.$BUILD_NUMBER \
+        --build-number=$BUILD_NUMBER
+        
+      # Create Shorebird release if this is a tagged build
+      if [ ! -z ${CM_TAG} ]; then
+        shorebird release android --no-confirm
+      fi
+```
+
+### Asset Generation
+
+```yaml
+  - name: Generate app icons and splash screens
+    script: |
+      # Generate launcher icons
+      flutter pub run flutter_launcher_icons:main
+      
+      # Generate native splash screens
+      flutter pub run flutter_native_splash:create
+```
 
 ## Deployment Strategies
 
 ### iOS App Store Deployment
 
-The iOS deployment process handles TestFlight distribution and App Store releases:
+```yaml
+artifacts:
+  - build/ios/ipa/*.ipa
+  - /tmp/xcodebuild_logs/*.log
+  - flutter_drive.log
+  - test-results/flutter.json
 
-**Certificate Management**: Automatically manages iOS distribution certificates and provisioning profiles. The pipeline updates profiles before builds and handles certificate renewal notifications.
-
-**TestFlight Distribution**: Development and staging builds automatically upload to TestFlight for internal testing and stakeholder review. Test notes include changelog information and feature highlights for testers.
-
-**App Store Submission**: Production builds submit to App Store Connect with release notes, screenshots, and metadata updates. The pipeline handles phased releases to minimize impact of potential issues.
+publishing:
+  email:
+    recipients:
+      - developer@mealvana.io
+    notify:
+      success: true
+      failure: true
+      
+  app_store_connect:
+    auth: integration
+    submit_to_testflight: true
+    beta_groups:
+      - "Internal Testers"
+      - "External Testers"
+    submit_to_app_store: false  # Manual App Store submission
+```
 
 ### Android Play Store Deployment
 
-The Android deployment manages Play Console releases across different tracks:
+```yaml
+artifacts:
+  - build/**/outputs/**/*.aab
+  - build/**/outputs/**/mapping.txt
+  - flutter_drive.log
+  - test-results/flutter.json
 
-**Signing Configuration**: Uses Play App Signing with upload keys managed securely in Codemagic. The pipeline handles key rotation and signing verification automatically.
+publishing:
+  email:
+    recipients:
+      - developer@mealvana.io
+    notify:
+      success: true
+      failure: true
+      
+  google_play:
+    credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+    track: $GOOGLE_PLAY_TRACK
+    submit_as_draft: true  # Review before publishing
+    
+    # Staged rollout configuration
+    rollout_fraction: 0.05  # Start with 5%
+```
 
-**Internal Testing**: Development builds deploy to internal testing track for team validation. These builds include debug information and development features not available in production.
+## Advanced Workflow Features
 
-**Production Rollout**: Production releases use staged rollout percentages, starting at 5% of users and gradually increasing based on crash metrics and user feedback. Critical issues trigger automatic rollback to previous versions.
+### Multi-Environment Support
 
-## Monitoring and Analytics
+```yaml
+  development-workflow:
+    name: Development Build
+    environment:
+      vars:
+        BUNDLE_ID_SUFFIX: ".dev"
+        GOOGLE_PLAY_TRACK: "internal"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "develop"
+          include: true
+          
+  staging-workflow:
+    name: Staging Build
+    environment:
+      vars:
+        BUNDLE_ID_SUFFIX: ".staging"
+        GOOGLE_PLAY_TRACK: "alpha"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "staging"
+          include: true
+          
+  production-workflow:
+    name: Production Build
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: "*"
+          include: true
+```
 
-### Build Performance Tracking
+### Shorebird Integration
 
-Pipeline performance metrics help optimize build times and identify bottlenecks:
+```yaml
+  shorebird-patch-workflow:
+    name: Shorebird Code Push
+    instance_type: mac_mini_m1
+    environment:
+      vars:
+        SHOREBIRD_TOKEN: $SHOREBIRD_TOKEN
+      flutter: "3.24.0"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "hotfix/*"
+          include: true
+    scripts:
+      - name: Install and setup Shorebird
+        script: |
+          curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf | bash
+          echo 'export PATH="$HOME/.shorebird/bin:$PATH"' >> $HOME/.bashrc
+          source $HOME/.bashrc
+          shorebird login --token $SHOREBIRD_TOKEN
+          
+      - name: Create Shorebird patch
+        script: |
+          flutter packages pub get
+          shorebird patch ios --no-confirm
+          shorebird patch android --no-confirm
+```
 
-**Build Duration Analysis**: Tracks build times across different workflow stages to identify optimization opportunities. Historical data shows trends and helps predict resource needs.
+## Build Performance Optimization
 
-**Cache Effectiveness**: Monitors cache hit rates for dependencies and build artifacts. Optimized caching reduces build times from 15+ minutes to under 5 minutes for incremental changes.
+### Caching Strategy
 
-**Resource Utilization**: Tracks compute usage and storage consumption to optimize costs while maintaining build performance.
+```yaml
+cache:
+  cache_paths:
+    # Flutter and Dart dependencies
+    - $FLUTTER_ROOT/.pub-cache
+    - ~/.pub-cache
+    
+    # Platform-specific caches
+    - ~/.gradle/caches  # Android
+    - ~/Library/Caches/CocoaPods  # iOS
+    
+    # Build artifacts
+    - build/
+    - .dart_tool/
+```
 
-### Deployment Health Monitoring
+### Build Time Optimization
 
-Post-deployment monitoring ensures successful releases:
-
-**Crash Rate Monitoring**: Integrates with Sentry to track crash rates immediately after releases. Crash rate spikes above 2% trigger automatic rollback procedures.
-
-**Performance Metrics**: Monitors app startup times and nutrition plan generation performance. Performance regressions trigger alerts and may halt further rollout expansion.
-
-**User Feedback Integration**: Aggregates app store reviews and in-app feedback to identify deployment-related issues quickly.
+- **Incremental Builds**: Utilize Codemagic's caching for dependencies
+- **Parallel Execution**: Run iOS and Android builds concurrently
+- **Selective Building**: Only build changed platforms on commit
+- **Code Generation**: Cache generated files between builds
 
 ## Security and Compliance
 
 ### Credential Management
 
-All sensitive information is securely managed and rotated regularly:
+```yaml
+environment:
+  groups:
+    - app_store_connect_credentials  # Contains APP_STORE_CONNECT_*
+    - google_play_credentials       # Contains GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+    - shorebird_credentials        # Contains SHOREBIRD_TOKEN
+    - signing_credentials          # Contains iOS certificates and Android keystore
+```
 
-**API Keys**: Supabase, Mixpanel, Sentry, and RevenueCat keys are stored in encrypted environment variables with role-based access. Keys rotate monthly and updates propagate automatically through the pipeline.
+### Code Signing
 
-**Signing Certificates**: iOS and Android signing credentials use hardware security modules (HSM) for maximum protection. Certificate expiration triggers automated renewal workflows.
+#### iOS Code Signing
+- **Distribution Type**: App Store distribution
+- **Certificate Management**: Automatic certificate and profile management
+- **Provisioning Profiles**: Automatically generated and updated
+- **Xcode Integration**: Seamless integration with Xcode project settings
 
-**Database Access**: Production database access is restricted to specific IP ranges and requires multi-factor authentication. All database interactions are logged and monitored.
+#### Android Code Signing
+- **Keystore Management**: Secure keystore storage in Codemagic
+- **Key Rotation**: Automated key rotation support
+- **Play App Signing**: Integration with Google Play App Signing
 
 ### Privacy Compliance
 
-The deployment process ensures compliance with privacy regulations:
+```yaml
+  - name: Validate Privacy Manifest
+    script: |
+      # Verify iOS Privacy Manifest exists
+      if [ ! -f "ios/Runner/PrivacyInfo.xcprivacy" ]; then
+        echo "Error: iOS Privacy Manifest missing"
+        exit 1
+      fi
+      
+      # Validate privacy compliance
+      echo "Privacy Manifest validated successfully"
+```
 
-**Data Handling**: Automated checks verify that user data encryption is enabled and that analytics collection respects user consent preferences.
+## Monitoring and Analytics
 
-**Privacy Policy Updates**: App store submissions include updated privacy policy information and data usage descriptions.
+### Build Monitoring
 
-**Third-Party Audits**: Regular security scans check for vulnerabilities in dependencies and identify potential privacy issues before deployment.
+```yaml
+  - name: Build performance metrics
+    script: |
+      # Track build duration
+      echo "Build started at: $(date)"
+      
+      # Monitor cache effectiveness
+      du -sh $FLUTTER_ROOT/.pub-cache || echo "No pub cache found"
+      
+      # Resource utilization
+      echo "Available disk space: $(df -h /)"
+      echo "Memory usage: $(free -h)"
+```
 
-This CI/CD implementation provides reliable, secure, and efficient deployment workflows specifically tailored for the Mealvana Endurance nutrition planning app while maintaining compliance with app store requirements and privacy regulations.
+### Post-Deployment Monitoring
+
+- **Build Success Rate**: Track successful deployments across environments
+- **Build Duration**: Monitor and optimize build times
+- **Cache Hit Rate**: Measure caching effectiveness
+- **Test Results**: Aggregate test results and coverage metrics
+
+## Error Handling and Recovery
+
+### Build Failure Recovery
+
+```yaml
+  - name: Handle build failures
+    script: |
+      # Clean build artifacts on failure
+      flutter clean
+      
+      # Clear pub cache if needed
+      flutter pub cache repair
+      
+      # Reset git state
+      git reset --hard HEAD
+    when: failure
+```
+
+### Notification Strategy
+
+```yaml
+publishing:
+  slack:
+    channel: "#mealvana-builds"
+    notify_on_build_start: true
+    notify:
+      success: true
+      failure: true
+      
+  email:
+    recipients:
+      - developer@mealvana.io
+      - qa@mealvana.io
+    notify:
+      success: false  # Only notify on failures
+      failure: true
+```
+
+## Best Practices
+
+### Repository Setup
+1. **Branching Strategy**: Git Flow with develop, staging, and main branches
+2. **Commit Conventions**: Conventional commits for automated versioning
+3. **Tag Management**: Semantic versioning for release tags
+4. **Secret Management**: All credentials stored securely in Codemagic
+
+### Testing Strategy
+1. **Unit Tests**: Comprehensive unit test coverage
+2. **Widget Tests**: UI component testing
+3. **Integration Tests**: End-to-end user journey testing
+4. **Performance Testing**: App startup and navigation performance
+
+### Deployment Strategy
+1. **Staged Rollouts**: Gradual rollout for production releases
+2. **Feature Flags**: Use Shorebird for instant feature toggles
+3. **Rollback Procedures**: Quick rollback using Shorebird patches
+4. **A/B Testing**: Future integration for feature experimentation
+
+## Troubleshooting
+
+### Common Issues
+
+#### Build Failures
+- **Dependency Resolution**: Clear pub cache and regenerate code
+- **iOS Code Signing**: Verify certificates and provisioning profiles
+- **Android Keystore**: Validate keystore credentials and aliases
+
+#### Shorebird Issues
+- **Authentication**: Verify SHOREBIRD_TOKEN environment variable
+- **Release Creation**: Ensure proper Flutter version compatibility
+- **Patch Deployment**: Validate patch against base release
+
+### Debug Commands
+
+```bash
+# Check Shorebird status
+shorebird doctor
+
+# Verify Flutter installation
+flutter doctor -v
+
+# Test Android keystore
+android-keystore verify -k keystore.jks -p password -a alias
+
+# Validate iOS certificates
+app-store-connect certificates list --save
+```
+
+## Future Enhancements
+
+### Planned Improvements
+1. **Automated Testing**: Expand test coverage and automation
+2. **Performance Monitoring**: Integrate app performance monitoring
+3. **Crash Reporting**: Future crash analytics integration
+4. **User Feedback**: Automated feedback collection system
+5. **Advanced Analytics**: Usage analytics and user behavior tracking
+
+This CI/CD implementation provides a robust, secure, and scalable foundation for the Mealvana Run app, ensuring reliable deployments while maintaining the privacy-first, offline-focused architecture.

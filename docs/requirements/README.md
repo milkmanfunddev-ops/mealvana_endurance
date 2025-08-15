@@ -20,20 +20,19 @@ Create a multi-step onboarding flow to collect:
 
 ### 2. Food Preference Collection
 
-~~Design a swipe-based interface for food preferences:~~
+Design a checkbox-based interface for food preferences on a single screen:
 
-- **~~Right swipe**: Like~~
-- **~~Left swipe**: Dislike~~
-- **~~Down swipe**: Want to try~~
-- **~~Up swipe**: Need more information~~
-
-We've decided to go for a checkbox style design that Lee will implement directly: Like, Dislike, Open to try. 
+- **Checked** = Like this food (will be included in nutrition plans)
+- **Unchecked** = Dislike this food (will be avoided in nutrition plans)
+- **Single scrollable list** showing all 12 food items by name
+- **Select All / Clear All buttons** for convenience
+- **Tap food name** to see detailed information and nutritional guidance 
 
 ### Food Items to Include:
 
 **Pre-Run Foods:**
 
-- Oatmeal (when swiping up, this information appears: "**Carb up, buttercup:** gentle complex carbs = smooth 2–3-hour energy. Hit 'em 30–60 min pre-run.")
+- Oatmeal (when tapping, this information appears: "**Carb up, buttercup:** gentle complex carbs = smooth 2–3-hour energy. Hit 'em 30–60 min pre-run.")
 - Waffle or pancakes
 - Bagel or bread 🥯
 - Peanut butter
@@ -122,8 +121,8 @@ Feedback question 2: What do you think about this tiny app?
 ### Visual Design
 
 - Clean, minimalistic interface
-- Clear visual indicators for swipe directions (consider overlay hints)
-- Subtle animations for swipe gestures
+- Clear checkbox states for food preferences
+- Tap-to-reveal detailed information for each food
 - High contrast for outdoor visibility
 
 ### Information Architecture
@@ -134,7 +133,9 @@ Feedback question 2: What do you think about this tiny app?
 
 ### User Experience
 
-- Consider adding a "skip" option for unfamiliar foods
+- Simple checkbox interface for quick food preference selection
+- Select All / Clear All buttons for convenience
+- Tap food names to see additional details and timing guidance
 - Make feedback component non-intrusive but easily accessible
 - Progress indicator for onboarding steps
 - Quick access to edit preferences after initial setup

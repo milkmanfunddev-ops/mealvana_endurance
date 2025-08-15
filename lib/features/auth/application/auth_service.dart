@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/repositories/user_repository.dart';
-import '../data/models/user_preferences.dart';
+import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
+import '../domain/user_preferences.dart';
 
 /// Application service for managing user authentication and preferences
 /// Follows the Andrea Bizzotto pattern with Ref for dependency injection
@@ -19,6 +19,7 @@ class AuthService {
     required int heightInches,
     required double weightPounds,
     required bool runsWithWaterBottle,
+    GutTraining? gutTraining,
   }) async {
     final profile = UserProfile(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -30,6 +31,7 @@ class AuthService {
       runsWithWaterBottle: runsWithWaterBottle,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      gutTraining: gutTraining ?? GutTraining.high, // Default to high
     );
 
     await _userRepository.saveUserProfile(profile);
@@ -86,10 +88,6 @@ class AuthService {
     return _userRepository.getDislikedFoods(userId);
   }
 
-  /// Get foods user is willing to try
-  List<String> getWillingToTryFoods(String userId) {
-    return _userRepository.getWillingToTryFoods(userId);
-  }
 
   /// Reset all user data (for testing or re-onboarding)
   Future<void> resetUserData() async {

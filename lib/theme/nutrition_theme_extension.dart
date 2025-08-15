@@ -99,67 +99,67 @@ class NutritionThemeExtension extends ThemeExtension<NutritionThemeExtension> {
 
   /// Light theme nutrition extension
   static const light = NutritionThemeExtension(
-    proteinColor: Color(0xFFE91E63),      // Pink
-    carbsColor: Color(0xFFFF9800),        // Orange
-    fatsColor: Color(0xFF9C27B0),         // Purple
-    caloriesColor: Color(0xFF2196F3),     // Blue
-    sodiumColor: Color(0xFFFFC107),       // Amber
-    fluidsColor: Color(0xFF03DAC6),       // Cyan
-    successColor: Color(0xFF4CAF50),      // Green
-    warningColor: Color(0xFFF44336),      // Red
-    infoColor: Color(0xFF2196F3),         // Blue
+    proteinColor: Color(0xFFDC2597),      // Highlight alternative
+    carbsColor: Color(0xFFFFC629),        // Warning
+    fatsColor: Color(0xFF3366FF),         // Primary 600
+    caloriesColor: Color(0xFF001C71),     // Primary 900
+    sodiumColor: Color(0xFFFFC629),       // Warning
+    fluidsColor: Color(0xFF3366FF),       // Primary 600
+    successColor: Color(0xFF4CAF50),      // Keep green for success
+    warningColor: Color(0xFFD92D20),      // Highlight 600
+    infoColor: Color(0xFF3366FF),         // Primary 600
     macroLabelStyle: TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w500,
-      color: Color(0xFF757575),
+      color: Color(0xFF667085),           // Base grey
     ),
     macroValueStyle: TextStyle(
       fontSize: 20,
       fontWeight: FontWeight.bold,
-      color: Color(0xFF212121),
+      color: Color(0xFF000000),           // Base black
     ),
     calorieTitleStyle: TextStyle(
       fontSize: 24,
       fontWeight: FontWeight.bold,
-      color: Color(0xFF212121),
+      color: Color(0xFF000000),           // Base black
     ),
     nutritionFactStyle: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w400,
-      color: Color(0xFF424242),
+      color: Color(0xFF667085),           // Base grey
     ),
   );
 
   /// Dark theme nutrition extension
   static const dark = NutritionThemeExtension(
-    proteinColor: Color(0xFFF48FB1),      // Light pink
-    carbsColor: Color(0xFFFFCC02),        // Light orange
-    fatsColor: Color(0xFFCE93D8),         // Light purple
-    caloriesColor: Color(0xFF64B5F6),     // Light blue
-    sodiumColor: Color(0xFFFFD54F),       // Light amber
-    fluidsColor: Color(0xFF4DD0E1),       // Light cyan
+    proteinColor: Color(0xFFFDA29B),      // Highlight 290
+    carbsColor: Color(0xFFFFC629),        // Warning (keep bright)
+    fatsColor: Color(0xFFD6E0FF),         // Primary 100
+    caloriesColor: Color(0xFFE0E8FF),     // Primary 50
+    sodiumColor: Color(0xFFFFC629),       // Warning
+    fluidsColor: Color(0xFFD6E0FF),       // Primary 100
     successColor: Color(0xFF81C784),      // Light green
-    warningColor: Color(0xFFE57373),      // Light red
-    infoColor: Color(0xFF64B5F6),         // Light blue
+    warningColor: Color(0xFFF97066),      // Highlight 490
+    infoColor: Color(0xFFD6E0FF),         // Primary 100
     macroLabelStyle: TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w500,
-      color: Color(0xFFBDBDBD),
+      color: Color(0xFF667085),           // Base grey
     ),
     macroValueStyle: TextStyle(
       fontSize: 20,
       fontWeight: FontWeight.bold,
-      color: Color(0xFFFFFFFF),
+      color: Color(0xFFFFFFFF),           // Base white
     ),
     calorieTitleStyle: TextStyle(
       fontSize: 24,
       fontWeight: FontWeight.bold,
-      color: Color(0xFFFFFFFF),
+      color: Color(0xFFFFFFFF),           // Base white
     ),
     nutritionFactStyle: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w400,
-      color: Color(0xFFE0E0E0),
+      color: Color(0xFF667085),           // Base grey
     ),
   );
 }

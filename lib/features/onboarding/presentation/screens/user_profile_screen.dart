@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/onboarding_controller.dart';
-import '../../../auth/data/models/user_preferences.dart';
+import '../../../auth/domain/user_preferences.dart';
 
 /// User profile creation screen
 /// Collects basic user information during onboarding

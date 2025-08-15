@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import '../../auth/application/auth_service.dart';
-import '../../auth/data/models/user_preferences.dart';
 
 /// Application service for managing the onboarding flow
 /// Coordinates user creation and food preference collection

@@ -6,10 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/food_preferences_screen.dart';
-import '../../features/nutrition_plan/presentation/screens/plan_input_screen.dart';
-import '../../features/nutrition_plan/presentation/screens/plan_results_screen.dart';
-import '../../features/feedback/presentation/screens/plan_feedback_screen.dart';
-import '../../features/feedback/presentation/screens/app_feedback_screen.dart';
+import '../../features/nutrition_plan/presentation/screens/main_nutrition_plan_screen.dart';
+import '../../features/nutrition_plan/presentation/screens/plan_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 class AppRouter {
@@ -30,10 +28,17 @@ class AppRouter {
       return null;
     },
     routes: [
-      // Root redirect to welcome
+      // Root redirect to welcome/onboarding first
       GoRoute(
         path: '/',
-        redirect: (context, state) => '/welcome',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      
+      // Main nutrition plan screen (after onboarding)
+      GoRoute(
+        path: '/main',
+        name: 'main',
+        builder: (context, state) => const MainNutritionPlanScreen(),
       ),
       
       // Welcome Screen
@@ -62,37 +67,11 @@ class AppRouter {
         builder: (context, state) => const FoodPreferencesScreen(),
       ),
       
-      // Main App - Plan Input (Home)
+      // Plan Screen - Shows generated nutrition plan
       GoRoute(
-        path: '/home',
-        name: 'home',
-        builder: (context, state) => const PlanInputScreen(),
-      ),
-      
-      // Plan Results
-      GoRoute(
-        path: '/plan-results',
-        name: 'plan-results',
-        builder: (context, state) => const PlanResultsScreen(),
-      ),
-      
-      // Feedback Flow
-      GoRoute(
-        path: '/feedback',
-        name: 'feedback',
-        redirect: (context, state) => '/feedback/plan',
-      ),
-      
-      GoRoute(
-        path: '/feedback/plan',
-        name: 'feedback-plan',
-        builder: (context, state) => const PlanFeedbackScreen(),
-      ),
-      
-      GoRoute(
-        path: '/feedback/app',
-        name: 'feedback-app',
-        builder: (context, state) => const AppFeedbackScreen(),
+        path: '/plan',
+        name: 'plan',
+        builder: (context, state) => const PlanScreen(),
       ),
     ],
     

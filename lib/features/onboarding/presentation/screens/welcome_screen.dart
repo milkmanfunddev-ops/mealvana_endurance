@@ -98,7 +98,7 @@ class WelcomeScreen extends ConsumerWidget {
               
               // Skip for now option (for testing)
               TextButton(
-                onPressed: () => context.go('/home'),
+                onPressed: () => context.go('/main'),
                 child: Text('Skip for Now'),
               ),
               

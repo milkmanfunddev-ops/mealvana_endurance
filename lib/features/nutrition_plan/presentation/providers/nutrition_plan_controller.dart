@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 import '../../application/nutrition_plan_service.dart';
-import '../../data/models/nutrition_plan.dart';
 
 /// Controller for managing nutrition plan generation and display
 class NutritionPlanController extends StateNotifier<AsyncValue<NutritionPlan?>> {

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/repositories/nutrition_plan_repository.dart';
-import '../data/models/nutrition_plan.dart';
-import '../data/models/food_item.dart';
+import '../data/nutrition_plan_repository.dart';
+import '../domain/nutrition_plan.dart';
+import '../domain/food_item.dart';
 import '../data/food_database.dart';
 import 'nutrition_calculator.dart';
 import '../../auth/application/auth_service.dart';
@@ -26,11 +26,15 @@ class NutritionPlanService {
       throw Exception('No user found. Please complete onboarding first.');
     }
 
+    // Get user food preferences
+    final likedFoods = _authService.getLikedFoods(user.id);
+
     // Calculate base nutrition requirements
     final plan = NutritionCalculator.calculateNutritionPlan(
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
       userProfile: user,
+      likedFoods: likedFoods,
     );
 
     // Save the plan
@@ -86,9 +90,8 @@ class NutritionPlanService {
     if (user == null) return [];
 
     final likedFoods = _authService.getLikedFoods(user.id);
-    final willingToTryFoods = _authService.getWillingToTryFoods(user.id);
     
-    return FoodDatabase.getPreferredFoods(category, likedFoods, willingToTryFoods);
+    return FoodDatabase.getPreferredFoods(category, likedFoods, []);
   }
 
   /// Search foods by query
@@ -152,9 +155,8 @@ class NutritionPlanService {
     return {
       'totalPlans': plans.length,
       'statistics': statistics,
-      'lastPlanDate': latestPlan?.createdAt,
-      'hasRecentPlan': latestPlan != null && 
-          latestPlan.createdAt.isAfter(DateTime.now().subtract(const Duration(days: 7))),
+      'latestPlan': latestPlan,
+      'hasRecentPlan': latestPlan != null,
     };
   }
 

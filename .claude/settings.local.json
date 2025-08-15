@@ -22,7 +22,21 @@
       "Bash(pkill:*)",
       "Bash(rm:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(shorebird doctor:*)",
+      "Bash(shorebird release:*)",
+      "Bash(dart run:*)",
+      "Bash(flutter build:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(cp:*)",
+      "Bash(true)",
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:docs.google.com)",
+      "Bash(pod repo update:*)",
+      "Bash(pod install:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -1,4 +1,4 @@
-import 'models/food_item.dart';
+import '../domain/food_item.dart';
 
 /// Static database of 12 food items for MVP
 /// Based on requirements from docs/requirements/README.md

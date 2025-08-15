@@ -1,5 +1,8 @@
-import '../data/models/nutrition_plan.dart';
-import '../../auth/data/models/user_preferences.dart';
+import '../domain/nutrition_plan.dart';
+import '../domain/food_item_data.dart';
+import '../../auth/domain/user_preferences.dart';
+import '../data/food_database.dart';
+import '../domain/food_item.dart';
 
 /// Service for calculating nutrition requirements for endurance athletes
 /// Based on evidence-based research documented in docs/business_logic/nutrition_algorithms.md
@@ -84,38 +87,72 @@ class NutritionCalculator {
     required double paceMinutesPerMile,
     required UserProfile userProfile,
     String? planId,
+    List<String>? likedFoods,
   }) {
     // Calculate total duration
     double durationHours = (distanceMiles * paceMinutesPerMile) / 60.0;
+    
+    // DEBUG: Print calculation details
+    print('🏃‍♀️ NUTRITION CALCULATOR DEBUG:');
+    print('📏 Distance: ${distanceMiles} miles');
+    print('⏱️ Pace: ${paceMinutesPerMile} min/mile');
+    print('🕐 Duration: ${durationHours.toStringAsFixed(1)} hours');
+    print('👤 User weight: ${userProfile.weightPounds} lbs');
+    print('💧 Runs with water: ${userProfile.runsWithWaterBottle}');
+    print('❤️ Liked foods: ${likedFoods?.length ?? 0} foods');
     
     // Calculate hourly requirements
     double carbsPerHour = calculateCarbsPerHour(durationHours, userProfile.weightPounds);
     double sodiumPerHour = calculateSodiumPerHour(durationHours, userProfile.runsWithWaterBottle);
     double fluidsPerHour = calculateFluidsPerHour(userProfile.weightPounds, durationHours);
     
+    // DEBUG: Print nutritional requirements
+    print('🍞 Carbs per hour: ${carbsPerHour.toStringAsFixed(1)}g');
+    print('🧂 Sodium per hour: ${sodiumPerHour.toStringAsFixed(1)}mg');
+    print('💧 Fluids per hour: ${fluidsPerHour.toStringAsFixed(1)}oz');
+    
     // Calculate total requirements
     double totalCarbs = carbsPerHour * durationHours;
-    double totalSodium = sodiumPerHour * durationHours;
-    double totalFluids = fluidsPerHour * durationHours;
     
-    return NutritionPlan(
+    // Create the new nutrition plan structure with sections
+    final plan = NutritionPlan(
       id: planId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: userProfile.id,
-      distanceMiles: distanceMiles,
-      paceMinutesPerMile: paceMinutesPerMile,
-      durationHours: durationHours,
-      totalCarbs: totalCarbs,
-      totalSodium: totalSodium,
-      totalFluids: totalFluids,
-      carbsPerHour: carbsPerHour,
-      sodiumPerHour: sodiumPerHour,
-      fluidsPerHour: fluidsPerHour,
-      preRunMeals: [], // Will be populated by meal planning service
-      duringRunMeals: [], // Will be populated by meal planning service  
-      postRunMeals: [], // Will be populated by meal planning service
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+      name: 'Personalized Nutrition Plan',
+      totalCalories: (totalCarbs * 4).round(), // Rough estimation: 4 calories per carb gram
+      notes: 'Plan generated for ${distanceMiles.toStringAsFixed(1)} miles at ${paceMinutesPerMile.toStringAsFixed(1)} min/mile pace',
+      macroTargets: MacroTargets(
+        calories: (totalCarbs * 4).round(),
+        carbs: totalCarbs.round(),
+        protein: (totalCarbs * 0.1).round(), // Rough 10% protein
+        fat: (totalCarbs * 0.05).round(), // Rough 5% fat
+        carbsRange: '85-90%',
+        proteinRange: '5-10%',
+        fatRange: '5-10%',
+      ),
+      sections: _createPlanSections(
+        carbsPerHour: carbsPerHour,
+        sodiumPerHour: sodiumPerHour, 
+        fluidsPerHour: fluidsPerHour,
+        durationHours: durationHours,
+        userProfile: userProfile,
+        likedFoods: likedFoods ?? [],
+      ),
     );
+    
+    // DEBUG: Print the created plan details
+    print('📋 CREATED PLAN:');
+    print('🆔 Plan ID: ${plan.id}');
+    print('📊 Sections: ${plan.sections.length}');
+    for (var i = 0; i < plan.sections.length; i++) {
+      final section = plan.sections[i];
+      print('📂 Section ${i + 1}: ${section.title} (${section.foodItems.length} foods)');
+      for (var j = 0; j < section.foodItems.length; j++) {
+        final food = section.foodItems[j];
+        print('   🍎 ${food.name}: ${food.quantity} (${food.nutritionalInfo?.carbs ?? 0}g carbs)');
+      }
+    }
+    
+    return plan;
   }
 
   /// Calculate pre-run nutrition timing and requirements
@@ -171,24 +208,241 @@ class NutritionCalculator {
     };
   }
 
+  /// Helper method to create plan sections with foods based on user preferences
+  static List<PlanSection> _createPlanSections({
+    required double carbsPerHour,
+    required double sodiumPerHour,
+    required double fluidsPerHour,
+    required double durationHours,
+    required UserProfile userProfile,
+    required List<String> likedFoods,
+  }) {
+    // Calculate nutrition needs
+    final bodyWeightKg = userProfile.weightPounds * 0.453592;
+    final preRunCarbsTarget = bodyWeightKg * 2.5; // Middle range
+    
+    // Get preferred foods from database
+    final allFoods = FoodDatabase.getAllFoods();
+    final preRunFoods = _selectFoodsForSection(allFoods, likedFoods, FoodCategory.preRun, preRunCarbsTarget);
+    final duringRunFoods = _selectFoodsForSection(allFoods, likedFoods, FoodCategory.duringRun, carbsPerHour * durationHours);
+    final postRunFoods = _selectFoodsForSection(allFoods, likedFoods, FoodCategory.postRun, bodyWeightKg * 1.1);
+
+    return [
+      PlanSection(
+        id: 'before-run',
+        title: 'Before Run',
+        subtitle: '2-3 hours pre-run',
+        timing: '2-3h',
+        foodItems: preRunFoods,
+      ),
+      PlanSection(
+        id: 'during-run',
+        title: 'During Run',
+        subtitle: 'Every 45-60 minutes',
+        timing: '45-60min',
+        foodItems: duringRunFoods,
+      ),
+      PlanSection(
+        id: 'after-run',
+        title: 'After Run',
+        subtitle: 'Within 30 minutes',
+        timing: '30min',
+        foodItems: postRunFoods,
+      ),
+    ];
+  }
+
+  /// Select foods for a specific section based on user preferences and nutritional needs
+  static List<FoodItemData> _selectFoodsForSection(
+    List<FoodItem> allFoods,
+    List<String> likedFoods,
+    FoodCategory category,
+    double carbTarget,
+  ) {
+    print('🎯 FOOD SELECTION for ${category.name}:');
+    print('📊 Target carbs: ${carbTarget.toStringAsFixed(1)}g');
+    print('❤️ User liked foods: $likedFoods');
+    
+    // Filter foods by category
+    final categoryFoods = allFoods.where((food) => food.category == category).toList();
+    print('📂 Available ${category.name} foods: ${categoryFoods.map((f) => f.id).toList()}');
+    
+    // First: Look for liked foods in this category
+    final preferredInCategory = categoryFoods.where((food) => likedFoods.contains(food.id)).toList();
+    
+    // Second: If no liked foods in this category, get liked foods from ANY category
+    final allLikedFoods = allFoods.where((food) => likedFoods.contains(food.id)).toList();
+    final likedFromOtherCategories = allLikedFoods.where((food) => food.category != category).toList();
+    
+    // Combine: preferred foods in category first, then liked foods from other categories
+    final allPreferredFoods = [...preferredInCategory, ...likedFromOtherCategories];
+    
+    // Other foods in this category (not liked)
+    final otherFoods = categoryFoods.where((food) => !likedFoods.contains(food.id)).toList();
+    
+    print('✅ Liked foods in ${category.name}: ${preferredInCategory.map((f) => f.id).toList()}');
+    print('💝 Liked foods from other categories: ${likedFromOtherCategories.map((f) => '${f.id}(${f.category.name})').toList()}');
+    print('⚪ Other ${category.name} foods: ${otherFoods.map((f) => f.id).toList()}');
+    
+    // Combine preferred foods first, then others
+    final orderedFoods = [...allPreferredFoods, ...otherFoods];
+    
+    // Select foods to meet carb target - allow unlimited quantities for ultra-distances
+    final selectedFoods = <FoodItemData>[];
+    double totalCarbs = 0;
+    
+    // For during-run: prioritize user preferences first, then calculate realistic quantities
+    if (category == FoodCategory.duringRun) {
+      // Try to meet carb target using only preferred foods first
+      if (allPreferredFoods.isNotEmpty) {
+        print('🎯 Trying to meet target with preferred foods only...');
+        double preferredCarbs = 0;
+        
+        for (final food in allPreferredFoods) {
+          final maxFromThisFood = carbTarget * 0.8; // Max 80% from any one food for variety
+          final quantityNeeded = (maxFromThisFood / food.nutrition.carbs).clamp(1.0, 100.0);
+          
+          selectedFoods.add(_convertToFoodItemData(food, quantityNeeded));
+          preferredCarbs += food.nutrition.carbs * quantityNeeded;
+          totalCarbs += food.nutrition.carbs * quantityNeeded;
+          
+          print('❤️ ${food.name}: ${quantityNeeded.toStringAsFixed(0)} ${food.servingUnit} (${(food.nutrition.carbs * quantityNeeded).toStringAsFixed(0)}g carbs)');
+          
+          if (preferredCarbs >= carbTarget * 0.8) break; // Got enough from preferences
+        }
+        
+        // If preferred foods don't meet 80% of target, supplement with other foods
+        if (totalCarbs < carbTarget * 0.8) {
+          print('⚪ Need to supplement with non-preferred foods...');
+          final remainingTarget = carbTarget - totalCarbs;
+          
+          for (final food in otherFoods.take(2)) { // Limit to 2 additional foods
+            final quantityNeeded = (remainingTarget * 0.5 / food.nutrition.carbs).clamp(1.0, 50.0);
+            selectedFoods.add(_convertToFoodItemData(food, quantityNeeded));
+            totalCarbs += food.nutrition.carbs * quantityNeeded;
+            
+            print('⚪ ${food.name}: ${quantityNeeded.toStringAsFixed(0)} ${food.servingUnit} (${(food.nutrition.carbs * quantityNeeded).toStringAsFixed(0)}g carbs)');
+            
+            if (totalCarbs >= carbTarget * 0.9) break;
+          }
+        }
+      } else {
+        // No preferred foods in this category, use standard algorithm
+        print('⚪ No preferred foods in category, using defaults...');
+        final gels = otherFoods.where((f) => f.id.contains('gel')).toList();
+        final chews = otherFoods.where((f) => f.id.contains('chew')).toList();
+        final drinks = otherFoods.where((f) => f.id.contains('drink')).toList();
+        
+        if (gels.isNotEmpty) {
+          final gel = gels.first;
+          final gelsNeeded = (carbTarget * 0.6 / gel.nutrition.carbs);
+          selectedFoods.add(_convertToFoodItemData(gel, gelsNeeded));
+          totalCarbs += gel.nutrition.carbs * gelsNeeded;
+          print('🍯 ${gel.name}: ${gelsNeeded.toStringAsFixed(0)} packets (${(gel.nutrition.carbs * gelsNeeded).toStringAsFixed(0)}g carbs)');
+        }
+        
+        if (chews.isNotEmpty && totalCarbs < carbTarget * 0.8) {
+          final chew = chews.first;
+          final chewsNeeded = ((carbTarget - totalCarbs) * 0.5 / chew.nutrition.carbs);
+          selectedFoods.add(_convertToFoodItemData(chew, chewsNeeded));
+          totalCarbs += chew.nutrition.carbs * chewsNeeded;
+          print('🍭 ${chew.name}: ${chewsNeeded.toStringAsFixed(0)} pieces (${(chew.nutrition.carbs * chewsNeeded).toStringAsFixed(0)}g carbs)');
+        }
+      }
+    } else {
+      // For pre-run and post-run: normal portion calculations
+      for (final food in orderedFoods.take(3)) {
+        final remainingCarbs = carbTarget - totalCarbs;
+        if (remainingCarbs <= 0) break;
+        
+        final quantity = remainingCarbs / food.nutrition.carbs;
+        final reasonableQuantity = quantity.clamp(0.5, 4.0); // Keep portions reasonable
+        
+        selectedFoods.add(_convertToFoodItemData(food, reasonableQuantity));
+        totalCarbs += food.nutrition.carbs * reasonableQuantity;
+        
+        if (totalCarbs >= carbTarget * 0.9) break; // Stop when we reach 90% of target
+      }
+    }
+    
+    print('✅ Total carbs selected: ${totalCarbs.toStringAsFixed(1)}g (target: ${carbTarget.toStringAsFixed(1)}g)');
+    return selectedFoods.isNotEmpty ? selectedFoods : [_getDefaultFoodForCategory(category)];
+  }
+
+  /// Calculate optimal quantity to meet nutritional needs
+  static double _calculateOptimalQuantity(FoodItem food, double carbTarget, double currentCarbs) {
+    final remainingCarbs = carbTarget - currentCarbs;
+    if (remainingCarbs <= 0) return 0;
+    
+    final baseQuantity = remainingCarbs / food.nutrition.carbs;
+    return (baseQuantity * food.servingAmount).clamp(0.5, 3.0); // Keep portions reasonable
+  }
+
+  /// Convert FoodItem to FoodItemData for plan display
+  static FoodItemData _convertToFoodItemData(FoodItem food, double quantity) {
+    final adjustedNutrition = NutritionalInfo(
+      calories: (food.nutrition.calories * quantity).round(),
+      carbs: (food.nutrition.carbs * quantity).round(),
+      protein: (food.nutrition.protein * quantity).round(),
+      fat: (food.nutrition.fat * quantity).round(),
+      sodium: food.nutrition.sodium != null ? (food.nutrition.sodium! * quantity).round() : null,
+    );
+
+    return FoodItemData(
+      id: food.id,
+      name: food.name,
+      quantity: '${quantity.toStringAsFixed(quantity % 1 == 0 ? 0 : 1)} ${food.servingUnit}',
+      iconPath: 'assets/images/${food.id}.png',
+      description: food.additionalInfo ?? food.description,
+      nutritionalInfo: adjustedNutrition,
+    );
+  }
+
+  /// Get default food for category when no preferences match
+  static FoodItemData _getDefaultFoodForCategory(FoodCategory category) {
+    switch (category) {
+      case FoodCategory.preRun:
+        return FoodItemData(
+          id: 'oatmeal',
+          name: 'Oatmeal',
+          quantity: '1 cup',
+          iconPath: 'assets/images/oatmeal.png',
+          description: 'Complex carbohydrates for sustained energy',
+          nutritionalInfo: const NutritionalInfo(calories: 150, carbs: 27, protein: 5, fat: 3),
+        );
+      case FoodCategory.duringRun:
+        return FoodItemData(
+          id: 'gels',
+          name: 'Energy Gels',
+          quantity: '2',
+          iconPath: 'assets/images/gels.png',
+          description: 'Fast-absorbing energy',
+          nutritionalInfo: const NutritionalInfo(calories: 200, carbs: 50, protein: 0, fat: 0),
+        );
+      case FoodCategory.postRun:
+        return FoodItemData(
+          id: 'recovery-drink',
+          name: 'Recovery Drink',
+          quantity: '1 serving',
+          iconPath: 'assets/images/protein_bar.png',
+          description: 'Protein and carbs for recovery',
+          nutritionalInfo: const NutritionalInfo(calories: 200, carbs: 30, protein: 15, fat: 3),
+        );
+    }
+  }
+
   /// Safety check for nutrition plan values
   /// 
   /// Ensures all calculated values are within safe limits
   static bool validateNutritionPlan(NutritionPlan plan) {
-    // Check maximum safe limits per hour
-    if (plan.carbsPerHour > 90) return false; // GI distress risk
-    if (plan.sodiumPerHour > 1000) return false; // Without medical guidance
-    if (plan.fluidsPerHour > 28) return false; // Hyponatremia risk
+    // Check for valid plan structure
+    if (plan.sections.isEmpty) return false;
+    if (plan.macroTargets == null) return false;
     
-    // Check minimum requirements
-    if (plan.carbsPerHour < 30) return false;
-    if (plan.sodiumPerHour < 200) return false;
-    if (plan.fluidsPerHour < 13) return false;
-    
-    // Duration checks
-    if (plan.durationHours <= 0) return false;
-    if (plan.distanceMiles <= 0) return false;
-    if (plan.paceMinutesPerMile <= 0) return false;
+    // Check macro targets are reasonable
+    final macros = plan.macroTargets!;
+    if (macros.calories <= 0) return false;
+    if (macros.carbs <= 0) return false;
     
     return true;
   }
@@ -199,34 +453,69 @@ class NutritionCalculator {
   static List<String> getNutritionRecommendations(NutritionPlan plan, UserProfile userProfile) {
     List<String> recommendations = [];
     
-    // Carb recommendations
-    if (plan.carbsPerHour < 40) {
-      recommendations.add('Consider increasing carbohydrate intake for sustained energy');
-    } else if (plan.carbsPerHour > 80) {
-      recommendations.add('Monitor for GI distress with higher carbohydrate amounts');
+    // General recommendations based on plan structure
+    if (plan.sections.length >= 3) {
+      recommendations.add('Follow the timing guidelines for optimal performance');
     }
     
-    // Sodium recommendations
-    if (plan.sodiumPerHour < 300) {
-      recommendations.add('Consider adding electrolyte supplements for longer runs');
+    // Macro-based recommendations
+    if (plan.macroTargets != null) {
+      final macros = plan.macroTargets!;
+      
+      if (macros.carbs > 150) {
+        recommendations.add('High carb plan - practice during training to avoid GI issues');
+      }
+      
+      if (macros.calories > 1000) {
+        recommendations.add('High calorie plan - break into smaller portions throughout');
+      }
     }
     
-    // Fluid recommendations
-    if (plan.fluidsPerHour > 24) {
-      recommendations.add('Be careful not to overhydrate - risk of hyponatremia');
+    // Section-specific recommendations
+    final duringSection = plan.sections.where((s) => s.title.contains('During')).firstOrNull;
+    if (duringSection != null && duringSection.foodItems.isNotEmpty) {
+      recommendations.add('Start fueling within the first 30-45 minutes of your run');
     }
     
-    // Duration-specific recommendations
-    if (plan.durationHours > 3) {
-      recommendations.add('For runs over 3 hours, practice your nutrition plan during training');
-      recommendations.add('Start fueling within the first 30-45 minutes');
-    }
+    // Hydration recommendations
+    recommendations.add('Monitor hydration levels and adjust intake based on conditions');
     
     // Personal recommendations
-    if (!userProfile.runsWithWaterBottle && plan.fluidsPerHour > 20) {
+    if (!userProfile.runsWithWaterBottle) {
       recommendations.add('Consider carrying a water bottle for adequate hydration');
     }
     
     return recommendations;
+  }
+
+  /// Legacy method for backward compatibility
+  @Deprecated('Use calculateNutritionPlan with RunParameters instead') 
+  static NutritionPlan calculateNutritionPlanLegacy({
+    required double distanceMiles,
+    required double paceMinutesPerMile,
+    required UserProfile userProfile,
+    String? planId,
+  }) {
+    // For now, use simplified calculation until UI is updated
+    double durationHours = (distanceMiles * paceMinutesPerMile) / 60.0;
+    double carbsPerHour = durationHours < 3.0 ? 45 : 75;
+    double totalCarbs = carbsPerHour * durationHours;
+    
+    return NutritionPlan(
+      id: planId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      name: 'Personalized Nutrition Plan',
+      totalCalories: (totalCarbs * 4).round(),
+      notes: 'Legacy plan for ${distanceMiles.toStringAsFixed(1)} miles',
+      macroTargets: MacroTargets(
+        calories: (totalCarbs * 4).round(),
+        carbs: totalCarbs.round(),
+        protein: (totalCarbs * 0.1).round(),
+        fat: (totalCarbs * 0.05).round(),
+        carbsRange: '85-90%',
+        proteinRange: '5-10%',
+        fatRange: '5-10%',
+      ),
+      sections: [],
+    );
   }
 }
