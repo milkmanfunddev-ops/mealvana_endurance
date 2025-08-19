@@ -167,11 +167,42 @@ class LargeHeroImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return HeroImage(
+    return SizedBox(
+      width: double.infinity,
       height: 280.h,
-      borderRadius: 20.r,
-      showBorder: false,
-      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20.r),
+        child: Image.asset(
+          'assets/images/woman_running.png',
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              decoration: BoxDecoration(
+                color: AppTheme.baseCream,
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.directions_run,
+                    size: 48.sp,
+                    color: AppTheme.primary600,
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    'Image not found',
+                    style: AppTheme.noteStyle.copyWith(
+                      color: AppTheme.baseGrey,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }

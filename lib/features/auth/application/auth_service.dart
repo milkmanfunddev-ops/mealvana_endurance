@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
+import '../data/auth_repository_edge.dart';
 import '../domain/user_preferences.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io';
 
 /// Application service for managing user authentication and preferences
 /// Follows the Andrea Bizzotto pattern with Ref for dependency injection
@@ -10,8 +14,11 @@ class AuthService {
 
   /// Get the user repository
   UserRepository get _userRepository => ref.read(userRepositoryProvider);
+  
+  /// Get the Edge Function auth repository
+  AuthRepositoryEdge get _authRepositoryEdge => ref.read(authRepositoryEdgeProvider);
 
-  /// Create a new user profile during onboarding
+  /// Create a new user profile during onboarding using Edge Function
   Future<UserProfile> createUser({
     required Gender gender,
     required DateTime birthday,
@@ -20,27 +27,70 @@ class AuthService {
     required double weightPounds,
     required bool runsWithWaterBottle,
     GutTraining? gutTraining,
+    Map<String, FoodPreference>? foodPreferences,
   }) async {
-    final profile = UserProfile(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    // Get device ID
+    final deviceId = await _getDeviceId();
+    
+    // Get app version (simplified for now)
+    const appVersion = '1.0.0';
+    
+    // Convert gut training to level
+    final gutTrainingLevel = _convertGutTrainingToLevel(gutTraining ?? GutTraining.high);
+    
+    // Call Edge Function to create user
+    final result = await _authRepositoryEdge.createUser(
+      deviceId: deviceId,
       gender: gender,
       birthday: birthday,
       heightFeet: heightFeet,
       heightInches: heightInches,
       weightPounds: weightPounds,
       runsWithWaterBottle: runsWithWaterBottle,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      gutTraining: gutTraining ?? GutTraining.high, // Default to high
+      gutTrainingLevel: gutTrainingLevel,
+      appVersion: appVersion,
+      foodPreferences: foodPreferences,
     );
-
-    await _userRepository.saveUserProfile(profile);
-    return profile;
+    
+    if (result.success && result.user != null) {
+      // Save locally for caching
+      await _userRepository.saveUserProfile(result.user!);
+      return result.user!;
+    } else {
+      throw Exception(result.message ?? 'Failed to create user');
+    }
   }
 
   /// Get the current user profile
   UserProfile? getCurrentUser() {
     return _userRepository.getCurrentUser();
+  }
+  
+  /// Get device ID for user identification
+  Future<String> _getDeviceId() async {
+    final deviceInfo = DeviceInfoPlugin();
+    
+    if (Platform.isAndroid) {
+      final androidInfo = await deviceInfo.androidInfo;
+      return androidInfo.id;
+    } else if (Platform.isIOS) {
+      final iosInfo = await deviceInfo.iosInfo;
+      return iosInfo.identifierForVendor ?? 'ios-unknown';
+    } else {
+      return 'unknown-platform';
+    }
+  }
+  
+  /// Convert GutTraining enum to GutTrainingLevel enum
+  GutTrainingLevel _convertGutTrainingToLevel(GutTraining gutTraining) {
+    switch (gutTraining) {
+      case GutTraining.low:
+        return GutTrainingLevel.low;
+      case GutTraining.moderate:
+        return GutTrainingLevel.moderate;
+      case GutTraining.high:
+        return GutTrainingLevel.high;
+    }
   }
 
   /// Update user profile
@@ -119,14 +169,14 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(ref);
 });
 
-/// Provider for UserRepository
-final userRepositoryProvider = Provider<UserRepository>((ref) {
-  // This will be overridden in main.dart after Hive initialization
-  throw UnimplementedError('UserRepository not initialized');
-});
-
 /// Provider for current user profile
 final currentUserProvider = Provider<UserProfile?>((ref) {
   final authService = ref.watch(authServiceProvider);
   return authService.getCurrentUser();
+});
+
+/// Provider for AuthRepositoryEdge
+final authRepositoryEdgeProvider = Provider<AuthRepositoryEdge>((ref) {
+  final supabase = Supabase.instance.client;
+  return AuthRepositoryEdge(supabase);
 });

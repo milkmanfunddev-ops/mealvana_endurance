@@ -6,7 +6,7 @@ import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/hero_image.dart';
 import '../../../../shared/widgets/labeled_text_field.dart';
 import '../../../../shared/widgets/primary_button.dart';
-import '../providers/nutrition_plan_controller.dart';
+import '../providers/main_screen_controller.dart';
 import '../widgets/pre_run_timing_selector.dart';
 import '../../domain/run_parameters.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -72,8 +72,8 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
             ((double.tryParse(paceParts[1]) ?? 30.0) / 60.0)
           : double.tryParse(paceString) ?? 8.5;
       
-      // Use the nutrition plan controller to generate plan
-      final controller = ref.read(nutritionPlanControllerProvider.notifier);
+      // Use the main screen controller to generate plan
+      final controller = ref.read(mainScreenControllerProvider.notifier);
       await controller.generatePlan(
         distanceMiles: distance,
         paceMinutesPerMile: paceMinutes,
@@ -86,9 +86,10 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
       
     } catch (error) {
       if (mounted) {
+        final currentState = ref.read(mainScreenControllerProvider).valueOrNull;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to generate plan: $error'),
+            content: Text(currentState?.errorGeneric ?? 'Something went wrong. Please try again.'),
             backgroundColor: AppTheme.highlight600,
           ),
         );
@@ -102,13 +103,30 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
 
   @override
   Widget build(BuildContext context) {
+    final controllerState = ref.watch(mainScreenControllerProvider);
+    
+    return controllerState.when(
+      data: (state) => _buildScreen(context, state),
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Scaffold(
+        body: Center(
+          child: Text('Error loading content: $error'),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context, MainScreenState state) {
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.baseCream,
         elevation: 0,
+        scrolledUnderElevation: 0,
         title: Text(
-          'Mealvana Endurance',
+          state.title,
           style: AppTheme.titleStyle.copyWith(
             color: AppTheme.baseBlack,
             fontSize: 18.sp,
@@ -142,7 +160,7 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
                         Expanded(
                           flex: 3,
                           child: LabeledTextField(
-                            label: 'Distance',
+                            label: state.distanceLabel,
                             hint: _selectedDistanceUnit == DistanceUnit.miles ? 'e.g. 5' : 'e.g. 8',
                             controller: _distanceController,
                             keyboardType: TextInputType.number,
@@ -402,7 +420,7 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
               // Tips text
               if (!_isGenerating) ...[
                 Text(
-                  'We\'ll create a personalized nutrition plan\nbased on your run details',
+                  state.tipsText,
                   style: AppTheme.noteStyle.copyWith(
                     color: AppTheme.baseGrey,
                     fontSize: 14.sp,

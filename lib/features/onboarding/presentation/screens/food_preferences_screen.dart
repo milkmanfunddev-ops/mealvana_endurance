@@ -4,8 +4,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/onboarding_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
-import '../../../nutrition_plan/data/food_database.dart';
+import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
+import '../../../../theme/app_theme.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 
 /// Food preferences screen - final step of onboarding
 /// Users select their food preferences using a checkbox list
@@ -18,13 +20,34 @@ class FoodPreferencesScreen extends ConsumerStatefulWidget {
 
 class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   final Map<String, bool> _selectedFoods = {};
+  List<FoodItem> _foods = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Initialize all foods as unchecked (disliked)
-    for (final food in FoodDatabase.getAllFoods()) {
-      _selectedFoods[food.id] = false;
+    _loadFoods();
+  }
+
+  Future<void> _loadFoods() async {
+    try {
+      final foodRepository = ref.read(foodRepositoryProvider);
+      final foods = await foodRepository.getAllFoods();
+      
+      setState(() {
+        _foods = foods;
+        _isLoading = false;
+        // Initialize all foods as unchecked (disliked)
+        for (final food in foods) {
+          _selectedFoods[food.id] = false;
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      // Handle error - maybe show a snackbar
+      print('Error loading foods: $e');
     }
   }
 
@@ -71,12 +94,25 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final asyncState = ref.watch(onboardingControllerProvider);
-    final foods = FoodDatabase.getAllFoods();
+    
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppTheme.baseCream,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
+      backgroundColor: AppTheme.baseCream,
       appBar: AppBar(
+        backgroundColor: AppTheme.baseCream,
+        foregroundColor: AppTheme.baseWhite,
+        leading: const CustomAppBarBackButton(),
         title: const Text('Food Preferences'),
         centerTitle: true,
+        iconTheme: IconThemeData(
+          color: AppTheme.baseWhite,
+        ),
       ),
       body: Column(
         children: [
@@ -156,10 +192,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           Expanded(
             child: ListView.separated(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
-              itemCount: foods.length,
+              itemCount: _foods.length,
               separatorBuilder: (context, index) => SizedBox(height: 8.h),
               itemBuilder: (context, index) {
-                final food = foods[index];
+                final food = _foods[index];
                 final isSelected = _selectedFoods[food.id] ?? false;
                 
                 return _FoodChecklistItem(

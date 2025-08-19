@@ -21,6 +21,36 @@ class FoodItemData {
   final NutritionalInfo? nutritionalInfo;
   final String? instructions; // Special preparation instructions
 
+  /// Create FoodItemData from JSON
+  factory FoodItemData.fromJson(Map<String, dynamic> json) {
+    return FoodItemData(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      quantity: json['quantity'] as String,
+      iconPath: json['iconPath'] as String,
+      description: json['description'] as String?,
+      timing: json['timing'] as String?,
+      instructions: json['instructions'] as String?,
+      nutritionalInfo: json['nutritionalInfo'] != null 
+          ? NutritionalInfo.fromJson(json['nutritionalInfo'])
+          : null,
+    );
+  }
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'quantity': quantity,
+      'iconPath': iconPath,
+      'description': description,
+      'timing': timing,
+      'instructions': instructions,
+      'nutritionalInfo': nutritionalInfo?.toJson(),
+    };
+  }
+
   @override
   String toString() => 'FoodItemData(id: $id, name: $name, quantity: $quantity)';
 }
@@ -42,6 +72,30 @@ class NutritionalInfo {
   final int? fat; // grams
   final int? sodium; // mg
   final int? sugar; // grams
+
+  /// Create NutritionalInfo from JSON
+  factory NutritionalInfo.fromJson(Map<String, dynamic> json) {
+    return NutritionalInfo(
+      calories: json['calories'] as int?,
+      carbs: json['carbs'] as int?,
+      protein: json['protein'] as int?,
+      fat: json['fat'] as int?,
+      sodium: json['sodium'] as int?,
+      sugar: json['sugar'] as int?,
+    );
+  }
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'calories': calories,
+      'carbs': carbs,
+      'protein': protein,
+      'fat': fat,
+      'sodium': sodium,
+      'sugar': sugar,
+    };
+  }
 
   @override
   String toString() => 'NutritionalInfo(calories: $calories, carbs: ${carbs}g)';

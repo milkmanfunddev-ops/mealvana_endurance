@@ -1,9 +1,10 @@
 # Nutrition Calculation Algorithms
 
 ## Overview
-Evidence-based nutrition calculation formulas for endurance athletes, specifically for running events. These algorithms are implemented in the Mealvana Endurance app to generate personalized nutrition plans.
+Evidence-based nutrition calculation formulas for endurance athletes, specifically for running events. These algorithms are implemented in the Mealvana Endurance app to generate personalized nutrition plans based on scientific research and acute fueling strategies.
 
 ## Research Sources
+- ACSM's Guidelines for Exercise Testing and Prescription
 - Journal of Sports Science Research: "Nutrition for endurance sports: Marathon, triathlon, and road cycling"
 - PMC Studies: "Nutritional Intake and Timing of Marathon Runners" 
 - TrainingPeaks: "A Complete Guide to Proper Marathon Nutrition"
@@ -11,183 +12,173 @@ Evidence-based nutrition calculation formulas for endurance athletes, specifical
 
 ## Core Calculation Formulas
 
-### 1. Carbohydrate Requirements
+### 1. Energy Expenditure
 
-**Base Formula:**
+**Net Calorie Formula (running-specific):**
 ```
-Carbs per hour = Base carb rate + Duration adjustment + Body weight adjustment
-```
-
-**Implementation Logic:**
-- **Short events (<3 hours)**: 30-60g carbs/hour
-- **Long events (3+ hours)**: 60-90g carbs/hour
-- **Target range for most athletes**: 50-70g carbs/hour
-- **Body weight adjustment**: +5g/hour for athletes >180lbs, -5g/hour for athletes <140lbs
-
-**Code Implementation:**
-```dart
-double calculateCarbsPerHour(double durationHours, double bodyWeightLbs) {
-  // Base carb rate based on duration
-  double baseCarbs;
-  if (durationHours < 3.0) {
-    baseCarbs = 45; // Middle of 30-60g range
-  } else {
-    baseCarbs = 75; // Middle of 60-90g range
-  }
-  
-  // Body weight adjustments
-  if (bodyWeightLbs > 180) {
-    baseCarbs += 5;
-  } else if (bodyWeightLbs < 140) {
-    baseCarbs -= 5;
-  }
-  
-  return baseCarbs.clamp(30, 90); // Keep within safe ranges
-}
+Net calories = ~1 kcal × body weight (kg) × distance (km)
 ```
 
-### 2. Sodium Requirements
-
-**Base Formula:**
+**Gross Calorie Formula (total energy expenditure):**
 ```
-Sodium per hour = Base sodium rate + Sweat rate adjustment + Duration adjustment
+Gross calories = MET × body weight (kg) × duration (hours)
+MET = VO₂ / 3.5
+VO₂ (mL/kg/min) = 0.2 × speed (m/min) + 3.5  (ACSM running equation, level)
+```
+
+Where:
+- Speed (m/min) = miles per hour × 26.8224
+- Miles per hour = 60 / pace (min/mile)
+
+### 2. Pre-Run Carbohydrate Requirements
+
+**Time-Based Carbohydrate Loading:**
+```
+if time_available ≥ 1 hour:    carbs = min(4 hours, time_available) × 1.0 g/kg
+if 0.25 ≤ time_available < 1h: carbs = 0.5 g/kg
+if time_available < 0.25h:     carbs = ~0.25 g/kg (small top-up)
 ```
 
 **Implementation Logic:**
-- **Standard recommendation**: 200-500mg sodium per hour
-- **High sweat rate athletes**: 500-700mg per hour
-- **"Salty sweaters"**: Up to 1000mg per hour
-- **Default target**: 400mg sodium per hour (middle range)
+- **1-4 hours before**: 1-4g per kg body weight (capped at 4g/kg)
+- **15-60 minutes before**: 0.5g per kg body weight  
+- **<15 minutes before**: Small top-up (~0.25g per kg)
+- **Focus**: Easily digestible carbohydrates
+- **Avoid**: High fiber, high fat, or unfamiliar foods
 
-**Code Implementation:**
-```dart
-double calculateSodiumPerHour(double durationHours, bool runsWithWaterBottle) {
-  double baseSodium = 400; // mg per hour
-  
-  // Adjustment for longer events (more sweat loss)
-  if (durationHours > 3.0) {
-    baseSodium += 100;
-  }
-  
-  // Adjustment for hydration habits (proxy for sweat rate awareness)
-  if (!runsWithWaterBottle) {
-    baseSodium += 50; // May be a heavier sweater who needs water bottle
-  }
-  
-  return baseSodium.clamp(200, 700); // Keep within recommended ranges
-}
+### 3. During-Run Carbohydrate Requirements
+
+**Mass-Normalized Rate Formula:**
+```
+Base rate = gut_training_level × body weight (kg)
+gut_training_levels: {low: 0.7, moderate: 0.8, high: 1.0} g/kg/h
 ```
 
-### 3. Fluid Requirements
-
-**Base Formula:**
+**Absorption-Limited Rate:**
 ```
-Fluids per hour = Base fluid rate + Body weight adjustment + Environmental adjustment
+Final rate = clamp(base_rate, 30, 60) g/h
+Total during-run carbs = final_rate × duration (hours)
 ```
 
 **Implementation Logic:**
-- **Standard recommendation**: 400-800mL (13-27 fl oz) per hour
-- **Stomach capacity limit**: ~24-28 fl oz per hour maximum
-- **Target range**: 16-24 fl oz per hour for most athletes
-- **Body weight adjustment**: Larger athletes need more fluids
+- **Gut training consideration**: Athletes with trained guts can absorb more
+- **Physiological limits**: 30-60g per hour absorption capacity
+- **Personalization**: Higher rates for larger, gut-trained athletes
+- **Safety**: Always clamp to digestive capacity limits
 
-**Code Implementation:**
-```dart
-double calculateFluidsPerHour(double bodyWeightLbs, double durationHours) {
-  // Base fluid requirement in fl oz
-  double baseFluidOz = 20; // Middle of 13-27 oz range
-  
-  // Body weight adjustment
-  if (bodyWeightLbs > 180) {
-    baseFluidOz += 3;
-  } else if (bodyWeightLbs < 140) {
-    baseFluidOz -= 2;
-  }
-  
-  // Longer events may need slightly more due to cumulative losses
-  if (durationHours > 4.0) {
-    baseFluidOz += 2;
-  }
-  
-  return baseFluidOz.clamp(13, 27); // Keep within research recommendations
-}
+### 4. Hydration Requirements
+
+**Pre-Run Hydration:**
+```
+if time_before_run ≥ 2h: 6 mL/kg (middle of 5-7 mL/kg range)
+if 1h ≤ time_before_run < 2h: 4 mL/kg
+if time_before_run < 1h: 2 mL/kg (minimal intake)
 ```
 
-### 4. Total Plan Calculation
-
-**Main Planning Algorithm:**
-```dart
-NutritionPlan calculateNutritionPlan({
-  required double distanceMiles,
-  required double paceMinutesPerMile,
-  required double bodyWeightLbs,
-  required bool runsWithWaterBottle,
-}) {
-  // Calculate total duration
-  double durationHours = (distanceMiles * paceMinutesPerMile) / 60.0;
-  
-  // Calculate hourly requirements
-  double carbsPerHour = calculateCarbsPerHour(durationHours, bodyWeightLbs);
-  double sodiumPerHour = calculateSodiumPerHour(durationHours, runsWithWaterBottle);
-  double fluidsPerHour = calculateFluidsPerHour(bodyWeightLbs, durationHours);
-  
-  // Calculate total requirements
-  double totalCarbs = carbsPerHour * durationHours;
-  double totalSodium = sodiumPerHour * durationHours;
-  double totalFluids = fluidsPerHour * durationHours;
-  
-  return NutritionPlan(
-    totalCarbs: totalCarbs,
-    totalSodium: totalSodium,
-    totalFluids: totalFluids,
-    durationHours: durationHours,
-    carbsPerHour: carbsPerHour,
-    sodiumPerHour: sodiumPerHour,
-    fluidsPerHour: fluidsPerHour,
-  );
-}
+**During-Run Hydration Rate:**
+```
+Base rate: 500 mL/h
+if duration ≤ 1h: 400 mL/h (80% of base)
+if MET ≥ 8.0: 800 mL/h (high intensity)
+if MET ≥ 6.0: 600 mL/h (moderate intensity)
+else: 500 mL/h (easy pace)
 ```
 
-## Timing Guidelines
+### 5. Sodium Requirements
 
-### Pre-Run Nutrition (1-3 hours before)
-- **Carbohydrates**: 1-4g per kg body weight (focus on easily digestible carbs)
-- **Timing**: Larger meals 3-4 hours before, smaller snacks 1-2 hours before
-- **Avoid**: High fiber, high fat, or new foods
+**Pre-Run Sodium:**
+```
+if time_before_run ≥ 2h: 500 mg (moderate pre-loading)
+else: 200 mg (minimal if close to run time)
+```
 
-### During-Run Nutrition
-- **Start early**: Begin fueling within 30-45 minutes of starting
-- **Frequency**: Every 15-20 minutes for consistent energy
-- **Focus**: Easily absorbed carbs + electrolytes
+**During-Run Sodium Rate:**
+```
+if duration ≤ 1h: 0 mg/h (no supplementation needed)
+else: 250 mg/h (typical sports drink concentration)
+```
 
-### Post-Run Recovery (within 30-60 minutes)
-- **Carbohydrates**: 1-1.2g per kg body weight
-- **Protein**: 0.25-0.3g per kg body weight  
-- **Fluids**: 1.2-1.5L per kg body weight lost
+## Complete Algorithm Implementation
+
+```python
+def compute_run_fueling(input_params):
+    # Convert units and calculate kinematics
+    weight_kg = to_kg(weight, weight_unit)
+    distance_mi = to_miles(distance, distance_unit)
+    pace_min_per_mile = parse_pace_to_min_per_mile(pace, pace_unit)
+    duration_h = distance_mi * pace_min_per_mile / 60.0
+    speed_mph = 60.0 / pace_min_per_mile
+    
+    # Energy expenditure
+    MET = met_from_pace_min_per_mile(pace_min_per_mile)
+    calories_net = weight_kg * distance_km  # ~1 kcal/kg/km
+    calories_gross = MET * weight_kg * duration_h
+    
+    # Pre-run carbohydrates
+    time_available_h = time_before_run_min / 60.0
+    if time_available_h >= 1.0:
+        pre_carbs = min(4.0, time_available_h) * 1.0 * weight_kg
+    elif time_available_h >= 0.25:
+        pre_carbs = 0.5 * weight_kg
+    else:
+        pre_carbs = 0.25 * weight_kg
+    
+    # During-run carbohydrates
+    gut_multiplier = {"low": 0.7, "moderate": 0.8, "high": 1.0}[gut_training]
+    mass_norm_rate = gut_multiplier * weight_kg
+    final_rate = clamp(mass_norm_rate, 30.0, 60.0)
+    total_during_carbs = final_rate * duration_h
+    
+    # Hydration and sodium calculations
+    pre_water = calc_pre_run_hydration(weight_kg, time_available_h)
+    during_water_rate = calc_during_run_hydration_rate(duration_h, MET)
+    pre_sodium = calc_pre_run_sodium(time_available_h)
+    during_sodium_rate = calc_during_run_sodium_rate(duration_h)
+    
+    return FuelOutput(...)
+```
+
+## Key Features of Updated Algorithm
+
+### 1. Evidence-Based Precision
+- Uses ACSM running equation for accurate energy expenditure
+- Implements time-sensitive pre-run carbohydrate strategies
+- Accounts for individual gut training levels
+
+### 2. Physiological Constraints
+- Respects digestive absorption limits (30-60g carbs/hour)
+- Prevents over-hydration with intensity-based fluid rates
+- Eliminates sodium supplementation for short runs (≤1 hour)
+
+### 3. Personalization Factors
+- Body weight scaling for all calculations
+- Gut training level consideration for carb absorption
+- Time-sensitive pre-run nutrition strategies
+- Intensity-based hydration adjustments
 
 ## Safety Considerations
 
 ### Maximum Safe Limits
-- **Carbohydrates**: Do not exceed 90g per hour (GI distress risk)
-- **Sodium**: Do not exceed 1000mg per hour without medical guidance
-- **Fluids**: Do not exceed 28 fl oz per hour (hyponatremia risk)
+- **Carbohydrates**: 60g per hour (GI tolerance limit)
+- **Fluids**: 800 mL per hour maximum (hyponatremia prevention)
+- **Sodium**: 250 mg per hour for runs >1 hour
 
 ### Individual Variations
-- **GI tolerance**: Some athletes need lower amounts
-- **Heat acclimatization**: Affects sweat rate and sodium losses
-- **Training status**: More trained athletes may handle higher amounts
-- **Personal preference**: Food preferences affect compliance
+- **Gut training status**: Affects carbohydrate absorption capacity
+- **Body weight**: Scales all nutritional requirements
+- **Exercise intensity**: Influences fluid and energy needs
+- **Timing constraints**: Determines pre-run nutrition strategy
 
 ## Implementation Notes
 
 ### Error Handling
-- Always clamp values to safe ranges
-- Provide warnings for extreme inputs
-- Default to conservative recommendations when in doubt
+- Always clamp values to physiological safe ranges
+- Provide fallback calculations for edge cases
+- Default to conservative recommendations when uncertain
 
-### User Feedback Integration
-- Track user feedback on plan amounts (too much/too little)
-- Adjust base recommendations based on user responses
-- Learn user-specific patterns over time
+### Algorithm Validation
+- Cross-reference with established sports nutrition guidelines
+- Test edge cases (very short/long runs, extreme body weights)
+- Validate against real-world athlete feedback
 
-This algorithm framework provides the foundation for generating personalized, evidence-based nutrition plans for endurance athletes while maintaining safety and efficacy standards.
+This updated algorithm framework provides a more precise, evidence-based foundation for generating personalized nutrition plans while maintaining safety and accounting for individual physiological differences.

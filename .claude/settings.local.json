@@ -36,7 +36,10 @@
       "mcp__ide__getDiagnostics",
       "WebFetch(domain:docs.google.com)",
       "Bash(pod repo update:*)",
-      "Bash(pod install:*)"
+      "Bash(pod install:*)",
+      "Bash(shorebird patches:*)",
+      "Bash(shorebird apps:*)",
+      "Bash(flutter:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

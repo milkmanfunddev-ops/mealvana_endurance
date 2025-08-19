@@ -1,208 +1,239 @@
-import 'package:hive/hive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/nutrition_plan.dart';
-import '../domain/food_item_data.dart';
 
-/// Repository for managing nutrition plans in Hive
+/// Repository for nutrition plan operations using Supabase Edge Functions
+/// Replaces complex client-side calculations and direct database access
 class NutritionPlanRepository {
-  static const String _boxName = 'nutrition_plans';
+  NutritionPlanRepository(this._supabase);
   
-  late Box<Map<dynamic, dynamic>> _planBox;
-  
-  /// Initialize the repository and open Hive box
-  Future<void> init() async {
-    _planBox = await Hive.openBox<Map<dynamic, dynamic>>(_boxName);
-  }
+  final SupabaseClient _supabase;
 
-  /// Save a nutrition plan
-  Future<void> savePlan(NutritionPlan plan) async {
-    final planData = _planToMap(plan);
-    await _planBox.put(plan.id, planData);
-  }
+  /// Create a new nutrition plan via Edge Function
+  Future<CreateNutritionPlanResult> createNutritionPlan({
+    required String deviceId,
+    required double distanceMiles,
+    required double paceMinutesPerMile,
+    double timeBeforeRunHours = 2.0,
+    String? gutTrainingLevel, // Override user's default
+  }) async {
+    try {
+      // Prepare request payload
+      final requestBody = {
+        'device_id': deviceId,
+        'distance_miles': distanceMiles,
+        'pace_minutes_per_mile': paceMinutesPerMile,
+        'time_before_run_hours': timeBeforeRunHours,
+        if (gutTrainingLevel != null) 'gut_training_level': gutTrainingLevel,
+      };
 
-  /// Get a nutrition plan by ID
-  NutritionPlan? getPlan(String planId) {
-    final planData = _planBox.get(planId);
-    return planData != null ? _mapToPlan(planData) : null;
-  }
+      // Call Edge Function
+      final response = await _supabase.functions.invoke(
+        'create-nutrition-plan',
+        body: requestBody,
+      );
 
-  /// Get all nutrition plans for a specific user
-  List<NutritionPlan> getPlansForUser(String userId) {
-    // Since our current model doesn't have userId, return all plans for now
-    return _planBox.values
-        .map((planData) => _mapToPlan(planData))
-        .toList();
-  }
-
-  /// Get the most recent nutrition plan for a user
-  NutritionPlan? getLatestPlanForUser(String userId) {
-    final userPlans = getPlansForUser(userId);
-    return userPlans.isNotEmpty ? userPlans.last : null; // Return last created
-  }
-
-  /// Update a nutrition plan
-  Future<void> updatePlan(NutritionPlan plan) async {
-    await savePlan(plan); // Simple update by overwriting
-  }
-
-  /// Delete a nutrition plan
-  Future<void> deletePlan(String planId) async {
-    await _planBox.delete(planId);
-  }
-
-  /// Delete all plans for a user
-  Future<void> deleteAllPlansForUser(String userId) async {
-    final userPlans = getPlansForUser(userId);
-    for (final plan in userPlans) {
-      await _planBox.delete(plan.id);
+      // Handle response
+      if (response.status >= 200 && response.status < 300) {
+        final data = response.data as Map<String, dynamic>;
+        
+        if (data['success'] == true) {
+          return CreateNutritionPlanResult(
+            success: true,
+            plan: NutritionPlan.fromJson(data['plan']),
+            calculations: data['calculations'],
+            message: data['message'],
+          );
+        } else {
+          return CreateNutritionPlanResult(
+            success: false,
+            message: data['message'] ?? 'Unknown error occurred',
+          );
+        }
+      } else {
+        return CreateNutritionPlanResult(
+          success: false,
+          message: 'Edge Function call failed with status ${response.status}',
+        );
+      }
+    } catch (e) {
+      print('Error calling create-nutrition-plan Edge Function: $e');
+      return CreateNutritionPlanResult(
+        success: false,
+        message: 'Failed to create nutrition plan: $e',
+      );
     }
   }
 
-  /// Get all nutrition plans (for admin/debugging)
-  List<NutritionPlan> getAllPlans() {
-    return _planBox.values
-        .map((planData) => _mapToPlan(planData))
-        .toList();
+  /// Get nutrition plans for a user (direct database call since it's simple)
+  Future<List<NutritionPlan>> getNutritionPlans(String deviceId) async {
+    try {
+      final response = await _supabase
+          .from('nutrition_plans')
+          .select('*')
+          .eq('device_id', deviceId)
+          .eq('is_deleted', false)
+          .order('updated_at', ascending: false);
+
+      return response.map<NutritionPlan>((json) => NutritionPlan.fromSupabaseJson(json)).toList();
+    } catch (e) {
+      print('Error fetching nutrition plans: $e');
+      return [];
+    }
   }
 
-  /// Check if a plan exists
-  bool planExists(String planId) {
-    return _planBox.containsKey(planId);
+  /// Get latest nutrition plan for a user
+  Future<NutritionPlan?> getLatestNutritionPlan(String deviceId) async {
+    try {
+      final response = await _supabase
+          .from('nutrition_plans')
+          .select('*')
+          .eq('device_id', deviceId)
+          .eq('is_deleted', false)
+          .order('updated_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response != null) {
+        return NutritionPlan.fromSupabaseJson(response);
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching latest nutrition plan: $e');
+      return null;
+    }
   }
 
-  /// Get plan count for a user
-  int getPlanCount(String userId) {
-    return getPlansForUser(userId).length;
+  /// Get a specific nutrition plan by ID
+  Future<NutritionPlan?> getNutritionPlan(String deviceId, String planId) async {
+    try {
+      final response = await _supabase
+          .from('nutrition_plans')
+          .select('*')
+          .eq('device_id', deviceId)
+          .eq('plan_id', planId)
+          .eq('is_deleted', false)
+          .maybeSingle();
+
+      if (response != null) {
+        return NutritionPlan.fromSupabaseJson(response);
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching nutrition plan: $e');
+      return null;
+    }
+  }
+
+  /// Update a nutrition plan (re-create via Edge Function for consistency)
+  Future<CreateNutritionPlanResult> updateNutritionPlan({
+    required String deviceId,
+    required double distanceMiles,
+    required double paceMinutesPerMile,
+    double timeBeforeRunHours = 2.0,
+    String? gutTrainingLevel,
+  }) async {
+    // For updates, we just call the create function again
+    // The Edge Function will handle versioning and conflicts
+    return await createNutritionPlan(
+      deviceId: deviceId,
+      distanceMiles: distanceMiles,
+      paceMinutesPerMile: paceMinutesPerMile,
+      timeBeforeRunHours: timeBeforeRunHours,
+      gutTrainingLevel: gutTrainingLevel,
+    );
+  }
+
+  /// Delete a nutrition plan (soft delete)
+  Future<bool> deleteNutritionPlan(String deviceId, String planId) async {
+    try {
+      await _supabase
+          .from('nutrition_plans')
+          .update({
+            'is_deleted': true,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('device_id', deviceId)
+          .eq('plan_id', planId);
+
+      return true;
+    } catch (e) {
+      print('Error deleting nutrition plan: $e');
+      return false;
+    }
   }
 
   /// Get nutrition plan statistics for a user
-  Map<String, dynamic> getPlanStatistics(String userId) {
-    final plans = getPlansForUser(userId);
-    
-    if (plans.isEmpty) {
+  Future<Map<String, dynamic>> getNutritionPlanStatistics(String deviceId) async {
+    try {
+      final plans = await getNutritionPlans(deviceId);
+      
+      if (plans.isEmpty) {
+        return {
+          'totalPlans': 0,
+          'averageDistance': 0.0,
+          'averageDuration': 0.0,
+          'averagePace': 0.0,
+          'averageCarbs': 0.0,
+          'averageCalories': 0.0,
+        };
+      }
+
+      final totalPlans = plans.length;
+      final totalCalories = plans.fold<int>(0, (sum, plan) => sum + (plan.totalCalories ?? 0));
+      final totalCarbs = plans.fold<int>(0, (sum, plan) => sum + (plan.macroTargets?.carbs ?? 0));
+
+      return {
+        'totalPlans': totalPlans,
+        'averageDistance': 0.0, // Distance info not stored in plans anymore (Edge Function handles it)
+        'averageCalories': totalCalories / totalPlans,
+        'averageCarbs': totalCarbs / totalPlans,
+      };
+    } catch (e) {
+      print('Error calculating nutrition plan statistics: $e');
       return {
         'totalPlans': 0,
         'averageDistance': 0.0,
         'averageDuration': 0.0,
         'averagePace': 0.0,
         'averageCarbs': 0.0,
-        'averageSodium': 0.0,
-        'averageFluids': 0.0,
+        'averageCalories': 0.0,
       };
     }
-
-    // Calculate basic statistics from available data
-    final totalCalories = plans.fold(0, (sum, plan) => sum + (plan.totalCalories ?? 0));
-
-    return {
-      'totalPlans': plans.length,
-      'averageDistance': 0.0, // Not available in current model
-      'averageDuration': 0.0, // Not available in current model
-      'averagePace': 0.0, // Not available in current model
-      'averageCarbs': plans.isNotEmpty 
-          ? totalCalories / plans.length / 4 // Rough carb estimation
-          : 0.0,
-      'averageSodium': 0.0, // Not available in current model
-      'averageFluids': 0.0, // Not available in current model
-    };
   }
 
-  /// Clear all nutrition plans (for testing/reset)
-  Future<void> clearAllPlans() async {
-    await _planBox.clear();
-  }
+  /// Clear all nutrition plans for a user (for testing)
+  Future<bool> clearAllNutritionPlans(String deviceId) async {
+    try {
+      await _supabase
+          .from('nutrition_plans')
+          .update({'is_deleted': true})
+          .eq('device_id', deviceId);
 
-  /// Close the repository and Hive box
-  Future<void> close() async {
-    await _planBox.close();
-  }
-
-  /// Convert NutritionPlan to Map for Hive storage
-  Map<String, dynamic> _planToMap(NutritionPlan plan) {
-    return {
-      'id': plan.id,
-      'name': plan.name,
-      'totalCalories': plan.totalCalories,
-      'notes': plan.notes,
-      'macroTargets': plan.macroTargets != null ? {
-        'calories': plan.macroTargets!.calories,
-        'carbs': plan.macroTargets!.carbs,
-        'protein': plan.macroTargets!.protein,
-        'fat': plan.macroTargets!.fat,
-        'carbsRange': plan.macroTargets!.carbsRange,
-        'proteinRange': plan.macroTargets!.proteinRange,
-        'fatRange': plan.macroTargets!.fatRange,
-      } : null,
-      'sections': plan.sections.map((section) => {
-        'id': section.id,
-        'title': section.title,
-        'subtitle': section.subtitle,
-        'timing': section.timing,
-        'foodItems': section.foodItems.map((item) => {
-          'id': item.id,
-          'name': item.name,
-          'quantity': item.quantity,
-          'iconPath': item.iconPath,
-          'description': item.description,
-          'timing': item.timing,
-          'instructions': item.instructions,
-          'nutritionalInfo': item.nutritionalInfo != null ? {
-            'calories': item.nutritionalInfo!.calories,
-            'carbs': item.nutritionalInfo!.carbs,
-            'protein': item.nutritionalInfo!.protein,
-            'fat': item.nutritionalInfo!.fat,
-            'sodium': item.nutritionalInfo!.sodium,
-          } : null,
-        }).toList(),
-      }).toList(),
-    };
-  }
-
-  /// Convert Map from Hive storage to NutritionPlan
-  NutritionPlan _mapToPlan(Map<dynamic, dynamic> map) {
-    return NutritionPlan(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      totalCalories: map['totalCalories'] as int?,
-      notes: map['notes'] as String?,
-      macroTargets: map['macroTargets'] != null 
-          ? MacroTargets(
-              calories: map['macroTargets']['calories'] as int,
-              carbs: map['macroTargets']['carbs'] as int,
-              protein: map['macroTargets']['protein'] as int,
-              fat: map['macroTargets']['fat'] as int,
-              carbsRange: map['macroTargets']['carbsRange'] as String?,
-              proteinRange: map['macroTargets']['proteinRange'] as String?,
-              fatRange: map['macroTargets']['fatRange'] as String?,
-            )
-          : null,
-      sections: (map['sections'] as List<dynamic>).map((sectionMap) {
-        return PlanSection(
-          id: sectionMap['id'] as String,
-          title: sectionMap['title'] as String,
-          subtitle: sectionMap['subtitle'] as String?,
-          timing: sectionMap['timing'] as String?,
-          foodItems: (sectionMap['foodItems'] as List<dynamic>).map((itemMap) {
-            return FoodItemData(
-              id: itemMap['id'] as String,
-              name: itemMap['name'] as String,
-              quantity: itemMap['quantity'] as String,
-              iconPath: itemMap['iconPath'] as String,
-              description: itemMap['description'] as String?,
-              timing: itemMap['timing'] as String?,
-              instructions: itemMap['instructions'] as String?,
-              nutritionalInfo: itemMap['nutritionalInfo'] != null
-                  ? NutritionalInfo(
-                      calories: itemMap['nutritionalInfo']['calories'] as int,
-                      carbs: itemMap['nutritionalInfo']['carbs'] as int,
-                      protein: itemMap['nutritionalInfo']['protein'] as int,
-                      fat: itemMap['nutritionalInfo']['fat'] as int,
-                      sodium: itemMap['nutritionalInfo']['sodium'] as int?,
-                    )
-                  : null,
-            );
-          }).toList(),
-        );
-      }).toList(),
-    );
+      return true;
+    } catch (e) {
+      print('Error clearing nutrition plans: $e');
+      return false;
+    }
   }
 }
+
+/// Result class for nutrition plan creation
+class CreateNutritionPlanResult {
+  final bool success;
+  final NutritionPlan? plan;
+  final Map<String, dynamic>? calculations;
+  final String? message;
+
+  CreateNutritionPlanResult({
+    required this.success,
+    this.plan,
+    this.calculations,
+    this.message,
+  });
+}
+
+/// Riverpod provider for NutritionPlanRepository
+final nutritionPlanRepositoryProvider = Provider<NutritionPlanRepository>((ref) {
+  return NutritionPlanRepository(Supabase.instance.client);
+});

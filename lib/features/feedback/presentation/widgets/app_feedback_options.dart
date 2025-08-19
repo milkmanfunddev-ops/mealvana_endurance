@@ -32,8 +32,12 @@ class AppFeedbackOptions extends StatelessWidget {
                   padding: EdgeInsets.only(left: 32.w, top: 8.h),
                   child: TextField(
                     controller: suggestionsController,
+                    style: TextStyle(
+                      color: AppTheme.baseBlack,
+                      fontSize: 16.sp,
+                    ),
                     decoration: InputDecoration(
-                      hintText: 'Type you suggestions',
+                      hintText: 'Type your suggestions',
                       hintStyle: AppTheme.noteStyle.copyWith(
                         color: AppTheme.baseGrey,
                       ),

@@ -1,12 +1,24 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../application/nutrition_plan_service.dart';
 
-/// Controller for managing nutrition plan generation and display
-class NutritionPlanController extends StateNotifier<AsyncValue<NutritionPlan?>> {
-  NutritionPlanController(this._nutritionPlanService) : super(const AsyncData(null));
+part 'nutrition_plan_controller.g.dart';
 
-  final NutritionPlanService _nutritionPlanService;
+/// Controller for managing nutrition plan generation and display
+@riverpod
+class NutritionPlanController extends _$NutritionPlanController {
+  NutritionPlanService get _nutritionPlanService => ref.read(nutritionPlanServiceProvider);
+  ContentService get _contentService => ref.read(contentServiceProvider);
+
+  @override
+  FutureOr<NutritionPlan?> build() {
+    // Initialize with the latest nutrition plan or null
+    return _nutritionPlanService.getLatestNutritionPlan();
+  }
 
   /// Generate a new nutrition plan
   Future<NutritionPlan?> generatePlan({
@@ -15,51 +27,54 @@ class NutritionPlanController extends StateNotifier<AsyncValue<NutritionPlan?>> 
   }) async {
     state = const AsyncLoading();
 
-    try {
+    state = await AsyncValue.guard(() async {
       final plan = await _nutritionPlanService.generateNutritionPlan(
         distanceMiles: distanceMiles,
         paceMinutesPerMile: paceMinutesPerMile,
       );
 
-      state = AsyncData(plan);
       return plan;
-    } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
-      return null;
-    }
+    });
+
+    return state.valueOrNull;
   }
 
-  /// Get the current/latest nutrition plan
-  NutritionPlan? getCurrentPlan() {
-    return state.valueOrNull ?? _nutritionPlanService.getLatestNutritionPlan();
-  }
 
-  /// Update an existing plan
-  Future<void> updatePlan(NutritionPlan plan) async {
-    try {
-      await _nutritionPlanService.updateNutritionPlan(plan);
-      state = AsyncData(plan);
-    } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
-    }
+  /// Update an existing plan with new parameters
+  Future<void> updatePlan({
+    required double distanceMiles,
+    required double paceMinutesPerMile,
+    double timeBeforeRunHours = 2.0,
+    String? gutTrainingLevel,
+  }) async {
+    state = await AsyncValue.guard(() async {
+      final updatedPlan = await _nutritionPlanService.updateNutritionPlan(
+        distanceMiles: distanceMiles,
+        paceMinutesPerMile: paceMinutesPerMile,
+        timeBeforeRunHours: timeBeforeRunHours,
+        gutTrainingLevel: gutTrainingLevel,
+      );
+      return updatedPlan;
+    });
   }
 
   /// Delete a plan
   Future<void> deletePlan(String planId) async {
-    try {
+    final currentPlan = state.valueOrNull;
+    
+    state = await AsyncValue.guard(() async {
       await _nutritionPlanService.deleteNutritionPlan(planId);
-      // If we just deleted the current plan, clear the state
-      if (state.valueOrNull?.id == planId) {
-        state = const AsyncData(null);
+      // If we just deleted the current plan, return null
+      if (currentPlan?.id == planId) {
+        return null;
       }
-    } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
-    }
+      return currentPlan;
+    });
   }
 
   /// Get nutrition recommendations for current plan
   List<String> getRecommendations() {
-    final plan = getCurrentPlan();
+    final plan = state.valueOrNull;
     if (plan == null) return [];
     
     return _nutritionPlanService.getNutritionRecommendations(plan);
@@ -67,38 +82,39 @@ class NutritionPlanController extends StateNotifier<AsyncValue<NutritionPlan?>> 
 
   /// Validate current plan for safety
   bool validateCurrentPlan() {
-    final plan = getCurrentPlan();
+    final plan = state.valueOrNull;
     if (plan == null) return false;
     
     return _nutritionPlanService.validateNutritionPlan(plan);
   }
 
   /// Get plan statistics for the user
-  Map<String, dynamic> getPlanStatistics() {
-    return _nutritionPlanService.getNutritionPlanStatistics();
+  Future<Map<String, dynamic>> getPlanStatistics() async {
+    return await _nutritionPlanService.getNutritionPlanStatistics();
   }
 
   /// Clear current plan (reset state)
   void clearCurrentPlan() {
     state = const AsyncData(null);
   }
+  
+  /// Get content-driven error message
+  String getErrorMessage(String? error) {
+    return _contentService.getValue(ContentKeys.errorGeneric, 
+        defaultValue: error ?? 'Something went wrong. Please try again.');
+  }
 }
 
-/// Provider for nutrition plan controller
-final nutritionPlanControllerProvider = 
-    StateNotifierProvider<NutritionPlanController, AsyncValue<NutritionPlan?>>((ref) {
-  final nutritionPlanService = ref.watch(nutritionPlanServiceProvider);
-  return NutritionPlanController(nutritionPlanService);
-});
-
 /// Provider for current nutrition plan
-final currentNutritionPlanProvider = Provider<NutritionPlan?>((ref) {
+@riverpod
+NutritionPlan? currentNutritionPlan(Ref ref) {
   final controller = ref.watch(nutritionPlanControllerProvider);
   return controller.valueOrNull;
-});
+}
 
 /// Provider for nutrition recommendations
-final nutritionRecommendationsProvider = Provider<List<String>>((ref) {
+@riverpod
+List<String> nutritionRecommendations(Ref ref) {
   final controller = ref.read(nutritionPlanControllerProvider.notifier);
   return controller.getRecommendations();
-});
+}

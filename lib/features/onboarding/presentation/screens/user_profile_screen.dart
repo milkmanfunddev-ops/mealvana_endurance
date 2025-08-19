@@ -4,6 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/onboarding_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../../../theme/app_theme.dart';
+import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/labeled_text_field.dart';
 
 /// User profile creation screen
 /// Collects basic user information during onboarding
@@ -75,12 +78,20 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final asyncState = ref.watch(onboardingControllerProvider);
     
     return Scaffold(
+      backgroundColor: AppTheme.baseCream,
       appBar: AppBar(
-        title: const Text('Your Profile'),
+        backgroundColor: AppTheme.baseCream,
+        elevation: 0,
+        title: Text(
+          'Your Profile',
+          style: AppTheme.titleStyle.copyWith(
+            color: AppTheme.primary900,
+            fontSize: 20.sp,
+          ),
+        ),
         centerTitle: true,
       ),
       body: Form(
@@ -93,15 +104,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               // Progress indicator
               LinearProgressIndicator(
                 value: 0.5, // 50% through onboarding
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                backgroundColor: AppTheme.baseGrey.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary600),
               ),
               
               SizedBox(height: 32.h),
               
               Text(
                 'Tell us about yourself',
-                style: theme.textTheme.headlineSmall?.copyWith(
+                style: AppTheme.titleStyle.copyWith(
+                  fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.primary900,
                 ),
               ),
               
@@ -109,8 +123,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               
               Text(
                 'This helps us calculate accurate nutrition plans for your runs.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                style: AppTheme.textStyle.copyWith(
+                  fontSize: 16.sp,
+                  color: AppTheme.baseGrey,
                 ),
               ),
               
@@ -119,8 +134,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               // Gender selection
               Text(
                 'Gender',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: AppTheme.textStyle.copyWith(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.primary900,
                 ),
               ),
               
@@ -132,8 +149,22 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     child: Padding(
                       padding: EdgeInsets.only(right: gender == Gender.values.last ? 0 : 8.w),
                       child: ChoiceChip(
-                        label: Text(_genderDisplayName(gender)),
+                        label: Text(
+                          _genderDisplayName(gender),
+                          style: TextStyle(
+                            color: _selectedGender == gender 
+                                ? AppTheme.baseWhite 
+                                : AppTheme.primary900,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         selected: _selectedGender == gender,
+                        selectedColor: AppTheme.primary900,
+                        backgroundColor: AppTheme.baseWhite,
+                        side: BorderSide(
+                          color: AppTheme.primary900,
+                          width: 1.5,
+                        ),
                         onSelected: (selected) {
                           setState(() {
                             _selectedGender = selected ? gender : null;
@@ -150,8 +181,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               // Birthday selection
               Text(
                 'Birthday',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: AppTheme.textStyle.copyWith(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.primary900,
                 ),
               ),
               
@@ -163,19 +196,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
                   decoration: BoxDecoration(
-                    border: Border.all(color: theme.colorScheme.outline),
+                    color: Colors.white,
+                    border: Border.all(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today, color: theme.colorScheme.onSurfaceVariant),
+                      Icon(Icons.calendar_today, color: AppTheme.baseGrey),
                       SizedBox(width: 12.w),
                       Text(
                         _selectedBirthday?.toString().split(' ')[0] ?? 'Select your birthday',
-                        style: theme.textTheme.bodyLarge?.copyWith(
+                        style: AppTheme.textStyle.copyWith(
+                          fontSize: 16.sp,
                           color: _selectedBirthday != null 
-                              ? theme.colorScheme.onSurface 
-                              : theme.colorScheme.onSurfaceVariant,
+                              ? AppTheme.primary900 
+                              : AppTheme.baseGrey,
                         ),
                       ),
                     ],
@@ -188,8 +223,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               // Height input
               Text(
                 'Height',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: AppTheme.textStyle.copyWith(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.primary900,
                 ),
               ),
               
@@ -200,6 +237,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _heightFeetController,
+                      style: TextStyle(
+                        color: AppTheme.primary900,
+                        fontSize: 16.sp,
+                      ),
                       decoration: const InputDecoration(
                         labelText: 'Feet',
                         suffixText: 'ft',
@@ -221,6 +262,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _heightInchesController,
+                      style: TextStyle(
+                        color: AppTheme.primary900,
+                        fontSize: 16.sp,
+                      ),
                       decoration: const InputDecoration(
                         labelText: 'Inches',
                         suffixText: 'in',
@@ -244,8 +289,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               // Weight input
               Text(
                 'Weight',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: AppTheme.textStyle.copyWith(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.primary900,
                 ),
               ),
               
@@ -253,6 +300,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               
               TextFormField(
                 controller: _weightController,
+                style: TextStyle(
+                  color: AppTheme.primary900,
+                  fontSize: 16.sp,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Weight',
                   suffixText: 'lbs',
@@ -273,8 +324,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               // Water bottle question
               Text(
                 'Running Habits',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: AppTheme.textStyle.copyWith(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.primary900,
                 ),
               ),
               

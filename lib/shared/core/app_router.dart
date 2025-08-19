@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 // Import all screens
+import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/food_preferences_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/main_nutrition_plan_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/plan_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 class AppRouter {
@@ -17,21 +19,16 @@ class AppRouter {
       // Simple redirect logic - can be enhanced later with proper state management
       final location = state.matchedLocation;
       
-      // Allow access to onboarding and welcome screens
-      if (location.startsWith('/welcome') || 
-          location.startsWith('/onboarding') ||
-          location == '/') {
-        return null;
-      }
-      
-      // For now, allow access to all screens (MVP behavior)
+      // Allow access to all screens (MVP behavior)
       return null;
     },
     routes: [
-      // Root redirect to welcome/onboarding first
+      // Root - App startup with device ID check and initialization
       GoRoute(
         path: '/',
-        builder: (context, state) => const WelcomeScreen(),
+        builder: (context, state) => AppStartupWidget(
+          onLoaded: (context) => const SizedBox.shrink(), // Empty widget during navigation
+        ),
       ),
       
       // Main nutrition plan screen (after onboarding)
@@ -72,6 +69,13 @@ class AppRouter {
         path: '/plan',
         name: 'plan',
         builder: (context, state) => const PlanScreen(),
+      ),
+      
+      // Settings Screen - User profile and preferences
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
     

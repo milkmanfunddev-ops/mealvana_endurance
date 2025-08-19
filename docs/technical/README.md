@@ -3,10 +3,20 @@
 ## Overview
 This document contains technical implementation details, patterns, and best practices for developing the Mealvana Endurance nutrition planning app. This guide covers Flutter architecture patterns, Riverpod implementation, launcher setup, and development workflows.
 
+## 🚨 CRITICAL Documentation
+
+**📋 [FOA Architecture Guide](foa-architecture.md)** - MANDATORY reading for all developers. Contains required Andrea Bizzotto AsyncNotifier patterns that ALL controllers must follow.
+
 ## App Architecture Patterns
 
+### 🎯 Feature-Oriented Architecture (FOA) - Andrea Bizzotto Patterns
+
+**CRITICAL: ALL controllers must follow Andrea Bizzotto's AsyncNotifier patterns**
+
+📚 **Comprehensive FOA Guide**: [foa-architecture.md](foa-architecture.md)
+
 ### Four-Layer Architecture
-Based on Andrea Bizzotto's Riverpod architecture, we implement a clean separation of concerns across four distinct layers:
+Based on Andrea Bizzotto's Feature-Oriented Architecture, we implement a clean separation of concerns across four distinct layers:
 
 ```
 ┌─────────────────────────┐
@@ -22,21 +32,42 @@ Based on Andrea Bizzotto's Riverpod architecture, we implement a clean separatio
 
 #### Presentation Layer
 - **Widgets**: Pure UI components that display data and handle user interaction
-- **Controllers**: `AsyncNotifier` subclasses that manage widget state and orchestrate business logic
+- **Controllers**: `AsyncNotifier` subclasses with `@riverpod` annotation (NEVER StateNotifier)
 - **Purpose**: Visual representation of application state, user interaction handling
 
+**🚨 MANDATORY Controller Pattern:**
 ```dart
+import 'dart:async';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
+
+part 'screen_controller.g.dart';
+
 @riverpod
-class SignInScreenController extends _$SignInScreenController {
+class ScreenController extends _$ScreenController {
+  ContentService get _contentService => ref.read(contentServiceProvider);
+  ServiceClass get _service => ref.read(serviceProvider);
+
   @override
-  FutureOr<void> build() {
-    // no-op
+  FutureOr<ScreenState> build() {
+    // Load content from ContentService (MANDATORY)
+    final title = _contentService.getValue(ContentKeys.screenTitle, 
+        defaultValue: 'Default Title');
+    return ScreenState(title: title);
   }
 
-  Future<void> signInAnonymously() async {
-    final authRepository = ref.read(authRepositoryProvider);
+  Future<void> performAction() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(authRepository.signInAnonymously);
+    state = await AsyncValue.guard(() async {
+      // Business logic here
+      return updatedState;
+    });
+  }
+  
+  Future<void> refresh() async {
+    await _contentService.refreshFromBackend();
+    ref.invalidateSelf();
   }
 }
 ```
@@ -447,42 +478,30 @@ extension AsyncValueUI on AsyncValue {
 
 This technical guide has been expanded into specialized documentation files for better organization and maintainability:
 
-### 📊 [Analytics Implementation](./analytics.md)
-- RudderStack Flutter SDK integration
-- Mixpanel event tracking patterns
-- Privacy and GDPR compliance
-- Multi-destination analytics routing
-
-### 🚀 [CI/CD with Codemagic](./cicd.md)  
-- Complete codemagic.yaml configuration
-- iOS and Android build workflows
-- Automated testing and quality gates
-- Environment management and secrets
-
-### 💳 [In-App Purchases & Subscriptions](./subscriptions.md)
-- RevenueCat SDK configuration
-- Subscription management with Riverpod
-- Paywall implementation patterns
-- Testing and error handling
-
-### 🐛 [Error Tracking with Sentry](./error-tracking.md)
-- Sentry Flutter integration
-- Performance monitoring
-- Custom error handling patterns
-- Release health tracking
-
 ### 💾 [Data Storage with Hive](./data-storage.md)
-- Advanced Hive Flutter patterns
+- Local-only Hive Flutter patterns
 - Custom type adapters and repositories
 - Performance optimization strategies
-- Backup and migration patterns
+- Offline-first data persistence
 
-### 🔗 [Backend Integration with Supabase](./backend-integration.md)
-- Real-time subscriptions
-- Authentication patterns (including MFA)
-- Offline-first architecture
-- File storage and batch operations
+### 🏗️ [Fat Backend Architecture](./fat-backend-architecture.md)
+- Content-driven architecture patterns
+- Algorithm parameter management
+- Local content system implementation
+- Business logic externalization
 
-Each specialized guide contains comprehensive examples, best practices, and production-ready patterns specific to that technology stack.
+### 📝 [Content Management System](./content-management.md)
+- Local content configuration system
+- Algorithm parameter management via JSON
+- Type-safe content access patterns
+- Content validation and fallback strategies
+
+### 🚀 [Shorebird Code Push](./shorebird-code-push.md)
+- Over-the-air update implementation
+- Code push deployment strategies
+- Update management and rollbacks
+- Integration with development workflow
+
+Each specialized guide contains comprehensive examples, best practices, and production-ready patterns specific to the current local-first MVP architecture.
 
 This technical guide provides the foundation for implementing a scalable, maintainable Flutter application following proven architectural patterns and best practices.

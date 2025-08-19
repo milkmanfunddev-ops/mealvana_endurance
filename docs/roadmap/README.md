@@ -3,58 +3,80 @@
 ## Overview
 This roadmap outlines the development phases for the Mealvana Endurance nutrition planning app, from MVP to full-featured platform.
 
-## Phase 1: MVP - Hive-Only Local App
-**Target:** TestFlight release to 5-6 testers  
-**Timeline:** Quick turnaround (2-4 weeks)  
-**Tech Stack:** Flutter, Hive (local storage only), Riverpod v2  
-**Current Status:** 🚀 **ACTIVE DEVELOPMENT**
+## Phase 1: MVP - Enhanced Local App with Content System
+**Target:** TestFlight release with full nutrition algorithm  
+**Timeline:** Extended development for algorithm precision (8-12 weeks)  
+**Tech Stack:** Flutter, Hive (local storage), Riverpod v2, Supabase (content only)  
+**Current Status:** ✅ **ALGORITHM & CONTENT SYSTEM COMPLETE** → 🚀 **UI DEVELOPMENT PHASE**
 
 ### Core Features
-1. **Onboarding Feature**
+1. **Onboarding Feature** ✅ **IMPLEMENTED**
    - Multi-step user profile collection
    - Gender, age/birthday, height, weight
    - Water bottle preference
    - Food preference collection (like/dislike/open to try)
    - 12 predefined foods across pre-run, during-run, after-run categories
 
-2. **Nutrition Plan Feature**
-   - Distance and pace input
-   - Nutrition algorithm research and implementation
-   - Macro calculation (carbs, sodium, fluids)
-   - Plan generation with timing
-   - Local plan storage (multiple plans)
-   - Plan history/management
+2. **Evidence-Based Nutrition Algorithm** ✅ **COMPLETED & ENHANCED**
+   - **ACSM-based energy expenditure calculations** (MET formulas)
+   - **Precision carbohydrate strategy**: Gut training levels (0.7-1.0 g/kg/h)
+   - **Dynamic pre-run nutrition**: Time-sensitive carb loading (0.25-4.0 g/kg)
+   - **Intensity-based hydration**: 400-800 mL/h based on exercise intensity
+   - **Duration-based sodium**: Smart supplementation (0mg/h for ≤1h runs)
+   - **Configurable parameters**: All algorithm constants editable via backend
 
-3. **Feedback Feature**
-   - Post-plan generation feedback forms
-   - Local storage only (no transmission)
-   - Plan rating and app feedback
+3. **Fat Backend Content System** ✅ **IMPLEMENTED**
+   - **Dynamic content management**: All UI text editable without code changes
+   - **Algorithm parameter control**: Nutrition constants tweakable by coworker
+   - **Offline-first with backend sync**: Supabase integration for content
+   - **Fallback system**: Local defaults ensure offline functionality
+
+4. **Local Plan Storage** ✅ **IMPLEMENTED**
+   - Plan generation with evidence-based calculations
+   - Local plan storage (multiple plans) via Hive
+   - Plan history and management
+   - Offline-first architecture
+
+5. **Feedback System** ✅ **IMPLEMENTED**
+   - Supabase integration for feedback collection
+   - User experience tracking
+   - Plan effectiveness feedback
 
 ### Technical Tasks
-**Foundation Setup:**
+
+**Foundation Setup:** ✅ **COMPLETE**
 - [x] Project architecture planning and documentation review
-- [ ] Initialize Flutter project with FOA structure
-- [ ] Set up pubspec.yaml with all required packages
-- [ ] Create `/theme` folder with Material Design 3 theming system
-- [ ] Implement flutter_screenutil for responsive design
-- [ ] Set up Riverpod v2 with code generation
+- [x] Initialize Flutter project with FOA structure  
+- [x] Set up pubspec.yaml with all required packages
+- [x] Create `/theme` folder with Material Design 3 theming system
+- [x] Implement flutter_screenutil for responsive design
+- [x] Set up Riverpod v2 with code generation
 
-**Core Features Implementation:**
-- [ ] Create 12-item food database with nutritional data
-- [ ] Implement Hive boxes for local data storage
-- [ ] Build onboarding flow (4 screens: Welcome → Basic Info → Running Habits → Food Preferences)
-- [ ] Create main nutrition planning screen with distance/pace input
-- [ ] Implement nutrition calculation algorithms (carbs, sodium, fluids)
-- [ ] Build plan display with timing (pre-run, during-run, after-run)
-- [ ] Create feedback collection screens (2-step process)
-- [ ] Add local plan storage and history management
+**Backend & Algorithm:** ✅ **COMPLETE**  
+- [x] **Implement evidence-based nutrition algorithm** (ACSM formulas, gut training, timing)
+- [x] **Create fat backend content system** (Supabase integration, dynamic content)
+- [x] **Build comprehensive food database** with detailed nutritional profiles
+- [x] **Implement content management** (algorithm parameters, UI text via backend)
+- [x] **Set up offline-first architecture** (Hive local storage with Supabase sync)
+- [x] **Create feedback collection system** (Supabase integration)
 
-**Polish & Assets:**
+**Core Features Implementation:** 🚧 **IN PROGRESS**
+- [x] Implement Hive boxes for local data storage
+- [x] Build onboarding flow (4 screens: Welcome → Basic Info → Running Habits → Food Preferences)
+- [x] Create nutrition calculation algorithms (enhanced with ACSM formulas)
+- [x] Add local plan storage and history management
+- [ ] **Create main nutrition planning screen** with distance/pace input
+- [ ] **Build plan display** with timing (pre-run, during-run, after-run)  
+- [ ] **Integrate content service** with UI components
+- [ ] **Polish UI screens** with final theming and responsive design
+
+**Remaining Polish & Assets:**
 - [ ] Design and implement splash screen with theming
-- [ ] Create placeholder launcher icons
+- [ ] Create placeholder launcher icons  
 - [ ] Implement loading states and micro-animations
 - [ ] Add form validation and error handling
 - [ ] Test offline functionality and data persistence
+- [ ] **Test algorithm parameter editing** via backend content system
 
 ### Success Metrics
 - [ ] All 5-6 testers can complete full user journey

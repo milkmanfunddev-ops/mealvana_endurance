@@ -52,7 +52,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
             end: Alignment.bottomCenter,
           ),
           borderRadius: BorderRadius.circular(28.r),
-          boxShadow: _isPressed
+          boxShadow: _isPressed || widget.onPressed == null
               ? []
               : [
                   BoxShadow(

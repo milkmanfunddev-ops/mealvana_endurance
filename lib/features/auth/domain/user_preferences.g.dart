@@ -27,13 +27,15 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       createdAt: fields[7] as DateTime,
       updatedAt: fields[8] as DateTime,
       gutTraining: fields[9] as GutTraining,
+      onboardingCompleted: fields[10] as bool,
+      appVersion: fields[11] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProfile obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -53,7 +55,11 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       ..writeByte(8)
       ..write(obj.updatedAt)
       ..writeByte(9)
-      ..write(obj.gutTraining);
+      ..write(obj.gutTraining)
+      ..writeByte(10)
+      ..write(obj.onboardingCompleted)
+      ..writeByte(11)
+      ..write(obj.appVersion);
   }
 
   @override
@@ -165,6 +171,8 @@ class FoodPreferenceAdapter extends TypeAdapter<FoodPreference> {
         return FoodPreference.like;
       case 1:
         return FoodPreference.dislike;
+      case 2:
+        return FoodPreference.willingToTry;
       default:
         return FoodPreference.like;
     }
@@ -178,6 +186,9 @@ class FoodPreferenceAdapter extends TypeAdapter<FoodPreference> {
         break;
       case FoodPreference.dislike:
         writer.writeByte(1);
+        break;
+      case FoodPreference.willingToTry:
+        writer.writeByte(2);
         break;
     }
   }

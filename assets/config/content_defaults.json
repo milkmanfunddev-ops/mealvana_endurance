@@ -1,0 +1,87 @@
+{
+  "main_screen": {
+    "title": "Mealvana Endurance",
+    "distance_label": "Distance",
+    "pace_label": "Average pace",
+    "pre_run_label": "Time before run",
+    "gut_training_label": "Gut training level", 
+    "generate_button": "Generate Plan",
+    "tips_text": "We'll create a personalized nutrition plan\nbased on your run details"
+  },
+  "plan_screen": {
+    "title": "Plan",
+    "before_run": "Before Run",
+    "during_run": "During Run", 
+    "after_run": "After Run",
+    "save_button": "Save",
+    "saved_button": "Saved",
+    "macro_targets": "Macro targets"
+  },
+  "user_profile": {
+    "title": "Your Profile",
+    "subtitle": "Tell us about yourself",
+    "description": "This helps us calculate accurate nutrition plans for your runs.",
+    "gender_label": "Gender",
+    "birthday_label": "Birthday",
+    "birthday_hint": "Select your birthday",
+    "height_label": "Height",
+    "weight_label": "Weight",
+    "running_habits_label": "Running Habits",
+    "water_bottle_label": "Do you run with a water bottle?",
+    "water_bottle_subtitle": "This helps us estimate your hydration needs",
+    "continue_button": "Continue"
+  },
+  "food_preferences": {
+    "title": "Food Preferences"
+  },
+  "gender": {
+    "male": "Male",
+    "female": "Female", 
+    "other": "Other"
+  },
+  "units": {
+    "miles": "mi",
+    "kilometers": "km",
+    "min_per_mile": "min/mi",
+    "min_per_km": "min/km",
+    "feet": "ft",
+    "inches": "in",
+    "pounds": "lbs"
+  },
+  "gut_training": {
+    "low": "Low",
+    "moderate": "Moderate",
+    "high": "High",
+    "low_description": "New to fueling during runs - start conservative",
+    "moderate_description": "Some experience with sports nutrition",
+    "high_description": "Experienced endurance athlete with high carb tolerance"
+  },
+  "pre_run_timing": {
+    "1_hour": "1 hour before",
+    "2_hours": "2 hours before",
+    "3_hours": "3 hours before"
+  },
+  "feedback": {
+    "type_suggestions": "Type your suggestions"
+  },
+  "validation": {
+    "required": "Required",
+    "invalid_number": "Please enter a valid number",
+    "distance_range": "Distance must be between 0 and 200",
+    "pace_format": "Format: 8:30 or 8.5",
+    "height_feet": "Enter valid feet (3-8)",
+    "height_inches": "Enter valid inches (0-11)",
+    "weight_range": "Enter valid weight (80-500 lbs)",
+    "fill_all_fields": "Please fill in all fields"
+  },
+  "error": {
+    "network": "Network error. Please check your connection.",
+    "generic": "Something went wrong. Please try again.",
+    "plan_generation": "Failed to generate plan",
+    "feedback_submission": "Failed to submit feedback. Please try again."
+  },
+  "success": {
+    "feedback_submitted": "✅ Thank you for your feedback!",
+    "profile_saved": "Profile saved successfully!"
+  }
+}

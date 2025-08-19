@@ -2,7 +2,7 @@
 
 ## Overview
 
-Hive-based local storage implementation for the Mealvana Endurance nutrition planning app, providing offline-first data persistence with fast access to user profiles, food preferences, nutrition plans, and feedback data. The storage layer supports the app's offline-first architecture while maintaining sync capabilities with Supabase.
+Hive-based local storage implementation for the Mealvana Endurance nutrition planning app, providing local-only data persistence with fast access to user profiles, food preferences, nutrition plans, and feedback data. The storage layer supports the app's local-first architecture for offline operation without requiring backend connectivity.
 
 ## Storage Architecture
 
@@ -16,7 +16,7 @@ The app organizes data into specific Hive boxes aligned with core features:
 
 **Plan Storage Boxes**: Store generated nutrition plans with complete macro calculations and food recommendations. Plans include distance, pace, duration, and detailed fueling schedules for offline access.
 
-**Sync Management Boxes**: Track pending operations and sync status for each entity type. These boxes queue local changes when offline and coordinate synchronization when connectivity returns.
+**Metadata Boxes**: Track app state, user preferences, and operational metadata. These boxes store configuration data and app-level settings for enhanced user experience.
 
 ```dart
 // lib/shared/data/hive_service.dart
@@ -25,7 +25,6 @@ class HiveService {
   static const String foodPreferencesBox = 'food_preferences';
   static const String nutritionPlansBox = 'nutrition_plans';
   static const String feedbackBox = 'feedback';
-  static const String pendingOpsPrefix = 'pending_ops_';
   static const String metaBox = 'meta';
   
   static Future<void> initialize() async {
@@ -37,12 +36,6 @@ class HiveService {
     await Hive.openBox<Map<String, dynamic>>(nutritionPlansBox);
     await Hive.openBox<Map<String, dynamic>>(feedbackBox);
     await Hive.openBox<Map<String, dynamic>>(metaBox);
-    
-    // Open sync tracking boxes
-    await Hive.openBox<Map<String, dynamic>>('${pendingOpsPrefix}user_profiles');
-    await Hive.openBox<Map<String, dynamic>>('${pendingOpsPrefix}food_preferences');
-    await Hive.openBox<Map<String, dynamic>>('${pendingOpsPrefix}nutrition_plans');
-    await Hive.openBox<Map<String, dynamic>>('${pendingOpsPrefix}feedback');
   }
 }
 ```
@@ -57,27 +50,27 @@ The storage layer maintains data models specific to endurance nutrition planning
 
 **Nutrition Plans Archive**: Stores complete plan history with detailed macro breakdowns and food recommendations. Each plan includes distance, duration, weather conditions, and user satisfaction feedback for pattern analysis.
 
-## Offline-First Implementation
+## Local-Only Implementation
 
 ### Local-First Operations
 
-All user interactions write to local storage immediately for responsive UI, with background synchronization handling remote updates:
+All user interactions write to local storage immediately for responsive UI without any network dependencies:
 
-**Profile Creation**: New user profiles save to local storage instantly and queue for backend sync. Users can immediately proceed to food preferences without waiting for network confirmation.
+**Profile Creation**: New user profiles save to local storage instantly. Users can immediately proceed to food preferences with no network delays.
 
-**Plan Generation**: Generated nutrition plans store locally first, enabling immediate viewing and sharing while background sync uploads to Supabase for cross-device access.
+**Plan Generation**: Generated nutrition plans store locally, enabling immediate viewing and sharing. All data remains on-device for privacy and performance.
 
-**Feedback Collection**: User feedback on plans and app experience saves locally and syncs when connectivity allows. No feedback is lost due to network issues.
+**Feedback Collection**: User feedback on plans and app experience saves locally for future feature development insights. All feedback remains private on-device.
 
-### Sync Strategy Implementation
+### Data Persistence Strategy
 
-The storage layer implements bidirectional sync with conflict resolution:
+The storage layer implements local-only data persistence with robust backup capabilities:
 
-**Push Operations**: Local changes queue in pending operations boxes and batch upload to Supabase when online. Failed operations retry with exponential backoff.
+**Immediate Persistence**: All changes write to disk immediately with automatic compaction for optimal performance.
 
-**Pull Operations**: Periodic sync fetches remote changes using timestamp-based incremental updates. Remote changes update local cache with newest-wins conflict resolution.
+**Data Integrity**: Built-in checksums and validation ensure data consistency across app sessions.
 
-**Conflict Resolution**: When both local and remote data exist, the system uses `updated_at` timestamps to determine the most recent version, preserving user intent while maintaining data consistency.
+**Backup Support**: Local data can be exported for user-controlled backup and device migration scenarios.
 
 ```dart
 // lib/shared/data/local_storage_repository.dart
@@ -104,7 +97,6 @@ abstract class LocalStorageRepository<T> {
     data['updated_at'] = DateTime.now().toIso8601String();
     
     await box.put(getId(entity), data);
-    await _queueForSync(entity, 'upsert');
   }
   
   Future<void> delete(String id) async {
@@ -114,7 +106,6 @@ abstract class LocalStorageRepository<T> {
     if (existing != null) {
       existing['deleted_at'] = DateTime.now().toIso8601String();
       await box.put(id, existing);
-      await _queueForSync(fromJson(existing), 'delete');
     }
   }
   

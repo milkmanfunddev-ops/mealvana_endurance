@@ -1,65 +1,76 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../domain/user_preferences.dart';
 
-/// Repository for managing user profile data in Hive
+part 'user_repository.g.dart';
+
+/// Repository for managing user profile data in Hive and Supabase
 class UserRepository {
-  static const String _boxName = 'user_profiles';
-  static const String _preferencesBoxName = 'food_preferences';
+  UserRepository({
+    required this.userBox,
+    required this.preferencesBox,
+    required this.supabase,
+  });
   
-  late Box<UserProfile> _userBox;
-  late Box<FoodPreferences> _preferencesBox;
+  static const String boxName = 'user_profiles';
+  static const String preferencesBoxName = 'food_preferences';
   
-  /// Initialize the repository and open Hive boxes
-  Future<void> init() async {
-    _userBox = await Hive.openBox<UserProfile>(_boxName);
-    _preferencesBox = await Hive.openBox<FoodPreferences>(_preferencesBoxName);
-  }
+  final Box<UserProfile> userBox;
+  final Box<FoodPreferences> preferencesBox;
+  final SupabaseClient supabase;
 
   /// Save user profile
   Future<void> saveUserProfile(UserProfile profile) async {
-    await _userBox.put(profile.id, profile);
+    await userBox.put(profile.id, profile);
   }
 
-  /// Get user profile by ID
-  UserProfile? getUserProfile(String userId) {
-    return _userBox.get(userId);
+  /// Get user profile by ID (optional for device-based identification)
+  UserProfile? getUserProfile([String? userId]) {
+    if (userId != null) {
+      return userBox.get(userId);
+    }
+    // If no userId provided, return current user (device-based)
+    return getCurrentUser();
   }
 
   /// Get the current user profile (assumes single user for MVP)
   UserProfile? getCurrentUser() {
-    if (_userBox.isEmpty) return null;
-    return _userBox.values.first;
+    if (userBox.isEmpty) return null;
+    return userBox.values.first;
   }
+
 
   /// Update user profile
   Future<void> updateUserProfile(UserProfile profile) async {
     final updatedProfile = profile.copyWith(updatedAt: DateTime.now());
-    await _userBox.put(profile.id, updatedProfile);
+    await userBox.put(profile.id, updatedProfile);
   }
 
   /// Delete user profile
   Future<void> deleteUserProfile(String userId) async {
-    await _userBox.delete(userId);
+    await userBox.delete(userId);
   }
 
   /// Check if user exists
   bool userExists(String userId) {
-    return _userBox.containsKey(userId);
+    return userBox.containsKey(userId);
   }
 
   /// Get all user profiles (for future multi-user support)
   List<UserProfile> getAllUsers() {
-    return _userBox.values.toList();
+    return userBox.values.toList();
   }
 
   /// Save food preferences for a user
   Future<void> saveFoodPreferences(FoodPreferences preferences) async {
-    await _preferencesBox.put(preferences.userId, preferences);
+    await preferencesBox.put(preferences.userId, preferences);
   }
 
   /// Get food preferences for a user
   FoodPreferences? getFoodPreferences(String userId) {
-    return _preferencesBox.get(userId);
+    return preferencesBox.get(userId);
   }
 
   /// Update food preferences
@@ -70,7 +81,7 @@ class UserRepository {
       createdAt: preferences.createdAt,
       updatedAt: DateTime.now(),
     );
-    await _preferencesBox.put(preferences.userId, updatedPreferences);
+    await preferencesBox.put(preferences.userId, updatedPreferences);
   }
 
   /// Update a single food preference
@@ -107,13 +118,164 @@ class UserRepository {
 
   /// Clear all user data (for testing/reset)
   Future<void> clearAllData() async {
-    await _userBox.clear();
-    await _preferencesBox.clear();
+    await userBox.clear();
+    await preferencesBox.clear();
+  }
+
+  // SUPABASE SYNC METHODS
+
+  /// Sync local user data with Supabase and return updated user
+  Future<UserProfile> syncUserWithSupabase(String deviceId, UserProfile localUser) async {
+    try {
+      // Convert user profile to JSON for Supabase
+      final userData = {
+        'gender': localUser.gender.name,
+        'birthday': localUser.birthday.toIso8601String().split('T')[0], // Date only
+        'height_feet': localUser.heightFeet,
+        'height_inches': localUser.heightInches,
+        'weight_pounds': localUser.weightPounds,
+        'runs_with_water_bottle': localUser.runsWithWaterBottle,
+        'food_preferences': {}, // TODO: Implement food preferences sync
+        'gut_training_level': localUser.gutTraining.name,
+        'onboarding_completed': true,
+        'app_version': '1.0.0', // TODO: Get from package info
+      };
+
+      // Use the upsert function from SQL script
+      final response = await supabase.rpc('upsert_user_by_device_id', params: {
+        'p_device_id': deviceId,
+        'p_user_data': userData,
+      });
+
+      if (response != null) {
+        // Convert response back to UserProfile
+        final updatedUser = _parseUserFromSupabase(response, deviceId);
+        
+        // Update local cache
+        await saveUserProfile(updatedUser);
+        
+        return updatedUser;
+      } else {
+        return localUser;
+      }
+    } catch (e) {
+      // Log error but don't throw - continue with local data
+      print('Failed to sync user with Supabase: $e');
+      return localUser;
+    }
+  }
+
+  /// Get user from Supabase by device ID
+  Future<UserProfile?> getUserFromSupabase(String deviceId) async {
+    try {
+      final response = await supabase.rpc('get_user_by_device_id', params: {
+        'p_device_id': deviceId,
+      });
+
+      if (response != null) {
+        return _parseUserFromSupabase(response, deviceId);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Failed to get user from Supabase: $e');
+      return null;
+    }
+  }
+
+  /// Create new user in Supabase (called after onboarding)
+  Future<UserProfile> createUserInSupabase(String deviceId, UserProfile userProfile) async {
+    try {
+      final userData = {
+        'gender': userProfile.gender.name,
+        'birthday': userProfile.birthday.toIso8601String().split('T')[0],
+        'height_feet': userProfile.heightFeet,
+        'height_inches': userProfile.heightInches,
+        'weight_pounds': userProfile.weightPounds,
+        'runs_with_water_bottle': userProfile.runsWithWaterBottle,
+        'food_preferences': {}, // TODO: Add food preferences
+        'gut_training_level': userProfile.gutTraining.name,
+        'onboarding_completed': true,
+        'app_version': '1.0.0',
+      };
+
+      final response = await supabase.rpc('upsert_user_by_device_id', params: {
+        'p_device_id': deviceId,
+        'p_user_data': userData,
+      });
+
+      if (response != null) {
+        final createdUser = _parseUserFromSupabase(response, deviceId);
+        await saveUserProfile(createdUser);
+        return createdUser;
+      } else {
+        // Fallback to local save if Supabase fails
+        await saveUserProfile(userProfile);
+        return userProfile;
+      }
+    } catch (e) {
+      print('Failed to create user in Supabase: $e');
+      // Fallback to local save
+      await saveUserProfile(userProfile);
+      return userProfile;
+    }
+  }
+
+  /// Parse user data from Supabase response
+  UserProfile _parseUserFromSupabase(dynamic response, String deviceId) {
+    // Handle both single object and array responses
+    final userData = response is List ? response.first : response;
+    
+    return UserProfile(
+      id: deviceId, // Use device ID as the local user ID
+      gender: Gender.values.firstWhere(
+        (e) => e.name == userData['gender'],
+        orElse: () => Gender.other,
+      ),
+      birthday: DateTime.parse(userData['birthday'] ?? DateTime.now().toIso8601String()),
+      heightFeet: userData['height_feet'] ?? 5,
+      heightInches: userData['height_inches'] ?? 8,
+      weightPounds: (userData['weight_pounds'] as num?)?.toDouble() ?? 150.0,
+      runsWithWaterBottle: userData['runs_with_water_bottle'] ?? false,
+      gutTraining: GutTraining.values.firstWhere(
+        (e) => e.name == userData['gut_training_level'],
+        orElse: () => GutTraining.moderate,
+      ),
+      createdAt: DateTime.parse(userData['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(userData['updated_at'] ?? DateTime.now().toIso8601String()),
+      appVersion: userData['app_version'] ?? '1.0.0',
+    );
   }
 
   /// Close the repository and Hive boxes
   Future<void> close() async {
-    await _userBox.close();
-    await _preferencesBox.close();
+    await userBox.close();
+    await preferencesBox.close();
   }
+}
+
+/// User box provider
+@Riverpod(keepAlive: true)
+Future<Box<UserProfile>> userBox(Ref ref) async {
+  return await Hive.openBox<UserProfile>(UserRepository.boxName);
+}
+
+/// Preferences box provider  
+@Riverpod(keepAlive: true)
+Future<Box<FoodPreferences>> preferencesBox(Ref ref) async {
+  return await Hive.openBox<FoodPreferences>(UserRepository.preferencesBoxName);
+}
+
+/// Repository provider following Andrea's pattern
+@riverpod
+UserRepository userRepository(Ref ref) {
+  // Use requireValue since boxes should be initialized by app startup
+  final userBoxInstance = ref.watch(userBoxProvider).requireValue;
+  final prefsBoxInstance = ref.watch(preferencesBoxProvider).requireValue;
+  
+  return UserRepository(
+    userBox: userBoxInstance,
+    preferencesBox: prefsBoxInstance,
+    supabase: Supabase.instance.client,
+  );
 }

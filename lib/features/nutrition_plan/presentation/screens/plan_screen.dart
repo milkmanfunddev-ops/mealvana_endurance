@@ -8,6 +8,7 @@ import '../../../feedback/presentation/widgets/feedback_drawer.dart';
 import '../../../feedback/presentation/providers/feedback_provider.dart';
 import '../../../feedback/domain/feedback_data.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/nutrition_plan_controller.dart';
 import '../../domain/nutrition_plan.dart' as new_model;
 import '../../domain/food_item_data.dart';
@@ -96,13 +97,15 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
   @override
   Widget build(BuildContext context) {
     final planState = ref.watch(nutritionPlanControllerProvider);
+    final feedbackState = ref.watch(feedbackSubmissionProvider);
     
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.baseCream,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: const CustomAppBarBackButton(),
         title: Text(
           'Plan',
           style: AppTheme.titleStyle.copyWith(
@@ -111,6 +114,33 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           ),
         ),
         centerTitle: true,
+        actions: [
+          // Plus button for creating new plan
+          IconButton(
+            icon: Icon(
+              Icons.add,
+              color: AppTheme.baseBlack,
+              size: 24.sp,
+            ),
+            onPressed: () {
+              // Navigate to main screen to create new plan
+              context.go('/main');
+            },
+          ),
+          // Gear icon for settings
+          IconButton(
+            icon: Icon(
+              Icons.settings,
+              color: AppTheme.baseBlack,
+              size: 24.sp,
+            ),
+            onPressed: () {
+              // Navigate to settings screen
+              context.go('/settings');
+            },
+          ),
+          SizedBox(width: 8.w), // Small padding from edge
+        ],
       ),
       
       body: Stack(
@@ -121,7 +151,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
               if (plan == null) {
                 return _buildEmptyState();
               }
-              return _buildPlanContent(plan);
+              return _buildPlanContent(plan, feedbackState);
             },
             loading: () => const Center(
               child: CircularProgressIndicator(),
@@ -142,12 +172,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
     );
   }
 
-  Widget _buildPlanContent(dynamic plan) {
+  Widget _buildPlanContent(dynamic plan, dynamic feedbackState) {
     return SingleChildScrollView(
       child: Column(
         children: [
-          SizedBox(height: 120.h), // More space for app bar to prevent image being too close to top
-          
           // Checklist illustration (matching Alex's design - truly full width)
           SizedBox(
             height: 200.h,
@@ -195,8 +223,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: PrimaryButton(
-              text: 'Save',
-              onPressed: () {
+              text: feedbackState.lastSubmissionSuccess ? 'Saved' : 'Save',
+              onPressed: feedbackState.lastSubmissionSuccess ? null : () {
                 _showFeedbackDrawer();
               },
               width: double.infinity,
@@ -292,7 +320,11 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
     print('📊 Plan sections: ${calculatedPlan?.sections?.length ?? 0}');
     if (calculatedPlan?.sections != null && calculatedPlan.sections.isNotEmpty) {
       print('📊 During-run foods: ${calculatedPlan.sections[1].foodItems.length}');
-      print('📊 First during-run food: ${calculatedPlan.sections[1].foodItems[0].name} - ${calculatedPlan.sections[1].foodItems[0].quantity}');
+      if (calculatedPlan.sections[1].foodItems.isNotEmpty) {
+        print('📊 First during-run food: ${calculatedPlan.sections[1].foodItems[0].name} - ${calculatedPlan.sections[1].foodItems[0].quantity}');
+      } else {
+        print('📊 No during-run foods for this short run');
+      }
     }
     
     // If we have a real plan, use its data; otherwise fall back to sample
