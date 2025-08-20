@@ -9,13 +9,28 @@ class FoodRepository {
   
   final SupabaseClient _supabase;
 
-  /// Get all foods from Supabase
+  /// Get all foods from Supabase with their categories
   Future<List<FoodItem>> getAllFoods() async {
     try {
       final response = await _supabase
           .from('foods')
-          .select('*')
-          .order('category', ascending: true);
+          .select('''
+            id,
+            name,
+            description,
+            instructions,
+            nutritional_info,
+            serving_amount,
+            serving_unit,
+            serving_unit_plural,
+            serving_qualifier,
+            icon_path,
+            created_at,
+            food_categories (
+              category_id
+            )
+          ''')
+          .order('name', ascending: true);
       
       final List<dynamic> data = response as List<dynamic>;
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
@@ -26,14 +41,31 @@ class FoodRepository {
     }
   }
 
-  /// Get foods by category
+  /// Get foods by category using the new join table with category_id
   Future<List<FoodItem>> getFoodsByCategory(FoodCategory category) async {
     try {
-      final categoryName = _mapCategoryToSupabaseCategory(category);
+      // First get the category ID
+      final categoryId = _getCategoryId(category);
+      
       final response = await _supabase
           .from('foods')
-          .select('*')
-          .eq('category', categoryName)
+          .select('''
+            id,
+            name,
+            description,
+            instructions,
+            nutritional_info,
+            serving_amount,
+            serving_unit,
+            serving_unit_plural,
+            serving_qualifier,
+            icon_path,
+            created_at,
+            food_categories!inner (
+              category_id
+            )
+          ''')
+          .eq('food_categories.category_id', categoryId)
           .order('name', ascending: true);
       
       final List<dynamic> data = response as List<dynamic>;
@@ -44,12 +76,27 @@ class FoodRepository {
     }
   }
 
-  /// Get a specific food by name (since Supabase uses text names as IDs)
+  /// Get a specific food by name with its categories
   Future<FoodItem?> getFoodByName(String name) async {
     try {
       final response = await _supabase
           .from('foods')
-          .select('*')
+          .select('''
+            id,
+            name,
+            description,
+            instructions,
+            nutritional_info,
+            serving_amount,
+            serving_unit,
+            serving_unit_plural,
+            serving_qualifier,
+            icon_path,
+            created_at,
+            food_categories (
+              category_id
+            )
+          ''')
           .eq('name', name)
           .maybeSingle();
       
@@ -63,13 +110,28 @@ class FoodRepository {
     }
   }
 
-  /// Search foods by name or description
+  /// Search foods by name or description with categories
   Future<List<FoodItem>> searchFoods(String query) async {
     try {
       final lowerQuery = query.toLowerCase();
       final response = await _supabase
           .from('foods')
-          .select('*')
+          .select('''
+            id,
+            name,
+            description,
+            instructions,
+            nutritional_info,
+            serving_amount,
+            serving_unit,
+            serving_unit_plural,
+            serving_qualifier,
+            icon_path,
+            created_at,
+            food_categories (
+              category_id
+            )
+          ''')
           .or('name.ilike.%$lowerQuery%,description.ilike.%$lowerQuery%')
           .order('name', ascending: true);
       
@@ -81,7 +143,7 @@ class FoodRepository {
     }
   }
 
-  /// Get preferred foods based on user likes
+  /// Get preferred foods based on user likes (now works with multi-category foods)
   Future<List<FoodItem>> getPreferredFoods(
     FoodCategory category,
     List<String> likedFoodNames,
@@ -91,6 +153,14 @@ class FoodRepository {
     return categoryFoods.where((food) {
       return likedFoodNames.contains(food.name) || 
              willingToTryNames.contains(food.name);
+    }).toList();
+  }
+
+  /// Get all foods that can be used for multiple categories
+  Future<List<FoodItem>> getFoodsForCategories(List<FoodCategory> categories) async {
+    final allFoods = await getAllFoods();
+    return allFoods.where((food) {
+      return categories.any((category) => food.belongsToCategory(category));
     }).toList();
   }
 
@@ -106,16 +176,32 @@ class FoodRepository {
     final sodium = _extractNutritionValue(nutritionalInfo, ['sodium_mg', 'sodium'], 0.0);
     final fiber = _extractNutritionValue(nutritionalInfo, ['fiber_per_serving', 'fiber'], 0.0);
     final sugar = _extractNutritionValue(nutritionalInfo, ['sugar_per_serving', 'sugar'], 0.0);
-    final servingSize = nutritionalInfo['serving_size'] as String? ?? '1 serving';
+    final fluids = _extractNutritionValue(nutritionalInfo, ['fluids', 'fluids_per_serving'], 0.0);
+
+    // Extract structured serving data from database
+    final servingAmount = (json['serving_amount'] as num?)?.toDouble() ?? 1.0;
+    final servingUnit = json['serving_unit'] as String? ?? 'serving';
+    final servingUnitPlural = json['serving_unit_plural'] as String?;
+    final servingQualifier = json['serving_qualifier'] as String?;
+    
+    // Create legacy serving size for compatibility
+    final servingSize = servingQualifier != null && servingQualifier.isNotEmpty 
+        ? '$servingAmount $servingUnit, $servingQualifier'
+        : '$servingAmount $servingUnit';
+
+    // Extract categories from the food_categories join
+    final categories = _extractCategoriesFromJoin(json);
 
     return FoodItem(
       id: _generateIdFromName(json['name'] as String),
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
-      category: _mapSupabaseCategoryToFoodCategory(json['category'] as String),
+      categories: categories,
       servingSize: servingSize,
-      servingAmount: 1.0, // Default serving amount
-      servingUnit: _extractServingUnit(servingSize),
+      servingAmount: servingAmount,
+      servingUnit: servingUnit,
+      servingUnitPlural: servingUnitPlural,
+      servingQualifier: servingQualifier,
       nutrition: NutritionInfo(
         calories: calories,
         carbs: carbs,
@@ -124,11 +210,50 @@ class FoodRepository {
         sodium: sodium,
         fiber: fiber,
         sugar: sugar,
-        fluids: 0.0, // Default value for fluids
+        fluids: fluids,
       ),
       tags: _generateTagsFromNutrition(carbs, protein, fat),
       additionalInfo: json['instructions'] as String?,
     );
+  }
+
+  /// Extract categories from the food_categories join
+  List<FoodCategory> _extractCategoriesFromJoin(Map<String, dynamic> json) {
+    final foodCategories = json['food_categories'] as List<dynamic>?;
+    if (foodCategories != null && foodCategories.isNotEmpty) {
+      return foodCategories
+          .map((fc) => _getCategoryFromId(fc['category_id'] as int))
+          .toList();
+    }
+    
+    // No categories found - return empty list
+    return [];
+  }
+
+  /// Map category ID to FoodCategory enum
+  FoodCategory _getCategoryFromId(int categoryId) {
+    switch (categoryId) {
+      case 1:
+        return FoodCategory.beforeRun;
+      case 2:
+        return FoodCategory.duringRun;
+      case 3:
+        return FoodCategory.afterRun;
+      default:
+        return FoodCategory.beforeRun;
+    }
+  }
+
+  /// Get category ID from FoodCategory enum
+  int _getCategoryId(FoodCategory category) {
+    switch (category) {
+      case FoodCategory.beforeRun:
+        return 1;
+      case FoodCategory.duringRun:
+        return 2;
+      case FoodCategory.afterRun:
+        return 3;
+    }
   }
 
   /// Extract nutrition value with fallback keys
@@ -153,14 +278,6 @@ class FoodRepository {
         .replaceAll(RegExp(r'[^a-z0-9_]'), '');
   }
 
-  /// Extract serving unit from serving size string
-  String _extractServingUnit(String servingSize) {
-    final words = servingSize.toLowerCase().split(' ');
-    if (words.length >= 2) {
-      return words.last; // Last word is usually the unit
-    }
-    return 'serving';
-  }
 
   /// Generate tags based on nutritional profile
   List<String> _generateTagsFromNutrition(double carbs, double protein, double fat) {
@@ -175,31 +292,6 @@ class FoodRepository {
     return tags;
   }
 
-  /// Map FoodCategory enum to Supabase category string
-  String _mapCategoryToSupabaseCategory(FoodCategory category) {
-    switch (category) {
-      case FoodCategory.preRun:
-        return 'before_run';
-      case FoodCategory.duringRun:
-        return 'during_run';
-      case FoodCategory.postRun:
-        return 'after_run';
-    }
-  }
-
-  /// Map Supabase category string to FoodCategory enum
-  FoodCategory _mapSupabaseCategoryToFoodCategory(String category) {
-    switch (category) {
-      case 'before_run':
-        return FoodCategory.preRun;
-      case 'during_run':
-        return FoodCategory.duringRun;
-      case 'after_run':
-        return FoodCategory.postRun;
-      default:
-        return FoodCategory.preRun; // Default fallback
-    }
-  }
 }
 
 /// Riverpod provider for FoodRepository

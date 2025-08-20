@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/app_startup/application/app_startup_provider.dart';
+import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 
 // Import all screens
-import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/food_preferences_screen.dart';
@@ -13,29 +14,19 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 class AppRouter {
+  // Static router instance - no Ref dependency
   static final GoRouter router = GoRouter(
     initialLocation: '/',
+    // Clean router with no startup logic - just handles routing
     redirect: (context, state) {
-      // Simple redirect logic - can be enhanced later with proper state management
-      final location = state.matchedLocation;
-      
-      // Allow access to all screens (MVP behavior)
+      // No redirect logic needed - AppStartupWidget will handle initial navigation
       return null;
     },
-    routes: [
-      // Root - App startup with device ID check and initialization
+      routes: [
+      // Root - AppStartupWidget handles initialization and navigation
       GoRoute(
         path: '/',
-        builder: (context, state) => AppStartupWidget(
-          onLoaded: (context) => const SizedBox.shrink(), // Empty widget during navigation
-        ),
-      ),
-      
-      // Main nutrition plan screen (after onboarding)
-      GoRoute(
-        path: '/main',
-        name: 'main',
-        builder: (context, state) => const MainNutritionPlanScreen(),
+        builder: (context, state) => const AppStartupWidget(),
       ),
       
       // Welcome Screen
@@ -62,6 +53,13 @@ class AppRouter {
         path: '/onboarding/food-preferences',
         name: 'onboarding-food-preferences', 
         builder: (context, state) => const FoodPreferencesScreen(),
+      ),
+      
+      // Main nutrition plan screen (after onboarding)
+      GoRoute(
+        path: '/main',
+        name: 'main',
+        builder: (context, state) => const MainNutritionPlanScreen(),
       ),
       
       // Plan Screen - Shows generated nutrition plan
@@ -111,8 +109,5 @@ class AppRouter {
         ),
       ),
     ),
-  );
+    );
 }
-
-/// Provider for router - useful for navigation in services
-final routerProvider = Provider<GoRouter>((ref) => AppRouter.router);

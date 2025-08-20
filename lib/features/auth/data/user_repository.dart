@@ -268,10 +268,10 @@ Future<Box<FoodPreferences>> preferencesBox(Ref ref) async {
 
 /// Repository provider following Andrea's pattern
 @riverpod
-UserRepository userRepository(Ref ref) {
-  // Use requireValue since boxes should be initialized by app startup
-  final userBoxInstance = ref.watch(userBoxProvider).requireValue;
-  final prefsBoxInstance = ref.watch(preferencesBoxProvider).requireValue;
+Future<UserRepository> userRepository(Ref ref) async {
+  // Wait for boxes to be initialized
+  final userBoxInstance = await ref.watch(userBoxProvider.future);
+  final prefsBoxInstance = await ref.watch(preferencesBoxProvider.future);
   
   return UserRepository(
     userBox: userBoxInstance,

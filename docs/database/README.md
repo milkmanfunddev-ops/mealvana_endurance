@@ -1,93 +1,203 @@
-# Mealvana Endurance - Database Documentation
+# Database Schema & Migrations
 
-This folder contains comprehensive documentation for the Mealvana Endurance database schema and structure.
+This directory contains the complete database schema, migrations, and documentation for the Mealvana Endurance nutrition planning system.
 
-## 📋 Quick Reference
+## 📁 **Files Overview**
 
-| Document | Description |
-|----------|-------------|
-| [Schema Overview](./schema-overview.md) | Complete database schema with tables and relationships |
-| [Users Table](./users-table.md) | User profiles and authentication |
-| [Nutrition Plans Table](./nutrition-plans-table.md) | Nutrition plan storage with versioning |
-| [Food Items Table](./food-items-table.md) | Food database and nutritional information |
-| [App Content Table](./app-content-table.md) | Dynamic content and configuration |
-| [SQL Functions](./sql-functions.md) | Stored procedures and database functions |
-| [Migration Guide](./migrations.md) | Database setup and migration instructions |
+### **Migrations**
+- **`migrations/01-create-core-tables.sql`** - Creates all core tables with indexes and triggers
+- **`migrations/02-create-functions-and-rls.sql`** - Creates database functions and Row Level Security policies
 
-## 🗄️ Database Technology
+### **Documentation**  
+- **`schema-overview.md`** - Complete database schema documentation
+- **`DEPLOYMENT-GUIDE.md`** - Step-by-step deployment instructions
 
-- **Database**: PostgreSQL (via Supabase)
-- **ORM/Client**: Supabase Dart client
-- **Local Storage**: Hive (Flutter)
-- **Versioning**: Custom versioning with conflict resolution
+## 🗄️ **Database Schema Overview**
 
-## 🔧 Key Features
+### **Core Tables**
 
-- **Offline-First**: Local Hive storage with Supabase sync
-- **Device-Based Auth**: No traditional user accounts, device-ID based
-- **Version Control**: Comprehensive versioning for nutrition plans
-- **Conflict Resolution**: Automatic and manual conflict resolution
-- **RLS Security**: Row Level Security policies
-- **Real-time**: Supabase real-time subscriptions ready
+| Table | Purpose | Key Features |
+|-------|---------|--------------|
+| `users` | User profiles and biometric data | Device-based auth, onboarding status |
+| `foods` | Food database | Structured serving data, nutritional info |
+| `categories` | Food timing categories | before_run, during_run, after_run |
+| `food_categories` | Food-to-category mapping | Many-to-many relationships |
+| `food_preferences` | User food preferences | like/dislike/willing_to_try |
+| `nutrition_plans` | Generated nutrition plans | Versioning, conflict resolution |
+| `feedback` | User feedback | Satisfaction ratings (1-3 scale) |
+| `app_content` | Dynamic app content | Localization, A/B testing |
 
-## 🚀 Quick Setup
+### **Key Relationships**
 
-1. Run the SQL scripts in order:
-   ```sql
-   -- 1. Create base tables
-   \i users-table.sql
-   \i nutrition-plans-table.sql
-   \i food-items-table.sql
-   \i app-content-table.sql
-   
-   -- 2. Create functions
-   \i sql-functions.sql
-   ```
-
-2. Verify setup:
-   ```sql
-   SELECT * FROM users LIMIT 1;
-   SELECT * FROM nutrition_plans LIMIT 1;
-   ```
-
-## 📊 Entity Relationships
-
-```
-Users (device_id) 
-  ├── 1:N → Nutrition Plans
-  └── 1:1 → Food Preferences
-
-Nutrition Plans (plan_id)
-  ├── N:N → Food Items (via plan sections)
-  └── 1:1 → Macro Targets
-
-Food Items
-  ├── 1:N → Nutritional Info
-  └── N:N → Categories/Tags
-
-App Content
-  └── 1:N → Content Versions
+```sql
+users (device_id) ←→ food_preferences (device_id)
+users (device_id) ←→ nutrition_plans (device_id)  
+foods (id) ←→ food_categories (food_id)
+categories (id) ←→ food_categories (category_id)
 ```
 
-## 🔐 Security Model
+## 🚀 **Quick Start**
 
-- **Public Access**: Food items, app content
-- **Device-Scoped**: Users can only access their own data
-- **RLS Policies**: Automatic filtering by device_id
-- **API Keys**: Supabase anon key for client access
+### **1. Run Migrations**
+Execute these in order in your Supabase SQL Editor:
 
-## 📝 Naming Conventions
+```sql
+-- Step 1: Create all core tables
+-- Copy and run: migrations/01-create-core-tables.sql
 
-- **Tables**: `snake_case` (e.g., `nutrition_plans`)
-- **Columns**: `snake_case` (e.g., `device_id`, `created_at`)
-- **Functions**: `snake_case` (e.g., `upsert_user_by_device_id`)
-- **Indexes**: `idx_table_column` (e.g., `idx_users_device_id`)
-- **Constraints**: `table_column_constraint` (e.g., `users_device_id_key`)
+-- Step 2: Create functions and RLS policies  
+-- Copy and run: migrations/02-create-functions-and-rls.sql
+```
 
-## 🏗️ Architecture Patterns
+### **2. Verify Installation**
+```sql
+-- Check all tables exist
+SELECT table_name FROM information_schema.tables 
+WHERE table_schema = 'public' 
+ORDER BY table_name;
 
-- **Device-First**: All data tied to device identifiers
-- **Eventual Consistency**: Local-first with background sync
-- **Immutable Events**: Soft deletes with version history
-- **JSONB Storage**: Flexible schema for nutrition plan data
-- **Upsert Operations**: Conflict-safe data operations
+-- Test key functions
+SELECT upsert_food_preferences('test_device', '{"Oatmeal": "like"}'::jsonb);
+SELECT get_active_app_content('production', 'en-US');
+```
+
+## 🏗️ **Schema Highlights**
+
+### **Device-Centric Architecture**
+- **No traditional user accounts** - Everything tied to device identifiers
+- **Privacy-first** - No email/phone collection required
+- **Offline-capable** - Local Hive storage with Supabase sync
+
+### **Multi-Category Food System**
+```sql
+-- Foods can belong to multiple timing categories
+SELECT f.name, array_agg(c.name) as categories
+FROM foods f
+JOIN food_categories fc ON f.id = fc.food_id  
+JOIN categories c ON fc.category_id = c.id
+GROUP BY f.id, f.name;
+```
+
+### **Structured Serving Data**
+```sql
+-- No more hardcoded parsing - proper database fields
+CREATE TABLE foods (
+  serving_amount NUMERIC,     -- e.g., 1, 0.5, 2
+  serving_unit TEXT,         -- e.g., "cup", "medium"  
+  serving_unit_plural TEXT,  -- e.g., "cups", "medium"
+  serving_qualifier TEXT     -- e.g., "cooked", "sliced"
+);
+```
+
+### **Food Preferences System**
+```sql
+-- Three-level preference system
+CREATE TABLE food_preferences (
+  preference TEXT CHECK (preference IN ('like', 'dislike', 'willing_to_try'))
+);
+
+-- Helper function for batch updates
+SELECT upsert_food_preferences(device_id, preferences_jsonb);
+```
+
+### **Versioning & Conflict Resolution**
+```sql
+-- Optimistic concurrency control for nutrition plans
+CREATE TABLE nutrition_plans (
+  version INTEGER DEFAULT 1,
+  conflict_resolution TEXT DEFAULT 'last_write_wins',
+  client_updated_at TIMESTAMPTZ
+);
+```
+
+## 🔧 **Database Functions**
+
+### **`upsert_food_preferences(device_id, preferences_jsonb)`**
+Replaces all food preferences for a user with new preferences.
+
+**Usage:**
+```sql
+SELECT upsert_food_preferences(
+  'device123',
+  '{"Oatmeal": "like", "Gels": "willing_to_try", "Coffee": "dislike"}'::jsonb
+);
+```
+
+### **`upsert_nutrition_plan_versioned(...)`**
+Inserts nutrition plan with conflict detection and versioning.
+
+### **`get_active_app_content(environment, locale)`**
+Retrieves active app content for localization.
+
+## 📊 **Performance Features**
+
+### **Strategic Indexes**
+- **Primary keys** - Automatic unique indexes
+- **Foreign keys** - Automatic relationship indexes
+- **Query optimization** - device_id, timestamps, active flags  
+- **Composite indexes** - Multi-column lookups
+
+### **Automatic Triggers**
+- **Updated timestamps** - Auto-update `updated_at` columns
+- **Data validation** - Constraint checks
+- **Referential integrity** - Foreign key enforcement
+
+### **Row Level Security (RLS)**
+- **User data isolation** - Users can only access their own data
+- **Edge function access** - Service role bypasses RLS
+- **Public data** - Foods and categories are publicly readable
+
+## 🔍 **Common Queries**
+
+### **Get User's Food Preferences**
+```sql
+SELECT food_name, preference 
+FROM food_preferences 
+WHERE device_id = 'device123';
+```
+
+### **Get Foods by Category**
+```sql
+SELECT f.* FROM foods f
+JOIN food_categories fc ON f.id = fc.food_id
+JOIN categories c ON fc.category_id = c.id  
+WHERE c.name = 'before_run';
+```
+
+### **Get User's Latest Nutrition Plan**
+```sql
+SELECT * FROM nutrition_plans
+WHERE device_id = 'device123' AND is_deleted = FALSE
+ORDER BY updated_at DESC
+LIMIT 1;
+```
+
+### **Get Multi-Category Foods**
+```sql
+SELECT f.name, count(*) as category_count
+FROM foods f
+JOIN food_categories fc ON f.id = fc.food_id
+GROUP BY f.id, f.name
+HAVING count(*) > 1;
+```
+
+## 🚨 **Migration Notes**
+
+### **Breaking Changes**
+- **Old single-category foods** → New multi-category system
+- **Hardcoded serving parsing** → Structured serving fields
+- **Text-based categories** → Integer-based with join table
+
+### **Data Migration**
+If migrating from an older schema:
+1. Export existing food preferences
+2. Run new migrations
+3. Convert category references to new format
+4. Re-import food data with structured serving fields
+
+## 📚 **Further Reading**
+
+- **`schema-overview.md`** - Detailed table structures and relationships
+- **`DEPLOYMENT-GUIDE.md`** - Complete deployment walkthrough
+- **`/docs/business_logic/`** - Edge functions that use this schema
+- **`/docs/technical/`** - Integration guides and best practices

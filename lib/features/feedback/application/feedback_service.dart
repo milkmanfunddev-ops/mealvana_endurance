@@ -1,10 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/feedback_data.dart';
+import '../../../shared/services/analytics_service.dart';
 
 /// Service for submitting feedback to Google Forms
 class FeedbackService {
+  FeedbackService(this.ref);
+  final Ref ref;
+  
+  /// Get analytics service
+  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
   // Google Form URL - your actual form
   static const String _formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfKkSEUYd_vdDKv4iMVT3jPr2v2VWTg5bVkWRxbvFN1HaAFKQ/formResponse';
   
@@ -102,6 +109,13 @@ class FeedbackService {
       print('📝 Feedback data: ${feedback.toString()}');
     }
 
+    // Track feedback submission attempt
+    await _analytics.trackFeedbackSubmitted(
+      type: 'Plan Feedback',
+      message: feedback.suggestions ?? '',
+      rating: _satisfactionToRating(feedback.satisfactionLevel),
+    );
+
     try {
       // Prepare form data with submit parameter
       final formData = <String, String>{
@@ -190,6 +204,18 @@ class FeedbackService {
     } catch (error) {
       print('Error submitting feedback to API: $error');
       return false;
+    }
+  }
+  
+  /// Convert satisfaction level to numeric rating for analytics
+  int _satisfactionToRating(SatisfactionLevel level) {
+    switch (level) {
+      case SatisfactionLevel.tooMuch:
+        return 1;
+      case SatisfactionLevel.justRight:
+        return 3;
+      case SatisfactionLevel.tooLittle:
+        return 2;
     }
   }
 

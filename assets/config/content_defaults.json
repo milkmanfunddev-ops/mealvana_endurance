@@ -32,7 +32,11 @@
     "continue_button": "Continue"
   },
   "food_preferences": {
-    "title": "Food Preferences"
+    "title": "Food Preferences",
+    "option_like": "Love",
+    "option_willing_to_try": "Willing to Try",
+    "option_dislike": "Avoid",
+    "complete_button": "Complete Setup"
   },
   "gender": {
     "male": "Male",

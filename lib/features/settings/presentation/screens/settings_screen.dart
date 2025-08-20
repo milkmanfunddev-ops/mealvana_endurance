@@ -23,7 +23,12 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: AppTheme.baseCream,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(),
+        leading: CustomAppBarBackButton(
+          onPressed: () {
+            // Navigate back to plan screen
+            context.pop();
+          },
+        ),
         title: settingsState.when(
           data: (state) => Text(
             state.title,

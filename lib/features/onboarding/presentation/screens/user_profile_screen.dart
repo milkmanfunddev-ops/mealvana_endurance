@@ -7,6 +7,9 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/labeled_text_field.dart';
+import '../../../../shared/mixins/analytics_mixin.dart';
+import '../../../auth/application/auth_service.dart';
+import '../../../auth/data/user_repository.dart';
 
 /// User profile creation screen
 /// Collects basic user information during onboarding
@@ -17,7 +20,7 @@ class UserProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> with AnalyticsMixin {
   final _formKey = GlobalKey<FormState>();
   
   Gender? _selectedGender;
@@ -26,6 +29,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   final _heightInchesController = TextEditingController();
   final _weightController = TextEditingController();
   bool _runsWithWaterBottle = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Track screen view
+    trackScreenView('User Profile Onboarding');
+  }
 
   @override
   void dispose() {
@@ -54,11 +64,22 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     if (!_formKey.currentState!.validate() || 
         _selectedGender == null || 
         _selectedBirthday == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill in all fields')),
+        );
+      }
       return;
     }
+
+    // Track form submission attempt
+    await trackFormSubmission('User Profile', formData: {
+      'Gender': _selectedGender!.name,
+      'Runs With Water Bottle': _runsWithWaterBottle,
+      'Height Feet': _heightFeetController.text,
+      'Height Inches': _heightInchesController.text,
+      'Weight': _weightController.text,
+    });
 
     final controller = ref.read(onboardingControllerProvider.notifier);
     
@@ -71,8 +92,25 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       runsWithWaterBottle: _runsWithWaterBottle,
     );
 
-    if (success) {
-      context.go('/onboarding/food-preferences');
+    if (success && mounted) {
+      // Track successful navigation
+      await trackNavigation('Food Preferences Onboarding', source: 'User Profile Submit');
+      
+      // Invalidate providers to refresh user state
+      ref.invalidate(currentUserProvider);
+      ref.invalidate(userRepositoryProvider);
+      
+      if (mounted) {
+        context.go('/onboarding/food-preferences');
+      }
+    } else if (mounted) {
+      // Show error if user creation failed
+      final state = ref.read(onboardingControllerProvider);
+      final errorMessage = state.asError?.error.toString() ?? 'Failed to create profile';
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
     }
   }
 

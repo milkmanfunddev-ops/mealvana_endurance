@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/nutrition_plan_repository.dart';
+import '../data/nutrition_plan_local_cache.dart';
 import '../domain/nutrition_plan.dart';
 import '../domain/food_item.dart';
 import '../data/food_repository.dart';
 // nutrition_calculator.dart - removed since logic moved to Edge Functions
 import '../../auth/application/auth_service.dart';
 // content_service.dart - removed since algorithm logic moved to Edge Functions
+import '../../../shared/services/analytics_service.dart';
 
 /// Application service for managing nutrition plans and food data
 /// Coordinates between food database, nutrition calculations, and plan storage
@@ -15,9 +17,11 @@ class NutritionPlanService {
 
   /// Get repositories and services
   NutritionPlanRepository get _planRepository => ref.read(nutritionPlanRepositoryProvider);
+  NutritionPlanLocalCache get _localCache => ref.read(nutritionPlanLocalCacheProvider);
   AuthService get _authService => ref.read(authServiceProvider);
   // Content service removed since algorithm logic moved to Edge Functions
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
+  AnalyticsService get _analyticsService => ref.read(analyticsServiceProvider);
   
   // Nutrition calculator removed - all logic moved to Edge Functions
 
@@ -28,41 +32,136 @@ class NutritionPlanService {
     double timeBeforeRunHours = 2.0,
     String? gutTrainingLevel,
   }) async {
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) {
       throw Exception('No user found. Please complete onboarding first.');
     }
 
-    // Call Edge Function to create nutrition plan with all business logic server-side
-    final result = await _planRepository.createNutritionPlan(
-      deviceId: user.id,
+    // Track plan generation started
+    await _analyticsService.trackNutritionPlanGenerationStarted(
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
       timeBeforeRunHours: timeBeforeRunHours,
       gutTrainingLevel: gutTrainingLevel,
     );
 
-    if (result.success && result.plan != null) {
-      return result.plan!;
-    } else {
-      throw Exception(result.message ?? 'Failed to generate nutrition plan');
+    final startTime = DateTime.now();
+    
+    try {
+      // Call Edge Function to create nutrition plan with all business logic server-side
+      final result = await _planRepository.createNutritionPlan(
+        deviceId: user.id,
+        distanceMiles: distanceMiles,
+        paceMinutesPerMile: paceMinutesPerMile,
+        timeBeforeRunHours: timeBeforeRunHours,
+        gutTrainingLevel: gutTrainingLevel,
+      );
+
+      final responseTime = DateTime.now().difference(startTime);
+
+      if (result.success && result.plan != null) {
+        final plan = result.plan!;
+        
+        // Track successful plan generation
+        await _analyticsService.trackNutritionPlanGenerated(
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: paceMinutesPerMile,
+          totalCalories: plan.totalCalories ?? 0,
+          totalCarbs: plan.macroTargets?.carbs ?? 0,
+          beforeRunItems: plan.sections.where((s) => s.title.contains('Before')).firstOrNull?.foodItems.length ?? 0,
+          duringRunItems: plan.sections.where((s) => s.title.contains('During')).firstOrNull?.foodItems.length ?? 0,
+          afterRunItems: plan.sections.where((s) => s.title.contains('After')).firstOrNull?.foodItems.length ?? 0,
+          isFirstPlan: await _isFirstPlan(),
+        );
+        
+        // Track Edge Function performance
+        await _analyticsService.trackEdgeFunctionPerformance(
+          functionName: 'create-nutrition-plan',
+          responseTime: responseTime,
+          success: true,
+        );
+        
+        // Cache the plan locally
+        await _localCache.saveLatestPlan(plan);
+        
+        return plan;
+      } else {
+        // Track failed generation
+        await _analyticsService.trackNutritionPlanGenerationFailed(
+          errorMessage: result.message ?? 'Unknown error',
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: paceMinutesPerMile,
+        );
+        
+        // Track Edge Function performance
+        await _analyticsService.trackEdgeFunctionPerformance(
+          functionName: 'create-nutrition-plan',
+          responseTime: responseTime,
+          success: false,
+          errorMessage: result.message,
+        );
+        
+        throw Exception(result.message ?? 'Failed to generate nutrition plan');
+      }
+    } catch (e) {
+      final responseTime = DateTime.now().difference(startTime);
+      
+      // Track failed generation
+      await _analyticsService.trackNutritionPlanGenerationFailed(
+        errorMessage: e.toString(),
+        distanceMiles: distanceMiles,
+        paceMinutesPerMile: paceMinutesPerMile,
+      );
+      
+      // Track Edge Function performance
+      await _analyticsService.trackEdgeFunctionPerformance(
+        functionName: 'create-nutrition-plan',
+        responseTime: responseTime,
+        success: false,
+        errorMessage: e.toString(),
+      );
+      
+      rethrow;
     }
+  }
+  
+  /// Check if this is the user's first nutrition plan
+  Future<bool> _isFirstPlan() async {
+    final user = await _authService.getCurrentUser();
+    if (user == null) return false;
+    
+    final plans = await getUserNutritionPlans();
+    return plans.isEmpty;
   }
 
   /// Get nutrition plans for the current user
   Future<List<NutritionPlan>> getUserNutritionPlans() async {
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) return [];
     
     return await _planRepository.getNutritionPlans(user.id);
   }
 
   /// Get the most recent nutrition plan for current user
+  /// Checks local cache first, falls back to Supabase
   Future<NutritionPlan?> getLatestNutritionPlan() async {
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) return null;
     
-    return await _planRepository.getLatestNutritionPlan(user.id);
+    // Try to get from local cache first
+    final cachedPlan = await _localCache.getLatestPlan();
+    if (cachedPlan != null) {
+      return cachedPlan;
+    }
+    
+    // If not in cache, try to get from Supabase
+    final remotePlan = await _planRepository.getLatestNutritionPlan(user.id);
+    if (remotePlan != null) {
+      // Cache the plan for next time
+      await _localCache.saveLatestPlan(remotePlan);
+    }
+    
+    return remotePlan;
   }
 
   /// Update an existing nutrition plan via Edge Function
@@ -72,7 +171,7 @@ class NutritionPlanService {
     double timeBeforeRunHours = 2.0,
     String? gutTrainingLevel,
   }) async {
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) {
       throw Exception('No user found. Please complete onboarding first.');
     }
@@ -94,7 +193,7 @@ class NutritionPlanService {
 
   /// Delete a nutrition plan
   Future<bool> deleteNutritionPlan(String planId) async {
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) return false;
     
     return await _planRepository.deleteNutritionPlan(user.id, planId);
@@ -119,7 +218,7 @@ class NutritionPlanService {
 
   /// Get foods that the current user prefers for a specific category
   Future<List<FoodItem>> getPreferredFoods(FoodCategory category) async {
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) return [];
 
     final likedFoods = _authService.getLikedFoods(user.id);
@@ -134,7 +233,7 @@ class NutritionPlanService {
 
   /// Get nutrition plan statistics for current user
   Future<Map<String, dynamic>> getNutritionPlanStatistics() async {
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) {
       return {
         'totalPlans': 0,
@@ -176,9 +275,9 @@ class NutritionPlanService {
   }
 
   /// Calculate pre-run nutrition requirements (simplified)
-  int calculatePreRunNutrition(double timeBeforeRunHours) {
+  Future<int> calculatePreRunNutrition(double timeBeforeRunHours) async {
     // Simplified calculation - Edge Function handles full logic
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) throw Exception('No user found');
     
     final bodyWeightKg = user.weightPounds * 0.453592;
@@ -191,9 +290,9 @@ class NutritionPlanService {
   }
 
   /// Calculate pre-run hydration requirements (simplified)
-  int calculatePreRunHydration(double timeBeforeRunHours) {
+  Future<int> calculatePreRunHydration(double timeBeforeRunHours) async {
     // Simplified calculation - Edge Function handles full logic
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) throw Exception('No user found');
     
     final bodyWeightKg = user.weightPounds * 0.453592;
@@ -223,7 +322,7 @@ class NutritionPlanService {
 
   /// Clear all nutrition plans (for testing)
   Future<bool> clearAllPlans() async {
-    final user = _authService.getCurrentUser();
+    final user = await _authService.getCurrentUser();
     if (user == null) return false;
     
     return await _planRepository.clearAllNutritionPlans(user.id);

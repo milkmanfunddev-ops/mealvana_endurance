@@ -105,7 +105,11 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
         backgroundColor: AppTheme.baseCream,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(),
+        leading: Navigator.of(context).canPop() 
+            ? CustomAppBarBackButton(
+                onPressed: () => context.pop(),
+              )
+            : null,
         title: Text(
           'Plan',
           style: AppTheme.titleStyle.copyWith(
@@ -136,7 +140,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
             ),
             onPressed: () {
               // Navigate to settings screen
-              context.go('/settings');
+              context.push('/settings');
             },
           ),
           SizedBox(width: 8.w), // Small padding from edge
@@ -201,19 +205,11 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           
           SizedBox(height: 16.h),
           
-          // Macro Targets as separate widget
+          // Macro Targets as separate widget - use actual plan data
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: MacroTargetsExpander(
-              macroTargets: const new_model.MacroTargets(
-                calories: 800,
-                carbs: 285,
-                protein: 20,
-                fat: 10,
-                carbsRange: '85-90%',
-                proteinRange: '5-10%',
-                fatRange: '5-10%',
-              ),
+              macroTargets: _extractMacroTargets(plan),
             ),
           ),
           
@@ -309,6 +305,29 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           ),
         ],
       ),
+    );
+  }
+
+  // Extract macro targets from the plan
+  new_model.MacroTargets _extractMacroTargets(dynamic plan) {
+    // If we have a real plan with macro targets, use them
+    if (plan != null && plan is new_model.NutritionPlan && plan.macroTargets != null) {
+      return plan.macroTargets!;
+    }
+    
+    // Fallback to default values if no plan data
+    return const new_model.MacroTargets(
+      calories: 0,
+      carbs: 0,
+      protein: 0,
+      fat: 0,
+      sodiumMin: 0,
+      sodiumMax: 0,
+      fluidsMin: 0,
+      fluidsMax: 0,
+      carbsRange: '80-90%',
+      proteinRange: '5-15%',
+      fatRange: '5-15%',
     );
   }
 

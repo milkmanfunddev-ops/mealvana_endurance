@@ -26,7 +26,7 @@ class FeedbackController extends _$FeedbackController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      final feedbackService = FeedbackService();
+      final feedbackService = FeedbackService(ref);
       final success = await feedbackService.submitFeedback(feedback);
       
       if (!success) {
@@ -44,7 +44,7 @@ class FeedbackController extends _$FeedbackController {
     state = const AsyncLoading();
     
     state = await AsyncValue.guard(() async {
-      final feedbackService = FeedbackService();
+      final feedbackService = FeedbackService(ref);
       final success = await feedbackService.testFormConnection();
       
       if (!success) {

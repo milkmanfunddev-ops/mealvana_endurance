@@ -7,14 +7,14 @@ part of 'onboarding_controller.dart';
 // **************************************************************************
 
 String _$onboardingProgressHash() =>
-    r'04102f062b9cf361d1b3bc2eadf83323856425ff';
+    r'811d98cd3bd2ef13b44db9780bb4ef67e2e0b3b7';
 
 /// Provider for onboarding progress
 ///
 /// Copied from [onboardingProgress].
 @ProviderFor(onboardingProgress)
 final onboardingProgressProvider =
-    AutoDisposeProvider<OnboardingProgress>.internal(
+    AutoDisposeFutureProvider<OnboardingProgress>.internal(
   onboardingProgress,
   name: r'onboardingProgressProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -26,9 +26,10 @@ final onboardingProgressProvider =
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef OnboardingProgressRef = AutoDisposeProviderRef<OnboardingProgress>;
+typedef OnboardingProgressRef
+    = AutoDisposeFutureProviderRef<OnboardingProgress>;
 String _$onboardingControllerHash() =>
-    r'fbce25bc2def33311cc67cdd5b028aaba7122865';
+    r'41d075b5f9dcbfe25c503d6b4dae4740fcbdc834';
 
 /// Controller for managing onboarding flow state
 ///

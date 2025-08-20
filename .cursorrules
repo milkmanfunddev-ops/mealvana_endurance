@@ -1,0 +1,165 @@
+# Mealvana Endurance – Cursor Rules
+
+## TL;DR
+- Flutter + Riverpod v2 + Hive + Supabase with Feature-Oriented Architecture (FOA).
+- Controllers MUST be `@riverpod` `AsyncNotifier`-based with codegen and `AsyncValue.guard`.
+- All UI text and algorithm parameters come from `ContentService` (no hardcoded strings or magic numbers).
+- Offline-first: write to Hive first; backend is secondary. Provide safe fallbacks.
+
+## Non‑Negotiables
+- Architecture: Follow Andrea Bizzotto FOA with four layers per feature: `presentation/`, `application/`, `domain/`, `data/`.
+- Controllers: Use `@riverpod` classes extending `AsyncNotifier<T>` (never `StateNotifier`, never manual providers).
+  - Include `part '<file>.g.dart';`
+  - Access services via `ref.read(...)`
+  - Initialize with a synchronous `build()` returning initial state
+  - Use `AsyncValue.guard` for async ops and `ref.invalidateSelf()` for refresh
+- Content: All user-facing strings and algorithm parameters must be read via `ContentService` and `ContentKeys`.
+  - Fallback order: Supabase → Hive cache → bundled defaults (`assets/config/content_defaults.json`)
+  - Do not hardcode UI text or algorithm constants
+- Offline-first/Hive: Persist locally first; design for no-network scenarios.
+  - Use encrypted Hive for sensitive data
+  - Maintain snake_case in storage, camelCase in Dart
+- Error handling: Use `AsyncValue.guard`, don’t swallow errors, expose UI via standard snackbar helpers
+- Type safety: Strongly typed models; avoid `dynamic`/`any` patterns
+- Do not introduce static methods for DI; always wire via Riverpod providers
+
+## File/Module Boundaries
+- Place code under `lib/features/<feature>/{presentation,application,domain,data}`
+- Cross-feature calls go through `application` services wired by providers; presentation never reaches directly into `data`
+- Shared utilities/widgets live under `lib/shared/`
+
+## Controller Template
+Use this exact pattern when adding controllers:
+```dart
+import 'dart:async';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../content/application/content_service.dart';
+import '../../content/domain/content_keys.dart';
+
+part 'screen_controller.g.dart';
+
+@riverpod
+class ScreenController extends _$ScreenController {
+	ContentService get _content => ref.read(contentServiceProvider);
+	MyService get _service => ref.read(myServiceProvider);
+
+	@override
+	FutureOr<ScreenState> build() {
+		final titleFuture = _content.getValue(ContentKeys.screenTitle, defaultValue: 'Title');
+		return ScreenState.initial(titleFuture);
+	}
+
+	Future<void> performAction() async {
+		state = const AsyncLoading();
+		state = await AsyncValue.guard(() async {
+			final result = await _service.doWork();
+			return state.requireValue.copyWith(result: result);
+		});
+	}
+
+	Future<void> refresh() async {
+		await _service.refresh();
+		ref.invalidateSelf();
+	}
+}
+```
+
+## ContentService Usage
+- Keys must be defined in `ContentKeys` and have defaults in `assets/config/content_defaults.json`.
+- Read UI strings:
+```dart
+final title = await ref.read(contentServiceProvider)
+	.getValue(ContentKeys.mainScreenTitle, defaultValue: 'Mealvana Endurance');
+```
+- Read algorithm params:
+```dart
+final minCarbs = await ref.read(contentServiceProvider)
+	.getAlgorithmParameter('during_run.carbs.absorption_limit_min_g_per_h', defaultValue: 30.0);
+```
+- Read nested categories:
+```dart
+final multipliers = await ref.read(contentServiceProvider)
+	.getAlgorithmCategory('during_run.carbs.gut_training_multipliers');
+```
+
+## Data & Storage
+- Boxes: `user_profiles`, `food_preferences`, `nutrition_plans`, `content_box`, `feedback`, `meta`
+- Local-first writes; add soft-deletes where applicable
+- Encrypted boxes for sensitive data
+- Prefer repositories for IO; keep mapping consistent: snake_case in storage, camelCase in Dart
+
+## Navigation & UI
+- Use `go_router` for navigation; keep UI layer dumb (no business logic in widgets)
+- Follow theming under `lib/theme/` and shared widgets under `lib/shared/widgets/`
+
+## Analytics & Monitoring
+- Use `lib/services/analytics_service.dart` or `lib/shared/services/analytics_service.dart` abstractions
+- Track content source when relevant (backend|cache|default)
+- Integrate Sentry for error reporting via shared services when available
+
+## Build/Run/Test Commands
+- Codegen (MANDATORY after adding/updating `@riverpod`, Hive adapters, etc.):
+```bash
+flutter pub run build_runner watch --delete-conflicting-outputs
+# or one-time
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+- Lint/Analyze:
+```bash
+flutter analyze
+```
+- Tests:
+```bash
+flutter test
+```
+- Run app:
+```bash
+flutter run
+```
+
+## Supabase
+- Access via `supabase_flutter`
+- Keys/URLs should use envs/dart-define for production; avoid committing secrets
+- Tables: `app_content`, `user_profiles`, `nutrition_plans`, `feedback`
+
+## Performance & Lifecycle
+- Providers: default to `autoDispose` unless persistence is required
+- Cache content for session; allow manual refresh; avoid blocking UI on network
+- Clamp algorithm outputs to safe physiological ranges (see docs/business_logic)
+
+## Adding Features – Checklist
+1. Create feature folders under `lib/features/<name>/`
+2. Define domain models and repositories (data layer)
+3. Implement application services that orchestrate logic
+4. Add `@riverpod` `AsyncNotifier` controllers (presentation)
+5. Use `ContentService` for all strings/params; add missing keys + defaults
+6. Write unit/widget tests; run `flutter test` and `flutter analyze`
+7. Run codegen; verify no analyzer errors
+
+## Style & Naming
+- Dart: PascalCase for types, camelCase for fields; storage/API: snake_case
+- Prefer descriptive names; avoid abbreviations and 1–2 letter variables
+- Keep functions small with early returns; avoid deep nesting
+
+## Do Not
+- Do not use `StateNotifier` or manual providers
+- Do not hardcode UI text or algorithm constants
+- Do not perform data access in widgets
+- Do not introduce static singletons for services; use providers
+- Do not block UI on network or content fetching
+
+## References (internal)
+- `CLAUDE.md` – project overview and critical rules
+- `docs/technical/README.md` – technical implementation
+- `docs/technical/content-management.md` – ContentService contract
+- `docs/technical/fat-backend-architecture.md` – content-driven architecture
+- `docs/technical/data-storage.md` – Hive patterns
+- `docs/business_logic/nutrition_algorithms.md` – algorithms & safety
+
+## Cursor‑specific Guidance
+- Start with a quick discovery pass; prefer semantic code search when exploring
+- Propose minimal, surgical edits; preserve existing formatting and structure
+- When adding controller/service/repository files, also add imports, providers, and `part` directives
+- After edits that touch codegen or adapters, run build_runner
+- Keep code snippets in discussions small and focused; cite file paths when referring to code
+- Write high-clarity, well-named code; avoid clever one-liners 

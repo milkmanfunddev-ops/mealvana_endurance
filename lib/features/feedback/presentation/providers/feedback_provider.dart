@@ -5,7 +5,7 @@ import '../../domain/feedback_data.dart';
 
 /// Provider for Google Forms feedback service instance
 final feedbackServiceProvider = Provider<FeedbackService>((ref) {
-  return FeedbackService();
+  return FeedbackService(ref);
 });
 
 /// Provider for Supabase feedback service instance  

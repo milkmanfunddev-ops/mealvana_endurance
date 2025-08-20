@@ -145,6 +145,55 @@ class AuthRepositoryEdge {
     }
   }
 
+  /// Save food preferences via Edge Function (preferred for onboarding)
+  Future<SaveFoodPreferencesResult> saveFoodPreferences(String deviceId, Map<String, FoodPreference> preferences) async {
+    try {
+      // Prepare request payload
+      final requestBody = {
+        'device_id': deviceId,
+        'food_preferences': preferences.map(
+          (key, value) => MapEntry(key, value.value),
+        ),
+      };
+
+      // Call Edge Function
+      final response = await _supabase.functions.invoke(
+        'save-food-preferences',
+        body: requestBody,
+      );
+
+      // Handle response
+      if (response.status >= 200 && response.status < 300) {
+        final data = response.data as Map<String, dynamic>;
+        
+        if (data['success'] == true) {
+          return SaveFoodPreferencesResult(
+            success: true,
+            message: data['message'],
+            preferencesCount: data['preferences_count'],
+            savedPreferences: data['saved_preferences'],
+          );
+        } else {
+          return SaveFoodPreferencesResult(
+            success: false,
+            message: data['message'] ?? 'Unknown error occurred',
+          );
+        }
+      } else {
+        return SaveFoodPreferencesResult(
+          success: false,
+          message: 'Edge Function call failed with status ${response.status}',
+        );
+      }
+    } catch (e) {
+      print('Error calling save-food-preferences Edge Function: $e');
+      return SaveFoodPreferencesResult(
+        success: false,
+        message: 'Failed to save food preferences: $e',
+      );
+    }
+  }
+
   /// Update food preferences (direct database call using SQL function)
   Future<bool> updateFoodPreferences(String deviceId, Map<String, FoodPreference> preferences) async {
     try {
@@ -191,6 +240,21 @@ class CreateUserResult {
     required this.success,
     this.user,
     this.message,
+  });
+}
+
+/// Result class for saving food preferences
+class SaveFoodPreferencesResult {
+  final bool success;
+  final String? message;
+  final int? preferencesCount;
+  final List<dynamic>? savedPreferences;
+
+  SaveFoodPreferencesResult({
+    required this.success,
+    this.message,
+    this.preferencesCount,
+    this.savedPreferences,
   });
 }
 

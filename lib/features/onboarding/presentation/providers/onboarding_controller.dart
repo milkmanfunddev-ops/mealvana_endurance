@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../../auth/application/auth_service.dart';
 import '../../application/onboarding_service.dart';
 
 part 'onboarding_controller.g.dart';
@@ -13,6 +14,7 @@ part 'onboarding_controller.g.dart';
 class OnboardingController extends _$OnboardingController {
   OnboardingService get _onboardingService => ref.read(onboardingServiceProvider);
   ContentService get _contentService => ref.read(contentServiceProvider);
+  AuthService get _authService => ref.read(authServiceProvider);
   UserProfile? _currentUser;
 
   @override
@@ -48,9 +50,12 @@ class OnboardingController extends _$OnboardingController {
 
   /// Save food preferences (step 2 of onboarding)
   Future<bool> saveFoodPreferences(Map<String, FoodPreference> preferences) async {
-    if (_currentUser == null) {
+    // Get current user from auth service (works for both session users and restored users)
+    final currentUser = _currentUser ?? await _authService.getCurrentUser();
+    
+    if (currentUser == null) {
       final errorMsg = _contentService.getValue(ContentKeys.errorGeneric, 
-          defaultValue: 'No user profile found');
+          defaultValue: 'No user profile found. Please complete user profile first.');
       state = AsyncError(errorMsg, StackTrace.current);
       return false;
     }
@@ -58,20 +63,22 @@ class OnboardingController extends _$OnboardingController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      await _onboardingService.saveFoodPreferences(_currentUser!.id, preferences);
+      await _onboardingService.saveFoodPreferences(currentUser.id, preferences);
+      // Update our session user reference
+      _currentUser = currentUser;
     });
 
     return !state.hasError;
   }
 
   /// Check if onboarding is complete
-  bool isOnboardingComplete() {
-    return _onboardingService.isOnboardingComplete();
+  Future<bool> isOnboardingComplete() async {
+    return await _onboardingService.isOnboardingComplete();
   }
 
   /// Get current onboarding progress
-  OnboardingProgress getProgress() {
-    return _onboardingService.getOnboardingProgress();
+  Future<OnboardingProgress> getProgress() async {
+    return await _onboardingService.getOnboardingProgress();
   }
 
   /// Get current user (if created during this session)
@@ -96,7 +103,7 @@ class OnboardingController extends _$OnboardingController {
 
 /// Provider for onboarding progress
 @riverpod
-OnboardingProgress onboardingProgress(Ref ref) {
+Future<OnboardingProgress> onboardingProgress(Ref ref) async {
   final controller = ref.watch(onboardingControllerProvider.notifier);
-  return controller.getProgress();
+  return await controller.getProgress();
 }

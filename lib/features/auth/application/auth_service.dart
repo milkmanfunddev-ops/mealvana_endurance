@@ -12,8 +12,8 @@ class AuthService {
   AuthService(this.ref);
   final Ref ref;
 
-  /// Get the user repository
-  UserRepository get _userRepository => ref.read(userRepositoryProvider);
+  /// Get the user repository (async)
+  Future<UserRepository> get _userRepository async => await ref.read(userRepositoryProvider.future);
   
   /// Get the Edge Function auth repository
   AuthRepositoryEdge get _authRepositoryEdge => ref.read(authRepositoryEdgeProvider);
@@ -54,16 +54,33 @@ class AuthService {
     
     if (result.success && result.user != null) {
       // Save locally for caching
-      await _userRepository.saveUserProfile(result.user!);
+      final userRepo = await _userRepository;
+      await userRepo.saveUserProfile(result.user!);
       return result.user!;
+    } else if (result.message?.contains('already exists') == true) {
+      // User already exists - fetch existing user from Supabase
+      final existingUser = await _authRepositoryEdge.getUserByDeviceId(deviceId);
+      if (existingUser != null) {
+        // Save locally for caching
+        final userRepo = await _userRepository;
+        await userRepo.saveUserProfile(existingUser);
+        return existingUser;
+      }
+      throw Exception('User already exists but could not retrieve existing user');
     } else {
       throw Exception(result.message ?? 'Failed to create user');
     }
   }
 
-  /// Get the current user profile
-  UserProfile? getCurrentUser() {
-    return _userRepository.getCurrentUser();
+  /// Get the current user profile (async - waits for repository to be ready)
+  Future<UserProfile?> getCurrentUser() async {
+    try {
+      final userRepo = await ref.read(userRepositoryProvider.future);
+      return userRepo.getCurrentUser();
+    } catch (e) {
+      print('⚠️ Error getting current user: $e');
+      return null;
+    }
   }
   
   /// Get device ID for user identification
@@ -95,58 +112,98 @@ class AuthService {
 
   /// Update user profile
   Future<void> updateUserProfile(UserProfile profile) async {
-    await _userRepository.updateUserProfile(profile);
+    final userRepo = await _userRepository;
+    await userRepo.updateUserProfile(profile);
   }
 
   /// Check if user has completed onboarding
-  bool hasCompletedOnboarding() {
-    final user = getCurrentUser();
+  Future<bool> hasCompletedOnboarding() async {
+    final user = await getCurrentUser();
     if (user == null) return false;
     
-    final preferences = _userRepository.getFoodPreferences(user.id);
-    return preferences != null && preferences.preferences.isNotEmpty;
+    // Check the onboardingCompleted flag from UserProfile
+    return user.onboardingCompleted;
   }
 
   /// Save food preferences (typically during onboarding)
   Future<void> saveFoodPreferences(String userId, Map<String, FoodPreference> preferences) async {
+    // Get device ID (userId is actually deviceId in our system)
+    final deviceId = userId;
+    
+    // First, save to Supabase via Edge Function
+    final result = await _authRepositoryEdge.saveFoodPreferences(deviceId, preferences);
+    
+    if (!result.success) {
+      throw Exception(result.message ?? 'Failed to save food preferences to server');
+    }
+    
+    // Then save locally for caching
     final foodPreferences = FoodPreferences(
       userId: userId,
       preferences: preferences,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    await _userRepository.saveFoodPreferences(foodPreferences);
+    final userRepo = await _userRepository;
+    await userRepo.saveFoodPreferences(foodPreferences);
+    
+    // Mark user as having completed onboarding locally
+    final user = await getCurrentUser();
+    if (user != null) {
+      final updatedUser = user.copyWith(
+        onboardingCompleted: true,
+        updatedAt: DateTime.now(),
+      );
+      await userRepo.updateUserProfile(updatedUser);
+    }
   }
 
   /// Update a single food preference
   Future<void> updateFoodPreference(String userId, String foodId, FoodPreference preference) async {
-    await _userRepository.updateFoodPreference(userId, foodId, preference);
+    final userRepo = await _userRepository;
+    await userRepo.updateFoodPreference(userId, foodId, preference);
   }
 
   /// Get food preferences for a user
   FoodPreferences? getFoodPreferences(String userId) {
-    return _userRepository.getFoodPreferences(userId);
+    try {
+      final userRepo = ref.read(userRepositoryProvider).valueOrNull;
+      return userRepo?.getFoodPreferences(userId);
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Get liked foods for a user
   List<String> getLikedFoods(String userId) {
-    return _userRepository.getLikedFoods(userId);
+    try {
+      final userRepo = ref.read(userRepositoryProvider).valueOrNull;
+      return userRepo?.getLikedFoods(userId) ?? [];
+    } catch (e) {
+      return [];
+    }
   }
 
   /// Get disliked foods for a user  
   List<String> getDislikedFoods(String userId) {
-    return _userRepository.getDislikedFoods(userId);
+    try {
+      final userRepo = ref.read(userRepositoryProvider).valueOrNull;
+      return userRepo?.getDislikedFoods(userId) ?? [];
+    } catch (e) {
+      return [];
+    }
   }
 
 
   /// Reset all user data (for testing or re-onboarding)
   Future<void> resetUserData() async {
-    await _userRepository.clearAllData();
+    final userRepo = await _userRepository;
+    await userRepo.clearAllData();
   }
 
   /// Get user profile summary for other features
-  Map<String, dynamic>? getUserSummary() {
-    final user = getCurrentUser();
+  Future<Map<String, dynamic>?> getUserSummary() async {
+    final user = await getCurrentUser();
     if (user == null) return null;
 
     final preferences = getFoodPreferences(user.id);
@@ -169,10 +226,10 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(ref);
 });
 
-/// Provider for current user profile
-final currentUserProvider = Provider<UserProfile?>((ref) {
+/// Provider for current user profile (async-aware)
+final currentUserProvider = FutureProvider<UserProfile?>((ref) async {
   final authService = ref.watch(authServiceProvider);
-  return authService.getCurrentUser();
+  return await authService.getCurrentUser();
 });
 
 /// Provider for AuthRepositoryEdge

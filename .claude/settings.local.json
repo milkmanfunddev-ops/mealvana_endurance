@@ -39,7 +39,13 @@
       "Bash(pod install:*)",
       "Bash(shorebird patches:*)",
       "Bash(shorebird apps:*)",
-      "Bash(flutter:*)"
+      "Bash(flutter:*)",
+      "WebFetch(domain:docs.mixpanel.com)",
+      "Bash(timeout 20 flutter run --debug)",
+      "Bash(gtimeout 30 flutter run --debug)",
+      "Bash(r)",
+      "Bash(touch:*)",
+      "Bash(supabase functions deploy:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

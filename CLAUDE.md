@@ -46,6 +46,32 @@ lib/features/{feature_name}/
 
 📚 **Full Documentation**: [/docs/technical/README.md](/docs/technical/README.md)
 
+### App Initialization Pattern (Andrea Bizzotto)
+
+**CRITICAL**: The app follows Andrea Bizzotto's robust initialization pattern. **DO NOT** modify the initialization flow without understanding this pattern.
+
+**Proper Flow:**
+1. `main()` → Only non-recoverable initialization (Supabase, Firebase)
+2. `RootAppWidget` → MaterialApp.router with builder
+3. `MaterialApp.builder` → Wraps router child with `AppStartupWidget`
+4. `AppStartupWidget` → Manages `appStartupProvider` and navigation
+5. `appStartupProvider` → Initializes recoverable dependencies (Hive, user session, analytics)
+
+**Key Rules:**
+- **Hive initialization**: Must be in `appStartupProvider`, NOT in `main()`
+- **User session detection**: Handled in app startup service 
+- **Navigation logic**: AppStartupWidget determines initial route based on user state
+- **Error handling**: AppStartupWidget shows retry for recoverable errors
+- **Deep links**: Supported via MaterialApp.router + builder pattern
+
+**Code Locations:**
+- Main entry: `lib/main.dart`
+- Root widget: `lib/shared/widgets/root_app_widget.dart`
+- Startup widget: `lib/features/app_startup/presentation/widgets/app_startup_widget.dart`
+- Startup service: `lib/shared/services/app_startup_service.dart`
+
+📖 **Andrea's Documentation**: [/docs/technical/andrea/andrea_initialization.txt](/docs/technical/andrea/andrea_initialization.txt)
+
 ### Fat Backend Architecture
 The app implements a "fat backend" strategy where business logic and content are controlled server-side:
 

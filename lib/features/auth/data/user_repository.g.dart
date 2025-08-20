@@ -43,13 +43,14 @@ final preferencesBoxProvider = FutureProvider<Box<FoodPreferences>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef PreferencesBoxRef = FutureProviderRef<Box<FoodPreferences>>;
-String _$userRepositoryHash() => r'1c362cf15e5d71346ecef18c1baaf2504be2405a';
+String _$userRepositoryHash() => r'a4d7fed179297867acbc0def9f5e522f590bdac8';
 
 /// Repository provider following Andrea's pattern
 ///
 /// Copied from [userRepository].
 @ProviderFor(userRepository)
-final userRepositoryProvider = AutoDisposeProvider<UserRepository>.internal(
+final userRepositoryProvider =
+    AutoDisposeFutureProvider<UserRepository>.internal(
   userRepository,
   name: r'userRepositoryProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -61,6 +62,6 @@ final userRepositoryProvider = AutoDisposeProvider<UserRepository>.internal(
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef UserRepositoryRef = AutoDisposeProviderRef<UserRepository>;
+typedef UserRepositoryRef = AutoDisposeFutureProviderRef<UserRepository>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

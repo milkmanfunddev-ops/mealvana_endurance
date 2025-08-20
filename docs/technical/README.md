@@ -5,6 +5,8 @@ This document contains technical implementation details, patterns, and best prac
 
 ## 🚨 CRITICAL Documentation
 
+**📋 [CLAUDE.md](../../CLAUDE.md)** - **PRIMARY AI ASSISTANT CONTEXT**. Contains complete project context, architecture patterns, and critical rules. **READ THIS FIRST**.
+
 **📋 [FOA Architecture Guide](foa-architecture.md)** - MANDATORY reading for all developers. Contains required Andrea Bizzotto AsyncNotifier patterns that ALL controllers must follow.
 
 ## App Architecture Patterns

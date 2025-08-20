@@ -54,6 +54,10 @@ class ContentKeys {
 
   // Food Preferences Screen
   static const String foodPreferencesTitle = 'food_preferences.title';
+  static const String foodPreferencesOptionLike = 'food_preferences.option_like';
+  static const String foodPreferencesOptionWillingToTry = 'food_preferences.option_willing_to_try';
+  static const String foodPreferencesOptionDislike = 'food_preferences.option_dislike';
+  static const String foodPreferencesCompleteButton = 'food_preferences.complete_button';
 
   // Settings Screen
   static const String settingsTitle = 'settings.title';

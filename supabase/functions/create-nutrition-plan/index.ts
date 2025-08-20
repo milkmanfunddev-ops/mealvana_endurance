@@ -17,14 +17,18 @@ interface CreateNutritionPlanRequest {
 interface FoodItem {
   id: string;
   name: string;
-  category: 'before_run' | 'during_run' | 'after_run';
+  serving_amount: number;
+  serving_unit: string;
+  serving_unit_plural?: string;
+  serving_qualifier?: string;
+  food_categories: Array<{ category_id: number }>;
   nutritional_info: {
     carbs_per_serving: number;
     protein_per_serving: number;
     fat_per_serving: number;
     calories_per_serving?: number;
     sodium_mg?: number;
-    serving_size: string;
+    serving_size: string; // Legacy field for compatibility
   };
   description?: string;
   instructions?: string;
@@ -108,8 +112,21 @@ serve(async (req) => {
     // Get all foods from database
     const { data: foods, error: foodsError } = await supabaseClient
       .from('foods')
-      .select('*')
-      .order('category', { ascending: true })
+      .select(`
+        id,
+        name,
+        description,
+        instructions,
+        nutritional_info,
+        serving_amount,
+        serving_unit,
+        serving_unit_plural,
+        serving_qualifier,
+        food_categories (
+          category_id
+        )
+      `)
+      .order('name', { ascending: true })
 
     if (foodsError || !foods) {
       return new Response(
@@ -337,10 +354,15 @@ async function selectFoodsForPlan({ calculations, foods, likedFoods, distanceMil
   durationHours: number;
 }) {
   
-  // Filter foods by category
-  const preRunFoods = foods.filter(f => f.category === 'before_run')
-  const duringRunFoods = foods.filter(f => f.category === 'during_run')
-  const postRunFoods = foods.filter(f => f.category === 'after_run')
+  // Helper function to check if food belongs to category
+  const foodBelongsToCategory = (food: any, categoryId: number) => {
+    return food.food_categories?.some((fc: any) => fc.category_id === categoryId)
+  }
+  
+  // Filter foods by category using the new multi-category system
+  const preRunFoods = foods.filter(f => foodBelongsToCategory(f, 1)) // before_run = 1
+  const duringRunFoods = foods.filter(f => foodBelongsToCategory(f, 2)) // during_run = 2
+  const postRunFoods = foods.filter(f => foodBelongsToCategory(f, 3)) // after_run = 3
 
   // Select pre-run foods
   const selectedPreRun = selectFoodsForCategory({
@@ -454,10 +476,31 @@ function createFoodItemData(food: FoodItem, quantity: number) {
   const adjustedCalories = Math.round((food.nutritional_info.calories_per_serving || 0) * quantity)
   const adjustedSodium = food.nutritional_info.sodium_mg ? Math.round(food.nutritional_info.sodium_mg * quantity) : undefined
 
+  // Calculate total amount using structured serving data
+  const totalAmount = quantity * food.serving_amount
+  
+  // Format quantity using structured serving data
+  let quantityText: string
+  if (totalAmount === 1) {
+    quantityText = `1 ${food.serving_unit}`
+  } else {
+    const unit = food.serving_unit_plural || food.serving_unit
+    if (totalAmount % 1 === 0) {
+      quantityText = `${totalAmount.toFixed(0)} ${unit}`
+    } else {
+      quantityText = `${totalAmount.toFixed(1)} ${unit}`
+    }
+  }
+  
+  // Add qualifier if present
+  if (food.serving_qualifier) {
+    quantityText += `, ${food.serving_qualifier}`
+  }
+
   return {
     id: food.id,
     name: food.name,
-    quantity: `${quantity % 1 === 0 ? quantity.toFixed(0) : quantity.toFixed(1)} ${extractServingUnit(food.nutritional_info.serving_size)}`,
+    quantity: quantityText,
     iconPath: `assets/images/${food.name.toLowerCase().replace(' ', '_')}.png`,
     description: food.description || food.instructions || '',
     nutritionalInfo: {
@@ -470,10 +513,3 @@ function createFoodItemData(food: FoodItem, quantity: number) {
   }
 }
 
-function extractServingUnit(servingSize: string): string {
-  const words = servingSize.toLowerCase().split(' ')
-  if (words.length >= 2) {
-    return words[words.length - 1] // Last word is usually the unit
-  }
-  return 'serving'
-}

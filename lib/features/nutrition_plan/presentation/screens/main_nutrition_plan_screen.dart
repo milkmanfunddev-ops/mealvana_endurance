@@ -10,6 +10,7 @@ import '../providers/main_screen_controller.dart';
 import '../widgets/pre_run_timing_selector.dart';
 import '../../domain/run_parameters.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../../../shared/mixins/analytics_mixin.dart';
 
 /// Main Nutrition Plan Screen - Main input screen matching Alex's design
 /// Users enter run details and generate their nutrition plan
@@ -20,7 +21,7 @@ class MainNutritionPlanScreen extends ConsumerStatefulWidget {
   ConsumerState<MainNutritionPlanScreen> createState() => _MainNutritionPlanScreenState();
 }
 
-class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScreen> {
+class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScreen> with AnalyticsMixin {
   final _formKey = GlobalKey<FormState>();
   final _distanceController = TextEditingController();
   final _paceController = TextEditingController();
@@ -37,6 +38,9 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
     // Set default placeholder values
     _distanceController.text = '5';
     _paceController.text = '8:30';
+    
+    // Track screen view
+    trackScreenView('Main Nutrition Plan Screen');
     
     // Load user's gut training preference if available
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -61,6 +65,16 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
     
     setState(() => _isGenerating = true);
     
+    // Track generate plan button press
+    await trackInteraction('Generate Plan Button Pressed', properties: {
+      'Distance': _distanceController.text,
+      'Pace': _paceController.text,
+      'Pre Run Minutes': _selectedPreRunMinutes,
+      'Gut Training': _selectedGutTraining.name,
+      'Distance Unit': _selectedDistanceUnit.name,
+      'Pace Unit': _selectedPaceUnit.name,
+    });
+    
     try {
       final distance = double.tryParse(_distanceController.text) ?? 5.0;
       final paceString = _paceController.text.trim();
@@ -79,12 +93,24 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
         paceMinutesPerMile: paceMinutes,
       );
       
+      // Track successful navigation to plan screen
+      await trackNavigation('Plan Screen', source: 'Main Screen Generate Button');
+      
       // Navigate to plan screen
       if (mounted) {
         context.push('/plan');
       }
       
     } catch (error) {
+      // Track the error
+      await trackScreenError(error.toString(), 
+        errorType: 'Plan Generation Error',
+        additionalContext: {
+          'Distance': _distanceController.text,
+          'Pace': _paceController.text,
+        },
+      );
+      
       if (mounted) {
         final currentState = ref.read(mainScreenControllerProvider).valueOrNull;
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import '../../auth/application/auth_service.dart';
+import '../../../shared/services/analytics_service.dart';
 
 /// Application service for managing the onboarding flow
 /// Coordinates user creation and food preference collection
@@ -10,6 +11,9 @@ class OnboardingService {
 
   /// Get auth service for user operations
   AuthService get _authService => ref.read(authServiceProvider);
+  
+  /// Get analytics service for tracking
+  AnalyticsService get _analyticsService => ref.read(analyticsServiceProvider);
 
   /// Complete user profile creation step
   Future<UserProfile> createUserProfile({
@@ -20,7 +24,10 @@ class OnboardingService {
     required double weightPounds,
     required bool runsWithWaterBottle,
   }) async {
-    return await _authService.createUser(
+    // Track onboarding step completion
+    await _analyticsService.trackOnboardingStepCompleted('User Profile');
+    
+    final user = await _authService.createUser(
       gender: gender,
       birthday: birthday,
       heightFeet: heightFeet,
@@ -28,6 +35,21 @@ class OnboardingService {
       weightPounds: weightPounds,
       runsWithWaterBottle: runsWithWaterBottle,
     );
+    
+    // Identify the user in analytics with all their properties
+    await _analyticsService.identifyUser(
+      user.id,
+      properties: {
+        'Gender': gender.name,
+        'Age': user.age,
+        'Weight (lbs)': weightPounds,
+        'Height (in)': user.heightFeet * 12 + user.heightInches,
+        'Runs With Water Bottle': runsWithWaterBottle,
+        'Has Completed Onboarding': false, // Will be true after food preferences
+      },
+    );
+    
+    return user;
   }
 
   /// Complete food preferences step
@@ -35,17 +57,44 @@ class OnboardingService {
     String userId, 
     Map<String, FoodPreference> preferences
   ) async {
+    // Track onboarding step completion
+    await _analyticsService.trackOnboardingStepCompleted('Food Preferences');
+    
     await _authService.saveFoodPreferences(userId, preferences);
+    
+    // Track onboarding completion
+    final user = await _authService.getCurrentUser();
+    if (user != null) {
+      // Update user profile to mark onboarding as complete
+      await _analyticsService.identifyUser(
+        user.id,
+        properties: {
+          'Has Completed Onboarding': true,
+          'Gut Training': user.gutTraining.name,
+          'Food Preferences Count': preferences.length,
+        },
+      );
+      
+      await _analyticsService.trackOnboardingCompleted(
+        timeTaken: Duration.zero, // TODO: Track actual time
+        gender: user.gender.name,
+        age: user.age,
+        weightPounds: user.weightPounds,
+        runsWithWaterBottle: user.runsWithWaterBottle,
+        gutTrainingLevel: user.gutTraining.name,
+        foodPreferencesSelected: preferences.length,
+      );
+    }
   }
 
   /// Check if onboarding is complete
-  bool isOnboardingComplete() {
-    return _authService.hasCompletedOnboarding();
+  Future<bool> isOnboardingComplete() async {
+    return await _authService.hasCompletedOnboarding();
   }
 
   /// Get onboarding progress
-  OnboardingProgress getOnboardingProgress() {
-    final user = _authService.getCurrentUser();
+  Future<OnboardingProgress> getOnboardingProgress() async {
+    final user = await _authService.getCurrentUser();
     final hasPreferences = user != null ? 
         _authService.getFoodPreferences(user.id) != null : false;
 
@@ -77,7 +126,7 @@ final onboardingServiceProvider = Provider<OnboardingService>((ref) {
 });
 
 /// Provider for onboarding progress
-final onboardingProgressProvider = Provider<OnboardingProgress>((ref) {
+final onboardingProgressProvider = FutureProvider<OnboardingProgress>((ref) async {
   final service = ref.watch(onboardingServiceProvider);
-  return service.getOnboardingProgress();
+  return await service.getOnboardingProgress();
 });

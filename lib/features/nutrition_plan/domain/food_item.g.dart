@@ -20,7 +20,7 @@ class FoodItemAdapter extends TypeAdapter<FoodItem> {
       id: fields[0] as String,
       name: fields[1] as String,
       description: fields[2] as String,
-      category: fields[3] as FoodCategory,
+      categories: (fields[3] as List).cast<FoodCategory>(),
       servingSize: fields[4] as String,
       servingAmount: fields[5] as double,
       servingUnit: fields[6] as String,
@@ -42,7 +42,7 @@ class FoodItemAdapter extends TypeAdapter<FoodItem> {
       ..writeByte(2)
       ..write(obj.description)
       ..writeByte(3)
-      ..write(obj.category)
+      ..write(obj.categories)
       ..writeByte(4)
       ..write(obj.servingSize)
       ..writeByte(5)
@@ -133,26 +133,26 @@ class FoodCategoryAdapter extends TypeAdapter<FoodCategory> {
   FoodCategory read(BinaryReader reader) {
     switch (reader.readByte()) {
       case 0:
-        return FoodCategory.preRun;
+        return FoodCategory.beforeRun;
       case 1:
         return FoodCategory.duringRun;
       case 2:
-        return FoodCategory.postRun;
+        return FoodCategory.afterRun;
       default:
-        return FoodCategory.preRun;
+        return FoodCategory.beforeRun;
     }
   }
 
   @override
   void write(BinaryWriter writer, FoodCategory obj) {
     switch (obj) {
-      case FoodCategory.preRun:
+      case FoodCategory.beforeRun:
         writer.writeByte(0);
         break;
       case FoodCategory.duringRun:
         writer.writeByte(1);
         break;
-      case FoodCategory.postRun:
+      case FoodCategory.afterRun:
         writer.writeByte(2);
         break;
     }

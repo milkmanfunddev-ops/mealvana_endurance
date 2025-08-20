@@ -14,16 +14,22 @@ class FoodItem extends HiveObject {
   final String description;
 
   @HiveField(3)
-  final FoodCategory category;
+  final List<FoodCategory> categories;
 
   @HiveField(4)
-  final String servingSize;
+  final String servingSize; // Legacy field - keep for compatibility
 
   @HiveField(5)
   final double servingAmount;
 
   @HiveField(6)
   final String servingUnit;
+
+  @HiveField(11)
+  final String? servingUnitPlural;
+
+  @HiveField(12)
+  final String? servingQualifier;
 
   /// Nutritional information per serving
   @HiveField(7)
@@ -43,11 +49,13 @@ class FoodItem extends HiveObject {
     required this.id,
     required this.name,
     required this.description,
-    required this.category,
+    required this.categories,
     required this.servingSize,
     required this.servingAmount,
     required this.servingUnit,
     required this.nutrition,
+    this.servingUnitPlural,
+    this.servingQualifier,
     this.imageUrl,
     this.tags = const [],
     this.additionalInfo,
@@ -58,16 +66,20 @@ class FoodItem extends HiveObject {
       id: json['id'],
       name: json['name'],
       description: json['description'],
-      category: FoodCategory.values.firstWhere(
-        (e) => e.toString().split('.').last == json['category'],
-      ),
-      servingSize: json['servingSize'],
-      servingAmount: json['servingAmount'].toDouble(),
-      servingUnit: json['servingUnit'],
-      nutrition: NutritionInfo.fromJson(json['nutrition']),
-      imageUrl: json['imageUrl'],
+      categories: json['categories'] != null 
+        ? (json['categories'] as List).map((cat) => 
+            FoodCategory.fromDbValue(cat as String)
+          ).toList()
+        : [],
+      servingSize: json['servingSize'] ?? '${json['serving_amount'] ?? 1} ${json['serving_unit'] ?? 'serving'}',
+      servingAmount: (json['servingAmount'] ?? json['serving_amount'])?.toDouble() ?? 1.0,
+      servingUnit: json['servingUnit'] ?? json['serving_unit'] ?? 'serving',
+      servingUnitPlural: json['servingUnitPlural'] ?? json['serving_unit_plural'],
+      servingQualifier: json['servingQualifier'] ?? json['serving_qualifier'],
+      nutrition: NutritionInfo.fromJson(json['nutrition'] ?? json['nutritional_info'] ?? {}),
+      imageUrl: json['imageUrl'] ?? json['image_url'],
       tags: List<String>.from(json['tags'] ?? []),
-      additionalInfo: json['additionalInfo'],
+      additionalInfo: json['additionalInfo'] ?? json['instructions'],
     );
   }
 
@@ -76,7 +88,7 @@ class FoodItem extends HiveObject {
       'id': id,
       'name': name,
       'description': description,
-      'category': category.toString().split('.').last,
+      'categories': categories.map((cat) => cat.dbValue).toList(),
       'servingSize': servingSize,
       'servingAmount': servingAmount,
       'servingUnit': servingUnit,
@@ -86,18 +98,55 @@ class FoodItem extends HiveObject {
       'additionalInfo': additionalInfo,
     };
   }
+  
+  /// Check if this food belongs to a specific category
+  bool belongsToCategory(FoodCategory category) {
+    return categories.contains(category);
+  }
+  
+  /// Format quantity for display (e.g., "3 cups", "2.3 servings")
+  String formatQuantity(double quantity) {
+    final totalAmount = quantity * servingAmount;
+    final unit = servingUnitPlural ?? servingUnit;
+    final qualifier = servingQualifier ?? '';
+    
+    String quantityText;
+    if (totalAmount == 1) {
+      quantityText = '1 $servingUnit';
+    } else if (totalAmount % 1 == 0) {
+      quantityText = '${totalAmount.toInt()} $unit';
+    } else {
+      quantityText = '${totalAmount.toStringAsFixed(1)} $unit';
+    }
+    
+    if (qualifier.isNotEmpty) {
+      quantityText += ', $qualifier';
+    }
+    
+    return quantityText;
+  }
 }
 
 @HiveType(typeId: 1)
 enum FoodCategory {
   @HiveField(0)
-  preRun,
+  beforeRun('before_run'),
 
   @HiveField(1)
-  duringRun,
+  duringRun('during_run'),
 
   @HiveField(2)
-  postRun,
+  afterRun('after_run');
+  
+  const FoodCategory(this.dbValue);
+  final String dbValue;
+  
+  static FoodCategory fromDbValue(String value) {
+    return FoodCategory.values.firstWhere(
+      (cat) => cat.dbValue == value,
+      orElse: () => FoodCategory.beforeRun,
+    );
+  }
 }
 
 @HiveType(typeId: 2)

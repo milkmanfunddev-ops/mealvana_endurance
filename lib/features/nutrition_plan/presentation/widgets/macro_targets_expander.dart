@@ -145,7 +145,7 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
                         margin: EdgeInsets.only(bottom: 16.h),
                       ),
                       
-                      // Alex's design macro items
+                      // Macro items with dynamic values
                       _buildMacroItem(
                         'Carbs: ${widget.macroTargets.carbs} grams',
                         Icons.grain,
@@ -155,7 +155,7 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
                       SizedBox(height: 12.h),
                       
                       _buildMacroItem(
-                        'Sodium: 800-1200mg',
+                        _formatSodium(),
                         Icons.local_fire_department,
                         AppTheme.highlight600Alt,
                       ),
@@ -163,7 +163,7 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
                       SizedBox(height: 12.h),
                       
                       _buildMacroItem(
-                        'Fluids: 40-48 oz',
+                        _formatFluids(),
                         Icons.water_drop,
                         AppTheme.primary600,
                       ),
@@ -176,6 +176,24 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
         ),
       ),
     );
+  }
+
+  String _formatSodium() {
+    if (widget.macroTargets.sodiumMin != null && widget.macroTargets.sodiumMax != null) {
+      return 'Sodium: ${widget.macroTargets.sodiumMin}-${widget.macroTargets.sodiumMax}mg';
+    } else if (widget.macroTargets.sodium != null) {
+      return 'Sodium: ${widget.macroTargets.sodium}mg';
+    }
+    return 'Sodium: Not specified';
+  }
+
+  String _formatFluids() {
+    if (widget.macroTargets.fluidsMin != null && widget.macroTargets.fluidsMax != null) {
+      return 'Fluids: ${widget.macroTargets.fluidsMin}-${widget.macroTargets.fluidsMax} oz';
+    } else if (widget.macroTargets.fluids != null) {
+      return 'Fluids: ${widget.macroTargets.fluids} oz';
+    }
+    return 'Fluids: Not specified';
   }
 
   Widget _buildMacroItem(String text, IconData icon, Color color) {

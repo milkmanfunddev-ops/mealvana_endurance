@@ -12,8 +12,7 @@ import '../../content/domain/app_content.dart';
 import '../../nutrition_plan/application/nutrition_plan_service.dart';
 import '../../nutrition_plan/domain/nutrition_plan.dart';
 import '../../nutrition_plan/domain/food_item.dart';
-
-part 'app_startup_service.g.dart';
+import '../../../shared/services/analytics_service.dart';
 
 /// Navigation state after app initialization
 enum AppStartupState {
@@ -42,19 +41,27 @@ class AppStartupService {
     required this.userRepository,
     required this.contentService,
     required this.nutritionPlanService,
+    required this.analyticsService,
   });
 
   final UserRepository userRepository;
   final ContentService contentService;
   final NutritionPlanService nutritionPlanService;
+  final AnalyticsService analyticsService;
 
   /// Initialize app and determine navigation state
   Future<AppStartupResult> initialize() async {
+    final startTime = DateTime.now();
+    
     try {
-      // 1. Get device ID
+      // 1. Initialize analytics first
+      await analyticsService.initialize();
+      await analyticsService.trackAppLaunched();
+      
+      // 2. Get device ID
       final deviceId = await _getDeviceId();
       
-      // 2. Initialize content service (load from cache/Supabase)
+      // 3. Initialize content service (load from cache/Supabase)
       await contentService.initialize();
       
       // 3. Check if user exists locally
@@ -69,6 +76,10 @@ class AppStartupService {
           
           // Try to load current nutrition plan
           final currentPlan = await nutritionPlanService.getLatestNutritionPlan();
+          
+          // Track successful startup
+          final startupDuration = DateTime.now().difference(startTime);
+          await analyticsService.trackAppStartupTime(startupDuration);
           
           return AppStartupResult(
             navigationState: AppStartupState.planScreen,
@@ -140,11 +151,13 @@ class AppStartupService {
 }
 
 @riverpod
-AppStartupService appStartupService(Ref ref) {
+Future<AppStartupService> appStartupService(Ref ref) async {
+  final userRepository = await ref.watch(userRepositoryProvider.future);
   return AppStartupService(
-    userRepository: ref.watch(userRepositoryProvider),
+    userRepository: userRepository,
     contentService: ref.watch(contentServiceProvider),
     nutritionPlanService: ref.watch(nutritionPlanServiceProvider),
+    analyticsService: ref.watch(analyticsServiceProvider),
   );
 }
 
@@ -166,24 +179,24 @@ Future<void> hiveInitialization(Ref ref) async {
   Hive.registerAdapter(AppContentAdapter());
 }
 
-/// Main app startup provider following Andrea's pattern
-@Riverpod(keepAlive: true)
-Future<AppStartupResult> appStartup(Ref ref) async {
-  ref.onDispose(() {
-    // Invalidate dependencies when app startup is invalidated
-    ref.invalidate(appStartupServiceProvider);
-  });
+// /// Main app startup provider following Andrea's pattern
+// @Riverpod(keepAlive: true)
+// Future<AppStartupResult> appStartup(Ref ref) async {
+//   ref.onDispose(() {
+//     // Invalidate dependencies when app startup is invalidated
+//     ref.invalidate(appStartupServiceProvider);
+//   });
 
-  // 1. First ensure Hive is initialized
-  await ref.watch(hiveInitializationProvider.future);
+//   // 1. First ensure Hive is initialized
+//   await ref.watch(hiveInitializationProvider.future);
 
-  // 2. Then eagerly initialize async dependencies (boxes)
-  await ref.watch(userBoxProvider.future);
-  await ref.watch(preferencesBoxProvider.future);
-  // Nutrition plan storage now handled by Edge Functions - no local storage needed
-  await ref.watch(contentBoxProvider.future);
+//   // 2. Then eagerly initialize async dependencies (boxes)
+//   await ref.watch(userBoxProvider.future);
+//   await ref.watch(preferencesBoxProvider.future);
+//   // Nutrition plan storage now handled by Edge Functions - no local storage needed
+//   await ref.watch(contentBoxProvider.future);
 
-  // 3. Finally run the startup service
-  final startupService = ref.watch(appStartupServiceProvider);
-  return await startupService.initialize();
-}
+//   // 3. Finally run the startup service
+//   final startupService = await ref.read(appStartupServiceProvider.future);
+//   return await startupService.initialize();
+// }

@@ -7,7 +7,7 @@ part of 'settings_controller.dart';
 // **************************************************************************
 
 String _$settingsControllerHash() =>
-    r'56d345c04c0815a6f38f159c8630118fb581ba37';
+    r'c4414dfaed364ae9ce7166670e1d9165683906a8';
 
 /// Controller for settings screen following Andrea Bizzotto FOA patterns
 ///

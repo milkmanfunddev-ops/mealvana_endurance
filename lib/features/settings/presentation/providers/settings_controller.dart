@@ -14,7 +14,7 @@ part 'settings_controller.g.dart';
 @riverpod
 class SettingsController extends _$SettingsController {
   ContentService get _contentService => ref.read(contentServiceProvider);
-  UserRepository get _userRepository => ref.read(userRepositoryProvider);
+  Future<UserRepository> get _userRepository async => await ref.read(userRepositoryProvider.future);
 
   @override
   FutureOr<SettingsState> build() async {
@@ -33,7 +33,8 @@ class SettingsController extends _$SettingsController {
     final saveButtonText = _contentService.getValue(ContentKeys.settingsSaveButton, defaultValue: 'Save Changes');
 
     // Load current user profile
-    final userProfile = _userRepository.getUserProfile();
+    final userRepository = await _userRepository;
+    final userProfile = userRepository.getUserProfile();
     
     return SettingsState(
       title: title,
@@ -188,7 +189,8 @@ class SettingsController extends _$SettingsController {
       );
 
       // Save locally first, then sync to Supabase
-      await _userRepository.saveUserProfile(updatedProfile);
+      final userRepository = await _userRepository;
+      await userRepository.saveUserProfile(updatedProfile);
       
       // TODO: Add Supabase sync once implemented
       // await _userRepository.syncToSupabase();

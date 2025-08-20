@@ -213,6 +213,12 @@ class MacroTargets {
     required this.carbs,
     required this.protein,
     required this.fat,
+    this.sodium,
+    this.sodiumMin,
+    this.sodiumMax,
+    this.fluids,
+    this.fluidsMin,
+    this.fluidsMax,
     this.carbsRange,
     this.proteinRange,
     this.fatRange,
@@ -222,6 +228,12 @@ class MacroTargets {
   final int carbs; // grams
   final int protein; // grams  
   final int fat; // grams
+  final int? sodium; // mg (average)
+  final int? sodiumMin; // mg (minimum)
+  final int? sodiumMax; // mg (maximum)
+  final int? fluids; // oz (average)
+  final int? fluidsMin; // oz (minimum)
+  final int? fluidsMax; // oz (maximum)
   final String? carbsRange; // e.g., "45-65%"
   final String? proteinRange; // e.g., "10-15%"
   final String? fatRange; // e.g., "20-35%"
@@ -233,6 +245,12 @@ class MacroTargets {
       carbs: json['carbs'] as int,
       protein: json['protein'] as int,
       fat: json['fat'] as int,
+      sodium: json['sodium'] as int?,
+      sodiumMin: json['sodiumMin'] as int?,
+      sodiumMax: json['sodiumMax'] as int?,
+      fluids: json['fluids'] as int?,
+      fluidsMin: json['fluidsMin'] as int?,
+      fluidsMax: json['fluidsMax'] as int?,
       carbsRange: json['carbsRange'] as String?,
       proteinRange: json['proteinRange'] as String?,
       fatRange: json['fatRange'] as String?,
@@ -246,6 +264,12 @@ class MacroTargets {
       'carbs': carbs,
       'protein': protein,
       'fat': fat,
+      'sodium': sodium,
+      'sodiumMin': sodiumMin,
+      'sodiumMax': sodiumMax,
+      'fluids': fluids,
+      'fluidsMin': fluidsMin,
+      'fluidsMax': fluidsMax,
       'carbsRange': carbsRange,
       'proteinRange': proteinRange,
       'fatRange': fatRange,

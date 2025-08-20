@@ -7,12 +7,13 @@ import 'shared/widgets/root_app_widget.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Supabase
+  // Initialize Supabase (non-recoverable initialization)
   await Supabase.initialize(
     url: 'https://wvmvsodrvbkxfydabqed.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2bXZzb2RydmJreGZ5ZGFicWVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTMxMDcsImV4cCI6MjA3MDg2OTEwN30.pG2IYdEIIFS8_zPxzr6pZplzWQqvD13dvslrpFMAPCk',
   );
   
+  // Entry point following Andrea Bizzotto's pattern
   runApp(
     const ProviderScope(
       child: RootAppWidget(),

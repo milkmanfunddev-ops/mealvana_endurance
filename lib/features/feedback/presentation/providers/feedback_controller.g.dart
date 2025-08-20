@@ -7,7 +7,7 @@ part of 'feedback_controller.dart';
 // **************************************************************************
 
 String _$feedbackControllerHash() =>
-    r'eea67f50daf03ba1787ddbc1b2cedb350fe5d2f3';
+    r'4ad8938ea269bea2c8350db8e0b0fef939797be4';
 
 /// Simple controller for feedback submission using our new system
 /// This replaces the old feedback controller with our new feedback workflow
