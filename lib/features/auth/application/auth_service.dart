@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import '../data/auth_repository_edge.dart';
 import '../domain/user_preferences.dart';
+import '../../../shared/services/sentry_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
@@ -17,6 +18,9 @@ class AuthService {
   
   /// Get the Edge Function auth repository
   AuthRepositoryEdge get _authRepositoryEdge => ref.read(authRepositoryEdgeProvider);
+  
+  /// Get the Sentry service
+  SentryService get _sentryService => ref.read(sentryServiceProvider);
 
   /// Create a new user profile during onboarding using Edge Function
   Future<UserProfile> createUser({
@@ -31,6 +35,7 @@ class AuthService {
   }) async {
     // Get device ID
     final deviceId = await _getDeviceId();
+    print('🔑 Creating user with device ID: $deviceId');
     
     // Get app version (simplified for now)
     const appVersion = '1.0.0';
@@ -56,6 +61,25 @@ class AuthService {
       // Save locally for caching
       final userRepo = await _userRepository;
       await userRepo.saveUserProfile(result.user!);
+      
+      // Update Sentry user context with new user details
+      await _sentryService.setUserContext(
+        deviceId: deviceId,
+        appVersion: appVersion,
+        onboardingCompleted: false, // User just created, onboarding in progress
+        gutTrainingLevel: gutTrainingLevel.name,
+      );
+      
+      _sentryService.addBreadcrumb(
+        message: 'User created successfully',
+        category: 'user_lifecycle',
+        data: {
+          'user_id': result.user!.id,
+          'gender': gender.name,
+          'gut_training': gutTrainingLevel.name,
+        },
+      );
+      
       return result.user!;
     } else if (result.message?.contains('already exists') == true) {
       // User already exists - fetch existing user from Supabase
@@ -64,11 +88,52 @@ class AuthService {
         // Save locally for caching
         final userRepo = await _userRepository;
         await userRepo.saveUserProfile(existingUser);
+        
+        // Update Sentry user context for existing user
+        await _sentryService.setUserContext(
+          deviceId: deviceId,
+          appVersion: appVersion,
+          onboardingCompleted: existingUser.onboardingCompleted,
+          gutTrainingLevel: existingUser.gutTraining.name,
+        );
+        
+        _sentryService.addBreadcrumb(
+          message: 'Existing user restored',
+          category: 'user_lifecycle',
+          data: {
+            'user_id': existingUser.id,
+            'onboarding_completed': existingUser.onboardingCompleted.toString(),
+          },
+        );
+        
         return existingUser;
       }
-      throw Exception('User already exists but could not retrieve existing user');
+      // Critical: User exists but couldn't be retrieved
+      final error = Exception('User already exists but could not retrieve existing user');
+      await _sentryService.reportCriticalError(
+        error,
+        context: 'user_creation_conflict',
+        tags: {
+          'device_id': deviceId,
+          'error_type': 'user_retrieval_failure',
+          'operation': 'create_user',
+        },
+      );
+      throw error;
     } else {
-      throw Exception(result.message ?? 'Failed to create user');
+      // Critical: User creation failed completely
+      final error = Exception(result.message ?? 'Failed to create user');
+      await _sentryService.reportCriticalError(
+        error,
+        context: 'user_creation_failure',
+        tags: {
+          'device_id': deviceId,
+          'error_type': 'edge_function_failure',
+          'operation': 'create_user',
+          'edge_function_message': result.message ?? 'unknown',
+        },
+      );
+      throw error;
     }
   }
 
@@ -76,25 +141,81 @@ class AuthService {
   Future<UserProfile?> getCurrentUser() async {
     try {
       final userRepo = await ref.read(userRepositoryProvider.future);
-      return userRepo.getCurrentUser();
-    } catch (e) {
-      print('⚠️ Error getting current user: $e');
+      final user = await userRepo.getCurrentUser();
+      
+      // Check if user exists but has empty device ID - fix it
+      if (user != null && (user.id.isEmpty || user.id.trim().isEmpty)) {
+        
+        // Generate a new device ID
+        final newDeviceId = await _getDeviceId();
+        
+        // Update the user with the new device ID
+        final updatedUser = user.copyWith(
+          id: newDeviceId,
+          updatedAt: DateTime.now(),
+        );
+        
+        // Save the updated user locally
+        await userRepo.updateUserProfile(updatedUser);
+        
+        // Also update in Supabase if the user exists there
+        try {
+          await _authRepositoryEdge.updateUser(updatedUser);
+        } catch (e) {
+          // Continue anyway since local update succeeded
+        }
+        
+        return updatedUser;
+      }
+      
+      return user;
+    } catch (e, stackTrace) {
+      // Critical: Can't get current user - this affects the entire app
+      await _sentryService.reportCriticalError(
+        e,
+        stackTrace: stackTrace,
+        context: 'get_current_user_failure',
+        tags: {
+          'error_type': 'user_retrieval_critical',
+          'operation': 'get_current_user',
+          'impact': 'app_functionality',
+        },
+      );
       return null;
     }
   }
   
   /// Get device ID for user identification
   Future<String> _getDeviceId() async {
-    final deviceInfo = DeviceInfoPlugin();
-    
-    if (Platform.isAndroid) {
-      final androidInfo = await deviceInfo.androidInfo;
-      return androidInfo.id;
-    } else if (Platform.isIOS) {
-      final iosInfo = await deviceInfo.iosInfo;
-      return iosInfo.identifierForVendor ?? 'ios-unknown';
-    } else {
-      return 'unknown-platform';
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        final deviceId = androidInfo.id;
+        
+        // Fallback for devices that return empty Android ID
+        if (deviceId.isEmpty) {
+          final fallbackId = 'android-${androidInfo.fingerprint.hashCode.abs()}';
+          return fallbackId;
+        }
+        return deviceId;
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        final deviceId = iosInfo.identifierForVendor;
+        
+        if (deviceId == null || deviceId.isEmpty) {
+          final fallbackId = 'ios-${iosInfo.model.hashCode.abs()}';
+          return fallbackId;
+        }
+        return deviceId;
+      } else {
+        return 'unknown-platform-${DateTime.now().millisecondsSinceEpoch}';
+      }
+    } catch (e) {
+      // Ultimate fallback
+      final emergencyId = 'emergency-${DateTime.now().millisecondsSinceEpoch}';
+      return emergencyId;
     }
   }
   
@@ -134,18 +255,25 @@ class AuthService {
     final result = await _authRepositoryEdge.saveFoodPreferences(deviceId, preferences);
     
     if (!result.success) {
-      throw Exception(result.message ?? 'Failed to save food preferences to server');
+      // Critical: Food preferences save failure blocks onboarding completion
+      final error = Exception(result.message ?? 'Failed to save food preferences to server');
+      await _sentryService.reportCriticalError(
+        error,
+        context: 'food_preferences_save_failure',
+        tags: {
+          'device_id': deviceId,
+          'error_type': 'edge_function_failure',
+          'operation': 'save_food_preferences',
+          'preferences_count': preferences.length.toString(),
+          'edge_function_message': result.message ?? 'unknown',
+        },
+      );
+      throw error;
     }
     
     // Then save locally for caching
-    final foodPreferences = FoodPreferences(
-      userId: userId,
-      preferences: preferences,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
     final userRepo = await _userRepository;
-    await userRepo.saveFoodPreferences(foodPreferences);
+    await userRepo.saveFoodPreferences(userId, preferences);
     
     // Mark user as having completed onboarding locally
     final user = await getCurrentUser();
@@ -155,6 +283,23 @@ class AuthService {
         updatedAt: DateTime.now(),
       );
       await userRepo.updateUserProfile(updatedUser);
+      
+      // Update Sentry user context to reflect onboarding completion
+      await _sentryService.setUserContext(
+        deviceId: userId,
+        appVersion: '1.0.0',
+        onboardingCompleted: true,
+        gutTrainingLevel: user.gutTraining.name,
+      );
+      
+      _sentryService.addBreadcrumb(
+        message: 'Onboarding completed - food preferences saved',
+        category: 'user_lifecycle',
+        data: {
+          'user_id': userId,
+          'food_preferences_count': preferences.length.toString(),
+        },
+      );
     }
   }
 
@@ -165,30 +310,30 @@ class AuthService {
   }
 
   /// Get food preferences for a user
-  FoodPreferences? getFoodPreferences(String userId) {
+  Future<Map<String, FoodPreference>?> getFoodPreferences(String userId) async {
     try {
-      final userRepo = ref.read(userRepositoryProvider).valueOrNull;
-      return userRepo?.getFoodPreferences(userId);
+      final userRepo = await _userRepository;
+      return await userRepo.getFoodPreferences(userId);
     } catch (e) {
       return null;
     }
   }
 
   /// Get liked foods for a user
-  List<String> getLikedFoods(String userId) {
+  Future<List<String>> getLikedFoods(String userId) async {
     try {
-      final userRepo = ref.read(userRepositoryProvider).valueOrNull;
-      return userRepo?.getLikedFoods(userId) ?? [];
+      final userRepo = await _userRepository;
+      return await userRepo.getLikedFoods(userId);
     } catch (e) {
       return [];
     }
   }
 
   /// Get disliked foods for a user  
-  List<String> getDislikedFoods(String userId) {
+  Future<List<String>> getDislikedFoods(String userId) async {
     try {
-      final userRepo = ref.read(userRepositoryProvider).valueOrNull;
-      return userRepo?.getDislikedFoods(userId) ?? [];
+      final userRepo = await _userRepository;
+      return await userRepo.getDislikedFoods(userId);
     } catch (e) {
       return [];
     }
@@ -206,7 +351,7 @@ class AuthService {
     final user = await getCurrentUser();
     if (user == null) return null;
 
-    final preferences = getFoodPreferences(user.id);
+    final preferences = await getFoodPreferences(user.id);
     
     return {
       'id': user.id,
@@ -216,7 +361,7 @@ class AuthService {
       'heightInches': user.totalHeightInches,
       'runsWithWaterBottle': user.runsWithWaterBottle,
       'hasPreferences': preferences != null,
-      'preferredFoodCount': preferences?.preferences.length ?? 0,
+      'preferredFoodCount': preferences?.length ?? 0,
     };
   }
 }

@@ -156,6 +156,10 @@ class AuthRepositoryEdge {
         ),
       };
 
+      print('🍎 Saving food preferences for device: $deviceId');
+      print('🍎 Preferences count: ${preferences.length}');
+      print('🍎 Request body: $requestBody');
+
       // Call Edge Function
       final response = await _supabase.functions.invoke(
         'save-food-preferences',

@@ -1,85 +1,114 @@
-import 'package:hive/hive.dart';
-
-part 'food_item.g.dart';
-
-@HiveType(typeId: 0)
-class FoodItem extends HiveObject {
-  @HiveField(0)
+/// Domain model for food items
+/// Updated to match enhanced database structure with suitability flags and explicit nutritional data
+class FoodItem {
   final String id;
-
-  @HiveField(1)
   final String name;
-
-  @HiveField(2)
-  final String description;
-
-  @HiveField(3)
+  final String? iconPath;
+  final String? description;
+  final String? instructions;
   final List<FoodCategory> categories;
-
-  @HiveField(4)
-  final String servingSize; // Legacy field - keep for compatibility
-
-  @HiveField(5)
-  final double servingAmount;
-
-  @HiveField(6)
-  final String servingUnit;
-
-  @HiveField(11)
+  
+  // Serving Information
+  final String? servingSize; // Legacy field - keep for compatibility
+  final double? servingAmount;
+  final String? servingUnit;
   final String? servingUnitPlural;
-
-  @HiveField(12)
   final String? servingQualifier;
 
-  /// Nutritional information per serving
-  @HiveField(7)
-  final NutritionInfo nutrition;
+  // Suitability Flags
+  final bool beforeRunSuitable;
+  final bool duringRunSuitable;
+  final bool runPortable;
+  final bool requiresPreparation;
+  final bool aidStationAvailable;
 
-  @HiveField(8)
-  final String? imageUrl;
+  // Serving Constraints
+  final int? maxServingsBefore;
+  final int? maxServingsDuring;
 
-  @HiveField(9)
+  // Explicit Nutritional Data (per serving)
+  final double? carbsPerServing;
+  final double? proteinPerServing;
+  final double? fatPerServing;
+  final int? caloriesPerServing;
+  final double? fluidMlPerServing;
+
+  // Micronutrients
+  final int? sodiumMg;
+  final int? caffeineMg;
+  final int? potassiumMg;
+
+  /// Legacy nutritional information - deprecated, use explicit fields
+  final NutritionInfo? nutrition;
   final List<String> tags;
-
-  /// Information shown when user wants to know more
-  @HiveField(10)
-  final String? additionalInfo;
 
   FoodItem({
     required this.id,
     required this.name,
-    required this.description,
-    required this.categories,
-    required this.servingSize,
-    required this.servingAmount,
-    required this.servingUnit,
-    required this.nutrition,
+    this.iconPath,
+    this.description,
+    this.instructions,
+    this.categories = const [],
+    this.servingSize,
+    this.servingAmount,
+    this.servingUnit,
     this.servingUnitPlural,
     this.servingQualifier,
-    this.imageUrl,
+    this.beforeRunSuitable = false,
+    this.duringRunSuitable = false,
+    this.runPortable = false,
+    this.requiresPreparation = false,
+    this.aidStationAvailable = false,
+    this.maxServingsBefore,
+    this.maxServingsDuring,
+    this.carbsPerServing,
+    this.proteinPerServing,
+    this.fatPerServing,
+    this.caloriesPerServing,
+    this.fluidMlPerServing,
+    this.sodiumMg,
+    this.caffeineMg,
+    this.potassiumMg,
+    this.nutrition,
     this.tags = const [],
-    this.additionalInfo,
   });
 
   factory FoodItem.fromJson(Map<String, dynamic> json) {
     return FoodItem(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      iconPath: json['icon_path']?.toString(),
+      description: json['description']?.toString(),
+      instructions: json['instructions']?.toString(),
       categories: json['categories'] != null 
         ? (json['categories'] as List).map((cat) => 
             FoodCategory.fromDbValue(cat as String)
           ).toList()
         : [],
-      servingSize: json['servingSize'] ?? '${json['serving_amount'] ?? 1} ${json['serving_unit'] ?? 'serving'}',
-      servingAmount: (json['servingAmount'] ?? json['serving_amount'])?.toDouble() ?? 1.0,
-      servingUnit: json['servingUnit'] ?? json['serving_unit'] ?? 'serving',
-      servingUnitPlural: json['servingUnitPlural'] ?? json['serving_unit_plural'],
-      servingQualifier: json['servingQualifier'] ?? json['serving_qualifier'],
-      nutrition: NutritionInfo.fromJson(json['nutrition'] ?? json['nutritional_info'] ?? {}),
-      imageUrl: json['imageUrl'] ?? json['image_url'],
+      servingSize: json['serving_size']?.toString(),
+      servingAmount: (json['serving_amount'] as num?)?.toDouble(),
+      servingUnit: json['serving_unit']?.toString(),
+      servingUnitPlural: json['serving_unit_plural']?.toString(),
+      servingQualifier: json['serving_qualifier']?.toString(),
+      beforeRunSuitable: json['before_run_suitable'] == true,
+      duringRunSuitable: json['during_run_suitable'] == true,
+      runPortable: json['run_portable'] == true,
+      requiresPreparation: json['requires_preparation'] == true,
+      aidStationAvailable: json['aid_station_available'] == true,
+      maxServingsBefore: json['max_servings_before'] as int?,
+      maxServingsDuring: json['max_servings_during'] as int?,
+      carbsPerServing: (json['carbs_per_serving'] as num?)?.toDouble(),
+      proteinPerServing: (json['protein_per_serving'] as num?)?.toDouble(),
+      fatPerServing: (json['fat_per_serving'] as num?)?.toDouble(),
+      caloriesPerServing: json['calories_per_serving'] as int?,
+      fluidMlPerServing: (json['fluid_ml_per_serving'] as num?)?.toDouble(),
+      sodiumMg: json['sodium_mg'] as int?,
+      caffeineMg: json['caffeine_mg'] as int?,
+      potassiumMg: json['potassium_mg'] as int?,
+      nutrition: json['nutritional_info'] != null 
+        ? NutritionInfo.fromJson(json['nutritional_info'] as Map<String, dynamic>)
+        : null,
       tags: List<String>.from(json['tags'] ?? []),
-      additionalInfo: json['additionalInfo'] ?? json['instructions'],
     );
   }
 
@@ -87,15 +116,32 @@ class FoodItem extends HiveObject {
     return {
       'id': id,
       'name': name,
+      'icon_path': iconPath,
       'description': description,
+      'instructions': instructions,
       'categories': categories.map((cat) => cat.dbValue).toList(),
-      'servingSize': servingSize,
-      'servingAmount': servingAmount,
-      'servingUnit': servingUnit,
-      'nutrition': nutrition.toJson(),
-      'imageUrl': imageUrl,
+      'serving_size': servingSize,
+      'serving_amount': servingAmount,
+      'serving_unit': servingUnit,
+      'serving_unit_plural': servingUnitPlural,
+      'serving_qualifier': servingQualifier,
+      'before_run_suitable': beforeRunSuitable,
+      'during_run_suitable': duringRunSuitable,
+      'run_portable': runPortable,
+      'requires_preparation': requiresPreparation,
+      'aid_station_available': aidStationAvailable,
+      'max_servings_before': maxServingsBefore,
+      'max_servings_during': maxServingsDuring,
+      'carbs_per_serving': carbsPerServing,
+      'protein_per_serving': proteinPerServing,
+      'fat_per_serving': fatPerServing,
+      'calories_per_serving': caloriesPerServing,
+      'fluid_ml_per_serving': fluidMlPerServing,
+      'sodium_mg': sodiumMg,
+      'caffeine_mg': caffeineMg,
+      'potassium_mg': potassiumMg,
+      'nutritional_info': nutrition?.toJson(),
       'tags': tags,
-      'additionalInfo': additionalInfo,
     };
   }
   
@@ -106,13 +152,14 @@ class FoodItem extends HiveObject {
   
   /// Format quantity for display (e.g., "3 cups", "2.3 servings")
   String formatQuantity(double quantity) {
-    final totalAmount = quantity * servingAmount;
-    final unit = servingUnitPlural ?? servingUnit;
+    final baseAmount = servingAmount ?? 1.0;
+    final totalAmount = quantity * baseAmount;
+    final unit = servingUnitPlural ?? servingUnit ?? 'serving';
     final qualifier = servingQualifier ?? '';
     
     String quantityText;
     if (totalAmount == 1) {
-      quantityText = '1 $servingUnit';
+      quantityText = '1 ${servingUnit ?? 'serving'}';
     } else if (totalAmount % 1 == 0) {
       quantityText = '${totalAmount.toInt()} $unit';
     } else {
@@ -125,17 +172,48 @@ class FoodItem extends HiveObject {
     
     return quantityText;
   }
+
+  /// Get effective carbs per serving (from explicit field or legacy nutrition)
+  double get effectiveCarbsPerServing {
+    return carbsPerServing ?? nutrition?.carbs ?? 0.0;
+  }
+
+  /// Get effective protein per serving (from explicit field or legacy nutrition)
+  double get effectiveProteinPerServing {
+    return proteinPerServing ?? nutrition?.protein ?? 0.0;
+  }
+
+  /// Get effective fat per serving (from explicit field or legacy nutrition)
+  double get effectiveFatPerServing {
+    return fatPerServing ?? nutrition?.fat ?? 0.0;
+  }
+
+  /// Get effective calories per serving (from explicit field or legacy nutrition)
+  double get effectiveCaloriesPerServing {
+    return caloriesPerServing?.toDouble() ?? nutrition?.calories ?? 0.0;
+  }
+
+  /// Get effective sodium in mg (from explicit field or legacy nutrition)
+  double get effectiveSodiumMg {
+    return sodiumMg?.toDouble() ?? nutrition?.sodium ?? 0.0;
+  }
+
+  /// Check if food is suitable for the given timing
+  bool isSuitableForTiming(FoodCategory category) {
+    switch (category) {
+      case FoodCategory.beforeRun:
+        return beforeRunSuitable;
+      case FoodCategory.duringRun:
+        return duringRunSuitable;
+      case FoodCategory.afterRun:
+        return true; // Assuming after run is generally more flexible
+    }
+  }
 }
 
-@HiveType(typeId: 1)
 enum FoodCategory {
-  @HiveField(0)
   beforeRun('before_run'),
-
-  @HiveField(1)
   duringRun('during_run'),
-
-  @HiveField(2)
   afterRun('after_run');
   
   const FoodCategory(this.dbValue);
@@ -149,38 +227,29 @@ enum FoodCategory {
   }
 }
 
-@HiveType(typeId: 2)
-class NutritionInfo extends HiveObject {
+class NutritionInfo {
   /// Calories per serving
-  @HiveField(0)
   final double calories;
 
   /// Carbohydrates in grams per serving
-  @HiveField(1)
   final double carbs;
 
   /// Protein in grams per serving
-  @HiveField(2)
   final double protein;
 
   /// Fat in grams per serving
-  @HiveField(3)
   final double fat;
 
   /// Fiber in grams per serving
-  @HiveField(4)
   final double fiber;
 
   /// Sodium in milligrams per serving
-  @HiveField(5)
   final double sodium;
 
   /// Sugar in grams per serving
-  @HiveField(6)
   final double sugar;
 
   /// Fluid content in fluid ounces per serving
-  @HiveField(7)
   final double fluids;
 
   NutritionInfo({

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../theme/app_theme.dart';
 import '../core/app_router.dart';
-import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 
 /// Root app widget that handles app initialization and navigation
 /// Following Andrea Bizzotto's patterns for app startup

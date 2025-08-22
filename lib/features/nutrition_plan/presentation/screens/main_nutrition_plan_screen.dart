@@ -6,6 +6,7 @@ import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/hero_image.dart';
 import '../../../../shared/widgets/labeled_text_field.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/generating_plan_overlay.dart';
 import '../providers/main_screen_controller.dart';
 import '../widgets/pre_run_timing_selector.dart';
 import '../../domain/run_parameters.dart';
@@ -160,9 +161,12 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: Form(
+      body: Stack(
+        children: [
+          // Main content
+          SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -436,7 +440,6 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
               PrimaryButton(
                 text: 'Generate Plan',
                 onPressed: _isGenerating ? null : _generatePlan,
-                isLoading: _isGenerating,
                 width: 280.w,
                 height: 56.h,
               ),
@@ -459,6 +462,12 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
             ],
           ),
         ),
+          ),
+          
+          // Generating plan overlay
+          if (_isGenerating)
+            const GeneratingPlanOverlay(),
+        ],
       ),
     );
   }

@@ -1,25 +1,23 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/app_content.dart';
 
 part 'content_repository.g.dart';
 
 /// Repository for managing app content with local caching and remote syncing
+/// Uses SharedPreferences for simple content caching instead of Drift database
 class ContentRepository {
   ContentRepository({
-    required this.contentBox,
     required this.supabase,
   });
   
-  static const String boxName = 'contentcontentBox';
+  static const String _contentKey = 'app_content_cache';
   static const String _defaultsAssetPath = 'assets/config/content_defaults.json';
   static const String supabaseTableName = 'app_content';
   
-  final Box<AppContent> contentBox;
   final SupabaseClient supabase;
 
   /// Get the current active content
@@ -28,89 +26,55 @@ class ContentRepository {
     String locale = 'en',
   }) async {
     // First try to get from local cache
-    final cached = contentBox.values
-        .where((content) => 
-            content.environment == environment && 
-            content.locale == locale && 
-            content.isActive)
-        .cast<AppContent?>()
-        .firstOrNull;
-
-    if (cached != null) {
-      return cached;
+    final cachedContent = await _getCachedContent();
+    
+    if (cachedContent != null && 
+        cachedContent.environment == environment && 
+        cachedContent.locale == locale &&
+        cachedContent.isActive) {
+      return cachedContent;
     }
-
-    // If no cached content, load defaults
+    
+    // Try to fetch from Supabase
+    final remoteContent = await _fetchFromSupabase(environment, locale);
+    if (remoteContent != null) {
+      await _cacheContent(remoteContent);
+      return remoteContent;
+    }
+    
+    // Fallback to local defaults
     return await _loadDefaultContent();
   }
 
-  /// Check for updates from Supabase in background
-  Future<AppContent?> checkForUpdates({
-    String environment = 'production',
-    String locale = 'en',
-  }) async {
+  /// Get content from local cache
+  Future<AppContent?> _getCachedContent() async {
     try {
-      // Get current cached version
-      final currentContent = await getActiveContent(
-        environment: environment,
-        locale: locale,
-      );
-      final currentVersion = currentContent?.version ?? 0;
-
-      // Check Supabase for latest version
-      final latestContent = await fetchLatestContent(
-        environment: environment,
-        locale: locale,
-      );
-
-      // If we found a newer version, it's already saved by fetchLatestContent
-      if (latestContent != null && latestContent.version > currentVersion) {
-        print('Content updated to version ${latestContent.version}');
-        return latestContent;
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString(_contentKey);
+      
+      if (cachedJson != null) {
+        final Map<String, dynamic> contentMap = json.decode(cachedJson);
+        return AppContent.fromJson(contentMap);
       }
     } catch (e) {
-      print('Background content update failed (using cached/defaults): $e');
-      // Don't throw - app should continue with cached/default content
+      print('Error reading cached content: $e');
     }
     return null;
   }
 
-  /// Load default content from assets
-  Future<AppContent> _loadDefaultContent() async {
+  /// Cache content locally
+  Future<void> _cacheContent(AppContent content) async {
     try {
-      final jsonString = await rootBundle.loadString(_defaultsAssetPath);
-      final jsonData = json.decode(jsonString);
-      
-      final defaultContent = AppContent.fromJson({
-        'version': 1,
-        'environment': 'production',
-        'locale': 'en',
-        'content': jsonData,
-        'last_updated': DateTime.now().toIso8601String(),
-        'is_active': true,
-      });
-
-      // Cache the defaults locally
-      await _saveContent(defaultContent);
-      return defaultContent;
+      final prefs = await SharedPreferences.getInstance();
+      final contentJson = json.encode(content.toJson());
+      await prefs.setString(_contentKey, contentJson);
     } catch (e) {
-      // If asset loading fails, return minimal fallback
-      return AppContent(
-        version: 1,
-        environment: 'production',
-        locale: 'en',
-        content: _getMinimalFallbackContent(),
-        lastUpdated: DateTime.now(),
-        isActive: true,
-      );
+      print('Error caching content: $e');
     }
   }
 
-  /// Fetch latest content from Supabase
-  Future<AppContent?> fetchLatestContent({
-    String environment = 'production',
-    String locale = 'en',
-  }) async {
+  /// Fetch content from Supabase
+  Future<AppContent?> _fetchFromSupabase(String environment, String locale) async {
     try {
       final response = await supabase
           .from(supabaseTableName)
@@ -123,120 +87,83 @@ class ContentRepository {
           .maybeSingle();
 
       if (response != null) {
-        // Convert Supabase response to AppContent
-        final supabaseContent = Map<String, dynamic>.from(response);
-        
-        // Map Supabase fields to our model
-        final content = AppContent.fromJson({
-          'version': supabaseContent['version'],
-          'environment': supabaseContent['environment'],
-          'locale': supabaseContent['locale'],
-          'content': supabaseContent['content'],
-          'last_updated': supabaseContent['updated_at'], // Note: Supabase uses 'updated_at'
-          'is_active': supabaseContent['is_active'],
-        });
-        
-        await _saveContent(content);
-        return content;
+        return AppContent.fromJson(response);
       }
     } catch (e) {
-      // Failed to fetch from backend, continue with cached content
-      print('Failed to fetch content from Supabase: $e');
+      print('Error fetching content from Supabase: $e');
     }
     return null;
   }
 
-  /// Save content to local cache
-  Future<void> _saveContent(AppContent content) async {
-    final key = '${content.environment}_${content.locale}';
-    
-    // Deactivate any existing content for this environment/locale
-    for (final existing in contentBox.values) {
-      if (existing.environment == content.environment && 
-          existing.locale == content.locale && 
-          existing.isActive) {
-        final updated = existing.copyWith(isActive: false);
-        final existingKey = contentBox.keys
-            .firstWhere((k) => contentBox.get(k) == existing, orElse: () => null);
-        if (existingKey != null) {
-          await contentBox.put(existingKey, updated);
-        }
-      }
+  /// Load default content from assets
+  Future<AppContent> _loadDefaultContent() async {
+    try {
+      final String jsonString = await rootBundle.loadString(_defaultsAssetPath);
+      final Map<String, dynamic> jsonMap = json.decode(jsonString);
+      
+      // Wrap the defaults in AppContent structure
+      return AppContent(
+        version: 1,
+        environment: 'production',
+        locale: 'en',
+        content: jsonMap,
+        lastUpdated: DateTime.now(),
+        isActive: true,
+      );
+    } catch (e) {
+      print('Error loading default content: $e');
+      // Return empty content as absolute fallback
+      return AppContent(
+        version: 1,
+        environment: 'production',
+        locale: 'en',
+        content: {},
+        lastUpdated: DateTime.now(),
+        isActive: true,
+      );
     }
-
-    // Save new active content
-    await contentBox.put(key, content);
   }
 
-  /// Get a specific content value by key
-  Future<String> getValue(
-    String key, {
-    String? defaultValue,
+  /// Force refresh content from remote
+  Future<AppContent> refreshContent({
     String environment = 'production',
     String locale = 'en',
   }) async {
-    final content = await getActiveContent(
-      environment: environment, 
-      locale: locale,
-    );
+    // Clear local cache
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_contentKey);
     
-    return content?.getValue(key, defaultValue: defaultValue) ?? 
-           defaultValue ?? 
-           key;
+    // Force fetch from remote
+    final content = await getActiveContent(environment: environment, locale: locale);
+    return content ?? await _loadDefaultContent();
   }
 
-  /// Check if we should refresh content (e.g., daily)
-  bool shouldRefreshContent() {
-    final activeContent = contentBox.values
-        .where((content) => content.isActive)
-        .cast<AppContent?>()
-        .firstOrNull;
-
-    if (activeContent == null) return true;
-
-    final hoursSinceUpdate = DateTime.now()
-        .difference(activeContent.lastUpdated)
-        .inHours;
-
-    return hoursSinceUpdate > 24; // Refresh daily
+  /// Get specific content value by key path (dot notation)
+  Future<String?> getContentValue(String keyPath, {String? defaultValue}) async {
+    final content = await getActiveContent();
+    return content?.getValue(keyPath, defaultValue: defaultValue) ?? defaultValue;
   }
 
-  /// Get minimal fallback content for critical app functionality
-  Map<String, dynamic> _getMinimalFallbackContent() {
-    return {
-      'main_screen': {
-        'title': 'Mealvana Endurance',
-        'generate_button': 'Generate Plan',
-      },
-      'plan_screen': {
-        'title': 'Plan',
-        'save_button': 'Save',
-        'saved_button': 'Saved',
-      },
-      'error': {
-        'generic': 'Something went wrong. Please try again.',
-        'network': 'Network error. Please check your connection.',
-      },
-    };
+  /// Check if cached content is stale (older than specified duration)
+  Future<bool> isCacheStale({Duration maxAge = const Duration(hours: 24)}) async {
+    final cachedContent = await _getCachedContent();
+    if (cachedContent == null) return true;
+    
+    final age = DateTime.now().difference(cachedContent.lastUpdated);
+    return age > maxAge;
   }
 
-  /// Clear all cached content (for testing/debugging)
+  /// Clear all cached content
   Future<void> clearCache() async {
-    await contentBox.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_contentKey);
   }
 }
 
-/// Content box provider
-@Riverpod(keepAlive: true)
-Future<Box<AppContent>> contentBox(Ref ref) async {
-  return await Hive.openBox<AppContent>(ContentRepository.boxName);
-}
-
-/// Repository provider following Andrea's pattern
+/// Content repository provider
 @riverpod
-ContentRepository contentRepository(Ref ref) {
+ContentRepository contentRepository(ContentRepositoryRef ref) {
   return ContentRepository(
-    contentBox: ref.watch(contentBoxProvider).requireValue,
     supabase: Supabase.instance.client,
   );
 }

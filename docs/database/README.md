@@ -1,6 +1,26 @@
-# Database Schema & Migrations
+# Database Schema & Drift Migrations
 
-This directory contains the complete database schema, migrations, and documentation for the Mealvana Endurance nutrition planning system.
+This directory contains the complete database schema, Drift migrations, and documentation for the Mealvana Endurance nutrition planning system.
+
+## 📖 **📖 COMPLETE DRIFT GUIDE**
+
+**👉 [DRIFT.md](DRIFT.md)** - The definitive guide to Drift implementation in Mealvana Endurance. Contains:
+- Complete setup and configuration
+- Table definitions with relationships
+- Migration workflows and testing
+- Repository patterns and advanced queries
+- Performance optimization strategies
+- Best practices and troubleshooting
+
+---
+
+## 🔄 **Migration from Hive to Drift**
+
+The app has migrated from Hive to Drift for superior data management:
+- **Type-Safe Migrations**: Built-in schema versioning with automatic code generation
+- **SQLite Backend**: More robust than Hive for complex relationships
+- **Migration Testing**: Auto-generated test cases for all schema changes
+- **Better Performance**: SQL queries with compile-time validation
 
 ## 📁 **Files Overview**
 
@@ -66,7 +86,7 @@ SELECT get_active_app_content('production', 'en-US');
 ### **Device-Centric Architecture**
 - **No traditional user accounts** - Everything tied to device identifiers
 - **Privacy-first** - No email/phone collection required
-- **Offline-capable** - Local Hive storage with Supabase sync
+- **Offline-capable** - Local Drift SQLite database with Supabase sync
 
 ### **Multi-Category Food System**
 ```sql
@@ -183,21 +203,43 @@ HAVING count(*) > 1;
 
 ## 🚨 **Migration Notes**
 
-### **Breaking Changes**
-- **Old single-category foods** → New multi-category system
-- **Hardcoded serving parsing** → Structured serving fields
-- **Text-based categories** → Integer-based with join table
+### **Hive to Drift Migration**
+- **Hive Boxes** → **Drift Tables**: Structured SQL tables with relationships
+- **Type Adapters** → **Schema Classes**: Generated Dart classes with type safety
+- **Manual Migrations** → **Automated Migrations**: Built-in schema versioning
 
-### **Data Migration**
-If migrating from an older schema:
-1. Export existing food preferences
-2. Run new migrations
-3. Convert category references to new format
-4. Re-import food data with structured serving fields
+### **Local Storage Migration Steps**
+1. **Export Hive Data**: Backup existing user data from Hive boxes
+2. **Initialize Drift Database**: Create SQLite database with schema version 1
+3. **Migrate Data**: Import user profiles, food preferences, and nutrition plans
+4. **Verify Integrity**: Run generated migration tests
+5. **Remove Hive Dependencies**: Clean up old Hive storage files
+
+### **Schema Migration Commands**
+```bash
+# Generate new schema version after changes
+dart run drift_dev make-migrations
+
+# Export schema for version control
+dart run drift_dev schema dump lib/database/database.dart drift_schemas/
+
+# Generate migration test code
+dart run drift_dev schema generate drift_schemas/ test/generated_migrations/
+```
 
 ## 📚 **Further Reading**
 
+### **Core Documentation**
+- **[`DRIFT.md`](DRIFT.md)** - 📘 **COMPREHENSIVE DRIFT GUIDE** - Complete implementation guide with examples, patterns, and best practices
 - **`schema-overview.md`** - Detailed table structures and relationships
 - **`DEPLOYMENT-GUIDE.md`** - Complete deployment walkthrough
+
+### **Technical Implementation**  
+- **`/docs/technical/README.md`** - Architecture overview and patterns
+- **`/docs/technical/drift-migration-guide.md`** - Migration from Hive to Drift
+- **`/docs/technical/drift-implementation.md`** - Implementation details and examples
+- **`/lib/shared/database/`** - Drift database classes and migrations
+
+### **Business Logic**
 - **`/docs/business_logic/`** - Edge functions that use this schema
-- **`/docs/technical/`** - Integration guides and best practices
+- **`/supabase/functions/`** - Server-side functions and API endpoints

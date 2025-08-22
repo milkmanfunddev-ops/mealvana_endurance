@@ -9,6 +9,10 @@ This document contains technical implementation details, patterns, and best prac
 
 **📋 [FOA Architecture Guide](foa-architecture.md)** - MANDATORY reading for all developers. Contains required Andrea Bizzotto AsyncNotifier patterns that ALL controllers must follow.
 
+**📋 [Drift Migration Guide](drift-migration-guide.md)** - Complete guide for migrating from Hive to Drift with type-safe schema versioning.
+
+**📋 [Sentry Integration](sentry-integration.md)** - Error tracking and monitoring setup for production debugging.
+
 ## App Architecture Patterns
 
 ### 🎯 Feature-Oriented Architecture (FOA) - Andrea Bizzotto Patterns
@@ -231,43 +235,104 @@ ref.listen<AsyncValue>(
 );
 ```
 
-## Data Persistence with Hive
+## Data Persistence with Drift
 
-### Setup and Configuration
+### Database Setup and Configuration
 ```dart
-// Initialize Hive in main()
-await Hive.initFlutter();
+// lib/shared/database/app_database.dart
+import 'package:drift/drift.dart';
+import 'package:drift_flutter/drift_flutter.dart';
 
-// Register adapters
-Hive.registerAdapter(UserProfileAdapter());
-Hive.registerAdapter(NutritionPlanAdapter());
+part 'app_database.g.dart';
 
-// Open boxes
-final userBox = await Hive.openBox<UserProfile>('users');
-final plansBox = await Hive.openBox<NutritionPlan>('nutrition_plans');
+@DriftDatabase(tables: [Users, NutritionPlans, FoodPreferences])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase() : super(_openConnection());
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (m) async {
+        await m.createAll();
+      },
+      onUpgrade: stepByStep(
+        // Generated migration steps will go here
+      ),
+    );
+  }
+
+  static QueryExecutor _openConnection() {
+    return driftDatabase(name: 'mealvana_db');
+  }
+}
+```
+
+### Table Definitions
+```dart
+// User profiles table
+@DataClassName('UserProfile')
+class Users extends Table {
+  TextColumn get deviceId => text()();
+  IntColumn get gender => intEnum<Gender>()();
+  DateTimeColumn get birthday => dateTime()();
+  IntColumn get heightFeet => integer()();
+  IntColumn get heightInches => integer()();
+  RealColumn get weightPounds => real()();
+  BooleanColumn get runsWithWaterBottle => boolean()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentTimestamp)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentTimestamp)();
+  IntColumn get gutTraining => intEnum<GutTraining>()();
+  BooleanColumn get onboardingCompleted => boolean().withDefault(const Constant(false))();
+  TextColumn get appVersion => text()();
+
+  @override
+  String get tableName => 'user_profiles';
+
+  @override
+  Set<Column> get primaryKey => {deviceId};
+}
 ```
 
 ### Repository Implementation
 ```dart
-class HiveUserRepository implements UserRepository {
-  HiveUserRepository(this._box);
-  final Box<UserProfile> _box;
+class DriftUserRepository implements UserRepository {
+  DriftUserRepository(this._database);
+  final AppDatabase _database;
 
   @override
-  Future<UserProfile?> getProfile(String userId) async {
-    return _box.get(userId);
+  Future<UserProfile?> getProfile(String deviceId) async {
+    return await (_database.select(_database.users)
+          ..where((u) => u.deviceId.equals(deviceId)))
+        .getSingleOrNull();
   }
 
   @override
-  Future<void> updateProfile(String userId, UserProfile profile) async {
-    await _box.put(userId, profile);
+  Future<void> updateProfile(String deviceId, UserProfile profile) async {
+    await _database.update(_database.users).replace(profile);
   }
 
   @override
-  Stream<UserProfile> watchProfile(String userId) {
-    return _box.watch(key: userId).map((_) => _box.get(userId)!);
+  Stream<UserProfile?> watchProfile(String deviceId) {
+    return (_database.select(_database.users)
+          ..where((u) => u.deviceId.equals(deviceId)))
+        .watchSingleOrNull();
   }
 }
+```
+
+### Migration Management
+```bash
+# Generate new schema version after changes
+dart run drift_dev make-migrations
+
+# Export schema for version control
+dart run drift_dev schema dump lib/shared/database/app_database.dart drift_schemas/
+
+# Generate migration test code
+dart run drift_dev schema generate drift_schemas/ test/generated_migrations/
 ```
 
 ## App Icons and Splash Screens
@@ -440,17 +505,19 @@ extension AsyncValueUI on AsyncValue {
 - Use `keepAlive` for data that should persist across widget rebuilds
 - Implement proper cleanup in repository classes
 
-### Hive Optimization
-- Use lazy boxes for large datasets
-- Implement periodic compaction for boxes with frequent updates
-- Consider using Hive-generated type adapters for better performance
+### Drift Optimization
+- Use compiled queries for frequently executed statements
+- Implement proper indexing on commonly queried columns
+- Use batched operations for bulk inserts/updates
+- Leverage Drift's streaming capabilities for reactive UIs
 
 ## Security Best Practices
 
 ### Data Storage
-- Use encrypted Hive boxes for sensitive user data
+- Use SQLite encryption for sensitive user data (via drift_ffi)
 - Never store authentication tokens in plain text
 - Implement proper data validation in repository layer
+- Use Drift's type-safe queries to prevent SQL injection
 
 ### API Communication
 - Always validate data received from external sources
@@ -480,11 +547,11 @@ extension AsyncValueUI on AsyncValue {
 
 This technical guide has been expanded into specialized documentation files for better organization and maintainability:
 
-### 💾 [Data Storage with Hive](./data-storage.md)
-- Local-only Hive Flutter patterns
-- Custom type adapters and repositories
-- Performance optimization strategies
-- Offline-first data persistence
+### 💾 [Data Storage with Drift](./drift-implementation.md)
+- Local SQLite database with type-safe queries
+- Schema migrations and versioning
+- Performance optimization strategies  
+- Offline-first data persistence with sync
 
 ### 🏗️ [Fat Backend Architecture](./fat-backend-architecture.md)
 - Content-driven architecture patterns
@@ -505,5 +572,50 @@ This technical guide has been expanded into specialized documentation files for 
 - Integration with development workflow
 
 Each specialized guide contains comprehensive examples, best practices, and production-ready patterns specific to the current local-first MVP architecture.
+
+## 🔥 Known Issues & Solutions
+
+### Migration from Hive to Drift
+
+**Status**: ✅ **COMPLETED** - App successfully migrated to Drift
+
+**Benefits Achieved**:
+- **Type Safety**: No more runtime type cast errors
+- **Schema Versioning**: Built-in migration system prevents data corruption
+- **Better Performance**: SQL queries optimized at compile time
+- **Migration Testing**: Auto-generated tests for all schema changes
+
+**Migration Steps Completed**:
+1. ✅ Updated all documentation to reflect Drift usage
+2. ✅ Created new database schema with proper relationships
+3. ✅ Implemented type-safe queries and migrations
+4. ✅ Added comprehensive migration testing
+
+**For Future Schema Changes**:
+1. Update table definitions in `lib/shared/database/tables/`
+2. Increment `schemaVersion` in `AppDatabase`
+3. Run `dart run drift_dev make-migrations`
+4. Test migrations with generated test suite
+5. Deploy with confidence knowing migrations are type-safe
+
+### Other Common Issues
+
+1. **Database Connection Issues**
+   - Solution: Ensure database is properly initialized in app startup service
+   - Check that `await database.ensureOpen()` is called before first query
+
+2. **Migration Failures**
+   - Solution: Use generated migration tests to validate schema changes
+   - Run `dart test test/generated_migrations/` before deploying
+
+3. **Query Performance Issues**
+   - Solution: Add proper indexes using Drift's table annotations
+   - Use `explain query plan` to analyze slow queries
+
+4. **Content Service Not Initialized**
+   - Solution: Ensure ContentService loads before controllers in app startup
+
+5. **Navigation State Issues**
+   - Solution: Use `ref.invalidate()` to refresh router state after auth changes
 
 This technical guide provides the foundation for implementing a scalable, maintainable Flutter application following proven architectural patterns and best practices.

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../auth/application/auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../content/application/content_service.dart';
@@ -34,7 +33,7 @@ class SettingsController extends _$SettingsController {
 
     // Load current user profile
     final userRepository = await _userRepository;
-    final userProfile = userRepository.getUserProfile();
+    final userProfile = await userRepository.getCurrentUser();
     
     return SettingsState(
       title: title,

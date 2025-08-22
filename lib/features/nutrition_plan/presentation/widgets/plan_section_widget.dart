@@ -35,6 +35,17 @@ class PlanSectionWidget extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  if (section.subtitle != null && section.subtitle!.isNotEmpty) ...[
+                    SizedBox(height: 4.h),
+                    Text(
+                      section.subtitle!,
+                      style: AppTheme.noteStyle.copyWith(
+                        color: AppTheme.primary600,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -145,18 +145,37 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
                         margin: EdgeInsets.only(bottom: 16.h),
                       ),
                       
-                      // Macro items with dynamic values
-                      _buildMacroItem(
-                        'Carbs: ${widget.macroTargets.carbs} grams',
+                      // Phase-specific macro breakdown
+                      _buildMacroPhaseItem(
+                        'Carbohydrates',
+                        widget.macroTargets.carbsRange ?? 'Total: ${widget.macroTargets.carbs}g',
                         Icons.grain,
                         AppTheme.warning500,
                       ),
                       
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 16.h),
+                      
+                      _buildMacroPhaseItem(
+                        'Protein',
+                        widget.macroTargets.proteinRange ?? 'Total: ${widget.macroTargets.protein}g',
+                        Icons.fitness_center,
+                        AppTheme.highlight600Alt,
+                      ),
+                      
+                      SizedBox(height: 16.h),
+                      
+                      _buildMacroPhaseItem(
+                        'Fat',
+                        widget.macroTargets.fatRange ?? 'Total: ${widget.macroTargets.fat}g',
+                        Icons.local_fire_department,
+                        AppTheme.primary600,
+                      ),
+                      
+                      SizedBox(height: 16.h),
                       
                       _buildMacroItem(
                         _formatSodium(),
-                        Icons.local_fire_department,
+                        Icons.scatter_plot,
                         AppTheme.highlight600Alt,
                       ),
                       
@@ -194,6 +213,52 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
       return 'Fluids: ${widget.macroTargets.fluids} oz';
     }
     return 'Fluids: Not specified';
+  }
+
+  Widget _buildMacroPhaseItem(String title, String breakdown, IconData icon, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 32.w,
+              height: 32.h,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 18.sp,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Text(
+              title,
+              style: AppTheme.textStyle.copyWith(
+                color: AppTheme.baseBlack,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 6.h),
+        Padding(
+          padding: EdgeInsets.only(left: 44.w),
+          child: Text(
+            breakdown,
+            style: AppTheme.noteStyle.copyWith(
+              color: AppTheme.baseBlack.withValues(alpha: 0.8),
+              fontSize: 13.sp,
+              height: 1.3,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildMacroItem(String text, IconData icon, Color color) {

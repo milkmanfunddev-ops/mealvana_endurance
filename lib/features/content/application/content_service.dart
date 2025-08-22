@@ -26,14 +26,12 @@ class ContentService {
   /// Check for updates in background without blocking the UI
   void _checkForUpdatesInBackground() {
     // Don't await this - let it run in background
-    _contentRepository.checkForUpdates().then((latestContent) {
-      // Update in-memory cache if new content was fetched
-      if (latestContent != null) {
-        _cachedContent = latestContent;
-      }
+    _contentRepository.refreshContent().then((latestContent) {
+      // Update in-memory cache with refreshed content
+      _cachedContent = latestContent;
     }).catchError((error) {
       // Silently handle errors - app continues with cached/default content
-      print('Background content check failed: $error');
+      // Log error but don't print in production
     });
   }
 
@@ -48,7 +46,8 @@ class ContentService {
   /// Refresh content from backend (Supabase) - for manual refresh
   Future<bool> refreshFromBackend() async {
     try {
-      await _contentRepository.checkForUpdates();
+      final refreshedContent = await _contentRepository.refreshContent();
+      _cachedContent = refreshedContent;
       return true;
     } catch (e) {
       return false;
@@ -62,10 +61,8 @@ class ContentService {
 
   /// Force refresh content (for testing or manual refresh)
   Future<void> forceRefresh() async {
-    final freshContent = await _contentRepository.fetchLatestContent();
-    if (freshContent != null) {
-      _cachedContent = freshContent;
-    }
+    final freshContent = await _contentRepository.refreshContent();
+    _cachedContent = freshContent;
   }
 
   /// Clear cached content (for debugging)

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../shared/services/app_startup_service.dart';
+import 'app_startup_service.dart';
+import '../../../shared/database/database_provider.dart';
+import '../../../shared/services/sentry_service.dart';
 import '../../../features/auth/application/auth_service.dart';
 import '../../../features/auth/domain/user_preferences.dart';
 
@@ -17,7 +19,7 @@ class AppStartupData {
   final bool hasCompletedOnboarding;
 }
 
-/// AsyncNotifier for app startup initialization
+/// AsyncNotifier for app startup initialization using Drift
 /// This coordinates the AppStartupService and provides async state management
 @Riverpod(keepAlive: true)
 class AppStartup extends _$AppStartup {
@@ -26,24 +28,31 @@ class AppStartup extends _$AppStartup {
     try {
       final AppStartupService startupService = ref.read(appStartupServiceProvider);
       
-      // 1. Initialize local storage (Hive)
-      await startupService.initializeLocalStorage();
+      // 1. Initialize Drift database
+      await startupService.initializeDatabase();
       
       // 2. Initialize analytics with device ID
       await startupService.initializeAnalytics();
       
-      // 3. Check and restore user session if exists
+      // 3. Set Sentry user context (Sentry already initialized in main.dart)
+      await startupService.setSentryUserContext();
+      
+      // 4. Check and restore user session if exists
       await startupService.checkUserSession();
       
-      // 4. Sync nutrition plans from Supabase to cache
-      await startupService.syncNutritionPlans();
+      // 5. Initialize nutrition plans (now using Drift)
+      await startupService.initializeNutritionPlans();
       
       print('✅ App startup initialization completed');
       
-      // 5. Get user state for navigation decisions
-      final authService = ref.read(authServiceProvider);
-      final user = await authService.getCurrentUser();
-      final hasCompletedOnboarding = user != null ? await authService.hasCompletedOnboarding() : false;
+      // 7. Track startup completion in Sentry
+      final sentryService = ref.read(sentryServiceProvider);
+      await sentryService.trackAppStartupCompleted();
+      
+      // 8. Get user state for navigation decisions
+      final database = await ref.read(databaseProvider.future);
+      final user = await database.getCurrentUserProfile();
+      final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
       
       return AppStartupData(
         user: user,

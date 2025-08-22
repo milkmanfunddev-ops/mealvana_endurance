@@ -106,7 +106,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                     // Food Info
                     Expanded(
                       child: Text(
-                        '${widget.foodItem.quantity} ${widget.foodItem.name}',
+                        widget.foodItem.quantity, // Now contains full description like "1 cup cooked oatmeal"
                         style: AppTheme.textStyle.copyWith(
                           color: AppTheme.primary900,
                           fontSize: 16.sp,

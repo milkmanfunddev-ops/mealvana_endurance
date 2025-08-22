@@ -6,27 +6,9 @@ part of 'content_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$contentBoxHash() => r'98f56dc0b685ac18540072c3f0d1d568bfe5f53e';
+String _$contentRepositoryHash() => r'55ff9b330215470c0bb441502e5fa7f5c4fb7c44';
 
-/// Content box provider
-///
-/// Copied from [contentBox].
-@ProviderFor(contentBox)
-final contentBoxProvider = FutureProvider<Box<AppContent>>.internal(
-  contentBox,
-  name: r'contentBoxProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$contentBoxHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef ContentBoxRef = FutureProviderRef<Box<AppContent>>;
-String _$contentRepositoryHash() => r'af8289c1c28a5329a058499f13e736b1bde5e26e';
-
-/// Repository provider following Andrea's pattern
+/// Content repository provider
 ///
 /// Copied from [contentRepository].
 @ProviderFor(contentRepository)

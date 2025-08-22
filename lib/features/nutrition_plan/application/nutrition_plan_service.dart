@@ -1,13 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/nutrition_plan_repository.dart';
-import '../data/nutrition_plan_local_cache.dart';
 import '../domain/nutrition_plan.dart';
 import '../domain/food_item.dart';
 import '../data/food_repository.dart';
+import 'llm_nutrition_plan_service.dart';
 // nutrition_calculator.dart - removed since logic moved to Edge Functions
 import '../../auth/application/auth_service.dart';
 // content_service.dart - removed since algorithm logic moved to Edge Functions
 import '../../../shared/services/analytics_service.dart';
+import '../../../shared/services/sentry_service.dart';
 
 /// Application service for managing nutrition plans and food data
 /// Coordinates between food database, nutrition calculations, and plan storage
@@ -16,21 +17,28 @@ class NutritionPlanService {
   final Ref ref;
 
   /// Get repositories and services
-  NutritionPlanRepository get _planRepository => ref.read(nutritionPlanRepositoryProvider);
-  NutritionPlanLocalCache get _localCache => ref.read(nutritionPlanLocalCacheProvider);
+  Future<NutritionPlanRepository> get _planRepository async => await ref.read(nutritionPlanRepositoryProvider.future);
   AuthService get _authService => ref.read(authServiceProvider);
   // Content service removed since algorithm logic moved to Edge Functions
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
   AnalyticsService get _analyticsService => ref.read(analyticsServiceProvider);
+  LLMNutritionPlanService get _llmService => ref.read(llmNutritionPlanServiceProvider);
+  SentryService get _sentryService => ref.read(sentryServiceProvider);
   
   // Nutrition calculator removed - all logic moved to Edge Functions
 
-  /// Generate a new nutrition plan for the current user using Edge Function
+  /// Generate a new nutrition plan for the current user using new run-plan Edge Function
   Future<NutritionPlan> generateNutritionPlan({
     required double distanceMiles,
     required double paceMinutesPerMile,
     double timeBeforeRunHours = 2.0,
     String? gutTrainingLevel,
+    double? tempF,
+    double? humidity,
+    String? sweatRate,
+    String? giSensitivity,
+    bool? allowHighCarbRun,
+    bool debug = false,
   }) async {
     final user = await _authService.getCurrentUser();
     if (user == null) {
@@ -48,13 +56,80 @@ class NutritionPlanService {
     final startTime = DateTime.now();
     
     try {
-      // Call Edge Function to create nutrition plan with all business logic server-side
-      final result = await _planRepository.createNutritionPlan(
-        deviceId: user.id,
+      // FIRST: Try LLM-based nutrition plan generation
+      final llmPlan = await _llmService.generateLLMNutritionPlan(
         distanceMiles: distanceMiles,
         paceMinutesPerMile: paceMinutesPerMile,
         timeBeforeRunHours: timeBeforeRunHours,
-        gutTrainingLevel: gutTrainingLevel,
+        sweatRate: sweatRate,
+      );
+
+      if (llmPlan != null) {
+        // LLM plan generated successfully
+        final responseTime = DateTime.now().difference(startTime);
+        
+        // Save the LLM plan to local repository
+        final planRepository = await _planRepository;
+        await planRepository.cachePlanLocally(user.id, llmPlan);
+        
+        // Track successful LLM plan generation
+        await _analyticsService.trackNutritionPlanGenerated(
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: paceMinutesPerMile,
+          totalCalories: llmPlan.totalCalories ?? 0,
+          totalCarbs: llmPlan.macroTargets?.carbs ?? 0,
+          beforeRunItems: llmPlan.sections.where((s) => s.title.contains('Before')).firstOrNull?.foodItems.length ?? 0,
+          duringRunItems: llmPlan.sections.where((s) => s.title.contains('During')).firstOrNull?.foodItems.length ?? 0,
+          afterRunItems: llmPlan.sections.where((s) => s.title.contains('After')).firstOrNull?.foodItems.length ?? 0,
+          isFirstPlan: await _isFirstPlan(),
+        );
+        
+        // Track LLM success
+        _sentryService.addBreadcrumb(
+          message: 'LLM nutrition plan used successfully',
+          category: 'nutrition_plan',
+          data: {
+            'plan_type': 'llm',
+            'response_time_ms': responseTime.inMilliseconds.toString(),
+          },
+        );
+        
+        return llmPlan;
+      }
+
+      // FALLBACK: Use algorithmic run-plan Edge Function if LLM fails
+      _sentryService.addBreadcrumb(
+        message: 'Falling back to algorithmic nutrition plan',
+        category: 'nutrition_plan',
+        data: {
+          'reason': 'llm_failed_or_unavailable',
+        },
+      );
+
+      // Convert distance/pace to weight/duration for new run-plan Edge Function
+      final weightKg = user.weightPounds * 0.453592; // Convert pounds to kg
+      final durationMin = (distanceMiles * paceMinutesPerMile).round(); // Total duration in minutes
+      final preWindowMin = (timeBeforeRunHours * 60).round(); // Convert hours to minutes
+      final paceMinPerKm = paceMinutesPerMile / 1.60934; // Convert pace to min/km for optional ACSM calculation
+      
+      // Use user's gut training level if not overridden
+      final effectiveGutTraining = gutTrainingLevel ?? user.gutTrainingLevel.name;
+
+      // Call new run-plan Edge Function
+      final planRepository = await _planRepository;
+      final result = await planRepository.createNutritionPlanV2(
+        deviceId: user.id,
+        weightKg: weightKg,
+        durationMin: durationMin,
+        preWindowMin: preWindowMin,
+        gutTraining: effectiveGutTraining,
+        giSensitivity: giSensitivity,
+        tempF: tempF,
+        humidity: humidity,
+        sweatRate: sweatRate,
+        allowHighCarbRun: allowHighCarbRun,
+        paceMinPerKm: paceMinPerKm,
+        debug: debug,
       );
 
       final responseTime = DateTime.now().difference(startTime);
@@ -76,13 +151,12 @@ class NutritionPlanService {
         
         // Track Edge Function performance
         await _analyticsService.trackEdgeFunctionPerformance(
-          functionName: 'create-nutrition-plan',
+          functionName: 'run-plan',
           responseTime: responseTime,
           success: true,
         );
         
-        // Cache the plan locally
-        await _localCache.saveLatestPlan(plan);
+        // Plan is already cached locally in the repository
         
         return plan;
       } else {
@@ -95,7 +169,7 @@ class NutritionPlanService {
         
         // Track Edge Function performance
         await _analyticsService.trackEdgeFunctionPerformance(
-          functionName: 'create-nutrition-plan',
+          functionName: 'run-plan',
           responseTime: responseTime,
           success: false,
           errorMessage: result.message,
@@ -115,7 +189,7 @@ class NutritionPlanService {
       
       // Track Edge Function performance
       await _analyticsService.trackEdgeFunctionPerformance(
-        functionName: 'create-nutrition-plan',
+        functionName: 'run-plan',
         responseTime: responseTime,
         success: false,
         errorMessage: e.toString(),
@@ -139,7 +213,8 @@ class NutritionPlanService {
     final user = await _authService.getCurrentUser();
     if (user == null) return [];
     
-    return await _planRepository.getNutritionPlans(user.id);
+    final planRepository = await _planRepository;
+    return await planRepository.getNutritionPlans(user.id);
   }
 
   /// Get the most recent nutrition plan for current user
@@ -148,20 +223,9 @@ class NutritionPlanService {
     final user = await _authService.getCurrentUser();
     if (user == null) return null;
     
-    // Try to get from local cache first
-    final cachedPlan = await _localCache.getLatestPlan();
-    if (cachedPlan != null) {
-      return cachedPlan;
-    }
-    
-    // If not in cache, try to get from Supabase
-    final remotePlan = await _planRepository.getLatestNutritionPlan(user.id);
-    if (remotePlan != null) {
-      // Cache the plan for next time
-      await _localCache.saveLatestPlan(remotePlan);
-    }
-    
-    return remotePlan;
+    // Repository handles local caching internally
+    final planRepository = await _planRepository;
+    return await planRepository.getLatestNutritionPlan(user.id);
   }
 
   /// Update an existing nutrition plan via Edge Function
@@ -176,7 +240,8 @@ class NutritionPlanService {
       throw Exception('No user found. Please complete onboarding first.');
     }
 
-    final result = await _planRepository.updateNutritionPlan(
+    final planRepository = await _planRepository;
+    final result = await planRepository.updateNutritionPlan(
       deviceId: user.id,
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
@@ -196,7 +261,8 @@ class NutritionPlanService {
     final user = await _authService.getCurrentUser();
     if (user == null) return false;
     
-    return await _planRepository.deleteNutritionPlan(user.id, planId);
+    final planRepository = await _planRepository;
+    return await planRepository.deleteNutritionPlan(user.id, planId);
   }
 
   // deleteNutritionPlan method defined above
@@ -221,7 +287,7 @@ class NutritionPlanService {
     final user = await _authService.getCurrentUser();
     if (user == null) return [];
 
-    final likedFoods = _authService.getLikedFoods(user.id);
+    final likedFoods = await _authService.getLikedFoods(user.id);
     
     return await _foodRepository.getPreferredFoods(category, likedFoods, []);
   }
@@ -246,7 +312,16 @@ class NutritionPlanService {
       };
     }
     
-    return await _planRepository.getNutritionPlanStatistics(user.id);
+    // Statistics method not implemented in repository yet
+    return {
+      'totalPlans': 0,
+      'averageDistance': 0.0,
+      'averageDuration': 0.0,
+      'averagePace': 0.0,
+      'averageCarbs': 0.0,
+      'averageSodium': 0.0,
+      'averageFluids': 0.0,
+    };
   }
 
   /// Validate a nutrition plan for safety
@@ -325,7 +400,8 @@ class NutritionPlanService {
     final user = await _authService.getCurrentUser();
     if (user == null) return false;
     
-    return await _planRepository.clearAllNutritionPlans(user.id);
+    final planRepository = await _planRepository;
+    return await planRepository.clearAllNutritionPlans(user.id);
   }
 
   // All sync and versioning logic removed - Edge Functions handle storage directly

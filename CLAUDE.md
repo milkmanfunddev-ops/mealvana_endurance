@@ -14,13 +14,13 @@ Mealvana Endurance is a personalized nutrition planning app for endurance athlet
 - **Personalized Nutrition Plans**: Algorithm-based plans considering distance, pace, body weight, and gut training
 - **Food Preference Integration**: Respects user's liked/disliked foods
 - **Science-Based Calculations**: Uses ACSM formulas and evidence-based nutrition research
-- **Offline-First Architecture**: Works without internet using Hive local storage
+- **Offline-First Architecture**: Works without internet using Drift SQLite database
 - **Content Management System**: Backend-editable UI text and algorithm parameters
 
 ### Tech Stack
 - **Framework**: Flutter 3.8+ with Dart
 - **State Management**: Riverpod 2.x with code generation
-- **Local Storage**: Hive (encrypted boxes for sensitive data)
+- **Local Storage**: Drift (SQLite with type-safe migrations and code generation)
 - **Backend**: Supabase (PostgreSQL + Auth + Realtime)
 - **Architecture**: Feature-Oriented Architecture (FOA) based on Andrea Bizzotto's patterns
 - **Code Push**: Shorebird for OTA updates
@@ -55,10 +55,10 @@ lib/features/{feature_name}/
 2. `RootAppWidget` → MaterialApp.router with builder
 3. `MaterialApp.builder` → Wraps router child with `AppStartupWidget`
 4. `AppStartupWidget` → Manages `appStartupProvider` and navigation
-5. `appStartupProvider` → Initializes recoverable dependencies (Hive, user session, analytics)
+5. `appStartupProvider` → Initializes recoverable dependencies (Drift database, user session, analytics)
 
 **Key Rules:**
-- **Hive initialization**: Must be in `appStartupProvider`, NOT in `main()`
+- **Drift database initialization**: Must be in `appStartupProvider`, NOT in `main()`
 - **User session detection**: Handled in app startup service 
 - **Navigation logic**: AppStartupWidget determines initial route based on user state
 - **Error handling**: AppStartupWidget shows retry for recoverable errors
@@ -153,23 +153,30 @@ Dynamic content system with backend control:
 📚 **Full Documentation**: [/docs/technical/content-management.md](/docs/technical/content-management.md)
 
 ### Data Storage
-Offline-first architecture using Hive:
+Offline-first architecture using Drift (SQLite):
 
-**Storage Boxes**:
+**Database Tables**:
 - `user_profiles`: User biometric data and preferences
-- `food_preferences`: Like/dislike food selections
-- `nutrition_plans`: Generated nutrition plans
-- `content_box`: Cached backend content
-- `feedback`: User feedback queue
+- `food_preferences`: Like/dislike food selections with user associations
+- `nutrition_plans`: Generated nutrition plans with full history
+- `app_content`: Cached backend content with version control
+- `feedback`: User feedback queue with sync status
 
-📚 **Full Documentation**: [/docs/technical/data-storage.md](/docs/technical/data-storage.md)
+**Migration System**:
+- **Schema Versioning**: Built-in versioning with automatic migration generation
+- **Step-by-Step Migrations**: Type-safe migrations with schema validation
+- **Migration Testing**: Auto-generated test cases for all schema changes
+- **Rollback Support**: Safe rollback mechanisms for failed migrations
+
+📚 **Full Documentation**: [/docs/database/README.md](/docs/database/README.md)
 
 ## Development Practices
 
 ### Code Generation
 The project uses build_runner for:
 - Riverpod providers (`@riverpod` annotation)
-- Hive type adapters (`@HiveType` annotation)
+- Drift database classes (`@DriftDatabase` annotation)
+- Schema migration code generation
 - JSON serialization (when needed)
 
 **Commands**:
@@ -240,17 +247,22 @@ class ScreenController extends _$ScreenController {
 
 ### Build & Deployment
 
+**🚨 IMPORTANT FOR AI ASSISTANTS:**
+- **NEVER run `flutter build` commands** - These take 5-10+ minutes and should only be run by the human developer
+- **DO run `flutter analyze`** - This is fast and helps catch issues
+- **Let the human handle builds** - They will run builds when ready for testing/deployment
+
 **Local Development**:
 ```bash
 flutter run                              # Run on connected device
-flutter analyze                          # Check for issues
+flutter analyze                          # Check for issues (AI assistants should use this)
 flutter test                            # Run tests
 ```
 
-**Release Builds**:
+**Release Builds (HUMAN ONLY)**:
 ```bash
-flutter build ios --release             # iOS build
-flutter build appbundle --release       # Android build
+flutter build ios --release             # iOS build (5-10+ minutes)
+flutter build appbundle --release       # Android build (5-10+ minutes)
 ```
 
 **Code Push (Shorebird)**:
@@ -294,7 +306,7 @@ anonKey: '[ANON_KEY]'
 - [Architecture Overview](/docs/technical/README.md) - Complete architecture guide
 - [Fat Backend Architecture](/docs/technical/fat-backend-architecture.md) - Content management strategy
 - [Content Management](/docs/technical/content-management.md) - CMS implementation details
-- [Data Storage](/docs/technical/data-storage.md) - Hive implementation patterns
+- [Data Storage](/docs/database/README.md) - Drift database implementation and migrations
 - [Backend Integration](/docs/technical/backend-integration.md) - Supabase setup
 - [CI/CD Pipeline](/docs/technical/cicd.md) - Codemagic configuration
 - [Shorebird Code Push](/docs/technical/shorebird-code-push.md) - OTA updates
@@ -328,7 +340,8 @@ anonKey: '[ANON_KEY]'
 2. **Use AsyncNotifier Controllers**: NEVER use StateNotifier - must use @riverpod AsyncNotifier
 3. **Use Content Service**: Never hardcode UI text or algorithm parameters
 4. **Maintain Offline-First**: Always write to local storage first
-5. **Run Code Generation**: After adding `@riverpod` or `@HiveType` annotations
+5. **Run Code Generation**: After adding `@riverpod` or `@DriftDatabase` annotations
+6. **Generate Schema Migrations**: After database schema changes using `dart run drift_dev make-migrations`
 6. **Follow ContentService Integration**: All controllers must access ContentService for UI text
 7. **Test on Both Platforms**: iOS and Android have different requirements
 

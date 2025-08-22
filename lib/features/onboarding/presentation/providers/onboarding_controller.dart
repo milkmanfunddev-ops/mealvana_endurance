@@ -53,6 +53,9 @@ class OnboardingController extends _$OnboardingController {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
     
+    print('👤 Food preferences - Current user: ${currentUser?.id ?? "null"}');
+    print('🍎 Food preferences - Count: ${preferences.length}');
+    
     if (currentUser == null) {
       final errorMsg = _contentService.getValue(ContentKeys.errorGeneric, 
           defaultValue: 'No user profile found. Please complete user profile first.');

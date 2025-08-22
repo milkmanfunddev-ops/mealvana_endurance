@@ -45,7 +45,14 @@
       "Bash(gtimeout 30 flutter run --debug)",
       "Bash(r)",
       "Bash(touch:*)",
-      "Bash(supabase functions deploy:*)"
+      "Bash(supabase functions deploy:*)",
+      "Bash(git commit:*)",
+      "Bash(shorebird help:*)",
+      "Bash(shorebird patch:*)",
+      "Bash(grep:*)",
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(./sentry-wizard:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

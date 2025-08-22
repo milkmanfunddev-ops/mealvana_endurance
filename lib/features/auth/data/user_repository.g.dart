@@ -6,44 +6,7 @@ part of 'user_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$userBoxHash() => r'a70bcea70ee0c32281f6eaaced6aef053b6e3457';
-
-/// User box provider
-///
-/// Copied from [userBox].
-@ProviderFor(userBox)
-final userBoxProvider = FutureProvider<Box<UserProfile>>.internal(
-  userBox,
-  name: r'userBoxProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$userBoxHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef UserBoxRef = FutureProviderRef<Box<UserProfile>>;
-String _$preferencesBoxHash() => r'cbce747fb0d46d3807c130cf612397385accad92';
-
-/// Preferences box provider
-///
-/// Copied from [preferencesBox].
-@ProviderFor(preferencesBox)
-final preferencesBoxProvider = FutureProvider<Box<FoodPreferences>>.internal(
-  preferencesBox,
-  name: r'preferencesBoxProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$preferencesBoxHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef PreferencesBoxRef = FutureProviderRef<Box<FoodPreferences>>;
-String _$userRepositoryHash() => r'a4d7fed179297867acbc0def9f5e522f590bdac8';
+String _$userRepositoryHash() => r'd6517ea89624c99f7d07a54089d0820fab12b0c3';
 
 /// Repository provider following Andrea's pattern
 ///

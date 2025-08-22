@@ -1,43 +1,18 @@
-import 'package:hive/hive.dart';
+/// Domain models for user authentication and preferences
+/// Removed Hive dependencies as part of migration to Drift database
 
-part 'user_preferences.g.dart';
-
-@HiveType(typeId: 3)
-class UserProfile extends HiveObject {
-  @HiveField(0)
+class UserProfile {
   final String id;
-
-  @HiveField(1)
   final Gender gender;
-
-  @HiveField(2)
   final DateTime birthday;
-
-  @HiveField(3)
   final int heightFeet;
-
-  @HiveField(4)
   final int heightInches;
-
-  @HiveField(5)
   final double weightPounds;
-
-  @HiveField(6)
   final bool runsWithWaterBottle;
-
-  @HiveField(7)
   final DateTime createdAt;
-
-  @HiveField(8)
   final DateTime updatedAt;
-
-  @HiveField(9)
   final GutTraining gutTraining;
-
-  @HiveField(10)
   final bool onboardingCompleted;
-
-  @HiveField(11)
   final String appVersion;
 
   UserProfile({
@@ -154,33 +129,19 @@ class UserProfile extends HiveObject {
   }
 }
 
-@HiveType(typeId: 4)
 enum Gender {
-  @HiveField(0)
   male,
-
-  @HiveField(1)
   female,
-
-  @HiveField(2)
   other;
 
   /// Get string value for API calls
   String get value => name;
 }
 
-@HiveType(typeId: 5)
-class FoodPreferences extends HiveObject {
-  @HiveField(0)
+class FoodPreferences {
   final String userId;
-
-  @HiveField(1)
   final Map<String, FoodPreference> preferences;
-
-  @HiveField(2)
   final DateTime createdAt;
-
-  @HiveField(3)
   final DateTime updatedAt;
 
   FoodPreferences({
@@ -226,30 +187,18 @@ class FoodPreferences extends HiveObject {
 
 }
 
-@HiveType(typeId: 6)
 enum FoodPreference {
-  @HiveField(0)
   like,
-
-  @HiveField(1)
   dislike,
-
-  @HiveField(2)
   willingToTry;
 
   /// Get string value for API calls
   String get value => name == 'willingToTry' ? 'willing_to_try' : name;
 }
 
-@HiveType(typeId: 7)
 enum GutTraining {
-  @HiveField(0)
   low,
-
-  @HiveField(1)
   moderate,
-
-  @HiveField(2)
   high;
 
   /// Get string value for API calls

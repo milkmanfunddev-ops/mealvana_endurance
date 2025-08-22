@@ -1,26 +1,11 @@
-import 'package:hive/hive.dart';
-
-part 'app_content.g.dart';
-
 /// Model representing app content/copy stored locally
-@HiveType(typeId: 10) // Choose an unused typeId
-class AppContent extends HiveObject {
-  @HiveField(0)
+/// Removed Hive dependencies as part of migration to Drift database
+class AppContent {
   final int version;
-
-  @HiveField(1)
   final String environment;
-
-  @HiveField(2)
   final String locale;
-
-  @HiveField(3)
   final Map<String, dynamic> content;
-
-  @HiveField(4)
   final DateTime lastUpdated;
-
-  @HiveField(5)
   final bool isActive;
 
   AppContent({

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mealvana_endurance/shared/services/sentry_service.dart';
 import '../providers/onboarding_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/widgets/food_preference_widget.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 
@@ -100,7 +102,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
               itemBuilder: (context, index) {
                 final food = _foods[index];
                 final selected = _selectedPreferences[food.name] ?? FoodPreference.dislike;
-                return _FoodPreferenceChipItem(
+                return FoodPreferenceChipItem(
                   food: food,
                   selected: selected,
                   likeLabel: likeLabel,
@@ -129,145 +131,6 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _FoodPreferenceChipItem extends StatelessWidget {
-  final FoodItem food;
-  final FoodPreference selected;
-  final String likeLabel;
-  final String willingLabel;
-  final String dislikeLabel;
-  final ValueChanged<FoodPreference> onChanged;
-
-  const _FoodPreferenceChipItem({
-    required this.food,
-    required this.selected,
-    required this.likeLabel,
-    required this.willingLabel,
-    required this.dislikeLabel,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.outline.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            food.name,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          SizedBox(height: 12.h),
-          Row(
-            children: [
-              _PreferenceChip(
-                label: likeLabel,
-                icon: '❤️',
-                isSelected: selected == FoodPreference.like,
-                onTap: () => onChanged(FoodPreference.like),
-                color: Colors.green,
-                theme: theme,
-              ),
-              SizedBox(width: 8.w),
-              _PreferenceChip(
-                label: willingLabel,
-                icon: '🤔',
-                isSelected: selected == FoodPreference.willingToTry,
-                onTap: () => onChanged(FoodPreference.willingToTry),
-                color: Colors.orange,
-                theme: theme,
-              ),
-              SizedBox(width: 8.w),
-              _PreferenceChip(
-                label: dislikeLabel,
-                icon: '❌',
-                isSelected: selected == FoodPreference.dislike,
-                onTap: () => onChanged(FoodPreference.dislike),
-                color: Colors.red,
-                theme: theme,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreferenceChip extends StatelessWidget {
-  final String label;
-  final String icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final Color color;
-  final ThemeData theme;
-
-  const _PreferenceChip({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-    required this.color,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
-          decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
-            border: Border.all(
-              color: isSelected ? color : theme.colorScheme.outline.withValues(alpha: 0.3),
-              width: isSelected ? 2 : 1,
-            ),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                icon,
-                style: TextStyle(fontSize: 18.sp),
-              ),
-              SizedBox(height: 4.h),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: isSelected ? color : theme.colorScheme.onSurfaceVariant,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  fontSize: 11.sp,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -1,4 +1,13 @@
-# Database Schema Overview
+# Database Schema Overview - Drift Implementation
+
+## 🎆 **Local Database Implementation**
+
+The app uses **Drift** (SQLite) for local data storage with the following benefits:
+- **Type-Safe Migrations**: Automatic schema versioning with generated migration code
+- **Compile-Time Query Validation**: SQL queries validated at compile time
+- **Strong Type System**: Generated Dart classes for all tables and queries
+- **Transaction Support**: ACID transactions with rollback support
+- **Offline-First**: Full functionality without network connection
 
 ## 📊 Tables Summary
 
@@ -6,7 +15,7 @@
 |-------|---------|--------------|
 | `users` | User profiles and preferences | Device-based auth, demographic data, onboarding status |
 | `nutrition_plans` | Nutrition plan storage | Versioning, conflict resolution, JSONB data |
-| `foods` | Food database | Nutritional info, structured serving data, multi-category system |
+| `foods` | Food database | Enhanced nutritional info, serving data, suitability flags, constraints |
 | `categories` | Food category definitions | Integer ID-based category lookup |
 | `food_categories` | Food-to-category mapping | Many-to-many via category_id |
 | `food_preferences` | User food preferences | Device-scoped like/willingToTry/dislike tracking |
@@ -42,13 +51,29 @@
                               │                      │
                               │ • id (PK)           │
                               │ • name              │
+                              │ • icon_path         │
                               │ • description       │
-                              │ • nutritional_info  │
                               │ • instructions      │
+                              │ • nutritional_info  │
                               │ • serving_amount    │
                               │ • serving_unit      │
                               │ • serving_unit_plural │
                               │ • serving_qualifier │
+                              │ • before_run_suitable│
+                              │ • during_run_suitable│
+                              │ • run_portable      │
+                              │ • requires_preparation│
+                              │ • aid_station_available│
+                              │ • max_servings_before│
+                              │ • max_servings_during│
+                              │ • sodium_mg         │
+                              │ • caffeine_mg       │
+                              │ • potassium_mg      │
+                              │ • carbs_per_serving │
+                              │ • protein_per_serving│
+                              │ • fat_per_serving   │
+                              │ • calories_per_serving│
+                              │ • fluid_ml_per_serving│
                               └──────────────────────┘
 ┌─────────────────┐                    │
 │   categories    │                    │ N:N
@@ -80,7 +105,8 @@
 ### 1. Device-Centric Architecture
 - **No traditional user accounts** - Everything tied to device identifiers
 - **Privacy-first** - No email/phone collection required
-- **Offline-capable** - Local Hive storage with Supabase sync
+- **Offline-capable** - Local Drift SQLite database with Supabase sync
+- **Migration-safe** - Built-in schema versioning prevents data corruption
 
 ### 2. Versioning & Conflict Resolution
 - **Optimistic concurrency** - Version numbers on mutable data
@@ -90,19 +116,24 @@
 
 ### 3. Flexible Schema
 - **JSONB columns** - Nutrition plans stored as flexible JSON
-- **Evolution-ready** - Schema can grow without migrations
-- **Type safety** - Dart models provide compile-time checks
+- **Evolution-ready** - Drift handles schema migrations automatically
+- **Type safety** - Generated Dart classes provide compile-time checks
+- **Migration testing** - Auto-generated tests validate schema changes
 
 ### 4. Performance Optimized
 - **Strategic indexes** - Fast lookups by device_id, timestamps
 - **Query optimization** - Efficient joins and filters
 - **Pagination support** - Large dataset handling
 
-### 5. Multi-Category Food System
-- **Flexible categorization** - Foods can belong to multiple timing categories
-- **Normalized categories** - `categories` table enforces valid values
-- **Join table efficiency** - `food_categories` enables many-to-many relationships
-- **Clean architecture** - No legacy fields, pure multi-category design
+### 5. Enhanced Food System
+- **Explicit nutritional data** - Direct columns for carbs, protein, fat, calories, fluids
+- **Suitability flags** - Boolean indicators for before/during run appropriateness
+- **Portability tracking** - Run-portable flag for foods easy to carry
+- **Preparation requirements** - Indicates foods needing advance preparation
+- **Aid station availability** - Tracks foods commonly available at race aid stations
+- **Serving constraints** - Max servings recommendations for safety
+- **Micronutrient tracking** - Sodium, caffeine, potassium for performance optimization
+- **Multi-category support** - Foods can belong to multiple timing categories via join table
 
 ## 📋 Column Conventions
 
@@ -276,19 +307,49 @@ CREATE TABLE feedback (
 );
 ```
 
-### Foods Table Structure (Updated)
-Enhanced with structured serving information for better quantity display:
+### Foods Table Structure (Enhanced)
+Complete food database with nutritional data, serving information, and suitability flags:
 ```sql
 CREATE TABLE foods (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
-  description TEXT,
-  instructions TEXT,
-  nutritional_info JSONB DEFAULT '{}',
-  serving_amount NUMERIC,        -- e.g., 1, 0.5, 2
-  serving_unit TEXT,            -- e.g., "cup", "medium", "packet"
-  serving_unit_plural TEXT,     -- e.g., "cups", "medium", "packets"
-  serving_qualifier TEXT,       -- e.g., "cooked", "sliced", "raw"
+  icon_path TEXT,                        -- Path to food icon/image
+  description TEXT,                      -- User-friendly description
+  instructions TEXT,                     -- Preparation/usage instructions
+  nutritional_info JSONB DEFAULT '{}',   -- Legacy field, use explicit columns
+  
+  -- Serving Information
+  serving_amount NUMERIC,                -- Base serving amount (e.g., 1, 0.5, 2)
+  serving_unit TEXT,                     -- Unit name singular (e.g., "cup", "packet")
+  serving_unit_plural TEXT,              -- Unit name plural (e.g., "cups", "packets")
+  serving_qualifier TEXT,                -- Qualifier (e.g., "cooked", "sliced")
+  
+  -- Suitability Flags
+  before_run_suitable BOOLEAN DEFAULT false,     -- Suitable for pre-run
+  during_run_suitable BOOLEAN DEFAULT false,     -- Suitable for during-run
+  run_portable BOOLEAN DEFAULT false,            -- Easy to carry while running
+  requires_preparation BOOLEAN DEFAULT false,    -- Needs advance preparation
+  aid_station_available BOOLEAN DEFAULT false,   -- Available at aid stations
+  
+  -- Serving Constraints
+  max_servings_before INTEGER,           -- Max servings recommended before run
+  max_servings_during INTEGER,           -- Max servings recommended during run
+  
+  -- Explicit Nutritional Data (per serving)
+  carbs_per_serving NUMERIC(10,2),       -- Carbohydrates in grams
+  protein_per_serving NUMERIC(10,2),     -- Protein in grams
+  fat_per_serving NUMERIC(10,2),         -- Fat in grams
+  calories_per_serving INTEGER,          -- Calories per serving
+  fluid_ml_per_serving NUMERIC(10,1),    -- Fluid content in mL
+  
+  -- Micronutrients
+  sodium_mg INTEGER,                     -- Sodium in milligrams
+  caffeine_mg INTEGER,                   -- Caffeine in milligrams
+  potassium_mg INTEGER,                  -- Potassium in milligrams
+  
+  -- Legacy/Compatibility
+  serving_size TEXT,                     -- Legacy field
+  
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```

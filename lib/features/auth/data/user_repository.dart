@@ -1,125 +1,138 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
+import '../../../shared/database/app_database.dart';
+import '../../../shared/database/database_provider.dart';
+import '../../../shared/services/sentry_service.dart';
 
 part 'user_repository.g.dart';
 
-/// Repository for managing user profile data in Hive and Supabase
+/// Repository for managing user profile data in Drift database and Supabase
 class UserRepository {
   UserRepository({
-    required this.userBox,
-    required this.preferencesBox,
+    required this.database,
     required this.supabase,
+    required this.sentryService,
   });
   
-  static const String boxName = 'user_profiles';
-  static const String preferencesBoxName = 'food_preferences';
-  
-  final Box<UserProfile> userBox;
-  final Box<FoodPreferences> preferencesBox;
+  final AppDatabase database;
   final SupabaseClient supabase;
+  final SentryService sentryService;
 
   /// Save user profile
   Future<void> saveUserProfile(UserProfile profile) async {
-    await userBox.put(profile.id, profile);
+    try {
+      await database.saveUserProfile(profile);
+      sentryService.addBreadcrumb(
+        message: 'User profile saved successfully',
+        category: 'database',
+        data: {'user_id': profile.id},
+      );
+    } catch (e, stackTrace) {
+      await sentryService.reportDatabaseError(
+        e,
+        operation: 'saveUserProfile',
+        table: 'user_profiles',
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
   /// Get user profile by ID (optional for device-based identification)
-  UserProfile? getUserProfile([String? userId]) {
-    if (userId != null) {
-      return userBox.get(userId);
+  Future<UserProfile?> getUserProfile([String? userId]) async {
+    try {
+      // For device-based approach, we just get the current user
+      return await getCurrentUser();
+    } catch (e, stackTrace) {
+      await sentryService.reportDatabaseError(
+        e,
+        operation: 'getUserProfile',
+        table: 'user_profiles',
+        stackTrace: stackTrace,
+      );
+      rethrow;
     }
-    // If no userId provided, return current user (device-based)
-    return getCurrentUser();
   }
 
   /// Get the current user profile (assumes single user for MVP)
-  UserProfile? getCurrentUser() {
-    if (userBox.isEmpty) return null;
-    return userBox.values.first;
+  Future<UserProfile?> getCurrentUser() async {
+    try {
+      return await database.getCurrentUserProfile();
+    } catch (e, stackTrace) {
+      await sentryService.reportDatabaseError(
+        e,
+        operation: 'getCurrentUser',
+        table: 'user_profiles',
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
-
 
   /// Update user profile
   Future<void> updateUserProfile(UserProfile profile) async {
-    final updatedProfile = profile.copyWith(updatedAt: DateTime.now());
-    await userBox.put(profile.id, updatedProfile);
+    try {
+      final updatedProfile = profile.copyWith(updatedAt: DateTime.now());
+      await database.updateUserProfile(updatedProfile);
+      sentryService.addBreadcrumb(
+        message: 'User profile updated successfully',
+        category: 'database',
+        data: {'user_id': profile.id},
+      );
+    } catch (e, stackTrace) {
+      await sentryService.reportDatabaseError(
+        e,
+        operation: 'updateUserProfile',
+        table: 'user_profiles',
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
   /// Delete user profile
-  Future<void> deleteUserProfile(String userId) async {
-    await userBox.delete(userId);
+  Future<bool> deleteUserProfile(String userId) async {
+    return await database.deleteUserProfile(userId);
   }
 
   /// Check if user exists
-  bool userExists(String userId) {
-    return userBox.containsKey(userId);
-  }
-
-  /// Get all user profiles (for future multi-user support)
-  List<UserProfile> getAllUsers() {
-    return userBox.values.toList();
+  Future<bool> userExists(String userId) async {
+    final user = await database.getCurrentUserProfile();
+    return user != null && user.id == userId;
   }
 
   /// Save food preferences for a user
-  Future<void> saveFoodPreferences(FoodPreferences preferences) async {
-    await preferencesBox.put(preferences.userId, preferences);
+  Future<void> saveFoodPreferences(String userId, Map<String, FoodPreference> preferences) async {
+    await database.saveFoodPreferences(userId, preferences);
   }
 
   /// Get food preferences for a user
-  FoodPreferences? getFoodPreferences(String userId) {
-    return preferencesBox.get(userId);
-  }
-
-  /// Update food preferences
-  Future<void> updateFoodPreferences(FoodPreferences preferences) async {
-    final updatedPreferences = FoodPreferences(
-      userId: preferences.userId,
-      preferences: preferences.preferences,
-      createdAt: preferences.createdAt,
-      updatedAt: DateTime.now(),
-    );
-    await preferencesBox.put(preferences.userId, updatedPreferences);
+  Future<Map<String, FoodPreference>> getFoodPreferences(String userId) async {
+    return await database.getUserFoodPreferences(userId);
   }
 
   /// Update a single food preference
   Future<void> updateFoodPreference(String userId, String foodId, FoodPreference preference) async {
-    final existingPreferences = getFoodPreferences(userId);
-    
-    if (existingPreferences != null) {
-      final updated = existingPreferences.updatePreference(foodId, preference);
-      await updateFoodPreferences(updated);
-    } else {
-      // Create new preferences if none exist
-      final newPreferences = FoodPreferences(
-        userId: userId,
-        preferences: {foodId: preference},
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      await saveFoodPreferences(newPreferences);
-    }
+    final existingPreferences = await getFoodPreferences(userId);
+    existingPreferences[foodId] = preference;
+    await saveFoodPreferences(userId, existingPreferences);
   }
 
   /// Get liked foods for a user
-  List<String> getLikedFoods(String userId) {
-    final preferences = getFoodPreferences(userId);
-    return preferences?.likedFoods ?? [];
+  Future<List<String>> getLikedFoods(String userId) async {
+    return await database.getLikedFoods(userId);
   }
 
   /// Get disliked foods for a user
-  List<String> getDislikedFoods(String userId) {
-    final preferences = getFoodPreferences(userId);
-    return preferences?.dislikedFoods ?? [];
+  Future<List<String>> getDislikedFoods(String userId) async {
+    return await database.getDislikedFoods(userId);
   }
-
 
   /// Clear all user data (for testing/reset)
   Future<void> clearAllData() async {
-    await userBox.clear();
-    await preferencesBox.clear();
+    await database.clearAllData();
   }
 
   // SUPABASE SYNC METHODS
@@ -158,9 +171,14 @@ class UserRepository {
       } else {
         return localUser;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Log error but don't throw - continue with local data
-      print('Failed to sync user with Supabase: $e');
+      await sentryService.reportNetworkError(
+        e,
+        url: 'supabase:upsert_user_by_device_id',
+        method: 'RPC',
+        stackTrace: stackTrace,
+      );
       return localUser;
     }
   }
@@ -177,8 +195,13 @@ class UserRepository {
       } else {
         return null;
       }
-    } catch (e) {
-      print('Failed to get user from Supabase: $e');
+    } catch (e, stackTrace) {
+      await sentryService.reportNetworkError(
+        e,
+        url: 'supabase:get_user_by_device_id',
+        method: 'RPC',
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -213,8 +236,13 @@ class UserRepository {
         await saveUserProfile(userProfile);
         return userProfile;
       }
-    } catch (e) {
-      print('Failed to create user in Supabase: $e');
+    } catch (e, stackTrace) {
+      await sentryService.reportNetworkError(
+        e,
+        url: 'supabase:upsert_user_by_device_id',
+        method: 'RPC',
+        stackTrace: stackTrace,
+      );
       // Fallback to local save
       await saveUserProfile(userProfile);
       return userProfile;
@@ -241,41 +269,24 @@ class UserRepository {
         (e) => e.name == userData['gut_training_level'],
         orElse: () => GutTraining.moderate,
       ),
+      onboardingCompleted: userData['onboarding_completed'] ?? false,
       createdAt: DateTime.parse(userData['created_at'] ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(userData['updated_at'] ?? DateTime.now().toIso8601String()),
       appVersion: userData['app_version'] ?? '1.0.0',
     );
   }
-
-  /// Close the repository and Hive boxes
-  Future<void> close() async {
-    await userBox.close();
-    await preferencesBox.close();
-  }
-}
-
-/// User box provider
-@Riverpod(keepAlive: true)
-Future<Box<UserProfile>> userBox(Ref ref) async {
-  return await Hive.openBox<UserProfile>(UserRepository.boxName);
-}
-
-/// Preferences box provider  
-@Riverpod(keepAlive: true)
-Future<Box<FoodPreferences>> preferencesBox(Ref ref) async {
-  return await Hive.openBox<FoodPreferences>(UserRepository.preferencesBoxName);
 }
 
 /// Repository provider following Andrea's pattern
 @riverpod
 Future<UserRepository> userRepository(Ref ref) async {
-  // Wait for boxes to be initialized
-  final userBoxInstance = await ref.watch(userBoxProvider.future);
-  final prefsBoxInstance = await ref.watch(preferencesBoxProvider.future);
+  // Get the database instance
+  final database = await ref.watch(databaseProvider.future);
+  final sentryService = ref.watch(sentryServiceProvider);
   
   return UserRepository(
-    userBox: userBoxInstance,
-    preferencesBox: prefsBoxInstance,
+    database: database,
     supabase: Supabase.instance.client,
+    sentryService: sentryService,
   );
 }

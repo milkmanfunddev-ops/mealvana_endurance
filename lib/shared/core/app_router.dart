@@ -11,6 +11,7 @@ import '../../features/onboarding/presentation/screens/food_preferences_screen.d
 import '../../features/nutrition_plan/presentation/screens/main_nutrition_plan_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/plan_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/food_preferences_edit_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 class AppRouter {
@@ -74,6 +75,13 @@ class AppRouter {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      
+      // Food Preferences Edit Screen - Edit food preferences from settings
+      GoRoute(
+        path: '/settings/food-preferences',
+        name: 'settings-food-preferences',
+        builder: (context, state) => const FoodPreferencesEditScreen(),
       ),
     ],
     

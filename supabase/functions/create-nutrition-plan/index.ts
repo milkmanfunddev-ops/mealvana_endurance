@@ -17,21 +17,47 @@ interface CreateNutritionPlanRequest {
 interface FoodItem {
   id: string;
   name: string;
+  icon_path?: string;
+  description?: string;
+  instructions?: string;
   serving_amount: number;
   serving_unit: string;
   serving_unit_plural?: string;
   serving_qualifier?: string;
   food_categories: Array<{ category_id: number }>;
-  nutritional_info: {
-    carbs_per_serving: number;
-    protein_per_serving: number;
-    fat_per_serving: number;
+  
+  // Suitability flags
+  before_run_suitable: boolean;
+  during_run_suitable: boolean;
+  run_portable: boolean;
+  requires_preparation: boolean;
+  aid_station_available: boolean;
+  
+  // Serving constraints
+  max_servings_before?: number;
+  max_servings_during?: number;
+  
+  // Explicit nutritional data per serving
+  carbs_per_serving?: number;
+  protein_per_serving?: number;
+  fat_per_serving?: number;
+  calories_per_serving?: number;
+  fluid_ml_per_serving?: number;
+  
+  // Micronutrients
+  sodium_mg?: number;
+  caffeine_mg?: number;
+  potassium_mg?: number;
+  
+  // Legacy nutritional info for backward compatibility
+  nutritional_info?: {
+    carbs_per_serving?: number;
+    protein_per_serving?: number;
+    fat_per_serving?: number;
     calories_per_serving?: number;
     sodium_mg?: number;
-    serving_size: string; // Legacy field for compatibility
+    serving_size?: string;
   };
-  description?: string;
-  instructions?: string;
 }
 
 interface NutritionCalculations {
@@ -109,19 +135,35 @@ serve(async (req) => {
 
     const likedFoods = foodPreferences?.filter(fp => fp.preference === 'like').map(fp => fp.food_name) ?? []
 
-    // Get all foods from database
+    // Get all foods from database with new structure
     const { data: foods, error: foodsError } = await supabaseClient
       .from('foods')
       .select(`
         id,
         name,
+        icon_path,
         description,
         instructions,
-        nutritional_info,
         serving_amount,
         serving_unit,
         serving_unit_plural,
         serving_qualifier,
+        before_run_suitable,
+        during_run_suitable,
+        run_portable,
+        requires_preparation,
+        aid_station_available,
+        max_servings_before,
+        max_servings_during,
+        carbs_per_serving,
+        protein_per_serving,
+        fat_per_serving,
+        calories_per_serving,
+        fluid_ml_per_serving,
+        sodium_mg,
+        caffeine_mg,
+        potassium_mg,
+        nutritional_info,
         food_categories (
           category_id
         )
@@ -403,9 +445,30 @@ function selectFoodsForCategory({ foods, likedFoods, carbTarget, category }: {
 }) {
   if (foods.length === 0 || carbTarget <= 0) return []
 
+  // Helper function to get effective carbs per serving
+  const getEffectiveCarbs = (food: FoodItem): number => {
+    return food.carbs_per_serving ?? food.nutritional_info?.carbs_per_serving ?? 0
+  }
+
+  // Filter foods based on new suitability flags
+  let suitableFoods = foods
+  if (category === 'during_run') {
+    // Use suitability flags for during-run foods
+    suitableFoods = foods.filter(f => f.during_run_suitable)
+    // If no suitable foods found, fall back to all foods
+    if (suitableFoods.length === 0) {
+      suitableFoods = foods
+    }
+  } else if (category === 'before_run') {
+    suitableFoods = foods.filter(f => f.before_run_suitable)
+    if (suitableFoods.length === 0) {
+      suitableFoods = foods
+    }
+  }
+
   // Prioritize liked foods first
-  const likedFoodsInCategory = foods.filter(f => likedFoods.includes(f.name))
-  const otherFoods = foods.filter(f => !likedFoods.includes(f.name))
+  const likedFoodsInCategory = suitableFoods.filter(f => likedFoods.includes(f.name))
+  const otherFoods = suitableFoods.filter(f => !likedFoods.includes(f.name))
   const orderedFoods = [...likedFoodsInCategory, ...otherFoods]
 
   const selectedFoods = []
@@ -413,30 +476,27 @@ function selectFoodsForCategory({ foods, likedFoods, carbTarget, category }: {
 
   // Special logic for during-run foods
   if (category === 'during_run') {
-    // Filter out inappropriate foods for during-run
-    const inappropriateFoods = ['Coffee', 'Orange juice'] // These are more pre-run focused
-    const appropriateFoods = orderedFoods.filter(f => !inappropriateFoods.includes(f.name))
+    // Prioritize portable foods for during-run
+    const portableFoods = orderedFoods.filter(f => f.run_portable)
+    const nonPortableFoods = orderedFoods.filter(f => !f.run_portable)
+    const prioritizedFoods = [...portableFoods, ...nonPortableFoods]
 
-    if (appropriateFoods.length > 0) {
-      // Prioritize gels and sports drinks for during-run
-      const gels = appropriateFoods.filter(f => f.name.toLowerCase().includes('gel'))
-      const sportsDrinks = appropriateFoods.filter(f => f.name.toLowerCase().includes('sport'))
-      const others = appropriateFoods.filter(f => !f.name.toLowerCase().includes('gel') && !f.name.toLowerCase().includes('sport'))
-
-      const prioritizedFoods = [...gels, ...sportsDrinks, ...others]
-
-      // Select foods to meet 80% of carb target (allow for variety)
-      for (const food of prioritizedFoods.slice(0, 2)) {
-        const carbsPerServing = food.nutritional_info.carbs_per_serving || 0
-        if (carbsPerServing > 0) {
-          const maxFromThisFood = carbTarget * 0.6 // Max 60% from any one food
-          const quantityNeeded = Math.min(Math.max(maxFromThisFood / carbsPerServing, 1), 10)
-          
-          selectedFoods.push(createFoodItemData(food, quantityNeeded))
-          totalCarbs += carbsPerServing * quantityNeeded
-
-          if (totalCarbs >= carbTarget * 0.8) break
+    // Select foods to meet 80% of carb target (allow for variety)
+    for (const food of prioritizedFoods.slice(0, 2)) {
+      const carbsPerServing = getEffectiveCarbs(food)
+      if (carbsPerServing > 0) {
+        const maxFromThisFood = carbTarget * 0.6 // Max 60% from any one food
+        let quantityNeeded = Math.min(Math.max(maxFromThisFood / carbsPerServing, 1), 10)
+        
+        // Respect max servings during run constraint
+        if (food.max_servings_during) {
+          quantityNeeded = Math.min(quantityNeeded, food.max_servings_during)
         }
+        
+        selectedFoods.push(createFoodItemData(food, quantityNeeded))
+        totalCarbs += carbsPerServing * quantityNeeded
+
+        if (totalCarbs >= carbTarget * 0.8) break
       }
     }
   } else {
@@ -445,13 +505,20 @@ function selectFoodsForCategory({ foods, likedFoods, carbTarget, category }: {
       const remainingCarbs = carbTarget - totalCarbs
       if (remainingCarbs <= 0) break
 
-      const carbsPerServing = food.nutritional_info.carbs_per_serving || 0
+      const carbsPerServing = getEffectiveCarbs(food)
       if (carbsPerServing > 0) {
-        const quantity = remainingCarbs / carbsPerServing
+        let quantity = remainingCarbs / carbsPerServing
         const reasonableQuantity = Math.min(Math.max(quantity, 0.5), 3.0) // Keep portions reasonable
+        
+        // Respect max servings before run constraint for pre-run foods
+        if (category === 'before_run' && food.max_servings_before) {
+          quantity = Math.min(reasonableQuantity, food.max_servings_before)
+        } else {
+          quantity = reasonableQuantity
+        }
 
-        selectedFoods.push(createFoodItemData(food, reasonableQuantity))
-        totalCarbs += carbsPerServing * reasonableQuantity
+        selectedFoods.push(createFoodItemData(food, quantity))
+        totalCarbs += carbsPerServing * quantity
 
         if (totalCarbs >= carbTarget * 0.9) break
       }
@@ -461,7 +528,7 @@ function selectFoodsForCategory({ foods, likedFoods, carbTarget, category }: {
   // If no foods selected, provide defaults
   if (selectedFoods.length === 0 && foods.length > 0) {
     const defaultFood = foods[0]
-    const carbsPerServing = defaultFood.nutritional_info.carbs_per_serving || 20
+    const carbsPerServing = getEffectiveCarbs(defaultFood) || 20
     const quantity = Math.max(carbTarget / carbsPerServing, 1)
     selectedFoods.push(createFoodItemData(defaultFood, quantity))
   }
@@ -470,11 +537,18 @@ function selectFoodsForCategory({ foods, likedFoods, carbTarget, category }: {
 }
 
 function createFoodItemData(food: FoodItem, quantity: number) {
-  const adjustedCarbs = Math.round((food.nutritional_info.carbs_per_serving || 0) * quantity)
-  const adjustedProtein = Math.round((food.nutritional_info.protein_per_serving || 0) * quantity)
-  const adjustedFat = Math.round((food.nutritional_info.fat_per_serving || 0) * quantity)
-  const adjustedCalories = Math.round((food.nutritional_info.calories_per_serving || 0) * quantity)
-  const adjustedSodium = food.nutritional_info.sodium_mg ? Math.round(food.nutritional_info.sodium_mg * quantity) : undefined
+  // Helper functions to get effective nutritional values
+  const getEffectiveCarbs = () => food.carbs_per_serving ?? food.nutritional_info?.carbs_per_serving ?? 0
+  const getEffectiveProtein = () => food.protein_per_serving ?? food.nutritional_info?.protein_per_serving ?? 0
+  const getEffectiveFat = () => food.fat_per_serving ?? food.nutritional_info?.fat_per_serving ?? 0
+  const getEffectiveCalories = () => food.calories_per_serving ?? food.nutritional_info?.calories_per_serving ?? 0
+  const getEffectiveSodium = () => food.sodium_mg ?? food.nutritional_info?.sodium_mg ?? 0
+  
+  const adjustedCarbs = Math.round(getEffectiveCarbs() * quantity)
+  const adjustedProtein = Math.round(getEffectiveProtein() * quantity)
+  const adjustedFat = Math.round(getEffectiveFat() * quantity)
+  const adjustedCalories = Math.round(getEffectiveCalories() * quantity)
+  const adjustedSodium = getEffectiveSodium() > 0 ? Math.round(getEffectiveSodium() * quantity) : undefined
 
   // Calculate total amount using structured serving data
   const totalAmount = quantity * food.serving_amount
@@ -501,7 +575,7 @@ function createFoodItemData(food: FoodItem, quantity: number) {
     id: food.id,
     name: food.name,
     quantity: quantityText,
-    iconPath: `assets/images/${food.name.toLowerCase().replace(' ', '_')}.png`,
+    iconPath: food.icon_path || `assets/images/${food.name.toLowerCase().replace(' ', '_')}.png`,
     description: food.description || food.instructions || '',
     nutritionalInfo: {
       calories: adjustedCalories,

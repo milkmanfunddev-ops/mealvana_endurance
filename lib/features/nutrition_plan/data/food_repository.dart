@@ -17,6 +17,7 @@ class FoodRepository {
           .select('''
             id,
             name,
+            icon_path,
             description,
             instructions,
             nutritional_info,
@@ -24,7 +25,22 @@ class FoodRepository {
             serving_unit,
             serving_unit_plural,
             serving_qualifier,
-            icon_path,
+            before_run_suitable,
+            during_run_suitable,
+            run_portable,
+            requires_preparation,
+            aid_station_available,
+            max_servings_before,
+            max_servings_during,
+            carbs_per_serving,
+            protein_per_serving,
+            fat_per_serving,
+            calories_per_serving,
+            fluid_ml_per_serving,
+            sodium_mg,
+            caffeine_mg,
+            potassium_mg,
+            serving_size,
             created_at,
             food_categories (
               category_id
@@ -52,6 +68,7 @@ class FoodRepository {
           .select('''
             id,
             name,
+            icon_path,
             description,
             instructions,
             nutritional_info,
@@ -59,7 +76,22 @@ class FoodRepository {
             serving_unit,
             serving_unit_plural,
             serving_qualifier,
-            icon_path,
+            before_run_suitable,
+            during_run_suitable,
+            run_portable,
+            requires_preparation,
+            aid_station_available,
+            max_servings_before,
+            max_servings_during,
+            carbs_per_serving,
+            protein_per_serving,
+            fat_per_serving,
+            calories_per_serving,
+            fluid_ml_per_serving,
+            sodium_mg,
+            caffeine_mg,
+            potassium_mg,
+            serving_size,
             created_at,
             food_categories!inner (
               category_id
@@ -84,6 +116,7 @@ class FoodRepository {
           .select('''
             id,
             name,
+            icon_path,
             description,
             instructions,
             nutritional_info,
@@ -91,7 +124,22 @@ class FoodRepository {
             serving_unit,
             serving_unit_plural,
             serving_qualifier,
-            icon_path,
+            before_run_suitable,
+            during_run_suitable,
+            run_portable,
+            requires_preparation,
+            aid_station_available,
+            max_servings_before,
+            max_servings_during,
+            carbs_per_serving,
+            protein_per_serving,
+            fat_per_serving,
+            calories_per_serving,
+            fluid_ml_per_serving,
+            sodium_mg,
+            caffeine_mg,
+            potassium_mg,
+            serving_size,
             created_at,
             food_categories (
               category_id
@@ -119,6 +167,7 @@ class FoodRepository {
           .select('''
             id,
             name,
+            icon_path,
             description,
             instructions,
             nutritional_info,
@@ -126,7 +175,22 @@ class FoodRepository {
             serving_unit,
             serving_unit_plural,
             serving_qualifier,
-            icon_path,
+            before_run_suitable,
+            during_run_suitable,
+            run_portable,
+            requires_preparation,
+            aid_station_available,
+            max_servings_before,
+            max_servings_during,
+            carbs_per_serving,
+            protein_per_serving,
+            fat_per_serving,
+            calories_per_serving,
+            fluid_ml_per_serving,
+            sodium_mg,
+            caffeine_mg,
+            potassium_mg,
+            serving_size,
             created_at,
             food_categories (
               category_id
@@ -168,7 +232,7 @@ class FoodRepository {
   FoodItem _mapSupabaseFoodToFoodItem(Map<String, dynamic> json) {
     final nutritionalInfo = json['nutritional_info'] as Map<String, dynamic>? ?? {};
     
-    // Extract nutrition values with defaults
+    // Extract nutrition values with defaults for legacy compatibility
     final calories = _extractNutritionValue(nutritionalInfo, ['calories', 'calories_per_serving'], 0.0);
     final carbs = _extractNutritionValue(nutritionalInfo, ['carbs_per_serving', 'carbs'], 0.0);
     final protein = _extractNutritionValue(nutritionalInfo, ['protein_per_serving', 'protein'], 0.0);
@@ -192,16 +256,38 @@ class FoodRepository {
     // Extract categories from the food_categories join
     final categories = _extractCategoriesFromJoin(json);
 
+    // Get carbs for tag generation (prefer explicit field over legacy)
+    final effectiveCarbs = (json['carbs_per_serving'] as num?)?.toDouble() ?? carbs;
+    final effectiveProtein = (json['protein_per_serving'] as num?)?.toDouble() ?? protein;
+    final effectiveFat = (json['fat_per_serving'] as num?)?.toDouble() ?? fat;
+
     return FoodItem(
       id: _generateIdFromName(json['name'] as String),
       name: json['name'] as String,
-      description: json['description'] as String? ?? '',
+      iconPath: json['icon_path'] as String?,
+      description: json['description'] as String?,
+      instructions: json['instructions'] as String?,
       categories: categories,
       servingSize: servingSize,
       servingAmount: servingAmount,
       servingUnit: servingUnit,
       servingUnitPlural: servingUnitPlural,
       servingQualifier: servingQualifier,
+      beforeRunSuitable: json['before_run_suitable'] == true,
+      duringRunSuitable: json['during_run_suitable'] == true,
+      runPortable: json['run_portable'] == true,
+      requiresPreparation: json['requires_preparation'] == true,
+      aidStationAvailable: json['aid_station_available'] == true,
+      maxServingsBefore: json['max_servings_before'] as int?,
+      maxServingsDuring: json['max_servings_during'] as int?,
+      carbsPerServing: (json['carbs_per_serving'] as num?)?.toDouble(),
+      proteinPerServing: (json['protein_per_serving'] as num?)?.toDouble(),
+      fatPerServing: (json['fat_per_serving'] as num?)?.toDouble(),
+      caloriesPerServing: json['calories_per_serving'] as int?,
+      fluidMlPerServing: (json['fluid_ml_per_serving'] as num?)?.toDouble(),
+      sodiumMg: json['sodium_mg'] as int?,
+      caffeineMg: json['caffeine_mg'] as int?,
+      potassiumMg: json['potassium_mg'] as int?,
       nutrition: NutritionInfo(
         calories: calories,
         carbs: carbs,
@@ -212,8 +298,7 @@ class FoodRepository {
         sugar: sugar,
         fluids: fluids,
       ),
-      tags: _generateTagsFromNutrition(carbs, protein, fat),
-      additionalInfo: json['instructions'] as String?,
+      tags: _generateTagsFromNutrition(effectiveCarbs, effectiveProtein, effectiveFat),
     );
   }
 

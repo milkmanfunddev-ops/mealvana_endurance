@@ -193,6 +193,12 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           
           SizedBox(height: 24.h),
           
+          // LLM Message blocks (if available)
+          if (plan.notes != null && plan.notes!.isNotEmpty) ...[
+            ..._buildDietitianMessages(plan.notes!),
+            SizedBox(height: 24.h),
+          ],
+          
           // Plan content (no longer in separate scroll view)
                 // Plan Container with nutrition plan
           PlanContainer(
@@ -501,6 +507,297 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           ],
         ),
       ],
+    );
+  }
+
+  List<Widget> _buildDietitianMessages(String notes) {
+    // Parse the messages (overview|||detailed)
+    final parts = notes.split('|||');
+    final overviewMessage = parts.isNotEmpty ? parts[0].trim() : '';
+    final detailedMessage = parts.length > 1 ? parts[1].trim() : '';
+    
+    return [
+      // Overview message (always visible)
+      if (overviewMessage.isNotEmpty) 
+        _buildMessageCard(
+          title: 'Your Nutrition Expert',
+          subtitle: 'Quick overview',
+          message: overviewMessage,
+          isExpandable: false,
+        ),
+      
+      if (overviewMessage.isNotEmpty && detailedMessage.isNotEmpty)
+        SizedBox(height: 12.h),
+      
+      // Detailed message (expandable)
+      if (detailedMessage.isNotEmpty)
+        _buildMessageCard(
+          title: 'Detailed Guidance',
+          subtitle: 'Tap to read more',
+          message: detailedMessage,
+          isExpandable: true,
+        ),
+    ];
+  }
+
+  Widget _buildMessageCard({
+    required String title,
+    required String subtitle,
+    required String message,
+    required bool isExpandable,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: isExpandable
+          ? _ExpandableMessageCard(
+              title: title,
+              subtitle: subtitle,
+              message: message,
+            )
+          : Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: AppTheme.primary600, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary600.withValues(alpha: 0.1),
+                    blurRadius: 8.r,
+                    offset: Offset(0, 4.h),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary600.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.psychology,
+                          color: AppTheme.primary600,
+                          size: 20.sp,
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: AppTheme.titleStyle.copyWith(
+                                color: AppTheme.primary600,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              subtitle,
+                              style: AppTheme.noteStyle.copyWith(
+                                color: AppTheme.primary600.withValues(alpha: 0.8),
+                                fontSize: 12.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16.h),
+                  Container(
+                    width: double.infinity,
+                    height: 1,
+                    color: AppTheme.primary600.withValues(alpha: 0.2),
+                  ),
+                  SizedBox(height: 16.h),
+                  Text(
+                    message,
+                    style: AppTheme.textStyle.copyWith(
+                      color: AppTheme.baseBlack,
+                      fontSize: 14.sp,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _ExpandableMessageCard extends StatefulWidget {
+  const _ExpandableMessageCard({
+    required this.title,
+    required this.subtitle,
+    required this.message,
+  });
+
+  final String title;
+  final String subtitle;
+  final String message;
+
+  @override
+  State<_ExpandableMessageCard> createState() => _ExpandableMessageCardState();
+}
+
+class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
+    with SingleTickerProviderStateMixin {
+  bool _isExpanded = false;
+  late AnimationController _controller;
+  late Animation<double> _expandAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _expandAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toggleExpansion() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppTheme.primary600, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary600.withValues(alpha: 0.1),
+            blurRadius: 8.r,
+            offset: Offset(0, 4.h),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: Column(
+          children: [
+            // Header (always visible)
+            InkWell(
+              onTap: _toggleExpansion,
+              child: Padding(
+                padding: EdgeInsets.all(20.w),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary600.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.info_outline,
+                        color: AppTheme.primary600,
+                        size: 20.sp,
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: AppTheme.titleStyle.copyWith(
+                              color: AppTheme.primary600,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            widget.subtitle,
+                            style: AppTheme.noteStyle.copyWith(
+                              color: AppTheme.primary600.withValues(alpha: 0.8),
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    AnimatedRotation(
+                      turns: _isExpanded ? 0.5 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: AppTheme.primary600,
+                        size: 24.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Expandable detailed content
+            SizeTransition(
+              sizeFactor: _expandAnimation,
+              child: Container(
+                width: double.infinity,
+                color: AppTheme.primary50.withValues(alpha: 0.3),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 1,
+                        color: AppTheme.primary600.withValues(alpha: 0.2),
+                        margin: EdgeInsets.only(bottom: 16.h),
+                      ),
+                      ...widget.message.split('\n\n').map((paragraph) {
+                        if (paragraph.trim().isEmpty) return const SizedBox.shrink();
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 12.h),
+                          child: Text(
+                            paragraph.trim(),
+                            style: AppTheme.textStyle.copyWith(
+                              color: AppTheme.baseBlack,
+                              fontSize: 14.sp,
+                              height: 1.5,
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
