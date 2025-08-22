@@ -195,7 +195,14 @@ RUN DETAILS:
 - Duration: ${durationMinutes.toFixed(0)} minutes (${durationHours.toFixed(1)} hours)
 - Time before run: ${requestData.time_before_run_hours} hours
 
-IMPORTANT: For DURING-RUN foods, specify the TOTAL amounts needed for the ENTIRE ${durationHours.toFixed(1)}-hour run, not per hour amounts. In the timing field, specify HOW to consume that total (e.g., "Take 1 gel every 30 minutes" if recommending 4 gels total).
+CRITICAL: For DURING-RUN foods, calculate the TOTAL carbs needed for this SPECIFIC ${durationMinutes.toFixed(0)}-minute run. 
+- For runs under 45 minutes: usually NO during-run fueling needed
+- For runs 45-60 minutes: usually 0-20g total carbs during run (maybe 1 gel)
+- For runs 60-90 minutes: usually 20-40g total carbs during run  
+- For runs over 90 minutes: scale appropriately but calculate for total duration
+
+DO NOT use hourly rates or "per hour" calculations. Calculate total consumption for the entire ${durationMinutes.toFixed(0)} minutes.
+In the timing field, specify how to consume the total (e.g., "Take 1 gel at 20 minutes" for a single gel).
 
 AVAILABLE FOODS:
 
@@ -240,13 +247,13 @@ Return a JSON response with this exact structure:
     "during": [
       {
         "food_name": "exact food name from list above",
-        "description": "e.g., 4 energy gels total", 
+        "description": "e.g., 1 energy gel (for 43-minute run)", 
         "carbs_grams": number,
         "calories": number,
         "protein_grams": number,
         "fat_grams": number,
         "sodium_mg": number,
-        "timing": "e.g., Take 1 gel every 30 minutes"
+        "timing": "e.g., Take 1 gel at 20 minutes"
       }
     ],
     "after": [
