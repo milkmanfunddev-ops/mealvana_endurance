@@ -45,3 +45,7 @@ app.*.map.json
 /android/app/release
 
 sentry.properties
+
+# iOS CocoaPods
+ios/Pods/
+ios/Podfile.lock
