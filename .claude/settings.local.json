@@ -57,7 +57,9 @@
       "Bash(find:*)",
       "Bash(sips:*)",
       "Bash(git rm:*)",
-      "Bash(git filter-branch:*)"
+      "Bash(git filter-branch:*)",
+      "Bash(java:*)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch sentry-wizard' --prune-empty --tag-name-filter cat -- --all)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
