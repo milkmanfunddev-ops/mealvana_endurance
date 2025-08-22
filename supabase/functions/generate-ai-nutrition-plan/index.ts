@@ -76,6 +76,13 @@ serve(async (req) => {
     );
 
     const requestData: NutritionPlanRequest = await req.json();
+    
+    // Debug logging
+    console.log('🔍 DEBUG: Received request data:', {
+      distance_miles: requestData.distance_miles,
+      pace_minutes_per_mile: requestData.pace_minutes_per_mile,
+      device_id: requestData.device_id?.substring(0, 8) + '...',
+    });
 
     // Validate required fields
     if (!requestData.device_id || !requestData.weight_kg || !requestData.distance_miles) {
@@ -139,6 +146,13 @@ serve(async (req) => {
     // Calculate run duration and caloric needs
     const durationHours = (requestData.distance_miles * requestData.pace_minutes_per_mile) / 60;
     const durationMinutes = requestData.distance_miles * requestData.pace_minutes_per_mile;
+    
+    console.log('🔍 DEBUG: Calculated duration:', {
+      distance: requestData.distance_miles,
+      pace: requestData.pace_minutes_per_mile,
+      durationHours: durationHours.toFixed(1),
+      durationMinutes: durationMinutes.toFixed(0)
+    });
 
     // Build the prompt for GPT-4o-mini
     const systemPrompt = `You are an expert sports nutritionist specializing in endurance running. Your task is to create personalized nutrition plans based on scientific guidelines including ACSM recommendations.
@@ -181,7 +195,7 @@ RUN DETAILS:
 - Duration: ${durationMinutes.toFixed(0)} minutes (${durationHours.toFixed(1)} hours)
 - Time before run: ${requestData.time_before_run_hours} hours
 
-IMPORTANT: For DURING-RUN foods, specify the TOTAL amounts needed for the ENTIRE ${durationHours.toFixed(1)}-hour run, not per hour amounts.
+IMPORTANT: For DURING-RUN foods, specify the TOTAL amounts needed for the ENTIRE ${durationHours.toFixed(1)}-hour run, not per hour amounts. In the timing field, specify HOW to consume that total (e.g., "Take 1 gel every 30 minutes" if recommending 4 gels total).
 
 AVAILABLE FOODS:
 
@@ -210,7 +224,7 @@ YOUR DETAILED MESSAGE MUST:
 Return a JSON response with this exact structure:
 
 {
-  "detailed_message": "A concise 2-3 paragraph detailed explanation as a sports dietitian speaking directly to your client. Start by mentioning the specific foods you've selected for each phase (before, during, after). Explain why these particular foods were chosen based on their preferences and nutritional content. Be encouraging and educational while being specific about the foods in their plan.",
+  "detailed_message": "A VERY concise 2 paragraphs maximum (100 words total) as a sports dietitian speaking directly to your client. Start by mentioning the specific foods you've selected for each phase. Explain why these foods were chosen based on their preferences. Be encouraging and specific about the foods in their plan. Keep it brief and actionable.",
   "plan": {
     "before": [
       {
@@ -226,13 +240,13 @@ Return a JSON response with this exact structure:
     "during": [
       {
         "food_name": "exact food name from list above",
-        "description": "e.g., 4 energy gels (total for entire run)", 
+        "description": "e.g., 4 energy gels total", 
         "carbs_grams": number,
         "calories": number,
         "protein_grams": number,
         "fat_grams": number,
         "sodium_mg": number,
-        "timing": "e.g., 1 every 30 minutes"
+        "timing": "e.g., Take 1 gel every 30 minutes"
       }
     ],
     "after": [
