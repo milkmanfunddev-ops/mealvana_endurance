@@ -64,6 +64,9 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
   Future<void> _generatePlan() async {
     if (!_formKey.currentState!.validate()) return;
     
+    // Dismiss keyboard before generating plan
+    FocusScope.of(context).unfocus();
+    
     setState(() => _isGenerating = true);
     
     // Track generate plan button press
@@ -194,6 +197,8 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
                             hint: _selectedDistanceUnit == DistanceUnit.miles ? 'e.g. 5' : 'e.g. 8',
                             controller: _distanceController,
                             keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.next,
+                            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter distance';
@@ -274,6 +279,8 @@ class _MainNutritionPlanScreenState extends ConsumerState<MainNutritionPlanScree
                             hint: _selectedPaceUnit == PaceUnit.minPerMile ? 'e.g. 8:30' : 'e.g. 5:15',
                             controller: _paceController,
                             keyboardType: TextInputType.text,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => FocusScope.of(context).unfocus(),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter average pace';

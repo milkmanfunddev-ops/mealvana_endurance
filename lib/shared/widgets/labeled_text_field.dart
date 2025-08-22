@@ -17,6 +17,8 @@ class LabeledTextField extends StatefulWidget {
     this.validator,
     this.enabled = true,
     this.maxLines = 1,
+    this.textInputAction,
+    this.onSubmitted,
   });
 
   final String label;
@@ -29,6 +31,8 @@ class LabeledTextField extends StatefulWidget {
   final String? Function(String?)? validator;
   final bool enabled;
   final int maxLines;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   State<LabeledTextField> createState() => _LabeledTextFieldState();
@@ -107,6 +111,8 @@ class _LabeledTextFieldState extends State<LabeledTextField> {
             validator: widget.validator,
             enabled: widget.enabled,
             maxLines: widget.maxLines,
+            textInputAction: widget.textInputAction ?? TextInputAction.done,
+            onFieldSubmitted: widget.onSubmitted,
             style: AppTheme.textStyle.copyWith(
               color: AppTheme.baseBlack,
               fontSize: 16.sp,
