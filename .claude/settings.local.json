@@ -55,7 +55,8 @@
       "Bash(./sentry-wizard:*)",
       "Bash(git config:*)",
       "Bash(find:*)",
-      "Bash(sips:*)"
+      "Bash(sips:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

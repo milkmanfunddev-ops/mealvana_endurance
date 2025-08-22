@@ -66,7 +66,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('✅ Thank you for your feedback!'),
-              backgroundColor: AppTheme.primary600,
+              backgroundColor: AppTheme.primary900,
               duration: const Duration(seconds: 3),
             ),
           );
@@ -551,7 +551,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
                 border: Border.all(color: AppTheme.primary900, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primary600.withValues(alpha: 0.1),
+                    color: AppTheme.primary900.withValues(alpha: 0.1),
                     blurRadius: 8.r,
                     offset: Offset(0, 4.h),
                   ),
@@ -565,12 +565,12 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
                       Container(
                         padding: EdgeInsets.all(8.w),
                         decoration: BoxDecoration(
-                          color: AppTheme.primary600.withValues(alpha: 0.1),
+                          color: AppTheme.primary900.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.psychology,
-                          color: AppTheme.primary600,
+                          color: AppTheme.primary900,
                           size: 20.sp,
                         ),
                       ),
@@ -582,7 +582,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
                             Text(
                               title,
                               style: AppTheme.titleStyle.copyWith(
-                                color: AppTheme.primary600,
+                                color: AppTheme.primary900,
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -590,7 +590,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
                             Text(
                               subtitle,
                               style: AppTheme.noteStyle.copyWith(
-                                color: AppTheme.primary600.withValues(alpha: 0.8),
+                                color: AppTheme.primary900.withValues(alpha: 0.8),
                                 fontSize: 12.sp,
                               ),
                             ),
@@ -603,7 +603,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
                   Container(
                     width: double.infinity,
                     height: 1,
-                    color: AppTheme.primary600.withValues(alpha: 0.2),
+                    color: AppTheme.primary900.withValues(alpha: 0.2),
                   ),
                   SizedBox(height: 16.h),
                   Text(
@@ -678,10 +678,10 @@ class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppTheme.primary600, width: 2),
+        border: Border.all(color: AppTheme.primary900, width: 2),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primary600.withValues(alpha: 0.1),
+            color: AppTheme.primary900.withValues(alpha: 0.1),
             blurRadius: 8.r,
             offset: Offset(0, 4.h),
           ),
@@ -701,12 +701,12 @@ class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
                     Container(
                       padding: EdgeInsets.all(8.w),
                       decoration: BoxDecoration(
-                        color: AppTheme.primary600.withValues(alpha: 0.1),
+                        color: AppTheme.primary900.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.info_outline,
-                        color: AppTheme.primary600,
+                        color: AppTheme.primary900,
                         size: 20.sp,
                       ),
                     ),
@@ -718,7 +718,7 @@ class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
                           Text(
                             widget.title,
                             style: AppTheme.titleStyle.copyWith(
-                              color: AppTheme.primary600,
+                              color: AppTheme.primary900,
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w700,
                             ),
@@ -726,7 +726,7 @@ class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
                           Text(
                             widget.subtitle,
                             style: AppTheme.noteStyle.copyWith(
-                              color: AppTheme.primary600.withValues(alpha: 0.8),
+                              color: AppTheme.primary900.withValues(alpha: 0.8),
                               fontSize: 12.sp,
                             ),
                           ),
@@ -738,7 +738,7 @@ class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
                       duration: const Duration(milliseconds: 300),
                       child: Icon(
                         Icons.keyboard_arrow_down,
-                        color: AppTheme.primary600,
+                        color: AppTheme.primary900,
                         size: 24.sp,
                       ),
                     ),
@@ -761,7 +761,7 @@ class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
                       Container(
                         width: double.infinity,
                         height: 1,
-                        color: AppTheme.primary600.withValues(alpha: 0.2),
+                        color: AppTheme.primary900.withValues(alpha: 0.2),
                         margin: EdgeInsets.only(bottom: 16.h),
                       ),
                       ...widget.message.split('\n\n').map((paragraph) {

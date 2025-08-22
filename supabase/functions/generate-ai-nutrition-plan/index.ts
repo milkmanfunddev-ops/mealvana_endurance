@@ -195,14 +195,17 @@ RUN DETAILS:
 - Duration: ${durationMinutes.toFixed(0)} minutes (${durationHours.toFixed(1)} hours)
 - Time before run: ${requestData.time_before_run_hours} hours
 
-CRITICAL: For DURING-RUN foods, calculate the TOTAL carbs needed for this SPECIFIC ${durationMinutes.toFixed(0)}-minute run. 
-- For runs under 45 minutes: usually NO during-run fueling needed
-- For runs 45-60 minutes: usually 0-20g total carbs during run (maybe 1 gel)
-- For runs 60-90 minutes: usually 20-40g total carbs during run  
-- For runs over 90 minutes: scale appropriately but calculate for total duration
+CRITICAL SCIENTIFIC GUIDELINES for DURING-RUN foods based on research:
+- For runs UNDER 60 minutes (${durationMinutes < 60 ? 'THIS RUN' : 'not this run'}): NO carbs needed - only hydration (150-300ml total fluids)
+- For runs 60-90 minutes: 20-40g total carbs for entire run + 400-600ml total fluids
+- For runs over 90 minutes: 45-60g total carbs for entire run + 600-800ml total fluids
 
-DO NOT use hourly rates or "per hour" calculations. Calculate total consumption for the entire ${durationMinutes.toFixed(0)} minutes.
-In the timing field, specify how to consume the total (e.g., "Take 1 gel at 20 minutes" for a single gel).
+${durationMinutes < 60 ? 
+  `This ${durationMinutes.toFixed(0)}-minute run requires NO during-run fueling - return empty during array []` :
+  `This ${durationMinutes.toFixed(0)}-minute run requires modest fueling - calculate total for entire duration`
+}
+
+NEVER use "per hour" calculations. Always calculate TOTAL consumption for the ENTIRE ${durationMinutes.toFixed(0)}-minute duration.
 
 AVAILABLE FOODS:
 
@@ -276,9 +279,9 @@ Return a JSON response with this exact structure:
       "fat_grams": number
     },
     "during_run": {
-      "carbs_per_hour": number,
-      "sodium_per_hour_mg": number,
-      "fluids_per_hour_ml": number
+      "carbs_total_grams": number,
+      "sodium_total_mg": number,
+      "fluids_total_ml": number
     },
     "post_run": {
       "calories": number,

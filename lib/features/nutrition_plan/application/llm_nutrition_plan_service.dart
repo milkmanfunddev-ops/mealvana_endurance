@@ -225,7 +225,7 @@ class LLMNutritionPlanService {
         PlanSection(
           id: 'during-run',
           title: 'During Run',
-          subtitle: 'Per hour: ${duringRun['carbs_per_hour']}g carbs, ${duringRun['fluids_per_hour_ml']}ml fluids',
+          subtitle: 'Total: ${duringRun['carbs_total_grams']}g carbs, ${duringRun['fluids_total_ml']}ml fluids',
           timing: 'During',
           foodItems: duringItems,
         ),
@@ -242,10 +242,10 @@ class LLMNutritionPlanService {
         carbs: totalCarbs,
         protein: totalProtein,
         fat: totalFat,
-        sodium: (duringRun['sodium_per_hour_mg'] as num?)?.toInt(),
-        fluids: (duringRun['fluids_per_hour_ml'] as num?)?.toInt(),
+        sodium: (duringRun['sodium_total_mg'] as num?)?.toInt(),
+        fluids: (duringRun['fluids_total_ml'] as num?)?.toInt(),
         // Store phase-specific data in ranges for display
-        carbsRange: 'Pre: ${preRun['carbs_grams']}g | During: ${duringRun['carbs_per_hour']}g/hr | Post: ${postRun['carbs_grams']}g',
+        carbsRange: 'Pre: ${preRun['carbs_grams']}g | During: ${duringRun['carbs_total_grams']}g total | Post: ${postRun['carbs_grams']}g',
         proteinRange: 'Pre: ${preRun['protein_grams']}g | Post: ${postRun['protein_grams']}g',
         fatRange: 'Pre: ${preRun['fat_grams']}g | Post: ${postRun['fat_grams']}g',
       ),
