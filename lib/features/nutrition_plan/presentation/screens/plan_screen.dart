@@ -511,25 +511,11 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
   }
 
   List<Widget> _buildDietitianMessages(String notes) {
-    // Parse the messages (overview|||detailed)
-    final parts = notes.split('|||');
-    final overviewMessage = parts.isNotEmpty ? parts[0].trim() : '';
-    final detailedMessage = parts.length > 1 ? parts[1].trim() : '';
+    // Now we only have the detailed message (no more overview)
+    final detailedMessage = notes.trim();
     
     return [
-      // Overview message (always visible)
-      if (overviewMessage.isNotEmpty) 
-        _buildMessageCard(
-          title: 'Your Nutrition Expert',
-          subtitle: 'Quick overview',
-          message: overviewMessage,
-          isExpandable: false,
-        ),
-      
-      if (overviewMessage.isNotEmpty && detailedMessage.isNotEmpty)
-        SizedBox(height: 12.h),
-      
-      // Detailed message (expandable)
+      // Only detailed message (expandable)
       if (detailedMessage.isNotEmpty)
         _buildMessageCard(
           title: 'Detailed Guidance',

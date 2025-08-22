@@ -158,7 +158,12 @@ Key Principles:
    - Protein: 0.25g/kg
    - Rehydration: 150% of fluid losses
 
-You must ONLY select foods from the provided lists. Each food item has an ID that must be used in the response.`;
+CRITICAL RULES:
+- You MUST ONLY select foods from the provided lists below
+- Use EXACT food names as listed (no variations, substitutions, or generic descriptions)
+- Never mention quantities like "9g carbs" or "1 packet" - only use actual food names
+- The description field should specify quantity (e.g., "1 cup oatmeal", "2 energy gels")
+- If you cannot create a plan using only the provided foods, respond with an error`;
 
     const userPrompt = `Create a nutrition plan for this runner:
 
@@ -192,11 +197,18 @@ ${afterFoods.filter(f => !preferredAfterFoods.includes(f)).slice(0, 8).map(f => 
 
 IMPORTANT: You MUST use the exact food names provided above. Prioritize foods marked with * (user's preferred foods).
 
-Create a nutrition plan prioritizing your client's preferred foods (marked with *). For each food item, calculate the nutrition facts based on the serving size and carb content provided above. Return a JSON response with this exact structure:
+Create a nutrition plan prioritizing your client's preferred foods (marked with *). For each food item, calculate the nutrition facts based on the serving size and carb content provided above. 
+
+YOUR DETAILED MESSAGE MUST:
+- Mention the specific foods you selected by name (e.g., "I've chosen oatmeal and banana for your pre-run meal")
+- Explain WHY you chose these specific foods based on their preferences and nutrition
+- Use proper paragraph breaks (\\n\\n between paragraphs)
+- Speak directly to your client using 'you' and 'your'
+
+Return a JSON response with this exact structure:
 
 {
-  "overview_message": "A brief 1-2 sentence summary speaking directly to your client using 'you' and 'your'. Highlight the key benefits of this personalized plan.",
-  "detailed_message": "A professional 2-3 paragraph detailed explanation as a sports dietitian speaking directly to your client. Use 'you' and 'your' throughout. Use proper paragraph breaks (\\n\\n between paragraphs). Explain why specific foods were chosen based on their preferences, the science behind the timing, and how this supports their specific run goals. Be encouraging and educational.",
+  "detailed_message": "A comprehensive 3-4 paragraph detailed explanation as a sports dietitian speaking directly to your client. Start by mentioning the specific foods you've selected for each phase (before, during, after). Explain why these particular foods were chosen based on their preferences, nutritional content, and timing science. Include practical tips for implementation. Be encouraging and educational while being specific about the foods in their plan.",
   "plan": {
     "before": [
       {

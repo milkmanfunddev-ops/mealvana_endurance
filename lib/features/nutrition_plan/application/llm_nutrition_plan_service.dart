@@ -138,7 +138,6 @@ class LLMNutritionPlanService {
   NutritionPlan _convertLLMResponseToPlan(Map<String, dynamic> data, String userId) {
     final planData = data['plan'] as Map<String, dynamic>;
     final macroTargets = data['macro_targets'] as Map<String, dynamic>;
-    final overviewMessage = data['overview_message'] as String;
     final detailedMessage = data['detailed_message'] as String;
     final planId = data['plan_id'] as String? ?? 
                    'llm-plan-${DateTime.now().millisecondsSinceEpoch}';
@@ -250,7 +249,7 @@ class LLMNutritionPlanService {
         proteinRange: 'Pre: ${preRun['protein_grams']}g | Post: ${postRun['protein_grams']}g',
         fatRange: 'Pre: ${preRun['fat_grams']}g | Post: ${postRun['fat_grams']}g',
       ),
-      notes: '$overviewMessage|||$detailedMessage', // Store both messages with separator
+      notes: detailedMessage, // Store only the detailed message
       createdAt: DateTime.now(),
     );
   }
