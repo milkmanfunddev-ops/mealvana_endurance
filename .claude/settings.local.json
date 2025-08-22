@@ -52,7 +52,10 @@
       "Bash(grep:*)",
       "Bash(curl:*)",
       "Bash(chmod:*)",
-      "Bash(./sentry-wizard:*)"
+      "Bash(./sentry-wizard:*)",
+      "Bash(git config:*)",
+      "Bash(find:*)",
+      "Bash(sips:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
