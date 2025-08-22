@@ -178,8 +178,10 @@ RUNNER PROFILE:
 RUN DETAILS:
 - Distance: ${requestData.distance_miles} miles
 - Pace: ${requestData.pace_minutes_per_mile} min/mile
-- Duration: ${durationMinutes.toFixed(0)} minutes
+- Duration: ${durationMinutes.toFixed(0)} minutes (${durationHours.toFixed(1)} hours)
 - Time before run: ${requestData.time_before_run_hours} hours
+
+IMPORTANT: For DURING-RUN foods, specify the TOTAL amounts needed for the ENTIRE ${durationHours.toFixed(1)}-hour run, not per hour amounts.
 
 AVAILABLE FOODS:
 
@@ -208,7 +210,7 @@ YOUR DETAILED MESSAGE MUST:
 Return a JSON response with this exact structure:
 
 {
-  "detailed_message": "A comprehensive 3-4 paragraph detailed explanation as a sports dietitian speaking directly to your client. Start by mentioning the specific foods you've selected for each phase (before, during, after). Explain why these particular foods were chosen based on their preferences, nutritional content, and timing science. Include practical tips for implementation. Be encouraging and educational while being specific about the foods in their plan.",
+  "detailed_message": "A concise 2-3 paragraph detailed explanation as a sports dietitian speaking directly to your client. Start by mentioning the specific foods you've selected for each phase (before, during, after). Explain why these particular foods were chosen based on their preferences and nutritional content. Be encouraging and educational while being specific about the foods in their plan.",
   "plan": {
     "before": [
       {
@@ -224,13 +226,13 @@ Return a JSON response with this exact structure:
     "during": [
       {
         "food_name": "exact food name from list above",
-        "description": "e.g., 2 energy gels", 
+        "description": "e.g., 4 energy gels (total for entire run)", 
         "carbs_grams": number,
         "calories": number,
         "protein_grams": number,
         "fat_grams": number,
         "sodium_mg": number,
-        "timing": "e.g., every 30 minutes"
+        "timing": "e.g., 1 every 30 minutes"
       }
     ],
     "after": [

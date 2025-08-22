@@ -128,7 +128,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
             ),
             onPressed: () {
               // Navigate to main screen to create new plan
-              context.go('/main');
+              context.push('/main');
             },
           ),
           // Gear icon for settings
@@ -193,6 +193,16 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           
           SizedBox(height: 24.h),
           
+          // Macro Targets as separate widget - use actual plan data
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: MacroTargetsExpander(
+              macroTargets: _extractMacroTargets(plan),
+            ),
+          ),
+          
+          SizedBox(height: 24.h),
+          
           // LLM Message blocks (if available)
           if (plan.notes != null && plan.notes!.isNotEmpty) ...[
             ..._buildDietitianMessages(plan.notes!),
@@ -210,14 +220,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           ),
           
           SizedBox(height: 16.h),
-          
-          // Macro Targets as separate widget - use actual plan data
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: MacroTargetsExpander(
-              macroTargets: _extractMacroTargets(plan),
-            ),
-          ),
           
           SizedBox(height: 32.h),
           
@@ -546,7 +548,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: AppTheme.primary600, width: 2),
+                border: Border.all(color: AppTheme.primary900, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.primary600.withValues(alpha: 0.1),
