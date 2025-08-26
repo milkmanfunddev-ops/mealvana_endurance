@@ -59,7 +59,17 @@
       "Bash(git rm:*)",
       "Bash(git filter-branch:*)",
       "Bash(java:*)",
-      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch sentry-wizard' --prune-empty --tag-name-filter cat -- --all)"
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch sentry-wizard' --prune-empty --tag-name-filter cat -- --all)",
+      "Bash(git gc:*)",
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__onboarding",
+      "mcp__serena__list_dir",
+      "mcp__serena__search_for_pattern",
+      "mcp__serena__find_file",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__think_about_collected_information",
+      "mcp__serena__write_memory",
+      "mcp__serena__find_symbol"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

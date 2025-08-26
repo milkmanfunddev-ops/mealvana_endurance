@@ -46,8 +46,8 @@ class AppStartupWidget extends ConsumerWidget {
         print('  → Navigating to FoodPreferencesScreen (incomplete onboarding)');
         context.go('/onboarding/food-preferences');
       } else {
-        print('  → Navigating to PlanScreen (user complete)');
-        context.go('/plan');
+        print('  → Navigating to TabsScreen (user complete)');
+        context.go('/main');
       }
     });
     

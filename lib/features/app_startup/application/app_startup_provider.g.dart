@@ -6,7 +6,7 @@ part of 'app_startup_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$appStartupHash() => r'f77b25f58b4860d58ae15018b8bac6fef08c8af7';
+String _$appStartupHash() => r'f6f2c8e80da9182f7a1adc78e74b5913e7fa4aed';
 
 /// AsyncNotifier for app startup initialization using Drift
 /// This coordinates the AppStartupService and provides async state management

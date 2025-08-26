@@ -119,30 +119,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
         ),
         centerTitle: true,
         actions: [
-          // Plus button for creating new plan
-          IconButton(
-            icon: Icon(
-              Icons.add,
-              color: AppTheme.baseBlack,
-              size: 24.sp,
-            ),
-            onPressed: () {
-              // Navigate to main screen to create new plan
-              context.push('/main');
-            },
-          ),
-          // Gear icon for settings
-          IconButton(
-            icon: Icon(
-              Icons.settings,
-              color: AppTheme.baseBlack,
-              size: 24.sp,
-            ),
-            onPressed: () {
-              // Navigate to settings screen
-              context.push('/settings');
-            },
-          ),
           SizedBox(width: 8.w), // Small padding from edge
         ],
       ),
@@ -172,6 +148,18 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
               onSubmitFeedback: _handleFeedbackSubmission,
             ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to main screen to create new plan
+          context.push('/main');
+        },
+        backgroundColor: AppTheme.primary900,
+        child: Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 24.sp,
+        ),
       ),
     );
   }
@@ -223,17 +211,18 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           
           SizedBox(height: 32.h),
           
-          // Save Button (matching Alex's design)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: PrimaryButton(
-              text: feedbackState.lastSubmissionSuccess ? 'Saved' : 'Save',
-              onPressed: feedbackState.lastSubmissionSuccess ? null : () {
-                _showFeedbackDrawer();
-              },
-              width: double.infinity,
+          // Save Button - only show if not yet saved
+          if (!feedbackState.lastSubmissionSuccess)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: PrimaryButton(
+                text: 'Save',
+                onPressed: () {
+                  _showFeedbackDrawer();
+                },
+                width: double.infinity,
+              ),
             ),
-          ),
           
           SizedBox(height: 16.h),
           

@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.1.0+13
+version: 1.1.0+14
 
 environment:
   sdk: ^3.8.1
@@ -92,6 +92,7 @@ flutter:
     - shorebird.yaml
     - assets/images/
     - assets/config/
+    - assets/icons/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

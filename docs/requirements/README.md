@@ -1,8 +1,20 @@
-# Long Run Nutrition Fueling Plan App - UI/UX Design Task
+# Mealvana Endurance - Requirements & Design Specification
 
 ## Project Overview
 
-Design a simple MVP app that generates personalized nutrition fueling plans for endurance athletes' long run days, covering both pre-run and during-run nutrition needs.
+Design and develop an evidence-based nutrition planning app that generates personalized fueling plans for endurance athletes, covering pre-run, during-run, and post-run nutrition needs. The app follows comprehensive endurance athlete nutrition guidelines to ensure digestible, portable, and appropriately timed nutrition recommendations.
+
+## Core Requirements
+
+### Evidence-Based Foundation
+The app implements scientifically-backed nutrition guidelines for endurance athletes:
+- **Macro targets** based on body weight and exercise duration (1-4g/kg carbs pre-run, 0-60g total during-run)
+- **Phase-specific food selection** with practicality constraints (no oatmeal/banana during runs)
+- **Product-specific suitability** enforced via database categorization system
+- **GI tolerance considerations** to minimize digestive stress
+- **Duration-based recommendations** (no fueling <60min, progressive increases for longer runs)
+
+See `nutrition_plan_guidelines.md` for complete scientific foundation.
 
 ## User Flow
 
@@ -75,9 +87,10 @@ A mock example of output:
 
 ### Macro Targets
 
-- **Carbs:** 285 grams
-- **Sodium:** 800-1200mg
-- **Fluids:** 40-48 oz
+- **Pre-run Carbs:** 70-280g (1-4g/kg based on available time)
+- **During-run Carbs:** 0-60g total (based on run duration and gut training)
+- **Sodium:** 0-600mg total for entire run
+- **Fluids:** 150-800ml total for entire run
 
 ### Plan
 
@@ -89,7 +102,7 @@ A mock example of output:
 
 **During Run:**
 
-4 gels + 4 cups sport drinks (spaced out every 30m) 
+2 gels + 16 oz sports drink (total for entire run, consume gradually) 
 
 **After Run:**
 

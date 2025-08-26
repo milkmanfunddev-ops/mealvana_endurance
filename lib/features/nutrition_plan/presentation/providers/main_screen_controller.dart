@@ -4,6 +4,7 @@ import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../application/nutrition_plan_service.dart';
 import '../../domain/nutrition_plan.dart';
+import 'nutrition_plan_controller.dart';
 
 part 'main_screen_controller.g.dart';
 
@@ -142,6 +143,9 @@ class MainScreenController extends _$MainScreenController {
         distanceMiles: distanceMiles,
         paceMinutesPerMile: paceMinutesPerMile,
       );
+
+      // Invalidate the nutrition plan controller to force it to show the new plan
+      ref.invalidate(nutritionPlanControllerProvider);
 
       return currentState.copyWith(
         isGenerating: false,

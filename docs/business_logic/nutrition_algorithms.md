@@ -32,39 +32,42 @@ Where:
 
 ### 2. Pre-Run Carbohydrate Requirements
 
-**Time-Based Carbohydrate Loading:**
+**Time-Based Carbohydrate Loading (Evidence-Based Guidelines):**
 ```
-if time_available ≥ 1 hour:    carbs = min(4 hours, time_available) × 1.0 g/kg
-if 0.25 ≤ time_available < 1h: carbs = 0.5 g/kg
-if time_available < 0.25h:     carbs = ~0.25 g/kg (small top-up)
+if time_available ≥ 2 hours:   carbs = min(4.0, time_available) × 1.0 g/kg  (1-4g/kg scaling)
+if 1 ≤ time_available < 2h:     carbs = 1.0 g/kg
+if 0.25 ≤ time_available < 1h:  carbs = 0.5 g/kg
+if time_available < 0.25h:      carbs = 0.25 g/kg (small top-up)
 ```
 
 **Implementation Logic:**
-- **1-4 hours before**: 1-4g per kg body weight (capped at 4g/kg)
+- **2-4 hours before**: 1-4g per kg body weight (scales with available time)
+- **1-2 hours before**: 1g per kg body weight  
 - **15-60 minutes before**: 0.5g per kg body weight  
-- **<15 minutes before**: Small top-up (~0.25g per kg)
+- **<15 minutes before**: Small top-up (0.25g per kg)
 - **Focus**: Easily digestible carbohydrates
 - **Avoid**: High fiber, high fat, or unfamiliar foods
 
 ### 3. During-Run Carbohydrate Requirements
 
-**Mass-Normalized Rate Formula:**
+**Duration-Based Total Carbohydrate Needs:**
 ```
-Base rate = gut_training_level × body weight (kg)
-gut_training_levels: {low: 0.7, moderate: 0.8, high: 1.0} g/kg/h
-```
+For runs < 60 minutes:     0g total (hydration only)
+For runs 60-90 minutes:    20-40g total for entire run
+For runs > 90 minutes:     30-60g total based on gut training
 
-**Absorption-Limited Rate:**
-```
-Final rate = clamp(base_rate, 30, 60) g/h
-Total during-run carbs = final_rate × duration (hours)
+Gut training multipliers:
+- Low gut training:    30g total maximum
+- Moderate gut training: 45g total maximum  
+- High gut training:    60g total maximum
 ```
 
 **Implementation Logic:**
-- **Gut training consideration**: Athletes with trained guts can absorb more
-- **Physiological limits**: 30-60g per hour absorption capacity
-- **Personalization**: Higher rates for larger, gut-trained athletes
-- **Safety**: Always clamp to digestive capacity limits
+- **Short runs (<60 min)**: No carbohydrate supplementation needed
+- **Medium runs (60-90 min)**: Modest total carbohydrate intake
+- **Long runs (>90 min)**: Higher totals based on gut training capacity
+- **Individual variation**: Gut training determines maximum absorption
+- **Safety**: Always calculate totals, never hourly rates
 
 ### 4. Hydration Requirements
 
@@ -75,13 +78,16 @@ if 1h ≤ time_before_run < 2h: 4 mL/kg
 if time_before_run < 1h: 2 mL/kg (minimal intake)
 ```
 
-**During-Run Hydration Rate:**
+**During-Run Total Hydration Needs:**
 ```
-Base rate: 500 mL/h
-if duration ≤ 1h: 400 mL/h (80% of base)
-if MET ≥ 8.0: 800 mL/h (high intensity)
-if MET ≥ 6.0: 600 mL/h (moderate intensity)
-else: 500 mL/h (easy pace)
+For runs ≤ 60 min:     150-300 mL total
+For runs 60-90 min:    400-600 mL total  
+For runs > 90 min:     600-800 mL total
+
+Intensity adjustments:
+if MET ≥ 8.0: use upper range (high intensity)
+if MET ≥ 6.0: use middle range (moderate intensity)  
+else: use lower range (easy pace)
 ```
 
 ### 5. Sodium Requirements
@@ -92,10 +98,11 @@ if time_before_run ≥ 2h: 500 mg (moderate pre-loading)
 else: 200 mg (minimal if close to run time)
 ```
 
-**During-Run Sodium Rate:**
+**During-Run Total Sodium Needs:**
 ```
-if duration ≤ 1h: 0 mg/h (no supplementation needed)
-else: 250 mg/h (typical sports drink concentration)
+For runs ≤ 60 min:     0 mg total (no supplementation needed)
+For runs 60-90 min:    150-300 mg total
+For runs > 90 min:     300-600 mg total
 ```
 
 ## Complete Algorithm Implementation
@@ -123,11 +130,14 @@ def compute_run_fueling(input_params):
     else:
         pre_carbs = 0.25 * weight_kg
     
-    # During-run carbohydrates
-    gut_multiplier = {"low": 0.7, "moderate": 0.8, "high": 1.0}[gut_training]
-    mass_norm_rate = gut_multiplier * weight_kg
-    final_rate = clamp(mass_norm_rate, 30.0, 60.0)
-    total_during_carbs = final_rate * duration_h
+    # During-run carbohydrates (total amounts, not hourly rates)
+    if duration_h < 1.0:
+        total_during_carbs = 0  # No carbs needed for short runs
+    elif duration_h <= 1.5:
+        total_during_carbs = min(40, 20 + (duration_h - 1.0) * 40)  # 20-40g total
+    else:
+        gut_multiplier = {"low": 30, "moderate": 45, "high": 60}[gut_training]
+        total_during_carbs = gut_multiplier  # Total grams, not per hour
     
     # Hydration and sodium calculations
     pre_water = calc_pre_run_hydration(weight_kg, time_available_h)

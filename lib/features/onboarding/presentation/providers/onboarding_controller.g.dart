@@ -29,7 +29,7 @@ final onboardingProgressProvider =
 typedef OnboardingProgressRef
     = AutoDisposeFutureProviderRef<OnboardingProgress>;
 String _$onboardingControllerHash() =>
-    r'41d075b5f9dcbfe25c503d6b4dae4740fcbdc834';
+    r'dbfb01123c950fc3950246147144cc516481c656';
 
 /// Controller for managing onboarding flow state
 ///

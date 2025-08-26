@@ -1,29 +1,27 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'main_screen_controller.dart';
+part of 'recipe_repository.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$mainScreenControllerHash() =>
-    r'd4f4375fdf135897006cc8bd3364105e9842cbd0';
+String _$recipeRepositoryHash() => r'515e9380b34b10bc6fb5979b2308da2130f8266b';
 
-/// Controller for main nutrition plan screen
-///
-/// Copied from [MainScreenController].
-@ProviderFor(MainScreenController)
-final mainScreenControllerProvider = AutoDisposeAsyncNotifierProvider<
-    MainScreenController, MainScreenState>.internal(
-  MainScreenController.new,
-  name: r'mainScreenControllerProvider',
+/// See also [recipeRepository].
+@ProviderFor(recipeRepository)
+final recipeRepositoryProvider = AutoDisposeProvider<RecipeRepository>.internal(
+  recipeRepository,
+  name: r'recipeRepositoryProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$mainScreenControllerHash,
+      : _$recipeRepositoryHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$MainScreenController = AutoDisposeAsyncNotifier<MainScreenState>;
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef RecipeRepositoryRef = AutoDisposeProviderRef<RecipeRepository>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

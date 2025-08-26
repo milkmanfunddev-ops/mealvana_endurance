@@ -155,20 +155,31 @@ serve(async (req) => {
     });
 
     // Build the prompt for GPT-4o-mini
-    const systemPrompt = `You are an expert sports nutritionist creating personalized running nutrition plans based on scientific guidelines.
+    const systemPrompt = `You are an expert sports nutritionist specializing in endurance running. Your task is to create personalized nutrition plans based on scientific guidelines including ACSM recommendations.
 
-MACRO CALCULATIONS (calculate TOTAL amounts for entire run):
-• Pre-run carbs: 1-4g/kg body weight (scale with available time: <15min=0.25g/kg, 15-60min=0.5g/kg, 60-120min=1g/kg, >120min=1-4g/kg)
-• During-run carbs: 30-60g per hour × run duration (adjust for gut training: Low=30g/h, Moderate=45g/h, High=60g/h)
-• During-run sodium: 300-600mg per hour × run duration (only for runs >60 minutes)
-• During-run fluids: 400-800ml per hour × run duration
-• Post-run: 1.0-1.2g/kg carbs + 0.25g/kg protein
+Key Principles:
+1. Pre-run nutrition (0.25-4g carbs/kg based on time window):
+   - <15 min before: 0.25g/kg
+   - 15-60 min: 0.5g/kg  
+   - 60-120 min: 1g/kg
+   - 120-240 min: 1-4g/kg (scale with available time)
+2. During-run nutrition (TOTAL amounts for entire run, NOT per hour):
+   - Runs <60 min: 0g carbs total
+   - Runs 60-90 min: 20-40g carbs total
+   - Runs >90 min: Gut training levels: Low (30g total), Moderate (45g total), High (60g total)
+   - Hydration: 150-800ml total for entire run
+   - Sodium: 0-600mg total for entire run
+3. Post-run recovery (within 30 min):
+   - Carbs: 1.0-1.2g/kg
+   - Protein: 0.25g/kg
+   - Rehydration: 150% of fluid losses
 
-RULES:
-- Calculate totals internally, never mention "per hour" in your response
-- Use ONLY foods from provided lists with EXACT names
-- Description field specifies quantities (e.g., "2 energy gels", "1 cup oatmeal")
-- For runs <60 minutes: no during-run carbs or sodium needed`;
+CRITICAL RULES:
+- You MUST ONLY select foods from the provided lists below
+- Use EXACT food names as listed (no variations, substitutions, or generic descriptions)
+- Never mention quantities like "9g carbs" or "1 packet" - only use actual food names
+- The description field should specify quantity (e.g., "1 cup oatmeal", "2 energy gels")
+- If you cannot create a plan using only the provided foods, respond with an error`;
 
     const userPrompt = `Create a nutrition plan for this runner:
 
@@ -186,15 +197,23 @@ RUN DETAILS:
 - Duration: ${durationMinutes.toFixed(0)} minutes (${durationHours.toFixed(1)} hours)
 - Time before run: ${requestData.time_before_run_hours} hours
 
-FOR THIS ${durationHours.toFixed(1)}-HOUR RUN:
+CRITICAL SCIENTIFIC GUIDELINES for DURING-RUN foods based on research:
+- For runs UNDER 60 minutes (${durationMinutes < 60 ? 'THIS RUN' : 'not this run'}): NO carbs needed - only hydration (150-300ml total fluids for entire run)
+- For runs 60-90 minutes: 20-40g TOTAL carbs for ENTIRE run + 400-600ml TOTAL fluids for ENTIRE run
+- For runs over 90 minutes based on gut training: 
+  * Low gut training: 30g TOTAL carbs for ENTIRE run
+  * Moderate gut training: 45g TOTAL carbs for ENTIRE run  
+  * High gut training: 60g TOTAL carbs for ENTIRE run
+  * Fluids: 600-800ml TOTAL for ENTIRE run
+
 ${durationMinutes < 60 ? 
-  `• During-run: NO carbs or sodium needed - only ${Math.round(durationHours * 400)}-${Math.round(durationHours * 500)}ml total fluids` :
-  `• During-run carbs: ${Math.round(durationHours * (requestData.gut_training_level === 'low' ? 30 : requestData.gut_training_level === 'moderate' ? 45 : 60))}g total
-• During-run sodium: ${Math.round(durationHours * 300)}-${Math.round(durationHours * 600)}mg total  
-• During-run fluids: ${Math.round(durationHours * 400)}-${Math.round(durationHours * 800)}ml total`
+  `This ${durationMinutes.toFixed(0)}-minute run requires NO during-run fueling - return empty during array []` :
+  durationMinutes <= 90 ?
+    `This ${durationMinutes.toFixed(0)}-minute run requires 20-40g TOTAL carbs for the ENTIRE run duration` :
+    `This ${durationMinutes.toFixed(0)}-minute run requires gut-training-based TOTAL carbs: Low(30g), Moderate(45g), High(60g) for ENTIRE run`
 }
 
-IMPORTANT: Present these as total amounts only - never mention hourly rates.
+CRITICAL: NEVER use "per hour" or "hourly" language. Always calculate TOTAL consumption for the ENTIRE ${durationMinutes.toFixed(0)}-minute run duration. Do NOT multiply by hours or give hourly rates.
 
 AVAILABLE FOODS:
 
@@ -210,15 +229,20 @@ AFTER RUN (Preferred foods marked with *):
 ${preferredAfterFoods.map(f => `* ${f.name} - ${f.carbs_per_serving}g carbs, ${f.protein_per_serving}g protein, ${f.serving_amount} ${f.serving_unit}`).join('\n')}
 ${afterFoods.filter(f => !preferredAfterFoods.includes(f)).slice(0, 8).map(f => `  ${f.name} - ${f.carbs_per_serving}g carbs, ${f.protein_per_serving}g protein, ${f.serving_amount} ${f.serving_unit}`).join('\n')}
 
-Create a nutrition plan using preferred foods (marked with *). Your response must:
-- Mention specific foods chosen and why
-- Speak directly to client using 'you/your'
-- Use paragraph breaks (\\n\\n)
+IMPORTANT: You MUST use the exact food names provided above. Prioritize foods marked with * (user's preferred foods).
+
+Create a nutrition plan prioritizing your client's preferred foods (marked with *). For each food item, calculate the nutrition facts based on the serving size and carb content provided above. 
+
+YOUR DETAILED MESSAGE MUST:
+- Mention the specific foods you selected by name (e.g., "I've chosen oatmeal and banana for your pre-run meal")
+- Explain WHY you chose these specific foods based on their preferences and nutrition
+- Use proper paragraph breaks (\\n\\n between paragraphs)
+- Speak directly to your client using 'you' and 'your'
 
 Return a JSON response with this exact structure:
 
 {
-  "detailed_message": "A concise 2 paragraphs maximum as a sports dietitian speaking directly to your client. Start by mentioning the specific foods you've selected for each phase. Explain why these foods were chosen based on their preferences. Be encouraging and specific about the foods in their plan. Keep it brief and actionable.",
+  "detailed_message": "A VERY concise 2 paragraphs maximum (100 words total) as a sports dietitian speaking directly to your client. Start by mentioning the specific foods you've selected for each phase. Explain why these foods were chosen based on their preferences. Be encouraging and specific about the foods in their plan. Keep it brief and actionable.",
   "plan": {
     "before": [
       {

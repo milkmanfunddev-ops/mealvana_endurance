@@ -8,10 +8,10 @@ import '../../features/app_startup/presentation/widgets/app_startup_widget.dart'
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/food_preferences_screen.dart';
-import '../../features/nutrition_plan/presentation/screens/main_nutrition_plan_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/plan_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_edit_screen.dart';
+import '../widgets/tabs_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 class AppRouter {
@@ -56,11 +56,11 @@ class AppRouter {
         builder: (context, state) => const FoodPreferencesScreen(),
       ),
       
-      // Main nutrition plan screen (after onboarding)
+      // Main tabs screen (after onboarding)
       GoRoute(
         path: '/main',
         name: 'main',
-        builder: (context, state) => const MainNutritionPlanScreen(),
+        builder: (context, state) => const TabsScreen(),
       ),
       
       // Plan Screen - Shows generated nutrition plan
