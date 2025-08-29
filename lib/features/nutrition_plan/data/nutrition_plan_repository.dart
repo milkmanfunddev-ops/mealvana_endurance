@@ -274,9 +274,13 @@ class NutritionPlanRepository {
   /// Cache nutrition plan locally in Drift database
   Future<void> cachePlanLocally(String deviceId, domain.NutritionPlan plan) async {
     try {
+      print('💾 Caching plan locally: planId=${plan.id}, deviceId=$deviceId, name=${plan.name}');
       final planJson = json.encode(plan.toJson());
+      print('📄 Plan JSON length: ${planJson.length} characters');
       await database.saveNutritionPlan(plan.id, deviceId, planJson);
+      print('✅ Plan cached successfully in Drift database');
     } catch (e, stackTrace) {
+      print('❌ Error caching plan locally: $e');
       await sentryService.reportDatabaseError(
         e,
         operation: 'saveNutritionPlan',
@@ -289,15 +293,31 @@ class NutritionPlanRepository {
 
   /// Get latest nutrition plan (try cache first, then remote)
   Future<domain.NutritionPlan?> getLatestNutritionPlan(String deviceId) async {
+    print('🔍 Getting latest nutrition plan for deviceId: $deviceId');
+    
     try {
       // First try local cache
+      print('📱 Checking local Drift cache...');
       final cachedPlanJson = await database.getLatestNutritionPlan(deviceId);
-      if (cachedPlanJson != null) {
-        final planData = json.decode(cachedPlanJson);
-        return domain.NutritionPlan.fromJson(planData);
+      
+      if (cachedPlanJson != null && cachedPlanJson.isNotEmpty) {
+        print('✅ Found cached plan, parsing JSON...');
+        try {
+          final planData = json.decode(cachedPlanJson);
+          final plan = domain.NutritionPlan.fromJson(planData);
+          print('✅ Successfully parsed cached plan: ${plan.name} with ${plan.sections.length} sections');
+          return plan;
+        } catch (e) {
+          print('❌ Error parsing cached nutrition plan: $e');
+          // Clear corrupted cache and continue to remote fetch
+          await database.clearAllData();
+        }
+      } else {
+        print('📭 No cached plan found, checking remote...');
       }
 
       // Fall back to remote
+      print('☁️ Checking Supabase for device_id: $deviceId');
       final response = await supabase
           .from('nutrition_plans')
           .select('*')
@@ -308,10 +328,25 @@ class NutritionPlanRepository {
           .maybeSingle();
 
       if (response != null) {
-        final plan = domain.NutritionPlan.fromSupabaseJson(response);
-        // Cache it locally for next time
-        await cachePlanLocally(deviceId, plan);
-        return plan;
+        print('✅ Found remote plan, parsing Supabase response...');
+        try {
+          final plan = domain.NutritionPlan.fromSupabaseJson(response);
+          print('✅ Successfully parsed remote plan: ${plan.name} with ${plan.sections.length} sections');
+          
+          // Cache it locally for next time
+          print('💾 Caching plan locally...');
+          await cachePlanLocally(deviceId, plan);
+          print('✅ Plan cached successfully');
+          
+          return plan;
+        } catch (e) {
+          print('❌ Error parsing Supabase nutrition plan: $e');
+          print('📊 Raw response: $response');
+          // Return null if parsing fails
+          return null;
+        }
+      } else {
+        print('📭 No remote plan found');
       }
       return null;
     } catch (e) {
@@ -464,6 +499,7 @@ class NutritionPlanRepository {
           protein: 0,
           fat: 0,
           sodium: 0,
+          fluids: 0.0,
         ),
       );
     }).toList();

@@ -1,0 +1,444 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../theme/app_theme.dart';
+import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import '../providers/swap_food_controller.dart';
+import '../../domain/food.dart';
+
+class SwapFoodScreen extends ConsumerStatefulWidget {
+  final String? foodToSwapId;
+  final String? foodToSwapName;
+  final String category; // 'before_run', 'during_run', 'after_run'
+  
+  const SwapFoodScreen({
+    super.key,
+    this.foodToSwapId,
+    this.foodToSwapName,
+    required this.category,
+  });
+
+  @override
+  ConsumerState<SwapFoodScreen> createState() => _SwapFoodScreenState();
+}
+
+class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
+  final _searchController = TextEditingController();
+  double _selectedQuantity = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    // No need to manually load foods - controller auto-initializes
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    ref.read(swapFoodControllerProvider(widget.category).notifier)
+      .updateSearch(query);
+  }
+
+  void _selectFood(Food food) {
+    ref.read(swapFoodControllerProvider(widget.category).notifier)
+      .selectFood(food);
+    _searchController.text = food.name;
+    // Reset quantity when selecting a new food
+    setState(() {
+      _selectedQuantity = food.servingAmount ?? 1.0;
+    });
+  }
+
+  void _incrementQuantity() {
+    setState(() {
+      _selectedQuantity += 0.5;
+    });
+  }
+
+  void _decrementQuantity() {
+    if (_selectedQuantity > 0.5) {
+      setState(() {
+        _selectedQuantity -= 0.5;
+      });
+    }
+  }
+
+  Future<void> _handleAction() async {
+    final controllerState = ref.read(swapFoodControllerProvider(widget.category));
+    final selectedFood = controllerState.valueOrNull?.selectedFood;
+    
+    if (selectedFood == null) return;
+
+    final controller = ref.read(swapFoodControllerProvider(widget.category).notifier);
+    
+    if (widget.foodToSwapId != null) {
+      // Swap existing food
+      await controller.swapFood(
+        widget.foodToSwapId!,
+        selectedFood,
+        widget.category,
+        customAmount: _selectedQuantity,
+      );
+    } else {
+      // Add new food
+      await controller.addFood(
+        selectedFood,
+        widget.category,
+        customAmount: _selectedQuantity,
+      );
+    }
+
+    if (mounted) {
+      context.pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controllerState = ref.watch(swapFoodControllerProvider(widget.category));
+    final isSwapping = widget.foodToSwapId != null;
+    final title = isSwapping ? 'Swap ${widget.foodToSwapName ?? 'Food'}' : 'Add Food';
+    final buttonText = isSwapping ? 'Swap meal' : 'Add meal';
+
+    return Scaffold(
+      backgroundColor: AppTheme.baseCream,
+      appBar: AppBar(
+        backgroundColor: AppTheme.baseCream,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: CustomAppBarBackButton(
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          title,
+          style: AppTheme.titleStyle.copyWith(
+            color: AppTheme.primary900,
+            fontSize: 18.sp,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: controllerState.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error loading foods: $error'),
+                  ElevatedButton(
+                    onPressed: () => ref.invalidate(swapFoodControllerProvider(widget.category)),
+                    child: Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+            data: (state) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Search field
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.baseWhite,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: AppTheme.primary100,
+                      width: 1,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'search',
+                      hintStyle: AppTheme.textStyle.copyWith(
+                        color: AppTheme.baseGrey,
+                        fontSize: 16.sp,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: AppTheme.baseGrey,
+                        size: 20.sp,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                SizedBox(height: 16.h),
+
+                // Selected food details
+                if (state.selectedFood != null) ...[
+                  Container(
+                    padding: EdgeInsets.all(16.w),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary50.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (state.selectedFood!.iconPath != null)
+                              Container(
+                                width: 40.w,
+                                height: 40.w,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.baseWhite,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    state.selectedFood!.iconPath!,
+                                    width: 24.w,
+                                    height: 24.h,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Text(
+                                state.selectedFood!.generateQuantityDisplay(customAmount: _selectedQuantity),
+                                style: AppTheme.textStyle.copyWith(
+                                  color: AppTheme.baseBlack,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16.h),
+                        // Quantity adjustment controls
+                        Row(
+                          children: [
+                            Text(
+                              'Quantity:',
+                              style: AppTheme.textStyle.copyWith(
+                                color: AppTheme.primary900,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Spacer(),
+                            // Decrement button
+                            Container(
+                              width: 36.w,
+                              height: 36.w,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary900,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                icon: Icon(
+                                  Icons.remove,
+                                  color: Colors.white,
+                                  size: 18.sp,
+                                ),
+                                onPressed: _decrementQuantity,
+                              ),
+                            ),
+                            SizedBox(width: 16.w),
+                            // Quantity display
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppTheme.primary100),
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Text(
+                                _selectedQuantity == _selectedQuantity.toInt() 
+                                    ? _selectedQuantity.toInt().toString()
+                                    : _selectedQuantity.toStringAsFixed(1),
+                                style: AppTheme.textStyle.copyWith(
+                                  color: AppTheme.baseBlack,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 16.w),
+                            // Increment button
+                            Container(
+                              width: 36.w,
+                              height: 36.w,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary900,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                icon: Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 18.sp,
+                                ),
+                                onPressed: _incrementQuantity,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16.h),
+                        _buildNutrientRow('Carbohydrates', 
+                          '${((state.selectedFood!.carbsPerServing ?? 0) * _selectedQuantity).toStringAsFixed(0)} g'),
+                        SizedBox(height: 8.h),
+                        _buildNutrientRow('Sodium', 
+                          '${((state.selectedFood!.sodiumMg ?? 0) * _selectedQuantity).toStringAsFixed(0)} mg'),
+                        SizedBox(height: 8.h),
+                        _buildNutrientRow('Fluids', 
+                          '${(((state.selectedFood!.fluidMlPerServing ?? 0) * _selectedQuantity) / 1000).toStringAsFixed(1)} L'),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+                ],
+
+                // Search results or recommended alternatives
+                if (state.searchQuery.isNotEmpty) ...[
+                  Text(
+                    'Search Results',
+                    style: AppTheme.subtitleStyle.copyWith(
+                      color: AppTheme.primary900,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: state.searchResults.length,
+                      separatorBuilder: (context, index) => SizedBox(height: 8.h),
+                      itemBuilder: (context, index) {
+                        final food = state.searchResults[index];
+                        return _buildFoodItem(food);
+                      },
+                    ),
+                  ),
+                ] else ...[
+                  Text(
+                    'Recommended Alternatives',
+                    style: AppTheme.subtitleStyle.copyWith(
+                      color: AppTheme.primary900,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: state.availableFoods.length,
+                      separatorBuilder: (context, index) => SizedBox(height: 8.h),
+                      itemBuilder: (context, index) {
+                        final food = state.availableFoods[index];
+                        return _buildFoodItem(food);
+                      },
+                    ),
+                  ),
+                ],
+
+                // Action button
+                if (state.selectedFood != null) ...[
+                  SizedBox(height: 16.h),
+                  PrimaryButton(
+                    text: buttonText,
+                    onPressed: _handleAction,
+                    width: double.infinity,
+                  ),
+                  SizedBox(height: 16.h),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNutrientRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTheme.textStyle.copyWith(
+            color: AppTheme.primary900,
+            fontSize: 14.sp,
+          ),
+        ),
+        Text(
+          value,
+          style: AppTheme.textStyle.copyWith(
+            color: AppTheme.baseBlack,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFoodItem(Food food) {
+    return InkWell(
+      onTap: () => _selectFood(food),
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: AppTheme.primary50.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
+          children: [
+            if (food.iconPath != null)
+              Container(
+                width: 40.w,
+                height: 40.w,
+                decoration: BoxDecoration(
+                  color: AppTheme.baseWhite,
+                  shape: BoxShape.circle,
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    food.iconPath!,
+                    width: 24.w,
+                    height: 24.h,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                food.generateQuantityDisplay(),
+                style: AppTheme.textStyle.copyWith(
+                  color: AppTheme.baseBlack,
+                  fontSize: 14.sp,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: AppTheme.primary900,
+              size: 24.sp,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

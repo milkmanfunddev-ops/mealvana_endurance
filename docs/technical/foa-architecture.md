@@ -294,7 +294,108 @@ class ScreenController extends _$ScreenController {
 }
 ```
 
-## 9. Common Violations to Avoid
+## 9. UI/Controller Separation Rules (CRITICAL)
+
+### 🚨 ABSOLUTE PROHIBITIONS:
+
+**❌ FORBIDDEN IN UI SCREENS:**
+- Business logic methods (especially underscore methods like `_generateMacros()`)
+- API calls to Supabase edge functions  
+- Complex data transformations and calculations
+- Direct repository access
+- Analytics tracking (except UI-specific events)
+- Data parsing and validation logic
+
+**❌ FORBIDDEN IN CONTROLLERS:**
+- Navigation logic (`context.push()`, `context.pop()`)
+- UI state management (`setState()`, focus management)
+- Scaffold operations (showing snackbars, dialogs)
+- Widget building logic
+
+### ✅ REQUIRED RESPONSIBILITIES:
+
+**UI Screens ONLY:**
+- Widget building and rendering
+- Form validation (UI-level only)
+- Navigation calls
+- Loading state display
+- Error message display via ScaffoldMessenger
+- Input collection and passing to controllers
+
+**Controllers ONLY:**
+- All business logic operations
+- API calls and data fetching
+- Data transformation and calculations  
+- Error handling and logging
+- Analytics tracking
+- Repository operations
+- State mutations
+
+### Example: FOA-Compliant Pattern
+
+**❌ VIOLATION Example:**
+```dart
+class ScreenWidget extends ConsumerStatefulWidget {
+  Future<void> _generateData() async {
+    // ❌ This is business logic in UI!
+    final supabase = Supabase.instance.client;
+    final response = await supabase.functions.invoke('generate-data');
+    // ... processing logic
+  }
+}
+```
+
+**✅ CORRECT Example:**
+```dart
+// UI Screen - ONLY UI concerns
+class ScreenWidget extends ConsumerStatefulWidget {
+  Future<void> _handleButtonPress() async {
+    // ✅ UI-only: keyboard, loading state
+    FocusScope.of(context).unfocus();
+    setState(() => _isLoading = true);
+    
+    try {
+      // ✅ Delegate ALL business logic to controller
+      await ref.read(screenControllerProvider.notifier).generateData(
+        inputValue: _controller.text,
+      );
+      
+      // ✅ UI-only: navigation
+      if (mounted) {
+        context.push('/next-screen');
+      }
+    } catch (error) {
+      // ✅ UI-only: show error from controller state
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      // ✅ UI-only: hide loading state  
+      setState(() => _isLoading = false);
+    }
+  }
+}
+
+// Controller - ONLY business logic
+@riverpod
+class ScreenController extends _$ScreenController {
+  Future<void> generateData(String inputValue) async {
+    // ✅ Parse and validate input
+    final parsedValue = double.tryParse(inputValue) ?? 0.0;
+    
+    // ✅ Call external services
+    final supabase = Supabase.instance.client;
+    final response = await supabase.functions.invoke('generate-data', 
+      body: {'input': parsedValue});
+    
+    // ✅ Process and store results
+    final repository = await ref.read(repositoryProvider.future);
+    await repository.saveResult(response.data);
+  }
+}
+```
+
+## 10. Common Violations to Avoid
 
 ### ❌ DON'T:
 - Use `StateNotifier` instead of `AsyncNotifier`

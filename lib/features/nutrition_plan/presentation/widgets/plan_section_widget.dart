@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 import '../../../../theme/app_theme.dart';
 import 'expandable_food_item.dart';
+import 'add_food_button.dart';
 
 /// Widget for plan sections (Before Run, During Run, After Run)
 class PlanSectionWidget extends StatelessWidget {
@@ -10,10 +12,29 @@ class PlanSectionWidget extends StatelessWidget {
     super.key,
     required this.section,
     this.onFoodItemTap,
+    this.isEditMode = false,
+    this.onSwapFood,
+    this.onDeleteFood,
   });
 
   final PlanSection section;
   final Function(String foodItemId)? onFoodItemTap;
+  final bool isEditMode;
+  final Function(String foodItemId, String foodName)? onSwapFood;
+  final Function(String foodItemId)? onDeleteFood;
+  
+  String get _sectionCategory {
+    switch (section.title) {
+      case 'Before Run':
+        return 'before_run';
+      case 'During Run':
+        return 'during_run';
+      case 'After Run':
+        return 'after_run';
+      default:
+        return 'before_run';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,14 +105,63 @@ class PlanSectionWidget extends StatelessWidget {
             
             return Column(
               children: [
-                ExpandableFoodItem(
-                  foodItem: foodItem,
-                  onTap: () => onFoodItemTap?.call(foodItem.id),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        transform: Matrix4.translationValues(
+                          isEditMode ? -40.w : 0,
+                          0,
+                          0,
+                        ),
+                        child: ExpandableFoodItem(
+                          foodItem: foodItem,
+                          onTap: () => onFoodItemTap?.call(foodItem.id),
+                        ),
+                      ),
+                    ),
+                    if (isEditMode)
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.swap_horiz,
+                              color: AppTheme.primary600,
+                              size: 20.sp,
+                            ),
+                            onPressed: () => onSwapFood?.call(foodItem.id, foodItem.name),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: AppTheme.highlight600,
+                              size: 20.sp,
+                            ),
+                            onPressed: () => onDeleteFood?.call(foodItem.id),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
                 if (!isLastItem) SizedBox(height: 8.h),
               ],
             );
           }),
+        
+        SizedBox(height: 12.h),
+        
+        // Add button
+        Center(
+          child: AddFoodButton(
+            onPressed: () {
+              // Navigate to swap/add screen
+              context.push('/swap-food', extra: {
+                'category': _sectionCategory,
+              });
+            },
+          ),
+        ),
       ],
     );
   }

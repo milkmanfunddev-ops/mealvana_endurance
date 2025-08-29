@@ -10,20 +10,19 @@ import '../../../feedback/domain/feedback_data.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/nutrition_plan_controller.dart';
-import '../../domain/nutrition_plan.dart' as new_model;
-import '../../domain/food_item_data.dart';
-import '../widgets/macro_targets_expander.dart';
+import '../widgets/macro_targets_widget.dart';
+import '../../domain/macro_targets.dart' as targets_model;
 
 /// Plan Screen - Shows generated nutrition plan matching Alex's design
 /// Displays the plan with Before/During/After sections and feedback integration
-class PlanScreen extends ConsumerStatefulWidget {
-  const PlanScreen({super.key});
+class CurrentPlanScreen extends ConsumerStatefulWidget {
+  const CurrentPlanScreen({super.key});
 
   @override
-  ConsumerState<PlanScreen> createState() => _PlanScreenState();
+  ConsumerState<CurrentPlanScreen> createState() => _CurrentPlanScreenState();
 }
 
-class _PlanScreenState extends ConsumerState<PlanScreen>
+class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
     with SingleTickerProviderStateMixin {
   bool _showFeedback = false;
   late AnimationController _feedbackController;
@@ -71,6 +70,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
             ),
           );
           _hideFeedbackDrawer();
+          // Navigate to main tabs screen after successful save
+          context.go('/main');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -99,15 +100,29 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
     final planState = ref.watch(nutritionPlanControllerProvider);
     final feedbackState = ref.watch(feedbackSubmissionProvider);
     
+    // Check if we should show the back button
+    // Show back button when accessed from adjust macros ('/current-plan')
+    // Hide back button when accessed from main tabs ('/plan')
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    final shouldShowBackButton = Navigator.of(context).canPop() && 
+        currentRoute != '/plan';
+    
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       appBar: AppBar(
         backgroundColor: AppTheme.baseCream,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: Navigator.of(context).canPop() 
+        leading: shouldShowBackButton
             ? CustomAppBarBackButton(
-                onPressed: () => context.pop(),
+                onPressed: () {
+                  if (Navigator.of(context).canPop()) {
+                    context.pop();
+                  } else {
+                    // Fallback to main screen if nothing to pop
+                    context.go('/main');
+                  }
+                },
               )
             : null,
         title: Text(
@@ -152,7 +167,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Navigate to main screen to create new plan
-          context.push('/main');
+          context.push('/distancepacegut');
         },
         backgroundColor: AppTheme.primary900,
         child: Icon(
@@ -181,11 +196,17 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           
           SizedBox(height: 24.h),
           
-          // Macro Targets as separate widget - use actual plan data
+          // Macro Targets with completion bars
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: MacroTargetsExpander(
-              macroTargets: _extractMacroTargets(plan),
+            child: FutureBuilder<targets_model.MacroTargets?>(
+              future: ref.read(nutritionPlanControllerProvider.notifier).getCachedMacroTargets(),
+              builder: (context, snapshot) {
+                return MacroTargetsWidget(
+                  plan: plan,
+                  targets: snapshot.data,
+                );
+              },
             ),
           ),
           
@@ -200,10 +221,45 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           // Plan content (no longer in separate scroll view)
                 // Plan Container with nutrition plan
           PlanContainer(
-            plan: _createSamplePlanFromOldFormat(plan),
+            plan: plan,
             onFoodItemTap: (foodItemId) {
               // Handle food item tap - expand details
               // Could add navigation to food details or expand inline
+            },
+            onSwapFood: (foodItemId, foodName, category) {
+              // Navigate to swap screen
+              context.push('/swap-food', extra: {
+                'foodToSwapId': foodItemId,
+                'foodToSwapName': foodName,
+                'category': category,
+              });
+            },
+            onDeleteFood: (foodItemId, category) async {
+              // Show confirmation dialog
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('Delete Food Item'),
+                  content: Text('Are you sure you want to remove this item from your plan?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: Text('Delete', style: TextStyle(color: AppTheme.highlight600)),
+                    ),
+                  ],
+                ),
+              );
+              
+              if (confirm == true) {
+                await ref.read(nutritionPlanControllerProvider.notifier).deleteFoodItem(
+                  foodItemId,
+                  category,
+                );
+              }
             },
           ),
           
@@ -234,36 +290,66 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.assignment_outlined,
-            size: 64.sp,
-            color: AppTheme.baseGrey,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'No plan generated yet',
-            style: AppTheme.textStyle.copyWith(
-              color: AppTheme.baseGrey,
-              fontSize: 18.sp,
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: AppTheme.primary50.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.restaurant_menu,
+                size: 64.sp,
+                color: AppTheme.primary600,
+              ),
             ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Go back and generate your nutrition plan',
-            style: AppTheme.noteStyle.copyWith(
-              color: AppTheme.baseGrey,
-              fontSize: 14.sp,
+            SizedBox(height: 24.h),
+            Text(
+              'No Nutrition Plan Yet',
+              style: AppTheme.heading2Style.copyWith(
+                color: AppTheme.primary900,
+                fontSize: 24.sp,
+              ),
             ),
-          ),
-          SizedBox(height: 24.h),
-          PrimaryButton(
-            text: 'Generate Plan',
-            onPressed: () => context.go('/main'),
-          ),
-        ],
+            SizedBox(height: 12.h),
+            Text(
+              'Create a personalized nutrition plan\nfor your next run',
+              style: AppTheme.textStyle.copyWith(
+                color: AppTheme.baseGrey,
+                fontSize: 16.sp,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 32.h),
+            PrimaryButton(
+              text: 'Create Your First Plan',
+              onPressed: () {
+                // Navigate to the distance/pace input screen
+                context.push('/distancepacegut');
+                // showModalBottomSheet(
+                //   context: context,
+                //   isScrollControlled: true,
+                //   backgroundColor: Colors.transparent,
+                //   builder: (context) => Container(
+                //     height: MediaQuery.of(context).size.height * 0.9,
+                //     decoration: BoxDecoration(
+                //       color: AppTheme.baseCream,
+                //       borderRadius: BorderRadius.vertical(
+                //         top: Radius.circular(20.r),
+                //       ),
+                //     ),
+                //     child: const DistancePaceGutEntryScreen(),
+                //   ),
+                // );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -302,202 +388,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen>
           ),
         ],
       ),
-    );
-  }
-
-  // Extract macro targets from the plan
-  new_model.MacroTargets _extractMacroTargets(dynamic plan) {
-    // If we have a real plan with macro targets, use them
-    if (plan != null && plan is new_model.NutritionPlan && plan.macroTargets != null) {
-      return plan.macroTargets!;
-    }
-    
-    // Fallback to default values if no plan data
-    return const new_model.MacroTargets(
-      calories: 0,
-      carbs: 0,
-      protein: 0,
-      fat: 0,
-      sodiumMin: 0,
-      sodiumMax: 0,
-      fluidsMin: 0,
-      fluidsMax: 0,
-      carbsRange: '80-90%',
-      proteinRange: '5-15%',
-      fatRange: '5-15%',
-    );
-  }
-
-  // Convert calculated plan to UI display format
-  new_model.NutritionPlan _createSamplePlanFromOldFormat(dynamic calculatedPlan) {
-    // DEBUG: Check what plan data we received
-    print('🎯 PLAN SCREEN DEBUG:');
-    print('📊 Received plan: ${calculatedPlan?.runtimeType}');
-    print('📊 Plan sections: ${calculatedPlan?.sections?.length ?? 0}');
-    if (calculatedPlan?.sections != null && calculatedPlan.sections.isNotEmpty) {
-      print('📊 During-run foods: ${calculatedPlan.sections[1].foodItems.length}');
-      if (calculatedPlan.sections[1].foodItems.isNotEmpty) {
-        print('📊 First during-run food: ${calculatedPlan.sections[1].foodItems[0].name} - ${calculatedPlan.sections[1].foodItems[0].quantity}');
-      } else {
-        print('📊 No during-run foods for this short run');
-      }
-    }
-    
-    // If we have a real plan, use its data; otherwise fall back to sample
-    if (calculatedPlan != null && calculatedPlan is new_model.NutritionPlan) {
-      print('✅ Using real calculated plan!');
-      return calculatedPlan; // It's already the right type!
-    }
-    
-    // Fallback to sample data if no real plan
-    return new_model.NutritionPlan(
-      id: 'sample-plan-${DateTime.now().millisecondsSinceEpoch}',
-      name: 'Your Nutrition Plan',
-      totalCalories: 800,
-      notes: 'This plan is optimized for your run. Stay hydrated and fuel consistently.',
-      macroTargets: const new_model.MacroTargets(
-        calories: 800,
-        carbs: 180,
-        protein: 20,
-        fat: 10,
-        carbsRange: '85-90%',
-        proteinRange: '5-10%',
-        fatRange: '5-10%',
-      ),
-      sections: [
-        new_model.PlanSection(
-          id: 'before-run',
-          title: 'Before Run',
-          subtitle: '2-3 hours pre-run',
-          timing: '2-3h',
-          foodItems: [
-            FoodItemData(
-              id: 'oatmeal',
-              name: 'Oatmeal',
-              quantity: '1 cup',
-              iconPath: 'assets/images/oatmeal.png',
-              description: 'Carb up, buttercup: gentle complex carbs = smooth 2–3-hour energy. Hit \'em 30–60 min pre-run.',
-              nutritionalInfo: const NutritionalInfo(
-                calories: 150,
-                carbs: 30,
-                protein: 4,
-                fat: 2,
-              ),
-            ),
-            FoodItemData(
-              id: 'banana',
-              name: 'Banana sliced',
-              quantity: '1',
-              iconPath: 'assets/images/banana.png',
-              description: 'Quick-digesting sugars and potassium for energy.',
-              nutritionalInfo: const NutritionalInfo(
-                calories: 105,
-                carbs: 27,
-                protein: 1,
-                fat: 0,
-              ),
-            ),
-            FoodItemData(
-              id: 'coffee',
-              name: 'Coffee',
-              quantity: '1 cup',
-              iconPath: 'assets/images/coffee.png',
-              description: 'Caffeine boost for performance.',
-              nutritionalInfo: const NutritionalInfo(
-                calories: 5,
-                carbs: 0,
-                protein: 0,
-                fat: 0,
-              ),
-            ),
-            FoodItemData(
-              id: 'orange-juice',
-              name: 'Orange juice',
-              quantity: '1 cup',
-              iconPath: 'assets/images/orange_juice.png',
-              description: 'Quick carbohydrates and vitamin C.',
-              nutritionalInfo: const NutritionalInfo(
-                calories: 110,
-                carbs: 26,
-                protein: 2,
-                fat: 0,
-              ),
-            ),
-          ],
-        ),
-        new_model.PlanSection(
-          id: 'during-run',
-          title: 'During Run',
-          subtitle: 'Every 45-60 minutes',
-          timing: '45-60min',
-          foodItems: [
-            FoodItemData(
-              id: 'gels',
-              name: 'Gels',
-              quantity: '4',
-              iconPath: 'assets/images/gels.png',
-              description: 'Fast-absorbing energy for sustained performance.',
-              instructions: 'Take with water every 45-60 minutes.',
-              nutritionalInfo: const NutritionalInfo(
-                calories: 400,
-                carbs: 100,
-                protein: 0,
-                fat: 0,
-              ),
-            ),
-            FoodItemData(
-              id: 'sports-drink',
-              name: 'Sport drinks',
-              quantity: '4 cups',
-              iconPath: 'assets/images/sports_drink.png',
-              description: 'Hydration with electrolytes and carbohydrates.',
-              instructions: 'Sip regularly throughout your run.',
-              nutritionalInfo: const NutritionalInfo(
-                calories: 200,
-                carbs: 50,
-                protein: 0,
-                fat: 0,
-                sodium: 400,
-              ),
-            ),
-          ],
-        ),
-        new_model.PlanSection(
-          id: 'after-run',
-          title: 'After Run',
-          subtitle: 'Within 30 minutes',
-          timing: '30min',
-          foodItems: [
-            FoodItemData(
-              id: 'protein-bar',
-              name: 'Protein bar',
-              quantity: '1',
-              iconPath: 'assets/images/protein_bar.png',
-              description: 'Protein and carbs for recovery.',
-              nutritionalInfo: const NutritionalInfo(
-                calories: 200,
-                carbs: 20,
-                protein: 10,
-                fat: 8,
-              ),
-            ),
-            FoodItemData(
-              id: 'coconut-water',
-              name: 'Coconut water',
-              quantity: '2 cups',
-              iconPath: 'assets/images/coconut_water.png',
-              description: 'Natural electrolytes for rehydration.',
-              nutritionalInfo: const NutritionalInfo(
-                calories: 90,
-                carbs: 18,
-                protein: 2,
-                fat: 0,
-                sodium: 120,
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 

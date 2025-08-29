@@ -73,7 +73,7 @@ class HeroImage extends StatelessWidget {
               Positioned.fill(
                 child: Image.asset(
                   imagePath,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       decoration: BoxDecoration(
@@ -167,14 +167,14 @@ class LargeHeroImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 280.h,
+      height: 300.h,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20.r),
         child: Image.asset(
-          'assets/images/woman_running.png',
-          fit: BoxFit.cover,
+          'assets/images/woman.png',
+          fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
             return Container(
               decoration: BoxDecoration(

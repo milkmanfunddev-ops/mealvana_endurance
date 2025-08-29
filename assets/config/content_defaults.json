@@ -17,6 +17,44 @@
     "saved_button": "Saved",
     "macro_targets": "Macro targets"
   },
+  "adjust_macros": {
+    "screen_title": "Adjust Your Macros",
+    "banner": {
+      "short_run": "For this duration, during-run carbs are optional",
+      "long_run": "Target at least {amount}g carbs during your run"
+    },
+    "sections": {
+      "pre_run": "Pre-Run",
+      "during_run": "During Run", 
+      "post_run": "Post-Run (within 30 min)"
+    },
+    "actions": {
+      "create_plan": "Create Plan",
+      "reset_all": "Reset All"
+    },
+    "help_content": {
+      "title": "Nutrition Science & Guidance",
+      "overview": "These targets are based on ISSN guidelines and sports nutrition research tailored to your run parameters. Values are calculated using validated formulas for endurance performance and recovery.",
+      "pre_run": "Pre-run fueling optimizes energy stores while preventing GI distress. Emphasize easily digestible carbohydrates (1-4g/kg body weight), limit fat and fiber, and maintain hydration. Timing: 1-4 hours before exercise for optimal absorption.",
+      "during_run": "During-run nutrition maintains blood glucose and delays fatigue during longer efforts. Target 30-90g carbs/hour based on intensity and gut tolerance. Multiple transportable carbs (glucose + fructose) optimize absorption for runs >2.5 hours.",
+      "post_run": "Post-run nutrition accelerates glycogen replenishment and muscle protein synthesis. The 'anabolic window' emphasizes rapid carb intake (1.0-1.2g/kg) with high-quality protein (20-25g) within 30 minutes of completion.",
+      "validation": "Warning indicators show values outside research-backed ranges but won't prevent plan creation. Individual tolerance varies - use these as starting points and adjust based on training responses."
+    },
+    "field_labels": {
+      "pre_run_carbs": "Carbohydrates",
+      "pre_run_protein": "Protein",
+      "pre_run_fat_cap": "Fat Cap",
+      "pre_run_fluids": "Fluids",
+      "pre_run_sodium": "Sodium",
+      "during_run_carb_total": "Total Carbs",
+      "during_run_fluid_total": "Total Fluids", 
+      "during_run_sodium_total": "Total Sodium",
+      "post_run_carbs": "Carbohydrates",
+      "post_run_protein": "Protein",
+      "post_run_fluids": "Fluids",
+      "post_run_sodium": "Sodium"
+    }
+  },
   "user_profile": {
     "title": "Your Profile",
     "subtitle": "Tell us about yourself",

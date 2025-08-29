@@ -205,6 +205,27 @@ enum GutTraining {
   String get value => name;
 }
 
+enum SweatRateCat {
+  light,
+  medium,
+  heavy;
+
+  /// Get string value for API calls
+  String get value => name;
+
+  /// Display name for UI
+  String get displayName {
+    switch (this) {
+      case SweatRateCat.light:
+        return 'Light';
+      case SweatRateCat.medium:
+        return 'Medium';
+      case SweatRateCat.heavy:
+        return 'Heavy';
+    }
+  }
+}
+
 /// Enum for gut training level API compatibility
 enum GutTrainingLevel {
   low,

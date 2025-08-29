@@ -64,6 +64,7 @@ class NutritionalInfo {
     this.fat,
     this.sodium,
     this.sugar,
+    this.fluids,
   });
 
   final int? calories;
@@ -72,6 +73,7 @@ class NutritionalInfo {
   final int? fat; // grams
   final int? sodium; // mg
   final int? sugar; // grams
+  final double? fluids; // ml
 
   /// Create NutritionalInfo from JSON
   factory NutritionalInfo.fromJson(Map<String, dynamic> json) {
@@ -82,6 +84,7 @@ class NutritionalInfo {
       fat: json['fat'] as int?,
       sodium: json['sodium'] as int?,
       sugar: json['sugar'] as int?,
+      fluids: (json['fluids'] as num?)?.toDouble(),
     );
   }
 
@@ -94,6 +97,7 @@ class NutritionalInfo {
       'fat': fat,
       'sodium': sodium,
       'sugar': sugar,
+      'fluids': fluids,
     };
   }
 

@@ -44,7 +44,29 @@ lib/features/{feature_name}/
 - **Testability**: Business logic isolated from UI and data sources
 - **Scalability**: Features can be developed independently
 
+**🚨 CRITICAL FOA COMPLIANCE RULES:**
+
+**UI/Controller Separation (MANDATORY)**:
+- **UI Screens**: ONLY UI logic - state management, navigation, form validation, animations
+- **Controllers**: ALL business logic - API calls, data processing, calculations, analytics
+- **NEVER**: Put business logic in UI screens (no underscore methods like `_generateMacros()`)
+- **NEVER**: Put UI logic in controllers (no navigation, no UI state like loading spinners)
+
+**Forbidden in UI Screens**:
+- API calls to Supabase edge functions
+- Complex data transformations 
+- Business calculations
+- Analytics tracking (except UI events like button taps)
+- Underscore methods that contain business logic
+
+**Required in Controllers**:
+- All calls to external services (Supabase, analytics)
+- Data validation and parsing
+- Error handling and logging
+- State mutations through repositories
+
 📚 **Full Documentation**: [/docs/technical/README.md](/docs/technical/README.md)
+📖 **UI/Controller Architecture**: [/docs/technical/foa-architecture.md](/docs/technical/foa-architecture.md)
 
 ### App Initialization Pattern (Andrea Bizzotto)
 

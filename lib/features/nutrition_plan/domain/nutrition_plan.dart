@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'food_item_data.dart';
 
 /// Data model for nutrition plans with before/during/after run sections
@@ -110,31 +111,65 @@ class NutritionPlan {
 
   /// Create NutritionPlan from Supabase database JSON
   factory NutritionPlan.fromSupabaseJson(Map<String, dynamic> json) {
+    // Handle plan_data which might be a string, Map, or null
+    Map<String, dynamic>? planData;
+    if (json['plan_data'] is String) {
+      try {
+        final parsedData = jsonDecode(json['plan_data']);
+        planData = parsedData is Map<String, dynamic> ? parsedData : null;
+      } catch (e) {
+        print('Error parsing plan_data string: $e');
+        planData = null;
+      }
+    } else if (json['plan_data'] is Map<String, dynamic>) {
+      planData = json['plan_data'] as Map<String, dynamic>;
+    } else {
+      planData = null;
+    }
+
+    // Parse sections with error handling
+    List<PlanSection> sections = [];
+    if (planData != null && planData['sections'] is List) {
+      try {
+        sections = (planData['sections'] as List<dynamic>)
+            .map((section) => PlanSection.fromJson(section as Map<String, dynamic>))
+            .toList();
+      } catch (e) {
+        print('Error parsing sections: $e');
+        sections = [];
+      }
+    }
+
+    // Parse macro targets with error handling
+    MacroTargets? macroTargets;
+    if (planData != null && planData['macroTargets'] is Map) {
+      try {
+        macroTargets = MacroTargets.fromJson(planData['macroTargets'] as Map<String, dynamic>);
+      } catch (e) {
+        print('Error parsing macroTargets: $e');
+        macroTargets = null;
+      }
+    }
+
     return NutritionPlan(
       id: json['plan_id'] as String,
       name: json['plan_name'] as String,
-      sections: json['plan_data'] != null 
-          ? (json['plan_data']['sections'] as List<dynamic>)
-              .map((section) => PlanSection.fromJson(section))
-              .toList()
-          : [],
-      macroTargets: json['plan_data'] != null && json['plan_data']['macroTargets'] != null
-          ? MacroTargets.fromJson(json['plan_data']['macroTargets'])
-          : null,
-      totalCalories: json['total_calories'] as int?,
+      sections: sections,
+      macroTargets: macroTargets,
+      totalCalories: json['total_calories'] is num ? (json['total_calories'] as num).toInt() : null,
       notes: json['notes'] as String?,
-      version: json['version'] as int? ?? 1,
+      version: json['version'] is num ? (json['version'] as num).toInt() : 1,
       lastModifiedBy: json['last_modified_by'] as String?,
-      clientUpdatedAt: json['client_updated_at'] != null 
-          ? DateTime.parse(json['client_updated_at'])
+      clientUpdatedAt: json['client_updated_at'] is String 
+          ? DateTime.tryParse(json['client_updated_at'])
           : null,
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at'])
+      createdAt: json['created_at'] is String 
+          ? DateTime.tryParse(json['created_at'])
           : null,
-      updatedAt: json['updated_at'] != null 
-          ? DateTime.parse(json['updated_at'])
+      updatedAt: json['updated_at'] is String 
+          ? DateTime.tryParse(json['updated_at'])
           : null,
-      isDeleted: json['is_deleted'] as bool? ?? false,
+      isDeleted: json['is_deleted'] is bool ? json['is_deleted'] as bool : false,
       conflictResolution: json['conflict_resolution'] as String? ?? 'last_write_wins',
     );
   }

@@ -191,6 +191,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
                 protein: 8,
                 fat: 4,
                 sodium: 150,
+                fluids: 0.0, // Oatmeal with banana - solid food
               ),
             ),
             FoodItemData(
@@ -206,6 +207,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
                 protein: 0,
                 fat: 0,
                 sodium: 5,
+                fluids: 240.0, // 8 oz = 240ml
               ),
             ),
           ],
@@ -229,6 +231,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
                 protein: 0,
                 fat: 0,
                 sodium: 50,
+                fluids: 0.0, // Energy gel - solid/semi-solid
               ),
             ),
             FoodItemData(
@@ -244,6 +247,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
                 protein: 0,
                 fat: 0,
                 sodium: 160,
+                fluids: 500.0, // 16-20 oz ≈ 500ml sports drink
               ),
             ),
           ],
@@ -267,6 +271,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
                 protein: 8,
                 fat: 5,
                 sodium: 150,
+                fluids: 355.0, // 12 oz = 355ml chocolate milk
               ),
             ),
             FoodItemData(
@@ -282,6 +287,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
                 protein: 1,
                 fat: 0,
                 sodium: 1,
+                fluids: 0.0, // Banana - solid food
               ),
             ),
           ],

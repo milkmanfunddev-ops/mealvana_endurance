@@ -10,12 +10,13 @@ import '../../features/auth/domain/user_preferences.dart' as domain;
 import 'tables/user_profiles.dart';
 import 'tables/food_preferences.dart';
 import 'tables/nutrition_plans.dart';
+import 'tables/macro_targets.dart';
 
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
 /// Replaces Hive for type-safe local storage with automatic migrations
-@DriftDatabase(tables: [UserProfilesTable, FoodPreferencesTable, NutritionPlans])
+@DriftDatabase(tables: [UserProfilesTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   
@@ -23,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   /// Migration strategy for schema changes
   @override
@@ -33,10 +34,15 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
+        // Version 2: Add MacroTargetsTable
+        if (from < 2) {
+          await m.createTable(macroTargetsTable);
+        }
+        
         // Future schema migrations will go here
-        // Example for version 2:
-        // if (from < 2) {
-        //   await m.addColumn(userProfilesTable, userProfilesTable.newColumn);
+        // Example for version 3:
+        // if (from < 3) {
+        //   await m.addColumn(someTable, someTable.newColumn);
         // }
       },
       beforeOpen: (details) async {
