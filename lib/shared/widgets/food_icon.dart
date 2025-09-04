@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../theme/app_theme.dart';
 
-/// Food icon component for displaying food images consistently
+/// Food icon component for displaying food images from online URLs
 /// Used in plan items and food selection
 class FoodIcon extends StatelessWidget {
   const FoodIcon({
     super.key,
-    required this.assetPath,
+    this.imageUrl,
     this.size,
     this.backgroundColor,
     this.borderColor,
     this.borderWidth,
   });
 
-  final String assetPath;
+  final String? imageUrl;
   final double? size;
   final Color? backgroundColor;
   final Color? borderColor;
@@ -23,6 +23,12 @@ class FoodIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconSize = size ?? 48.w;
+    
+    // Debug logging
+    print('🍽️ FoodIcon: Building with imageUrl: $imageUrl (isEmpty: ${imageUrl?.isEmpty ?? true})');
+    if (imageUrl == null || imageUrl!.isEmpty) {
+      print('   ⚠️  No image URL provided, showing fallback icon');
+    }
     
     return Container(
       width: iconSize,
@@ -45,20 +51,49 @@ class FoodIcon extends StatelessWidget {
         ],
       ),
       child: ClipOval(
-        child: Image.asset(
-          assetPath,
-          width: iconSize * 0.8,
-          height: iconSize * 0.8,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            // Fallback icon if image fails to load
-            return Icon(
-              Icons.restaurant,
-              size: iconSize * 0.6,
-              color: AppTheme.baseGrey,
-            );
-          },
-        ),
+        child: imageUrl != null && imageUrl!.isNotEmpty
+            ? Image.network(
+                imageUrl!,
+                width: iconSize * 0.8,
+                height: iconSize * 0.8,
+                fit: BoxFit.cover,
+                headers: const {
+                  'User-Agent': 'Mozilla/5.0 (compatible; Flutter App)',
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) {
+                    print('✅ FoodIcon: Successfully loaded image: $imageUrl');
+                    return child;
+                  }
+                  print('🔄 FoodIcon: Loading image: $imageUrl (${loadingProgress.cumulativeBytesLoaded}/${loadingProgress.expectedTotalBytes})');
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                      strokeWidth: 2.0,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary600),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  print('❌ FoodIcon: Failed to load image: $imageUrl');
+                  print('   Error: $error');
+                  print('   StackTrace: $stackTrace');
+                  // Fallback icon if image fails to load
+                  return Icon(
+                    Icons.restaurant,
+                    size: iconSize * 0.6,
+                    color: AppTheme.baseGrey,
+                  );
+                },
+              )
+            : Icon(
+                Icons.restaurant,
+                size: iconSize * 0.6,
+                color: AppTheme.baseGrey,
+              ),
       ),
     );
   }

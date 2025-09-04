@@ -49,7 +49,7 @@ CREATE OR REPLACE VIEW public.food_with_preferences AS
 SELECT 
     f.id AS food_id,
     f.name AS food_name,
-    f.icon_path,
+    f.image_address,
     f.description,
     f.instructions,
     f.serving_amount,

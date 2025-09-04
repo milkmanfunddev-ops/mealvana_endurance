@@ -491,7 +491,7 @@ class NutritionPlanRepository {
         id: itemMap['name'].toString().toLowerCase().replaceAll(' ', '_'),
         name: itemMap['name'],
         quantity: '${itemMap['servings']} serving${itemMap['servings'] == 1 ? '' : 's'}',
-        iconPath: 'assets/images/${itemMap['name'].toString().toLowerCase().replaceAll(' ', '_')}.png',
+        imageAddress: itemMap['image_address'] as String?,
         description: '',
         nutritionalInfo: NutritionalInfo(
           calories: 0,
@@ -513,7 +513,7 @@ class NutritionPlanRepository {
         id: eventMap['item'].toString().toLowerCase().replaceAll(' ', '_'),
         name: eventMap['item'],
         quantity: '${eventMap['servings']} serving${eventMap['servings'] == 1 ? '' : 's'}',
-        iconPath: 'assets/images/${eventMap['item'].toString().toLowerCase().replaceAll(' ', '_')}.png',
+        imageAddress: eventMap['image_address'] as String?,
         description: 'At ${eventMap['at_min']} minutes',
         nutritionalInfo: NutritionalInfo(
           calories: 0,
@@ -533,7 +533,7 @@ class NutritionPlanRepository {
         id: itemMap['name'].toString().toLowerCase().replaceAll(' ', '_'),
         name: itemMap['name'],
         quantity: '${itemMap['servings']} serving${itemMap['servings'] == 1 ? '' : 's'}',
-        iconPath: 'assets/images/${itemMap['name'].toString().toLowerCase().replaceAll(' ', '_')}.png',
+        imageAddress: itemMap['image_address'] as String?,
         description: '',
         nutritionalInfo: NutritionalInfo(
           calories: 0,

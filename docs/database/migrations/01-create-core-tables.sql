@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS foods (
     serving_unit TEXT DEFAULT 'serving',
     serving_unit_plural TEXT,
     serving_qualifier TEXT,
-    icon_path TEXT,
+    image_address TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

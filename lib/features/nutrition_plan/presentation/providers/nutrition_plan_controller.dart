@@ -10,6 +10,7 @@ import '../../data/nutrition_plan_repository.dart';
 import '../../data/macro_repository.dart';
 import '../../domain/macro_targets.dart' as targets_model;
 import '../../../auth/application/auth_service.dart';
+import '../../../../shared/services/logging_service.dart';
 
 part 'nutrition_plan_controller.g.dart';
 
@@ -190,7 +191,7 @@ class NutritionPlanController extends _$NutritionPlanController {
                 id: newFood.id,
                 name: newFood.name,
                 quantity: newFood.generateQuantityDisplay(customAmount: customAmount),
-                iconPath: newFood.iconPath ?? '🍽️',
+                imageAddress: newFood.imageAddress,
                 instructions: newFood.instructions,
                 nutritionalInfo: NutritionalInfo(
                   calories: ((newFood.caloriesPerServing ?? 0) * multiplier).toInt(),
@@ -251,7 +252,7 @@ class NutritionPlanController extends _$NutritionPlanController {
             id: food.id,
             name: food.name,
             quantity: food.generateQuantityDisplay(customAmount: customAmount),
-            iconPath: food.iconPath ?? '🍽️',
+            imageAddress: food.imageAddress,
             instructions: food.instructions,
             nutritionalInfo: NutritionalInfo(
               calories: ((food.caloriesPerServing ?? 0) * multiplier).toInt(),
@@ -332,6 +333,93 @@ class NutritionPlanController extends _$NutritionPlanController {
       
       return updatedPlan;
     });
+  }
+
+  /// Update the quantity of an existing food item
+  Future<void> updateFoodQuantity(String foodId, String category, double newQuantity) async {
+    final currentPlan = state.valueOrNull;
+    if (currentPlan == null) return;
+    
+    // Don't set loading state to avoid UI rebuilds during quantity editing
+    // state = const AsyncLoading();
+    
+    try {
+      // Create a new plan with the updated food quantity
+      final updatedSections = currentPlan.sections.map((section) {
+        if ((category == 'before_run' && section.title == 'Before Run') ||
+            (category == 'during_run' && section.title == 'During Run') ||
+            (category == 'after_run' && section.title == 'After Run')) {
+          final updatedItems = section.foodItems.map((item) {
+            if (item.id == foodId) {
+              // We need to recalculate nutrition based on the original serving data
+              // For now, we'll proportionally scale the current nutrition values
+              final currentNutrition = item.nutritionalInfo;
+              if (currentNutrition != null) {
+                // Extract the current quantity from the quantity string (e.g., "2.5 cups" -> 2.5)
+                final currentQuantityMatch = RegExp(r'^([\d.]+)').firstMatch(item.quantity);
+                final currentQuantity = currentQuantityMatch != null 
+                    ? double.tryParse(currentQuantityMatch.group(1)!) ?? 1.0
+                    : 1.0;
+                
+                final scaleFactor = newQuantity / currentQuantity;
+                
+                // Generate new quantity display string
+                final quantityParts = item.quantity.split(' ');
+                final newQuantityDisplay = quantityParts.length > 1
+                    ? '${newQuantity == newQuantity.toInt() ? newQuantity.toInt().toString() : newQuantity.toStringAsFixed(1)} ${quantityParts.skip(1).join(' ')}'
+                    : '${newQuantity == newQuantity.toInt() ? newQuantity.toInt().toString() : newQuantity.toStringAsFixed(1)} servings ${item.name.toLowerCase()}';
+                
+                return FoodItemData(
+                  id: item.id,
+                  name: item.name,
+                  quantity: newQuantityDisplay,
+                  imageAddress: item.imageAddress,
+                  instructions: item.instructions,
+                  description: item.description,
+                  nutritionalInfo: NutritionalInfo(
+                    calories: (currentNutrition.calories! * scaleFactor).round(),
+                    carbs: (currentNutrition.carbs! * scaleFactor).round(),
+                    protein: (currentNutrition.protein! * scaleFactor).round(),
+                    fat: (currentNutrition.fat! * scaleFactor).round(),
+                    sodium: (currentNutrition.sodium! * scaleFactor).round(),
+                    fluids: currentNutrition.fluids! * scaleFactor,
+                  ),
+                );
+              }
+            }
+            return item;
+          }).toList();
+          
+          return PlanSection(
+            id: section.id,
+            title: section.title,
+            subtitle: section.subtitle,
+            foodItems: updatedItems,
+          );
+        }
+        return section;
+      }).toList();
+      
+      // Recalculate macro targets based on updated food items
+      final updatedMacroTargets = _recalculateMacroTargets(currentPlan.copyWith(sections: updatedSections));
+      
+      // Create updated plan with recalculated macros
+      final updatedPlan = currentPlan.copyWith(
+        sections: updatedSections,
+        macroTargets: updatedMacroTargets,
+        totalCalories: updatedMacroTargets.calories,
+        updatedAt: DateTime.now(),
+      );
+      
+      // Save the updated plan to storage
+      await _saveUpdatedPlan(updatedPlan);
+      
+      // Update state without loading state to prevent UI rebuilds
+      state = AsyncData(updatedPlan);
+    } catch (error, stackTrace) {
+      // Handle errors without changing to error state to prevent rebuilds
+      AppLogger.instance.error('Failed to update food quantity', error: error, stackTrace: stackTrace);
+    }
   }
 
   String getErrorMessage(String? error) {

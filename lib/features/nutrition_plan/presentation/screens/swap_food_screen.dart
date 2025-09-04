@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/widgets/food_icon.dart';
 import '../providers/swap_food_controller.dart';
 import '../../domain/food.dart';
 
@@ -104,7 +105,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     final controllerState = ref.watch(swapFoodControllerProvider(widget.category));
     final isSwapping = widget.foodToSwapId != null;
     final title = isSwapping ? 'Swap ${widget.foodToSwapName ?? 'Food'}' : 'Add Food';
-    final buttonText = isSwapping ? 'Swap meal' : 'Add meal';
+    final buttonText = isSwapping ? 'Swap food' : 'Add food';
 
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
@@ -192,23 +193,10 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                       children: [
                         Row(
                           children: [
-                            if (state.selectedFood!.iconPath != null)
-                              Container(
-                                width: 40.w,
-                                height: 40.w,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.baseWhite,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    state.selectedFood!.iconPath!,
-                                    width: 24.w,
-                                    height: 24.h,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
+                            FoodIcon(
+                              imageUrl: state.selectedFood!.imageAddress,
+                              size: 40.w,
+                            ),
                             SizedBox(width: 12.w),
                             Expanded(
                               child: Text(
@@ -404,23 +392,10 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         ),
         child: Row(
           children: [
-            if (food.iconPath != null)
-              Container(
-                width: 40.w,
-                height: 40.w,
-                decoration: BoxDecoration(
-                  color: AppTheme.baseWhite,
-                  shape: BoxShape.circle,
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    food.iconPath!,
-                    width: 24.w,
-                    height: 24.h,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+            FoodIcon(
+              imageUrl: food.imageAddress,
+              size: 40.w,
+            ),
             SizedBox(width: 12.w),
             Expanded(
               child: Text(

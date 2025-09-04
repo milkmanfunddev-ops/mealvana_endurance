@@ -649,21 +649,143 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     });
 
     try {
-      await repository.clearCachedMacroTargets();
+      // Get the original macro targets that were stored when first generated
+      final originalTargets = await repository.getOriginalMacroTargets();
       
-      // Track successful reset
-      _analytics.track('Macro Values Reset Successfully');
-      
-      // Update state to remove macro targets
-      final currentState = state.valueOrNull;
-      if (currentState != null) {
-        state = AsyncData(currentState.copyWith(macroTargets: null));
+      if (originalTargets != null) {
+        // Use the original targets with updated ID and timestamp to replace current
+        final restoredTargets = originalTargets.copyWith(
+          id: cachedTargets.id, // Keep the current ID
+          timestamp: DateTime.now(), // Update timestamp
+          isUserModified: false,
+          modifiedFields: [],
+        );
+        
+        // Save the restored targets back to cache
+        await repository.saveMacroTargets(restoredTargets);
+        
+        // Track successful reset
+        _analytics.track('Macro Values Reset Successfully');
+        
+        // Update state with the restored targets
+        final currentState = state.valueOrNull;
+        if (currentState != null) {
+          state = AsyncData(currentState.copyWith(macroTargets: restoredTargets));
+        }
+      } else {
+        // Fallback: if no original targets found, just clear modification flags
+        print('DEBUG: No original targets found, falling back to clearing modification flags');
+        final fallbackTargets = cachedTargets.copyWith(
+          isUserModified: false,
+          modifiedFields: [],
+        );
+        
+        await repository.saveMacroTargets(fallbackTargets);
+        
+        final currentState = state.valueOrNull;
+        if (currentState != null) {
+          state = AsyncData(currentState.copyWith(macroTargets: fallbackTargets));
+        }
       }
       
     } catch (error, stackTrace) {
       // Track error
       _analytics.trackError(
         errorType: 'Macro Reset Error',
+        errorMessage: error.toString(),
+        screenName: 'Adjust Macros',
+      );
+      
+      rethrow;
+    }
+  }
+
+  /// Save all macro changes from the adjust macros screen
+  Future<void> saveAllMacroChanges({
+    // Pre-run values
+    required double preRunCarbs,
+    required double preRunProtein, 
+    required double preRunFluids,
+    required double preRunSodium,
+    // During-run values
+    required double duringRunCarbs,
+    required double duringRunFluids,
+    required double duringRunSodium,
+    // Post-run values
+    required double postRunCarbs,
+    required double postRunProtein,
+    required double postRunFluids,
+    required double postRunSodium,
+  }) async {
+    try {
+      // Update all values in sequence
+      await updateMacroValue(
+        section: MacroSection.preRun,
+        field: MacroField.preRunCarbs,
+        newValue: preRunCarbs,
+      );
+      await updateMacroValue(
+        section: MacroSection.preRun,
+        field: MacroField.preRunProtein,
+        newValue: preRunProtein,
+      );
+      await updateMacroValue(
+        section: MacroSection.preRun,
+        field: MacroField.preRunFluids,
+        newValue: preRunFluids,
+      );
+      await updateMacroValue(
+        section: MacroSection.preRun,
+        field: MacroField.preRunSodium,
+        newValue: preRunSodium,
+      );
+      
+      // During-run values
+      await updateMacroValue(
+        section: MacroSection.duringRun,
+        field: MacroField.duringRunCarbTotal,
+        newValue: duringRunCarbs,
+      );
+      await updateMacroValue(
+        section: MacroSection.duringRun,
+        field: MacroField.duringRunFluidTotal,
+        newValue: duringRunFluids,
+      );
+      await updateMacroValue(
+        section: MacroSection.duringRun,
+        field: MacroField.duringRunSodiumTotal,
+        newValue: duringRunSodium,
+      );
+      
+      // Post-run values
+      await updateMacroValue(
+        section: MacroSection.postRun,
+        field: MacroField.postRunCarbs,
+        newValue: postRunCarbs,
+      );
+      await updateMacroValue(
+        section: MacroSection.postRun,
+        field: MacroField.postRunProtein,
+        newValue: postRunProtein,
+      );
+      await updateMacroValue(
+        section: MacroSection.postRun,
+        field: MacroField.postRunFluids,
+        newValue: postRunFluids,
+      );
+      await updateMacroValue(
+        section: MacroSection.postRun,
+        field: MacroField.postRunSodium,
+        newValue: postRunSodium,
+      );
+      
+      // Track successful save
+      _analytics.track('All Macro Changes Saved Successfully');
+      
+    } catch (error, stackTrace) {
+      // Track error
+      _analytics.trackError(
+        errorType: 'Save All Macros Error',
         errorMessage: error.toString(),
         screenName: 'Adjust Macros',
       );

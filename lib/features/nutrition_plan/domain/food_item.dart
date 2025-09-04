@@ -3,7 +3,7 @@
 class FoodItem {
   final String id;
   final String name;
-  final String? iconPath;
+  final String? imageAddress;
   final String? description;
   final String? instructions;
   final List<FoodCategory> categories;
@@ -45,7 +45,7 @@ class FoodItem {
   FoodItem({
     required this.id,
     required this.name,
-    this.iconPath,
+    this.imageAddress,
     this.description,
     this.instructions,
     this.categories = const [],
@@ -77,7 +77,7 @@ class FoodItem {
     return FoodItem(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      iconPath: json['icon_path']?.toString(),
+      imageAddress: json['image_address']?.toString(),
       description: json['description']?.toString(),
       instructions: json['instructions']?.toString(),
       categories: json['categories'] != null 
@@ -116,7 +116,7 @@ class FoodItem {
     return {
       'id': id,
       'name': name,
-      'icon_path': iconPath,
+      'image_address': imageAddress,
       'description': description,
       'instructions': instructions,
       'categories': categories.map((cat) => cat.dbValue).toList(),

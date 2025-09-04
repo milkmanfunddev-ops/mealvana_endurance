@@ -182,7 +182,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
               id: 'oatmeal',
               name: 'Oatmeal with Banana',
               quantity: '1 cup + 1 banana',
-              iconPath: 'assets/images/foods/oatmeal.png',
+              imageAddress: null, // TODO: Replace with actual image URL from database // 'assets/images/foods/oatmeal.png',
               description: 'Complex carbohydrates provide sustained energy for your long run. The banana adds quick-digesting sugars and potassium.',
               instructions: 'Cook oatmeal with water or low-fat milk. Slice banana on top.',
               nutritionalInfo: const NutritionalInfo(
@@ -198,7 +198,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
               id: 'coffee',
               name: 'Coffee',
               quantity: '8 oz',
-              iconPath: 'assets/images/foods/coffee.png',
+              imageAddress: null, // TODO: Replace with actual image URL from database // 'assets/images/foods/coffee.png',
               description: 'Caffeine can improve performance and reduce perceived effort during endurance exercise.',
               instructions: 'Drink 30-60 minutes before run. Avoid if sensitive to caffeine.',
               nutritionalInfo: const NutritionalInfo(
@@ -222,7 +222,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
               id: 'energy-gel',
               name: 'Energy Gel',
               quantity: '1 packet',
-              iconPath: 'assets/images/foods/energy_gel.png',
+              imageAddress: null, // TODO: Replace with actual image URL from database // 'assets/images/foods/energy_gel.png',
               description: 'Fast-absorbing carbohydrates to maintain blood sugar and energy levels during your run.',
               instructions: 'Take with 4-6 oz water. Start fueling before you feel tired.',
               nutritionalInfo: const NutritionalInfo(
@@ -238,7 +238,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
               id: 'sports-drink',
               name: 'Sports Drink',
               quantity: '16-20 oz',
-              iconPath: 'assets/images/foods/sports_drink.png',
+              imageAddress: null, // TODO: Replace with actual image URL from database // 'assets/images/foods/sports_drink.png',
               description: 'Provides carbohydrates and electrolytes to replace what you lose through sweat.',
               instructions: 'Sip regularly throughout run. Aim for 6-8 oz every 15-20 minutes.',
               nutritionalInfo: const NutritionalInfo(
@@ -262,7 +262,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
               id: 'chocolate-milk',
               name: 'Chocolate Milk',
               quantity: '12 oz',
-              iconPath: 'assets/images/foods/chocolate_milk.png',
+              imageAddress: null, // TODO: Replace with actual image URL from database // 'assets/images/foods/chocolate_milk.png',
               description: 'Ideal 3:1 carb to protein ratio for recovery. Helps replenish glycogen and repair muscles.',
               instructions: 'Drink immediately after run while muscles are most receptive to nutrients.',
               nutritionalInfo: const NutritionalInfo(
@@ -278,7 +278,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
               id: 'banana',
               name: 'Banana',
               quantity: '1 medium',
-              iconPath: 'assets/images/foods/banana.png',
+              imageAddress: null, // TODO: Replace with actual image URL from database // 'assets/images/foods/banana.png',
               description: 'Quick carbohydrates and potassium to help with muscle recovery and prevent cramping.',
               instructions: 'Eat within 30 minutes post-run for optimal recovery.',
               nutritionalInfo: const NutritionalInfo(

@@ -79,7 +79,8 @@
       "Bash(dart test:*)",
       "Bash(sed:*)",
       "Bash(deno check:*)",
-      "mcp__serena__find_referencing_symbols"
+      "mcp__serena__find_referencing_symbols",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

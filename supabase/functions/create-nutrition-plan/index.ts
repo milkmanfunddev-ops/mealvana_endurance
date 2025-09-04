@@ -17,7 +17,7 @@ interface CreateNutritionPlanRequest {
 interface FoodItem {
   id: string;
   name: string;
-  icon_path?: string;
+  image_address?: string;
   description?: string;
   instructions?: string;
   serving_amount: number;
@@ -141,7 +141,7 @@ serve(async (req) => {
       .select(`
         id,
         name,
-        icon_path,
+        image_address,
         description,
         instructions,
         serving_amount,
@@ -575,7 +575,7 @@ function createFoodItemData(food: FoodItem, quantity: number) {
     id: food.id,
     name: food.name,
     quantity: quantityText,
-    iconPath: food.icon_path || `assets/images/${food.name.toLowerCase().replace(' ', '_')}.png`,
+    iconPath: food.image_address || null,
     description: food.description || food.instructions || '',
     nutritionalInfo: {
       calories: adjustedCalories,

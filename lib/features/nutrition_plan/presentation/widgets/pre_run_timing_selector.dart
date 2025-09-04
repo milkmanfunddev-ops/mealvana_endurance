@@ -50,9 +50,8 @@ class PreRunTimingSelector extends StatelessWidget {
         if (label != null) ...[
           Text(
             label!,
-            style: AppTheme.textStyle.copyWith(
+            style: AppTheme.subtitleStyle.copyWith(
               fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
               color: AppTheme.primary900,
             ),
           ),

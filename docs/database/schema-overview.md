@@ -15,7 +15,7 @@ The app uses **Drift** (SQLite) for local data storage with the following benefi
 |-------|---------|--------------|
 | `users` | User profiles and preferences | Device-based auth, demographic data, onboarding status |
 | `nutrition_plans` | Nutrition plan storage | Versioning, conflict resolution, JSONB data |
-| `foods` | Food database | Enhanced nutritional info, serving data, suitability flags, constraints |
+| `foods` | Food database | Enhanced nutritional info, serving data, suitability flags, online images, product info |
 | `categories` | Food category definitions | Integer ID-based category lookup |
 | `food_categories` | Food-to-category mapping | Many-to-many via category_id |
 | `food_preferences` | User food preferences | Device-scoped like/willingToTry/dislike tracking |
@@ -51,7 +51,7 @@ The app uses **Drift** (SQLite) for local data storage with the following benefi
                               │                      │
                               │ • id (PK)           │
                               │ • name              │
-                              │ • icon_path         │
+                              │ • image_address     │
                               │ • description       │
                               │ • instructions      │
                               │ • nutritional_info  │
@@ -74,6 +74,10 @@ The app uses **Drift** (SQLite) for local data storage with the following benefi
                               │ • fat_per_serving   │
                               │ • calories_per_serving│
                               │ • fluid_ml_per_serving│
+                              │ • brand_id (FK)     │
+                              │ • product_type      │
+                              │ • purchase_url      │
+                              │ • affiliate_source  │
                               └──────────────────────┘
 ┌─────────────────┐                    │
 │   categories    │                    │ N:N
@@ -134,6 +138,13 @@ The app uses **Drift** (SQLite) for local data storage with the following benefi
 - **Serving constraints** - Max servings recommendations for safety
 - **Micronutrient tracking** - Sodium, caffeine, potassium for performance optimization
 - **Multi-category support** - Foods can belong to multiple timing categories via join table
+- **Branded vs Generic Foods** - Foods with `brand_id` are branded products, foods with `brand_id = NULL` are generic foods
+- **Online Images** - All food images loaded from `image_address` URLs (no local assets)
+
+### 6. Food Filtering Rules
+- **Food Preferences Screen** - Only shows generic foods (`brand_id IS NULL`) to avoid commercial bias
+- **AI Nutrition Plans** - Only recommends generic foods by default (configurable via `RECOMMENDATION_MODE`)
+- **Swap Food Screen** - Shows all foods but primarily generic foods for recommendations
 
 ## 📋 Column Conventions
 
@@ -313,7 +324,7 @@ Complete food database with nutritional data, serving information, and suitabili
 CREATE TABLE foods (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
-  icon_path TEXT,                        -- Path to food icon/image
+  image_address TEXT,                    -- URL to food image (online)
   description TEXT,                      -- User-friendly description
   instructions TEXT,                     -- Preparation/usage instructions
   nutritional_info JSONB DEFAULT '{}',   -- Legacy field, use explicit columns
@@ -323,6 +334,7 @@ CREATE TABLE foods (
   serving_unit TEXT,                     -- Unit name singular (e.g., "cup", "packet")
   serving_unit_plural TEXT,              -- Unit name plural (e.g., "cups", "packets")
   serving_qualifier TEXT,                -- Qualifier (e.g., "cooked", "sliced")
+  serving_size TEXT,                     -- Legacy field
   
   -- Suitability Flags
   before_run_suitable BOOLEAN DEFAULT false,     -- Suitable for pre-run
@@ -347,11 +359,20 @@ CREATE TABLE foods (
   caffeine_mg INTEGER,                   -- Caffeine in milligrams
   potassium_mg INTEGER,                  -- Potassium in milligrams
   
-  -- Legacy/Compatibility
-  serving_size TEXT,                     -- Legacy field
+  -- Product Information
+  brand_id UUID REFERENCES brands(id),   -- Brand reference
+  product_type TEXT CHECK (product_type IN (
+    'gel', 'chew', 'drink_mix', 'electrolyte_only', 'sports_drink', 
+    'bar', 'waffle', 'capsule', 'real_food', 'recovery_shake'
+  )),
+  purchase_url TEXT,                     -- Purchase link
+  affiliate_source TEXT,                 -- Affiliate tracking
   
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Unique index on lowercase name for case-insensitive uniqueness
+CREATE UNIQUE INDEX uq_foods_lower_name ON foods (LOWER(name));
 ```
 
 **Example data:**

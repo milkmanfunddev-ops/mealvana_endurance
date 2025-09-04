@@ -189,9 +189,8 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                 children: [
                   Text(
                     state.gutTrainingLabel,
-                    style: AppTheme.textStyle.copyWith(
+                    style: AppTheme.subtitleStyle.copyWith(
                       fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
                       color: AppTheme.primary900,
                     ),
                   ),
@@ -252,9 +251,8 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                 children: [
                   Text(
                     'Sweat Rate',
-                    style: AppTheme.textStyle.copyWith(
+                    style: AppTheme.subtitleStyle.copyWith(
                       fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
                       color: AppTheme.primary900,
                     ),
                   ),
@@ -302,9 +300,8 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                 children: [
                   Text(
                     'Temperature',
-                    style: AppTheme.textStyle.copyWith(
+                    style: AppTheme.subtitleStyle.copyWith(
                       fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
                       color: AppTheme.primary900,
                     ),
                   ),
@@ -357,9 +354,8 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                 children: [
                   Text(
                     'Humidity',
-                    style: AppTheme.textStyle.copyWith(
+                    style: AppTheme.subtitleStyle.copyWith(
                       fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
                       color: AppTheme.primary900,
                     ),
                   ),

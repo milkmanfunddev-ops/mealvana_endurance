@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'nutrition_theme_extension.dart';
 import 'component_themes/button_themes.dart';
 import 'component_themes/input_themes.dart';
 import 'component_themes/card_themes.dart';
 import 'component_themes/app_bar_themes.dart';
 
 /// Main theme configuration for Mealvana Endurance
-/// Implements Material Design 3 with nutrition-specific extensions
+/// Implements Material Design 3 with nutrition-specific styling
+/// Light mode only - no dark theme support
 class AppTheme {
-  // Brand Colors
+  // Brand Colors - Primary (Blues)
   static const Color primary900 = Color(0xFF001C71);
   static const Color primary600 = Color(0xFF3366FF);
   static const Color primary100 = Color(0xFFD6E0FF);
   static const Color primary50 = Color(0xFFE0E8FF);
   
-  // Highlight Colors
+  // Highlight Colors (Coral/Pink)
   static const Color highlight600 = Color(0xFFD92D20);
   static const Color highlight600Alt = Color(0xFFDC2597);
   static const Color highlight490 = Color(0xFFF97066);
@@ -33,7 +32,20 @@ class AppTheme {
   // Warning
   static const Color warning500 = Color(0xFFFFC629);
 
-  /// Light theme configuration
+  // Macro-specific colors for nutrition data visualization
+  static const Color proteinColor = Color(0xFFDC2597);      // Pink for protein
+  static const Color carbsColor = Color(0xFFFFC629);        // Yellow for carbohydrates
+  static const Color fatsColor = Color(0xFF3366FF);         // Blue for fats
+  static const Color caloriesColor = Color(0xFF001C71);     // Dark blue for calories
+  static const Color sodiumColor = Color(0xFFFFC629);       // Yellow for sodium
+  static const Color fluidsColor = Color(0xFF3366FF);       // Blue for fluids
+  
+  // Status colors
+  static const Color successColor = Color(0xFF4CAF50);      // Green for success
+  static const Color warningColor = Color(0xFFD92D20);      // Red for warnings
+  static const Color infoColor = Color(0xFF3366FF);         // Blue for info
+
+  /// Light theme configuration (only theme)
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.light(
       primary: primary600,
@@ -42,8 +54,6 @@ class AppTheme {
       onSecondary: baseWhite,
       surface: baseWhite,
       onSurface: baseBlack,
-      // background: baseCream, // Deprecated - using surface instead
-      // onBackground: baseBlack, // Deprecated - using onSurface instead
       error: highlight600,
       onError: baseWhite,
       outline: baseGrey,
@@ -51,184 +61,297 @@ class AppTheme {
       onSurfaceVariant: baseGrey,
     );
 
-    final textTheme = GoogleFonts.interTextTheme();
-
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.light,
       colorScheme: colorScheme,
-      textTheme: _buildTextTheme(textTheme, colorScheme),
-      extensions: const [
-        NutritionThemeExtension.light,
-      ],
+      textTheme: _buildTextTheme(colorScheme),
       elevatedButtonTheme: AppButtonThemes.elevatedButtonTheme(colorScheme),
       inputDecorationTheme: AppInputThemes.inputDecorationTheme(colorScheme),
       cardTheme: AppCardThemes.cardTheme(colorScheme),
-      appBarTheme: AppBarThemes.appBarTheme(colorScheme, textTheme),
-    );
-  }
-
-  /// Dark theme configuration
-  static ThemeData get darkTheme {
-    final colorScheme = ColorScheme.dark(
-      primary: primary600,
-      onPrimary: baseWhite,
-      secondary: highlight490,
-      onSecondary: baseBlack,
-      surface: primary900,
-      onSurface: baseWhite,
-      // background: baseBlack, // Deprecated - using surface instead
-      // onBackground: baseWhite, // Deprecated - using onSurface instead
-      error: highlight490,
-      onError: baseBlack,
-      outline: baseGrey,
-      surfaceContainerHighest: primary100,
-      onSurfaceVariant: baseGrey,
-    );
-
-    final textTheme = GoogleFonts.interTextTheme(
-      ThemeData.dark().textTheme,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: colorScheme,
-      textTheme: _buildTextTheme(textTheme, colorScheme),
-      extensions: const [
-        NutritionThemeExtension.dark,
-      ],
-      elevatedButtonTheme: AppButtonThemes.elevatedButtonTheme(colorScheme),
-      inputDecorationTheme: AppInputThemes.inputDecorationTheme(colorScheme),
-      cardTheme: AppCardThemes.cardTheme(colorScheme),
-      appBarTheme: AppBarThemes.appBarTheme(colorScheme, textTheme),
+      appBarTheme: AppBarThemes.appBarTheme(colorScheme, _buildTextTheme(colorScheme)),
     );
   }
 
   /// Build text theme with custom fonts based on design system
-  static TextTheme _buildTextTheme(TextTheme baseTheme, ColorScheme colorScheme) {
-    return baseTheme.copyWith(
-      // Title - Sansita font
-      displayLarge: GoogleFonts.sansita(
+  static TextTheme _buildTextTheme(ColorScheme colorScheme) {
+    return TextTheme(
+      // Display styles - Using Sansita for large titles
+      displayLarge: const TextStyle(
+        fontFamily: 'Sansita',
         fontSize: 48,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w900,
         height: 1.1,
-        color: colorScheme.onSurface,
       ),
-      displayMedium: GoogleFonts.sansita(
+      displayMedium: const TextStyle(
+        fontFamily: 'Sansita',
         fontSize: 36,
         fontWeight: FontWeight.bold,
         height: 1.1,
-        color: colorScheme.onSurface,
       ),
-      
-      // Headlines - Sansita for titles, headings
-      headlineLarge: GoogleFonts.sansita(
+      displaySmall: const TextStyle(
+        fontFamily: 'Sansita',
         fontSize: 32,
         fontWeight: FontWeight.bold,
         height: 1.2,
-        color: colorScheme.onSurface,
       ),
-      headlineMedium: GoogleFonts.sansita(
+      
+      // Headlines - Sansita for section headers
+      headlineLarge: const TextStyle(
+        fontFamily: 'Sansita',
+        fontSize: 32,
+        fontWeight: FontWeight.bold,
+        height: 1.2,
+      ),
+      headlineMedium: const TextStyle(
+        fontFamily: 'Sansita',
         fontSize: 28,
         fontWeight: FontWeight.bold,
         height: 1.3,
-        color: colorScheme.onSurface,
       ),
-      headlineSmall: GoogleFonts.sansita(
+      headlineSmall: const TextStyle(
+        fontFamily: 'Sansita',
         fontSize: 24,
         fontWeight: FontWeight.w600,
         height: 1.3,
-        color: colorScheme.onSurface,
       ),
 
-      // Body text - Apercu for text and notes
-      bodyLarge: GoogleFonts.lato( // Using Lato as Apercu substitute
+      // Title styles
+      titleLarge: const TextStyle(
+        fontFamily: 'Sansita',
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        height: 1.3,
+      ),
+      titleMedium: const TextStyle(
+        fontFamily: 'Sansita',
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        height: 1.5,
+      ),
+      titleSmall: const TextStyle(
+        fontFamily: 'Sansita',
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        height: 1.4,
+      ),
+
+      // Body text - Apercu for readability
+      bodyLarge: const TextStyle(
+        fontFamily: 'Apercu',
         fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.5,
-        color: colorScheme.onSurface,
       ),
-      bodyMedium: GoogleFonts.lato(
+      bodyMedium: const TextStyle(
+        fontFamily: 'Apercu',
         fontSize: 14,
         fontWeight: FontWeight.w400,
         height: 1.4,
-        color: colorScheme.onSurface,
+      ),
+      bodySmall: const TextStyle(
+        fontFamily: 'Apercu',
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        height: 1.3,
       ),
 
-      // Labels - for form inputs  
-      labelLarge: GoogleFonts.lato(
+      // Labels - for form inputs and small text
+      labelLarge: TextStyle(
+        fontFamily: 'Apercu',
         fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.4,
         color: colorScheme.onSurfaceVariant,
       ),
-      labelMedium: GoogleFonts.lato(
+      labelMedium: TextStyle(
+        fontFamily: 'Apercu',
         fontSize: 12,
         fontWeight: FontWeight.w500,
         height: 1.3,
         color: colorScheme.onSurfaceVariant,
       ),
+      labelSmall: TextStyle(
+        fontFamily: 'Apercu',
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        height: 1.3,
+        color: colorScheme.onSurfaceVariant,
+      ),
     );
   }
   
-  /// Custom text styles for specific use cases
-  static TextStyle get titleStyle => GoogleFonts.sansita(
+  // Custom text styles based on design specs
+  
+  // Sansita-based styles
+  static const TextStyle titleStyle = TextStyle(
+    fontFamily: 'Sansita',
     fontSize: 24,
     fontWeight: FontWeight.bold,
   );
   
-  static TextStyle get subtitleStyle => GoogleFonts.sansita(
+  static const TextStyle subtitleStyle = TextStyle(
+    fontFamily: 'Sansita',
     fontSize: 20,
     fontWeight: FontWeight.w600,
   );
   
-  static TextStyle get heading1Style => GoogleFonts.sansita(
+  static const TextStyle hintStyle = TextStyle(
+    fontFamily: 'Sansita',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    fontStyle: FontStyle.italic,
+  );
+  
+  static const TextStyle heading1Style = TextStyle(
+    fontFamily: 'Sansita',
     fontSize: 32,
     fontWeight: FontWeight.bold,
   );
   
-  static TextStyle get heading2Style => GoogleFonts.sansita(
+  static const TextStyle heading2Style = TextStyle(
+    fontFamily: 'Sansita',
     fontSize: 28,
     fontWeight: FontWeight.bold,
   );
   
-  static TextStyle get heading3Style => GoogleFonts.sansita(
+  static const TextStyle heading3Style = TextStyle(
+    fontFamily: 'Sansita',
     fontSize: 24,
     fontWeight: FontWeight.w600,
   );
   
-  static TextStyle get textStyle => GoogleFonts.lato(
+  static const TextStyle calendarStyle = TextStyle(
+    fontFamily: 'Sansita',
     fontSize: 16,
-    fontWeight: FontWeight.w400,
-  );
-  
-  static TextStyle get noteStyle => GoogleFonts.lato(
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-  );
-  
-  static TextStyle get selectionStyle => GoogleFonts.roboto( // Using Roboto as Compadre substitute
-    fontSize: 14,
     fontWeight: FontWeight.w500,
   );
   
-  // Nutrition text styles - Helvetica
-  static TextStyle get nutritionRegularStyle => GoogleFonts.roboto( // Using Roboto as Helvetica substitute
+  // Apercu-based styles
+  static const TextStyle textStyle = TextStyle(
+    fontFamily: 'Apercu',
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+  );
+  
+  static const TextStyle textCrossedStyle = TextStyle(
+    fontFamily: 'Apercu',
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    decoration: TextDecoration.lineThrough,
+  );
+  
+  static const TextStyle noteStyle = TextStyle(
+    fontFamily: 'Apercu',
     fontSize: 14,
     fontWeight: FontWeight.w400,
   );
   
-  static TextStyle get nutritionBoldStyle => GoogleFonts.roboto(
+  static const TextStyle linkStyle = TextStyle(
+    fontFamily: 'Apercu',
     fontSize: 14,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w400,
+    decoration: TextDecoration.underline,
   );
   
-  static TextStyle get nutritionTitleStyle => GoogleFonts.roboto(
+  // Compadre-based style
+  static const TextStyle selectionStyle = TextStyle(
+    fontFamily: 'Compadre',
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 1.5,
+  );
+  
+  // Helvetica-based nutrition text styles
+  static const TextStyle nutritionRegularStyle = TextStyle(
+    fontFamily: 'Helvetica',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+  );
+  
+  static const TextStyle nutritionRegularObliqueStyle = TextStyle(
+    fontFamily: 'Helvetica',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    fontStyle: FontStyle.italic,
+  );
+  
+  static const TextStyle nutritionFootnoteStyle = TextStyle(
+    fontFamily: 'Helvetica',
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+  );
+  
+  static const TextStyle nutritionBoldStyle = TextStyle(
+    fontFamily: 'Helvetica',
+    fontSize: 14,
+    fontWeight: FontWeight.w900,
+  );
+  
+  static const TextStyle nutritionTitleStyle = TextStyle(
+    fontFamily: 'Helvetica',
     fontSize: 16,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w900,
   );
   
-  static TextStyle get nutritionLargeStyle => GoogleFonts.roboto(
+  static const TextStyle nutritionLargeStyle = TextStyle(
+    fontFamily: 'Helvetica',
     fontSize: 18,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w900,
+  );
+
+  // Nutrition-specific custom text styles
+  static const TextStyle macroLabelStyle = TextStyle(
+    fontFamily: 'Helvetica',
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: baseGrey,
+  );
+  
+  static const TextStyle macroValueStyle = TextStyle(
+    fontFamily: 'Helvetica',
+    fontSize: 20,
+    fontWeight: FontWeight.w900,
+    color: baseBlack,
+  );
+  
+  static const TextStyle calorieTitleStyle = TextStyle(
+    fontFamily: 'Helvetica',
+    fontSize: 24,
+    fontWeight: FontWeight.w900,
+    color: baseBlack,
+  );
+  
+  static const TextStyle nutritionFactStyle = TextStyle(
+    fontFamily: 'Helvetica',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: baseGrey,
+  );
+
+  // Shadow and effects constants
+  static const BoxShadow dropShadow = BoxShadow(
+    color: Color(0x1A000000),
+    offset: Offset(0, 2),
+    blurRadius: 4,
+  );
+  
+  static const BoxShadow glowShadow = BoxShadow(
+    color: Color(0x40FFFFFF),
+    offset: Offset(0, 0),
+    blurRadius: 10,
+    spreadRadius: 2,
+  );
+  
+  static const BoxShadow tabBarShadow = BoxShadow(
+    color: Color(0x0D000000),
+    offset: Offset(0, -1),
+    blurRadius: 4,
+  );
+  
+  static const BoxShadow checkboxDropShadow = BoxShadow(
+    color: Color(0x0D000000),
+    offset: Offset(0, 1),
+    blurRadius: 2,
   );
 }

@@ -43,6 +43,9 @@ abstract class MacroRepository {
 
   /// Clear cached macro targets
   Future<void> clearCachedMacroTargets();
+
+  /// Get original macro targets for reset functionality
+  Future<MacroTargets?> getOriginalMacroTargets();
 }
 
 /// Implementation of macro repository
@@ -198,6 +201,47 @@ class MacroRepositoryImpl implements MacroRepository {
     );
 
     await database.into(database.macroTargetsTable).insertOnConflictUpdate(macroTargetsCompanion);
+    
+    // If this is a newly generated macro target (not user modified), also store as original
+    if (!targets.isUserModified) {
+      await _saveOriginalMacroTargets(targets);
+    }
+  }
+
+  /// Save original macro targets for reset functionality
+  Future<void> _saveOriginalMacroTargets(MacroTargets targets) async {
+    // Store as a separate entry with a special ID prefix
+    final originalId = 'original_${targets.id}';
+    final originalTargetsCompanion = MacroTargetsTableCompanion.insert(
+      id: originalId,
+      preRunCarbsG: targets.preRun.carbsG,
+      preRunProteinG: targets.preRun.proteinG,
+      preRunFatCapG: targets.preRun.fatCapG,
+      preRunFluidsMl: targets.preRun.fluidsMl,
+      preRunSodiumMg: targets.preRun.sodiumMg,
+      duringCarbRateGPerH: targets.duringRun.carbRateGPerH,
+      duringCarbTotalG: targets.duringRun.carbTotalG,
+      duringFluidRateMlPerH: targets.duringRun.fluidRateMlPerH,
+      duringFluidTotalMl: targets.duringRun.fluidTotalMl,
+      duringSodiumRateMgPerH: targets.duringRun.sodiumRateMgPerH,
+      duringSodiumTotalMg: targets.duringRun.sodiumTotalMg,
+      duringMassNormRateGPerH: Value(targets.duringRun.massNormRateGPerH),
+      postRunCarbsG: targets.postRun.carbsG,
+      postRunProteinG: targets.postRun.proteinG,
+      postRunFluidsMl: targets.postRun.fluidsMl,
+      postRunSodiumMg: targets.postRun.sodiumMg,
+      distanceMi: targets.metrics.distanceMi,
+      durationH: targets.metrics.durationH,
+      paceMinPerMile: targets.metrics.paceMinPerMile,
+      caloriesGrossKcal: targets.metrics.caloriesGrossKcal,
+      met: targets.metrics.met,
+      calculationRule: '${targets.calculationRule} (Original)',
+      timestamp: targets.timestamp,
+      isUserModified: Value(false),
+      modifiedFields: Value(''),
+    );
+
+    await database.into(database.macroTargetsTable).insertOnConflictUpdate(originalTargetsCompanion);
   }
 
   @override
@@ -326,10 +370,9 @@ class MacroRepositoryImpl implements MacroRepository {
           preRun: targets.preRun.copyWith(fatCapG: newValue),
         );
       case MacroField.preRunFluids:
-        // Convert fl oz to ml
-        final newValueMl = newValue / 0.033814;
+        // Value is already in ml, no conversion needed
         return targets.copyWith(
-          preRun: targets.preRun.copyWith(fluidsMl: newValueMl),
+          preRun: targets.preRun.copyWith(fluidsMl: newValue),
         );
       case MacroField.preRunSodium:
         return targets.copyWith(
@@ -350,11 +393,10 @@ class MacroRepositoryImpl implements MacroRepository {
           ),
         );
       case MacroField.duringRunFluidTotal:
-        // Convert fl oz to ml
-        final newValueMl = newValue / 0.033814;
+        // Value is already in ml, no conversion needed
         return targets.copyWith(
           duringRun: targets.duringRun.withUpdatedTotalFluids(
-            newValueMl,
+            newValue,
             targets.metrics.durationH,
           ),
         );
@@ -381,10 +423,9 @@ class MacroRepositoryImpl implements MacroRepository {
           postRun: targets.postRun.copyWith(proteinG: newValue),
         );
       case MacroField.postRunFluids:
-        // Convert fl oz to ml
-        final newValueMl = newValue / 0.033814;
+        // Value is already in ml, no conversion needed
         return targets.copyWith(
-          postRun: targets.postRun.copyWith(fluidsMl: newValueMl),
+          postRun: targets.postRun.copyWith(fluidsMl: newValue),
         );
       case MacroField.postRunSodium:
         return targets.copyWith(
@@ -398,6 +439,26 @@ class MacroRepositoryImpl implements MacroRepository {
   @override
   Future<void> clearCachedMacroTargets() async {
     await database.delete(database.macroTargetsTable).go();
+  }
+
+  @override
+  Future<MacroTargets?> getOriginalMacroTargets() async {
+    // Look for the most recent original macro targets
+    final query = database.select(database.macroTargetsTable)
+      ..where((t) => t.id.like('original_%'))
+      ..orderBy([(t) => OrderingTerm.desc(t.timestamp)])
+      ..limit(1);
+
+    final result = await query.getSingleOrNull();
+    if (result == null) {
+      print('DEBUG: No original macro targets found');
+      return null;
+    }
+
+    print('DEBUG: Found original macro targets with ID: ${result.id}');
+    print('  Original pre-run carbs: ${result.preRunCarbsG}g');
+    
+    return _mapDatabaseRowToMacroTargets(result);
   }
 }
 

@@ -5,7 +5,7 @@ class FoodItemData {
     required this.id,
     required this.name,
     required this.quantity,
-    required this.iconPath,
+    this.imageAddress,
     this.description,
     this.timing,
     this.nutritionalInfo,
@@ -15,7 +15,7 @@ class FoodItemData {
   final String id;
   final String name;
   final String quantity; // e.g., "1 cup", "4", "30m before"
-  final String iconPath; // Asset path to food image
+  final String? imageAddress; // Online image URL
   final String? description; // Detailed nutritional advice
   final String? timing; // When to consume (e.g., "30-60 min pre-run")
   final NutritionalInfo? nutritionalInfo;
@@ -27,7 +27,7 @@ class FoodItemData {
       id: json['id'] as String,
       name: json['name'] as String,
       quantity: json['quantity'] as String,
-      iconPath: json['iconPath'] as String,
+      imageAddress: json['imageAddress'] as String? ?? json['image_address'] as String?,
       description: json['description'] as String?,
       timing: json['timing'] as String?,
       instructions: json['instructions'] as String?,
@@ -43,7 +43,7 @@ class FoodItemData {
       'id': id,
       'name': name,
       'quantity': quantity,
-      'iconPath': iconPath,
+      'imageAddress': imageAddress,
       'description': description,
       'timing': timing,
       'instructions': instructions,

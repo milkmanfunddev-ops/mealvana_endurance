@@ -6,6 +6,7 @@ import '../domain/macro_targets.dart' as targets;
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../../../shared/services/sentry_service.dart';
+import '../../../shared/services/logging_service.dart';
 
 /// Service for generating nutrition plans using LLM (GPT-4o-mini)
 class LLMNutritionPlanService {
@@ -62,7 +63,31 @@ class LLMNutritionPlanService {
       final weightKg = user.weightPounds * 0.453592;
       final heightCm = user.totalHeightInches * 2.54;
 
-      // Prepare request data
+      // Calculate macro targets using the same logic as the algorithm would
+      // These are estimates based on standard sports nutrition guidelines
+      final durationHours = (distanceMiles * paceMinutesPerMile) / 60.0;
+      
+      // Pre-run: 1-4g carbs/kg body weight (depending on timing)
+      final preRunCarbs = (weightKg * 2.0).round(); // 2g/kg as baseline
+      final preRunProtein = (weightKg * 0.25).round(); // ~0.25g/kg
+      final preRunFat = (preRunCarbs * 0.1).round(); // ~10% of carb calories as fat
+      final preRunWater = (weightKg * 5).round(); // 5ml/kg
+      final preRunSodium = 300; // baseline sodium
+      
+      // During-run: 30-60g carbs/hour
+      final duringRunCarbsPerHour = user.gutTraining.value == 'high' ? 60 : 
+                                    user.gutTraining.value == 'low' ? 30 : 45;
+      final duringRunCarbs = (duringRunCarbsPerHour * durationHours).round();
+      final duringRunWater = (600 * durationHours).round(); // ~600ml/hour
+      final duringRunSodium = (400 * durationHours).round(); // ~400mg/hour
+      
+      // Post-run: 1.0-1.2g carbs/kg, 0.3g protein/kg
+      final postRunCarbs = (weightKg * 1.0).round();
+      final postRunProtein = (weightKg * 0.3).round();
+      final postRunWater = (duringRunWater * 1.25).round(); // 125% of sweat loss
+      final postRunSodium = 500; // baseline recovery sodium
+
+      // Prepare request data with calculated macro targets
       final requestData = {
         'device_id': user.id,
         'age': age,
@@ -77,6 +102,28 @@ class LLMNutritionPlanService {
         'willing_to_try_foods': willingToTryFoods,
         'disliked_foods': dislikedFoods,
         if (sweatRate != null) 'sweat_rate': sweatRate,
+        // Include macro targets for proper AI generation
+        'macro_targets': {
+          'pre_run': {
+            'carbs_g': preRunCarbs,
+            'protein_g': preRunProtein,
+            'fat_g': preRunFat,
+            'water_ml': preRunWater,
+            'sodium_mg': preRunSodium,
+          },
+          'during_run': {
+            'carbs_total_g': duringRunCarbs,
+            'sodium_total_mg': duringRunSodium,
+            'water_total_ml': duringRunWater,
+          },
+          'post_run': {
+            'carbs_g': postRunCarbs,
+            'protein_g': postRunProtein,
+            'fat_g': 0, // Post-run typically avoids fat
+            'water_ml': postRunWater,
+            'sodium_mg': postRunSodium,
+          },
+        },
       };
 
       // Call the edge function
@@ -96,6 +143,11 @@ class LLMNutritionPlanService {
 
       // Parse the response
       final data = response.data as Map<String, dynamic>;
+      AppLogger.instance.api('Edge function response received',
+        endpoint: '/generate-ai-nutrition-plan',
+        statusCode: response.status,
+        responseData: data,
+      );
       
       if (data['success'] != true) {
         if (data['fallback_to_algorithm'] == true) {
@@ -104,8 +156,24 @@ class LLMNutritionPlanService {
         throw Exception(data['message'] ?? 'Failed to generate nutrition plan');
       }
 
+      AppLogger.instance.nutritionPlan('Converting LLM response to nutrition plan',
+        planId: data['plan_id'] as String?,
+      );
+      
       // Convert the LLM response to our NutritionPlan format
       final nutritionPlan = _convertLLMResponseToPlan(data, user.id);
+      
+      AppLogger.instance.nutritionPlan('Nutrition plan conversion completed',
+        planId: nutritionPlan.id,
+        data: {
+          'sectionsCount': nutritionPlan.sections.length,
+          'totalFoodItems': nutritionPlan.sections.fold<int>(0, (sum, section) => sum + section.foodItems.length),
+          'sectionDetails': nutritionPlan.sections.map((section) => {
+            'title': section.title,
+            'itemCount': section.foodItems.length,
+          }).toList(),
+        },
+      );
 
       // Track success in Sentry
       _sentryService.addBreadcrumb(
@@ -137,71 +205,130 @@ class LLMNutritionPlanService {
 
   /// Convert LLM response format to our NutritionPlan domain model
   NutritionPlan _convertLLMResponseToPlan(Map<String, dynamic> data, String userId) {
+    AppLogger.instance.debug('Starting LLM response conversion',
+      context: 'LLMNutritionPlanService',
+      data: {
+        'rawDataKeys': data.keys.toList(),
+        'planDataKeys': (data['plan'] as Map<String, dynamic>).keys.toList(),
+        'macroTargetsKeys': (data['macro_targets'] as Map<String, dynamic>).keys.toList(),
+      },
+    );
+    
     final planData = data['plan'] as Map<String, dynamic>;
     final macroTargets = data['macro_targets'] as Map<String, dynamic>;
-    final detailedMessage = data['detailed_message'] as String;
+    final detailedMessage = data['detailed_message'] as String? ?? 'AI-generated nutrition plan';
     final planId = data['plan_id'] as String? ?? 
                    'llm-plan-${DateTime.now().millisecondsSinceEpoch}';
+                   
+    AppLogger.instance.debug('Extracted plan metadata',
+      context: 'LLMNutritionPlanService',
+      data: {
+        'planId': planId,
+        'detailedMessage': detailedMessage,
+      },
+    );
 
     // Convert before section
+    AppLogger.instance.debug('Converting before section',
+      context: 'LLMNutritionPlanService',
+      data: {'beforeItemsCount': (planData['before'] as List<dynamic>).length},
+    );
+    
     final beforeItems = (planData['before'] as List<dynamic>).map((item) {
       final itemMap = item as Map<String, dynamic>;
+      final foodName = itemMap['food_name'] as String? ?? 'Unknown Food';
+      final description = itemMap['description'] as String? ?? 'No description';
+      final timing = itemMap['timing'] as String? ?? '';
+      
       return FoodItemData(
-        id: itemMap['food_name'] as String, // Use food name as ID for now
-        name: itemMap['food_name'] as String,
-        quantity: itemMap['description'] as String, // LLM provides full description like "1 cup cooked oatmeal"
-        iconPath: 'assets/images/${itemMap['food_name'].toLowerCase().replaceAll(' ', '_')}.png',
-        description: itemMap['timing'] as String? ?? '',
+        id: foodName, // Use food name as ID for now
+        name: foodName,
+        quantity: description, // LLM provides full description like "1 cup cooked oatmeal"
+        imageAddress: itemMap['image_address'] as String?,
+        description: timing,
         nutritionalInfo: NutritionalInfo(
-          calories: (itemMap['calories'] as num).toInt(),
-          carbs: (itemMap['carbs_grams'] as num).toInt(),
-          protein: (itemMap['protein_grams'] as num).toInt(),
-          fat: (itemMap['fat_grams'] as num).toInt(),
+          calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
+          carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
+          protein: (itemMap['protein_grams'] as num?)?.toInt() ?? 0,
+          fat: (itemMap['fat_grams'] as num?)?.toInt() ?? 0,
           sodium: (itemMap['sodium_mg'] as num?)?.toInt() ?? 0,
           fluids: (itemMap['fluids_ml'] as num?)?.toDouble() ?? 0.0,
         ),
       );
     }).toList();
+    
+    AppLogger.instance.debug('Before section conversion completed',
+      context: 'LLMNutritionPlanService',
+      data: {'convertedItemsCount': beforeItems.length},
+    );
 
     // Convert during section
+    AppLogger.instance.debug('Converting during section',
+      context: 'LLMNutritionPlanService',
+      data: {'duringItemsCount': (planData['during'] as List<dynamic>).length},
+    );
+    
     final duringItems = (planData['during'] as List<dynamic>).map((item) {
       final itemMap = item as Map<String, dynamic>;
+      final foodName = itemMap['food_name'] as String? ?? 'Unknown Food';
+      final description = itemMap['description'] as String? ?? 'No description';
+      final timing = itemMap['timing'] as String? ?? '';
+      
       return FoodItemData(
-        id: itemMap['food_name'] as String,
-        name: itemMap['food_name'] as String,
-        quantity: itemMap['description'] as String,
-        iconPath: 'assets/images/${itemMap['food_name'].toLowerCase().replaceAll(' ', '_')}.png',
-        description: itemMap['timing'] as String? ?? '',
+        id: foodName,
+        name: foodName,
+        quantity: description,
+        imageAddress: itemMap['image_address'] as String?,
+        description: timing,
         nutritionalInfo: NutritionalInfo(
-          calories: (itemMap['calories'] as num).toInt(),
-          carbs: (itemMap['carbs_grams'] as num).toInt(),
-          protein: (itemMap['protein_grams'] as num).toInt(),
-          fat: (itemMap['fat_grams'] as num).toInt(),
+          calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
+          carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
+          protein: (itemMap['protein_grams'] as num?)?.toInt() ?? 0,
+          fat: (itemMap['fat_grams'] as num?)?.toInt() ?? 0,
           sodium: (itemMap['sodium_mg'] as num?)?.toInt() ?? 0,
           fluids: (itemMap['fluids_ml'] as num?)?.toDouble() ?? 0.0,
         ),
       );
     }).toList();
+    
+    AppLogger.instance.debug('During section conversion completed',
+      context: 'LLMNutritionPlanService',
+      data: {'convertedItemsCount': duringItems.length},
+    );
 
     // Convert after section
+    AppLogger.instance.debug('Converting after section',
+      context: 'LLMNutritionPlanService',
+      data: {'afterItemsCount': (planData['after'] as List<dynamic>).length},
+    );
+    
     final afterItems = (planData['after'] as List<dynamic>).map((item) {
       final itemMap = item as Map<String, dynamic>;
+      final foodName = itemMap['food_name'] as String? ?? 'Unknown Food';
+      final description = itemMap['description'] as String? ?? 'No description';
+      final timing = itemMap['timing'] as String? ?? '';
+      
       return FoodItemData(
-        id: itemMap['food_name'] as String,
-        name: itemMap['food_name'] as String,
-        quantity: itemMap['description'] as String,
-        iconPath: 'assets/images/${itemMap['food_name'].toLowerCase().replaceAll(' ', '_')}.png',
-        description: itemMap['timing'] as String? ?? '',
+        id: foodName,
+        name: foodName,
+        quantity: description,
+        imageAddress: itemMap['image_address'] as String?,
+        description: timing,
         nutritionalInfo: NutritionalInfo(
-          calories: (itemMap['calories'] as num).toInt(),
-          carbs: (itemMap['carbs_grams'] as num).toInt(),
-          protein: (itemMap['protein_grams'] as num).toInt(),
-          fat: (itemMap['fat_grams'] as num).toInt(),
+          calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
+          carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
+          protein: (itemMap['protein_grams'] as num?)?.toInt() ?? 0,
+          fat: (itemMap['fat_grams'] as num?)?.toInt() ?? 0,
           sodium: (itemMap['sodium_mg'] as num?)?.toInt() ?? 0,
           fluids: (itemMap['fluids_ml'] as num?)?.toDouble() ?? 0.0,
         ),
       );
     }).toList();
+    
+    AppLogger.instance.debug('After section conversion completed',
+      context: 'LLMNutritionPlanService',
+      data: {'convertedItemsCount': afterItems.length},
+    );
 
     // Calculate total macros from phase targets (using correct field names)
     final preRun = macroTargets['pre_run'] as Map<String, dynamic>;
@@ -226,7 +353,7 @@ class LLMNutritionPlanService {
     final totalCalories = (totalCarbs * 4) + (totalProtein * 4) + (totalFat * 9); // Rough calorie calculation
 
     // Create the nutrition plan
-    return NutritionPlan(
+    final plan = NutritionPlan(
       id: planId,
       name: 'AI-Generated Nutrition Plan',
       totalCalories: totalCalories,
@@ -268,6 +395,18 @@ class LLMNutritionPlanService {
       notes: detailedMessage, // Store only the detailed message
       createdAt: DateTime.now(),
     );
+    
+    AppLogger.instance.nutritionPlan('Nutrition plan creation completed',
+      planId: plan.id,
+      data: {
+        'totalFoodItems': beforeItems.length + duringItems.length + afterItems.length,
+        'beforeItems': beforeItems.length,
+        'duringItems': duringItems.length,
+        'afterItems': afterItems.length,
+      },
+    );
+    
+    return plan;
   }
 
   /// Generate nutrition plan from adjusted macro targets
@@ -313,12 +452,16 @@ class LLMNutritionPlanService {
       final weightKg = user.weightPounds * 0.453592;
       final heightCm = user.totalHeightInches * 2.54;
 
-      // 🚨 CRITICAL DEBUG: Log the exact macro targets being sent to edge function
-      print('🎯 DEBUG: MACRO TARGETS BEING SENT TO EDGE FUNCTION:');
-      print('  Pre-run: ${macroTargets.preRun.carbsG}g carbs, ${macroTargets.preRun.proteinG}g protein');
-      print('  During-run: ${macroTargets.duringRun.carbTotalG}g carbs total');
-      print('  Post-run: ${macroTargets.postRun.carbsG}g carbs, ${macroTargets.postRun.proteinG}g protein');
-      print('  TOTAL EXPECTED CARBS: ${macroTargets.preRun.carbsG + macroTargets.duringRun.carbTotalG + macroTargets.postRun.carbsG}g');
+      AppLogger.instance.nutritionPlan('Macro targets prepared for edge function',
+        data: {
+          'preRunCarbs': macroTargets.preRun.carbsG,
+          'preRunProtein': macroTargets.preRun.proteinG,
+          'duringRunCarbsTotal': macroTargets.duringRun.carbTotalG,
+          'postRunCarbs': macroTargets.postRun.carbsG,
+          'postRunProtein': macroTargets.postRun.proteinG,
+          'totalExpectedCarbs': macroTargets.preRun.carbsG + macroTargets.duringRun.carbTotalG + macroTargets.postRun.carbsG,
+        },
+      );
 
       // Prepare request data with macro_targets structure
       final requestData = {

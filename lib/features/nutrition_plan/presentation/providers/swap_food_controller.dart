@@ -6,6 +6,7 @@ import '../../domain/food.dart';
 import '../../domain/food_item.dart';
 import '../../data/food_repository.dart';
 import '../providers/nutrition_plan_controller.dart';
+import '../../../../shared/services/logging_service.dart';
 
 part 'swap_food_controller.g.dart';
 
@@ -14,13 +15,15 @@ class SwapFoodState {
   const SwapFoodState({
     required this.availableFoods,
     required this.searchResults,
+    this.allFoodsForSearch,
     this.selectedFood,
     this.searchQuery = '',
     this.isSearching = false,
   });
   
-  final List<Food> availableFoods;
-  final List<Food> searchResults;
+  final List<Food> availableFoods; // Generic foods for recommendations
+  final List<Food> searchResults; // Current search results or recommendations
+  final List<Food>? allFoodsForSearch; // All foods (including branded) for searching
   final Food? selectedFood;
   final String searchQuery;
   final bool isSearching;
@@ -28,6 +31,7 @@ class SwapFoodState {
   SwapFoodState copyWith({
     List<Food>? availableFoods,
     List<Food>? searchResults,
+    List<Food>? allFoodsForSearch,
     Food? selectedFood,
     String? searchQuery,
     bool? isSearching,
@@ -35,6 +39,7 @@ class SwapFoodState {
     return SwapFoodState(
       availableFoods: availableFoods ?? this.availableFoods,
       searchResults: searchResults ?? this.searchResults,
+      allFoodsForSearch: allFoodsForSearch ?? this.allFoodsForSearch,
       selectedFood: selectedFood ?? this.selectedFood,
       searchQuery: searchQuery ?? this.searchQuery,
       isSearching: isSearching ?? this.isSearching,
@@ -59,11 +64,12 @@ class SwapFoodController extends _$SwapFoodController {
   }
   
   Future<SwapFoodState> _loadFoodsForCategory(String category) async {
-    // First try to get from local cache, then fall back to Supabase
-    final allFoods = await _getAllFoodsWithCache();
+    // Load generic foods for recommendations and all foods (including branded) for search
+    final genericFoods = await _getGenericFoodsWithCache();
+    final allFoods = await _getAllFoodsIncludingBrandedWithCache();
     
-    // Filter foods by category suitability
-    final availableFoods = allFoods.where((food) {
+    // Filter generic foods by category suitability for recommendations
+    final availableFoods = genericFoods.where((food) {
       switch (category) {
         case 'before_run':
           return food.beforeRunSuitable;
@@ -76,33 +82,88 @@ class SwapFoodController extends _$SwapFoodController {
       }
     }).toList();
     
+    // Filter ALL foods (including branded) by category for search capability  
+    final allCategoryFoods = allFoods.where((food) {
+      switch (category) {
+        case 'before_run':
+          return food.beforeRunSuitable;
+        case 'during_run':
+          return food.duringRunSuitable;
+        case 'after_run':
+          return true;
+        default:
+          return false;
+      }
+    }).toList();
+    
     return SwapFoodState(
-      availableFoods: availableFoods,
-      searchResults: availableFoods, // Initially show all available foods
+      availableFoods: availableFoods, // Generic foods for recommendations
+      searchResults: availableFoods, // Initially show generic foods, will be replaced on search
+      allFoodsForSearch: allCategoryFoods, // All foods (including branded) for search
     );
   }
   
-  Future<List<Food>> _getAllFoodsWithCache() async {
+  /// Get generic foods only (for recommendations)
+  Future<List<Food>> _getGenericFoodsWithCache() async {
     try {
-      // Use the existing FoodRepository instead of calling Supabase directly
+      // Use the existing FoodRepository to get only generic foods
       final foodRepository = ref.read(foodRepositoryProvider);
-      final allFoodItems = await foodRepository.getAllFoods();
+      final genericFoodItems = await foodRepository.getAllFoods();
+      
+      AppLogger.instance.debug('Loaded generic foods for recommendations',
+        context: 'SwapFoodController',
+        data: {'count': genericFoodItems.length},
+      );
+      
+      // Convert FoodItems to Food domain objects for the swap controller
+      return genericFoodItems.map((foodItem) => _convertFoodItemToFood(foodItem)).toList();
+    } catch (e) {
+      AppLogger.instance.error('Error loading generic foods',
+        context: 'SwapFoodController',
+        error: e,
+      );
+      return [];
+    }
+  }
+  
+  /// Get ALL foods including branded (for search)
+  Future<List<Food>> _getAllFoodsIncludingBrandedWithCache() async {
+    try {
+      // Use the new method to get ALL foods including branded
+      final foodRepository = ref.read(foodRepositoryProvider);
+      final allFoodItems = await foodRepository.getAllFoodsIncludingBranded();
+      
+      AppLogger.instance.debug('Loaded all foods including branded for search',
+        context: 'SwapFoodController',
+        data: {'count': allFoodItems.length},
+      );
       
       // Convert FoodItems to Food domain objects for the swap controller
       return allFoodItems.map((foodItem) => _convertFoodItemToFood(foodItem)).toList();
     } catch (e) {
-      // If remote fails, return empty list for now
-      // TODO: Implement local Drift cache for foods when needed
+      AppLogger.instance.error('Error loading all foods including branded',
+        context: 'SwapFoodController',
+        error: e,
+      );
       return [];
     }
   }
   
   /// Convert FoodItem to Food domain object
   Food _convertFoodItemToFood(FoodItem foodItem) {
+    AppLogger.instance.debug('Converting FoodItem to Food domain object',
+      context: 'SwapFoodController',
+      data: {
+        'foodName': foodItem.name,
+        'imageAddress': foodItem.imageAddress,
+        'foodId': foodItem.id,
+      },
+    );
+    
     return Food(
       id: foodItem.id,
       name: foodItem.name,
-      iconPath: foodItem.iconPath,
+      imageAddress: foodItem.imageAddress,
       description: foodItem.description,
       instructions: foodItem.instructions,
       servingAmount: foodItem.servingAmount,
@@ -124,19 +185,31 @@ class SwapFoodController extends _$SwapFoodController {
     if (currentState == null) return;
     
     if (query.isEmpty) {
+      // No search - show recommended alternatives (generic foods)
       state = AsyncValue.data(currentState.copyWith(
         searchQuery: '',
-        searchResults: currentState.availableFoods,
+        searchResults: currentState.availableFoods, // Generic foods
         isSearching: false,
       ));
     } else {
-      final filtered = currentState.availableFoods.where((food) {
+      // Search in ALL foods (including branded)
+      final searchPool = currentState.allFoodsForSearch ?? currentState.availableFoods;
+      final filtered = searchPool.where((food) {
         return food.name.toLowerCase().contains(query.toLowerCase());
       }).toList();
       
+      AppLogger.instance.debug('Search performed',
+        context: 'SwapFoodController',
+        data: {
+          'searchQuery': query,
+          'searchPoolSize': searchPool.length,
+          'resultsFound': filtered.length,
+        },
+      );
+      
       state = AsyncValue.data(currentState.copyWith(
         searchQuery: query,
-        searchResults: filtered,
+        searchResults: filtered, // Both generic AND branded foods
         isSearching: true,
       ));
     }

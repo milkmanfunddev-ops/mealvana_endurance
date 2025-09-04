@@ -37,7 +37,7 @@ const SCORING_CONFIG = {
 type Food = {
   id: string;
   name: string;
-  icon_path?: string | null;        // Fixed: matches database
+  image_address?: string | null;        // Fixed: matches database
   description?: string | null;      // Fixed: matches database
   instructions?: string | null;     // Fixed: matches database
 
@@ -266,7 +266,7 @@ function calcTargets(inp: Inputs): Targets {
 // ---- Data access (≤ 2 roundtrips, foods cached)
 async function fetchFoods(): Promise<Food[]> {
   const cols = [
-    "id","name","icon_path","description","instructions",      // Fixed: correct field names
+    "id","name","image_address","description","instructions",      // Fixed: correct field names
     "serving_amount","serving_unit","serving_qualifier","serving_unit_plural","serving_size",
     "sodium_mg","caffeine_mg","potassium_mg","fat_per_serving","carbs_per_serving","protein_per_serving","calories_per_serving",
     "fluid_ml_per_serving",

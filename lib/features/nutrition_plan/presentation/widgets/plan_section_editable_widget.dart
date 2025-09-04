@@ -3,8 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 import '../../../../theme/app_theme.dart';
-import 'expandable_food_item.dart';
+import 'editable_expandable_food_item.dart';
 import 'add_food_button.dart';
+import 'section_subtitle_widget.dart';
 
 /// Widget for individual plan sections with its own edit state
 /// Each section (Before Run, During Run, After Run) manages its own edit mode
@@ -12,15 +13,19 @@ class PlanSectionEditableWidget extends StatefulWidget {
   const PlanSectionEditableWidget({
     super.key,
     required this.section,
+    required this.plan,
     this.onFoodItemTap,
     this.onSwapFood,
     this.onDeleteFood,
+    this.onUpdateQuantity,
   });
 
   final PlanSection section;
+  final NutritionPlan plan;
   final Function(String foodItemId)? onFoodItemTap;
   final Function(String foodItemId, String foodName)? onSwapFood;
   final Function(String foodItemId)? onDeleteFood;
+  final Function(String foodItemId, double newQuantity)? onUpdateQuantity;
   
   @override
   State<PlanSectionEditableWidget> createState() => _PlanSectionEditableWidgetState();
@@ -42,52 +47,6 @@ class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
     }
   }
 
-  /// Calculate totals for this section
-  Map<String, int> _calculateSectionTotals() {
-    int totalCarbs = 0;
-    int totalProtein = 0;
-    int totalCalories = 0;
-    int totalSodium = 0;
-    int totalFluids = 0;
-
-    for (final foodItem in widget.section.foodItems) {
-      final nutrition = foodItem.nutritionalInfo;
-      if (nutrition != null) {
-        totalCarbs += nutrition.carbs ?? 0;
-        totalProtein += nutrition.protein ?? 0;
-        totalCalories += nutrition.calories ?? 0;
-        totalSodium += nutrition.sodium ?? 0;
-        totalFluids += (nutrition.fluids ?? 0).toInt();
-      }
-    }
-
-    return {
-      'carbs': totalCarbs,
-      'protein': totalProtein,
-      'calories': totalCalories,
-      'sodium': totalSodium,
-      'fluids': totalFluids,
-    };
-  }
-
-  /// Get the appropriate subtitle with calculated totals
-  String _getDynamicSubtitle() {
-    final totals = _calculateSectionTotals();
-    final carbs = totals['carbs']!;
-    final protein = totals['protein']!;
-    final fluids = totals['fluids']!;
-
-    switch (widget.section.title) {
-      case 'Before Run':
-        return 'Pre-run fueling (${carbs}g carbs, ${protein}g protein)';
-      case 'During Run':
-        return 'Total: ${carbs}g carbs, ${fluids}ml fluids';
-      case 'After Run':
-        return 'Recovery (${carbs}g carbs, ${protein}g protein)';
-      default:
-        return widget.section.subtitle ?? '';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,13 +69,9 @@ class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
                     ),
                   ),
                   SizedBox(height: 4.h),
-                  Text(
-                    _getDynamicSubtitle(),
-                    style: AppTheme.noteStyle.copyWith(
-                      color: AppTheme.primary600,
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  SectionSubtitleWidget(
+                    section: widget.section,
+                    plan: widget.plan,
                   ),
                 ],
               ),
@@ -172,8 +127,10 @@ class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
                 Row(
                   children: [
                     Expanded(
-                      child: ExpandableFoodItem(
+                      child: EditableExpandableFoodItem(
                         foodItem: foodItem,
+                        category: _sectionCategory,
+                        onQuantityChanged: (newQuantity) => widget.onUpdateQuantity?.call(foodItem.id, newQuantity),
                         onTap: () => widget.onFoodItemTap?.call(foodItem.id),
                       ),
                     ),

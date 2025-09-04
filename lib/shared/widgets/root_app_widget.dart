@@ -21,8 +21,7 @@ class RootAppWidget extends ConsumerWidget {
           title: 'Mealvana Endurance',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.system,
+          themeMode: ThemeMode.light, // Force light mode only
           routerConfig: AppRouter.router,
         );
       },

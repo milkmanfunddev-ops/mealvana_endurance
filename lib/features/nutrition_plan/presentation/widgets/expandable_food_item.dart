@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../../theme/nutrition_theme_extension.dart';
 import '../../domain/food_item_data.dart';
 import '../../../../shared/widgets/food_icon.dart';
 
@@ -67,8 +66,6 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
 
   @override
   Widget build(BuildContext context) {
-    final nutritionTheme = Theme.of(context).extension<NutritionThemeExtension>()!;
-    
     return Container(
       decoration: BoxDecoration(
         color: Color(0xFFD6E0FF), // Correct light blue from Alex's design
@@ -97,7 +94,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                   children: [
                     // Food Icon
                     FoodIcon(
-                      assetPath: widget.foodItem.iconPath,
+                      imageUrl: widget.foodItem.imageAddress,
                       size: 40.w,
                     ),
                     
@@ -194,7 +191,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                       
                       // Nutritional Info
                       if (widget.foodItem.nutritionalInfo != null)
-                        _buildNutritionInfo(nutritionTheme),
+                        _buildNutritionInfo(),
                     ],
                   ),
                 ),
@@ -206,7 +203,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
     );
   }
 
-  Widget _buildNutritionInfo(NutritionThemeExtension nutritionTheme) {
+  Widget _buildNutritionInfo() {
     final nutrition = widget.foodItem.nutritionalInfo!;
     
     return Container(
@@ -237,28 +234,28 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                 _buildNutritionItem(
                   'Calories',
                   '${nutrition.calories}',
-                  nutritionTheme.caloriesColor ?? AppTheme.primary900,
+                  AppTheme.caloriesColor,
                 ),
               
               if (nutrition.carbs != null)
                 _buildNutritionItem(
                   'Carbs',
                   '${nutrition.carbs}g',
-                  nutritionTheme.carbsColor ?? AppTheme.warning500,
+                  AppTheme.carbsColor,
                 ),
               
               if (nutrition.protein != null)
                 _buildNutritionItem(
                   'Protein',
                   '${nutrition.protein}g',
-                  nutritionTheme.proteinColor ?? AppTheme.highlight600Alt,
+                  AppTheme.proteinColor,
                 ),
               
               if (nutrition.fat != null)
                 _buildNutritionItem(
                   'Fat',
                   '${nutrition.fat}g',
-                  nutritionTheme.fatsColor ?? AppTheme.primary600,
+                  AppTheme.fatsColor,
                 ),
             ],
           ),

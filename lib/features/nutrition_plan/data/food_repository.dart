@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/food_item.dart';
+import '../../../shared/services/logging_service.dart';
 
 /// Repository for accessing food data from Supabase
 /// Replaces the hardcoded FoodDatabase with dynamic data
@@ -9,7 +10,8 @@ class FoodRepository {
   
   final SupabaseClient _supabase;
 
-  /// Get all foods from Supabase with their categories
+  /// Get all generic foods from Supabase (brand_id IS NULL)
+  /// Use this for "Recommended Alternatives" - generic foods only
   Future<List<FoodItem>> getAllFoods() async {
     try {
       final response = await _supabase
@@ -17,7 +19,7 @@ class FoodRepository {
           .select('''
             id,
             name,
-            icon_path,
+            image_address,
             description,
             instructions,
             nutritional_info,
@@ -41,17 +43,22 @@ class FoodRepository {
             caffeine_mg,
             potassium_mg,
             serving_size,
+            brand_id,
             created_at,
             food_categories (
               category_id
             )
           ''')
+          .isFilter('brand_id', null)  // Only get generic foods (no brand)
           .order('name', ascending: true);
       
       final List<dynamic> data = response as List<dynamic>;
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
-      print('Error fetching foods from Supabase: $e');
+      AppLogger.instance.error('Error fetching generic foods from Supabase',
+        context: 'FoodRepository',
+        error: e,
+      );
       // Fallback to empty list - app should still work without foods
       return [];
     }
@@ -68,7 +75,7 @@ class FoodRepository {
           .select('''
             id,
             name,
-            icon_path,
+            image_address,
             description,
             instructions,
             nutritional_info,
@@ -103,7 +110,11 @@ class FoodRepository {
       final List<dynamic> data = response as List<dynamic>;
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
-      print('Error fetching foods by category from Supabase: $e');
+      AppLogger.instance.error('Error fetching foods by category from Supabase',
+        context: 'FoodRepository',
+        data: {'category': category.dbValue},
+        error: e,
+      );
       return [];
     }
   }
@@ -116,7 +127,7 @@ class FoodRepository {
           .select('''
             id,
             name,
-            icon_path,
+            image_address,
             description,
             instructions,
             nutritional_info,
@@ -153,8 +164,65 @@ class FoodRepository {
       }
       return null;
     } catch (e) {
-      print('Error fetching food by name from Supabase: $e');
+      AppLogger.instance.error('Error fetching food by name from Supabase',
+        context: 'FoodRepository',
+        data: {'foodName': name},
+        error: e,
+      );
       return null;
+    }
+  }
+
+  /// Get ALL foods from Supabase including both generic and branded
+  /// Use this for search functionality to include branded foods
+  Future<List<FoodItem>> getAllFoodsIncludingBranded() async {
+    try {
+      final response = await _supabase
+          .from('foods')
+          .select('''
+            id,
+            name,
+            image_address,
+            description,
+            instructions,
+            nutritional_info,
+            serving_amount,
+            serving_unit,
+            serving_unit_plural,
+            serving_qualifier,
+            before_run_suitable,
+            during_run_suitable,
+            run_portable,
+            requires_preparation,
+            aid_station_available,
+            max_servings_before,
+            max_servings_during,
+            carbs_per_serving,
+            protein_per_serving,
+            fat_per_serving,
+            calories_per_serving,
+            fluid_ml_per_serving,
+            sodium_mg,
+            caffeine_mg,
+            potassium_mg,
+            serving_size,
+            brand_id,
+            created_at,
+            food_categories (
+              category_id
+            )
+          ''')
+          // NO brand_id filter - include both generic (null) and branded (not null)
+          .order('name', ascending: true);
+      
+      final List<dynamic> data = response as List<dynamic>;
+      return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
+    } catch (e) {
+      AppLogger.instance.error('Error fetching all foods including branded from Supabase',
+        context: 'FoodRepository',
+        error: e,
+      );
+      return [];
     }
   }
 
@@ -167,7 +235,7 @@ class FoodRepository {
           .select('''
             id,
             name,
-            icon_path,
+            image_address,
             description,
             instructions,
             nutritional_info,
@@ -202,7 +270,11 @@ class FoodRepository {
       final List<dynamic> data = response as List<dynamic>;
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
-      print('Error searching foods in Supabase: $e');
+      AppLogger.instance.error('Error searching foods in Supabase',
+        context: 'FoodRepository',
+        data: {'searchQuery': query},
+        error: e,
+      );
       return [];
     }
   }
@@ -261,10 +333,21 @@ class FoodRepository {
     final effectiveProtein = (json['protein_per_serving'] as num?)?.toDouble() ?? protein;
     final effectiveFat = (json['fat_per_serving'] as num?)?.toDouble() ?? fat;
 
+    // Debug logging
+    final imageAddress = json['image_address'] as String?;
+    AppLogger.instance.debug('Creating FoodItem from Supabase data',
+      context: 'FoodRepository',
+      data: {
+        'foodName': json['name'],
+        'imageAddress': imageAddress,
+        'brandId': json['brand_id'],
+      },
+    );
+    
     return FoodItem(
       id: _generateIdFromName(json['name'] as String),
       name: json['name'] as String,
-      iconPath: json['icon_path'] as String?,
+      imageAddress: imageAddress,
       description: json['description'] as String?,
       instructions: json['instructions'] as String?,
       categories: categories,

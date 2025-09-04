@@ -1,26 +1,27 @@
+// deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ---------------- CORS ----------------
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
+// ---------------- Types ----------------
 interface NutritionPlanRequest {
-  // User profile
   device_id: string;
   age: number;
   gender: string;
   weight_kg: number;
   height_cm: number;
   gut_training_level: string;
-  
-  // Run parameters
+
   distance_miles: number;
   pace_minutes_per_mile: number;
   time_before_run_hours: number;
-  
-  // Pre-calculated macros from adjust macros screen
+
   macro_targets: {
     pre_run: {
       carbs_g: number;
@@ -42,554 +43,509 @@ interface NutritionPlanRequest {
       sodium_mg: number;
     };
   };
-  
-  // Food preferences
+
   liked_foods: string[];
   willing_to_try_foods: string[];
   disliked_foods: string[];
-  
-  // Optional parameters
+
   sweat_rate?: string;
 }
 
-interface FoodItem {
+interface FoodRow {
   id: string;
   name: string;
-  phase_suitability: string[];
-  calories_per_serving: number;
-  carbs_per_serving: number;
-  protein_per_serving: number;
-  fat_per_serving: number;
-  sodium_mg?: number;
-  fluid_ml_per_serving?: number;
-  serving_unit: string;
-  serving_unit_plural?: string;
-  serving_qualifier?: string;
-  serving_amount: number;
-  max_servings_before?: number;
-  max_servings_during?: number;
-  max_servings_after?: number;
+  image_address: string | null;
+  calories_per_serving: number | null;
+  carbs_per_serving: number | null;
+  protein_per_serving: number | null;
+  fat_per_serving: number | null;
+  sodium_mg: number | null;
+  fluid_ml_per_serving: number | null;
+  serving_amount: number | null;
+  serving_unit: string | null;
+  serving_unit_plural: string | null;
+  serving_qualifier: string | null;
+  before_run_suitable: boolean | null;
+  during_run_suitable: boolean | null;
+  run_portable: boolean | null;
+  aid_station_available: boolean | null;
+  max_servings_before: number | null;
+  max_servings_during: number | null;
+  product_type: string | null;
+  brand_id: string | null;
+  purchase_url: string | null;
+  affiliate_source: string | null;
 }
 
-// Helper function to generate proper quantity display like the Flutter Food.generateQuantityDisplay() method
-function generateQuantityDisplay(food: FoodItem, customAmount?: number): string {
-  const amount = customAmount ?? food.serving_amount ?? 1.0;
-  const amountStr = amount === Math.floor(amount) ? Math.floor(amount).toString() : amount.toFixed(1);
-  
-  // Determine unit (singular vs plural)
-  const unit = amount > 1 && food.serving_unit_plural && food.serving_unit_plural.trim().length > 0
-    ? food.serving_unit_plural
-    : food.serving_unit ?? 'serving';
-  
-  // Build the complete description
+// ---------------- Config ----------------
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+type Mode = "generic" | "branded" | "any";
+const RECOMMENDATION_MODE: Mode = (Deno.env.get("RECOMMENDATION_MODE") ??
+  "generic") as Mode; // default keeps current behavior
+
+// ---------------- Helpers ----------------
+function generateQuantityDisplay(food: FoodRow, customAmount?: number): string {
+  const baseAmt = food.serving_amount ?? 1.0;
+  const amount = customAmount ?? baseAmt;
+  const amountStr =
+    amount === Math.floor(amount) ? Math.floor(amount).toString() : amount.toFixed(1);
+
+  const unit =
+    amount > 1 && food.serving_unit_plural?.trim()
+      ? food.serving_unit_plural
+      : food.serving_unit ?? "serving";
+
   const parts = [amountStr, unit];
-  
-  if (food.serving_qualifier && food.serving_qualifier.trim().length > 0) {
-    parts.push(food.serving_qualifier);
-  }
-  
-  parts.push(food.name.toLowerCase());
-  
-  return parts.join(' ');
+  if (food.serving_qualifier?.trim()) parts.push(food.serving_qualifier);
+  parts.push((food.name || "").toLowerCase());
+  return parts.join(" ");
 }
 
-// OpenAI API configuration
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+function safeArr<T = string>(v: T[] | undefined | null): T[] {
+  return Array.isArray(v) ? v : [];
+}
 
+function selectTop<T>(arr: T[], n: number): T[] {
+  return arr.slice(0, Math.max(0, n));
+}
+
+// Simple ranking for each phase (tunable but cheap)
+function rankBefore(a: FoodRow, b: FoodRow): number {
+  // prefer bars/waffles/gels with lower fat for before, then carbs
+  const ptScore = (f: FoodRow) =>
+    ["bar", "waffle", "gel", "drink_mix"].indexOf(f.product_type || "") >= 0 ? 1 : 0;
+  const fa = (a.fat_per_serving ?? 0);
+  const fb = (b.fat_per_serving ?? 0);
+  const c = (b.carbs_per_serving ?? 0) - (a.carbs_per_serving ?? 0);
+  const pf = ptScore(b) - ptScore(a);
+  return pf || (fa - fb) || c;
+}
+
+function rankDuring(a: FoodRow, b: FoodRow): number {
+  // prefer portable + aid station + classic during types, then carbs
+  const typeRank = (f: FoodRow) => {
+    const t = f.product_type || "";
+    if (["gel", "chew"].includes(t)) return 3;
+    if (["drink_mix", "sports_drink"].includes(t)) return 2;
+    if (["electrolyte_only", "capsule"].includes(t)) return 1;
+    return 0;
+  };
+  const portable = Number(!!b.run_portable) - Number(!!a.run_portable);
+  const aid = Number(!!b.aid_station_available) - Number(!!a.aid_station_available);
+  const tr = typeRank(b) - typeRank(a);
+  const carbs = (b.carbs_per_serving ?? 0) - (a.carbs_per_serving ?? 0);
+  return tr || aid || portable || carbs;
+}
+
+function rankAfter(a: FoodRow, b: FoodRow): number {
+  // prefer recovery_shake/bar with higher protein, then carbs
+  const typeRank = (f: FoodRow) =>
+    f.product_type === "recovery_shake" ? 2 : f.product_type === "bar" ? 1 : 0;
+  const tr = typeRank(b) - typeRank(a);
+  const protein = (b.protein_per_serving ?? 0) - (a.protein_per_serving ?? 0);
+  const carbs = (b.carbs_per_serving ?? 0) - (a.carbs_per_serving ?? 0);
+  return tr || protein || carbs;
+}
+
+function buildCandidate(f: FoodRow) {
+  return {
+    id: f.id,
+    name: f.name,
+    carbs: f.carbs_per_serving ?? 0,
+    sodium: f.sodium_mg ?? 0,
+    water: f.fluid_ml_per_serving ?? 0,
+    max:
+      (f.max_servings_during ?? f.max_servings_before ?? 5) > 0
+        ? (f.max_servings_during ?? f.max_servings_before ?? 5)
+        : 5,
+    unit: f.serving_unit ?? "serving",
+    amt: f.serving_amount ?? 1,
+    qual: f.serving_qualifier ?? "",
+  };
+}
+
+// ---------------- Server ----------------
 serve(async (req: Request) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  // CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Verify OpenAI API key is configured
     if (!OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY is not configured in edge function secrets');
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'AI service not configured. Please contact support.',
-        fallback_to_algorithm: true
-      }), {
-        status: 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      console.error("OPENAI_API_KEY is not configured in edge function secrets");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "AI service not configured. Please contact support.",
+          fallback_to_algorithm: true,
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    // Supabase
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
     const requestData: NutritionPlanRequest = await req.json();
-    
-    // Debug logging
-    console.log('🔍 DEBUG: Received request data:', {
-      distance_miles: requestData.distance_miles,
-      pace_minutes_per_mile: requestData.pace_minutes_per_mile,
-      device_id: requestData.device_id?.substring(0, 8) + '...',
-      pre_run_carbs: requestData.macro_targets?.pre_run?.carbs_g,
-      during_run_carbs: requestData.macro_targets?.during_run?.carbs_total_g,
-      post_run_carbs: requestData.macro_targets?.post_run?.carbs_g,
-    });
 
-    // Validate required fields
+    // Basic validation
     if (!requestData.device_id || !requestData.macro_targets) {
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Missing required fields: device_id and macro_targets are required'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Missing required fields: device_id and macro_targets are required",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const { pre_run, during_run, post_run } = requestData.macro_targets || {};
+    if (!pre_run || !during_run || !post_run) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message:
+            "Invalid macro_targets structure: pre_run, during_run, and post_run phases required",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    // Validate macro targets structure
-    if (!requestData.macro_targets.pre_run || !requestData.macro_targets.during_run || !requestData.macro_targets.post_run) {
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Invalid macro_targets structure: pre_run, during_run, and post_run phases required'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Fetch user preferences in categorized format
-    const { data: userPrefs, error: prefsError } = await supabaseClient
-      .from('user_food_preferences_categorized')
-      .select('*')
-      .eq('device_id', requestData.device_id)
+    // Pull user preferences (view)
+    const { data: userPrefs } = await supabase
+      .from("user_food_preferences_categorized")
+      .select("*")
+      .eq("device_id", requestData.device_id)
       .maybeSingle();
 
-    if (prefsError) {
-      console.error('Error fetching user preferences:', prefsError);
-      // Continue without preferences if query fails
-    }
+    const likedFoods = safeArr(userPrefs?.liked_foods) || safeArr(requestData.liked_foods);
+    const willingToTryFoods =
+      safeArr(userPrefs?.willing_to_try_foods) || safeArr(requestData.willing_to_try_foods);
+    const dislikedFoods = new Set(safeArr(requestData.disliked_foods));
 
-    // Extract preference arrays (fallback to request data if view query failed)
-    const likedFoods = userPrefs?.liked_foods || requestData.liked_foods;
-    const willingToTryFoods = userPrefs?.willing_to_try_foods || requestData.willing_to_try_foods;
-    
-    console.log('🔍 DEBUG: User preferences:', {
-      liked: likedFoods?.length || 0,
-      willingToTry: willingToTryFoods?.length || 0,
-      disliked: requestData.disliked_foods?.length || 0
-    });
-
-    // Fetch foods from the full foods table with all necessary fields for proper quantity display
-    const { data: allFoods, error: foodsError } = await supabaseClient
-      .from('foods')
+    // ---- Fetch foods with DB-side brand filter ----
+    let foodsQuery = supabase
+      .from("foods")
       .select(`
-        id,
-        name,
-        calories_per_serving,
-        carbs_per_serving,
-        protein_per_serving,
-        fat_per_serving,
-        sodium_mg,
-        fluid_ml_per_serving,
-        serving_amount,
-        serving_unit,
-        serving_unit_plural,
-        serving_qualifier,
-        before_run_suitable,
-        during_run_suitable,
-        run_portable,
-        aid_station_available,
-        max_servings_before,
-        max_servings_during
+        id, name, image_address,
+        calories_per_serving, carbs_per_serving, protein_per_serving, fat_per_serving,
+        sodium_mg, fluid_ml_per_serving,
+        serving_amount, serving_unit, serving_unit_plural, serving_qualifier,
+        before_run_suitable, during_run_suitable, run_portable, aid_station_available,
+        max_servings_before, max_servings_during,
+        product_type, brand_id
       `);
 
+    if (RECOMMENDATION_MODE === "generic") {
+      foodsQuery = foodsQuery.is("brand_id", null);
+    } else if (RECOMMENDATION_MODE === "branded") {
+      foodsQuery = foodsQuery.not("brand_id", "is", null);
+    } // 'any' => no brand filter
+
+    const { data: allFoods, error: foodsError } = await foodsQuery;
     if (foodsError || !allFoods) {
-      console.error('Error fetching foods:', foodsError);
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Failed to fetch food database'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      console.error("Error fetching foods:", foodsError);
+      return new Response(
+        JSON.stringify({ success: false, message: "Failed to fetch food database" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    // Categorize foods by phase suitability using direct database flags
-    console.log('🔍 DEBUG: Total foods fetched:', allFoods.length);
-    
-    const beforeFoods = allFoods.filter((f: any) => f.before_run_suitable);
-    const duringFoods = allFoods.filter((f: any) => f.during_run_suitable || f.run_portable);
-    // For after foods, include all foods that are suitable for recovery (most foods can be used after run)
-    const afterFoods = allFoods.filter((f: any) => 
-      // Include foods that have protein (good for recovery) or are not specifically limited to before/during only
-      (f.protein_per_serving && f.protein_per_serving > 0) || 
-      (!f.before_run_suitable && !f.during_run_suitable)
-    );
-    
-    console.log('🔍 DEBUG: Food categorization:', {
-      before: beforeFoods.length,
-      during: duringFoods.length,
-      after: afterFoods.length
-    });
+    // Remove disliked
+    const notDisliked = (f: FoodRow) => !dislikedFoods.has(f.name);
 
-    // Filter by user preferences using arrays from view
-    const preferredBeforeFoods = beforeFoods.filter((f: any) => 
-      likedFoods.includes(f.name) || willingToTryFoods.includes(f.name)
-    );
-    const preferredDuringFoods = duringFoods.filter((f: any) => 
-      likedFoods.includes(f.name) || willingToTryFoods.includes(f.name)
-    );
-    const preferredAfterFoods = afterFoods.filter((f: any) => 
-      likedFoods.includes(f.name) || willingToTryFoods.includes(f.name)
-    );
-    
-    console.log('🔍 DEBUG: Preferred foods:', {
-      before: preferredBeforeFoods.length,
-      during: preferredDuringFoods.length,
-      after: preferredAfterFoods.length
-    });
+    // Build phase pools (better signals)
+    const beforePool = (allFoods as FoodRow[])
+      .filter((f) => (f.before_run_suitable ?? false))
+      .filter(notDisliked)
+      .sort(rankBefore);
 
-    // Calculate run duration and caloric needs
-    const durationHours = (requestData.distance_miles * requestData.pace_minutes_per_mile) / 60;
-    const durationMinutes = requestData.distance_miles * requestData.pace_minutes_per_mile;
-    
-    console.log('🔍 DEBUG: Calculated duration:', {
-      distance: requestData.distance_miles,
-      pace: requestData.pace_minutes_per_mile,
-      durationHours: durationHours.toFixed(1),
-      durationMinutes: durationMinutes.toFixed(0)
-    });
+    const duringPool = (allFoods as FoodRow[])
+      .filter((f) => (f.during_run_suitable ?? false) || (f.run_portable ?? false))
+      .filter(notDisliked)
+      .sort(rankDuring);
 
-    // 🚨 CRITICAL DEBUG: Log the exact macro targets being sent to AI
-    console.log('🎯 DEBUG: MACRO TARGETS BEING SENT TO AI:', {
-      preRun: {
-        carbs: requestData.macro_targets.pre_run.carbs_g,
-        protein: requestData.macro_targets.pre_run.protein_g,
-        fat: requestData.macro_targets.pre_run.fat_g,
-        sodium: requestData.macro_targets.pre_run.sodium_mg,
-        water: requestData.macro_targets.pre_run.water_ml
+    const afterPool = (allFoods as FoodRow[])
+      .filter((f) => {
+        // Prefer explicit recovery types; otherwise protein >= 10 and not marked as before/during
+        const isRecoveryType =
+          f.product_type === "recovery_shake" || f.product_type === "bar";
+        const isProteinRich = (f.protein_per_serving ?? 0) >= 10;
+        const notBeforeOrDuring = !(f.before_run_suitable ?? false) && !(f.during_run_suitable ?? false);
+        return isRecoveryType || (isProteinRich && notBeforeOrDuring);
+      })
+      .filter(notDisliked)
+      .sort(rankAfter);
+
+    // Preference trim (fallback to pools if empty)
+    const likeSet = new Set(likedFoods);
+    const trySet = new Set(willingToTryFoods);
+
+    const prefer = (arr: FoodRow[]) => {
+      const picked = arr.filter((f) => likeSet.has(f.name) || trySet.has(f.name));
+      return picked.length ? picked : arr;
+    };
+
+    const beforeCandidates = selectTop(prefer(beforePool), 10).map(buildCandidate);
+    const duringCandidates = selectTop(prefer(duringPool), 12).map(buildCandidate);
+    const afterCandidates = selectTop(prefer(afterPool), 10).map(buildCandidate);
+
+    // Nothing to work with?
+    if (!beforeCandidates.length && !duringCandidates.length && !afterCandidates.length) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message:
+            "No eligible foods found for the selected mode and preferences. Try adjusting preferences or mode.",
+        }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Compute run duration (debug)
+    const durationHours =
+      (requestData.distance_miles * requestData.pace_minutes_per_mile) / 60;
+
+    // ---------------- Model Call (IDs in, same JSON shape out) ----------------
+    const systemPrompt =
+      `You are a sports dietitian. Build a long-run fueling plan that meets per-phase carb targets within ±10g.
+
+CRITICAL: You MUST calculate actual carbs by multiplying each food's carbs_per_serving by the servings you select.
+For example: If you select 2 servings of a food with 27g carbs, that contributes 54g total carbs.
+
+Before selecting foods:
+1. Calculate the total carbs for each phase by multiplying (food carbs × servings) for all selected items
+2. Verify your totals match the targets within ±10g
+3. Adjust servings if needed to hit targets
+
+Also consider sodium and water (during-run especially). Use 0..max servings per item.
+Return ONLY the requested JSON shape with IDs (we will map to names):`;
+
+    const userPayload = {
+      run: {
+        distance_miles: requestData.distance_miles,
+        pace_min_per_mile: requestData.pace_minutes_per_mile,
+        duration_hours: Number(durationHours.toFixed(2)),
       },
-      duringRun: {
-        carbs: requestData.macro_targets.during_run.carbs_total_g,
-        sodium: requestData.macro_targets.during_run.sodium_total_mg,
-        water: requestData.macro_targets.during_run.water_total_ml
+      targets: requestData.macro_targets,
+      candidates: {
+        before: beforeCandidates,
+        during: duringCandidates,
+        after: afterCandidates,
       },
-      postRun: {
-        carbs: requestData.macro_targets.post_run.carbs_g,
-        protein: requestData.macro_targets.post_run.protein_g,
-        fat: requestData.macro_targets.post_run.fat_g,
-        sodium: requestData.macro_targets.post_run.sodium_mg,
-        water: requestData.macro_targets.post_run.water_ml
+      output_contract: {
+        // Keep your existing contract for the final API response,
+        // but ask the model to use IDs internally so we can map safely.
+        detailed_message: "string",
+        solution: {
+          // Model should return [{ id, servings }] for each phase.
+          before: [{ id: "uuid", servings: "number" }],
+          during: [{ id: "uuid", servings: "number" }],
+          after: [{ id: "uuid", servings: "number" }],
+        },
+        carbs_check: {
+          before_total: "number",
+          during_total: "number",
+          after_total: "number",
+        },
       },
-      TOTAL_CARBS_EXPECTED: requestData.macro_targets.pre_run.carbs_g + requestData.macro_targets.during_run.carbs_total_g + requestData.macro_targets.post_run.carbs_g
-    });
+    };
 
-    const systemPrompt = `You are a sports dietitian creating a personalized nutrition plan for an endurance athlete's long run. Solve the constraint problem to hit the carbohydrate targets within ±10g for each phase.`;
+    // Optional: log trimmed
+    const promptLog = JSON.stringify(userPayload).slice(0, 1200);
+    console.log("📝 USER PAYLOAD (trimmed):", promptLog + (promptLog.length >= 1200 ? "…": ""));
 
-    const userPrompt = `Create a nutrition plan for a ${requestData.distance_miles} mile run at ${requestData.pace_minutes_per_mile} min/mile pace.
-
-BEFORE PHASE: Need ${requestData.macro_targets.pre_run.carbs_g}g carbs
-Available (name, carbs/serving):
-${preferredBeforeFoods.map((f: any) => `- ${f.name}, ${f.carbs_per_serving}g`).join('\n')}
-
-DURING PHASE: Need ${requestData.macro_targets.during_run.carbs_total_g}g carbs  
-Available (name, carbs/serving):
-${preferredDuringFoods.map((f: any) => `- ${f.name}, ${f.carbs_per_serving}g`).join('\n')}
-
-AFTER PHASE: Need ${requestData.macro_targets.post_run.carbs_g}g carbs
-Available (name, carbs/serving):
-${preferredAfterFoods.map((f: any) => `- ${f.name}, ${f.carbs_per_serving}g`).join('\n')}
-
-Return servings for each food that sum to the target ±10g. You may use 0-5 servings of any food. Return JSON with this structure:
-
-{
-  "detailed_message": "2 paragraphs explaining your food selections for this ${requestData.distance_miles} mile run. Mention the specific carb targets (Before: ${requestData.macro_targets.pre_run.carbs_g}g, During: ${requestData.macro_targets.during_run.carbs_total_g}g, After: ${requestData.macro_targets.post_run.carbs_g}g) and how your selections meet them.",
-  "solution": {
-    "before": [
-      {
-        "food_name": "exact name from list",
-        "servings": number (0-5+)
-      }
-    ],
-    "during": [
-      {
-        "food_name": "exact name from list",
-        "servings": number (0-5+)
-      }
-    ],
-    "after": [
-      {
-        "food_name": "exact name from list", 
-        "servings": number (0-5+)
-      }
-    ]
-  },
-  "carbs_check": {
-    "before_total": "sum of before phase carbs",
-    "during_total": "sum of during phase carbs",
-    "after_total": "sum of after phase carbs"
-  }
-}`;
-
-    // 🚨 DEBUG: Log the exact prompt being sent to AI
-    console.log('📝 PROMPT BEING SENT TO AI (first 1000 chars):', userPrompt.substring(0, 1000) + '...');
-    console.log('📝 SYSTEM PROMPT:', systemPrompt);
-
-    // Call OpenAI API
     const openAIResponse = await fetch(OPENAI_API_URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: "gpt-4o-mini",
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: JSON.stringify(userPayload) },
         ],
-        temperature: 0.0, // Zero temperature for maximum determinism
+        temperature: 0.0,
         max_completion_tokens: 2000,
-        response_format: { type: "json_object" }
-      })
+        response_format: { type: "json_object" },
+      }),
     });
 
     if (!openAIResponse.ok) {
       const errorText = await openAIResponse.text();
-      console.error('OpenAI API error:', errorText);
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Failed to generate nutrition plan from AI'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      console.error("OpenAI API error:", errorText);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Failed to generate nutrition plan from AI",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    const aiResponse = await openAIResponse.json();
-    console.log('🔍 DEBUG: AI response received successfully');
-    
-    let aiSolution = JSON.parse(aiResponse.choices[0].message.content);
-    console.log('🔍 DEBUG: AI solution parsed:', {
-      beforeItems: aiSolution.solution?.before?.length || 0,
-      duringItems: aiSolution.solution?.during?.length || 0,
-      afterItems: aiSolution.solution?.after?.length || 0
+    const aiJson = await openAIResponse.json();
+    console.log("🔍 DEBUG: AI response received");
+    console.log("🔍 DEBUG: Raw AI response content:", aiJson.choices[0].message.content);
+
+    // The model returns JSON as a string in message.content
+    let aiSolution: any;
+    try {
+      aiSolution = JSON.parse(aiJson.choices[0].message.content);
+      console.log("🔍 DEBUG: Parsed AI solution:", JSON.stringify(aiSolution));
+    } catch (_e) {
+      console.error("❌ Failed to parse AI content. Content:", aiJson.choices[0].message.content);
+      return new Response(
+        JSON.stringify({ success: false, message: "Invalid AI response" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Build maps for lookup
+    const foodById = new Map<string, FoodRow>((allFoods as FoodRow[]).map((f) => [f.id, f]));
+    const foodByName = new Map<string, FoodRow>((allFoods as FoodRow[]).map((f) => [f.name, f]));
+    console.log("🔍 DEBUG: Built food maps - foodById:", foodById.size, "foodByName:", foodByName.size);
+
+    // Supports either {id, servings} or {food_name, servings} (back-compat)
+    function normalizePhaseItems(items: any[]): { id: string; servings: number }[] {
+      console.log("🔍 DEBUG: Normalizing phase items:", JSON.stringify(items));
+      const result = (items || [])
+        .map((it) => {
+          if (it?.id) {
+            console.log("🔍 DEBUG: Found ID-based item:", it.id, "servings:", it.servings);
+            return { id: String(it.id), servings: Number(it.servings || 0) };
+          }
+          if (it?.food_name) {
+            console.log("🔍 DEBUG: Found name-based item:", it.food_name, "servings:", it.servings);
+            const f = foodByName.get(String(it.food_name));
+            if (f) {
+              console.log("🔍 DEBUG: Mapped name to ID:", it.food_name, "->", f.id);
+              return { id: f.id, servings: Number(it.servings || 0) };
+            } else {
+              console.log("❌ DEBUG: Could not find food by name:", it.food_name);
+            }
+          }
+          console.log("❌ DEBUG: Could not normalize item:", JSON.stringify(it));
+          return null;
+        })
+        .filter(Boolean) as { id: string; servings: number }[];
+      console.log("🔍 DEBUG: Normalized result:", JSON.stringify(result));
+      return result;
+    }
+
+    const sol = aiSolution?.solution || {};
+    console.log("🔍 DEBUG: AI solution object:", JSON.stringify(sol));
+    const phaseIds = {
+      before: normalizePhaseItems(sol.before),
+      during: normalizePhaseItems(sol.during),
+      after: normalizePhaseItems(sol.after),
+    };
+    console.log("🔍 DEBUG: Phase IDs after normalization:", JSON.stringify(phaseIds));
+
+    function convertSolutionToNutritionPlan(phase: "before" | "during" | "after", items: { id: string; servings: number }[]) {
+      console.log(`🔍 DEBUG: Converting ${phase} phase with items:`, JSON.stringify(items));
+      const defaultTiming =
+        phase === "before" ? "2-3 hours before" : phase === "during" ? "Throughout run" : "Within 30 minutes";
+      const result = items
+        .filter((it) => {
+          const hasServings = it.servings > 0;
+          console.log(`🔍 DEBUG: ${phase} item ${it.id} has servings > 0:`, hasServings);
+          return hasServings;
+        })
+        .map((it) => {
+          const f = foodById.get(it.id);
+          console.log(`🔍 DEBUG: Looking up food by ID ${it.id}:`, f ? f.name : 'NOT FOUND');
+          if (!f) {
+            console.log(`❌ DEBUG: Food not found for ID: ${it.id}`);
+            return null;
+          }
+          const servings = it.servings;
+          const customAmount = servings * (f.serving_amount ?? 1);
+          const planItem = {
+            food_name: f.name, // <-- preserve contract
+            description: generateQuantityDisplay(f, customAmount),
+            image_address: f.image_address, // Include the online image URL
+            timing: defaultTiming,
+            servings,
+            carbs_grams: (f.carbs_per_serving ?? 0) * servings,
+            calories: (f.calories_per_serving ?? 0) * servings,
+            protein_grams: (f.protein_per_serving ?? 0) * servings,
+            fat_grams: (f.fat_per_serving ?? 0) * servings,
+            sodium_mg: (f.sodium_mg ?? 0) * servings,
+            fluids_ml: (f.fluid_ml_per_serving ?? 0) * servings,
+          };
+          console.log(`🔍 DEBUG: Created plan item for ${f.name}:`, JSON.stringify(planItem));
+          return planItem;
+        })
+        .filter(Boolean) as any[];
+      console.log(`🔍 DEBUG: Final ${phase} plan:`, JSON.stringify(result));
+      return result;
+    }
+
+    const planBefore = convertSolutionToNutritionPlan("before", phaseIds.before);
+    console.log("🔍 DEBUG: planBefore completed");
+    const planDuring = convertSolutionToNutritionPlan("during", phaseIds.during);
+    console.log("🔍 DEBUG: planDuring completed");
+    const planAfter = convertSolutionToNutritionPlan("after", phaseIds.after);
+    console.log("🔍 DEBUG: planAfter completed");
+
+    // Backend totals
+    const sum = (arr: any[], key: string) =>
+      arr.reduce((s, it) => s + (Number(it[key]) || 0), 0);
+
+    const aiBeforeCarbs = sum(planBefore, "carbs_grams");
+    const aiDuringCarbs = sum(planDuring, "carbs_grams");
+    const aiAfterCarbs = sum(planAfter, "carbs_grams");
+
+    console.log("🚨 MACROS CHECK:", {
+      AI_BEFORE_CARBS: aiBeforeCarbs,
+      AI_DURING_CARBS: aiDuringCarbs,
+      AI_AFTER_CARBS: aiAfterCarbs,
+      EXPECTED_BEFORE: pre_run.carbs_g,
+      EXPECTED_DURING: during_run.carbs_total_g,
+      EXPECTED_AFTER: post_run.carbs_g,
     });
 
-    // Create a lookup map for food objects
-    const foodLookup = new Map<string, any>(allFoods.map((food: any) => [food.name, food]));
-
-    // Convert AI's simple solution to full nutrition plan with backend calculations
-    const convertSolutionToNutritionPlan = (phase: string, items: any[]) => {
-      // Default timing based on phase
-      const defaultTiming = phase === 'before' ? '2-3 hours before' : 
-                           phase === 'during' ? 'Throughout run' : 
-                           'Within 30 minutes';
-      
-      return items.filter((item: any) => item.servings > 0).map((item: any) => {
-        const food = foodLookup.get(item.food_name) as FoodItem | undefined;
-        if (!food) {
-          console.error(`❌ Food not found: ${item.food_name}`);
-          return null;
-        }
-        
-        const servings = item.servings || 1;
-        const customAmount = servings * (food.serving_amount || 1);
-        
-        return {
-          food_name: item.food_name,
-          description: generateQuantityDisplay(food, customAmount), // Generate proper display
-          timing: defaultTiming, // Add timing for frontend
-          servings: servings,
-          carbs_grams: (food.carbs_per_serving || 0) * servings,
-          calories: (food.calories_per_serving || 0) * servings,
-          protein_grams: (food.protein_per_serving || 0) * servings,
-          fat_grams: (food.fat_per_serving || 0) * servings,
-          sodium_mg: (food.sodium_mg || 0) * servings,
-          fluids_ml: (food.fluid_ml_per_serving || 0) * servings
-        };
-      }).filter(item => item !== null);
-    };
-
-    // Build full nutrition plan from AI's solution
-    let nutritionPlan = {
+    // Build final response (UNCHANGED SHAPE)
+    console.log("🔍 DEBUG: Building final response...");
+    const planId = `ai-plan-${Date.now()}-${requestData.device_id.slice(-6)}`;
+    console.log("🔍 DEBUG: Plan ID generated:", planId);
+    
+    const nutritionPlan = {
       detailed_message: aiSolution.detailed_message,
       plan: {
-        before: convertSolutionToNutritionPlan('before', aiSolution.solution.before),
-        during: convertSolutionToNutritionPlan('during', aiSolution.solution.during),
-        after: convertSolutionToNutritionPlan('after', aiSolution.solution.after)
-      }
+        before: planBefore,
+        during: planDuring,
+        after: planAfter,
+      },
     };
+    console.log("🔍 DEBUG: Nutrition plan object created:", JSON.stringify(nutritionPlan));
 
-    // Calculate actual carbs achieved with backend calculations
-    const aiBeforeCarbs = nutritionPlan.plan.before.reduce((sum: any, item: any) => sum + (item.carbs_grams || 0), 0);
-    const aiDuringCarbs = nutritionPlan.plan.during.reduce((sum: any, item: any) => sum + (item.carbs_grams || 0), 0);
-    const aiAfterCarbs = nutritionPlan.plan.after.reduce((sum: any, item: any) => sum + (item.carbs_grams || 0), 0);
-    
-    console.log('🚨 CRITICAL: AI RETURNED MACRO VALUES:', {
-      AI_BEFORE_CARBS: aiBeforeCarbs,
-      AI_DURING_CARBS: aiDuringCarbs, 
-      AI_AFTER_CARBS: aiAfterCarbs,
-      AI_TOTAL_CARBS: aiBeforeCarbs + aiDuringCarbs + aiAfterCarbs,
-      EXPECTED_BEFORE: requestData.macro_targets.pre_run.carbs_g,
-      EXPECTED_DURING: requestData.macro_targets.during_run.carbs_total_g,
-      EXPECTED_AFTER: requestData.macro_targets.post_run.carbs_g,
-      EXPECTED_TOTAL: requestData.macro_targets.pre_run.carbs_g + requestData.macro_targets.during_run.carbs_total_g + requestData.macro_targets.post_run.carbs_g
+    // Save (best effort)
+    console.log("🔍 DEBUG: Attempting to save plan to database...");
+    const { error: saveError } = await supabase.from("nutrition_plans").insert({
+      device_id: requestData.device_id,
+      plan_id: planId,
+      plan_name: "AI-Generated Nutrition Plan",
+      plan_data: JSON.stringify(nutritionPlan),
+      distance_miles: requestData.distance_miles,
+      pace_minutes_per_mile: requestData.pace_minutes_per_mile,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     });
-
-    // Log macro target comparison for debugging (but don't reject)
-    const expectedTotal = requestData.macro_targets.pre_run.carbs_g + requestData.macro_targets.during_run.carbs_total_g + requestData.macro_targets.post_run.carbs_g;
-    const aiTotal = aiBeforeCarbs + aiDuringCarbs + aiAfterCarbs;
-    const tolerance = 0.15; // 15% tolerance
-    const minAcceptable = expectedTotal * (1 - tolerance);
-    const maxAcceptable = expectedTotal * (1 + tolerance);
-    
-    if (aiTotal < minAcceptable || aiTotal > maxAcceptable) {
-      console.warn(`⚠️  AI missed macro targets: Expected ${expectedTotal}g, Got ${aiTotal}g (acceptable range: ${minAcceptable.toFixed(0)}-${maxAcceptable.toFixed(0)}g)`);
-    } else {
-      console.log(`✅ AI hit macro targets within tolerance: ${aiTotal}g vs ${expectedTotal}g expected`);
-    }
-
-    // Validate that all food names exist in our database
-    const allPlanFoodNames = [
-      ...nutritionPlan.plan.before.map((f: any) => f.food_name),
-      ...nutritionPlan.plan.during.map((f: any) => f.food_name),
-      ...nutritionPlan.plan.after.map((f: any) => f.food_name)
-    ];
-    
-    const validFoodNames = allFoods.map((f: any) => f.name);
-    const invalidNames = allPlanFoodNames.filter((name: any) => !validFoodNames.includes(name));
-    
-    if (invalidNames.length > 0) {
-      console.error('🚨 Invalid food names in AI response:', invalidNames);
-      console.error('🚨 Valid food names available:', validFoodNames.slice(0, 10));
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'AI generated invalid food selections',
-        fallback_to_algorithm: true,
-        debug_invalid_names: invalidNames
-      }), {
-        status: 422,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Helper function to parse AI quantity from description and calculate serving multiplier
-    function parseQuantityFromAIDescription(description: string, foodName: string): { multiplier: number, properDescription: string } {
-      const food = foodLookup.get(foodName) as FoodItem | undefined;
-      if (!food) {
-        return { multiplier: 1, properDescription: description };
-      }
-
-      // Parse the numeric amount from the description (now should be just a number like "2" or "1.5")
-      const trimmedDescription = description.trim();
-      const aiAmount = parseFloat(trimmedDescription);
-      
-      if (!isNaN(aiAmount) && aiAmount > 0) {
-        const baseAmount = food.serving_amount || 1;
-        const multiplier = aiAmount / baseAmount;
-        const properDescription = generateQuantityDisplay(food, aiAmount);
-        return { multiplier, properDescription };
-      }
-
-      // Fallback to base serving if parsing fails
-      return { 
-        multiplier: 1, 
-        properDescription: generateQuantityDisplay(food) 
-      };
-    }
-
-    // Update all food items in the plan with proper quantity displays ONLY
-    // The AI provides the correct macro amounts - we must NOT recalculate them!
-    nutritionPlan.plan.before = nutritionPlan.plan.before.map((item: any) => {
-      const { properDescription } = parseQuantityFromAIDescription(item.description, item.food_name);
-      
-      // Calculate fluids based on database values for display purposes
-      const food = foodLookup.get(item.food_name) as FoodItem | undefined;
-      const aiAmount = parseFloat(item.description.trim()) || 1;
-      let calculatedFluids = 0;
-      
-      if (food?.fluid_ml_per_serving && food.fluid_ml_per_serving > 0) {
-        const baseAmount = food.serving_amount || 1;
-        const multiplier = aiAmount / baseAmount;
-        calculatedFluids = Math.round((food.fluid_ml_per_serving || 0) * multiplier);
-        console.log(`🥤 DEBUG: ${item.food_name} - Base: ${food.fluid_ml_per_serving}ml, Amount: ${aiAmount}, Final: ${calculatedFluids}ml`);
-      }
-      
-      return {
-        ...item,
-        description: properDescription,
-        // Only override fluids - keep AI's macro calculations
-        fluids_ml: calculatedFluids
-      };
-    });
-
-    nutritionPlan.plan.during = nutritionPlan.plan.during.map((item: any) => {
-      const { properDescription } = parseQuantityFromAIDescription(item.description, item.food_name);
-      
-      // Calculate fluids based on database values for display purposes
-      const food = foodLookup.get(item.food_name) as FoodItem | undefined;
-      const aiAmount = parseFloat(item.description.trim()) || 1;
-      let calculatedFluids = 0;
-      
-      if (food?.fluid_ml_per_serving && food.fluid_ml_per_serving > 0) {
-        const baseAmount = food.serving_amount || 1;
-        const multiplier = aiAmount / baseAmount;
-        calculatedFluids = Math.round((food.fluid_ml_per_serving || 0) * multiplier);
-      }
-      
-      return {
-        ...item,
-        description: properDescription,
-        // Only override fluids - keep AI's macro calculations
-        fluids_ml: calculatedFluids
-      };
-    });
-
-    nutritionPlan.plan.after = nutritionPlan.plan.after.map((item: any) => {
-      const { properDescription } = parseQuantityFromAIDescription(item.description, item.food_name);
-      
-      // Calculate fluids based on database values for display purposes
-      const food = foodLookup.get(item.food_name) as FoodItem | undefined;
-      const aiAmount = parseFloat(item.description.trim()) || 1;
-      let calculatedFluids = 0;
-      
-      if (food?.fluid_ml_per_serving && food.fluid_ml_per_serving > 0) {
-        const baseAmount = food.serving_amount || 1;
-        const multiplier = aiAmount / baseAmount;
-        calculatedFluids = Math.round((food.fluid_ml_per_serving || 0) * multiplier);
-      }
-      
-      return {
-        ...item,
-        description: properDescription,
-        // Only override fluids - keep AI's macro calculations
-        fluids_ml: calculatedFluids
-      };
-    });
-
-    // Save the plan to Supabase (let database generate UUID)
-    const planId = `ai-plan-${Date.now()}-${requestData.device_id.slice(-6)}`;
-    
-    const { error: saveError } = await supabaseClient
-      .from('nutrition_plans')
-      .insert({
-        // Don't provide id - let database generate it
-        device_id: requestData.device_id,
-        plan_id: planId, // Use plan_id for our custom identifier
-        plan_name: 'AI-Generated Nutrition Plan',
-        plan_data: JSON.stringify(nutritionPlan),
-        distance_miles: requestData.distance_miles,
-        pace_minutes_per_mile: requestData.pace_minutes_per_mile,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
     if (saveError) {
-      console.error('Error saving plan to Supabase:', saveError);
-      // Don't fail the request, just log the error
+      console.error("❌ Error saving plan:", saveError);
+    } else {
+      console.log("✅ DEBUG: Plan saved successfully");
     }
 
-    // Return the successful response with correct macro_targets structure
+    // Return EXACT same contract your frontend expects
+    console.log("🔍 DEBUG: Building final response object...");
     const response = {
       success: true,
       plan_id: planId,
@@ -597,44 +553,43 @@ Return servings for each food that sum to the target ±10g. You may use 0-5 serv
       plan: nutritionPlan.plan,
       macro_targets: {
         pre_run: {
-          carbs_g: requestData.macro_targets.pre_run.carbs_g,
-          protein_g: requestData.macro_targets.pre_run.protein_g,
-          fat_g: requestData.macro_targets.pre_run.fat_g,
-          water_ml: requestData.macro_targets.pre_run.water_ml,
-          sodium_mg: requestData.macro_targets.pre_run.sodium_mg,
+          carbs_g: pre_run.carbs_g,
+          protein_g: pre_run.protein_g,
+          fat_g: pre_run.fat_g,
+          water_ml: pre_run.water_ml,
+          sodium_mg: pre_run.sodium_mg,
         },
         during_run: {
-          carbs_total_g: requestData.macro_targets.during_run.carbs_total_g,
-          sodium_total_mg: requestData.macro_targets.during_run.sodium_total_mg,
-          water_total_ml: requestData.macro_targets.during_run.water_total_ml,
+          carbs_total_g: during_run.carbs_total_g,
+          sodium_total_mg: during_run.sodium_total_mg,
+          water_total_ml: during_run.water_total_ml,
         },
         post_run: {
-          carbs_g: requestData.macro_targets.post_run.carbs_g,
-          protein_g: requestData.macro_targets.post_run.protein_g,
-          fat_g: requestData.macro_targets.post_run.fat_g,
-          water_ml: requestData.macro_targets.post_run.water_ml,
-          sodium_mg: requestData.macro_targets.post_run.sodium_mg,
+          carbs_g: post_run.carbs_g,
+          protein_g: post_run.protein_g,
+          fat_g: post_run.fat_g,
+          water_ml: post_run.water_ml,
+          sodium_mg: post_run.sodium_mg,
         },
-      }
+      },
     };
+    console.log("🔍 DEBUG: Final response object:", JSON.stringify(response));
 
+    console.log("🔍 DEBUG: Sending response...");
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
-  } catch (error) {
-    console.error('🚨 UNEXPECTED ERROR in generate-ai-nutrition-plan:', error);
-    console.error('🚨 ERROR STACK:', error.stack);
-    console.error('🚨 ERROR MESSAGE:', error.message);
-    return new Response(JSON.stringify({
-      success: false,
-      message: `Internal server error: ${error.message}`,
-      fallback_to_algorithm: true,
-      debug_error: error.toString()
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+  } catch (error: any) {
+    console.error("🚨 UNEXPECTED ERROR:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: `Internal server error: ${error?.message ?? "unknown"}`,
+        fallback_to_algorithm: true,
+        debug_error: String(error),
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });

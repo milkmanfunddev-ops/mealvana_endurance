@@ -34,7 +34,7 @@ serve(async (req) => {
       categoryId = 3 // Assuming 3 is after_run category
     }
 
-    // Build the query
+    // Build the query - get all foods (both generic and branded)
     let query = supabaseClient
       .from('foods')
       .select(`
@@ -59,7 +59,7 @@ serve(async (req) => {
     const formattedFoods = foods?.map(food => ({
       id: food.id,
       name: food.name,
-      icon_path: food.icon_path,
+      image_address: food.image_address,
       description: food.description,
       instructions: food.instructions,
       carbs_per_serving: food.carbs_per_serving || 0,
@@ -81,7 +81,11 @@ serve(async (req) => {
       max_servings_before: food.max_servings_before,
       max_servings_during: food.max_servings_during,
       caffeine_mg: food.caffeine_mg,
-      potassium_mg: food.potassium_mg
+      potassium_mg: food.potassium_mg,
+      brand_id: food.brand_id,
+      product_type: food.product_type,
+      purchase_url: food.purchase_url,
+      affiliate_source: food.affiliate_source
     })) || []
 
     return new Response(

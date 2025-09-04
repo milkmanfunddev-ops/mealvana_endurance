@@ -119,7 +119,7 @@ CREATE POLICY "Users can update own data" ON public.users
 CREATE TABLE public.foods (
     id                    UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     name                  TEXT NOT NULL,
-    icon_path             TEXT,
+    image_address         TEXT,
     description           TEXT,
     instructions          TEXT,
     nutritional_info      JSONB DEFAULT '{}',

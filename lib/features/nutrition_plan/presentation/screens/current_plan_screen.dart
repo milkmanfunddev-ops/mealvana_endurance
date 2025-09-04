@@ -59,7 +59,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
     try {
       final feedbackNotifier = ref.read(feedbackSubmissionProvider.notifier);
       final success = await feedbackNotifier.submitFeedback(feedback);
-      
+
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -75,7 +75,9 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('❌ Failed to submit feedback. Please try again.'),
+              content: const Text(
+                '❌ Failed to submit feedback. Please try again.',
+              ),
               backgroundColor: AppTheme.highlight600,
               duration: const Duration(seconds: 4),
             ),
@@ -99,14 +101,14 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
   Widget build(BuildContext context) {
     final planState = ref.watch(nutritionPlanControllerProvider);
     final feedbackState = ref.watch(feedbackSubmissionProvider);
-    
+
     // Check if we should show the back button
     // Show back button when accessed from adjust macros ('/current-plan')
     // Hide back button when accessed from main tabs ('/plan')
     final currentRoute = GoRouterState.of(context).uri.toString();
-    final shouldShowBackButton = Navigator.of(context).canPop() && 
-        currentRoute != '/plan';
-    
+    final shouldShowBackButton =
+        Navigator.of(context).canPop() && currentRoute != '/plan';
+
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       appBar: AppBar(
@@ -137,7 +139,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
           SizedBox(width: 8.w), // Small padding from edge
         ],
       ),
-      
+
       body: Stack(
         children: [
           // Main content
@@ -148,12 +150,10 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
               }
               return _buildPlanContent(plan, feedbackState);
             },
-            loading: () => const Center(
-              child: CircularProgressIndicator(),
-            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _buildErrorState(error.toString()),
           ),
-          
+
           // Feedback Drawer Overlay
           if (_showFeedback)
             FeedbackDrawer(
@@ -170,11 +170,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
           context.push('/distancepacegut');
         },
         backgroundColor: AppTheme.primary900,
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 24.sp,
-        ),
+        child: Icon(Icons.add, color: Colors.white, size: 24.sp),
       ),
     );
   }
@@ -193,33 +189,83 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
               width: double.infinity,
             ),
           ),
-          
+
           SizedBox(height: 24.h),
-          
+
+          // Workout Reference Section
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: FutureBuilder<targets_model.MacroTargets?>(
+              future: ref
+                  .read(nutritionPlanControllerProvider.notifier)
+                  .getCachedMacroTargets(),
+              builder: (context, targetSnapshot) {
+                if (targetSnapshot.hasData && targetSnapshot.data != null) {
+                  final targets = targetSnapshot.data!;
+                  return Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.fromLTRB(8.w, 0.h, 16.w, 12.h),
+                    // margin: EdgeInsets.only(bottom: 16.h),
+                    // decoration: BoxDecoration(
+                    //   color: AppTheme.primary50.withValues(alpha: 0.6),
+                    //   borderRadius: BorderRadius.circular(12.r),
+                    //   border: Border.all(color: AppTheme.primary600, width: 1),
+                    // ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.directions_run,
+                              color: AppTheme.primary600,
+                              size: 20.sp,
+                            ),
+                            SizedBox(width: 16.w),
+                            Expanded(
+                              child: Text(
+                                '${targets.metrics.distanceMi.toStringAsFixed(1)} miles at ${targets.metrics.formattedPace} pace',
+                                style: AppTheme.textStyle.copyWith(
+                                  color: AppTheme.primary900,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+
           // Macro Targets with completion bars
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: FutureBuilder<targets_model.MacroTargets?>(
-              future: ref.read(nutritionPlanControllerProvider.notifier).getCachedMacroTargets(),
+              future: ref
+                  .read(nutritionPlanControllerProvider.notifier)
+                  .getCachedMacroTargets(),
               builder: (context, snapshot) {
-                return MacroTargetsWidget(
-                  plan: plan,
-                  targets: snapshot.data,
-                );
+                return MacroTargetsWidget(plan: plan, targets: snapshot.data);
               },
             ),
           ),
-          
+
           SizedBox(height: 24.h),
-          
+
           // LLM Message blocks (if available)
-          if (plan.notes != null && plan.notes!.isNotEmpty) ...[
-            ..._buildDietitianMessages(plan.notes!),
-            SizedBox(height: 24.h),
-          ],
-          
+          // if (plan.notes != null && plan.notes!.isNotEmpty) ...[
+          //   ..._buildDietitianMessages(plan.notes!),
+          //   SizedBox(height: 24.h),
+          // ],
+
           // Plan content (no longer in separate scroll view)
-                // Plan Container with nutrition plan
+          // Plan Container with nutrition plan
           PlanContainer(
             plan: plan,
             onFoodItemTap: (foodItemId) {
@@ -228,11 +274,14 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
             },
             onSwapFood: (foodItemId, foodName, category) {
               // Navigate to swap screen
-              context.push('/swap-food', extra: {
-                'foodToSwapId': foodItemId,
-                'foodToSwapName': foodName,
-                'category': category,
-              });
+              context.push(
+                '/swap-food',
+                extra: {
+                  'foodToSwapId': foodItemId,
+                  'foodToSwapName': foodName,
+                  'category': category,
+                },
+              );
             },
             onDeleteFood: (foodItemId, category) async {
               // Show confirmation dialog
@@ -240,7 +289,9 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
                 context: context,
                 builder: (context) => AlertDialog(
                   title: Text('Delete Food Item'),
-                  content: Text('Are you sure you want to remove this item from your plan?'),
+                  content: Text(
+                    'Are you sure you want to remove this item from your plan?',
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
@@ -248,25 +299,33 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
                     ),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(true),
-                      child: Text('Delete', style: TextStyle(color: AppTheme.highlight600)),
+                      child: Text(
+                        'Delete',
+                        style: TextStyle(color: AppTheme.highlight600),
+                      ),
                     ),
                   ],
                 ),
               );
-              
+
               if (confirm == true) {
-                await ref.read(nutritionPlanControllerProvider.notifier).deleteFoodItem(
-                  foodItemId,
-                  category,
-                );
+                await ref
+                    .read(nutritionPlanControllerProvider.notifier)
+                    .deleteFoodItem(foodItemId, category);
               }
             },
+            onUpdateQuantity: (foodItemId, category, newQuantity) async {
+              // Update the quantity of the food item
+              await ref
+                  .read(nutritionPlanControllerProvider.notifier)
+                  .updateFoodQuantity(foodItemId, category, newQuantity);
+            },
           ),
-          
+
           SizedBox(height: 16.h),
-          
+
           SizedBox(height: 32.h),
-          
+
           // Save Button - only show if not yet saved
           if (!feedbackState.lastSubmissionSuccess)
             Padding(
@@ -279,9 +338,9 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
                 width: double.infinity,
               ),
             ),
-          
+
           SizedBox(height: 16.h),
-          
+
           SizedBox(height: 40.h),
         ],
       ),
@@ -359,11 +418,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64.sp,
-            color: AppTheme.highlight600,
-          ),
+          Icon(Icons.error_outline, size: 64.sp, color: AppTheme.highlight600),
           SizedBox(height: 16.h),
           Text(
             'Error loading plan',
@@ -394,7 +449,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
   List<Widget> _buildDietitianMessages(String notes) {
     // Now we only have the detailed message (no more overview)
     final detailedMessage = notes.trim();
-    
+
     return [
       // Only detailed message (expandable)
       if (detailedMessage.isNotEmpty)
@@ -469,7 +524,9 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
                             Text(
                               subtitle,
                               style: AppTheme.noteStyle.copyWith(
-                                color: AppTheme.primary900.withValues(alpha: 0.8),
+                                color: AppTheme.primary900.withValues(
+                                  alpha: 0.8,
+                                ),
                                 fontSize: 12.sp,
                               ),
                             ),
@@ -625,7 +682,7 @@ class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
                 ),
               ),
             ),
-            
+
             // Expandable detailed content
             SizeTransition(
               sizeFactor: _expandAnimation,
@@ -644,7 +701,8 @@ class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
                         margin: EdgeInsets.only(bottom: 16.h),
                       ),
                       ...widget.message.split('\n\n').map((paragraph) {
-                        if (paragraph.trim().isEmpty) return const SizedBox.shrink();
+                        if (paragraph.trim().isEmpty)
+                          return const SizedBox.shrink();
                         return Padding(
                           padding: EdgeInsets.only(bottom: 12.h),
                           child: Text(

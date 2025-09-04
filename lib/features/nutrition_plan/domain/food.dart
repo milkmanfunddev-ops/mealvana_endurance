@@ -1,7 +1,7 @@
 class Food {
   final String id;
   final String name;
-  final String? iconPath;
+  final String? imageAddress;
   final String? description;
   final String? instructions;
   final double? servingAmount;
@@ -28,7 +28,7 @@ class Food {
   const Food({
     required this.id,
     required this.name,
-    this.iconPath,
+    this.imageAddress,
     this.description,
     this.instructions,
     this.servingAmount,
@@ -57,7 +57,7 @@ class Food {
     return Food(
       id: json['id'] as String,
       name: json['name'] as String,
-      iconPath: json['icon_path'] as String?,
+      imageAddress: json['image_address'] as String?,
       description: json['description'] as String?,
       instructions: json['instructions'] as String?,
       servingAmount: (json['serving_amount'] as num?)?.toDouble(),
@@ -112,7 +112,7 @@ class Food {
     return {
       'id': id,
       'name': name,
-      'icon_path': iconPath,
+      'image_address': imageAddress,
       'description': description,
       'instructions': instructions,
       'serving_amount': servingAmount,

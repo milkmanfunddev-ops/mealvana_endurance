@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'shared/services/logging_service.dart';
 import 'shared/widgets/root_app_widget.dart';
 
 Future<void> main() async {
@@ -90,6 +92,12 @@ Future<void> main() async {
 /// App runner function called after Sentry initialization
 Future<void> _runMealvanaApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize logging service
+  LoggingService().initialize(
+    logLevel: kDebugMode ? Level.debug : Level.info,
+    enableFileOutput: false,
+  );
   
   // Initialize Supabase (non-recoverable initialization)
   await Supabase.initialize(

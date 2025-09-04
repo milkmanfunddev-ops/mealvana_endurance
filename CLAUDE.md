@@ -190,7 +190,7 @@ Offline-first architecture using Drift (SQLite):
 - **Migration Testing**: Auto-generated test cases for all schema changes
 - **Rollback Support**: Safe rollback mechanisms for failed migrations
 
-📚 **Full Documentation**: [/docs/database/README.md](/docs/database/README.md)
+📚 **Full Documentation**: [/docs/database/README.md](/docs/database/README.md) and [/docs/database/schema-overview.md](/docs/database/schema-overview.md)
 
 ## Development Practices
 

@@ -12,11 +12,14 @@ class AppBarThemes {
       surfaceTintColor: colorScheme.surfaceTint,
       shadowColor: colorScheme.shadow,
       
-      // Title styling
-      titleTextStyle: textTheme.headlineSmall?.copyWith(
-        color: colorScheme.onSurface,
-        fontWeight: FontWeight.w600,
+      // Title styling - Force Sansita font
+      titleTextStyle: const TextStyle(
+        fontFamily: 'Sansita',
         fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: Colors.black, // Will be overridden by theme
+      ).copyWith(
+        color: colorScheme.onSurface,
       ),
       
       // Center titles for consistent look

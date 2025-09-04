@@ -2,43 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/nutrition_plan.dart';
-import 'plan_section_editable_widget.dart';
+import 'plan_sections_widget.dart';
 
 /// Main container for nutrition plan display
 /// White container with blue border matching Alex's design
+/// Note: plan parameter is now ignored as child widgets watch the controller directly
 class PlanContainer extends StatefulWidget {
   const PlanContainer({
     super.key,
-    required this.plan,
+    this.plan, // Made optional and ignored - child widgets watch controller
     this.onFoodItemTap,
     this.showMacroTargets = true,
     this.onSwapFood,
     this.onDeleteFood,
+    this.onUpdateQuantity,
   });
 
-  final NutritionPlan plan;
+  final NutritionPlan? plan; // Now optional and ignored
   final Function(String foodItemId)? onFoodItemTap;
   final bool showMacroTargets;
   final Function(String foodItemId, String foodName, String category)? onSwapFood;
   final Function(String foodItemId, String category)? onDeleteFood;
+  final Function(String foodItemId, String category, double newQuantity)? onUpdateQuantity;
   
   @override
   State<PlanContainer> createState() => _PlanContainerState();
 }
 
 class _PlanContainerState extends State<PlanContainer> {
-  String _getSectionCategory(String sectionTitle) {
-    switch (sectionTitle) {
-      case 'Before Run':
-        return 'before_run';
-      case 'During Run':
-        return 'during_run';
-      case 'After Run':
-        return 'after_run';
-      default:
-        return 'before_run';
-    }
-  }
   
   @override
   Widget build(BuildContext context) {
@@ -64,24 +55,15 @@ class _PlanContainerState extends State<PlanContainer> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Plan Sections with individual edit states
-            ...widget.plan.sections.map((section) {
-              final isLastSection = section == widget.plan.sections.last;
-              final category = _getSectionCategory(section.title);
-              return Column(
-                children: [
-                  PlanSectionEditableWidget(
-                    section: section,
-                    onFoodItemTap: widget.onFoodItemTap,
-                    onSwapFood: (foodId, foodName) => 
-                      widget.onSwapFood?.call(foodId, foodName, category),
-                    onDeleteFood: (foodId) => 
-                      widget.onDeleteFood?.call(foodId, category),
-                  ),
-                  if (!isLastSection) SizedBox(height: 24.h),
-                ],
-              );
-            }),
+            // Plan sections - separate widget with plan parameter
+            if (widget.plan != null)
+              PlanSectionsWidget(
+                plan: widget.plan!,
+                onFoodItemTap: widget.onFoodItemTap,
+                onSwapFood: widget.onSwapFood,
+                onDeleteFood: widget.onDeleteFood,
+                onUpdateQuantity: widget.onUpdateQuantity,
+              ),
           ],
         ),
       ),
