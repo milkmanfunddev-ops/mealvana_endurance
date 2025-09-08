@@ -12,6 +12,7 @@ import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.
 import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_edit_screen.dart';
+import '../../features/feedback/presentation/screens/survey_screen.dart';
 import '../widgets/tabs_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
@@ -66,6 +67,18 @@ class AppRouter {
         path: '/main',
         name: 'main',
         builder: (context, state) => const TabsScreen(),
+      ),
+      
+      // Survey screen - shown after plan generation
+      GoRoute(
+        path: '/survey',
+        name: 'survey',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return SurveyScreen(
+            planName: extra?['planName'] as String?,
+          );
+        },
       ),
       
       // Current Plan Screen - Shows generated nutrition plan or empty state

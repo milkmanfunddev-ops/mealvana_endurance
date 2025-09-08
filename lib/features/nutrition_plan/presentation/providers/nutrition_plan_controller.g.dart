@@ -7,7 +7,7 @@ part of 'nutrition_plan_controller.dart';
 // **************************************************************************
 
 String _$currentNutritionPlanHash() =>
-    r'7d102551429933ae0ecad299532db8dcf0ee8719';
+    r'ffe55a43fe2e32e5b2271eb25a40bb17f7a2bc80';
 
 /// Provider for current nutrition plan
 ///
@@ -49,14 +49,14 @@ final nutritionRecommendationsProvider =
 // ignore: unused_element
 typedef NutritionRecommendationsRef = AutoDisposeProviderRef<List<String>>;
 String _$nutritionPlanControllerHash() =>
-    r'185efba9338c5af5ea32701be9a187687aec0511';
+    r'03767b408d9fbb7fa4a5b0055fd0c070eb30cf6f';
 
-/// Controller for managing nutrition plan generation and display
+/// Controller for managing nutrition plan generation and display with save state
 ///
 /// Copied from [NutritionPlanController].
 @ProviderFor(NutritionPlanController)
 final nutritionPlanControllerProvider = AutoDisposeAsyncNotifierProvider<
-    NutritionPlanController, NutritionPlan?>.internal(
+    NutritionPlanController, NutritionPlanState>.internal(
   NutritionPlanController.new,
   name: r'nutritionPlanControllerProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -66,6 +66,7 @@ final nutritionPlanControllerProvider = AutoDisposeAsyncNotifierProvider<
   allTransitiveDependencies: null,
 );
 
-typedef _$NutritionPlanController = AutoDisposeAsyncNotifier<NutritionPlan?>;
+typedef _$NutritionPlanController
+    = AutoDisposeAsyncNotifier<NutritionPlanState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

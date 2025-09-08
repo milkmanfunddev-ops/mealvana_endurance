@@ -40,7 +40,10 @@ class AppStartup extends _$AppStartup {
       // 4. Check and restore user session if exists
       await startupService.checkUserSession();
       
-      // 5. Initialize nutrition plans (now using Drift)
+      // 5. Check and refresh food data if needed (for updated image URLs)
+      await startupService.checkAndRefreshFoodData();
+      
+      // 6. Initialize nutrition plans (now using Drift)
       await startupService.initializeNutritionPlans();
       
       print('✅ App startup initialization completed');

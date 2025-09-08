@@ -132,6 +132,49 @@ class NutritionService {
 }
 ```
 
+**Shared Services Architecture:**
+
+Our application includes shared services that provide functionality across multiple features:
+
+- **NotificationService**: Local notification scheduling and management
+  - Handles notification permissions across iOS and Android
+  - Schedules one-time and recurring reminders
+  - Persists scheduled notifications across device reboots
+  - Integrates with timezone handling for accurate scheduling
+  - Provides graceful fallbacks when permissions are denied
+
+```dart
+@riverpod
+NotificationService notificationService(NotificationServiceRef ref) {
+  return NotificationService();
+}
+
+class NotificationService {
+  late FlutterLocalNotificationsPlugin _plugin;
+  
+  Future<void> initialize() async {
+    // Platform-specific initialization
+  }
+  
+  Future<bool> requestPermissions() async {
+    // Handle iOS/Android permission requests
+  }
+  
+  Future<void> scheduleReminder({
+    required DateTime scheduledDate,
+    required bool recurring,
+    required String title,
+    required String body,
+  }) async {
+    // Schedule notification with timezone support
+  }
+  
+  Future<void> cancelAllReminders() async {
+    // Cancel existing scheduled notifications
+  }
+}
+```
+
 #### Data Layer
 - **Repositories**: Abstraction over data sources, type-safe entity conversion
 - **Data Sources**: Third-party APIs, local storage, external services
@@ -159,6 +202,9 @@ We use `riverpod_generator` for automatic provider generation, reducing boilerpl
 dependencies:
   flutter_riverpod: ^2.4.0
   riverpod_annotation: ^2.3.0
+  // Local notifications for reminder scheduling
+  flutter_local_notifications: ^19.4.1
+  timezone: ^0.9.2
 
 dev_dependencies:
   riverpod_generator: ^2.3.0
@@ -234,6 +280,122 @@ ref.listen<AsyncValue>(
   (_, state) => state.showSnackbarOnError(context),
 );
 ```
+
+## Platform-Specific Integrations
+
+### Local Notifications with flutter_local_notifications
+
+Our app integrates local notifications for reminder scheduling using `flutter_local_notifications: ^19.4.1`. This provides cross-platform notification support with platform-specific setup requirements.
+
+**Key Features:**
+- Schedule one-time and recurring reminders
+- Handle notification permissions on iOS and Android
+- Persist notifications across device reboots
+- Timezone-aware scheduling
+- Cross-platform notification display
+
+**Platform Setup Requirements:**
+
+#### iOS Configuration (Developer Required)
+```swift
+// ios/Runner/AppDelegate.swift
+import UIKit
+import Flutter
+import flutter_local_notifications
+
+@UIApplicationMain
+@objc class AppDelegate: FlutterAppDelegate {
+  override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    // Required for notification handling
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
+    }
+    
+    // Required for background notification processing
+    FlutterLocalNotificationsPlugin.setPluginRegistrantCallback { (registry) in
+      GeneratedPluginRegistrant.register(with: registry)
+    }
+    
+    GeneratedPluginRegistrant.register(with: self)
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+}
+```
+
+#### Android Configuration
+```xml
+<!-- android/app/src/main/AndroidManifest.xml -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Required permissions -->
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+  <application>
+    <!-- Notification receivers for scheduling persistence -->
+    <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+    <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>
+```
+
+**NotificationService Integration:**
+```dart
+// lib/shared/services/notification_service.dart
+@riverpod
+NotificationService notificationService(NotificationServiceRef ref) {
+  return NotificationService();
+}
+
+class NotificationService {
+  late FlutterLocalNotificationsPlugin _plugin;
+  
+  Future<void> initialize() async {
+    _plugin = FlutterLocalNotificationsPlugin();
+    
+    const androidSettings = AndroidInitializationSettings('app_icon');
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: false, // Will request when needed
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    
+    await _plugin.initialize(
+      const InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      ),
+      onDidReceiveNotificationResponse: _onNotificationTapped,
+    );
+  }
+  
+  Future<bool> requestPermissions() async {
+    if (Platform.isIOS) {
+      return await _plugin.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(alert: true, badge: true, sound: true) ?? false;
+    } else if (Platform.isAndroid) {
+      return await _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission() ?? false;
+    }
+    return false;
+  }
+}
+```
+
+**Developer Action Items:**
+- **iOS Setup**: Requires Xcode configuration and AppDelegate.swift updates
+- **Testing**: Platform-specific testing on physical devices
+- **App Store**: May require notification entitlement documentation
 
 ## Data Persistence with Drift
 

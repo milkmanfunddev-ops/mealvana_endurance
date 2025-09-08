@@ -21,6 +21,15 @@ class FoodItemData {
   final NutritionalInfo? nutritionalInfo;
   final String? instructions; // Special preparation instructions
 
+  /// Get the full S3 image URL for this food item data
+  /// Constructs URL from S3 bucket base URL + image_address field
+  String? get imageUrl {
+    if (imageAddress == null || imageAddress!.isEmpty) {
+      return null;
+    }
+    return 'https://milkman-dev.s3.us-east-2.amazonaws.com/foods/$imageAddress';
+  }
+
   /// Create FoodItemData from JSON
   factory FoodItemData.fromJson(Map<String, dynamic> json) {
     return FoodItemData(

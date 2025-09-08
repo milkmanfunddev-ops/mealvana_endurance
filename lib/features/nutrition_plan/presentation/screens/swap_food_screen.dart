@@ -194,7 +194,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                         Row(
                           children: [
                             FoodIcon(
-                              imageUrl: state.selectedFood!.imageAddress,
+                              imageUrl: state.selectedFood!.imageUrl,
                               size: 40.w,
                             ),
                             SizedBox(width: 12.w),
@@ -393,7 +393,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         child: Row(
           children: [
             FoodIcon(
-              imageUrl: food.imageAddress,
+              imageUrl: food.imageUrl,
               size: 40.w,
             ),
             SizedBox(width: 12.w),

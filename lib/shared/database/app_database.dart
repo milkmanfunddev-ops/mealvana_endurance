@@ -11,12 +11,13 @@ import 'tables/user_profiles.dart';
 import 'tables/food_preferences.dart';
 import 'tables/nutrition_plans.dart';
 import 'tables/macro_targets.dart';
+import 'tables/feedback.dart';
 
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
 /// Replaces Hive for type-safe local storage with automatic migrations
-@DriftDatabase(tables: [UserProfilesTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable])
+@DriftDatabase(tables: [UserProfilesTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   
@@ -24,9 +25,9 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 1; // Keep simple - schema managed externally
 
-  /// Migration strategy for schema changes
+  /// Simple migration strategy that delegates to schema manager
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
@@ -34,16 +35,9 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // Version 2: Add MacroTargetsTable
-        if (from < 2) {
-          await m.createTable(macroTargetsTable);
-        }
-        
-        // Future schema migrations will go here
-        // Example for version 3:
-        // if (from < 3) {
-        //   await m.addColumn(someTable, someTable.newColumn);
-        // }
+        // For schema upgrades, we'll use the schema manager instead
+        // This just ensures tables exist if migration is triggered
+        await m.createAll();
       },
       beforeOpen: (details) async {
         // Enable foreign key support
@@ -180,6 +174,25 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Save temporary nutrition plan (unsaved plan that persists through app restart)
+  Future<void> saveTempNutritionPlan(String userId, String planData) async {
+    await (update(userProfilesTable)..where((u) => u.id.equals(userId)))
+        .write(UserProfilesTableCompanion(tempPlanData: Value(planData)));
+  }
+
+  /// Get temporary nutrition plan
+  Future<String?> getTempNutritionPlan(String userId) async {
+    final query = select(userProfilesTable)..where((u) => u.id.equals(userId));
+    final result = await query.getSingleOrNull();
+    return result?.tempPlanData;
+  }
+
+  /// Clear temporary nutrition plan
+  Future<void> clearTempNutritionPlan(String userId) async {
+    await (update(userProfilesTable)..where((u) => u.id.equals(userId)))
+        .write(const UserProfilesTableCompanion(tempPlanData: Value(null)));
+  }
+
   /// Get latest nutrition plan for user
   Future<String?> getLatestNutritionPlan(String userId) async {
     final query = select(nutritionPlans)
@@ -236,6 +249,76 @@ class AppDatabase extends _$AppDatabase {
       'preferences': preferencesCount.read(foodPreferencesTable.userId.count())!,
       'plans': plansCount.read(nutritionPlans.id.count())!,
     };
+  }
+
+  /// Save survey response to local database
+  Future<void> saveSurveyResponse({
+    required String id,
+    required int confidenceLevel,
+    required String confidenceLabel,
+    required String reuseIntent,
+    bool reminderRequested = false,
+    List<String>? missedReasons,
+    String? missedOther,
+    int? reminderDayOfWeek,
+    int? reminderHour,
+    int? reminderMinute,
+    bool? reminderRecurring,
+    String? deviceId,
+    String? planName,
+  }) async {
+    await into(feedbackTable).insertOnConflictUpdate(
+      FeedbackTableCompanion.insert(
+        id: id,
+        satisfactionLevel: 2, // Default to "just right" for now
+        satisfactionEmoji: '🤗',
+        satisfactionLabel: 'Just right',
+        confidenceLevel: Value(confidenceLevel),
+        confidenceLabel: Value(confidenceLabel),
+        reuseIntent: Value(reuseIntent),
+        reminderRequested: Value(reminderRequested),
+        missedReasons: Value(missedReasons != null ? missedReasons.join(',') : null),
+        missedOther: Value(missedOther),
+        reminderDayOfWeek: Value(reminderDayOfWeek),
+        reminderHour: Value(reminderHour ?? 17),
+        reminderMinute: Value(reminderMinute ?? 0),
+        reminderRecurring: Value(reminderRecurring ?? false),
+        deviceId: Value(deviceId),
+        planName: Value(planName),
+        timestamp: Value(DateTime.now()),
+      ),
+    );
+  }
+  
+  /// Get latest survey response for user
+  Future<FeedbackEntry?> getLatestSurveyResponse(String deviceId) async {
+    final query = select(feedbackTable)
+      ..where((f) => f.deviceId.equals(deviceId))
+      ..orderBy([(f) => OrderingTerm.desc(f.createdAt)])
+      ..limit(1);
+    
+    final results = await query.get();
+    return results.isNotEmpty ? results.first : null;
+  }
+  
+  /// Update user notification preferences
+  Future<void> updateUserNotificationPreferences({
+    required String userId,
+    required bool notificationsEnabled,
+    required int defaultReminderDay,
+    required int defaultReminderHour,
+    required int defaultReminderMinute,
+    required bool defaultReminderRecurring,
+  }) async {
+    await (update(userProfilesTable)..where((u) => u.id.equals(userId))).write(
+      UserProfilesTableCompanion(
+        notificationsEnabled: Value(notificationsEnabled),
+        defaultReminderDay: Value(defaultReminderDay),
+        defaultReminderHour: Value(defaultReminderHour),
+        defaultReminderMinute: Value(defaultReminderMinute),
+        defaultReminderRecurring: Value(defaultReminderRecurring),
+      ),
+    );
   }
 
   /// Convert Drift UserProfileEntry to Domain UserProfile

@@ -291,6 +291,66 @@ class NutritionPlanRepository {
     }
   }
 
+  /// Save plan temporarily (survives app restart until officially saved)
+  Future<void> saveTempPlan(String deviceId, domain.NutritionPlan plan) async {
+    try {
+      print('🔄 Saving temporary plan: planId=${plan.id}, deviceId=$deviceId');
+      final planJson = json.encode(plan.toJson());
+      await database.saveTempNutritionPlan(deviceId, planJson);
+      print('✅ Temporary plan saved successfully');
+    } catch (e, stackTrace) {
+      print('❌ Error saving temporary plan: $e');
+      await sentryService.reportDatabaseError(
+        e,
+        operation: 'saveTempNutritionPlan',
+        table: 'temp_nutrition_plans',
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Get temporarily stored plan
+  Future<domain.NutritionPlan?> getTempPlan(String deviceId) async {
+    try {
+      print('🔍 Getting temporary plan for deviceId: $deviceId');
+      final planJson = await database.getTempNutritionPlan(deviceId);
+      if (planJson != null && planJson.isNotEmpty) {
+        final plan = domain.NutritionPlan.fromJson(json.decode(planJson));
+        print('✅ Found temporary plan: ${plan.name}');
+        return plan;
+      } else {
+        print('📭 No temporary plan found');
+        return null;
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error getting temporary plan: $e');
+      await sentryService.reportDatabaseError(
+        e,
+        operation: 'getTempNutritionPlan',
+        table: 'temp_nutrition_plans',
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Clear temporary plan
+  Future<void> clearTempPlan(String deviceId) async {
+    try {
+      print('🗑️ Clearing temporary plan for deviceId: $deviceId');
+      await database.clearTempNutritionPlan(deviceId);
+      print('✅ Temporary plan cleared successfully');
+    } catch (e, stackTrace) {
+      print('❌ Error clearing temporary plan: $e');
+      await sentryService.reportDatabaseError(
+        e,
+        operation: 'clearTempNutritionPlan',
+        table: 'temp_nutrition_plans',
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   /// Get latest nutrition plan (try cache first, then remote)
   Future<domain.NutritionPlan?> getLatestNutritionPlan(String deviceId) async {
     print('🔍 Getting latest nutrition plan for deviceId: $deviceId');

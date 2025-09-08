@@ -42,21 +42,21 @@ class AnalyticsService {
     try {
       final deviceInfo = DeviceInfoPlugin();
       Map<String, dynamic> superProps = {
-        'App Version': '1.1.0',
-        'Platform': Platform.isIOS ? 'iOS' : 'Android',
+        'app_version': '1.3.0',
+        'platform': Platform.isIOS ? 'iOS' : 'Android',
       };
       
       if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
         superProps.addAll({
-          'OS Version': iosInfo.systemVersion,
-          'Device Model': iosInfo.model,
+          'os_version': iosInfo.systemVersion,
+          'device_model': iosInfo.model,
         });
       } else if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
         superProps.addAll({
-          'OS Version': androidInfo.version.release,
-          'Device Model': androidInfo.model,
+          'os_version': androidInfo.version.release,
+          'device_model': androidInfo.model,
         });
       }
       
@@ -98,7 +98,7 @@ class AnalyticsService {
         people.setOnce('First Seen', DateTime.now().toIso8601String());
         
         // Track identification event
-        track('User Identified', properties: properties);
+        track('user_identified', properties: properties);
       } else if (gender != null || age != null || weightPounds != null) {
         // Backward compatibility - use individual parameters
         if (gender != null) people.set('Gender', gender);
@@ -108,20 +108,20 @@ class AnalyticsService {
         if (gutTrainingLevel != null) people.set('Gut Training Level', gutTrainingLevel);
         people.setOnce('First Seen', DateTime.now().toIso8601String());
         
-        track('User Identified', properties: {
-          'Gender': gender,
-          'Age': age,
-          'Weight (lbs)': weightPounds,
-          'Runs With Water Bottle': runsWithWaterBottle,
-          'Gut Training Level': gutTrainingLevel,
+        track('user_identified', properties: {
+          'gender': gender,
+          'age': age,
+          'weight_lbs': weightPounds,
+          'runs_with_water_bottle': runsWithWaterBottle,
+          'gut_training_level': gutTrainingLevel,
         });
       } else {
         // Just identifying with ID, no properties (anonymous user)
         people.setOnce('First Seen', DateTime.now().toIso8601String());
         people.set('User Type', 'Anonymous');
         
-        track('Anonymous User Identified', properties: {
-          'Device ID': userId,
+        track('anonymous_user_identified', properties: {
+          'device_id': userId,
         });
       }
     } catch (e) {
@@ -134,7 +134,7 @@ class AnalyticsService {
     if (_mixpanel == null) return;
     
     try {
-      track('User Reset');
+      track('user_reset');
       _mixpanel!.reset();
     } catch (e) {
       print('Failed to reset user: $e');
@@ -174,30 +174,33 @@ class AnalyticsService {
     }
   }
   
-  // MARK: - App Lifecycle Events
+  // MARK: - App Lifecycle Events - DEPRECATED
+  // These events are not part of the North-Star metric
   
-  /// Track app launch
+  /// Track app launch - DEPRECATED
+  @Deprecated('Not required for North-Star metric')
   Future<void> trackAppLaunched() async {
-    await track('App Launched');
+    // Removed - not part of North-Star metric
   }
   
-  /// Track app backgrounded
+  /// Track app backgrounded - DEPRECATED  
+  @Deprecated('Not required for North-Star metric')
   Future<void> trackAppBackgrounded() async {
-    await track('App Backgrounded');
+    // Removed - not part of North-Star metric
   }
   
-  // MARK: - Onboarding Events
+  // MARK: - Onboarding Events - PARTIALLY DEPRECATED
   
-  /// Track onboarding started
+  /// Track onboarding started - DEPRECATED
+  @Deprecated('Not required for North-Star metric')
   Future<void> trackOnboardingStarted() async {
-    await track('Onboarding Started');
+    // Removed - not part of North-Star metric
   }
   
-  /// Track onboarding step completed
+  /// Track onboarding step completed - DEPRECATED
+  @Deprecated('Not required for North-Star metric')
   Future<void> trackOnboardingStepCompleted(String step) async {
-    await track('Onboarding Step Completed', properties: {
-      'Step': step,
-    });
+    // Removed - not part of North-Star metric
   }
   
   /// Track onboarding completed
@@ -230,23 +233,27 @@ class AnalyticsService {
   
   // MARK: - Nutrition Plan Events
   
-  /// Track nutrition plan generation started
+  /// Track nutrition plan generation started - DEPRECATED
+  /// Use plan_flow_started instead for North-Star metric
+  @Deprecated('Use plan_flow_started instead')
   Future<void> trackNutritionPlanGenerationStarted({
     required double distanceMiles,
     required double paceMinutesPerMile,
     required double timeBeforeRunHours,
     String? gutTrainingLevel,
   }) async {
-    await timeEvent('Nutrition Plan Generated');
-    await track('Nutrition Plan Generation Started', properties: {
-      'Distance (miles)': distanceMiles,
-      'Pace (min/mile)': paceMinutesPerMile,
-      'Time Before Run (hours)': timeBeforeRunHours,
-      'Gut Training Level': gutTrainingLevel,
+    await timeEvent('plan_generated');
+    await track('plan_generation_started', properties: {
+      'distance_mi': distanceMiles,
+      'pace_min_per_mile': paceMinutesPerMile,
+      'time_before_run_hours': timeBeforeRunHours,
+      'gut_training_level': gutTrainingLevel,
     });
   }
   
-  /// Track nutrition plan generated successfully
+  /// Track nutrition plan generated successfully - DEPRECATED
+  /// Use plan_saved instead for North-Star metric
+  @Deprecated('Use plan_saved instead')
   Future<void> trackNutritionPlanGenerated({
     required double distanceMiles,
     required double paceMinutesPerMile,
@@ -257,41 +264,45 @@ class AnalyticsService {
     required int afterRunItems,
     bool isFirstPlan = false,
   }) async {
-    await track('Nutrition Plan Generated', properties: {
-      'Distance (miles)': distanceMiles,
-      'Pace (min/mile)': paceMinutesPerMile,
-      'Total Calories': totalCalories,
-      'Total Carbs (g)': totalCarbs,
-      'Before Run Items': beforeRunItems,
-      'During Run Items': duringRunItems,
-      'After Run Items': afterRunItems,
-      'Is First Plan': isFirstPlan,
+    await track('plan_generated', properties: {
+      'distance_mi': distanceMiles,
+      'pace_min_per_mile': paceMinutesPerMile,
+      'total_calories': totalCalories,
+      'carbs_total_g': totalCarbs,
+      'items_pre_count': beforeRunItems,
+      'items_during_count': duringRunItems,
+      'items_post_count': afterRunItems,
+      'is_first_plan': isFirstPlan,
     });
   }
   
-  /// Track nutrition plan generation failed
+  /// Track nutrition plan generation failed - DEPRECATED
+  /// Use error_shown instead
+  @Deprecated('Use error_shown instead')
   Future<void> trackNutritionPlanGenerationFailed({
     required String errorMessage,
     required double distanceMiles,
     required double paceMinutesPerMile,
   }) async {
-    await track('Nutrition Plan Generation Failed', properties: {
-      'Error': errorMessage,
-      'Distance (miles)': distanceMiles,
-      'Pace (min/mile)': paceMinutesPerMile,
+    await track('plan_generation_failed', properties: {
+      'error_message': errorMessage,
+      'distance_mi': distanceMiles,
+      'pace_min_per_mile': paceMinutesPerMile,
     });
   }
   
-  /// Track nutrition plan saved
+  /// Track nutrition plan saved - DEPRECATED
+  /// Use plan_saved instead for North-Star metric
+  @Deprecated('Use plan_saved instead')
   Future<void> trackNutritionPlanSaved({
     required String planId,
     required double distanceMiles,
     required int totalCalories,
   }) async {
-    await track('Nutrition Plan Saved', properties: {
-      'Plan ID': planId,
-      'Distance (miles)': distanceMiles,
-      'Total Calories': totalCalories,
+    await track('plan_saved_old', properties: {
+      'plan_id': planId,
+      'distance_mi': distanceMiles,
+      'total_calories': totalCalories,
     });
   }
   
@@ -319,48 +330,41 @@ class AnalyticsService {
     });
   }
   
-  // MARK: - User Engagement Events
+  // MARK: - User Engagement Events - DEPRECATED
+  // These events are not part of the North-Star metric
   
-  /// Track screen viewed
+  /// Track screen viewed - DEPRECATED
+  @Deprecated('Not required for North-Star metric - use specific events instead')
   Future<void> trackScreenViewed(String screenName) async {
-    await track('Screen Viewed', properties: {
-      'Screen Name': screenName,
-    });
+    // Removed - not part of North-Star metric
   }
   
-  /// Track food preference changed
+  /// Track food preference changed - DEPRECATED
+  @Deprecated('Not required for North-Star metric')
   Future<void> trackFoodPreferenceChanged({
     required String foodItem,
     required String preference,
   }) async {
-    await track('Food Preference Changed', properties: {
-      'Food Item': foodItem,
-      'Preference': preference,
-    });
+    // Removed - not part of North-Star metric
   }
   
-  /// Track settings changed
+  /// Track settings changed - DEPRECATED
+  @Deprecated('Not required for North-Star metric')
   Future<void> trackSettingsChanged({
     required String setting,
     required String oldValue,
     required String newValue,
   }) async {
-    await track('Settings Changed', properties: {
-      'Setting': setting,
-      'Old Value': oldValue,
-      'New Value': newValue,
-    });
+    // Removed - not part of North-Star metric
   }
   
-  /// Track search performed
+  /// Track search performed - DEPRECATED
+  @Deprecated('Not required for North-Star metric')
   Future<void> trackSearchPerformed({
     required String query,
     required int resultsCount,
   }) async {
-    await track('Search Performed', properties: {
-      'Query': query,
-      'Results Count': resultsCount,
-    });
+    // Removed - not part of North-Star metric
   }
   
   // MARK: - Feedback Events
@@ -375,6 +379,21 @@ class AnalyticsService {
       'Type': type,
       'Message Length': message.length,
       'Rating': rating,
+    });
+  }
+  
+  /// Track survey completed
+  Future<void> trackSurveyCompleted({
+    required int confidenceLevel,
+    required String reuseIntent,
+    required bool reminderRequested,
+    String? missedReason,
+  }) async {
+    await track('Survey Completed', properties: {
+      'Confidence Level': confidenceLevel,
+      'Reuse Intent': reuseIntent,
+      'Reminder Requested': reminderRequested,
+      'Missed Reason': missedReason,
     });
   }
   
@@ -397,27 +416,217 @@ class AnalyticsService {
     await track('App Error', properties: properties);
   }
   
-  // MARK: - Performance Events
+  // MARK: - Performance Events - DEPRECATED
+  // These events are not part of the North-Star metric
   
-  /// Track app startup time
+  /// Track app startup time - DEPRECATED
+  @Deprecated('Not required for North-Star metric')
   Future<void> trackAppStartupTime(Duration startupTime) async {
-    await track('App Startup', properties: {
-      'Startup Time (ms)': startupTime.inMilliseconds,
-    });
+    // Removed - not part of North-Star metric
   }
   
-  /// Track Edge Function performance
+  /// Track Edge Function performance - DEPRECATED
+  @Deprecated('Not required for North-Star metric')
   Future<void> trackEdgeFunctionPerformance({
     required String functionName,
     required Duration responseTime,
     required bool success,
     String? errorMessage,
   }) async {
-    await track('Edge Function Performance', properties: {
-      'Function Name': functionName,
-      'Response Time (ms)': responseTime.inMilliseconds,
-      'Success': success,
-      'Error Message': errorMessage,
+    // Removed - not part of North-Star metric
+  }
+
+  // MARK: - North-Star Metric Events (Mixpanel Requirements)
+  
+  /// Track plan flow started - generates plan_id and starts the North-Star funnel
+  /// This is the entry point for the successful fueling plan metric
+  Future<void> trackPlanFlowStarted({
+    required String planId, // UUID v4 generated at this point
+    required String screen,
+    required String activityType,
+    required double distanceMi,
+    required double durationMin,
+    required double timeBeforeRunMin,
+    required String gutTrainingLevel,
+    required String sweatRateLevel,
+    required double temperatureC,
+    required double humidityPct,
+    String? experimentVariant,
+  }) async {
+    await track('plan_flow_started', properties: {
+      'plan_id': planId,
+      'screen': screen,
+      'activity_type': activityType,
+      'distance_mi': distanceMi,
+      'duration_min': durationMin,
+      'time_before_run_min': timeBeforeRunMin,
+      'gut_training_level': gutTrainingLevel,
+      'sweat_rate_level': sweatRateLevel,
+      'temperature_c': temperatureC,
+      'humidity_pct': humidityPct,
+      'experiment_variant': experimentVariant,
+    });
+  }
+  
+  /// Track plan saved - second step in North-Star funnel
+  Future<void> trackPlanSaved({
+    required String planId,
+    required double carbsTotalG,
+    required double sodiumTotalMg,
+    required double fluidsTotalMl,
+    required double carbsCoveragePct,
+    required double sodiumCoveragePct,
+    required double fluidsCoveragePct,
+    required int itemsPreCount,
+    required int itemsDuringCount,
+    required int itemsPostCount,
+    required double secondsToSave, // Time since plan_flow_started
+  }) async {
+    await track('plan_saved', properties: {
+      'plan_id': planId,
+      'carbs_total_g': carbsTotalG,
+      'sodium_total_mg': sodiumTotalMg,
+      'fluids_total_ml': fluidsTotalMl,
+      'carbs_coverage_pct': carbsCoveragePct,
+      'sodium_coverage_pct': sodiumCoveragePct,
+      'fluids_coverage_pct': fluidsCoveragePct,
+      'items_pre_count': itemsPreCount,
+      'items_during_count': itemsDuringCount,
+      'items_post_count': itemsPostCount,
+      'seconds_to_save': secondsToSave,
+    });
+  }
+  
+  /// Track reminder set - optional but recommended
+  Future<void> trackReminderSet({
+    required String planId,
+    required String remindAtIso, // ISO-8601 string with timezone
+  }) async {
+    await track('reminder_set', properties: {
+      'plan_id': planId,
+      'remind_at_iso': remindAtIso,
+    });
+  }
+  
+  /// Track reminder fired - third step in North-Star funnel
+  /// Called when local push notification is delivered
+  Future<void> trackReminderFired({
+    required String planId,
+  }) async {
+    await track('reminder_fired', properties: {
+      'plan_id': planId,
+    });
+  }
+  
+  /// Track plan opened from reminder - final step in North-Star funnel
+  /// Called when user taps notification and lands on the plan
+  Future<void> trackPlanOpenedFromReminder({
+    required String planId,
+    required String screen,
+  }) async {
+    await track('plan_opened_from_reminder', properties: {
+      'plan_id': planId,
+      'screen': screen,
+    });
+  }
+  
+  // MARK: - Quality Events (Mixpanel Recommended)
+  
+  /// Track when user views macro targets
+  Future<void> trackTargetsViewed() async {
+    await track('targets_viewed');
+  }
+  
+  /// Track when edit all macros dialog is opened
+  Future<void> trackEditAllMacrosOpened() async {
+    await track('edit_all_macros_opened');
+  }
+  
+  /// Track when a specific macro value is changed
+  Future<void> trackMacrosChanged({
+    required String macro,
+    required dynamic oldValue,
+    required dynamic newValue,
+  }) async {
+    await track('macros_changed', properties: {
+      'macro': macro,
+      'old_value': oldValue,
+      'new_value': newValue,
+    });
+  }
+  
+  /// Track when a food item is added to a plan
+  Future<void> trackItemAdded({
+    required String itemName,
+    required String section, // pre_run, during_run, post_run
+  }) async {
+    await track('item_added', properties: {
+      'item_name': itemName,
+      'section': section,
+    });
+  }
+  
+  /// Track when a food item is removed from a plan
+  Future<void> trackItemRemoved({
+    required String itemName,
+    required String section,
+  }) async {
+    await track('item_removed', properties: {
+      'item_name': itemName,
+      'section': section,
+    });
+  }
+  
+  /// Track when food item quantity is changed
+  Future<void> trackItemQuantityChanged({
+    required String itemName,
+    required String section,
+    required double oldQuantity,
+    required double newQuantity,
+  }) async {
+    await track('item_quantity_changed', properties: {
+      'item_name': itemName,
+      'section': section,
+      'old_quantity': oldQuantity,
+      'new_quantity': newQuantity,
+    });
+  }
+  
+  /// Track when guidelines/help content is opened
+  Future<void> trackGuidelinesOpened({
+    required String topic,
+  }) async {
+    await track('guidelines_opened', properties: {
+      'topic': topic,
+    });
+  }
+  
+  /// Track when feedback prompt is shown to user
+  Future<void> trackFeedbackPromptShown() async {
+    await track('feedback_prompt_shown');
+  }
+  
+  /// Track when plan is exported/shared
+  Future<void> trackPlanExported({
+    required String channel, // email, text, copy, etc.
+    required String format, // pdf, text, json, etc.
+  }) async {
+    await track('plan_exported', properties: {
+      'channel': channel,
+      'format': format,
+    });
+  }
+  
+  /// Track when error is shown to user
+  Future<void> trackErrorShown({
+    required String errorCode,
+    required String message,
+    required String screen,
+  }) async {
+    await track('error_shown', properties: {
+      'error_code': errorCode,
+      'message': message,
+      'screen': screen,
     });
   }
 }

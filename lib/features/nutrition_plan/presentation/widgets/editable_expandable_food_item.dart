@@ -186,7 +186,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                   children: [
                     // Food Icon
                     FoodIcon(
-                      imageUrl: widget.foodItem.imageAddress,
+                      imageUrl: widget.foodItem.imageUrl,
                       size: 40.w,
                     ),
                     

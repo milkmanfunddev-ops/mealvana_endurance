@@ -7,7 +7,7 @@ part of 'distance_page_gut_entry_controller.dart';
 // **************************************************************************
 
 String _$distancePageGutEntryControllerHash() =>
-    r'820e79289b101ba91d58fd6bc62d8df3bb0fba5f';
+    r'089a403480340f34b4eb35bcbeb3df19243c299a';
 
 /// Controller for distance page gut entry screen
 /// FOA COMPLIANT: Contains ALL business logic, no UI concerns

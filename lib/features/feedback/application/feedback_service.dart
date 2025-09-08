@@ -4,14 +4,20 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/feedback_data.dart';
 import '../../../shared/services/analytics_service.dart';
+import '../../../shared/services/notification_service.dart';
+import '../data/feedback_repository.dart';
+import '../../../shared/database/app_database.dart';
 
-/// Service for submitting feedback to Google Forms
+/// Service for submitting feedback to Google Forms and handling survey responses
 class FeedbackService {
   FeedbackService(this.ref);
   final Ref ref;
   
   /// Get analytics service
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
+  
+  /// Get feedback repository
+  FeedbackRepository get _repository => ref.read(feedbackRepositoryProvider);
   // Google Form URL - your actual form
   static const String _formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfKkSEUYd_vdDKv4iMVT3jPr2v2VWTg5bVkWRxbvFN1HaAFKQ/formResponse';
   
@@ -22,6 +28,125 @@ class FeedbackService {
   static const String _planNameFieldId = 'entry.1956700449';      // "Plan Name"
   static const String _userNameFieldId = 'entry.536281714';       // "User Name"
   static const String _timestampFieldId = 'entry.845631390';      // "Submission Time"
+
+  /// Submit survey response to local database and handle notifications
+  Future<bool> submitSurveyResponse({
+    required SurveyResponse response,
+    required String deviceId,
+    String? planName,
+  }) async {
+    try {
+      // Create full response with device info
+      final fullResponse = SurveyResponse(
+        confidenceLevel: response.confidenceLevel,
+        reuseIntent: response.reuseIntent,
+        reminderPreference: response.reminderPreference,
+        missedReason: response.missedReason,
+        missedOther: response.missedOther,
+        deviceId: deviceId,
+        planName: planName,
+        timestamp: DateTime.now(),
+      );
+
+      // Save to local database
+      await _repository.saveSurveyResponse(fullResponse);
+
+      // Track survey completion
+      await _analytics.trackSurveyCompleted(
+        confidenceLevel: response.confidenceLevel.value,
+        reuseIntent: response.reuseIntent.value,
+        reminderRequested: response.reminderPreference != null,
+        missedReason: response.missedReason?.value,
+      );
+
+      // Handle notification scheduling if user wants reminders
+      if (response.reminderPreference != null) {
+        await _scheduleReminder(response.reminderPreference!);
+      }
+
+      return true;
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        print('💥 Error submitting survey response: $error');
+        print('Stack trace: $stackTrace');
+      }
+      return false;
+    }
+  }
+
+  /// Schedule notification reminder based on user preferences
+  Future<void> _scheduleReminder(NotificationPreference preference) async {
+    try {
+      // Request notification permissions first
+      final hasPermission = await NotificationService.requestPermissions();
+      if (!hasPermission) {
+        if (kDebugMode) {
+          print('⚠️ Notification permission denied, cannot schedule reminder');
+        }
+        return;
+      }
+
+      // Calculate the next reminder date
+      final reminderDate = preference.getNextReminderDate();
+      
+      // Schedule the reminder
+      await NotificationService.scheduleReminder(
+        scheduledDate: reminderDate,
+        recurring: preference.isRecurring,
+        title: 'How did your nutrition plan work?',
+        body: 'Share your feedback to help us improve your fueling strategy.',
+      );
+
+      if (kDebugMode) {
+        print('✅ Reminder scheduled for ${reminderDate}');
+      }
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        print('💥 Error scheduling reminder: $error');
+        print('Stack trace: $stackTrace');
+      }
+    }
+  }
+
+  /// Check if user should be shown the survey
+  /// Returns false if they've completed it recently
+  Future<bool> shouldShowSurvey(String deviceId) async {
+    try {
+      return !(await _repository.hasRecentSurveyResponse(deviceId));
+    } catch (error) {
+      if (kDebugMode) {
+        print('Error checking survey eligibility: $error');
+      }
+      return true; // Default to showing survey if check fails
+    }
+  }
+
+  /// Get latest survey response for a device
+  Future<SurveyResponse?> getLatestSurveyResponse(String deviceId) async {
+    try {
+      final entry = await _repository.getLatestSurveyResponse(deviceId);
+      return _repository.convertToSurveyResponse(entry);
+    } catch (error) {
+      if (kDebugMode) {
+        print('Error getting latest survey response: $error');
+      }
+      return null;
+    }
+  }
+
+  /// Cancel all scheduled reminders (if user changes notification preferences)
+  Future<void> cancelAllReminders() async {
+    try {
+      await NotificationService.cancelAllReminders();
+      if (kDebugMode) {
+        print('✅ All reminders cancelled');
+      }
+    } catch (error) {
+      if (kDebugMode) {
+        print('Error cancelling reminders: $error');
+      }
+    }
+  }
 
   /// Test simple submission with minimal data
   Future<bool> testSimpleSubmission() async {

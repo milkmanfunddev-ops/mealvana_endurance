@@ -5,30 +5,37 @@
 -- ============================================
 -- FEEDBACK TABLE
 -- ============================================
--- Stores user feedback for nutrition plans
+-- Stores user survey responses for nutrition plans
 CREATE TABLE public.feedback (
-    id                 UUID DEFAULT uuid_generate_v4() NOT NULL PRIMARY KEY,
-    satisfaction_level INTEGER NOT NULL CHECK (satisfaction_level >= 1 AND satisfaction_level <= 3),
-    satisfaction_emoji TEXT NOT NULL,
-    satisfaction_label TEXT NOT NULL,
-    app_feedback       TEXT,
-    suggestions        TEXT,
-    plan_name          TEXT,
-    user_name          TEXT,
-    timestamp          TIMESTAMP WITH TIME ZONE,
-    created_at         TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    id                   UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    satisfaction_level   INTEGER,
+    satisfaction_emoji   TEXT,
+    satisfaction_label   TEXT,
+    confidence_level     INTEGER,
+    confidence_label     TEXT,
+    reuse_intent         TEXT, -- FIXED: Changed from INTEGER to TEXT to match Flutter enum values
+    reminder_requested   BOOLEAN DEFAULT false,
+    missed_reasons       TEXT,
+    missed_other         TEXT,
+    reminder_day_of_week INTEGER,
+    reminder_hour        INTEGER DEFAULT 17,
+    reminder_minute      INTEGER DEFAULT 0,
+    reminder_recurring   BOOLEAN DEFAULT false,
+    plan_name            TEXT,
+    user_name            TEXT, -- Using deviceId as user identifier
+    timestamp            TIMESTAMP WITH TIME ZONE,
+    created_at           TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- Indexes
-CREATE INDEX idx_feedback_created_at ON public.feedback (created_at DESC);
-CREATE INDEX idx_feedback_satisfaction ON public.feedback (satisfaction_level);
+CREATE INDEX idx_feedback_created_at ON public.feedback (created_at);
+CREATE INDEX idx_feedback_user_name ON public.feedback (user_name);
+CREATE INDEX idx_feedback_satisfaction_level ON public.feedback (satisfaction_level);
+CREATE INDEX idx_feedback_timestamp ON public.feedback (timestamp);
 
 -- RLS Policies
-CREATE POLICY "Allow feedback submissions" ON public.feedback
-    FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Allow feedback reading" ON public.feedback
-    FOR SELECT USING (true);
+CREATE POLICY "Allow all operations on feedback" ON public.feedback
+    FOR ALL USING (true);
 
 -- ============================================
 -- APP CONTENT TABLE

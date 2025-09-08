@@ -83,6 +83,15 @@ class Food {
     );
   }
 
+  /// Get the full S3 image URL for this food
+  /// Constructs URL from S3 bucket base URL + image_address field
+  String? get imageUrl {
+    if (imageAddress == null || imageAddress!.isEmpty) {
+      return null;
+    }
+    return 'https://milkman-dev.s3.us-east-2.amazonaws.com/foods/$imageAddress';
+  }
+
   /// Generate quantity display string with amount, unit, qualifier, and name
   /// Examples: "1 cup cooked oatmeal", "2 medium bananas sliced", "4 energy gels"
   String generateQuantityDisplay({double? customAmount}) {

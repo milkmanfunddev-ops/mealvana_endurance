@@ -80,7 +80,17 @@
       "Bash(sed:*)",
       "Bash(deno check:*)",
       "mcp__serena__find_referencing_symbols",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "WebFetch(domain:pub.dev)",
+      "Bash(cat:*)",
+      "Bash(do)",
+      "Bash(if [[ -f \"$file\" ]])",
+      "Bash(then)",
+      "Bash(echo:*)",
+      "Bash(fi)",
+      "Bash(bash:*)",
+      "WebFetch(domain:logo.clearbit.com)",
+      "mcp__serena__read_memory"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

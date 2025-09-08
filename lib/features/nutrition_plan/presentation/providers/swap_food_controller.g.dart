@@ -26,7 +26,7 @@ final foodRepositoryProvider = AutoDisposeProvider<FoodRepository>.internal(
 // ignore: unused_element
 typedef FoodRepositoryRef = AutoDisposeProviderRef<FoodRepository>;
 String _$swapFoodControllerHash() =>
-    r'17d54f71f0e6a154d8547b062caa69777a9f07e6';
+    r'c175a45093a2e34282a6dad2ab287ca1aa2030e9';
 
 /// Copied from Dart SDK
 class _SystemHash {

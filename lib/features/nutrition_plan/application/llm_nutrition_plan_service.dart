@@ -243,9 +243,10 @@ class LLMNutritionPlanService {
       return FoodItemData(
         id: foodName, // Use food name as ID for now
         name: foodName,
-        quantity: description, // LLM provides full description like "1 cup cooked oatmeal"
+        quantity: description, // LP provides quantity display like "1.5 cups cooked oatmeal"
         imageAddress: itemMap['image_address'] as String?,
-        description: timing,
+        description: timing, // LP provides timing like "2-3 hours before"
+        timing: timing, // Also set timing field if it exists
         nutritionalInfo: NutritionalInfo(
           calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
           carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
@@ -277,9 +278,10 @@ class LLMNutritionPlanService {
       return FoodItemData(
         id: foodName,
         name: foodName,
-        quantity: description,
+        quantity: description, // LP provides quantity display
         imageAddress: itemMap['image_address'] as String?,
-        description: timing,
+        description: timing, // LP provides timing
+        timing: timing, // Also set timing field if it exists
         nutritionalInfo: NutritionalInfo(
           calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
           carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
@@ -311,9 +313,10 @@ class LLMNutritionPlanService {
       return FoodItemData(
         id: foodName,
         name: foodName,
-        quantity: description,
+        quantity: description, // LP provides quantity display
         imageAddress: itemMap['image_address'] as String?,
-        description: timing,
+        description: timing, // LP provides timing
+        timing: timing, // Also set timing field if it exists
         nutritionalInfo: NutritionalInfo(
           calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
           carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,

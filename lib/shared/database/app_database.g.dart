@@ -86,6 +86,57 @@ class $UserProfilesTableTable extends UserProfilesTable
   late final GeneratedColumn<String> appVersion = GeneratedColumn<String>(
       'app_version', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _notificationsEnabledMeta =
+      const VerificationMeta('notificationsEnabled');
+  @override
+  late final GeneratedColumn<bool> notificationsEnabled = GeneratedColumn<bool>(
+      'notifications_enabled', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("notifications_enabled" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _defaultReminderDayMeta =
+      const VerificationMeta('defaultReminderDay');
+  @override
+  late final GeneratedColumn<int> defaultReminderDay = GeneratedColumn<int>(
+      'default_reminder_day', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(4));
+  static const VerificationMeta _defaultReminderHourMeta =
+      const VerificationMeta('defaultReminderHour');
+  @override
+  late final GeneratedColumn<int> defaultReminderHour = GeneratedColumn<int>(
+      'default_reminder_hour', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(17));
+  static const VerificationMeta _defaultReminderMinuteMeta =
+      const VerificationMeta('defaultReminderMinute');
+  @override
+  late final GeneratedColumn<int> defaultReminderMinute = GeneratedColumn<int>(
+      'default_reminder_minute', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _defaultReminderRecurringMeta =
+      const VerificationMeta('defaultReminderRecurring');
+  @override
+  late final GeneratedColumn<bool> defaultReminderRecurring =
+      GeneratedColumn<bool>(
+          'default_reminder_recurring', aliasedName, false,
+          type: DriftSqlType.bool,
+          requiredDuringInsert: false,
+          defaultConstraints: GeneratedColumn.constraintIsAlways(
+              'CHECK ("default_reminder_recurring" IN (0, 1))'),
+          defaultValue: const Constant(false));
+  static const VerificationMeta _tempPlanDataMeta =
+      const VerificationMeta('tempPlanData');
+  @override
+  late final GeneratedColumn<String> tempPlanData = GeneratedColumn<String>(
+      'temp_plan_data', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -99,13 +150,19 @@ class $UserProfilesTableTable extends UserProfilesTable
         onboardingCompleted,
         createdAt,
         updatedAt,
-        appVersion
+        appVersion,
+        notificationsEnabled,
+        defaultReminderDay,
+        defaultReminderHour,
+        defaultReminderMinute,
+        defaultReminderRecurring,
+        tempPlanData
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'user_profiles_table';
+  static const String $name = 'users';
   @override
   VerificationContext validateIntegrity(Insertable<UserProfileEntry> instance,
       {bool isInserting = false}) {
@@ -194,6 +251,43 @@ class $UserProfilesTableTable extends UserProfilesTable
     } else if (isInserting) {
       context.missing(_appVersionMeta);
     }
+    if (data.containsKey('notifications_enabled')) {
+      context.handle(
+          _notificationsEnabledMeta,
+          notificationsEnabled.isAcceptableOrUnknown(
+              data['notifications_enabled']!, _notificationsEnabledMeta));
+    }
+    if (data.containsKey('default_reminder_day')) {
+      context.handle(
+          _defaultReminderDayMeta,
+          defaultReminderDay.isAcceptableOrUnknown(
+              data['default_reminder_day']!, _defaultReminderDayMeta));
+    }
+    if (data.containsKey('default_reminder_hour')) {
+      context.handle(
+          _defaultReminderHourMeta,
+          defaultReminderHour.isAcceptableOrUnknown(
+              data['default_reminder_hour']!, _defaultReminderHourMeta));
+    }
+    if (data.containsKey('default_reminder_minute')) {
+      context.handle(
+          _defaultReminderMinuteMeta,
+          defaultReminderMinute.isAcceptableOrUnknown(
+              data['default_reminder_minute']!, _defaultReminderMinuteMeta));
+    }
+    if (data.containsKey('default_reminder_recurring')) {
+      context.handle(
+          _defaultReminderRecurringMeta,
+          defaultReminderRecurring.isAcceptableOrUnknown(
+              data['default_reminder_recurring']!,
+              _defaultReminderRecurringMeta));
+    }
+    if (data.containsKey('temp_plan_data')) {
+      context.handle(
+          _tempPlanDataMeta,
+          tempPlanData.isAcceptableOrUnknown(
+              data['temp_plan_data']!, _tempPlanDataMeta));
+    }
     return context;
   }
 
@@ -227,6 +321,19 @@ class $UserProfilesTableTable extends UserProfilesTable
           .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
       appVersion: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}app_version'])!,
+      notificationsEnabled: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}notifications_enabled'])!,
+      defaultReminderDay: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}default_reminder_day'])!,
+      defaultReminderHour: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}default_reminder_hour'])!,
+      defaultReminderMinute: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}default_reminder_minute'])!,
+      defaultReminderRecurring: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool,
+          data['${effectivePrefix}default_reminder_recurring'])!,
+      tempPlanData: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}temp_plan_data']),
     );
   }
 
@@ -238,7 +345,7 @@ class $UserProfilesTableTable extends UserProfilesTable
 
 class UserProfileEntry extends DataClass
     implements Insertable<UserProfileEntry> {
-  /// Primary key - device ID used as user identifier
+  /// Device ID used as user identifier (maps to device_id in Supabase users table)
   final String id;
 
   /// User's gender (stored as string enum)
@@ -273,6 +380,16 @@ class UserProfileEntry extends DataClass
 
   /// App version when profile was created/updated
   final String appVersion;
+
+  /// Notification preferences
+  final bool notificationsEnabled;
+  final int defaultReminderDay;
+  final int defaultReminderHour;
+  final int defaultReminderMinute;
+  final bool defaultReminderRecurring;
+
+  /// Temporary plan storage (unsaved plan that persists through app restart)
+  final String? tempPlanData;
   const UserProfileEntry(
       {required this.id,
       required this.gender,
@@ -285,7 +402,13 @@ class UserProfileEntry extends DataClass
       required this.onboardingCompleted,
       required this.createdAt,
       required this.updatedAt,
-      required this.appVersion});
+      required this.appVersion,
+      required this.notificationsEnabled,
+      required this.defaultReminderDay,
+      required this.defaultReminderHour,
+      required this.defaultReminderMinute,
+      required this.defaultReminderRecurring,
+      this.tempPlanData});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -301,6 +424,15 @@ class UserProfileEntry extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['app_version'] = Variable<String>(appVersion);
+    map['notifications_enabled'] = Variable<bool>(notificationsEnabled);
+    map['default_reminder_day'] = Variable<int>(defaultReminderDay);
+    map['default_reminder_hour'] = Variable<int>(defaultReminderHour);
+    map['default_reminder_minute'] = Variable<int>(defaultReminderMinute);
+    map['default_reminder_recurring'] =
+        Variable<bool>(defaultReminderRecurring);
+    if (!nullToAbsent || tempPlanData != null) {
+      map['temp_plan_data'] = Variable<String>(tempPlanData);
+    }
     return map;
   }
 
@@ -318,6 +450,14 @@ class UserProfileEntry extends DataClass
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       appVersion: Value(appVersion),
+      notificationsEnabled: Value(notificationsEnabled),
+      defaultReminderDay: Value(defaultReminderDay),
+      defaultReminderHour: Value(defaultReminderHour),
+      defaultReminderMinute: Value(defaultReminderMinute),
+      defaultReminderRecurring: Value(defaultReminderRecurring),
+      tempPlanData: tempPlanData == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tempPlanData),
     );
   }
 
@@ -339,6 +479,16 @@ class UserProfileEntry extends DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       appVersion: serializer.fromJson<String>(json['appVersion']),
+      notificationsEnabled:
+          serializer.fromJson<bool>(json['notificationsEnabled']),
+      defaultReminderDay: serializer.fromJson<int>(json['defaultReminderDay']),
+      defaultReminderHour:
+          serializer.fromJson<int>(json['defaultReminderHour']),
+      defaultReminderMinute:
+          serializer.fromJson<int>(json['defaultReminderMinute']),
+      defaultReminderRecurring:
+          serializer.fromJson<bool>(json['defaultReminderRecurring']),
+      tempPlanData: serializer.fromJson<String?>(json['tempPlanData']),
     );
   }
   @override
@@ -357,6 +507,13 @@ class UserProfileEntry extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'appVersion': serializer.toJson<String>(appVersion),
+      'notificationsEnabled': serializer.toJson<bool>(notificationsEnabled),
+      'defaultReminderDay': serializer.toJson<int>(defaultReminderDay),
+      'defaultReminderHour': serializer.toJson<int>(defaultReminderHour),
+      'defaultReminderMinute': serializer.toJson<int>(defaultReminderMinute),
+      'defaultReminderRecurring':
+          serializer.toJson<bool>(defaultReminderRecurring),
+      'tempPlanData': serializer.toJson<String?>(tempPlanData),
     };
   }
 
@@ -372,7 +529,13 @@ class UserProfileEntry extends DataClass
           bool? onboardingCompleted,
           DateTime? createdAt,
           DateTime? updatedAt,
-          String? appVersion}) =>
+          String? appVersion,
+          bool? notificationsEnabled,
+          int? defaultReminderDay,
+          int? defaultReminderHour,
+          int? defaultReminderMinute,
+          bool? defaultReminderRecurring,
+          Value<String?> tempPlanData = const Value.absent()}) =>
       UserProfileEntry(
         id: id ?? this.id,
         gender: gender ?? this.gender,
@@ -386,6 +549,15 @@ class UserProfileEntry extends DataClass
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
         appVersion: appVersion ?? this.appVersion,
+        notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+        defaultReminderDay: defaultReminderDay ?? this.defaultReminderDay,
+        defaultReminderHour: defaultReminderHour ?? this.defaultReminderHour,
+        defaultReminderMinute:
+            defaultReminderMinute ?? this.defaultReminderMinute,
+        defaultReminderRecurring:
+            defaultReminderRecurring ?? this.defaultReminderRecurring,
+        tempPlanData:
+            tempPlanData.present ? tempPlanData.value : this.tempPlanData,
       );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
     return UserProfileEntry(
@@ -412,6 +584,24 @@ class UserProfileEntry extends DataClass
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       appVersion:
           data.appVersion.present ? data.appVersion.value : this.appVersion,
+      notificationsEnabled: data.notificationsEnabled.present
+          ? data.notificationsEnabled.value
+          : this.notificationsEnabled,
+      defaultReminderDay: data.defaultReminderDay.present
+          ? data.defaultReminderDay.value
+          : this.defaultReminderDay,
+      defaultReminderHour: data.defaultReminderHour.present
+          ? data.defaultReminderHour.value
+          : this.defaultReminderHour,
+      defaultReminderMinute: data.defaultReminderMinute.present
+          ? data.defaultReminderMinute.value
+          : this.defaultReminderMinute,
+      defaultReminderRecurring: data.defaultReminderRecurring.present
+          ? data.defaultReminderRecurring.value
+          : this.defaultReminderRecurring,
+      tempPlanData: data.tempPlanData.present
+          ? data.tempPlanData.value
+          : this.tempPlanData,
     );
   }
 
@@ -429,7 +619,13 @@ class UserProfileEntry extends DataClass
           ..write('onboardingCompleted: $onboardingCompleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('appVersion: $appVersion')
+          ..write('appVersion: $appVersion, ')
+          ..write('notificationsEnabled: $notificationsEnabled, ')
+          ..write('defaultReminderDay: $defaultReminderDay, ')
+          ..write('defaultReminderHour: $defaultReminderHour, ')
+          ..write('defaultReminderMinute: $defaultReminderMinute, ')
+          ..write('defaultReminderRecurring: $defaultReminderRecurring, ')
+          ..write('tempPlanData: $tempPlanData')
           ..write(')'))
         .toString();
   }
@@ -447,7 +643,13 @@ class UserProfileEntry extends DataClass
       onboardingCompleted,
       createdAt,
       updatedAt,
-      appVersion);
+      appVersion,
+      notificationsEnabled,
+      defaultReminderDay,
+      defaultReminderHour,
+      defaultReminderMinute,
+      defaultReminderRecurring,
+      tempPlanData);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -463,7 +665,13 @@ class UserProfileEntry extends DataClass
           other.onboardingCompleted == this.onboardingCompleted &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.appVersion == this.appVersion);
+          other.appVersion == this.appVersion &&
+          other.notificationsEnabled == this.notificationsEnabled &&
+          other.defaultReminderDay == this.defaultReminderDay &&
+          other.defaultReminderHour == this.defaultReminderHour &&
+          other.defaultReminderMinute == this.defaultReminderMinute &&
+          other.defaultReminderRecurring == this.defaultReminderRecurring &&
+          other.tempPlanData == this.tempPlanData);
 }
 
 class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
@@ -479,6 +687,12 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String> appVersion;
+  final Value<bool> notificationsEnabled;
+  final Value<int> defaultReminderDay;
+  final Value<int> defaultReminderHour;
+  final Value<int> defaultReminderMinute;
+  final Value<bool> defaultReminderRecurring;
+  final Value<String?> tempPlanData;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
     this.id = const Value.absent(),
@@ -493,6 +707,12 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.appVersion = const Value.absent(),
+    this.notificationsEnabled = const Value.absent(),
+    this.defaultReminderDay = const Value.absent(),
+    this.defaultReminderHour = const Value.absent(),
+    this.defaultReminderMinute = const Value.absent(),
+    this.defaultReminderRecurring = const Value.absent(),
+    this.tempPlanData = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UserProfilesTableCompanion.insert({
@@ -508,6 +728,12 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     required DateTime createdAt,
     required DateTime updatedAt,
     required String appVersion,
+    this.notificationsEnabled = const Value.absent(),
+    this.defaultReminderDay = const Value.absent(),
+    this.defaultReminderHour = const Value.absent(),
+    this.defaultReminderMinute = const Value.absent(),
+    this.defaultReminderRecurring = const Value.absent(),
+    this.tempPlanData = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         gender = Value(gender),
@@ -533,6 +759,12 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? appVersion,
+    Expression<bool>? notificationsEnabled,
+    Expression<int>? defaultReminderDay,
+    Expression<int>? defaultReminderHour,
+    Expression<int>? defaultReminderMinute,
+    Expression<bool>? defaultReminderRecurring,
+    Expression<String>? tempPlanData,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -550,6 +782,17 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (appVersion != null) 'app_version': appVersion,
+      if (notificationsEnabled != null)
+        'notifications_enabled': notificationsEnabled,
+      if (defaultReminderDay != null)
+        'default_reminder_day': defaultReminderDay,
+      if (defaultReminderHour != null)
+        'default_reminder_hour': defaultReminderHour,
+      if (defaultReminderMinute != null)
+        'default_reminder_minute': defaultReminderMinute,
+      if (defaultReminderRecurring != null)
+        'default_reminder_recurring': defaultReminderRecurring,
+      if (tempPlanData != null) 'temp_plan_data': tempPlanData,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -567,6 +810,12 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<String>? appVersion,
+      Value<bool>? notificationsEnabled,
+      Value<int>? defaultReminderDay,
+      Value<int>? defaultReminderHour,
+      Value<int>? defaultReminderMinute,
+      Value<bool>? defaultReminderRecurring,
+      Value<String?>? tempPlanData,
       Value<int>? rowid}) {
     return UserProfilesTableCompanion(
       id: id ?? this.id,
@@ -581,6 +830,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       appVersion: appVersion ?? this.appVersion,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      defaultReminderDay: defaultReminderDay ?? this.defaultReminderDay,
+      defaultReminderHour: defaultReminderHour ?? this.defaultReminderHour,
+      defaultReminderMinute:
+          defaultReminderMinute ?? this.defaultReminderMinute,
+      defaultReminderRecurring:
+          defaultReminderRecurring ?? this.defaultReminderRecurring,
+      tempPlanData: tempPlanData ?? this.tempPlanData,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -624,6 +881,26 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (appVersion.present) {
       map['app_version'] = Variable<String>(appVersion.value);
     }
+    if (notificationsEnabled.present) {
+      map['notifications_enabled'] = Variable<bool>(notificationsEnabled.value);
+    }
+    if (defaultReminderDay.present) {
+      map['default_reminder_day'] = Variable<int>(defaultReminderDay.value);
+    }
+    if (defaultReminderHour.present) {
+      map['default_reminder_hour'] = Variable<int>(defaultReminderHour.value);
+    }
+    if (defaultReminderMinute.present) {
+      map['default_reminder_minute'] =
+          Variable<int>(defaultReminderMinute.value);
+    }
+    if (defaultReminderRecurring.present) {
+      map['default_reminder_recurring'] =
+          Variable<bool>(defaultReminderRecurring.value);
+    }
+    if (tempPlanData.present) {
+      map['temp_plan_data'] = Variable<String>(tempPlanData.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -645,6 +922,12 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('appVersion: $appVersion, ')
+          ..write('notificationsEnabled: $notificationsEnabled, ')
+          ..write('defaultReminderDay: $defaultReminderDay, ')
+          ..write('defaultReminderHour: $defaultReminderHour, ')
+          ..write('defaultReminderMinute: $defaultReminderMinute, ')
+          ..write('defaultReminderRecurring: $defaultReminderRecurring, ')
+          ..write('tempPlanData: $tempPlanData, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2562,6 +2845,1043 @@ class MacroTargetsTableCompanion
   }
 }
 
+class $FeedbackTableTable extends FeedbackTable
+    with TableInfo<$FeedbackTableTable, FeedbackEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FeedbackTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _satisfactionLevelMeta =
+      const VerificationMeta('satisfactionLevel');
+  @override
+  late final GeneratedColumn<int> satisfactionLevel = GeneratedColumn<int>(
+      'satisfaction_level', aliasedName, false,
+      check: () => ComparableExpr(satisfactionLevel).isBetweenValues(1, 3),
+      type: DriftSqlType.int,
+      requiredDuringInsert: true);
+  static const VerificationMeta _satisfactionEmojiMeta =
+      const VerificationMeta('satisfactionEmoji');
+  @override
+  late final GeneratedColumn<String> satisfactionEmoji =
+      GeneratedColumn<String>('satisfaction_emoji', aliasedName, false,
+          type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _satisfactionLabelMeta =
+      const VerificationMeta('satisfactionLabel');
+  @override
+  late final GeneratedColumn<String> satisfactionLabel =
+      GeneratedColumn<String>('satisfaction_label', aliasedName, false,
+          type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _appFeedbackMeta =
+      const VerificationMeta('appFeedback');
+  @override
+  late final GeneratedColumn<String> appFeedback = GeneratedColumn<String>(
+      'app_feedback', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _suggestionsMeta =
+      const VerificationMeta('suggestions');
+  @override
+  late final GeneratedColumn<String> suggestions = GeneratedColumn<String>(
+      'suggestions', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _planNameMeta =
+      const VerificationMeta('planName');
+  @override
+  late final GeneratedColumn<String> planName = GeneratedColumn<String>(
+      'plan_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _userNameMeta =
+      const VerificationMeta('userName');
+  @override
+  late final GeneratedColumn<String> userName = GeneratedColumn<String>(
+      'user_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _timestampMeta =
+      const VerificationMeta('timestamp');
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+      'timestamp', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _confidenceLevelMeta =
+      const VerificationMeta('confidenceLevel');
+  @override
+  late final GeneratedColumn<int> confidenceLevel = GeneratedColumn<int>(
+      'confidence_level', aliasedName, true,
+      check: () => ComparableExpr(confidenceLevel).isBetweenValues(1, 5),
+      type: DriftSqlType.int,
+      requiredDuringInsert: false);
+  static const VerificationMeta _confidenceLabelMeta =
+      const VerificationMeta('confidenceLabel');
+  @override
+  late final GeneratedColumn<String> confidenceLabel = GeneratedColumn<String>(
+      'confidence_label', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _reuseIntentMeta =
+      const VerificationMeta('reuseIntent');
+  @override
+  late final GeneratedColumn<String> reuseIntent = GeneratedColumn<String>(
+      'reuse_intent', aliasedName, true,
+      check: () => reuseIntent.isIn(['yes', 'maybe', 'no']),
+      type: DriftSqlType.string,
+      requiredDuringInsert: false);
+  static const VerificationMeta _reminderRequestedMeta =
+      const VerificationMeta('reminderRequested');
+  @override
+  late final GeneratedColumn<bool> reminderRequested = GeneratedColumn<bool>(
+      'reminder_requested', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("reminder_requested" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _missedReasonsMeta =
+      const VerificationMeta('missedReasons');
+  @override
+  late final GeneratedColumn<String> missedReasons = GeneratedColumn<String>(
+      'missed_reasons', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _missedOtherMeta =
+      const VerificationMeta('missedOther');
+  @override
+  late final GeneratedColumn<String> missedOther = GeneratedColumn<String>(
+      'missed_other', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _reminderDayOfWeekMeta =
+      const VerificationMeta('reminderDayOfWeek');
+  @override
+  late final GeneratedColumn<int> reminderDayOfWeek = GeneratedColumn<int>(
+      'reminder_day_of_week', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _reminderHourMeta =
+      const VerificationMeta('reminderHour');
+  @override
+  late final GeneratedColumn<int> reminderHour = GeneratedColumn<int>(
+      'reminder_hour', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(17));
+  static const VerificationMeta _reminderMinuteMeta =
+      const VerificationMeta('reminderMinute');
+  @override
+  late final GeneratedColumn<int> reminderMinute = GeneratedColumn<int>(
+      'reminder_minute', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _reminderRecurringMeta =
+      const VerificationMeta('reminderRecurring');
+  @override
+  late final GeneratedColumn<bool> reminderRecurring = GeneratedColumn<bool>(
+      'reminder_recurring', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("reminder_recurring" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        deviceId,
+        satisfactionLevel,
+        satisfactionEmoji,
+        satisfactionLabel,
+        appFeedback,
+        suggestions,
+        planName,
+        userName,
+        timestamp,
+        confidenceLevel,
+        confidenceLabel,
+        reuseIntent,
+        reminderRequested,
+        missedReasons,
+        missedOther,
+        reminderDayOfWeek,
+        reminderHour,
+        reminderMinute,
+        reminderRecurring,
+        createdAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'feedback';
+  @override
+  VerificationContext validateIntegrity(Insertable<FeedbackEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
+    if (data.containsKey('satisfaction_level')) {
+      context.handle(
+          _satisfactionLevelMeta,
+          satisfactionLevel.isAcceptableOrUnknown(
+              data['satisfaction_level']!, _satisfactionLevelMeta));
+    } else if (isInserting) {
+      context.missing(_satisfactionLevelMeta);
+    }
+    if (data.containsKey('satisfaction_emoji')) {
+      context.handle(
+          _satisfactionEmojiMeta,
+          satisfactionEmoji.isAcceptableOrUnknown(
+              data['satisfaction_emoji']!, _satisfactionEmojiMeta));
+    } else if (isInserting) {
+      context.missing(_satisfactionEmojiMeta);
+    }
+    if (data.containsKey('satisfaction_label')) {
+      context.handle(
+          _satisfactionLabelMeta,
+          satisfactionLabel.isAcceptableOrUnknown(
+              data['satisfaction_label']!, _satisfactionLabelMeta));
+    } else if (isInserting) {
+      context.missing(_satisfactionLabelMeta);
+    }
+    if (data.containsKey('app_feedback')) {
+      context.handle(
+          _appFeedbackMeta,
+          appFeedback.isAcceptableOrUnknown(
+              data['app_feedback']!, _appFeedbackMeta));
+    }
+    if (data.containsKey('suggestions')) {
+      context.handle(
+          _suggestionsMeta,
+          suggestions.isAcceptableOrUnknown(
+              data['suggestions']!, _suggestionsMeta));
+    }
+    if (data.containsKey('plan_name')) {
+      context.handle(_planNameMeta,
+          planName.isAcceptableOrUnknown(data['plan_name']!, _planNameMeta));
+    }
+    if (data.containsKey('user_name')) {
+      context.handle(_userNameMeta,
+          userName.isAcceptableOrUnknown(data['user_name']!, _userNameMeta));
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(_timestampMeta,
+          timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta));
+    }
+    if (data.containsKey('confidence_level')) {
+      context.handle(
+          _confidenceLevelMeta,
+          confidenceLevel.isAcceptableOrUnknown(
+              data['confidence_level']!, _confidenceLevelMeta));
+    }
+    if (data.containsKey('confidence_label')) {
+      context.handle(
+          _confidenceLabelMeta,
+          confidenceLabel.isAcceptableOrUnknown(
+              data['confidence_label']!, _confidenceLabelMeta));
+    }
+    if (data.containsKey('reuse_intent')) {
+      context.handle(
+          _reuseIntentMeta,
+          reuseIntent.isAcceptableOrUnknown(
+              data['reuse_intent']!, _reuseIntentMeta));
+    }
+    if (data.containsKey('reminder_requested')) {
+      context.handle(
+          _reminderRequestedMeta,
+          reminderRequested.isAcceptableOrUnknown(
+              data['reminder_requested']!, _reminderRequestedMeta));
+    }
+    if (data.containsKey('missed_reasons')) {
+      context.handle(
+          _missedReasonsMeta,
+          missedReasons.isAcceptableOrUnknown(
+              data['missed_reasons']!, _missedReasonsMeta));
+    }
+    if (data.containsKey('missed_other')) {
+      context.handle(
+          _missedOtherMeta,
+          missedOther.isAcceptableOrUnknown(
+              data['missed_other']!, _missedOtherMeta));
+    }
+    if (data.containsKey('reminder_day_of_week')) {
+      context.handle(
+          _reminderDayOfWeekMeta,
+          reminderDayOfWeek.isAcceptableOrUnknown(
+              data['reminder_day_of_week']!, _reminderDayOfWeekMeta));
+    }
+    if (data.containsKey('reminder_hour')) {
+      context.handle(
+          _reminderHourMeta,
+          reminderHour.isAcceptableOrUnknown(
+              data['reminder_hour']!, _reminderHourMeta));
+    }
+    if (data.containsKey('reminder_minute')) {
+      context.handle(
+          _reminderMinuteMeta,
+          reminderMinute.isAcceptableOrUnknown(
+              data['reminder_minute']!, _reminderMinuteMeta));
+    }
+    if (data.containsKey('reminder_recurring')) {
+      context.handle(
+          _reminderRecurringMeta,
+          reminderRecurring.isAcceptableOrUnknown(
+              data['reminder_recurring']!, _reminderRecurringMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FeedbackEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FeedbackEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
+      satisfactionLevel: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}satisfaction_level'])!,
+      satisfactionEmoji: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}satisfaction_emoji'])!,
+      satisfactionLabel: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}satisfaction_label'])!,
+      appFeedback: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}app_feedback']),
+      suggestions: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}suggestions']),
+      planName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}plan_name']),
+      userName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_name']),
+      timestamp: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp']),
+      confidenceLevel: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}confidence_level']),
+      confidenceLabel: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}confidence_label']),
+      reuseIntent: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}reuse_intent']),
+      reminderRequested: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}reminder_requested'])!,
+      missedReasons: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}missed_reasons']),
+      missedOther: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}missed_other']),
+      reminderDayOfWeek: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}reminder_day_of_week']),
+      reminderHour: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}reminder_hour'])!,
+      reminderMinute: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}reminder_minute'])!,
+      reminderRecurring: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}reminder_recurring'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $FeedbackTableTable createAlias(String alias) {
+    return $FeedbackTableTable(attachedDatabase, alias);
+  }
+}
+
+class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
+  /// Primary key - auto-generated UUID
+  final String id;
+
+  /// Device ID to associate with user
+  final String? deviceId;
+
+  /// Original feedback fields (existing)
+  final int satisfactionLevel;
+  final String satisfactionEmoji;
+  final String satisfactionLabel;
+  final String? appFeedback;
+  final String? suggestions;
+  final String? planName;
+  final String? userName;
+  final DateTime? timestamp;
+
+  /// New survey fields
+  final int? confidenceLevel;
+  final String? confidenceLabel;
+  final String? reuseIntent;
+  final bool reminderRequested;
+
+  /// Missed reasons stored as JSON array (for single selection + other text)
+  final String? missedReasons;
+  final String? missedOther;
+
+  /// Notification preferences
+  final int? reminderDayOfWeek;
+  final int reminderHour;
+  final int reminderMinute;
+  final bool reminderRecurring;
+
+  /// Audit fields
+  final DateTime createdAt;
+  const FeedbackEntry(
+      {required this.id,
+      this.deviceId,
+      required this.satisfactionLevel,
+      required this.satisfactionEmoji,
+      required this.satisfactionLabel,
+      this.appFeedback,
+      this.suggestions,
+      this.planName,
+      this.userName,
+      this.timestamp,
+      this.confidenceLevel,
+      this.confidenceLabel,
+      this.reuseIntent,
+      required this.reminderRequested,
+      this.missedReasons,
+      this.missedOther,
+      this.reminderDayOfWeek,
+      required this.reminderHour,
+      required this.reminderMinute,
+      required this.reminderRecurring,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    map['satisfaction_level'] = Variable<int>(satisfactionLevel);
+    map['satisfaction_emoji'] = Variable<String>(satisfactionEmoji);
+    map['satisfaction_label'] = Variable<String>(satisfactionLabel);
+    if (!nullToAbsent || appFeedback != null) {
+      map['app_feedback'] = Variable<String>(appFeedback);
+    }
+    if (!nullToAbsent || suggestions != null) {
+      map['suggestions'] = Variable<String>(suggestions);
+    }
+    if (!nullToAbsent || planName != null) {
+      map['plan_name'] = Variable<String>(planName);
+    }
+    if (!nullToAbsent || userName != null) {
+      map['user_name'] = Variable<String>(userName);
+    }
+    if (!nullToAbsent || timestamp != null) {
+      map['timestamp'] = Variable<DateTime>(timestamp);
+    }
+    if (!nullToAbsent || confidenceLevel != null) {
+      map['confidence_level'] = Variable<int>(confidenceLevel);
+    }
+    if (!nullToAbsent || confidenceLabel != null) {
+      map['confidence_label'] = Variable<String>(confidenceLabel);
+    }
+    if (!nullToAbsent || reuseIntent != null) {
+      map['reuse_intent'] = Variable<String>(reuseIntent);
+    }
+    map['reminder_requested'] = Variable<bool>(reminderRequested);
+    if (!nullToAbsent || missedReasons != null) {
+      map['missed_reasons'] = Variable<String>(missedReasons);
+    }
+    if (!nullToAbsent || missedOther != null) {
+      map['missed_other'] = Variable<String>(missedOther);
+    }
+    if (!nullToAbsent || reminderDayOfWeek != null) {
+      map['reminder_day_of_week'] = Variable<int>(reminderDayOfWeek);
+    }
+    map['reminder_hour'] = Variable<int>(reminderHour);
+    map['reminder_minute'] = Variable<int>(reminderMinute);
+    map['reminder_recurring'] = Variable<bool>(reminderRecurring);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FeedbackTableCompanion toCompanion(bool nullToAbsent) {
+    return FeedbackTableCompanion(
+      id: Value(id),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      satisfactionLevel: Value(satisfactionLevel),
+      satisfactionEmoji: Value(satisfactionEmoji),
+      satisfactionLabel: Value(satisfactionLabel),
+      appFeedback: appFeedback == null && nullToAbsent
+          ? const Value.absent()
+          : Value(appFeedback),
+      suggestions: suggestions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(suggestions),
+      planName: planName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planName),
+      userName: userName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userName),
+      timestamp: timestamp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(timestamp),
+      confidenceLevel: confidenceLevel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(confidenceLevel),
+      confidenceLabel: confidenceLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(confidenceLabel),
+      reuseIntent: reuseIntent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reuseIntent),
+      reminderRequested: Value(reminderRequested),
+      missedReasons: missedReasons == null && nullToAbsent
+          ? const Value.absent()
+          : Value(missedReasons),
+      missedOther: missedOther == null && nullToAbsent
+          ? const Value.absent()
+          : Value(missedOther),
+      reminderDayOfWeek: reminderDayOfWeek == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderDayOfWeek),
+      reminderHour: Value(reminderHour),
+      reminderMinute: Value(reminderMinute),
+      reminderRecurring: Value(reminderRecurring),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory FeedbackEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FeedbackEntry(
+      id: serializer.fromJson<String>(json['id']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      satisfactionLevel: serializer.fromJson<int>(json['satisfactionLevel']),
+      satisfactionEmoji: serializer.fromJson<String>(json['satisfactionEmoji']),
+      satisfactionLabel: serializer.fromJson<String>(json['satisfactionLabel']),
+      appFeedback: serializer.fromJson<String?>(json['appFeedback']),
+      suggestions: serializer.fromJson<String?>(json['suggestions']),
+      planName: serializer.fromJson<String?>(json['planName']),
+      userName: serializer.fromJson<String?>(json['userName']),
+      timestamp: serializer.fromJson<DateTime?>(json['timestamp']),
+      confidenceLevel: serializer.fromJson<int?>(json['confidenceLevel']),
+      confidenceLabel: serializer.fromJson<String?>(json['confidenceLabel']),
+      reuseIntent: serializer.fromJson<String?>(json['reuseIntent']),
+      reminderRequested: serializer.fromJson<bool>(json['reminderRequested']),
+      missedReasons: serializer.fromJson<String?>(json['missedReasons']),
+      missedOther: serializer.fromJson<String?>(json['missedOther']),
+      reminderDayOfWeek: serializer.fromJson<int?>(json['reminderDayOfWeek']),
+      reminderHour: serializer.fromJson<int>(json['reminderHour']),
+      reminderMinute: serializer.fromJson<int>(json['reminderMinute']),
+      reminderRecurring: serializer.fromJson<bool>(json['reminderRecurring']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'satisfactionLevel': serializer.toJson<int>(satisfactionLevel),
+      'satisfactionEmoji': serializer.toJson<String>(satisfactionEmoji),
+      'satisfactionLabel': serializer.toJson<String>(satisfactionLabel),
+      'appFeedback': serializer.toJson<String?>(appFeedback),
+      'suggestions': serializer.toJson<String?>(suggestions),
+      'planName': serializer.toJson<String?>(planName),
+      'userName': serializer.toJson<String?>(userName),
+      'timestamp': serializer.toJson<DateTime?>(timestamp),
+      'confidenceLevel': serializer.toJson<int?>(confidenceLevel),
+      'confidenceLabel': serializer.toJson<String?>(confidenceLabel),
+      'reuseIntent': serializer.toJson<String?>(reuseIntent),
+      'reminderRequested': serializer.toJson<bool>(reminderRequested),
+      'missedReasons': serializer.toJson<String?>(missedReasons),
+      'missedOther': serializer.toJson<String?>(missedOther),
+      'reminderDayOfWeek': serializer.toJson<int?>(reminderDayOfWeek),
+      'reminderHour': serializer.toJson<int>(reminderHour),
+      'reminderMinute': serializer.toJson<int>(reminderMinute),
+      'reminderRecurring': serializer.toJson<bool>(reminderRecurring),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  FeedbackEntry copyWith(
+          {String? id,
+          Value<String?> deviceId = const Value.absent(),
+          int? satisfactionLevel,
+          String? satisfactionEmoji,
+          String? satisfactionLabel,
+          Value<String?> appFeedback = const Value.absent(),
+          Value<String?> suggestions = const Value.absent(),
+          Value<String?> planName = const Value.absent(),
+          Value<String?> userName = const Value.absent(),
+          Value<DateTime?> timestamp = const Value.absent(),
+          Value<int?> confidenceLevel = const Value.absent(),
+          Value<String?> confidenceLabel = const Value.absent(),
+          Value<String?> reuseIntent = const Value.absent(),
+          bool? reminderRequested,
+          Value<String?> missedReasons = const Value.absent(),
+          Value<String?> missedOther = const Value.absent(),
+          Value<int?> reminderDayOfWeek = const Value.absent(),
+          int? reminderHour,
+          int? reminderMinute,
+          bool? reminderRecurring,
+          DateTime? createdAt}) =>
+      FeedbackEntry(
+        id: id ?? this.id,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
+        satisfactionLevel: satisfactionLevel ?? this.satisfactionLevel,
+        satisfactionEmoji: satisfactionEmoji ?? this.satisfactionEmoji,
+        satisfactionLabel: satisfactionLabel ?? this.satisfactionLabel,
+        appFeedback: appFeedback.present ? appFeedback.value : this.appFeedback,
+        suggestions: suggestions.present ? suggestions.value : this.suggestions,
+        planName: planName.present ? planName.value : this.planName,
+        userName: userName.present ? userName.value : this.userName,
+        timestamp: timestamp.present ? timestamp.value : this.timestamp,
+        confidenceLevel: confidenceLevel.present
+            ? confidenceLevel.value
+            : this.confidenceLevel,
+        confidenceLabel: confidenceLabel.present
+            ? confidenceLabel.value
+            : this.confidenceLabel,
+        reuseIntent: reuseIntent.present ? reuseIntent.value : this.reuseIntent,
+        reminderRequested: reminderRequested ?? this.reminderRequested,
+        missedReasons:
+            missedReasons.present ? missedReasons.value : this.missedReasons,
+        missedOther: missedOther.present ? missedOther.value : this.missedOther,
+        reminderDayOfWeek: reminderDayOfWeek.present
+            ? reminderDayOfWeek.value
+            : this.reminderDayOfWeek,
+        reminderHour: reminderHour ?? this.reminderHour,
+        reminderMinute: reminderMinute ?? this.reminderMinute,
+        reminderRecurring: reminderRecurring ?? this.reminderRecurring,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  FeedbackEntry copyWithCompanion(FeedbackTableCompanion data) {
+    return FeedbackEntry(
+      id: data.id.present ? data.id.value : this.id,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      satisfactionLevel: data.satisfactionLevel.present
+          ? data.satisfactionLevel.value
+          : this.satisfactionLevel,
+      satisfactionEmoji: data.satisfactionEmoji.present
+          ? data.satisfactionEmoji.value
+          : this.satisfactionEmoji,
+      satisfactionLabel: data.satisfactionLabel.present
+          ? data.satisfactionLabel.value
+          : this.satisfactionLabel,
+      appFeedback:
+          data.appFeedback.present ? data.appFeedback.value : this.appFeedback,
+      suggestions:
+          data.suggestions.present ? data.suggestions.value : this.suggestions,
+      planName: data.planName.present ? data.planName.value : this.planName,
+      userName: data.userName.present ? data.userName.value : this.userName,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      confidenceLevel: data.confidenceLevel.present
+          ? data.confidenceLevel.value
+          : this.confidenceLevel,
+      confidenceLabel: data.confidenceLabel.present
+          ? data.confidenceLabel.value
+          : this.confidenceLabel,
+      reuseIntent:
+          data.reuseIntent.present ? data.reuseIntent.value : this.reuseIntent,
+      reminderRequested: data.reminderRequested.present
+          ? data.reminderRequested.value
+          : this.reminderRequested,
+      missedReasons: data.missedReasons.present
+          ? data.missedReasons.value
+          : this.missedReasons,
+      missedOther:
+          data.missedOther.present ? data.missedOther.value : this.missedOther,
+      reminderDayOfWeek: data.reminderDayOfWeek.present
+          ? data.reminderDayOfWeek.value
+          : this.reminderDayOfWeek,
+      reminderHour: data.reminderHour.present
+          ? data.reminderHour.value
+          : this.reminderHour,
+      reminderMinute: data.reminderMinute.present
+          ? data.reminderMinute.value
+          : this.reminderMinute,
+      reminderRecurring: data.reminderRecurring.present
+          ? data.reminderRecurring.value
+          : this.reminderRecurring,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FeedbackEntry(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('satisfactionLevel: $satisfactionLevel, ')
+          ..write('satisfactionEmoji: $satisfactionEmoji, ')
+          ..write('satisfactionLabel: $satisfactionLabel, ')
+          ..write('appFeedback: $appFeedback, ')
+          ..write('suggestions: $suggestions, ')
+          ..write('planName: $planName, ')
+          ..write('userName: $userName, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('confidenceLevel: $confidenceLevel, ')
+          ..write('confidenceLabel: $confidenceLabel, ')
+          ..write('reuseIntent: $reuseIntent, ')
+          ..write('reminderRequested: $reminderRequested, ')
+          ..write('missedReasons: $missedReasons, ')
+          ..write('missedOther: $missedOther, ')
+          ..write('reminderDayOfWeek: $reminderDayOfWeek, ')
+          ..write('reminderHour: $reminderHour, ')
+          ..write('reminderMinute: $reminderMinute, ')
+          ..write('reminderRecurring: $reminderRecurring, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        id,
+        deviceId,
+        satisfactionLevel,
+        satisfactionEmoji,
+        satisfactionLabel,
+        appFeedback,
+        suggestions,
+        planName,
+        userName,
+        timestamp,
+        confidenceLevel,
+        confidenceLabel,
+        reuseIntent,
+        reminderRequested,
+        missedReasons,
+        missedOther,
+        reminderDayOfWeek,
+        reminderHour,
+        reminderMinute,
+        reminderRecurring,
+        createdAt
+      ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FeedbackEntry &&
+          other.id == this.id &&
+          other.deviceId == this.deviceId &&
+          other.satisfactionLevel == this.satisfactionLevel &&
+          other.satisfactionEmoji == this.satisfactionEmoji &&
+          other.satisfactionLabel == this.satisfactionLabel &&
+          other.appFeedback == this.appFeedback &&
+          other.suggestions == this.suggestions &&
+          other.planName == this.planName &&
+          other.userName == this.userName &&
+          other.timestamp == this.timestamp &&
+          other.confidenceLevel == this.confidenceLevel &&
+          other.confidenceLabel == this.confidenceLabel &&
+          other.reuseIntent == this.reuseIntent &&
+          other.reminderRequested == this.reminderRequested &&
+          other.missedReasons == this.missedReasons &&
+          other.missedOther == this.missedOther &&
+          other.reminderDayOfWeek == this.reminderDayOfWeek &&
+          other.reminderHour == this.reminderHour &&
+          other.reminderMinute == this.reminderMinute &&
+          other.reminderRecurring == this.reminderRecurring &&
+          other.createdAt == this.createdAt);
+}
+
+class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
+  final Value<String> id;
+  final Value<String?> deviceId;
+  final Value<int> satisfactionLevel;
+  final Value<String> satisfactionEmoji;
+  final Value<String> satisfactionLabel;
+  final Value<String?> appFeedback;
+  final Value<String?> suggestions;
+  final Value<String?> planName;
+  final Value<String?> userName;
+  final Value<DateTime?> timestamp;
+  final Value<int?> confidenceLevel;
+  final Value<String?> confidenceLabel;
+  final Value<String?> reuseIntent;
+  final Value<bool> reminderRequested;
+  final Value<String?> missedReasons;
+  final Value<String?> missedOther;
+  final Value<int?> reminderDayOfWeek;
+  final Value<int> reminderHour;
+  final Value<int> reminderMinute;
+  final Value<bool> reminderRecurring;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const FeedbackTableCompanion({
+    this.id = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.satisfactionLevel = const Value.absent(),
+    this.satisfactionEmoji = const Value.absent(),
+    this.satisfactionLabel = const Value.absent(),
+    this.appFeedback = const Value.absent(),
+    this.suggestions = const Value.absent(),
+    this.planName = const Value.absent(),
+    this.userName = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.confidenceLevel = const Value.absent(),
+    this.confidenceLabel = const Value.absent(),
+    this.reuseIntent = const Value.absent(),
+    this.reminderRequested = const Value.absent(),
+    this.missedReasons = const Value.absent(),
+    this.missedOther = const Value.absent(),
+    this.reminderDayOfWeek = const Value.absent(),
+    this.reminderHour = const Value.absent(),
+    this.reminderMinute = const Value.absent(),
+    this.reminderRecurring = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FeedbackTableCompanion.insert({
+    required String id,
+    this.deviceId = const Value.absent(),
+    required int satisfactionLevel,
+    required String satisfactionEmoji,
+    required String satisfactionLabel,
+    this.appFeedback = const Value.absent(),
+    this.suggestions = const Value.absent(),
+    this.planName = const Value.absent(),
+    this.userName = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.confidenceLevel = const Value.absent(),
+    this.confidenceLabel = const Value.absent(),
+    this.reuseIntent = const Value.absent(),
+    this.reminderRequested = const Value.absent(),
+    this.missedReasons = const Value.absent(),
+    this.missedOther = const Value.absent(),
+    this.reminderDayOfWeek = const Value.absent(),
+    this.reminderHour = const Value.absent(),
+    this.reminderMinute = const Value.absent(),
+    this.reminderRecurring = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        satisfactionLevel = Value(satisfactionLevel),
+        satisfactionEmoji = Value(satisfactionEmoji),
+        satisfactionLabel = Value(satisfactionLabel);
+  static Insertable<FeedbackEntry> custom({
+    Expression<String>? id,
+    Expression<String>? deviceId,
+    Expression<int>? satisfactionLevel,
+    Expression<String>? satisfactionEmoji,
+    Expression<String>? satisfactionLabel,
+    Expression<String>? appFeedback,
+    Expression<String>? suggestions,
+    Expression<String>? planName,
+    Expression<String>? userName,
+    Expression<DateTime>? timestamp,
+    Expression<int>? confidenceLevel,
+    Expression<String>? confidenceLabel,
+    Expression<String>? reuseIntent,
+    Expression<bool>? reminderRequested,
+    Expression<String>? missedReasons,
+    Expression<String>? missedOther,
+    Expression<int>? reminderDayOfWeek,
+    Expression<int>? reminderHour,
+    Expression<int>? reminderMinute,
+    Expression<bool>? reminderRecurring,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (deviceId != null) 'device_id': deviceId,
+      if (satisfactionLevel != null) 'satisfaction_level': satisfactionLevel,
+      if (satisfactionEmoji != null) 'satisfaction_emoji': satisfactionEmoji,
+      if (satisfactionLabel != null) 'satisfaction_label': satisfactionLabel,
+      if (appFeedback != null) 'app_feedback': appFeedback,
+      if (suggestions != null) 'suggestions': suggestions,
+      if (planName != null) 'plan_name': planName,
+      if (userName != null) 'user_name': userName,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (confidenceLevel != null) 'confidence_level': confidenceLevel,
+      if (confidenceLabel != null) 'confidence_label': confidenceLabel,
+      if (reuseIntent != null) 'reuse_intent': reuseIntent,
+      if (reminderRequested != null) 'reminder_requested': reminderRequested,
+      if (missedReasons != null) 'missed_reasons': missedReasons,
+      if (missedOther != null) 'missed_other': missedOther,
+      if (reminderDayOfWeek != null) 'reminder_day_of_week': reminderDayOfWeek,
+      if (reminderHour != null) 'reminder_hour': reminderHour,
+      if (reminderMinute != null) 'reminder_minute': reminderMinute,
+      if (reminderRecurring != null) 'reminder_recurring': reminderRecurring,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FeedbackTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String?>? deviceId,
+      Value<int>? satisfactionLevel,
+      Value<String>? satisfactionEmoji,
+      Value<String>? satisfactionLabel,
+      Value<String?>? appFeedback,
+      Value<String?>? suggestions,
+      Value<String?>? planName,
+      Value<String?>? userName,
+      Value<DateTime?>? timestamp,
+      Value<int?>? confidenceLevel,
+      Value<String?>? confidenceLabel,
+      Value<String?>? reuseIntent,
+      Value<bool>? reminderRequested,
+      Value<String?>? missedReasons,
+      Value<String?>? missedOther,
+      Value<int?>? reminderDayOfWeek,
+      Value<int>? reminderHour,
+      Value<int>? reminderMinute,
+      Value<bool>? reminderRecurring,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
+    return FeedbackTableCompanion(
+      id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
+      satisfactionLevel: satisfactionLevel ?? this.satisfactionLevel,
+      satisfactionEmoji: satisfactionEmoji ?? this.satisfactionEmoji,
+      satisfactionLabel: satisfactionLabel ?? this.satisfactionLabel,
+      appFeedback: appFeedback ?? this.appFeedback,
+      suggestions: suggestions ?? this.suggestions,
+      planName: planName ?? this.planName,
+      userName: userName ?? this.userName,
+      timestamp: timestamp ?? this.timestamp,
+      confidenceLevel: confidenceLevel ?? this.confidenceLevel,
+      confidenceLabel: confidenceLabel ?? this.confidenceLabel,
+      reuseIntent: reuseIntent ?? this.reuseIntent,
+      reminderRequested: reminderRequested ?? this.reminderRequested,
+      missedReasons: missedReasons ?? this.missedReasons,
+      missedOther: missedOther ?? this.missedOther,
+      reminderDayOfWeek: reminderDayOfWeek ?? this.reminderDayOfWeek,
+      reminderHour: reminderHour ?? this.reminderHour,
+      reminderMinute: reminderMinute ?? this.reminderMinute,
+      reminderRecurring: reminderRecurring ?? this.reminderRecurring,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (satisfactionLevel.present) {
+      map['satisfaction_level'] = Variable<int>(satisfactionLevel.value);
+    }
+    if (satisfactionEmoji.present) {
+      map['satisfaction_emoji'] = Variable<String>(satisfactionEmoji.value);
+    }
+    if (satisfactionLabel.present) {
+      map['satisfaction_label'] = Variable<String>(satisfactionLabel.value);
+    }
+    if (appFeedback.present) {
+      map['app_feedback'] = Variable<String>(appFeedback.value);
+    }
+    if (suggestions.present) {
+      map['suggestions'] = Variable<String>(suggestions.value);
+    }
+    if (planName.present) {
+      map['plan_name'] = Variable<String>(planName.value);
+    }
+    if (userName.present) {
+      map['user_name'] = Variable<String>(userName.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (confidenceLevel.present) {
+      map['confidence_level'] = Variable<int>(confidenceLevel.value);
+    }
+    if (confidenceLabel.present) {
+      map['confidence_label'] = Variable<String>(confidenceLabel.value);
+    }
+    if (reuseIntent.present) {
+      map['reuse_intent'] = Variable<String>(reuseIntent.value);
+    }
+    if (reminderRequested.present) {
+      map['reminder_requested'] = Variable<bool>(reminderRequested.value);
+    }
+    if (missedReasons.present) {
+      map['missed_reasons'] = Variable<String>(missedReasons.value);
+    }
+    if (missedOther.present) {
+      map['missed_other'] = Variable<String>(missedOther.value);
+    }
+    if (reminderDayOfWeek.present) {
+      map['reminder_day_of_week'] = Variable<int>(reminderDayOfWeek.value);
+    }
+    if (reminderHour.present) {
+      map['reminder_hour'] = Variable<int>(reminderHour.value);
+    }
+    if (reminderMinute.present) {
+      map['reminder_minute'] = Variable<int>(reminderMinute.value);
+    }
+    if (reminderRecurring.present) {
+      map['reminder_recurring'] = Variable<bool>(reminderRecurring.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FeedbackTableCompanion(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('satisfactionLevel: $satisfactionLevel, ')
+          ..write('satisfactionEmoji: $satisfactionEmoji, ')
+          ..write('satisfactionLabel: $satisfactionLabel, ')
+          ..write('appFeedback: $appFeedback, ')
+          ..write('suggestions: $suggestions, ')
+          ..write('planName: $planName, ')
+          ..write('userName: $userName, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('confidenceLevel: $confidenceLevel, ')
+          ..write('confidenceLabel: $confidenceLabel, ')
+          ..write('reuseIntent: $reuseIntent, ')
+          ..write('reminderRequested: $reminderRequested, ')
+          ..write('missedReasons: $missedReasons, ')
+          ..write('missedOther: $missedOther, ')
+          ..write('reminderDayOfWeek: $reminderDayOfWeek, ')
+          ..write('reminderHour: $reminderHour, ')
+          ..write('reminderMinute: $reminderMinute, ')
+          ..write('reminderRecurring: $reminderRecurring, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2572,6 +3892,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $NutritionPlansTable nutritionPlans = $NutritionPlansTable(this);
   late final $MacroTargetsTableTable macroTargetsTable =
       $MacroTargetsTableTable(this);
+  late final $FeedbackTableTable feedbackTable = $FeedbackTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2580,7 +3901,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         userProfilesTable,
         foodPreferencesTable,
         nutritionPlans,
-        macroTargetsTable
+        macroTargetsTable,
+        feedbackTable
       ];
 }
 
@@ -2598,6 +3920,12 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder
   required DateTime createdAt,
   required DateTime updatedAt,
   required String appVersion,
+  Value<bool> notificationsEnabled,
+  Value<int> defaultReminderDay,
+  Value<int> defaultReminderHour,
+  Value<int> defaultReminderMinute,
+  Value<bool> defaultReminderRecurring,
+  Value<String?> tempPlanData,
   Value<int> rowid,
 });
 typedef $$UserProfilesTableTableUpdateCompanionBuilder
@@ -2614,6 +3942,12 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<String> appVersion,
+  Value<bool> notificationsEnabled,
+  Value<int> defaultReminderDay,
+  Value<int> defaultReminderHour,
+  Value<int> defaultReminderMinute,
+  Value<bool> defaultReminderRecurring,
+  Value<String?> tempPlanData,
   Value<int> rowid,
 });
 
@@ -2663,6 +3997,29 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<String> get appVersion => $composableBuilder(
       column: $table.appVersion, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get notificationsEnabled => $composableBuilder(
+      column: $table.notificationsEnabled,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get defaultReminderDay => $composableBuilder(
+      column: $table.defaultReminderDay,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get defaultReminderHour => $composableBuilder(
+      column: $table.defaultReminderHour,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get defaultReminderMinute => $composableBuilder(
+      column: $table.defaultReminderMinute,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get defaultReminderRecurring => $composableBuilder(
+      column: $table.defaultReminderRecurring,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tempPlanData => $composableBuilder(
+      column: $table.tempPlanData, builder: (column) => ColumnFilters(column));
 }
 
 class $$UserProfilesTableTableOrderingComposer
@@ -2713,6 +4070,30 @@ class $$UserProfilesTableTableOrderingComposer
 
   ColumnOrderings<String> get appVersion => $composableBuilder(
       column: $table.appVersion, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get notificationsEnabled => $composableBuilder(
+      column: $table.notificationsEnabled,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get defaultReminderDay => $composableBuilder(
+      column: $table.defaultReminderDay,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get defaultReminderHour => $composableBuilder(
+      column: $table.defaultReminderHour,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get defaultReminderMinute => $composableBuilder(
+      column: $table.defaultReminderMinute,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get defaultReminderRecurring => $composableBuilder(
+      column: $table.defaultReminderRecurring,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tempPlanData => $composableBuilder(
+      column: $table.tempPlanData,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$UserProfilesTableTableAnnotationComposer
@@ -2759,6 +4140,24 @@ class $$UserProfilesTableTableAnnotationComposer
 
   GeneratedColumn<String> get appVersion => $composableBuilder(
       column: $table.appVersion, builder: (column) => column);
+
+  GeneratedColumn<bool> get notificationsEnabled => $composableBuilder(
+      column: $table.notificationsEnabled, builder: (column) => column);
+
+  GeneratedColumn<int> get defaultReminderDay => $composableBuilder(
+      column: $table.defaultReminderDay, builder: (column) => column);
+
+  GeneratedColumn<int> get defaultReminderHour => $composableBuilder(
+      column: $table.defaultReminderHour, builder: (column) => column);
+
+  GeneratedColumn<int> get defaultReminderMinute => $composableBuilder(
+      column: $table.defaultReminderMinute, builder: (column) => column);
+
+  GeneratedColumn<bool> get defaultReminderRecurring => $composableBuilder(
+      column: $table.defaultReminderRecurring, builder: (column) => column);
+
+  GeneratedColumn<String> get tempPlanData => $composableBuilder(
+      column: $table.tempPlanData, builder: (column) => column);
 }
 
 class $$UserProfilesTableTableTableManager extends RootTableManager<
@@ -2801,6 +4200,12 @@ class $$UserProfilesTableTableTableManager extends RootTableManager<
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<String> appVersion = const Value.absent(),
+            Value<bool> notificationsEnabled = const Value.absent(),
+            Value<int> defaultReminderDay = const Value.absent(),
+            Value<int> defaultReminderHour = const Value.absent(),
+            Value<int> defaultReminderMinute = const Value.absent(),
+            Value<bool> defaultReminderRecurring = const Value.absent(),
+            Value<String?> tempPlanData = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               UserProfilesTableCompanion(
@@ -2816,6 +4221,12 @@ class $$UserProfilesTableTableTableManager extends RootTableManager<
             createdAt: createdAt,
             updatedAt: updatedAt,
             appVersion: appVersion,
+            notificationsEnabled: notificationsEnabled,
+            defaultReminderDay: defaultReminderDay,
+            defaultReminderHour: defaultReminderHour,
+            defaultReminderMinute: defaultReminderMinute,
+            defaultReminderRecurring: defaultReminderRecurring,
+            tempPlanData: tempPlanData,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -2831,6 +4242,12 @@ class $$UserProfilesTableTableTableManager extends RootTableManager<
             required DateTime createdAt,
             required DateTime updatedAt,
             required String appVersion,
+            Value<bool> notificationsEnabled = const Value.absent(),
+            Value<int> defaultReminderDay = const Value.absent(),
+            Value<int> defaultReminderHour = const Value.absent(),
+            Value<int> defaultReminderMinute = const Value.absent(),
+            Value<bool> defaultReminderRecurring = const Value.absent(),
+            Value<String?> tempPlanData = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               UserProfilesTableCompanion.insert(
@@ -2846,6 +4263,12 @@ class $$UserProfilesTableTableTableManager extends RootTableManager<
             createdAt: createdAt,
             updatedAt: updatedAt,
             appVersion: appVersion,
+            notificationsEnabled: notificationsEnabled,
+            defaultReminderDay: defaultReminderDay,
+            defaultReminderHour: defaultReminderHour,
+            defaultReminderMinute: defaultReminderMinute,
+            defaultReminderRecurring: defaultReminderRecurring,
+            tempPlanData: tempPlanData,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -3754,6 +5177,439 @@ typedef $$MacroTargetsTableTableProcessedTableManager = ProcessedTableManager<
     ),
     MacroTargetsTableData,
     PrefetchHooks Function()>;
+typedef $$FeedbackTableTableCreateCompanionBuilder = FeedbackTableCompanion
+    Function({
+  required String id,
+  Value<String?> deviceId,
+  required int satisfactionLevel,
+  required String satisfactionEmoji,
+  required String satisfactionLabel,
+  Value<String?> appFeedback,
+  Value<String?> suggestions,
+  Value<String?> planName,
+  Value<String?> userName,
+  Value<DateTime?> timestamp,
+  Value<int?> confidenceLevel,
+  Value<String?> confidenceLabel,
+  Value<String?> reuseIntent,
+  Value<bool> reminderRequested,
+  Value<String?> missedReasons,
+  Value<String?> missedOther,
+  Value<int?> reminderDayOfWeek,
+  Value<int> reminderHour,
+  Value<int> reminderMinute,
+  Value<bool> reminderRecurring,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+typedef $$FeedbackTableTableUpdateCompanionBuilder = FeedbackTableCompanion
+    Function({
+  Value<String> id,
+  Value<String?> deviceId,
+  Value<int> satisfactionLevel,
+  Value<String> satisfactionEmoji,
+  Value<String> satisfactionLabel,
+  Value<String?> appFeedback,
+  Value<String?> suggestions,
+  Value<String?> planName,
+  Value<String?> userName,
+  Value<DateTime?> timestamp,
+  Value<int?> confidenceLevel,
+  Value<String?> confidenceLabel,
+  Value<String?> reuseIntent,
+  Value<bool> reminderRequested,
+  Value<String?> missedReasons,
+  Value<String?> missedOther,
+  Value<int?> reminderDayOfWeek,
+  Value<int> reminderHour,
+  Value<int> reminderMinute,
+  Value<bool> reminderRecurring,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+class $$FeedbackTableTableFilterComposer
+    extends Composer<_$AppDatabase, $FeedbackTableTable> {
+  $$FeedbackTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get satisfactionLevel => $composableBuilder(
+      column: $table.satisfactionLevel,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get satisfactionEmoji => $composableBuilder(
+      column: $table.satisfactionEmoji,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get satisfactionLabel => $composableBuilder(
+      column: $table.satisfactionLabel,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get appFeedback => $composableBuilder(
+      column: $table.appFeedback, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get suggestions => $composableBuilder(
+      column: $table.suggestions, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get planName => $composableBuilder(
+      column: $table.planName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userName => $composableBuilder(
+      column: $table.userName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get confidenceLevel => $composableBuilder(
+      column: $table.confidenceLevel,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get confidenceLabel => $composableBuilder(
+      column: $table.confidenceLabel,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get reuseIntent => $composableBuilder(
+      column: $table.reuseIntent, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get reminderRequested => $composableBuilder(
+      column: $table.reminderRequested,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get missedReasons => $composableBuilder(
+      column: $table.missedReasons, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get missedOther => $composableBuilder(
+      column: $table.missedOther, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get reminderDayOfWeek => $composableBuilder(
+      column: $table.reminderDayOfWeek,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get reminderHour => $composableBuilder(
+      column: $table.reminderHour, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get reminderMinute => $composableBuilder(
+      column: $table.reminderMinute,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get reminderRecurring => $composableBuilder(
+      column: $table.reminderRecurring,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$FeedbackTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $FeedbackTableTable> {
+  $$FeedbackTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get satisfactionLevel => $composableBuilder(
+      column: $table.satisfactionLevel,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get satisfactionEmoji => $composableBuilder(
+      column: $table.satisfactionEmoji,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get satisfactionLabel => $composableBuilder(
+      column: $table.satisfactionLabel,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get appFeedback => $composableBuilder(
+      column: $table.appFeedback, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get suggestions => $composableBuilder(
+      column: $table.suggestions, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get planName => $composableBuilder(
+      column: $table.planName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userName => $composableBuilder(
+      column: $table.userName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get confidenceLevel => $composableBuilder(
+      column: $table.confidenceLevel,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get confidenceLabel => $composableBuilder(
+      column: $table.confidenceLabel,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get reuseIntent => $composableBuilder(
+      column: $table.reuseIntent, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get reminderRequested => $composableBuilder(
+      column: $table.reminderRequested,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get missedReasons => $composableBuilder(
+      column: $table.missedReasons,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get missedOther => $composableBuilder(
+      column: $table.missedOther, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get reminderDayOfWeek => $composableBuilder(
+      column: $table.reminderDayOfWeek,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get reminderHour => $composableBuilder(
+      column: $table.reminderHour,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get reminderMinute => $composableBuilder(
+      column: $table.reminderMinute,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get reminderRecurring => $composableBuilder(
+      column: $table.reminderRecurring,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$FeedbackTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FeedbackTableTable> {
+  $$FeedbackTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get satisfactionLevel => $composableBuilder(
+      column: $table.satisfactionLevel, builder: (column) => column);
+
+  GeneratedColumn<String> get satisfactionEmoji => $composableBuilder(
+      column: $table.satisfactionEmoji, builder: (column) => column);
+
+  GeneratedColumn<String> get satisfactionLabel => $composableBuilder(
+      column: $table.satisfactionLabel, builder: (column) => column);
+
+  GeneratedColumn<String> get appFeedback => $composableBuilder(
+      column: $table.appFeedback, builder: (column) => column);
+
+  GeneratedColumn<String> get suggestions => $composableBuilder(
+      column: $table.suggestions, builder: (column) => column);
+
+  GeneratedColumn<String> get planName =>
+      $composableBuilder(column: $table.planName, builder: (column) => column);
+
+  GeneratedColumn<String> get userName =>
+      $composableBuilder(column: $table.userName, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<int> get confidenceLevel => $composableBuilder(
+      column: $table.confidenceLevel, builder: (column) => column);
+
+  GeneratedColumn<String> get confidenceLabel => $composableBuilder(
+      column: $table.confidenceLabel, builder: (column) => column);
+
+  GeneratedColumn<String> get reuseIntent => $composableBuilder(
+      column: $table.reuseIntent, builder: (column) => column);
+
+  GeneratedColumn<bool> get reminderRequested => $composableBuilder(
+      column: $table.reminderRequested, builder: (column) => column);
+
+  GeneratedColumn<String> get missedReasons => $composableBuilder(
+      column: $table.missedReasons, builder: (column) => column);
+
+  GeneratedColumn<String> get missedOther => $composableBuilder(
+      column: $table.missedOther, builder: (column) => column);
+
+  GeneratedColumn<int> get reminderDayOfWeek => $composableBuilder(
+      column: $table.reminderDayOfWeek, builder: (column) => column);
+
+  GeneratedColumn<int> get reminderHour => $composableBuilder(
+      column: $table.reminderHour, builder: (column) => column);
+
+  GeneratedColumn<int> get reminderMinute => $composableBuilder(
+      column: $table.reminderMinute, builder: (column) => column);
+
+  GeneratedColumn<bool> get reminderRecurring => $composableBuilder(
+      column: $table.reminderRecurring, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$FeedbackTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $FeedbackTableTable,
+    FeedbackEntry,
+    $$FeedbackTableTableFilterComposer,
+    $$FeedbackTableTableOrderingComposer,
+    $$FeedbackTableTableAnnotationComposer,
+    $$FeedbackTableTableCreateCompanionBuilder,
+    $$FeedbackTableTableUpdateCompanionBuilder,
+    (
+      FeedbackEntry,
+      BaseReferences<_$AppDatabase, $FeedbackTableTable, FeedbackEntry>
+    ),
+    FeedbackEntry,
+    PrefetchHooks Function()> {
+  $$FeedbackTableTableTableManager(_$AppDatabase db, $FeedbackTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FeedbackTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FeedbackTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FeedbackTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int> satisfactionLevel = const Value.absent(),
+            Value<String> satisfactionEmoji = const Value.absent(),
+            Value<String> satisfactionLabel = const Value.absent(),
+            Value<String?> appFeedback = const Value.absent(),
+            Value<String?> suggestions = const Value.absent(),
+            Value<String?> planName = const Value.absent(),
+            Value<String?> userName = const Value.absent(),
+            Value<DateTime?> timestamp = const Value.absent(),
+            Value<int?> confidenceLevel = const Value.absent(),
+            Value<String?> confidenceLabel = const Value.absent(),
+            Value<String?> reuseIntent = const Value.absent(),
+            Value<bool> reminderRequested = const Value.absent(),
+            Value<String?> missedReasons = const Value.absent(),
+            Value<String?> missedOther = const Value.absent(),
+            Value<int?> reminderDayOfWeek = const Value.absent(),
+            Value<int> reminderHour = const Value.absent(),
+            Value<int> reminderMinute = const Value.absent(),
+            Value<bool> reminderRecurring = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              FeedbackTableCompanion(
+            id: id,
+            deviceId: deviceId,
+            satisfactionLevel: satisfactionLevel,
+            satisfactionEmoji: satisfactionEmoji,
+            satisfactionLabel: satisfactionLabel,
+            appFeedback: appFeedback,
+            suggestions: suggestions,
+            planName: planName,
+            userName: userName,
+            timestamp: timestamp,
+            confidenceLevel: confidenceLevel,
+            confidenceLabel: confidenceLabel,
+            reuseIntent: reuseIntent,
+            reminderRequested: reminderRequested,
+            missedReasons: missedReasons,
+            missedOther: missedOther,
+            reminderDayOfWeek: reminderDayOfWeek,
+            reminderHour: reminderHour,
+            reminderMinute: reminderMinute,
+            reminderRecurring: reminderRecurring,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            Value<String?> deviceId = const Value.absent(),
+            required int satisfactionLevel,
+            required String satisfactionEmoji,
+            required String satisfactionLabel,
+            Value<String?> appFeedback = const Value.absent(),
+            Value<String?> suggestions = const Value.absent(),
+            Value<String?> planName = const Value.absent(),
+            Value<String?> userName = const Value.absent(),
+            Value<DateTime?> timestamp = const Value.absent(),
+            Value<int?> confidenceLevel = const Value.absent(),
+            Value<String?> confidenceLabel = const Value.absent(),
+            Value<String?> reuseIntent = const Value.absent(),
+            Value<bool> reminderRequested = const Value.absent(),
+            Value<String?> missedReasons = const Value.absent(),
+            Value<String?> missedOther = const Value.absent(),
+            Value<int?> reminderDayOfWeek = const Value.absent(),
+            Value<int> reminderHour = const Value.absent(),
+            Value<int> reminderMinute = const Value.absent(),
+            Value<bool> reminderRecurring = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              FeedbackTableCompanion.insert(
+            id: id,
+            deviceId: deviceId,
+            satisfactionLevel: satisfactionLevel,
+            satisfactionEmoji: satisfactionEmoji,
+            satisfactionLabel: satisfactionLabel,
+            appFeedback: appFeedback,
+            suggestions: suggestions,
+            planName: planName,
+            userName: userName,
+            timestamp: timestamp,
+            confidenceLevel: confidenceLevel,
+            confidenceLabel: confidenceLabel,
+            reuseIntent: reuseIntent,
+            reminderRequested: reminderRequested,
+            missedReasons: missedReasons,
+            missedOther: missedOther,
+            reminderDayOfWeek: reminderDayOfWeek,
+            reminderHour: reminderHour,
+            reminderMinute: reminderMinute,
+            reminderRecurring: reminderRecurring,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$FeedbackTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $FeedbackTableTable,
+    FeedbackEntry,
+    $$FeedbackTableTableFilterComposer,
+    $$FeedbackTableTableOrderingComposer,
+    $$FeedbackTableTableAnnotationComposer,
+    $$FeedbackTableTableCreateCompanionBuilder,
+    $$FeedbackTableTableUpdateCompanionBuilder,
+    (
+      FeedbackEntry,
+      BaseReferences<_$AppDatabase, $FeedbackTableTable, FeedbackEntry>
+    ),
+    FeedbackEntry,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3766,4 +5622,6 @@ class $AppDatabaseManager {
       $$NutritionPlansTableTableManager(_db, _db.nutritionPlans);
   $$MacroTargetsTableTableTableManager get macroTargetsTable =>
       $$MacroTargetsTableTableTableManager(_db, _db.macroTargetsTable);
+  $$FeedbackTableTableTableManager get feedbackTable =>
+      $$FeedbackTableTableTableManager(_db, _db.feedbackTable);
 }

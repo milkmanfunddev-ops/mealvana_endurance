@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../domain/run_parameters.dart';
@@ -55,6 +56,7 @@ class DistancePageGutEntryState {
   
   // Shared fields
   final String? errorMessage;
+  final String? planId; // UUID v4 for threading North-Star metric events
 
   const DistancePageGutEntryState({
     // Distance page fields
@@ -95,6 +97,7 @@ class DistancePageGutEntryState {
     
     // Shared fields
     this.errorMessage,
+    this.planId,
   });
 
   DistancePageGutEntryState copyWith({
@@ -136,6 +139,7 @@ class DistancePageGutEntryState {
     
     // Shared fields
     String? errorMessage,
+    String? planId,
   }) {
     return DistancePageGutEntryState(
       title: title ?? this.title,
@@ -175,6 +179,7 @@ class DistancePageGutEntryState {
       
       // Shared fields
       errorMessage: errorMessage ?? this.errorMessage,
+      planId: planId ?? this.planId,
     );
   }
 }
@@ -317,22 +322,24 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         print('📊 DEBUG: Parsed distance: ${distance}mi');
         print('📊 DEBUG: Parsed pace: ${paceMinutes}min/mi');
         
-        // Track generate macro targets button press
-        _analytics.track('Generate Macro Targets Button Pressed', properties: {
-          'Distance': distanceText,
-          'Pace': paceText,
-          'Pre Run Minutes': timeBeforeRunMinutes,
-          'Gut Training': gutTraining.name,
-          'Distance Unit': distanceUnit.name,
-          'Pace Unit': paceUnit.name,
-        });
+        // Generate plan_id for North-Star metric threading
+        const uuid = Uuid();
+        final planId = uuid.v4();
+        
+        print('🆔 DEBUG: Generated plan_id: $planId');
 
-        // Track macro generation started
-        _analytics.trackNutritionPlanGenerationStarted(
-          distanceMiles: distance,
-          paceMinutesPerMile: paceMinutes,
-          timeBeforeRunHours: timeBeforeRunMinutes / 60.0,
+        // Track plan flow started - North-Star metric entry point
+        await _analytics.trackPlanFlowStarted(
+          planId: planId,
+          screen: 'Adjust Your Macros',
+          activityType: 'running', // Could be parameterized later
+          distanceMi: distance,
+          durationMin: distance * paceMinutes, // Calculate duration
+          timeBeforeRunMin: timeBeforeRunMinutes.toDouble(),
           gutTrainingLevel: gutTraining.name,
+          sweatRateLevel: sweatRateCat?.name ?? 'medium',
+          temperatureC: temperatureC ?? 20.0, // Default temp
+          humidityPct: humidityPct ?? 50.0, // Default humidity
         );
 
         print('🎯 DEBUG: Calling generateMacroTargets directly...');
@@ -354,34 +361,14 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         final repository = await ref.read(macroRepositoryProvider.future);
         final macroTargets = await repository.getCachedMacroTargets();
         
-        if (macroTargets != null) {
-          // Track successful macro generation
-          _analytics.trackNutritionPlanGenerated(
-            distanceMiles: distance,
-            paceMinutesPerMile: paceMinutes,
-            totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
-            totalCarbs: (macroTargets.preRun.carbsG + macroTargets.duringRun.carbTotalG + macroTargets.postRun.carbsG).round(),
-            beforeRunItems: 1, // Simplified for now
-            duringRunItems: 1,
-            afterRunItems: 1,
-            isFirstPlan: true, // Could be enhanced to check if this is actually first plan
-          );
-        }
-
         print('✅ DEBUG: Macro targets generated successfully!');
-        
-        // Track successful navigation to adjust macros screen
-        _analytics.track('Navigation to Adjust Macros Screen', properties: {
-          'Source': 'Distance Page Generate Button',
-          'Distance': distance,
-          'Pace': paceMinutes,
-        });
 
-        // Update state to not generating and include macro targets
+        // Update state to not generating and include macro targets with planId
         return currentState.copyWith(
           isGeneratingMacros: false,
           errorMessage: null,
           macroTargets: macroTargets,
+          planId: planId, // Thread plan_id for North-Star metric
         );
 
       } catch (error, stackTrace) {
@@ -838,16 +825,11 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
             'Plan Type': 'LLM Generated',
           });
 
-          // Save the plan to local repository so current plan screen can access it
-          final authService = ref.read(authServiceProvider);
-          final user = await authService.getCurrentUser();
-          if (user != null) {
-            final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
-            await planRepository.cachePlanLocally(user.id, nutritionPlan);
-            
-            // Invalidate the nutrition plan controller to refresh with new plan
-            ref.invalidate(nutritionPlanControllerProvider);
-          }
+          // Use setGeneratedPlan to mark as unsaved and save temporarily with planId
+          await ref.read(nutritionPlanControllerProvider.notifier).setGeneratedPlan(
+            nutritionPlan, 
+            planId: currentState.planId, // Get planId from state
+          );
           
           return currentState.copyWith(isCreatingPlan: false);
         } else {

@@ -6,7 +6,6 @@ import 'package:mealvana_endurance/shared/widgets/generating_plan_overlay.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/services/analytics_service.dart';
 import '../providers/distance_page_gut_entry_controller.dart';
 import '../../domain/macro_targets.dart';
@@ -75,19 +74,6 @@ class AdjustMacrosScreen extends ConsumerWidget {
         },
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            Icons.help_outline,
-            color: AppTheme.primary900,
-            size: 24.sp,
-          ),
-          onPressed: () {
-            ref.read(analyticsServiceProvider).track('Help Button Tapped', properties: {
-              'Screen': 'Adjust Macros',
-            });
-            _showHelpBottomSheet(context, ref);
-          },
-        ),
         SizedBox(width: 16.w),
       ],
     );
@@ -321,7 +307,7 @@ class AdjustMacrosScreen extends ConsumerWidget {
           child: Column(
             children: [
               // Header row
-              _buildHeaderRow(),
+              _buildHeaderRow(context, ref),
               SizedBox(height: 16.h),
               // Carbs row
               _buildMacroTableRow(
@@ -373,11 +359,28 @@ class AdjustMacrosScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeaderRow() {
+  Widget _buildHeaderRow(BuildContext context, WidgetRef ref) {
     return Row(
       children: [
-        // Empty space for icon + label
-        SizedBox(width: 80.w),
+        // Help icon positioned at the left, above the Carbs icon
+        GestureDetector(
+          onTap: () {
+            ref.read(analyticsServiceProvider).track('Help Button Tapped', properties: {
+              'Screen': 'Adjust Macros',
+            });
+            _showHelpBottomSheet(context, ref);
+          },
+          child: Container(
+            padding: EdgeInsets.all(4.w),
+            child: Icon(
+              Icons.help_outline,
+              color: AppTheme.primary900,
+              size: 20.sp,
+            ),
+          ),
+        ),
+        // Space for the rest of the icon + label column
+        SizedBox(width: 56.w),
         // Column headers
         Expanded(
           child: Row(
@@ -655,171 +658,8 @@ class AdjustMacrosScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          padding: EdgeInsets.only(
-            left: 20.w,
-            right: 20.w,
-            top: 20.h,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20.h,
-          ),
-          decoration: BoxDecoration(
-            color: AppTheme.baseWhite,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(20.r),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40.w,
-                  height: 4.h,
-                  decoration: BoxDecoration(
-                    color: AppTheme.baseGrey.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                ),
-              ),
-              SizedBox(height: 20.h),
-              Text(
-                'Nutrition Guidelines',
-                style: TextStyle(
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.primary900,
-                ),
-              ),
-              SizedBox(height: 20.h),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildNewHelpSection(
-                        title: '### **Carbohydrates ⓘ**',
-                        content: '''**How we calculate it:** Duration establishes a safe **absorption band**. We adjust for **intensity (MET)**, **gut training**, **body size**, and fuel mix—then **cap** based on what your gut can process.
-
-Replenish with high-quality carbs immediately after exercise to jumpstart recovery and restore glycogen.
-
-*Key References:*
-
-*ACSM Metabolic Calculations Handbook; ACSM Guidelines 10e.
-Jeukendrup AE (2004, 2011).*''',
-                      ),
-                      
-                      SizedBox(height: 24.h),
-                      
-                      _buildNewHelpSection(
-                        title: '### **Sodium ⓘ**',
-                        content: '''**How we calculate it:** If you know your **sweat rate**, we estimate hourly sodium loss (**sweat sodium × sweat rate**) and target **~50–70%** of that (clamped at **300–1200 mg/h**). If not, we determine needs based on your **sweater type** (low/medium/high) and adjust for **heat/humidity**.
-
-Include sodium in your **pre-run** and **post-run** drinks to enhance fluid retention and improve rehydration.
-
-*Key References:*
-
-*ACSM/AND/DC 2016; NATA & ACSM hydration position stands.*''',
-                      ),
-                      
-                      SizedBox(height: 24.h),
-                      
-                      _buildNewHelpSection(
-                        title: '### **Fluids ⓘ**',
-                        content: '''**How we calculate it:** We begin with a running-friendly range (**~0.4–0.8 L/h**), adjust for **body size** and **intensity (MET)**, then modify based on **weather** (less in cool conditions, more in hot/humid). For those with a **measured sweat rate**, we target **~70–80%** of that rate, staying within the safe range to prevent overhydration.
-
-Post-run, replenish approximately **125%** of your **estimated fluid deficit** using a drink containing **~500–700 mg/L sodium**.
-
-*Key References:*
-
-*ACSM & NATA hydration guidance; ACSM Guidelines 10e.*''',
-                      ),
-                      
-                      SizedBox(height: 24.h),
-                      
-                      _buildNewHelpSection(
-                        title: '### **Protein ⓘ**',
-                        content: '''**How we calculate it:**
-
-- **Pre-run:** small amount, **~0.15–0.25 g/kg** (varies with timing) for satiety without digestive discomfort.
-- **During:** **0 g/h** for runs ≤3.5 h (minimal amounts only for ultramarathons).
-- **After:** **~0.3 g/kg** within the first hour; 20–40 g high-quality protein containing **~2–3 g leucine**.
-
-Remember: "carbs first, protein **right after**" for optimal recovery.
-
-*Key References:*
-
-*Thomas et al., JAND 2016; IOC/consensus updates on recovery protein.*''',
-                      ),
-                      
-                      SizedBox(height: 24.h),
-                      
-                      _buildNewHelpSection(
-                        title: '### **Fats ⓘ**',
-                        content: '''**How we calculate it:**
-
-- **Pre-run:** modest intake, **~0.1–0.2 g/kg** (reduce fiber/fat closer to start time).
-- **During:** **0–2 g/h** maximum (minimized to protect gut function).
-- **After:** approximately **~0.2 g/kg** as part of your recovery meal—supports satiety and overall energy intake.
-
-Prioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.
-
-*Key References:*
-
-*Thomas et al., JAND 2016; Burke et al., IOC consensus on athlete nutrition.*''',
-                      ),
-                      
-                      SizedBox(height: 20.h),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      builder: (context) => _HelpBottomSheet(),
     );
-  }
-
-  Widget _buildNewHelpSection({
-    required String title,
-    required String content,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title.replaceAll('### **', '').replaceAll('**', '').replaceAll(' ⓘ', ''),
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.primary900,
-          ),
-        ),
-        SizedBox(height: 12.h),
-        Text(
-          _formatMarkdownText(content),
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: AppTheme.baseGrey,
-            height: 1.5,
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _formatMarkdownText(String text) {
-    // Simple markdown processing - remove markdown formatting for display
-    return text
-        .replaceAll('**', '') // Remove bold markdown
-        .replaceAll('*', '') // Remove italic markdown
-        .replaceAll('~', '') // Remove strikethrough
-        .trim();
   }
 }
 
@@ -1130,8 +970,295 @@ class _EditAllMacrosDialogState extends ConsumerState<_EditAllMacrosDialog> {
       }
     } catch (e) {
       // Error handling - silently fail for now
-      print('DEBUG: Error parsing macro values: $e');
+      // TODO: Show user-friendly error message
     }
+  }
+}
+
+class _HelpBottomSheet extends StatefulWidget {
+  const _HelpBottomSheet({super.key});
+
+  @override
+  State<_HelpBottomSheet> createState() => _HelpBottomSheetState();
+}
+
+class _HelpBottomSheetState extends State<_HelpBottomSheet> {
+  // Track which sections are expanded
+  String? expandedSection = 'Carbohydrates'; // Default expanded section
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) => Container(
+        padding: EdgeInsets.only(
+          left: 20.w,
+          right: 20.w,
+          top: 20.h,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20.h,
+        ),
+        decoration: BoxDecoration(
+          color: AppTheme.baseWhite,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(20.r),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppTheme.baseGrey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+            ),
+            SizedBox(height: 20.h),
+            Text(
+              'Nutrition Guidelines',
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.primary900,
+              ),
+            ),
+            SizedBox(height: 20.h),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Accordion sections
+                    _buildAccordionSection(
+                      title: 'Carbohydrates',
+                      content: '''**How we calculate it:** Duration establishes a safe **absorption band**. We adjust for **intensity (MET)**, **gut training**, **body size**, and fuel mix—then **cap** based on what your gut can process.
+
+Replenish with high-quality carbs immediately after exercise to jumpstart recovery and restore glycogen.''',
+                      isExpanded: expandedSection == 'Carbohydrates',
+                      onTap: () {
+                        setState(() {
+                          expandedSection = expandedSection == 'Carbohydrates' ? null : 'Carbohydrates';
+                        });
+                      },
+                    ),
+                    
+                    _buildAccordionSection(
+                      title: 'Sodium',
+                      content: '''**How we calculate it:** If you know your **sweat rate**, we estimate hourly sodium loss (**sweat sodium × sweat rate**) and target **~50–70%** of that (clamped at **300–1200 mg/h**). If not, we determine needs based on your **sweater type** (low/medium/high) and adjust for **heat/humidity**.
+
+Include sodium in your **pre-run** and **post-run** drinks to enhance fluid retention and improve rehydration.''',
+                      isExpanded: expandedSection == 'Sodium',
+                      onTap: () {
+                        setState(() {
+                          expandedSection = expandedSection == 'Sodium' ? null : 'Sodium';
+                        });
+                      },
+                    ),
+                    
+                    _buildAccordionSection(
+                      title: 'Fluids',
+                      content: '''**How we calculate it:** We begin with a running-friendly range (**~0.4–0.8 L/h**), adjust for **body size** and **intensity (MET)**, then modify based on **weather** (less in cool conditions, more in hot/humid). For those with a **measured sweat rate**, we target **~70–80%** of that rate, staying within the safe range to prevent overhydration.
+
+Post-run, replenish approximately **125%** of your **estimated fluid deficit** using a drink containing **~500–700 mg/L sodium**.''',
+                      isExpanded: expandedSection == 'Fluids',
+                      onTap: () {
+                        setState(() {
+                          expandedSection = expandedSection == 'Fluids' ? null : 'Fluids';
+                        });
+                      },
+                    ),
+                    
+                    _buildAccordionSection(
+                      title: 'Protein',
+                      content: '''**How we calculate it:**
+
+- **Pre-run:** small amount, **~0.15–0.25 g/kg** (varies with timing) for satiety without digestive discomfort.
+- **During:** **0 g/h** for runs ≤3.5 h (minimal amounts only for ultramarathons).
+- **After:** **~0.3 g/kg** within the first hour; 20–40 g high-quality protein containing **~2–3 g leucine**.
+
+Remember: "carbs first, protein **right after**" for optimal recovery.''',
+                      isExpanded: expandedSection == 'Protein',
+                      onTap: () {
+                        setState(() {
+                          expandedSection = expandedSection == 'Protein' ? null : 'Protein';
+                        });
+                      },
+                    ),
+                    
+                    _buildAccordionSection(
+                      title: 'Fats',
+                      content: '''**How we calculate it:**
+
+- **Pre-run:** modest intake, **~0.1–0.2 g/kg** (reduce fiber/fat closer to start time).
+- **During:** **0–2 g/h** maximum (minimized to protect gut function).
+- **After:** approximately **~0.2 g/kg** as part of your recovery meal—supports satiety and overall energy intake.
+
+Prioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.''',
+                      isExpanded: expandedSection == 'Fats',
+                      onTap: () {
+                        setState(() {
+                          expandedSection = expandedSection == 'Fats' ? null : 'Fats';
+                        });
+                      },
+                    ),
+                    
+                    SizedBox(height: 24.h),
+                    
+                    // Key References section (always visible)
+                    Container(
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary50.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: AppTheme.primary600.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Key References',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.primary900,
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            '• ACSM Metabolic Calculations Handbook; ACSM Guidelines 10e\n'
+                            '• Jeukendrup AE (2004, 2011)\n'
+                            '• ACSM/AND/DC 2016; NATA & ACSM hydration position stands\n'
+                            '• Thomas et al., JAND 2016\n'
+                            '• IOC/consensus updates on recovery protein\n'
+                            '• Burke et al., IOC consensus on athlete nutrition',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: AppTheme.baseGrey,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    SizedBox(height: 20.h),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccordionSection({
+    required String title,
+    required String content,
+    required bool isExpanded,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      decoration: BoxDecoration(
+        color: AppTheme.baseWhite,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isExpanded 
+              ? AppTheme.primary600.withValues(alpha: 0.3)
+              : AppTheme.baseGrey.withValues(alpha: 0.2),
+          width: 1,
+        ),
+        boxShadow: isExpanded 
+            ? [
+                BoxShadow(
+                  color: AppTheme.primary600.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : [],
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(12.r),
+              bottom: Radius.circular(isExpanded ? 0 : 12.r),
+            ),
+            child: Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: isExpanded 
+                    ? AppTheme.primary50.withValues(alpha: 0.5)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(12.r),
+                  bottom: Radius.circular(isExpanded ? 0 : 12.r),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                        color: isExpanded 
+                            ? AppTheme.primary900
+                            : AppTheme.baseBlack,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    isExpanded 
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: isExpanded 
+                        ? AppTheme.primary600
+                        : AppTheme.baseGrey,
+                    size: 24.w,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded) ...[
+            Container(
+              padding: EdgeInsets.all(16.w),
+              child: Text(
+                _formatMarkdownText(content),
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppTheme.baseGrey,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatMarkdownText(String text) {
+    // Simple markdown processing - remove markdown formatting for display
+    return text
+        .replaceAll('**', '') // Remove bold markdown
+        .replaceAll('*', '') // Remove italic markdown
+        .replaceAll('~', '') // Remove strikethrough
+        .trim();
   }
 }
 

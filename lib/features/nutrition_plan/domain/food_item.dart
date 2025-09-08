@@ -73,6 +73,15 @@ class FoodItem {
     this.tags = const [],
   });
 
+  /// Get the full S3 image URL for this food item
+  /// Constructs URL from S3 bucket base URL + image_address field
+  String? get imageUrl {
+    if (imageAddress == null || imageAddress!.isEmpty) {
+      return null;
+    }
+    return 'https://milkman-dev.s3.us-east-2.amazonaws.com/foods/$imageAddress';
+  }
+
   factory FoodItem.fromJson(Map<String, dynamic> json) {
     return FoodItem(
       id: json['id']?.toString() ?? '',

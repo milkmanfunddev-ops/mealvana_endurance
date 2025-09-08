@@ -25,7 +25,6 @@ class FoodIcon extends StatelessWidget {
     final iconSize = size ?? 48.w;
     
     // Debug logging
-    print('🍽️ FoodIcon: Building with imageUrl: $imageUrl (isEmpty: ${imageUrl?.isEmpty ?? true})');
     if (imageUrl == null || imageUrl!.isEmpty) {
       print('   ⚠️  No image URL provided, showing fallback icon');
     }
@@ -62,10 +61,8 @@ class FoodIcon extends StatelessWidget {
                 },
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) {
-                    print('✅ FoodIcon: Successfully loaded image: $imageUrl');
                     return child;
                   }
-                  print('🔄 FoodIcon: Loading image: $imageUrl (${loadingProgress.cumulativeBytesLoaded}/${loadingProgress.expectedTotalBytes})');
                   return Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null

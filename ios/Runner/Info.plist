@@ -49,5 +49,7 @@
 		<false/>
 		<key>ITSAppUsesNonExemptEncryption</key>
 		<false/>
+		<key>LSApplicationCategoryType</key>
+		<string>public.app-category.utilities</string>
 	</dict>
 </plist>

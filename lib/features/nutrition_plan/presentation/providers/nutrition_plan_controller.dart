@@ -11,14 +11,54 @@ import '../../data/macro_repository.dart';
 import '../../domain/macro_targets.dart' as targets_model;
 import '../../../auth/application/auth_service.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/analytics_service.dart';
+import '../../../../shared/database/database_provider.dart';
 
 part 'nutrition_plan_controller.g.dart';
 
-/// Controller for managing nutrition plan generation and display
-@riverpod
+/// State class combining nutrition plan and its save status
+class NutritionPlanState {
+  const NutritionPlanState({
+    this.plan,
+    this.isSaved = true,
+    this.isLoading = false,
+    this.error,
+    this.planId,
+  });
+
+  final NutritionPlan? plan;
+  final bool isSaved;
+  final bool isLoading;
+  final String? error;
+  final String? planId; // UUID v4 for North-Star metric threading
+
+  NutritionPlanState copyWith({
+    NutritionPlan? plan,
+    bool? isSaved,
+    bool? isLoading,
+    String? error,
+    String? planId,
+  }) {
+    return NutritionPlanState(
+      plan: plan ?? this.plan,
+      isSaved: isSaved ?? this.isSaved,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+      planId: planId ?? this.planId,
+    );
+  }
+
+  @override
+  String toString() => 'NutritionPlanState(plan: ${plan?.id}, isSaved: $isSaved, isLoading: $isLoading, error: $error)';
+}
+
+
+/// Controller for managing nutrition plan generation and display with save state
+@riverpod  
 class NutritionPlanController extends _$NutritionPlanController {
   NutritionPlanService get _nutritionPlanService => ref.read(nutritionPlanServiceProvider);
   ContentService get _contentService => ref.read(contentServiceProvider);
+  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
   
   /// Save an updated plan to both local and remote storage
   Future<void> _saveUpdatedPlan(NutritionPlan updatedPlan) async {
@@ -73,9 +113,227 @@ class NutritionPlanController extends _$NutritionPlanController {
   }
 
   @override
-  FutureOr<NutritionPlan?> build() {
-    // Initialize with the latest nutrition plan or null
-    return _nutritionPlanService.getLatestNutritionPlan();
+  FutureOr<NutritionPlanState> build() async {
+    print('🔍 DEBUG: NutritionPlanController.build() called');
+    
+    // First try to get a temporarily saved plan (unsaved plan)
+    final tempPlan = await _getTempPlan();
+    if (tempPlan != null) {
+      print('🔍 DEBUG: Found temp plan: ${tempPlan.id}, returning as unsaved');
+      return NutritionPlanState(plan: tempPlan, isSaved: false);
+    }
+    
+    print('🔍 DEBUG: No temp plan found, getting latest saved plan');
+    // Otherwise get the latest saved nutrition plan  
+    final savedPlan = await _nutritionPlanService.getLatestNutritionPlan();
+    if (savedPlan != null) {
+      print('🔍 DEBUG: Found saved plan: ${savedPlan.id}, returning as saved');
+      return NutritionPlanState(plan: savedPlan, isSaved: true);
+    } else {
+      print('🔍 DEBUG: No plan found');
+      return const NutritionPlanState(plan: null, isSaved: true);
+    }
+  }
+
+  /// Get temporarily stored plan (unsaved plan that persists through app reload)
+  Future<NutritionPlan?> _getTempPlan() async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      final user = await authService.getCurrentUser();
+      if (user == null) {
+        print('🔍 DEBUG: No user found for temp plan check');
+        return null;
+      }
+
+      print('🔍 DEBUG: Checking for temp plan for user: ${user.id}');
+      final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
+      final tempPlan = await planRepository.getTempPlan(user.id);
+      
+      if (tempPlan != null) {
+        print('🔍 DEBUG: Found temp plan: ${tempPlan.id}');
+      } else {
+        print('🔍 DEBUG: No temp plan found');
+      }
+      
+      return tempPlan;
+    } catch (error) {
+      print('Error getting temp plan: $error');
+      return null;
+    }
+  }
+
+  /// Save plan temporarily (survives app restart until officially saved)
+  Future<void> _saveTempPlan(NutritionPlan plan) async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      final user = await authService.getCurrentUser();
+      if (user == null) {
+        print('🔍 DEBUG: Cannot save temp plan - no user');
+        return;
+      }
+
+      print('🔍 DEBUG: Saving temp plan ${plan.id} for user: ${user.id}');
+      final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
+      await planRepository.saveTempPlan(user.id, plan);
+      print('🔍 DEBUG: Temp plan saved successfully');
+    } catch (error) {
+      print('Error saving temp plan: $error');
+    }
+  }
+
+  /// Clear temporary plan (called when plan is officially saved)
+  Future<void> _clearTempPlan() async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      final user = await authService.getCurrentUser();
+      if (user == null) return;
+
+      final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
+      await planRepository.clearTempPlan(user.id);
+    } catch (error) {
+      print('Error clearing temp plan: $error');
+    }
+  }
+
+
+  /// Set a new generated plan (marks as unsaved and saves temporarily)
+  Future<void> setGeneratedPlan(NutritionPlan plan, {String? planId}) async {
+    print('🔍 DEBUG: setGeneratedPlan() called for plan: ${plan.id}');
+    print('🔍 DEBUG: planId for North-Star: $planId');
+    
+    // Set state to show plan as unsaved with planId
+    state = AsyncValue.data(NutritionPlanState(plan: plan, isSaved: false, planId: planId));
+    
+    // Save temporarily so it persists through app reload
+    print('🔍 DEBUG: Saving plan temporarily');
+    await _saveTempPlan(plan);
+    
+    // Remove from permanent local storage if it was cached there
+    try {
+      final authService = ref.read(authServiceProvider);
+      final user = await authService.getCurrentUser();
+      if (user != null) {
+        final database = await ref.read(appDatabaseProvider);
+        // Delete the plan from permanent local storage so it's only in temp storage
+        print('🔍 DEBUG: Removing plan from permanent local storage');
+        await database.deleteNutritionPlan(plan.id);
+      }
+    } catch (error) {
+      print('Note: Could not remove plan from permanent local storage: $error');
+    }
+    print('🔍 DEBUG: setGeneratedPlan() completed');
+  }
+
+  /// Save the current plan permanently (move from temp to permanent storage)
+  Future<bool> savePlan() async {
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) {
+      print('🔍 DEBUG: savePlan() - No plan to save');
+      return false;
+    }
+
+    try {
+      print('🔍 DEBUG: savePlan() called for plan: ${currentState!.plan!.id}');
+      
+      // Save to permanent storage
+      final authService = ref.read(authServiceProvider);
+      final user = await authService.getCurrentUser();
+      if (user == null) {
+        print('🔍 DEBUG: savePlan() - No user found');
+        return false;
+      }
+
+      final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
+      await planRepository.cachePlanLocally(user.id, currentState.plan!);
+      
+      // Track North-Star metric: plan_saved
+      if (currentState.planId != null) {
+        final plan = currentState.plan!;
+        
+        // Calculate totals from the plan
+        double carbsTotalG = 0;
+        double sodiumTotalMg = 0; 
+        double fluidsTotalMl = 0;
+        int itemsPreCount = 0;
+        int itemsDuringCount = 0;
+        int itemsPostCount = 0;
+        
+        // Calculate from plan sections
+        for (final section in plan.sections) {
+          if (section.title.toLowerCase().contains('before') || 
+              section.title.toLowerCase().contains('pre')) {
+            itemsPreCount = section.foodItems.length;
+            for (final food in section.foodItems) {
+              carbsTotalG += food.nutritionalInfo?.carbs ?? 0;
+              sodiumTotalMg += food.nutritionalInfo?.sodium ?? 0;
+              fluidsTotalMl += food.nutritionalInfo?.fluids ?? 0;
+            }
+          } else if (section.title.toLowerCase().contains('during')) {
+            itemsDuringCount = section.foodItems.length;
+            for (final food in section.foodItems) {
+              carbsTotalG += food.nutritionalInfo?.carbs ?? 0;
+              sodiumTotalMg += food.nutritionalInfo?.sodium ?? 0;
+              fluidsTotalMl += food.nutritionalInfo?.fluids ?? 0;
+            }
+          } else if (section.title.toLowerCase().contains('after') ||
+                     section.title.toLowerCase().contains('post')) {
+            itemsPostCount = section.foodItems.length;
+            for (final food in section.foodItems) {
+              carbsTotalG += food.nutritionalInfo?.carbs ?? 0;
+              sodiumTotalMg += food.nutritionalInfo?.sodium ?? 0;
+              fluidsTotalMl += food.nutritionalInfo?.fluids ?? 0;
+            }
+          }
+        }
+        
+        // Get macro targets for coverage calculation
+        final macroTargets = await getCachedMacroTargets();
+        double carbsCoveragePct = 0;
+        double sodiumCoveragePct = 0; 
+        double fluidsCoveragePct = 0;
+        
+        if (macroTargets != null) {
+          final totalTargetCarbs = macroTargets.preRun.carbsG + 
+                                  macroTargets.duringRun.carbTotalG + 
+                                  macroTargets.postRun.carbsG;
+          final totalTargetSodium = macroTargets.duringRun.sodiumTotalMg;
+          final totalTargetFluids = macroTargets.duringRun.fluidTotalMl;
+          
+          if (totalTargetCarbs > 0) carbsCoveragePct = (carbsTotalG / totalTargetCarbs) * 100;
+          if (totalTargetSodium > 0) sodiumCoveragePct = (sodiumTotalMg / totalTargetSodium) * 100;
+          if (totalTargetFluids > 0) fluidsCoveragePct = (fluidsTotalMl / totalTargetFluids) * 100;
+        }
+        
+        // Track the North-Star plan_saved event
+        await _analytics.trackPlanSaved(
+          planId: currentState.planId!,
+          carbsTotalG: carbsTotalG,
+          sodiumTotalMg: sodiumTotalMg,
+          fluidsTotalMl: fluidsTotalMl,
+          carbsCoveragePct: carbsCoveragePct,
+          sodiumCoveragePct: sodiumCoveragePct,
+          fluidsCoveragePct: fluidsCoveragePct,
+          itemsPreCount: itemsPreCount,
+          itemsDuringCount: itemsDuringCount,
+          itemsPostCount: itemsPostCount,
+          secondsToSave: 0, // TODO: Calculate actual time from plan_flow_started
+        );
+        
+        print('📊 DEBUG: Tracked plan_saved event for planId: ${currentState.planId}');
+      }
+      
+      // Clear temp storage
+      await _clearTempPlan();
+      
+      // Update state to show as saved
+      state = AsyncValue.data(currentState.copyWith(isSaved: true));
+      
+      print('🔍 DEBUG: savePlan() completed successfully');
+      return true;
+    } catch (error, stackTrace) {
+      print('🔍 DEBUG: savePlan() failed: $error');
+      return false;
+    }
   }
 
   /// Get cached macro targets from repository
@@ -95,18 +353,26 @@ class NutritionPlanController extends _$NutritionPlanController {
     required double distanceMiles,
     required double paceMinutesPerMile,
   }) async {
-    state = const AsyncLoading();
+    state = const AsyncValue.loading();
 
-    state = await AsyncValue.guard(() async {
+    try {
       final plan = await _nutritionPlanService.generateNutritionPlan(
         distanceMiles: distanceMiles,
         paceMinutesPerMile: paceMinutesPerMile,
       );
 
-      return plan;
-    });
-
-    return state.valueOrNull;
+      if (plan != null) {
+        // Use setGeneratedPlan to mark as unsaved
+        await setGeneratedPlan(plan);
+        return plan;
+      } else {
+        state = const AsyncValue.data(NutritionPlanState(plan: null, isSaved: true));
+        return null;
+      }
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      return null;
+    }
   }
 
 
@@ -117,45 +383,51 @@ class NutritionPlanController extends _$NutritionPlanController {
     double timeBeforeRunHours = 2.0,
     String? gutTrainingLevel,
   }) async {
-    state = await AsyncValue.guard(() async {
+    try {
       final updatedPlan = await _nutritionPlanService.updateNutritionPlan(
         distanceMiles: distanceMiles,
         paceMinutesPerMile: paceMinutesPerMile,
         timeBeforeRunHours: timeBeforeRunHours,
         gutTrainingLevel: gutTrainingLevel,
       );
-      return updatedPlan;
-    });
+      
+      if (updatedPlan != null) {
+        // Mark updated plan as unsaved
+        await setGeneratedPlan(updatedPlan);
+      }
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   /// Delete a plan
   Future<void> deletePlan(String planId) async {
-    final currentPlan = state.valueOrNull;
+    final currentState = state.valueOrNull;
     
     state = await AsyncValue.guard(() async {
       await _nutritionPlanService.deleteNutritionPlan(planId);
-      // If we just deleted the current plan, return null
-      if (currentPlan?.id == planId) {
-        return null;
+      // If we just deleted the current plan, return empty state
+      if (currentState?.plan?.id == planId) {
+        return const NutritionPlanState(plan: null, isSaved: true);
       }
-      return currentPlan;
+      return currentState ?? const NutritionPlanState(plan: null, isSaved: true);
     });
   }
 
   /// Get nutrition recommendations for current plan
   List<String> getRecommendations() {
-    final plan = state.valueOrNull;
-    if (plan == null) return [];
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) return [];
     
-    return _nutritionPlanService.getNutritionRecommendations(plan);
+    return _nutritionPlanService.getNutritionRecommendations(currentState!.plan!);
   }
 
   /// Validate current plan for safety
   bool validateCurrentPlan() {
-    final plan = state.valueOrNull;
-    if (plan == null) return false;
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) return false;
     
-    return _nutritionPlanService.validateNutritionPlan(plan);
+    return _nutritionPlanService.validateNutritionPlan(currentState!.plan!);
   }
 
   /// Get plan statistics for the user
@@ -165,14 +437,16 @@ class NutritionPlanController extends _$NutritionPlanController {
 
   /// Clear current plan (reset state)
   void clearCurrentPlan() {
-    state = const AsyncData(null);
+    state = const AsyncData(NutritionPlanState(plan: null, isSaved: true));
   }
   
   /// Get content-driven error message
   /// Swap a food item in the current plan
   Future<void> swapFoodItem(String oldFoodId, dynamic newFood, String category, {double? customAmount}) async {
-    final currentPlan = state.valueOrNull;
-    if (currentPlan == null) return;
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) return;
+    
+    final currentPlan = currentState!.plan!;
     
     state = const AsyncLoading();
     
@@ -230,14 +504,16 @@ class NutritionPlanController extends _$NutritionPlanController {
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
       
-      return updatedPlan;
+      return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
     });
   }
   
   /// Add a food item to the current plan
   Future<void> addFoodItem(dynamic food, String category, {double? customAmount}) async {
-    final currentPlan = state.valueOrNull;
-    if (currentPlan == null) return;
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) return;
+    
+    final currentPlan = currentState!.plan!;
     
     state = const AsyncLoading();
     
@@ -288,14 +564,16 @@ class NutritionPlanController extends _$NutritionPlanController {
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
       
-      return updatedPlan;
+      return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
     });
   }
   
   /// Delete a food item from the current plan
   Future<void> deleteFoodItem(String foodId, String category) async {
-    final currentPlan = state.valueOrNull;
-    if (currentPlan == null) return;
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) return;
+    
+    final currentPlan = currentState!.plan!;
     
     state = const AsyncLoading();
     
@@ -331,14 +609,16 @@ class NutritionPlanController extends _$NutritionPlanController {
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
       
-      return updatedPlan;
+      return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
     });
   }
 
   /// Update the quantity of an existing food item
   Future<void> updateFoodQuantity(String foodId, String category, double newQuantity) async {
-    final currentPlan = state.valueOrNull;
-    if (currentPlan == null) return;
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) return;
+    
+    final currentPlan = currentState!.plan!;
     
     // Don't set loading state to avoid UI rebuilds during quantity editing
     // state = const AsyncLoading();
@@ -415,7 +695,7 @@ class NutritionPlanController extends _$NutritionPlanController {
       await _saveUpdatedPlan(updatedPlan);
       
       // Update state without loading state to prevent UI rebuilds
-      state = AsyncData(updatedPlan);
+      state = AsyncData(NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved));
     } catch (error, stackTrace) {
       // Handle errors without changing to error state to prevent rebuilds
       AppLogger.instance.error('Failed to update food quantity', error: error, stackTrace: stackTrace);
@@ -432,7 +712,7 @@ class NutritionPlanController extends _$NutritionPlanController {
 @riverpod
 NutritionPlan? currentNutritionPlan(Ref ref) {
   final controller = ref.watch(nutritionPlanControllerProvider);
-  return controller.valueOrNull;
+  return controller.valueOrNull?.plan;
 }
 
 /// Provider for nutrition recommendations

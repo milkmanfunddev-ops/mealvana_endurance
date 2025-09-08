@@ -7,11 +7,14 @@ import '../widgets/plan_container.dart';
 import '../../../feedback/presentation/widgets/feedback_drawer.dart';
 import '../../../feedback/presentation/providers/feedback_provider.dart';
 import '../../../feedback/domain/feedback_data.dart';
+import '../../../feedback/application/feedback_service.dart';
+import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/nutrition_plan_controller.dart';
 import '../widgets/macro_targets_widget.dart';
 import '../../domain/macro_targets.dart' as targets_model;
+import '../../domain/nutrition_plan.dart';
 
 /// Plan Screen - Shows generated nutrition plan matching Alex's design
 /// Displays the plan with Before/During/After sections and feedback integration
@@ -53,6 +56,38 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
         setState(() => _showFeedback = false);
       }
     });
+  }
+
+  /// Handle save button press - show survey or go to main screen
+  Future<void> _handleSavePlan() async {
+    final feedbackService = ref.read(feedbackServiceProvider);
+    
+    // Get device ID to check survey eligibility
+    final user = await ref.read(appDatabaseProvider).getCurrentUserProfile();
+    final deviceId = user?.id ?? 'anonymous';
+    
+    // Check if user should be shown the survey
+    final shouldShowSurvey = await feedbackService.shouldShowSurvey(deviceId);
+    
+    if (shouldShowSurvey) {
+      // Get plan name for survey context
+      final planState = ref.read(nutritionPlanControllerProvider);
+      final planName = planState.when(
+        data: (planData) => planData.plan != null ? 'Nutrition Plan' : null,
+        loading: () => null,
+        error: (_, __) => null,
+      );
+      
+      // Navigate to survey with plan name
+      if (mounted) {
+        context.push('/survey', extra: {'planName': planName});
+      }
+    } else {
+      // User has completed survey recently, go directly to main screen
+      if (mounted) {
+        context.go('/main');
+      }
+    }
   }
 
   Future<void> _handleFeedbackSubmission(FeedbackResponse feedback) async {
@@ -144,11 +179,11 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
         children: [
           // Main content
           planState.when(
-            data: (plan) {
-              if (plan == null) {
+            data: (planData) {
+              if (planData.plan == null) {
                 return _buildEmptyState();
               }
-              return _buildPlanContent(plan, feedbackState);
+              return _buildPlanContent(planData.plan!, feedbackState);
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _buildErrorState(error.toString()),
@@ -157,7 +192,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
           // Feedback Drawer Overlay
           if (_showFeedback)
             FeedbackDrawer(
-              planName: planState.value?.name,
+              planName: planState.valueOrNull?.plan?.name,
               isVisible: _showFeedback,
               onClose: _hideFeedbackDrawer,
               onSubmitFeedback: _handleFeedbackSubmission,
@@ -175,7 +210,10 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
     );
   }
 
-  Widget _buildPlanContent(dynamic plan, dynamic feedbackState) {
+  Widget _buildPlanContent(NutritionPlan plan, dynamic feedbackState) {
+    final planState = ref.watch(nutritionPlanControllerProvider).valueOrNull;
+    final isSaved = planState?.isSaved ?? true;
+    print('🔍 DEBUG: Plan save status - isSaved: $isSaved, planId: ${plan.id}');
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -326,14 +364,26 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
 
           SizedBox(height: 32.h),
 
-          // Save Button - only show if not yet saved
-          if (!feedbackState.lastSubmissionSuccess)
+          // Save Button - only show if plan is not yet saved
+          if (!isSaved)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
               child: PrimaryButton(
                 text: 'Save',
-                onPressed: () {
-                  _showFeedbackDrawer();
+                onPressed: () async {
+                  final success = await ref.read(nutritionPlanControllerProvider.notifier).savePlan();
+                  if (success) {
+                    _handleSavePlan(); // This will trigger the survey flow
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('❌ Failed to save plan. Please try again.'),
+                          backgroundColor: AppTheme.warningColor,
+                        ),
+                      );
+                    }
+                  }
                 },
                 width: double.infinity,
               ),

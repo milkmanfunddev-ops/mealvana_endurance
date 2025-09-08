@@ -5,7 +5,7 @@ import '../../../features/auth/domain/user_preferences.dart' as domain;
 /// Stores user biometric data and preferences
 @DataClassName('UserProfileEntry')
 class UserProfilesTable extends Table {
-  /// Primary key - device ID used as user identifier
+  /// Device ID used as user identifier (maps to device_id in Supabase users table)
   TextColumn get id => text()();
   
   /// User's gender (stored as string enum)
@@ -40,9 +40,22 @@ class UserProfilesTable extends Table {
   
   /// App version when profile was created/updated
   TextColumn get appVersion => text()();
+  
+  /// Notification preferences
+  BoolColumn get notificationsEnabled => boolean().withDefault(const Constant(false))();
+  IntColumn get defaultReminderDay => integer().withDefault(const Constant(4))(); // Thursday
+  IntColumn get defaultReminderHour => integer().withDefault(const Constant(17))(); // 5 PM
+  IntColumn get defaultReminderMinute => integer().withDefault(const Constant(0))();
+  BoolColumn get defaultReminderRecurring => boolean().withDefault(const Constant(false))();
+  
+  /// Temporary plan storage (unsaved plan that persists through app restart)
+  TextColumn get tempPlanData => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
+
+  @override
+  String get tableName => 'users';
 }
 
 // Extensions and helpers removed - conversions handled in app_database.dart
