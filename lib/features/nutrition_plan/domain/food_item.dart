@@ -42,6 +42,12 @@ class FoodItem {
   final NutritionInfo? nutrition;
   final List<String> tags;
 
+  // New database fields for display and solver control
+  final String? displayName;
+  final String? displayNamePlural;
+  final String? displayOverride;
+  final bool toExcludeFromSolver;
+
   FoodItem({
     required this.id,
     required this.name,
@@ -71,6 +77,10 @@ class FoodItem {
     this.potassiumMg,
     this.nutrition,
     this.tags = const [],
+    this.displayName,
+    this.displayNamePlural,
+    this.displayOverride,
+    this.toExcludeFromSolver = false,
   });
 
   /// Get the full S3 image URL for this food item
@@ -114,10 +124,14 @@ class FoodItem {
       sodiumMg: json['sodium_mg'] as int?,
       caffeineMg: json['caffeine_mg'] as int?,
       potassiumMg: json['potassium_mg'] as int?,
-      nutrition: json['nutritional_info'] != null 
+      nutrition: json['nutritional_info'] != null
         ? NutritionInfo.fromJson(json['nutritional_info'] as Map<String, dynamic>)
         : null,
       tags: List<String>.from(json['tags'] ?? []),
+      displayName: json['display_name']?.toString(),
+      displayNamePlural: json['display_name_plural']?.toString(),
+      displayOverride: json['display_override']?.toString(),
+      toExcludeFromSolver: json['to_exclude_from_solver'] == true,
     );
   }
 
@@ -151,6 +165,10 @@ class FoodItem {
       'potassium_mg': potassiumMg,
       'nutritional_info': nutrition?.toJson(),
       'tags': tags,
+      'display_name': displayName,
+      'display_name_plural': displayNamePlural,
+      'display_override': displayOverride,
+      'to_exclude_from_solver': toExcludeFromSolver,
     };
   }
   

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/nutrition_plan.dart';
 import '../domain/food_item_data.dart';
 import '../domain/macro_targets.dart' as targets;
+import '../data/food_repository.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../../../shared/services/sentry_service.dart';
@@ -15,6 +16,7 @@ class LLMNutritionPlanService {
 
   AuthService get _authService => ref.read(authServiceProvider);
   SentryService get _sentryService => ref.read(sentryServiceProvider);
+  FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
   SupabaseClient get _supabase => Supabase.instance.client;
 
   /// Generate a nutrition plan using the LLM edge function
@@ -159,9 +161,9 @@ class LLMNutritionPlanService {
       AppLogger.instance.nutritionPlan('Converting LLM response to nutrition plan',
         planId: data['plan_id'] as String?,
       );
-      
+
       // Convert the LLM response to our NutritionPlan format
-      final nutritionPlan = _convertLLMResponseToPlan(data, user.id);
+      final nutritionPlan = await _convertLLMResponseToPlan(data, user.id);
       
       AppLogger.instance.nutritionPlan('Nutrition plan conversion completed',
         planId: nutritionPlan.id,
@@ -203,50 +205,70 @@ class LLMNutritionPlanService {
     }
   }
 
+
+  /// Get food details (display names and image) from local cache using food_id
+  Future<({String? name, String? imageAddress, String? displayName, String? displayNamePlural, String? displayOverride})> _getFoodDetailsFromCache(String? foodId) async {
+    if (foodId == null || foodId.isEmpty) {
+      return (name: null, imageAddress: null, displayName: null, displayNamePlural: null, displayOverride: null);
+    }
+
+    try {
+      final foodItem = await _foodRepository.getFoodById(foodId);
+      // Use display_name if available, fallback to name
+      final displayName = foodItem?.displayName?.isNotEmpty == true
+          ? foodItem!.displayName
+          : foodItem?.name;
+      return (
+        name: displayName,
+        imageAddress: foodItem?.imageAddress,
+        displayName: foodItem?.displayName,
+        displayNamePlural: foodItem?.displayNamePlural,
+        displayOverride: foodItem?.displayOverride,
+      );
+    } catch (e) {
+      AppLogger.instance.error('Error looking up food details from cache',
+        context: 'LLMNutritionPlanService',
+        data: {'foodId': foodId},
+        error: e,
+      );
+      return (name: null, imageAddress: null, displayName: null, displayNamePlural: null, displayOverride: null);
+    }
+  }
+
   /// Convert LLM response format to our NutritionPlan domain model
-  NutritionPlan _convertLLMResponseToPlan(Map<String, dynamic> data, String userId) {
-    AppLogger.instance.debug('Starting LLM response conversion',
-      context: 'LLMNutritionPlanService',
-      data: {
-        'rawDataKeys': data.keys.toList(),
-        'planDataKeys': (data['plan'] as Map<String, dynamic>).keys.toList(),
-        'macroTargetsKeys': (data['macro_targets'] as Map<String, dynamic>).keys.toList(),
-      },
-    );
-    
+  Future<NutritionPlan> _convertLLMResponseToPlan(Map<String, dynamic> data, String userId) async {
     final planData = data['plan'] as Map<String, dynamic>;
     final macroTargets = data['macro_targets'] as Map<String, dynamic>;
     final detailedMessage = data['detailed_message'] as String? ?? 'AI-generated nutrition plan';
     final planId = data['plan_id'] as String? ?? 
                    'llm-plan-${DateTime.now().millisecondsSinceEpoch}';
                    
-    AppLogger.instance.debug('Extracted plan metadata',
-      context: 'LLMNutritionPlanService',
-      data: {
-        'planId': planId,
-        'detailedMessage': detailedMessage,
-      },
-    );
-
-    // Convert before section
-    AppLogger.instance.debug('Converting before section',
-      context: 'LLMNutritionPlanService',
-      data: {'beforeItemsCount': (planData['before'] as List<dynamic>).length},
-    );
-    
-    final beforeItems = (planData['before'] as List<dynamic>).map((item) {
+    final beforeItems = <FoodItemData>[];
+    for (final item in planData['before'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
-      final foodName = itemMap['food_name'] as String? ?? 'Unknown Food';
+      final foodId = itemMap['food_id'] as String?;
       final description = itemMap['description'] as String? ?? 'No description';
       final timing = itemMap['timing'] as String? ?? '';
-      
-      return FoodItemData(
-        id: foodName, // Use food name as ID for now
+
+      // Look up food details (name and image) from local cache using food_id
+      final foodDetails = await _getFoodDetailsFromCache(foodId);
+      final foodName = foodDetails.name ?? itemMap['food_name'] as String? ?? 'Unknown Food';
+      final imageAddress = foodDetails.imageAddress;
+
+      // Get the quantity as a number from the edge function
+      final quantityNum = (itemMap['quantity'] as num?)?.toDouble() ?? 1.0;
+      // Create a simple quantity display string
+      final quantityDisplay = quantityNum == quantityNum.toInt()
+          ? quantityNum.toInt().toString()
+          : quantityNum.toStringAsFixed(1);
+
+      beforeItems.add(FoodItemData(
+        id: foodId ?? foodName, // Use food_id if available, fallback to food_name
         name: foodName,
-        quantity: description, // LP provides quantity display like "1.5 cups cooked oatmeal"
-        imageAddress: itemMap['image_address'] as String?,
-        description: timing, // LP provides timing like "2-3 hours before"
-        timing: timing, // Also set timing field if it exists
+        quantity: quantityDisplay, // Simple quantity display like "1.5"
+        imageAddress: imageAddress, // From local cache
+        description: description, // Use description field properly
+        timing: timing, // Set timing field if it exists
         nutritionalInfo: NutritionalInfo(
           calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
           carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
@@ -255,33 +277,42 @@ class LLMNutritionPlanService {
           sodium: (itemMap['sodium_mg'] as num?)?.toInt() ?? 0,
           fluids: (itemMap['fluids_ml'] as num?)?.toDouble() ?? 0.0,
         ),
-      );
-    }).toList();
+        displayName: foodDetails.displayName,
+        displayNamePlural: foodDetails.displayNamePlural,
+        displayOverride: foodDetails.displayOverride,
+      ));
+    }
     
-    AppLogger.instance.debug('Before section conversion completed',
-      context: 'LLMNutritionPlanService',
-      data: {'convertedItemsCount': beforeItems.length},
-    );
-
-    // Convert during section
-    AppLogger.instance.debug('Converting during section',
-      context: 'LLMNutritionPlanService',
-      data: {'duringItemsCount': (planData['during'] as List<dynamic>).length},
-    );
+    // Validation logging: Track sodium and fluids for before section
+    final beforeSodiumTotal = beforeItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0));
+    final beforeFluidsTotal = beforeItems.fold<double>(0.0, (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0));
     
-    final duringItems = (planData['during'] as List<dynamic>).map((item) {
+    final duringItems = <FoodItemData>[];
+    for (final item in planData['during'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
-      final foodName = itemMap['food_name'] as String? ?? 'Unknown Food';
+      final foodId = itemMap['food_id'] as String?;
       final description = itemMap['description'] as String? ?? 'No description';
       final timing = itemMap['timing'] as String? ?? '';
-      
-      return FoodItemData(
-        id: foodName,
+
+      // Look up food details (name and image) from local cache using food_id
+      final foodDetails = await _getFoodDetailsFromCache(foodId);
+      final foodName = foodDetails.name ?? itemMap['food_name'] as String? ?? 'Unknown Food';
+      final imageAddress = foodDetails.imageAddress;
+
+      // Get the quantity as a number from the edge function
+      final quantityNum = (itemMap['quantity'] as num?)?.toDouble() ?? 1.0;
+      // Create a simple quantity display string
+      final quantityDisplay = quantityNum == quantityNum.toInt()
+          ? quantityNum.toInt().toString()
+          : quantityNum.toStringAsFixed(1);
+
+      duringItems.add(FoodItemData(
+        id: foodId ?? foodName, // Use food_id if available, fallback to food_name
         name: foodName,
-        quantity: description, // LP provides quantity display
-        imageAddress: itemMap['image_address'] as String?,
-        description: timing, // LP provides timing
-        timing: timing, // Also set timing field if it exists
+        quantity: quantityDisplay, // Simple quantity display like "1.5"
+        imageAddress: imageAddress, // From local cache
+        description: description, // Use description field properly
+        timing: timing, // Set timing field if it exists
         nutritionalInfo: NutritionalInfo(
           calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
           carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
@@ -290,33 +321,42 @@ class LLMNutritionPlanService {
           sodium: (itemMap['sodium_mg'] as num?)?.toInt() ?? 0,
           fluids: (itemMap['fluids_ml'] as num?)?.toDouble() ?? 0.0,
         ),
-      );
-    }).toList();
+        displayName: foodDetails.displayName,
+        displayNamePlural: foodDetails.displayNamePlural,
+        displayOverride: foodDetails.displayOverride,
+      ));
+    }
     
-    AppLogger.instance.debug('During section conversion completed',
-      context: 'LLMNutritionPlanService',
-      data: {'convertedItemsCount': duringItems.length},
-    );
-
-    // Convert after section
-    AppLogger.instance.debug('Converting after section',
-      context: 'LLMNutritionPlanService',
-      data: {'afterItemsCount': (planData['after'] as List<dynamic>).length},
-    );
+    // Validation logging: Track sodium and fluids for during section
+    final duringSodiumTotal = duringItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0));
+    final duringFluidsTotal = duringItems.fold<double>(0.0, (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0));
     
-    final afterItems = (planData['after'] as List<dynamic>).map((item) {
+    final afterItems = <FoodItemData>[];
+    for (final item in planData['after'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
-      final foodName = itemMap['food_name'] as String? ?? 'Unknown Food';
+      final foodId = itemMap['food_id'] as String?;
       final description = itemMap['description'] as String? ?? 'No description';
       final timing = itemMap['timing'] as String? ?? '';
-      
-      return FoodItemData(
-        id: foodName,
+
+      // Look up food details (name and image) from local cache using food_id
+      final foodDetails = await _getFoodDetailsFromCache(foodId);
+      final foodName = foodDetails.name ?? itemMap['food_name'] as String? ?? 'Unknown Food';
+      final imageAddress = foodDetails.imageAddress;
+
+      // Get the quantity as a number from the edge function
+      final quantityNum = (itemMap['quantity'] as num?)?.toDouble() ?? 1.0;
+      // Create a simple quantity display string
+      final quantityDisplay = quantityNum == quantityNum.toInt()
+          ? quantityNum.toInt().toString()
+          : quantityNum.toStringAsFixed(1);
+
+      afterItems.add(FoodItemData(
+        id: foodId ?? foodName, // Use food_id if available, fallback to food_name
         name: foodName,
-        quantity: description, // LP provides quantity display
-        imageAddress: itemMap['image_address'] as String?,
-        description: timing, // LP provides timing
-        timing: timing, // Also set timing field if it exists
+        quantity: quantityDisplay, // Simple quantity display like "1.5"
+        imageAddress: imageAddress, // From local cache
+        description: description, // Use description field properly
+        timing: timing, // Set timing field if it exists
         nutritionalInfo: NutritionalInfo(
           calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
           carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
@@ -325,13 +365,16 @@ class LLMNutritionPlanService {
           sodium: (itemMap['sodium_mg'] as num?)?.toInt() ?? 0,
           fluids: (itemMap['fluids_ml'] as num?)?.toDouble() ?? 0.0,
         ),
-      );
-    }).toList();
+        displayName: foodDetails.displayName,
+        displayNamePlural: foodDetails.displayNamePlural,
+        displayOverride: foodDetails.displayOverride,
+      ));
+    }
     
-    AppLogger.instance.debug('After section conversion completed',
-      context: 'LLMNutritionPlanService',
-      data: {'convertedItemsCount': afterItems.length},
-    );
+    // Validation logging: Track sodium and fluids for after section
+    final afterSodiumTotal = afterItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0));
+    final afterFluidsTotal = afterItems.fold<double>(0.0, (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0));
+    
 
     // Calculate total macros from phase targets (using correct field names)
     final preRun = macroTargets['pre_run'] as Map<String, dynamic>;
@@ -355,6 +398,51 @@ class LLMNutritionPlanService {
     final totalFat = preRunFat + postRunFat;
     final totalCalories = (totalCarbs * 4) + (totalProtein * 4) + (totalFat * 9); // Rough calorie calculation
 
+    // Extract macro target values for sodium and fluids
+    final preRunSodium = (preRun['sodium_mg'] as num?)?.toInt() ?? 0;
+    final duringRunSodium = (duringRun['sodium_total_mg'] as num?)?.toInt() ?? 0;
+    final postRunSodium = (postRun['sodium_mg'] as num?)?.toInt() ?? 0;
+    final totalTargetSodium = preRunSodium + duringRunSodium + postRunSodium;
+    
+    final preRunFluids = (preRun['water_ml'] as num?)?.toDouble() ?? 0.0;
+    final duringRunFluids = (duringRun['water_total_ml'] as num?)?.toDouble() ?? 0.0;
+    final postRunFluids = (postRun['water_ml'] as num?)?.toDouble() ?? 0.0;
+    final totalTargetFluids = preRunFluids + duringRunFluids + postRunFluids;
+    
+    // Calculate actual food item totals across all phases
+    final totalFoodItemSodium = beforeSodiumTotal + duringSodiumTotal + afterSodiumTotal;
+    final totalFoodItemFluids = beforeFluidsTotal + duringFluidsTotal + afterFluidsTotal;
+    final totalFoodItemCarbs = beforeItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0)) +
+                              duringItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0)) +
+                              afterItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0));
+    
+    // CRITICAL VALIDATION: Log the discrepancy between macro targets and food item totals
+    AppLogger.instance.error('LLM Response Validation: Food Items vs Macro Targets Comparison',
+      context: 'LLMNutritionPlanService',
+      data: {
+        'macro_targets': {
+          'total_sodium_mg': totalTargetSodium,
+          'total_fluids_ml': totalTargetFluids,
+          'total_carbs_g': totalCarbs,
+        },
+        'food_items_actual': {
+          'total_sodium_mg': totalFoodItemSodium,
+          'total_fluids_ml': totalFoodItemFluids,
+          'total_carbs_g': totalFoodItemCarbs,
+        },
+        'discrepancies': {
+          'sodium_difference_mg': totalFoodItemSodium - totalTargetSodium,
+          'fluids_difference_ml': totalFoodItemFluids - totalTargetFluids,
+          'carbs_difference_g': totalFoodItemCarbs - totalCarbs,
+        },
+        'percentage_match': {
+          'sodium_percentage': totalTargetSodium > 0 ? (totalFoodItemSodium / totalTargetSodium * 100).round() : 0,
+          'fluids_percentage': totalTargetFluids > 0 ? (totalFoodItemFluids / totalTargetFluids * 100).round() : 0,
+          'carbs_percentage': totalCarbs > 0 ? (totalFoodItemCarbs / totalCarbs * 100).round() : 0,
+        }
+      },
+    );
+
     // Create the nutrition plan
     final plan = NutritionPlan(
       id: planId,
@@ -364,9 +452,14 @@ class LLMNutritionPlanService {
         PlanSection(
           id: 'before-run',
           title: 'Before Run',
-          subtitle: 'Pre-run fueling (${preRunCarbs}g carbs, ${preRunProtein}g protein)',
+          subtitle: '${preRunCarbs}g carbs, ${preRunProtein}g protein, ${preRunSodium}g sodium',
           timing: 'Before',
           foodItems: beforeItems,
+          carbsTarget: preRunCarbs.toDouble(),
+          proteinTarget: preRunProtein.toDouble(),
+          fatTarget: (preRun['fat_total_g'] as num? ?? 5).toDouble(),
+          sodiumTarget: (preRun['sodium_total_mg'] as num? ?? 200).toDouble(),
+          fluidsTarget: (preRun['water_total_ml'] as num? ?? 500).toDouble(),
         ),
         PlanSection(
           id: 'during-run',
@@ -374,6 +467,11 @@ class LLMNutritionPlanService {
           subtitle: 'Total: ${duringRunCarbs}g carbs, ${(duringRun['water_total_ml'] as num? ?? 0).toInt()}ml fluids',
           timing: 'During',
           foodItems: duringItems,
+          carbsTarget: duringRunCarbs.toDouble(),
+          proteinTarget: 0.0,
+          fatTarget: 0.0,
+          sodiumTarget: (duringRun['sodium_total_mg'] as num? ?? 250).toDouble(),
+          fluidsTarget: (duringRun['water_total_ml'] as num? ?? 600).toDouble(),
         ),
         PlanSection(
           id: 'after-run',
@@ -381,6 +479,11 @@ class LLMNutritionPlanService {
           subtitle: 'Recovery (${postRunCarbs}g carbs, ${postRunProtein}g protein)',
           timing: 'Within 30min',
           foodItems: afterItems,
+          carbsTarget: postRunCarbs.toDouble(),
+          proteinTarget: postRunProtein.toDouble(),
+          fatTarget: (postRun['fat_total_g'] as num? ?? 10).toDouble(),
+          sodiumTarget: (postRun['sodium_total_mg'] as num? ?? 300).toDouble(),
+          fluidsTarget: ((duringRun['water_total_ml'] as num? ?? 600) * 1.25).toDouble(),
         ),
       ],
       macroTargets: MacroTargets(
@@ -522,7 +625,7 @@ class LLMNutritionPlanService {
       final data = response.data as Map<String, dynamic>;
 
       // Convert the LLM response to our NutritionPlan format
-      final nutritionPlan = _convertLLMResponseToPlan(data, user.id);
+      final nutritionPlan = await _convertLLMResponseToPlan(data, user.id);
 
       // Track success in Sentry
       _sentryService.addBreadcrumb(

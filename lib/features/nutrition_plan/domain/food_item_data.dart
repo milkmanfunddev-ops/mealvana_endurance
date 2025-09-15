@@ -10,6 +10,9 @@ class FoodItemData {
     this.timing,
     this.nutritionalInfo,
     this.instructions,
+    this.displayName,
+    this.displayNamePlural,
+    this.displayOverride,
   });
 
   final String id;
@@ -20,6 +23,9 @@ class FoodItemData {
   final String? timing; // When to consume (e.g., "30-60 min pre-run")
   final NutritionalInfo? nutritionalInfo;
   final String? instructions; // Special preparation instructions
+  final String? displayName; // Display name for singular quantities
+  final String? displayNamePlural; // Display name for plural quantities
+  final String? displayOverride; // Override display name
 
   /// Get the full S3 image URL for this food item data
   /// Constructs URL from S3 bucket base URL + image_address field
@@ -40,9 +46,12 @@ class FoodItemData {
       description: json['description'] as String?,
       timing: json['timing'] as String?,
       instructions: json['instructions'] as String?,
-      nutritionalInfo: json['nutritionalInfo'] != null 
+      nutritionalInfo: json['nutritionalInfo'] != null
           ? NutritionalInfo.fromJson(json['nutritionalInfo'])
           : null,
+      displayName: json['displayName'] as String?,
+      displayNamePlural: json['displayNamePlural'] as String?,
+      displayOverride: json['displayOverride'] as String?,
     );
   }
 
@@ -57,6 +66,9 @@ class FoodItemData {
       'timing': timing,
       'instructions': instructions,
       'nutritionalInfo': nutritionalInfo?.toJson(),
+      'displayName': displayName,
+      'displayNamePlural': displayNamePlural,
+      'displayOverride': displayOverride,
     };
   }
 

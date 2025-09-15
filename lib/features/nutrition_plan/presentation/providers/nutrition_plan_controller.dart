@@ -480,10 +480,7 @@ class NutritionPlanController extends _$NutritionPlanController {
             return item;
           }).toList();
           
-          return PlanSection(
-            id: section.id,
-            title: section.title,
-            subtitle: section.subtitle,
+          return section.copyWith(
             foodItems: updatedItems,
           );
         }
@@ -585,10 +582,7 @@ class NutritionPlanController extends _$NutritionPlanController {
             (category == 'after_run' && section.title == 'After Run')) {
           final updatedItems = section.foodItems.where((item) => item.id != foodId).toList();
           
-          return PlanSection(
-            id: section.id,
-            title: section.title,
-            subtitle: section.subtitle,
+          return section.copyWith(
             foodItems: updatedItems,
           );
         }
@@ -647,7 +641,7 @@ class NutritionPlanController extends _$NutritionPlanController {
                 final quantityParts = item.quantity.split(' ');
                 final newQuantityDisplay = quantityParts.length > 1
                     ? '${newQuantity == newQuantity.toInt() ? newQuantity.toInt().toString() : newQuantity.toStringAsFixed(1)} ${quantityParts.skip(1).join(' ')}'
-                    : '${newQuantity == newQuantity.toInt() ? newQuantity.toInt().toString() : newQuantity.toStringAsFixed(1)} servings ${item.name.toLowerCase()}';
+                    : '${newQuantity == newQuantity.toInt() ? newQuantity.toInt().toString() : newQuantity.toStringAsFixed(1)} ${item.name.toLowerCase()}';
                 
                 return FoodItemData(
                   id: item.id,
@@ -670,10 +664,7 @@ class NutritionPlanController extends _$NutritionPlanController {
             return item;
           }).toList();
           
-          return PlanSection(
-            id: section.id,
-            title: section.title,
-            subtitle: section.subtitle,
+          return section.copyWith(
             foodItems: updatedItems,
           );
         }
@@ -699,6 +690,33 @@ class NutritionPlanController extends _$NutritionPlanController {
     } catch (error, stackTrace) {
       // Handle errors without changing to error state to prevent rebuilds
       AppLogger.instance.error('Failed to update food quantity', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  /// Update the run date/time for the current plan
+  Future<void> updateRunDateTime(String planId, DateTime runDateTime) async {
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) return;
+    
+    final currentPlan = currentState!.plan!;
+    
+    // Don't set loading state for this minor update
+    try {
+      // Update the plan with new run date/time
+      final updatedPlan = currentPlan.copyWith(
+        runDateTime: runDateTime,
+        updatedAt: DateTime.now(),
+      );
+      
+      // Save the updated plan to local storage
+      await _saveUpdatedPlan(updatedPlan);
+      
+      // Update state to reflect the change
+      state = AsyncData(NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved));
+      
+      print('✅ Updated run date/time for plan ${planId}');
+    } catch (error, stackTrace) {
+      AppLogger.instance.error('Failed to update run date/time', error: error, stackTrace: stackTrace);
     }
   }
 
