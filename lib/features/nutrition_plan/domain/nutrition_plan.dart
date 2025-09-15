@@ -10,6 +10,9 @@ class NutritionPlan {
     this.macroTargets,
     this.totalCalories,
     this.notes,
+    this.runDateTime,
+    this.planRating,
+    this.journalNotes,
     this.version = 1,
     this.lastModifiedBy,
     this.clientUpdatedAt,
@@ -25,6 +28,9 @@ class NutritionPlan {
   final MacroTargets? macroTargets;
   final int? totalCalories;
   final String? notes;
+  final DateTime? runDateTime; // Scheduled run date and time
+  final int? planRating; // 1=Could be better, 2=Neutral, 3=Satisfied
+  final String? journalNotes; // User's feedback notes about the plan
   
   // Versioning fields
   final int version;
@@ -43,6 +49,9 @@ class NutritionPlan {
     MacroTargets? macroTargets,
     int? totalCalories,
     String? notes,
+    DateTime? runDateTime,
+    int? planRating,
+    String? journalNotes,
     int? version,
     String? lastModifiedBy,
     DateTime? clientUpdatedAt,
@@ -58,6 +67,9 @@ class NutritionPlan {
       macroTargets: macroTargets ?? this.macroTargets,
       totalCalories: totalCalories ?? this.totalCalories,
       notes: notes ?? this.notes,
+      runDateTime: runDateTime ?? this.runDateTime,
+      planRating: planRating ?? this.planRating,
+      journalNotes: journalNotes ?? this.journalNotes,
       version: version ?? this.version,
       lastModifiedBy: lastModifiedBy ?? this.lastModifiedBy,
       clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
@@ -93,6 +105,11 @@ class NutritionPlan {
           : null,
       totalCalories: json['totalCalories'] as int?,
       notes: json['notes'] as String?,
+      runDateTime: json['runDateTime'] != null 
+          ? DateTime.parse(json['runDateTime'])
+          : null,
+      planRating: json['planRating'] as int?,
+      journalNotes: json['journalNotes'] as String?,
       version: json['version'] as int? ?? 1,
       lastModifiedBy: json['lastModifiedBy'] as String?,
       clientUpdatedAt: json['clientUpdatedAt'] != null 
@@ -158,6 +175,11 @@ class NutritionPlan {
       macroTargets: macroTargets,
       totalCalories: json['total_calories'] is num ? (json['total_calories'] as num).toInt() : null,
       notes: json['notes'] as String?,
+      runDateTime: json['run_date_time'] is String 
+          ? DateTime.tryParse(json['run_date_time'])
+          : null,
+      planRating: json['plan_rating'] is num ? (json['plan_rating'] as num).toInt() : null,
+      journalNotes: json['journal_notes'] as String?,
       version: json['version'] is num ? (json['version'] as num).toInt() : 1,
       lastModifiedBy: json['last_modified_by'] as String?,
       clientUpdatedAt: json['client_updated_at'] is String 
@@ -183,6 +205,9 @@ class NutritionPlan {
       'macroTargets': macroTargets?.toJson(),
       'totalCalories': totalCalories,
       'notes': notes,
+      'runDateTime': runDateTime?.toIso8601String(),
+      'planRating': planRating,
+      'journalNotes': journalNotes,
       'version': version,
       'lastModifiedBy': lastModifiedBy,
       'clientUpdatedAt': clientUpdatedAt?.toIso8601String(),
@@ -205,6 +230,11 @@ class PlanSection {
     required this.foodItems,
     this.subtitle,
     this.timing,
+    this.proteinTarget,
+    this.fatTarget,
+    this.carbsTarget,
+    this.sodiumTarget,
+    this.fluidsTarget,
   });
 
   final String id;
@@ -212,6 +242,13 @@ class PlanSection {
   final String? subtitle; // "30-60 min pre-run"
   final String? timing;
   final List<FoodItemData> foodItems;
+  
+  // Macro targets for this section (nullable with defaults)
+  final double? proteinTarget; // grams
+  final double? fatTarget; // grams
+  final double? carbsTarget; // grams
+  final double? sodiumTarget; // milligrams
+  final double? fluidsTarget; // milliliters
 
   /// Create PlanSection from JSON
   factory PlanSection.fromJson(Map<String, dynamic> json) {
@@ -223,6 +260,11 @@ class PlanSection {
       foodItems: (json['foodItems'] as List<dynamic>)
           .map((item) => FoodItemData.fromJson(item))
           .toList(),
+      proteinTarget: json['proteinTarget'] as double?,
+      fatTarget: json['fatTarget'] as double?,
+      carbsTarget: json['carbsTarget'] as double?,
+      sodiumTarget: json['sodiumTarget'] as double?,
+      fluidsTarget: json['fluidsTarget'] as double?,
     );
   }
 
@@ -234,7 +276,96 @@ class PlanSection {
       'subtitle': subtitle,
       'timing': timing,
       'foodItems': foodItems.map((item) => item.toJson()).toList(),
+      'proteinTarget': proteinTarget,
+      'fatTarget': fatTarget,
+      'carbsTarget': carbsTarget,
+      'sodiumTarget': sodiumTarget,
+      'fluidsTarget': fluidsTarget,
     };
+  }
+
+  /// Create a copy with updated values
+  PlanSection copyWith({
+    String? id,
+    String? title,
+    String? subtitle,
+    String? timing,
+    List<FoodItemData>? foodItems,
+    double? proteinTarget,
+    double? fatTarget,
+    double? carbsTarget,
+    double? sodiumTarget,
+    double? fluidsTarget,
+  }) {
+    return PlanSection(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      timing: timing ?? this.timing,
+      foodItems: foodItems ?? this.foodItems,
+      proteinTarget: proteinTarget ?? this.proteinTarget,
+      fatTarget: fatTarget ?? this.fatTarget,
+      carbsTarget: carbsTarget ?? this.carbsTarget,
+      sodiumTarget: sodiumTarget ?? this.sodiumTarget,
+      fluidsTarget: fluidsTarget ?? this.fluidsTarget,
+    );
+  }
+
+  /// Get default macro targets for this section type
+  static PlanSection withDefaults({
+    required String id,
+    required String title,
+    String? subtitle,
+    String? timing,
+    List<FoodItemData>? foodItems,
+  }) {
+    // Default values based on section type
+    double? defaultProtein, defaultFat, defaultCarbs, defaultSodium, defaultFluids;
+    
+    switch (id) {
+      case 'before-run':
+      case 'pre-run':
+        defaultCarbs = 30.0;
+        defaultProtein = 5.0;
+        defaultFat = 5.0;
+        defaultSodium = 200.0;
+        defaultFluids = 500.0;
+        break;
+      case 'during-run':
+        defaultCarbs = 45.0;
+        defaultProtein = 0.0;
+        defaultFat = 0.0;
+        defaultSodium = 250.0;
+        defaultFluids = 600.0;
+        break;
+      case 'after-run':
+      case 'post-run':
+        defaultCarbs = 40.0;
+        defaultProtein = 20.0;
+        defaultFat = 10.0;
+        defaultSodium = 300.0;
+        defaultFluids = 500.0;
+        break;
+      default:
+        defaultCarbs = 30.0;
+        defaultProtein = 10.0;
+        defaultFat = 5.0;
+        defaultSodium = 200.0;
+        defaultFluids = 500.0;
+    }
+
+    return PlanSection(
+      id: id,
+      title: title,
+      subtitle: subtitle,
+      timing: timing,
+      foodItems: foodItems ?? [],
+      proteinTarget: defaultProtein,
+      fatTarget: defaultFat,
+      carbsTarget: defaultCarbs,
+      sodiumTarget: defaultSodium,
+      fluidsTarget: defaultFluids,
+    );
   }
 
   @override

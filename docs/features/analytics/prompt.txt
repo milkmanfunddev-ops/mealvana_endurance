@@ -1,0 +1,21 @@
+Goal: Instrument Mixpanel per "Mixpanel Instrumentation Guide — Mealvana Endurance" (README in canvas).
+
+Scope:
+- Platforms: iOS (Swift), Android (Kotlin), and/or React Native (JS/TS) depending on files present.
+- Create an Analytics wrapper with identify/setSuper/track (+ plan_id helper) as specified.
+- Implement the minimum viable North-Star events (§5.1) at the screen points (§6).
+- Ensure plan_id (UUID v4) is created at plan_flow_started and threaded to all downstream events.
+- Add reminder hooks: fire reminder_fired on local notification delivery; plan_opened_from_reminder on deep-link open.
+- Register super-properties from Settings and environment.
+
+Deliverables:
+1) Code changes as a Git-style diff (new files + edits).
+2) A short QA checklist and steps to validate in Mixpanel (Live View + Lexicon).
+3) If platform is RN: update package.json and install instructions; if native: add SDK init to AppDelegate/MyApplication.
+4) Feature flag or ENV guard for the Mixpanel token, no hardcoding.
+
+Constraints:
+- Event/property names in snake_case with unit suffixes (_g, _ml, _mg, _pct, _mi, _min).
+- Numeric metrics must be numbers, not strings.
+- Don’t send PII.
+- Add TODO comments where app-specific values are unknown.

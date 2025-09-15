@@ -58,7 +58,7 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Thank you for your feedback!'),
-            backgroundColor: AppTheme.successColor,
+            backgroundColor: AppTheme.primary900,
             duration: const Duration(seconds: 2),
           ),
         );

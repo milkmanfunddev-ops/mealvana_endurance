@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../theme/app_theme.dart';
 import '../widgets/plan_container.dart';
 import '../../../feedback/presentation/widgets/feedback_drawer.dart';
 import '../../../feedback/presentation/providers/feedback_provider.dart';
 import '../../../feedback/domain/feedback_data.dart';
-import '../../../feedback/application/feedback_service.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
@@ -45,10 +45,6 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
     super.dispose();
   }
 
-  void _showFeedbackDrawer() {
-    setState(() => _showFeedback = true);
-    _feedbackController.forward();
-  }
 
   void _hideFeedbackDrawer() {
     _feedbackController.reverse().then((_) {
@@ -132,14 +128,66 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
     }
   }
 
+  /// Show date/time picker and update the plan
+  Future<void> _showDateTimePicker(NutritionPlan plan) async {
+    final now = DateTime.now();
+    final nextSaturday = _getNextSaturday();
+    
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: plan.runDateTime ?? nextSaturday,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    
+    if (selectedDate == null) return;
+    
+    if (!mounted) return;
+    
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(
+        plan.runDateTime ?? DateTime(nextSaturday.year, nextSaturday.month, nextSaturday.day, 8, 0)
+      ),
+    );
+    
+    if (selectedTime == null) return;
+    
+    final selectedDateTime = DateTime(
+      selectedDate.year,
+      selectedDate.month, 
+      selectedDate.day,
+      selectedTime.hour,
+      selectedTime.minute,
+    );
+    
+    // Update the plan's run date/time via the controller
+    await ref
+        .read(nutritionPlanControllerProvider.notifier)
+        .updateRunDateTime(plan.id, selectedDateTime);
+  }
+
+  /// Get next Saturday as default date
+  DateTime _getNextSaturday() {
+    final now = DateTime.now();
+    final daysUntilSaturday = 6 - now.weekday;
+    final nextSaturday = now.add(Duration(days: daysUntilSaturday == -1 ? 6 : daysUntilSaturday));
+    return DateTime(nextSaturday.year, nextSaturday.month, nextSaturday.day, 8, 0);
+  }
+
+  /// Format date/time for display
+  String _formatDateTime(DateTime dateTime) {
+    final dateFormat = DateFormat('EEEE, MMM d');
+    final timeFormat = DateFormat('h:mm a');
+    return '${dateFormat.format(dateTime)} at ${timeFormat.format(dateTime)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final planState = ref.watch(nutritionPlanControllerProvider);
     final feedbackState = ref.watch(feedbackSubmissionProvider);
 
     // Check if we should show the back button
-    // Show back button when accessed from adjust macros ('/current-plan')
-    // Hide back button when accessed from main tabs ('/plan')
     final currentRoute = GoRouterState.of(context).uri.toString();
     final shouldShowBackButton =
         Navigator.of(context).canPop() && currentRoute != '/plan';
@@ -156,7 +204,6 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
                   if (Navigator.of(context).canPop()) {
                     context.pop();
                   } else {
-                    // Fallback to main screen if nothing to pop
                     context.go('/main');
                   }
                 },
@@ -171,13 +218,11 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
         ),
         centerTitle: true,
         actions: [
-          SizedBox(width: 8.w), // Small padding from edge
+          SizedBox(width: 8.w),
         ],
       ),
-
       body: Stack(
         children: [
-          // Main content
           planState.when(
             data: (planData) {
               if (planData.plan == null) {
@@ -188,8 +233,6 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _buildErrorState(error.toString()),
           ),
-
-          // Feedback Drawer Overlay
           if (_showFeedback)
             FeedbackDrawer(
               planName: planState.valueOrNull?.plan?.name,
@@ -201,7 +244,6 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navigate to main screen to create new plan
           context.push('/distancepacegut');
         },
         backgroundColor: AppTheme.primary900,
@@ -213,11 +255,10 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
   Widget _buildPlanContent(NutritionPlan plan, dynamic feedbackState) {
     final planState = ref.watch(nutritionPlanControllerProvider).valueOrNull;
     final isSaved = planState?.isSaved ?? true;
-    print('🔍 DEBUG: Plan save status - isSaved: $isSaved, planId: ${plan.id}');
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Checklist illustration (matching Alex's design - truly full width)
+          // Checklist illustration
           SizedBox(
             height: 200.h,
             width: double.infinity,
@@ -243,12 +284,6 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
                   return Container(
                     width: double.infinity,
                     padding: EdgeInsets.fromLTRB(8.w, 0.h, 16.w, 12.h),
-                    // margin: EdgeInsets.only(bottom: 16.h),
-                    // decoration: BoxDecoration(
-                    //   color: AppTheme.primary50.withValues(alpha: 0.6),
-                    //   borderRadius: BorderRadius.circular(12.r),
-                    //   border: Border.all(color: AppTheme.primary600, width: 1),
-                    // ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -281,9 +316,54 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
             ),
           ),
 
-          // Macro Targets with completion bars
+          // Run Date/Time Section
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.fromLTRB(8.w, 0.h, 16.w, 12.h),
+              child: InkWell(
+                onTap: () => _showDateTimePicker(plan),
+                borderRadius: BorderRadius.circular(8.r),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        color: AppTheme.primary600,
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 16.w),
+                      Expanded(
+                        child: Text(
+                          plan.runDateTime != null
+                              ? 'Run scheduled for ${_formatDateTime(plan.runDateTime!)}'
+                              : 'Schedule your run',
+                          style: AppTheme.textStyle.copyWith(
+                            color: plan.runDateTime != null 
+                                ? AppTheme.primary900 
+                                : AppTheme.baseGrey,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.edit,
+                        color: AppTheme.baseGrey,
+                        size: 16.sp,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Macro Targets with completion bars
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 0.w),
             child: FutureBuilder<targets_model.MacroTargets?>(
               future: ref
                   .read(nutritionPlanControllerProvider.notifier)
@@ -296,22 +376,13 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
 
           SizedBox(height: 24.h),
 
-          // LLM Message blocks (if available)
-          // if (plan.notes != null && plan.notes!.isNotEmpty) ...[
-          //   ..._buildDietitianMessages(plan.notes!),
-          //   SizedBox(height: 24.h),
-          // ],
-
-          // Plan content (no longer in separate scroll view)
           // Plan Container with nutrition plan
           PlanContainer(
             plan: plan,
             onFoodItemTap: (foodItemId) {
               // Handle food item tap - expand details
-              // Could add navigation to food details or expand inline
             },
             onSwapFood: (foodItemId, foodName, category) {
-              // Navigate to swap screen
               context.push(
                 '/swap-food',
                 extra: {
@@ -322,7 +393,6 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
               );
             },
             onDeleteFood: (foodItemId, category) async {
-              // Show confirmation dialog
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -353,7 +423,6 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
               }
             },
             onUpdateQuantity: (foodItemId, category, newQuantity) async {
-              // Update the quantity of the food item
               await ref
                   .read(nutritionPlanControllerProvider.notifier)
                   .updateFoodQuantity(foodItemId, category, newQuantity);
@@ -361,8 +430,6 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
           ),
 
           SizedBox(height: 16.h),
-
-          SizedBox(height: 32.h),
 
           // Save Button - only show if plan is not yet saved
           if (!isSaved)
@@ -373,7 +440,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
                 onPressed: () async {
                   final success = await ref.read(nutritionPlanControllerProvider.notifier).savePlan();
                   if (success) {
-                    _handleSavePlan(); // This will trigger the survey flow
+                    _handleSavePlan();
                   } else {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -389,9 +456,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
               ),
             ),
 
-          SizedBox(height: 16.h),
-
-          SizedBox(height: 40.h),
+          SizedBox(height: 120.h), // Bottom padding for FAB
         ],
       ),
     );
@@ -438,23 +503,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
             PrimaryButton(
               text: 'Create Your First Plan',
               onPressed: () {
-                // Navigate to the distance/pace input screen
                 context.push('/distancepacegut');
-                // showModalBottomSheet(
-                //   context: context,
-                //   isScrollControlled: true,
-                //   backgroundColor: Colors.transparent,
-                //   builder: (context) => Container(
-                //     height: MediaQuery.of(context).size.height * 0.9,
-                //     decoration: BoxDecoration(
-                //       color: AppTheme.baseCream,
-                //       borderRadius: BorderRadius.vertical(
-                //         top: Radius.circular(20.r),
-                //       ),
-                //     ),
-                //     child: const DistancePaceGutEntryScreen(),
-                //   ),
-                // );
               },
             ),
           ],
@@ -492,286 +541,6 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
             onPressed: () => context.go('/main'),
           ),
         ],
-      ),
-    );
-  }
-
-  List<Widget> _buildDietitianMessages(String notes) {
-    // Now we only have the detailed message (no more overview)
-    final detailedMessage = notes.trim();
-
-    return [
-      // Only detailed message (expandable)
-      if (detailedMessage.isNotEmpty)
-        _buildMessageCard(
-          title: 'Detailed Guidance',
-          subtitle: 'Tap to read more',
-          message: detailedMessage,
-          isExpandable: true,
-        ),
-    ];
-  }
-
-  Widget _buildMessageCard({
-    required String title,
-    required String subtitle,
-    required String message,
-    required bool isExpandable,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: isExpandable
-          ? _ExpandableMessageCard(
-              title: title,
-              subtitle: subtitle,
-              message: message,
-            )
-          : Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: AppTheme.primary900, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primary900.withValues(alpha: 0.1),
-                    blurRadius: 8.r,
-                    offset: Offset(0, 4.h),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(8.w),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary900.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.psychology,
-                          color: AppTheme.primary900,
-                          size: 20.sp,
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              style: AppTheme.titleStyle.copyWith(
-                                color: AppTheme.primary900,
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              subtitle,
-                              style: AppTheme.noteStyle.copyWith(
-                                color: AppTheme.primary900.withValues(
-                                  alpha: 0.8,
-                                ),
-                                fontSize: 12.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16.h),
-                  Container(
-                    width: double.infinity,
-                    height: 1,
-                    color: AppTheme.primary900.withValues(alpha: 0.2),
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    message,
-                    style: AppTheme.textStyle.copyWith(
-                      color: AppTheme.baseBlack,
-                      fontSize: 14.sp,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-}
-
-class _ExpandableMessageCard extends StatefulWidget {
-  const _ExpandableMessageCard({
-    required this.title,
-    required this.subtitle,
-    required this.message,
-  });
-
-  final String title;
-  final String subtitle;
-  final String message;
-
-  @override
-  State<_ExpandableMessageCard> createState() => _ExpandableMessageCardState();
-}
-
-class _ExpandableMessageCardState extends State<_ExpandableMessageCard>
-    with SingleTickerProviderStateMixin {
-  bool _isExpanded = false;
-  late AnimationController _controller;
-  late Animation<double> _expandAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _expandAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _toggleExpansion() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppTheme.primary900, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary900.withValues(alpha: 0.1),
-            blurRadius: 8.r,
-            offset: Offset(0, 4.h),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.r),
-        child: Column(
-          children: [
-            // Header (always visible)
-            InkWell(
-              onTap: _toggleExpansion,
-              child: Padding(
-                padding: EdgeInsets.all(20.w),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8.w),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primary900.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.info_outline,
-                        color: AppTheme.primary900,
-                        size: 20.sp,
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.title,
-                            style: AppTheme.titleStyle.copyWith(
-                              color: AppTheme.primary900,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            widget.subtitle,
-                            style: AppTheme.noteStyle.copyWith(
-                              color: AppTheme.primary900.withValues(alpha: 0.8),
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    AnimatedRotation(
-                      turns: _isExpanded ? 0.5 : 0.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: AppTheme.primary900,
-                        size: 24.sp,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Expandable detailed content
-            SizeTransition(
-              sizeFactor: _expandAnimation,
-              child: Container(
-                width: double.infinity,
-                color: AppTheme.primary50.withValues(alpha: 0.3),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        height: 1,
-                        color: AppTheme.primary900.withValues(alpha: 0.2),
-                        margin: EdgeInsets.only(bottom: 16.h),
-                      ),
-                      ...widget.message.split('\n\n').map((paragraph) {
-                        if (paragraph.trim().isEmpty)
-                          return const SizedBox.shrink();
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 12.h),
-                          child: Text(
-                            paragraph.trim(),
-                            style: AppTheme.textStyle.copyWith(
-                              color: AppTheme.baseBlack,
-                              fontSize: 14.sp,
-                              height: 1.5,
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

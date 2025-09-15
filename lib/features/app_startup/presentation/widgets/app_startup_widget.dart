@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../application/app_startup_provider.dart';
+import '../../../../shared/services/logging_service.dart';
 import 'app_startup_loading_widget.dart';
 import 'app_startup_error_widget.dart';
 
@@ -32,21 +33,17 @@ class AppStartupWidget extends ConsumerWidget {
 
   /// Handle navigation after startup and return loading widget
   Widget _handleNavigation(BuildContext context, AppStartupData appStartupData) {
-    print('🔍 Determining initial screen after app startup:');
-    print('  User exists: ${appStartupData.user != null}');
-    print('  User ID: ${appStartupData.user?.id ?? "none"}');
-    print('  Onboarding complete: ${appStartupData.hasCompletedOnboarding}');
     
     // Navigate to appropriate screen using postFrameCallback to avoid build context issues
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (appStartupData.user == null) {
-        print('  → Navigating to WelcomeScreen (no user)');
         context.go('/welcome');
       } else if (!appStartupData.hasCompletedOnboarding) {
-        print('  → Navigating to FoodPreferencesScreen (incomplete onboarding)');
         context.go('/onboarding/food-preferences');
+      } else if (appStartupData.planIdNeedingFeedback != null) {
+        // User has a plan that needs feedback - navigate to the rating screen
+        context.go('/plan-how-well/${appStartupData.planIdNeedingFeedback}');
       } else {
-        print('  → Navigating to TabsScreen (user complete)');
         context.go('/main');
       }
     });

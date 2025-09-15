@@ -2,13 +2,13 @@
 
 ## Overview
 
-The Content Management System (CMS) allows dynamic updating of UI text and algorithm parameters without code changes. Content is stored in Supabase and cached locally in Hive, with fallback to bundled JSON files, enabling the "fat backend" architecture where business logic parameters are managed remotely while maintaining offline functionality.
+The Content Management System (CMS) allows dynamic updating of UI text and algorithm parameters without code changes. Content is stored in Supabase and cached locally in Drift SQLite database, with fallback to bundled JSON files, enabling the "fat backend" architecture where business logic parameters are managed remotely while maintaining offline functionality.
 
 ## Content Structure
 
 ### Data Model
 
-Content is stored as structured JSON in the Supabase `app_content` table and cached locally in Hive:
+Content is stored as structured JSON in the Supabase `app_content` table and cached locally in Drift SQLite database:
 
 ### Content Schema
 
@@ -107,7 +107,7 @@ Handles data persistence and retrieval with Supabase integration:
 ```dart
 class ContentRepository {
   final SupabaseClient _supabase;
-  late Box<AppContent> _box;
+  final AppDatabase _database;
   
   /// Check for updates from Supabase in background
   Future<void> checkForUpdates({
@@ -253,7 +253,7 @@ Content is managed through the Supabase database using the `app_content` table:
 
 ### 2. Content Flow
 
-The app follows this priority order: **Supabase → Hive Cache → Bundled Defaults**
+The app follows this priority order: **Supabase → Drift SQLite Cache → Bundled Defaults**
 
 1. **App Startup**: ContentService checks Supabase for latest content version
 2. **Background Update**: Compares version numbers and downloads if newer available
@@ -351,7 +351,7 @@ Future<double> calculateCarbsPerHour(...) async {
 
 - Content size typically <100KB
 - Cached in memory for fast access
-- Persisted to Hive for offline access
+- Persisted to Drift SQLite database for offline access
 - Defaults bundled in app (~50KB)
 
 ### Network Efficiency
@@ -435,7 +435,7 @@ void main() {
 **Content not updating**
 - Check Supabase connection
 - Verify `is_active` flag in database
-- Clear local cache: `contentBox.clear()`
+- Clear local cache: `DELETE FROM app_content;`
 - Check network connectivity
 
 **Wrong algorithm values**

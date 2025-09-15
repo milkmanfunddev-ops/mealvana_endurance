@@ -464,7 +464,7 @@ class MacroRepositoryImpl implements MacroRepository {
 
 @riverpod
 Future<MacroRepository> macroRepository(Ref ref) async {
-  final database = await ref.watch(databaseProvider.future);
+  final database = ref.watch(appDatabaseProvider);
   return MacroRepositoryImpl(
     database: database,
   );

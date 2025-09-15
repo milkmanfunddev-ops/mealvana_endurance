@@ -7,7 +7,7 @@ part of 'nutrition_plan_repository.dart';
 // **************************************************************************
 
 String _$nutritionPlanRepositoryHash() =>
-    r'4d531c10773e3f46c21721fff2c4b49af04455be';
+    r'2f71bf16b3b8dfaa6cf6b5ad31f8c554e734cd88';
 
 /// Riverpod provider for NutritionPlanRepository
 ///

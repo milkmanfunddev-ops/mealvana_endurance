@@ -1,9 +1,8 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'app_startup_service.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/sentry_service.dart';
-import '../../../features/auth/application/auth_service.dart';
+import '../../../shared/services/logging_service.dart';
 import '../../../features/auth/domain/user_preferences.dart';
 
 part 'app_startup_provider.g.dart';
@@ -13,16 +12,20 @@ class AppStartupData {
   const AppStartupData({
     required this.user,
     required this.hasCompletedOnboarding,
+    this.planIdNeedingFeedback,
   });
 
   final UserProfile? user;
   final bool hasCompletedOnboarding;
+  final String? planIdNeedingFeedback;
 }
 
 /// AsyncNotifier for app startup initialization using Drift
 /// This coordinates the AppStartupService and provides async state management
-@Riverpod(keepAlive: true)
+@riverpod
 class AppStartup extends _$AppStartup {
+  LoggingService get _logger => AppLogger.instance;
+  
   @override
   Future<AppStartupData> build() async {
     try {
@@ -46,23 +49,29 @@ class AppStartup extends _$AppStartup {
       // 6. Initialize nutrition plans (now using Drift)
       await startupService.initializeNutritionPlans();
       
-      print('✅ App startup initialization completed');
+      // 7. Check for plans needing feedback
+      final planIdNeedingFeedback = await startupService.checkForPendingFeedback();
       
-      // 7. Track startup completion in Sentry
+      // 8. Track startup completion in Sentry
       final sentryService = ref.read(sentryServiceProvider);
       await sentryService.trackAppStartupCompleted();
       
-      // 8. Get user state for navigation decisions
-      final database = await ref.read(databaseProvider.future);
+      // 9. Get user state for navigation decisions
+      final database = ref.read(appDatabaseProvider);
       final user = await database.getCurrentUserProfile();
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
       
       return AppStartupData(
         user: user,
         hasCompletedOnboarding: hasCompletedOnboarding,
+        planIdNeedingFeedback: planIdNeedingFeedback,
       );
-    } catch (e) {
-      print('❌ App startup initialization failed: $e');
+    } catch (e, stackTrace) {
+      _logger.error('App startup initialization failed', 
+        context: 'APP_STARTUP',
+        error: e,
+        stackTrace: stackTrace
+      );
       rethrow; // Re-throw to trigger error state in AsyncNotifier
     }
   }

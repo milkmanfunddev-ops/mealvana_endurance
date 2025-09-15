@@ -1,49 +1,89 @@
 # Business Logic & Edge Functions
 
-This directory contains the core business logic and Edge Functions for the Mealvana Endurance nutrition planning system.
+This directory contains the core business logic and Edge Functions for the Mealvana Endurance nutrition planning system, featuring an **AI-first architecture** with intelligent algorithmic fallback.
 
 ## 📁 **Files Overview**
 
-### **Edge Functions**
-- **`create-user-edge-function.ts`** - Creates new users with device-based authentication
-- **`save-food-preferences-edge-function.ts`** - Saves user food preferences (like/dislike/willing_to_try)
-- **`generate-ai-nutrition-plan/index.ts`** - AI-powered personalized nutrition plan generation
+### **Architecture Documentation**
+- **`ai-nutrition-planning.md`** - AI-first architecture with LLM integration and fallback strategies
+- **`edge-functions-current.md`** - Active Edge Functions deployment and testing guide
+- **`nutrition_algorithms.md`** - Detailed nutrition calculation algorithms and evidence-based formulas
+- **`food-preferences-system-overview.md`** - Food preferences system with three-tier preference model
 
-### **Documentation**
-- **`nutrition_algorithms.md`** - Detailed nutrition calculation algorithms
-- **`food-preferences-system-overview.md`** - Complete food preferences system documentation
-- **`edge-functions-readme.md`** - Edge functions deployment and usage guide
-
-### **Requirements**
-- **`../requirements/nutrition_plan_guidelines.md`** - Comprehensive endurance athlete nutrition guidelines
+### **Requirements & Guidelines**
+- **`../requirements/nutrition_plan_guidelines.md`** - Evidence-based endurance athlete nutrition guidelines
 - **`../requirements/README.md`** - MVP design requirements and user flows
 
-## 🚀 **Edge Functions Overview**
+## 🚀 **Current Architecture (2025)**
 
-### **1. Create User**
-**Endpoint:** `/functions/v1/create-user`
+### **AI-First Dual-System Approach**
 
-Creates a new user with device-based authentication and biometric data.
+```
+User Request for Nutrition Plan
+    ↓
+🤖 Primary: AI-Powered LLM Planning
+    ├─ Linear Programming Optimization
+    ├─ Advanced Personalization
+    └─ Context-Aware Recommendations
+    ↓ (if AI fails or unavailable)
+⚡ Fallback: Algorithmic Planning  
+    ├─ Sub-second Response Times
+    ├─ Evidence-Based Calculations
+    └─ Deterministic Food Selection
+    ↓
+📱 Personalized Nutrition Plan
+```
+
+### **Active Edge Functions**
+
+#### **1. `generate-ai-nutrition-plan`** (Primary)
+**Purpose**: AI-powered nutrition planning with sophisticated optimization
+
+**Key Features**:
+- **LLM Integration**: Natural language understanding for personalized planning
+- **Linear Programming Solver**: Multi-objective optimization for food selection
+- **Advanced Scoring**: User preferences, nutritional targets, and constraints
+- **Performance Optimized**: Food candidate limiting and constraint tolerance tuning
 
 **Request:**
 ```json
 {
-  "device_id": "unique_device_identifier",
-  "gender": "male|female|other",
-  "birthday": "1990-01-01",
-  "height_feet": 5,
-  "height_inches": 10,
-  "weight_pounds": 150,
-  "runs_with_water_bottle": true,
+  "device_id": "device123",
+  "distance_miles": 13.1,
+  "pace_minutes_per_mile": 8.5,
+  "time_before_run_hours": 2.0,
   "gut_training_level": "moderate",
-  "app_version": "1.0.0"
+  "temp_f": 75.0,
+  "humidity": 65.0,
+  "sweat_rate": "medium",
+  "gi_sensitivity": "low",
+  "allow_high_carb_run": true
 }
 ```
 
-### **2. Save Food Preferences**
-**Endpoint:** `/functions/v1/save-food-preferences`
+#### **2. `run-plan`** (Fallback)
+**Purpose**: Fast, reliable algorithmic planning when AI unavailable
 
-Saves user food preferences and completes onboarding.
+**Key Features**:
+- **Sub-second Response**: Optimized for speed and reliability
+- **No Dependencies**: Pure TypeScript with no external packages  
+- **Evidence-Based**: ACSM formulas and sports nutrition research
+- **Preference Integration**: User food likes/dislikes with scoring
+
+**Request:**
+```json
+{
+  "device_id": "device123",
+  "weight_kg": 70.0,
+  "duration_min": 111,
+  "pre_window_min": 120,
+  "gut_training": "moderate",
+  "pace_min_per_km": 5.28
+}
+```
+
+#### **3. `save-food-preferences`**
+**Purpose**: Three-tier food preference management
 
 **Request:**
 ```json
@@ -58,136 +98,240 @@ Saves user food preferences and completes onboarding.
 }
 ```
 
-### **3. Create Nutrition Plan**
-**Endpoint:** `/functions/v1/create-nutrition-plan`
-
-Generates personalized nutrition plans based on user data and preferences.
+#### **4. `create-user`**
+**Purpose**: Device-based user creation with biometric data
 
 **Request:**
 ```json
 {
-  "device_id": "device123",
-  "distance_miles": 10,
-  "pace_minutes_per_mile": 8.5,
-  "time_before_run_hours": 2.0,
-  "gut_training_level": "moderate"
+  "device_id": "unique_device_identifier",
+  "gender": "male",
+  "birthday": "1990-01-01",
+  "height_feet": 5,
+  "height_inches": 10,
+  "weight_pounds": 150,
+  "gut_training_level": "moderate",
+  "app_version": "1.2.0"
 }
 ```
 
-**Response:** Complete nutrition plan with before/during/after run sections.
+#### **5. `get-foods`**
+**Purpose**: Food database retrieval with caching and filtering
 
-## 🎯 **Key Features**
+**Request:**
+```json
+{
+  "category": "during_run",
+  "search": "gel",
+  "limit": 50
+}
+```
+
+## 🎯 **Key Features & Algorithms**
+
+### **AI-Powered Personalization**
+- **LLM Integration**: Natural language understanding for complex user requirements
+- **Linear Programming Optimization**: Multi-objective constraint solving for optimal food selection
+- **Context-Aware Planning**: Considers race conditions, weather, and individual performance history
+- **Advanced Preference Modeling**: Sophisticated scoring for food likes, dislikes, and willingness to try
 
 ### **Evidence-Based Nutrition Guidelines**
-The system follows comprehensive endurance athlete nutrition guidelines:
+Both AI and algorithmic systems follow comprehensive endurance athlete nutrition research:
 
 **Macro Target Guidelines:**
 - **Carbohydrates:**
-  - Pre-workout: 1–4g/kg body weight (~70–280g for 70kg athlete)
+  - Pre-workout: 1–4g/kg body weight (~70–280g for 70kg athlete)  
   - During workout: 30–60g/hour (up to 90g/hour with glucose+fructose mix)
 - **Sodium:** 300–600mg/hour (up to 1000mg/hour in heat)
-- **Fluids:** ~0.4–0.8 L/hour depending on sweat rate
+- **Fluids:** ~0.4–0.8 L/hour depending on sweat rate and environmental conditions
 
-### **Phase-Specific Food Selection**
-The algorithm applies specific rules for each phase:
+### **Multi-Objective Optimization**
+The AI system uses constraint priority weighting:
+```typescript
+CONSTRAINT_PRIORITY = {
+  carbs_g: 2.0,     // HIGH priority - primary fuel source
+  sodium_mg: 1.8,   // High priority for performance  
+  water_ml: 1.5,    // High priority for hydration
+  protein_g: 0.3,   // Lower priority for most phases
+  fat_g: 0.3        // Lower priority for most phases
+}
+```
 
-**Pre-Workout (2–3 hrs before start):**
-- Limits to 3–6 different food items to reduce GI stress
-- Prioritizes low to moderate fiber and fat foods for faster digestion
-- Includes easily digestible carbs (oatmeal, banana, waffle, white bread, honey)
-- Avoids high-fat or fibrous items (granola bars, nuts, raw veggies)
-- Recommends 16–24 oz fluids slowly
+### **Phase-Specific Intelligence**
+Both systems apply sophisticated phase-specific rules:
+
+**Pre-Workout (1-4 hrs before):**
+- **AI System**: Contextual understanding of timing, individual digestibility, preferences
+- **Algorithmic System**: Time-dependent carb scaling (1-4g/kg), digestibility scoring
+- **Food Selection**: Prioritizes easily digestible carbs, avoids high-fat/fiber foods
+- **Hydration**: 2-6ml/kg based on available time window
 
 **During Run:**
-- Matches carb needs to duration with steady intake every 20–30 min
-- Uses carb-dense, portable options (gels, chews, drink mix)
-- Restricts to easily consumed forms while running (gels, chews, fluids)
-- Flags impractical foods for running (banana, sandwich, oatmeal)
-- Maximizes palatability while minimizing complexity (2–4 items)
+- **AI System**: Linear programming for optimal carb/sodium/fluid balance
+- **Algorithmic System**: Deterministic selection with preference scoring  
+- **Food Selection**: Portable, easily consumed foods (gels, chews, drinks)
+- **Intake Strategy**: Steady 20-30 min intervals, gut training capacity limits
+
+**After Run:**
+- **Recovery Focus**: 1g/kg carbs + 0.2g/kg protein within 2 hours
+- **Rehydration**: 150% of fluid losses or systematic replacement strategy
+- **Food Selection**: Combination foods addressing multiple recovery needs
 
 ### **Smart Food Prioritization**
-The nutrition plan algorithm prioritizes foods based on:
-1. **User preferences** (liked > willing-to-try > neutral foods)
-2. **Phase appropriateness** (per practicality guidelines)
-3. **Nutritional fit** (macro targets and timing)
-4. **Digestibility** (fiber, fat content considerations)
+Advanced multi-factor scoring system:
+1. **User Preferences**: Like (+20 pts) > Willing-to-try (+5 pts) > Neutral (0 pts)
+2. **Phase Appropriateness**: Practicality and digestibility scoring
+3. **Nutritional Efficiency**: Macro density and bioavailability
+4. **Individual Tolerance**: GI sensitivity and gut training adaptations
+5. **Environmental Factors**: Heat, humidity, aid station availability
 
-### **Product-Specific Practicality**
-Each food item is evaluated for phase-specific suitability:
-- **Pre-Run Suitable:** Oatmeal, banana, peanut butter, waffle, gel (optional)
-- **During-Run Suitable:** Gel, chews, sports drink, tailwind drink mix
-- **Post-Run Suitable:** Protein shake, coconut water, banana, granola bar
-- **Phase Restrictions:** Never assigns impractical foods (e.g., oatmeal during run)
+## 🔧 **Deployment & Infrastructure**
 
-## 🔧 **Deployment**
-
-### **Deploy to Supabase**
+### **Deploy Current Edge Functions**
 ```bash
-# Deploy all functions
+# Deploy primary AI-powered nutrition planning
+supabase functions deploy generate-ai-nutrition-plan
+
+# Deploy algorithmic fallback system  
+supabase functions deploy run-plan
+
+# Deploy supporting functions
+supabase functions deploy save-food-preferences
 supabase functions deploy create-user
-supabase functions deploy save-food-preferences  
-supabase functions deploy create-nutrition-plan
+supabase functions deploy get-foods
 ```
 
 ### **Environment Variables**
-Ensure these are set in your Supabase project:
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
-## 📊 **Architecture**
-
-```
-Flutter App
-    ↓
-Edge Functions (Deno)
-    ↓
-Supabase Database (PostgreSQL)
-    ↓
-Response with Nutrition Plan
-```
-
-### **Data Flow**
-1. **User Creation** → Save biometric data
-2. **Food Preferences** → Save like/dislike/willing-to-try
-3. **Plan Generation** → Use preferences + algorithms → Return personalized plan
-
-### **Error Handling**
-All edge functions include:
-- ✅ Input validation
-- ✅ Database error handling  
-- ✅ CORS support
-- ✅ Detailed error messages
-- ✅ Logging for debugging
-
-## 🧪 **Testing**
-
-### **Test User Creation**
+Required for all Edge Functions:
 ```bash
-curl -X POST 'https://your-project.supabase.co/functions/v1/create-user' \
-  -H 'Authorization: Bearer YOUR_ANON_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"device_id": "test123", "gender": "male", ...}'
+SUPABASE_URL=https://project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  
+SUPABASE_ANON_KEY=your_anon_key
 ```
 
-### **Test Food Preferences**
+## 📊 **Current Architecture Flow**
+
+### **AI-First System Architecture**
+```
+Flutter App (Dart)
+    ↓
+NutritionPlanService (orchestrates AI → fallback)
+    ↓
+generate-ai-nutrition-plan (Primary: AI + Linear Programming)
+    ↓ (if fails)
+run-plan (Fallback: Fast Algorithmic)
+    ↓
+Supabase Database (PostgreSQL + RLS)
+    ↓
+Personalized Nutrition Plan Response
+```
+
+### **Data Flow & Caching Strategy**
+1. **User Onboarding**: create-user → save-food-preferences → mark onboarding complete
+2. **Food Data**: get-foods → Cache locally in Drift SQLite for 24 hours
+3. **Plan Generation**: AI system (primary) → algorithmic fallback → local caching
+4. **Preference Updates**: save-food-preferences → invalidate plan cache → regenerate
+
+### **Intelligent Fallback Strategy**
+```dart
+// Service layer automatically handles fallback
+try {
+  // Primary: Try AI-powered planning
+  plan = await llmService.generateNutritionPlan();
+  analytics.track('plan_generated', type: 'ai');
+} catch (aiError) {
+  // Fallback: Use algorithmic planning
+  plan = await repository.createNutritionPlanV2();
+  analytics.track('plan_generated', type: 'algorithmic');
+}
+```
+
+### **Error Handling & Reliability**
+- ✅ **Dual-system reliability**: AI failure gracefully falls back to algorithms
+- ✅ **Comprehensive logging**: Sentry integration with detailed error context  
+- ✅ **Performance monitoring**: Response time tracking for both systems
+- ✅ **Input validation**: Robust parameter checking and sanitization
+- ✅ **CORS support**: Proper mobile app integration
+
+## 🧪 **Testing Guide**
+
+### **Test AI-Powered Planning (Primary)**
 ```bash
-curl -X POST 'https://your-project.supabase.co/functions/v1/save-food-preferences' \
-  -H 'Authorization: Bearer YOUR_ANON_KEY' \
+curl -X POST 'https://project.supabase.co/functions/v1/generate-ai-nutrition-plan' \
+  -H 'Authorization: Bearer ANON_KEY' \
   -H 'Content-Type: application/json' \
-  -d '{"device_id": "test123", "food_preferences": {...}}'
+  -d '{
+    "device_id": "test123",
+    "distance_miles": 13.1,
+    "pace_minutes_per_mile": 8.5,
+    "gut_training_level": "moderate",
+    "temp_f": 75.0,
+    "humidity": 65.0
+  }'
 ```
 
-### **Test Nutrition Plan**
+### **Test Algorithmic Fallback**
 ```bash
-curl -X POST 'https://your-project.supabase.co/functions/v1/create-nutrition-plan' \
-  -H 'Authorization: Bearer YOUR_ANON_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"device_id": "test123", "distance_miles": 10, "pace_minutes_per_mile": 8.5}'
+curl -X POST 'https://project.supabase.co/functions/v1/run-plan' \
+  -H 'Authorization: Bearer ANON_KEY' \
+  -H 'Content-Type: application/json' \  
+  -d '{
+    "device_id": "test123", 
+    "weight_kg": 70.0,
+    "duration_min": 111,
+    "gut_training": "moderate"
+  }'
 ```
 
-## 📚 **Further Reading**
+### **Integration Testing**
+```bash
+# Full user flow
+1. POST create-user (device-based auth)
+2. POST save-food-preferences (onboarding completion)
+3. GET get-foods (verify food data caching)
+4. POST generate-ai-nutrition-plan (primary system)
+5. Verify plan quality and food preference integration
+```
 
-- **`nutrition_algorithms.md`** - Deep dive into nutrition calculations
-- **`food-preferences-system-overview.md`** - Complete food preference system
-- **`/docs/database/`** - Database schema and migrations
-- **`/docs/technical/`** - Technical architecture guides
+## 🚀 **Benefits of Current Architecture**
+
+### **🤖 AI-First Advantages**
+- **Highly Personalized**: Understands nuanced user requirements and context
+- **Adaptive**: Learns from user behavior and preferences over time
+- **Context-Aware**: Considers race conditions, weather, individual history
+- **Advanced Optimization**: Linear programming for optimal food selection
+
+### **⚡ Reliable Fallback System**  
+- **High Availability**: Dual-system ensures plans always generate
+- **Fast Performance**: <1 second algorithmic fallback when AI unavailable
+- **Evidence-Based**: ACSM formulas and sports nutrition research
+- **Consistent Quality**: Maintains nutrition standards regardless of system used
+
+### **🏗️ Development Benefits**
+- **Scalable**: Independent scaling of AI and algorithmic systems
+- **Maintainable**: Clear separation between primary and fallback logic
+- **Observable**: Comprehensive analytics and error tracking  
+- **Flexible**: Easy to improve AI models without affecting reliability
+
+### **📱 User Experience**
+- **Seamless**: Users never experience failed plan generation
+- **Fast**: Intelligent system selection based on availability
+- **Accurate**: Both systems provide evidence-based nutrition guidance
+- **Personalized**: Preferences respected regardless of system used
+
+## 📚 **Documentation Links**
+
+### **Detailed Architecture**
+- **`ai-nutrition-planning.md`** - Complete AI system architecture and linear programming optimization
+- **`edge-functions-current.md`** - Active Edge Functions with deployment and testing guides
+
+### **Algorithm Deep Dives**  
+- **`nutrition_algorithms.md`** - Evidence-based calculation formulas and ACSM equations
+- **`food-preferences-system-overview.md`** - Three-tier preference system and database design
+
+### **External References**
+- **`/docs/database/`** - Dual database architecture (Drift SQLite + Supabase PostgreSQL)
+- **`/docs/technical/`** - Flutter app architecture and Riverpod patterns
+- **`../requirements/`** - Evidence-based nutrition guidelines and MVP requirements
+
+This AI-first architecture represents a significant evolution from simple algorithmic planning to sophisticated, personalized nutrition guidance while maintaining reliability through intelligent fallback strategies! 🎉

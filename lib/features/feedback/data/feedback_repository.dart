@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
+import '../../../shared/services/logging_service.dart';
 import '../domain/feedback_data.dart';
 
 /// Provider for feedback repository
@@ -18,6 +19,7 @@ class FeedbackRepository {
   
   final AppDatabase _database;
   final SupabaseClient _supabase = Supabase.instance.client;
+  LoggingService get _logger => AppLogger.instance;
 
   /// Save survey response to both local database and Supabase
   Future<void> saveSurveyResponse(SurveyResponse response) async {
@@ -43,10 +45,12 @@ class FeedbackRepository {
     // Also save to Supabase for analytics and backup
     try {
       await _saveToSupabase(response);
-      print('✅ Survey response saved to Supabase successfully');
     } catch (error, stackTrace) {
-      print('⚠️ Failed to save survey response to Supabase: $error');
-      print('Stack trace: $stackTrace');
+      _logger.error('Failed to save survey response to Supabase',
+        context: 'FEEDBACK',
+        error: error,
+        stackTrace: stackTrace
+      );
       // Don't throw error - local save already succeeded
       // The survey was saved locally, so this is not a critical failure
     }
@@ -54,11 +58,6 @@ class FeedbackRepository {
   
   /// Save survey response to Supabase feedback table
   Future<void> _saveToSupabase(SurveyResponse response) async {
-    print('🔄 Preparing to save survey response to Supabase...');
-    
-    // Check if Supabase client is properly initialized
-    print('🔍 Supabase client initialized');
-    print('🔍 Supabase client session: ${_supabase.auth.currentSession != null ? "with session" : "no session"}');
     
     final feedbackId = const Uuid().v4();
     final feedbackData = {
@@ -82,23 +81,13 @@ class FeedbackRepository {
       'created_at': DateTime.now().toIso8601String(),
     };
     
-    print('📝 Survey data prepared for Supabase:');
-    print('  - ID: $feedbackId');
-    print('  - Confidence: ${response.confidenceLevel.label} (${response.confidenceLevel.value})');
-    print('  - Reuse Intent: ${response.reuseIntent.value}');
-    print('  - Reminder Requested: ${response.reminderPreference != null}');
-    print('  - Device ID: ${response.deviceId}');
-    print('  - Plan Name: ${response.planName ?? "null"}');
-    
-    print('🚀 Attempting to insert into feedback table...');
-    
     try {
-      final result = await _supabase.from('feedback').insert(feedbackData).select();
-      print('📤 Supabase insert completed successfully');
-      print('📋 Insert result: $result');
+      await _supabase.from('feedback').insert(feedbackData).select();
     } catch (e) {
-      print('❌ Supabase insert failed with error: $e');
-      print('📊 Failed data: $feedbackData');
+      _logger.error('Supabase insert failed for survey feedback',
+        context: 'FEEDBACK',
+        error: e
+      );
       rethrow; // Let the caller handle the error
     }
   }
@@ -132,7 +121,7 @@ class FeedbackRepository {
     await _database.updateUserNotificationPreferences(
       userId: userId,
       notificationsEnabled: true, // User explicitly requested notifications
-      defaultReminderDay: preference.dayOfWeek,
+      defaultReminderDay: preference.dayOfWeek ?? 4, // Default to Thursday if null
       defaultReminderHour: preference.hour,
       defaultReminderMinute: preference.minute,
       defaultReminderRecurring: preference.isRecurring,
@@ -143,7 +132,6 @@ class FeedbackRepository {
   /// Always returns false to allow unlimited survey submissions
   /// TODO: Re-enable time restrictions for production
   Future<bool> hasRecentSurveyResponse(String deviceId) async {
-    print('🔍 DEBUG: Survey restriction disabled - allowing survey submission');
     return false; // Always allow survey submissions during development
   }
 

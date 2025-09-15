@@ -2,11 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'dart:io';
+import 'dart:convert';
 import '../../../shared/services/analytics_service.dart';
 import '../../../shared/services/sentry_service.dart';
+import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/database/schema_manager.dart';
 import '../../auth/application/auth_service.dart';
 import '../../nutrition_plan/data/food_repository.dart';
 
@@ -18,49 +19,20 @@ class AppStartupService {
   final Ref ref;
   
   SentryService get _sentryService => ref.read(sentryServiceProvider);
+  LoggingService get _logger => AppLogger.instance;
   
-  /// Initialize Drift database with smart schema validation and updates
+  /// Initialize Drift database with v2 migration support
   Future<void> initializeDatabase() async {
     try {
-      print('📊 Initializing Drift database...');
+      // Get database instance (this will create it if needed and trigger migration)
+      final database = ref.read(appDatabaseProvider);
       
-      // Get database instance (this will create it if needed)
-      final database = await ref.read(databaseProvider.future);
-      
-      // Create schema manager and validate/update schema
-      final schemaManager = DatabaseSchemaManager(database);
-      
-      print('🔍 Validating database schema...');
-      final result = await schemaManager.validateAndUpdateSchema();
-      
-      if (result.success) {
-        if (result.changesWereMade) {
-          print('✅ Database schema updated successfully');
-          print(result.toString());
-        } else {
-          print('✅ Database schema is up to date');
-        }
-        
-        // Get database info for logging
-        final dbInfo = await schemaManager.getDatabaseInfo();
-        print('📊 Database state:');
-        print(dbInfo.toString());
-        
-      } else {
-        print('❌ Schema validation failed');
-        print(result.toString());
-        
-        // Try to get basic stats even if schema validation failed
-        try {
-          final stats = await database.getDatabaseStats();
-          print('📊 Fallback stats - Users: ${stats['users']}, Preferences: ${stats['preferences']}, Plans: ${stats['plans']}');
-        } catch (statsError) {
-          print('⚠️ Could not get database stats: $statsError');
-        }
-      }
-      
-    } catch (e) {
-      print('❌ Database initialization error: $e');
+    } catch (e, stackTrace) {
+      _logger.error('Database initialization failed', 
+        context: 'DATABASE',
+        error: e,
+        stackTrace: stackTrace
+      );
       rethrow; // Re-throw to trigger error handling in AppStartupWidget
     }
   }
@@ -83,9 +55,6 @@ class AppStartupService {
     
     // Track app launch
     await analyticsService.trackAppLaunched();
-    
-    print('📊 Analytics initialized with device ID: $deviceId');
-    print('🔔 Notification service connected to analytics');
   }
   
   /// Set Sentry user context during app startup
@@ -100,20 +69,13 @@ class AppStartupService {
         appVersion: '1.1.0+8',
       );
       
-      _sentryService.addBreadcrumb(
-        message: 'App startup user context set',
-        category: 'app_lifecycle',
-        level: SentryLevel.info,
-        data: {
-          'device_id': deviceId,
-          'startup_phase': 'user_context',
-        },
-      );
-      
-      print('📊 Sentry user context set with device ID: $deviceId');
     } catch (e, stackTrace) {
       // Don't use Sentry to report Sentry initialization errors
-      print('❌ Sentry user context error: $e');
+      _logger.error('Sentry user context error', 
+        context: 'SENTRY',
+        error: e,
+        stackTrace: stackTrace
+      );
       // Don't rethrow - app should continue even if Sentry fails
     }
   }
@@ -122,7 +84,7 @@ class AppStartupService {
   /// Get or create a persistent device ID for analytics
   Future<String> getOrCreateDeviceId() async {
     try {
-      final database = await ref.read(databaseProvider.future);
+      final database = ref.read(appDatabaseProvider);
       
       // Try to get existing device ID from database
       // For now, we'll use a simple approach - store it with the user profile
@@ -142,7 +104,7 @@ class AppStartupService {
       }
       
     } catch (e) {
-      print('Error getting device ID: $e');
+      _logger.error('Error getting device ID', error: e);
       return _generateFallbackId();
     }
   }
@@ -157,13 +119,10 @@ class AppStartupService {
     try {
       final authService = ref.read(authServiceProvider);
       final analyticsService = ref.read(analyticsServiceProvider);
-      final database = await ref.read(databaseProvider.future);
-      
-      print('🔍 Checking for existing user session...');
+      final database = ref.read(appDatabaseProvider);
       
       // Check if user exists in Drift database
       final user = await database.getCurrentUserProfile();
-      print('🔍 Local user check: ${user != null ? "Found user ${user.id}" : "No local user"}');
       
       if (user != null) {
         // User exists locally - identify them properly in analytics
@@ -179,14 +138,12 @@ class AppStartupService {
             'Has Completed Onboarding': user.onboardingCompleted,
           },
         );
-        
-        print('👤 User session restored from Drift: ${user.id}');
-      } else {
-        // No local user - this is expected for new installs
-        print('👤 No user session - new installation');
       }
     } catch (e) {
-      print('Session check error: $e');
+      _logger.warning('Session check error', 
+        context: 'AUTH',
+        error: e
+      );
       // Continue without user session - this is expected on fresh installs
     }
   }
@@ -194,7 +151,7 @@ class AppStartupService {
   /// Initialize nutrition plan cache (now using Drift as primary storage)
   Future<void> initializeNutritionPlans() async {
     try {
-      final database = await ref.read(databaseProvider.future);
+      final database = ref.read(appDatabaseProvider);
       final authService = ref.read(authServiceProvider);
       
       // Check if we have a current user
@@ -203,17 +160,12 @@ class AppStartupService {
       if (user != null) {
         // Get latest nutrition plan from Drift
         final latestPlanJson = await database.getLatestNutritionPlan(user.id);
-        
-        if (latestPlanJson != null) {
-          print('📋 Latest nutrition plan found in Drift database');
-        } else {
-          print('📋 No nutrition plans found for user');
-        }
-      } else {
-        print('📋 No user found - skipping plan initialization');
       }
     } catch (e) {
-      print('Plan initialization error: $e');
+      _logger.error('Plan initialization error', 
+        context: 'NUTRITION_PLAN',
+        error: e
+      );
       // Continue - app should work without plans (expected on fresh installs)
     }
   }
@@ -222,22 +174,70 @@ class AppStartupService {
   /// Always pull and cache the latest food data from Supabase on app initialization
   Future<void> checkAndRefreshFoodData() async {
     try {
-      print('🍎 Pulling and caching food data from Supabase...');
-      
       // Always fetch fresh food data from Supabase
       final foodRepository = ref.read(foodRepositoryProvider);
-      
-      // Pre-fetch food data to warm the cache with latest data
+
+      // Only sync generic foods (brand_id IS NULL) to match edge function filtering
+      // This ensures food IDs returned by edge functions can be resolved locally
       await foodRepository.getAllFoods();
-      print('🍎 Generic foods cached from Supabase');
-      
-      await foodRepository.getAllFoodsIncludingBranded();
-      print('🍎 All foods (including branded) cached from Supabase');
-      
-      print('✅ Food data successfully pulled and cached');
+
     } catch (e) {
-      print('❌ Food data refresh error: $e');
+      _logger.error('Food data refresh error',
+        context: 'FOOD_DATA',
+        error: e
+      );
       // Don't throw - app should continue even if food refresh fails
+    }
+  }
+
+  /// Check for plans that need feedback after run time has passed
+  /// Also checks for notification-based navigation
+  Future<String?> checkForPendingFeedback() async {
+    try {
+      // First check if user tapped a notification
+      final notificationPlanId = NotificationService.getPendingNavigationPlanId();
+      if (notificationPlanId != null) {
+        print('📱 DEBUG: Found pending notification navigation for plan: $notificationPlanId');
+        return notificationPlanId;
+      }
+      
+      final database = ref.read(appDatabaseProvider);
+      
+      // Check if we have a current user
+      final user = await database.getCurrentUserProfile();
+      if (user == null) return null;
+      
+      // Get plans that have a run date/time in the past but no feedback yet
+      final now = DateTime.now();
+      final plans = await database.select(database.nutritionPlans).get();
+      
+      for (final plan in plans) {
+        // Parse the plan to check runDateTime
+        final planJson = jsonDecode(plan.planData) as Map<String, dynamic>;
+        if (planJson.containsKey('runDateTime') && planJson['runDateTime'] != null) {
+          final runDateTime = DateTime.parse(planJson['runDateTime']);
+          
+          // Check if run time has passed and no feedback exists
+          if (runDateTime.isBefore(now)) {
+            final hasRating = planJson['planRating'] != null;
+            final hasNotes = planJson['journalNotes'] != null && 
+                             (planJson['journalNotes'] as String).isNotEmpty;
+            
+            if (!hasRating && !hasNotes) {
+              // Found a plan that needs feedback
+              return plan.id;
+            }
+          }
+        }
+      }
+      
+      return null; // No plans need feedback
+    } catch (e) {
+      _logger.error('Error checking for pending feedback', 
+        context: 'FEEDBACK_CHECK',
+        error: e
+      );
+      return null; // Continue without feedback check if it fails
     }
   }
 }

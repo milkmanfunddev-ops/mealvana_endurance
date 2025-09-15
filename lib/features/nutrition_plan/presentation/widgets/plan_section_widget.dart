@@ -5,6 +5,7 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan
 import '../../../../theme/app_theme.dart';
 import 'expandable_food_item.dart';
 import 'add_food_button.dart';
+import 'section_macro_targets_widget.dart';
 
 /// Widget for plan sections (Before Run, During Run, After Run)
 class PlanSectionWidget extends StatelessWidget {
@@ -72,6 +73,11 @@ class PlanSectionWidget extends StatelessWidget {
             ),
           ],
         ),
+        
+        SizedBox(height: 8.h),
+        
+        // Section Macro Targets
+        SectionMacroTargetsWidget(section: section),
         
         SizedBox(height: 12.h),
         

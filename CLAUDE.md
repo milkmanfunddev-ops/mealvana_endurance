@@ -137,19 +137,28 @@ mealvana_endurance/
 
 ## Core Systems
 
-### Nutrition Algorithm
-The app uses an evidence-based algorithm for nutrition planning based on:
-- **Energy Expenditure**: ACSM running equation for MET calculation
-- **Carbohydrate Requirements**: Gut training levels (0.7-1.0 g/kg/h)
-- **Hydration**: Intensity-based fluid recommendations (400-800 mL/h)
-- **Electrolytes**: Duration-based sodium supplementation
+### Nutrition Algorithm (AI-First Architecture)
+The app uses a sophisticated **AI-first nutrition planning system** with intelligent algorithmic fallback:
+
+**Primary System: AI-Powered**
+- **LLM Integration**: Natural language understanding for personalized requirements
+- **Linear Programming**: Multi-objective optimization for food selection
+- **Advanced Personalization**: Context-aware recommendations and preference learning
+- **Constraint Solving**: Simultaneous optimization of carbs, protein, fat, sodium, hydration
+
+**Fallback System: Evidence-Based Algorithmic**
+- **ACSM Calculations**: Energy expenditure using ACSM running equation for MET calculation
+- **Evidence-Based Guidelines**: Carbohydrate requirements based on gut training levels
+- **Performance Optimized**: Sub-second response times with deterministic calculations
+- **Safety Focused**: Duration-based sodium supplementation and intensity-based hydration
 
 **Key Files**:
-- Algorithm implementation: `/lib/features/nutrition_plan/application/nutrition_calculator.dart`
-- Algorithm documentation: `/docs/business_logic/nutrition_algorithms.md`
-- Python reference: `/docs/business_logic/run_fueling.py`
+- Service orchestration: `/lib/features/nutrition_plan/application/nutrition_plan_service.dart`
+- AI integration: `/lib/features/nutrition_plan/application/llm_nutrition_plan_service.dart`
+- Primary Edge Function: `/supabase/functions/generate-ai-nutrition-plan/index.ts`
+- Fallback Edge Function: `/supabase/functions/run-plan/index.ts`
 
-📚 **Full Documentation**: [/docs/business_logic/nutrition_algorithms.md](/docs/business_logic/nutrition_algorithms.md)
+📚 **Full Business Logic Documentation**: [/docs/business_logic/README.md](/docs/business_logic/README.md)
 
 ### Content Management System
 Dynamic content system with backend control:
@@ -175,22 +184,37 @@ Dynamic content system with backend control:
 📚 **Full Documentation**: [/docs/technical/content-management.md](/docs/technical/content-management.md)
 
 ### Data Storage
-Offline-first architecture using Drift (SQLite):
+Dual database architecture combining offline-first local storage with cloud synchronization:
 
-**Database Tables**:
-- `user_profiles`: User biometric data and preferences
+**Local Storage (Drift SQLite v2)**:
+- `user_profiles`: User biometric data and preferences  
 - `food_preferences`: Like/dislike food selections with user associations
 - `nutrition_plans`: Generated nutrition plans with full history
-- `app_content`: Cached backend content with version control
+- `foods`: Cached food database with nutritional information (24-hour refresh)
+- `app_content`: Dynamic content management (replaces SharedPreferences)
+- `categories`: Food timing categories (before_run, during_run, after_run)
+- `food_categories`: Many-to-many food-category relationships
+- `brands`: Brand information for affiliate marketing
 - `feedback`: User feedback queue with sync status
+- `macro_targets`: Macro nutrient target tracking
+
+**Cloud Storage (Supabase PostgreSQL)**:
+- Mirrors local schema for backup and synchronization
+- Content management system for dynamic UI text and algorithm parameters
+- Edge functions for AI-powered nutrition plan generation
+- Row Level Security for privacy protection
 
 **Migration System**:
-- **Schema Versioning**: Built-in versioning with automatic migration generation
-- **Step-by-Step Migrations**: Type-safe migrations with schema validation
-- **Migration Testing**: Auto-generated test cases for all schema changes
-- **Rollback Support**: Safe rollback mechanisms for failed migrations
+- **Database Version**: Schema v2 (upgraded from v1 using Big Bang migration)
+- **Migration Trigger**: Controlled by `schemaVersion` property in AppDatabase
+- **Big Bang Approach**: All 5 new tables added in single migration
+- **24-Hour Sync Cycles**: Automatic refresh for foods and content data
 
-📚 **Full Documentation**: [/docs/database/README.md](/docs/database/README.md) and [/docs/database/schema-overview.md](/docs/database/schema-overview.md)
+📚 **Full Documentation**: 
+- [Database Overview](/docs/database/README.md) - Complete dual database architecture
+- [Drift Schema](/docs/database/drift/schema.md) - Local SQLite implementation
+- [Supabase Tables](/docs/database/supabase/tables.md) - Cloud backend structure
+- [Migration Strategy](/docs/database/drift/migration-strategy.md) - V1→V2 upgrade approach
 
 ## Development Practices
 
@@ -324,23 +348,27 @@ anonKey: '[ANON_KEY]'
 
 ## Documentation Index
 
-### Technical Documentation
-- [Architecture Overview](/docs/technical/README.md) - Complete architecture guide
-- [Fat Backend Architecture](/docs/technical/fat-backend-architecture.md) - Content management strategy
-- [Content Management](/docs/technical/content-management.md) - CMS implementation details
-- [Data Storage](/docs/database/README.md) - Drift database implementation and migrations
-- [Backend Integration](/docs/technical/backend-integration.md) - Supabase setup
-- [CI/CD Pipeline](/docs/technical/cicd.md) - Codemagic configuration
-- [Shorebird Code Push](/docs/technical/shorebird-code-push.md) - OTA updates
-- [Analytics](/docs/technical/analytics.md) - Event tracking setup
-- [Error Tracking](/docs/technical/error-tracking.md) - Sentry integration
-- [Subscriptions](/docs/technical/subscriptions.md) - RevenueCat setup
+### Architecture Documentation
+- [App Architecture](/docs/architecture/README.md) - Complete current architecture overview
+- [Technical Implementation](/docs/technical/README.md) - Detailed development patterns
+- [Database Architecture](/docs/database/README.md) - Dual database implementation and migrations
 
-### Business Logic
-- [Nutrition Algorithms](/docs/business_logic/nutrition_algorithms.md) - Core calculation formulas
-- [Python Reference Implementation](/docs/business_logic/run_fueling.py) - Algorithm reference
-- [Output Reference](/docs/business_logic/output_reference.md) - Algorithm output documentation
-- [Usage Examples](/docs/business_logic/examples.md) - Algorithm usage examples
+### Technical Documentation  
+- [Technical Overview](/docs/technical/README.md) - Complete technical architecture guide with current Drift SQLite v2 schema
+- [Fat Backend Architecture](/docs/technical/fat-backend-architecture.md) - Content management strategy with Drift SQLite caching
+- [Content Management System](/docs/technical/content-management.md) - Dynamic content management with Drift SQLite storage  
+- [Drift Database Implementation](/docs/technical/drift-implementation.md) - Type-safe SQLite database with v2 schema
+- [Drift Migration Guide](/docs/technical/drift-migration-guide.md) - Database migration management and v1→v2 transition
+- [Logging Service](/docs/technical/logging-service.md) - Structured logging implementation
+- [Sentry Integration](/docs/technical/sentry-integration.md) - Error tracking and performance monitoring
+- [Shorebird Code Push](/docs/technical/shorebird-code-push.md) - Over-the-air updates
+
+### Business Logic & AI Architecture
+- [Business Logic Overview](/docs/business_logic/README.md) - Complete AI-first system architecture
+- [AI Nutrition Planning](/docs/business_logic/ai-nutrition-planning.md) - LLM integration and linear programming optimization
+- [Current Edge Functions](/docs/business_logic/edge-functions-current.md) - Active Edge Functions deployment guide  
+- [Nutrition Algorithms](/docs/business_logic/nutrition_algorithms.md) - Evidence-based calculation formulas and AI system details
+- [Food Preferences System](/docs/business_logic/food-preferences-system-overview.md) - Three-tier preference model and database design
 
 ### Andrea Bizzotto's Architecture Guides
 - [Architecture Overview](/docs/technical/andrea/andrea_architecture.txt)
@@ -379,11 +407,24 @@ anonKey: '[ANON_KEY]'
 - **Adding Features**: Create new folder under `/lib/features/`
 - **Updating Dependencies**: Run `flutter pub upgrade` carefully
 
-### Testing Approach
-- Unit tests for algorithms and business logic
-- Widget tests for UI components
-- Integration tests for critical user flows
-- Manual testing on real devices for performance
+### Testing Strategy
+Mealvana Endurance implements a **focused, speed-optimized testing approach** designed for aggressive development timelines with minimal maintenance overhead.
+
+**Philosophy**:
+- **Integration tests over unit tests** - Focus on critical business logic paths
+- **Fast execution** - No slow widget pumping, uses Andrea Bizzotto's AsyncNotifier patterns
+- **Real dependencies** - In-memory databases and live API calls for authentic validation
+- **Risk-based coverage** - Test the 5% of functionality that causes 95% of user pain
+
+**Critical Test Categories**:
+1. **Schema Migration Tests** - Prevent app crashes during database updates (v1→v2 migration)
+2. **Food Suitability Validation** - Ensure user safety (no oatmeal during runs)
+3. **Macro Target Validation** - Core value proposition accuracy within ±10g tolerance
+4. **Device Authentication Flow** - Privacy compliance and data integrity
+5. **Edge Function Integration** - AI nutrition generation and error handling
+6. **Content Management System** - Backend-controlled UI text and algorithm parameters
+
+📚 **Complete Testing Documentation**: [/docs/test/README.md](/docs/test/README.md)
 
 ## Contact & Resources
 

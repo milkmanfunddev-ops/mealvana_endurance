@@ -49,3 +49,20 @@ sentry.properties
 # iOS CocoaPods
 ios/Pods/
 ios/Podfile.lock
+
+# Node.js/NPM related
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tgz
+.npm
+.eslintcache
+
+# Local testing and development
+test/local_edge_functions/node_modules/
+test/local_edge_functions/package-lock.json
+test/local_edge_functions/*.log
+test/local_edge_functions/debug-*.js
+test/local_edge_functions/test-*.js
+test/local_edge_functions/.env*

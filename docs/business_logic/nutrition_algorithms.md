@@ -1,7 +1,7 @@
 # Nutrition Calculation Algorithms
 
 ## Overview
-Evidence-based nutrition calculation formulas for endurance athletes, specifically for running events. These algorithms are implemented in the Mealvana Endurance app to generate personalized nutrition plans based on scientific research and acute fueling strategies.
+Evidence-based nutrition calculation formulas for endurance athletes, specifically for running events. These algorithms are implemented in the Mealvana Endurance app using an **AI-first architecture** with intelligent fallback to algorithmic calculations. The system generates personalized nutrition plans based on scientific research, acute fueling strategies, and advanced optimization techniques.
 
 ## Research Sources
 - ACSM's Guidelines for Exercise Testing and Prescription
@@ -10,7 +10,73 @@ Evidence-based nutrition calculation formulas for endurance athletes, specifical
 - TrainingPeaks: "A Complete Guide to Proper Marathon Nutrition"
 - Precision Fuel & Hydration: Performance nutrition research
 
-## Core Calculation Formulas
+## Implementation Architecture
+
+### **AI-First Dual-System Approach**
+The Mealvana Endurance app implements a sophisticated dual-system architecture:
+
+**Primary System: AI-Powered Linear Programming**
+- **LLM Integration**: Natural language understanding for personalized requirements
+- **Linear Programming Solver**: Multi-objective optimization using JavaScript solver
+- **Advanced Personalization**: Context-aware recommendations based on individual history
+- **Constraint Optimization**: Simultaneous optimization of carbs, protein, fat, sodium, and hydration
+
+**Fallback System: Evidence-Based Algorithmic**  
+- **Fast Response**: Sub-second deterministic calculations using ACSM formulas
+- **Reliable**: No external dependencies, pure TypeScript implementation
+- **Evidence-Based**: Follows the core calculation formulas detailed below
+- **Preference-Aware**: Integrates user food preferences with scoring system
+
+## AI System: Linear Programming Optimization
+
+### **Multi-Objective Constraint Solving**
+The AI-powered system uses advanced linear programming to simultaneously optimize multiple nutritional objectives:
+
+```typescript
+const CONSTRAINT_PRIORITY = {
+  carbs_g: 2.0,     // HIGH priority - primary fuel source
+  sodium_mg: 1.8,   // High priority for performance
+  water_ml: 1.5,    // High priority for hydration
+  protein_g: 0.3,   // Lower priority for most phases
+  fat_g: 0.3        // Lower priority for most phases
+};
+```
+
+### **Food Selection Scoring Matrix**
+Advanced preference and phase-specific scoring:
+```typescript
+const SCORING_CONFIG = {
+  preference: {
+    like: 20,           // Strong preference bonus
+    willing_to_try: 5,  // Moderate preference bonus
+    dislike: 0          // Excluded from selection
+  },
+  phase_bonuses: {
+    aid_station_bonus: 12,      // Race-practical foods
+    carb_density_bonus: 120,    // Efficient carb sources
+    gi_sensitive_penalty: 20    // Digestibility concerns
+  }
+};
+```
+
+### **Constraint Tolerances**
+Tight tolerances for critical nutrients, relaxed for optional macros:
+```typescript
+const DEFAULT_TOL = {
+  carbs_g: 5,       // ±5g precision for primary fuel
+  sodium_mg: 25,    // ±25mg precision for electrolytes
+  water_ml: 50,     // ±50ml precision for hydration
+  protein_g: 15,    // ±15g relaxed for optional macro
+  fat_g: 10         // ±10g relaxed for optional macro
+};
+```
+
+### **Performance Optimizations**
+- **Food Candidate Limiting**: Max 8-12 foods per phase to reduce solver complexity
+- **Serving Granularity**: 0.25-0.5 serving increments for precise targeting
+- **Penalty Functions**: Unique item penalties to minimize complexity
+
+## Core Calculation Formulas (Algorithmic Fallback)
 
 ### 1. Energy Expenditure
 
@@ -105,66 +171,118 @@ For runs 60-90 min:    150-300 mg total
 For runs > 90 min:     300-600 mg total
 ```
 
-## Complete Algorithm Implementation
+## Current Implementation Architecture
 
-```python
-def compute_run_fueling(input_params):
-    # Convert units and calculate kinematics
-    weight_kg = to_kg(weight, weight_unit)
-    distance_mi = to_miles(distance, distance_unit)
-    pace_min_per_mile = parse_pace_to_min_per_mile(pace, pace_unit)
-    duration_h = distance_mi * pace_min_per_mile / 60.0
-    speed_mph = 60.0 / pace_min_per_mile
+### **Dual-System Service Layer (Dart/Flutter)**
+```dart
+// lib/features/nutrition_plan/application/nutrition_plan_service.dart
+Future<NutritionPlan> generateNutritionPlan() async {
+  try {
+    // PRIMARY: AI-powered linear programming optimization
+    final llmPlan = await _llmService.generateLLMNutritionPlan(
+      distanceMiles: distanceMiles,
+      paceMinutesPerMile: paceMinutesPerMile,
+      timeBeforeRunHours: timeBeforeRunHours,
+      sweatRate: sweatRate,
+    );
+
+    if (llmPlan != null) {
+      // Track AI success and cache locally
+      await _analyticsService.trackNutritionPlanGenerated(planType: 'llm');
+      return llmPlan;
+    }
+
+    // FALLBACK: Fast algorithmic Edge Function
+    final algorithmicPlan = await _repository.createNutritionPlanV2(
+      deviceId: user.id,
+      weightKg: weightKg,
+      durationMin: durationMin,
+      gutTraining: gutTraining,
+    );
     
-    # Energy expenditure
-    MET = met_from_pace_min_per_mile(pace_min_per_mile)
-    calories_net = weight_kg * distance_km  # ~1 kcal/kg/km
-    calories_gross = MET * weight_kg * duration_h
+    await _analyticsService.trackNutritionPlanGenerated(planType: 'algorithmic');
+    return algorithmicPlan.plan!;
     
-    # Pre-run carbohydrates
-    time_available_h = time_before_run_min / 60.0
-    if time_available_h >= 1.0:
-        pre_carbs = min(4.0, time_available_h) * 1.0 * weight_kg
-    elif time_available_h >= 0.25:
-        pre_carbs = 0.5 * weight_kg
-    else:
-        pre_carbs = 0.25 * weight_kg
-    
-    # During-run carbohydrates (total amounts, not hourly rates)
-    if duration_h < 1.0:
-        total_during_carbs = 0  # No carbs needed for short runs
-    elif duration_h <= 1.5:
-        total_during_carbs = min(40, 20 + (duration_h - 1.0) * 40)  # 20-40g total
-    else:
-        gut_multiplier = {"low": 30, "moderate": 45, "high": 60}[gut_training]
-        total_during_carbs = gut_multiplier  # Total grams, not per hour
-    
-    # Hydration and sodium calculations
-    pre_water = calc_pre_run_hydration(weight_kg, time_available_h)
-    during_water_rate = calc_during_run_hydration_rate(duration_h, MET)
-    pre_sodium = calc_pre_run_sodium(time_available_h)
-    during_sodium_rate = calc_during_run_sodium_rate(duration_h)
-    
-    return FuelOutput(...)
+  } catch (e) {
+    await _analyticsService.trackNutritionPlanGenerationFailed();
+    rethrow;
+  }
+}
 ```
 
-## Key Features of Updated Algorithm
+### **AI System: Linear Programming (TypeScript)**
+```typescript
+// supabase/functions/generate-ai-nutrition-plan/index.ts
+const constraints = {
+  // Multi-objective optimization with priority weighting
+  carbs_target: {
+    min: targetCarbs * (1 - tolerance_carbs / targetCarbs),
+    max: targetCarbs * (1 + tolerance_carbs / targetCarbs),
+    weight: CONSTRAINT_PRIORITY.carbs_g
+  },
+  sodium_target: {
+    min: targetSodium * (1 - tolerance_sodium / targetSodium),  
+    max: targetSodium * (1 + tolerance_sodium / targetSodium),
+    weight: CONSTRAINT_PRIORITY.sodium_mg
+  }
+  // ... additional constraints for protein, fat, hydration
+};
 
-### 1. Evidence-Based Precision
-- Uses ACSM running equation for accurate energy expenditure
-- Implements time-sensitive pre-run carbohydrate strategies
-- Accounts for individual gut training levels
+// Use JavaScript LP solver for optimization
+const solution = solver.Solve(model);
+```
 
-### 2. Physiological Constraints
-- Respects digestive absorption limits (30-60g carbs/hour)
-- Prevents over-hydration with intensity-based fluid rates
-- Eliminates sodium supplementation for short runs (≤1 hour)
+### **Algorithmic Fallback: ACSM Calculations (TypeScript)**
+```typescript  
+// supabase/functions/run-plan/index.ts
+function calculateNutritionTargets(request: RunPlanRequest) {
+  // Energy expenditure using ACSM equations
+  const speedMph = 60.0 / (request.duration_min / request.distance_miles);
+  const speedMPerMin = speedMph * 26.8224;
+  const vo2 = 0.2 * speedMPerMin + 3.5;
+  const met = vo2 / 3.5;
+  const grossCalories = met * request.weight_kg * (request.duration_min / 60);
+  
+  // Time-sensitive pre-run carbs
+  const timeAvailableHours = request.pre_window_min / 60.0;
+  let preCarbs: number;
+  if (timeAvailableHours >= 1.0) {
+    preCarbs = Math.min(4.0, timeAvailableHours) * request.weight_kg;
+  } else if (timeAvailableHours >= 0.25) {
+    preCarbs = 0.5 * request.weight_kg;  
+  } else {
+    preCarbs = 0.25 * request.weight_kg;
+  }
+  
+  return { met, grossCalories, preCarbs, /* ... */ };
+}
+```
 
-### 3. Personalization Factors
-- Body weight scaling for all calculations
-- Gut training level consideration for carb absorption
-- Time-sensitive pre-run nutrition strategies
-- Intensity-based hydration adjustments
+## Key Features of Current System
+
+### 1. **AI-Powered Personalization (Primary System)**
+- **Advanced Optimization**: Linear programming for multi-objective constraint solving
+- **Context Understanding**: LLM integration for nuanced user requirements
+- **Preference Learning**: Sophisticated scoring for food likes, dislikes, and willingness to try
+- **Environmental Adaptation**: Weather, race conditions, and individual history consideration
+
+### 2. **Evidence-Based Reliability (Fallback System)**
+- **ACSM Precision**: Uses ACSM running equation for accurate energy expenditure
+- **Time-Sensitive Strategies**: Implements evidence-based pre-run carbohydrate timing
+- **Gut Training Integration**: Accounts for individual carbohydrate absorption capacity
+- **Fast Performance**: Sub-second response times with deterministic calculations
+
+### 3. **Physiological Safety (Both Systems)**
+- **Absorption Limits**: Respects digestive constraints (30-60g carbs/hour, up to 90g with dual-source)
+- **Hydration Safety**: Prevents over-hydration with intensity-based fluid rates
+- **Electrolyte Balance**: Evidence-based sodium supplementation for runs >1 hour
+- **Individual Scaling**: Body weight scaling for all nutritional requirements
+
+### 4. **Advanced Personalization Features**
+- **Three-Tier Preferences**: Like (+20 pts) > Willing-to-try (+5 pts) > Neutral (0 pts)
+- **Phase Intelligence**: Specific food selection rules for pre/during/after run phases
+- **GI Sensitivity**: Adjustments for individual digestive tolerance
+- **Environmental Factors**: Temperature, humidity, and sweat rate considerations
 
 ## Safety Considerations
 
@@ -179,16 +297,54 @@ def compute_run_fueling(input_params):
 - **Exercise intensity**: Influences fluid and energy needs
 - **Timing constraints**: Determines pre-run nutrition strategy
 
-## Implementation Notes
+## Implementation & Performance
 
-### Error Handling
+### **Dual-System Error Handling**
+**AI System Resilience:**
+- Graceful degradation to algorithmic fallback when AI unavailable
+- Constraint violation handling with penalty functions
+- Linear programming solver timeout protection
+
+**Algorithmic System Reliability:**
 - Always clamp values to physiological safe ranges
-- Provide fallback calculations for edge cases
-- Default to conservative recommendations when uncertain
+- Robust fallback calculations for edge cases
+- Conservative recommendations when data uncertain
 
-### Algorithm Validation
-- Cross-reference with established sports nutrition guidelines
-- Test edge cases (very short/long runs, extreme body weights)
-- Validate against real-world athlete feedback
+### **Performance Monitoring**
+**Response Time Tracking:**
+- AI System: Typically 2-5 seconds (includes optimization solving)
+- Algorithmic Fallback: <1 second (optimized for speed)
+- Analytics tracking of system usage patterns and success rates
 
-This updated algorithm framework provides a more precise, evidence-based foundation for generating personalized nutrition plans while maintaining safety and accounting for individual physiological differences.
+**Quality Assurance:**
+- Cross-reference both systems with established sports nutrition guidelines
+- Continuous validation against real-world athlete feedback
+- A/B testing of AI vs algorithmic recommendations for quality comparison
+
+### **System Selection Logic**
+```dart
+// Intelligent system selection based on availability and requirements
+Future<NutritionPlan> generatePlan() async {
+  final startTime = DateTime.now();
+  
+  try {
+    // Try AI system first for complex personalization
+    final aiPlan = await generateAIPlan();
+    trackResponseTime('ai_success', startTime);
+    return aiPlan;
+  } catch (aiError) {
+    // Fallback to fast, reliable algorithmic system
+    final algorithmicPlan = await generateAlgorithmicPlan();  
+    trackResponseTime('algorithmic_fallback', startTime);
+    return algorithmicPlan;
+  }
+}
+```
+
+### **Continuous Improvement**
+- **AI Model Updates**: Regular improvements to LLM understanding and constraint solving
+- **Algorithm Refinement**: Evidence-based updates to ACSM calculations and safety limits
+- **User Feedback Integration**: Plan rating and usage data to improve both systems
+- **Performance Optimization**: Ongoing tuning of constraint tolerances and food candidate limits
+
+This dual-system architecture provides sophisticated AI-powered personalization while maintaining reliability through evidence-based algorithmic fallback, ensuring users always receive high-quality nutrition guidance regardless of system availability.

@@ -281,7 +281,7 @@ class UserRepository {
 @riverpod
 Future<UserRepository> userRepository(Ref ref) async {
   // Get the database instance
-  final database = await ref.watch(databaseProvider.future);
+  final database = ref.watch(appDatabaseProvider);
   final sentryService = ref.watch(sentryServiceProvider);
   
   return UserRepository(

@@ -6,7 +6,7 @@ part of 'macro_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$macroRepositoryHash() => r'2ae4c72fd2051534ddf98def35b919d080b7ee87';
+String _$macroRepositoryHash() => r'5c5c34ddca47ab4be53852055020e39ed82332ae';
 
 /// See also [macroRepository].
 @ProviderFor(macroRepository)

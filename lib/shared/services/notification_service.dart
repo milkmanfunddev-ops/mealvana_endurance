@@ -12,6 +12,7 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
   static AnalyticsService? _analytics; // Analytics service for tracking
+  static String? _pendingNavigationPlanId; // Plan ID to navigate to when app becomes active
   
   /// Set analytics service for tracking North-Star metrics
   static void setAnalyticsService(AnalyticsService analytics) {
@@ -59,9 +60,14 @@ class NotificationService {
         final planId = response.payload!;
         _analytics!.trackPlanOpenedFromReminder(
           planId: planId,
-          screen: 'Current Plan', // Will navigate to the current plan screen
+          screen: 'Plan How Well', // Will navigate to the plan rating screen
         );
         print('📊 DEBUG: Tracked plan_opened_from_reminder for planId: $planId');
+        
+        // Store the planId for navigation handling
+        // The navigation will be handled by the router when the app becomes active
+        _pendingNavigationPlanId = planId;
+        
       } catch (e) {
         print('❌ DEBUG: Failed to track plan_opened_from_reminder: $e');
       }
@@ -200,6 +206,19 @@ class NotificationService {
     }
     
     return await _plugin.pendingNotificationRequests();
+  }
+
+  /// Get and clear pending navigation plan ID
+  /// Called by app startup or navigation logic to handle notification taps
+  static String? getPendingNavigationPlanId() {
+    final planId = _pendingNavigationPlanId;
+    _pendingNavigationPlanId = null; // Clear after reading
+    return planId;
+  }
+  
+  /// Check if there's a pending navigation from notification tap
+  static bool hasPendingNavigation() {
+    return _pendingNavigationPlanId != null;
   }
   
   /// Track reminder_fired event for planId

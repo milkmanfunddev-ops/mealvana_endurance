@@ -13,6 +13,16 @@ class NutritionPlans extends Table {
   /// Plan data stored as JSON string
   TextColumn get planData => text()();
   
+  /// Scheduled run date and time
+  DateTimeColumn get runDateTime => dateTime().nullable()();
+  
+  /// User's rating of plan effectiveness (1-3 scale)
+  /// 1 = Could be better, 2 = Neutral, 3 = Satisfied
+  IntColumn get planRating => integer().nullable()();
+  
+  /// User's journal notes about the plan
+  TextColumn get journalNotes => text().nullable()();
+  
   /// When the plan was created
   DateTimeColumn get createdAt => dateTime()();
   

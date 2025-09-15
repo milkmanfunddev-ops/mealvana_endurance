@@ -48,7 +48,7 @@ class SurveyPage2 extends ConsumerWidget {
               
               // Show different content based on reuse intent
               if (state.reuseIntent == ReuseIntent.yes)
-                _buildReminderSection(state, controller)
+                _buildReminderSection(context, state, controller)
               else
                 _buildFeedbackSection(state, controller),
               
@@ -71,7 +71,7 @@ class SurveyPage2 extends ConsumerWidget {
     );
   }
 
-  Widget _buildReminderSection(SurveyState state, SurveyController controller) {
+  Widget _buildReminderSection(BuildContext context, SurveyState state, SurveyController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -81,58 +81,25 @@ class SurveyPage2 extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         
-        // Option 1: Next Thursday at 5 PM
+        // Option 1: No reminder needed
         _buildReminderOption(
           state,
           controller,
-          const NotificationPreference(
-            dayOfWeek: 4, // Thursday
-            hour: 17, // 5 PM
-            minute: 0,
-            isRecurring: false,
-          ),
-          'Next Thursday at 5:00 PM (one-time)',
-        ),
-        
-        const SizedBox(height: 12),
-        
-        // Option 2: Every Thursday at 5 PM
-        _buildReminderOption(
-          state,
-          controller,
-          const NotificationPreference(
-            dayOfWeek: 4, // Thursday
-            hour: 17, // 5 PM
-            minute: 0,
-            isRecurring: true,
-          ),
-          'Every Thursday at 5:00 PM (recurring)',
-        ),
-        
-        const SizedBox(height: 12),
-        
-        // Option 3: Next Saturday at 5 PM
-        _buildReminderOption(
-          state,
-          controller,
-          const NotificationPreference(
-            dayOfWeek: 6, // Saturday
-            hour: 17, // 5 PM
-            minute: 0,
-            isRecurring: false,
-          ),
-          'Next Saturday at 5:00 PM (one-time)',
-        ),
-        
-        const SizedBox(height: 12),
-        
-        // Option 4: No reminder
-        _buildReminderOption(
-          state,
-          controller,
-          null,
+          () => controller.setNoReminderNeeded(true),
           'No reminder needed',
+          isSelected: state.noReminderNeeded,
         ),
+        
+        const SizedBox(height: 12),
+        
+        // Option 2: Set a reminder with editable date/time
+        _buildEditableReminderOption(context, state, controller),
+        
+        // Show recurring toggle below reminder options if reminder is enabled
+        if (!state.noReminderNeeded) ...[
+          const SizedBox(height: 20),
+          _buildRecurringToggle(state, controller),
+        ],
       ],
     );
   }
@@ -140,17 +107,12 @@ class SurveyPage2 extends ConsumerWidget {
   Widget _buildReminderOption(
     SurveyState state,
     SurveyController controller,
-    NotificationPreference? preference,
-    String label,
-  ) {
-    final isSelected = (preference == null && state.reminderPreference == null) ||
-        (preference != null && 
-         state.reminderPreference?.dayOfWeek == preference.dayOfWeek &&
-         state.reminderPreference?.hour == preference.hour &&
-         state.reminderPreference?.isRecurring == preference.isRecurring);
-
+    VoidCallback onTap,
+    String label, {
+    required bool isSelected,
+  }) {
     return GestureDetector(
-      onTap: () => controller.setReminderPreference(preference),
+      onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -196,6 +158,203 @@ class SurveyPage2 extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildEditableReminderOption(BuildContext context, SurveyState state, SurveyController controller) {
+    final isSelected = !state.noReminderNeeded;
+    final reminderDate = state.customReminderDate ?? 
+        DateTime.now().copyWith(hour: 17, minute: 0).add(
+          Duration(days: (DateTime.thursday - DateTime.now().weekday) % 7)
+        );
+
+    final weekday = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][reminderDate.weekday];
+    final hour12 = reminderDate.hour > 12 ? reminderDate.hour - 12 : (reminderDate.hour == 0 ? 12 : reminderDate.hour);
+    final amPm = reminderDate.hour >= 12 ? 'PM' : 'AM';
+    final minute = reminderDate.minute.toString().padLeft(2, '0');
+    final dateStr = '${reminderDate.month}/${reminderDate.day}';
+    
+    return GestureDetector(
+      onTap: () => controller.setNoReminderNeeded(false),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primary100 : AppTheme.baseWhite,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected ? AppTheme.primary600 : Colors.transparent,
+                    border: Border.all(
+                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey,
+                      width: 2,
+                    ),
+                  ),
+                  child: isSelected
+                      ? const Icon(
+                          Icons.check,
+                          size: 12,
+                          color: AppTheme.baseWhite,
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Set a reminder',
+                    style: AppTheme.textStyle.copyWith(
+                      color: isSelected ? AppTheme.primary600 : AppTheme.baseBlack,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            
+            // Show date/time pickers if reminder is selected
+            if (isSelected) ...[
+              const SizedBox(height: 16),
+              Text(
+                'When should we remind you?',
+                style: AppTheme.textStyle.copyWith(
+                  color: AppTheme.baseGrey,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _showDatePicker(context, reminderDate, controller),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.baseWhite,
+                          border: Border.all(color: AppTheme.baseGrey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today, size: 20, color: AppTheme.baseGrey),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$weekday, $dateStr',
+                              style: AppTheme.textStyle.copyWith(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _showTimePicker(context, reminderDate, controller),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.baseWhite,
+                          border: Border.all(color: AppTheme.baseGrey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.access_time, size: 20, color: AppTheme.baseGrey),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$hour12:$minute $amPm',
+                              style: AppTheme.textStyle.copyWith(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecurringToggle(SurveyState state, SurveyController controller) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.baseWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.baseGrey),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Repeat this reminder',
+              style: AppTheme.textStyle,
+            ),
+          ),
+          Switch(
+            value: state.isRecurring,
+            onChanged: controller.setIsRecurring,
+            activeColor: AppTheme.primary600,
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  void _showDatePicker(BuildContext context, DateTime selectedDate, SurveyController controller) {
+    showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    ).then((pickedDate) {
+      if (pickedDate != null) {
+        final newDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          selectedDate.hour,
+          selectedDate.minute,
+        );
+        controller.setCustomReminderDate(newDateTime);
+      }
+    });
+  }
+
+  void _showTimePicker(BuildContext context, DateTime selectedDate, SurveyController controller) {
+    showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(selectedDate),
+    ).then((pickedTime) {
+      if (pickedTime != null) {
+        final newDateTime = DateTime(
+          selectedDate.year,
+          selectedDate.month,
+          selectedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+        controller.setCustomReminderDate(newDateTime);
+      }
+    });
   }
 
   Widget _buildFeedbackSection(SurveyState state, SurveyController controller) {

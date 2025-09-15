@@ -6,7 +6,7 @@ part of 'survey_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$surveyControllerHash() => r'0343fb155ca5c6461d85ca269770d649cd231756';
+String _$surveyControllerHash() => r'cada1979bffe2d0df82559e912956ef4fa147316';
 
 /// See also [SurveyController].
 @ProviderFor(SurveyController)

@@ -172,7 +172,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
         fatRange: '5-10%',
       ),
       sections: [
-        PlanSection(
+        PlanSection.withDefaults(
           id: 'before-run',
           title: 'Before Run',
           subtitle: '2-3 hours pre-run',
@@ -212,7 +212,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
             ),
           ],
         ),
-        PlanSection(
+        PlanSection.withDefaults(
           id: 'during-run',
           title: 'During Run',
           subtitle: 'Every 45-60 minutes',
@@ -252,7 +252,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
             ),
           ],
         ),
-        PlanSection(
+        PlanSection.withDefaults(
           id: 'after-run',
           title: 'After Run',
           subtitle: 'Within 30 minutes',

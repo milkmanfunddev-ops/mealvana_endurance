@@ -13,6 +13,8 @@ import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_edit_screen.dart';
 import '../../features/feedback/presentation/screens/survey_screen.dart';
+import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
+import '../../features/user_journal/presentation/screens/voice_notes_list_screen.dart';
 import '../widgets/tabs_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
@@ -66,7 +68,25 @@ class AppRouter {
       GoRoute(
         path: '/main',
         name: 'main',
-        builder: (context, state) => const TabsScreen(),
+        builder: (context, state) {
+          // Support tab query parameter to navigate to specific tab
+          final tabParam = state.uri.queryParameters['tab'];
+          int initialTab = 0;
+          
+          switch (tabParam) {
+            case 'notes':
+            case 'workout-notes':
+              initialTab = 1;
+              break;
+            case 'settings':
+              initialTab = 2;
+              break;
+            default:
+              initialTab = 0;
+          }
+          
+          return TabsScreen(initialTabIndex: initialTab);
+        },
       ),
       
       // Survey screen - shown after plan generation
@@ -127,6 +147,36 @@ class AppRouter {
             foodToSwapName: extra?['foodToSwapName'] as String?,
             category: extra?['category'] as String? ?? 'before_run',
           );
+        },
+      ),
+      
+      // User Journal Routes
+      
+      // Plan Rating Screen - Rate how well a nutrition plan worked
+      GoRoute(
+        path: '/plan-how-well/:planId',
+        name: 'plan-how-well',
+        builder: (context, state) {
+          final planId = state.pathParameters['planId']!;
+          return PlanHowWellScreen(planId: planId);
+        },
+      ),
+      
+      // Voice Notes List Screen - View all saved notes
+      GoRoute(
+        path: '/voice-notes',
+        name: 'voice-notes',
+        builder: (context, state) => const VoiceNotesListScreen(),
+      ),
+      
+      // Voice Memo Screen - Redirect to workout notes tab
+      // Keeping for backward compatibility but redirects to tabs
+      GoRoute(
+        path: '/voice-memo/:planId',
+        name: 'voice-memo',
+        redirect: (context, state) {
+          // Redirect to main tabs with notes tab selected
+          return '/main?tab=workout-notes';
         },
       ),
     ],

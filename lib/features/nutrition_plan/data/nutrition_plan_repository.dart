@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/nutrition_plan.dart' as domain;
 import '../domain/food_item_data.dart';
+import 'package:drift/drift.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/sentry_service.dart';
+import '../application/food_data_transformation_service.dart';
 import 'dart:convert';
 
 part 'nutrition_plan_repository.g.dart';
@@ -17,11 +19,13 @@ class NutritionPlanRepository {
     required this.supabase,
     required this.database,
     required this.sentryService,
+    required this.transformationService,
   });
   
   final SupabaseClient supabase;
   final AppDatabase database;
   final SentryService sentryService;
+  final FoodDataTransformationService transformationService;
 
   /// Create a new nutrition plan via new run-plan Edge Function
   Future<CreateNutritionPlanResult> createNutritionPlanV2({
@@ -87,7 +91,7 @@ class NutritionPlanRepository {
         // The new edge function doesn't return a success flag, it returns plan directly
         if (data.containsKey('plan')) {
           // Convert new format to existing NutritionPlan format
-          final convertedPlan = _convertNewPlanFormat(data, deviceId);
+          final convertedPlan = await _convertNewPlanFormat(data, deviceId);
           
           // Cache the plan locally
           await cachePlanLocally(deviceId, convertedPlan);
@@ -534,147 +538,275 @@ class NutritionPlanRepository {
     }
   }
 
-  /// Convert new run-plan format to existing NutritionPlan format
-  domain.NutritionPlan _convertNewPlanFormat(Map<String, dynamic> data, String deviceId) {
+  /// Convert new edge function format to existing NutritionPlan format
+  /// Now handles food_id + quantity format with database lookups
+  Future<domain.NutritionPlan> _convertNewPlanFormat(Map<String, dynamic> data, String deviceId) async {
     final plan = data['plan'] as Map<String, dynamic>;
-    final targets = data['targets'] as Map<String, dynamic>;
-    final inputs = data['inputs'] as Map<String, dynamic>;
-    
+    final targets = data['targets'] as Map<String, dynamic>?;
+
     // Generate plan ID
     final planId = 'plan-${DateTime.now().millisecondsSinceEpoch}-${deviceId.substring(deviceId.length - 4)}';
-    
-    // Convert before section
-    final beforeData = plan['before'] as Map<String, dynamic>;
-    final beforeItems = (beforeData['items'] as List<dynamic>).map((item) {
-      final itemMap = item as Map<String, dynamic>;
-      return FoodItemData(
-        id: itemMap['name'].toString().toLowerCase().replaceAll(' ', '_'),
-        name: itemMap['name'],
-        quantity: '${itemMap['servings']} serving${itemMap['servings'] == 1 ? '' : 's'}',
-        imageAddress: itemMap['image_address'] as String?,
-        description: '',
-        nutritionalInfo: NutritionalInfo(
-          calories: 0,
-          carbs: (itemMap['carbs_g'] as num).round(),
-          protein: 0,
-          fat: 0,
-          sodium: 0,
-          fluids: 0.0,
-        ),
-      );
-    }).toList();
 
-    // Convert during section
-    final duringData = plan['during'] as Map<String, dynamic>;
-    final duringEvents = duringData['events'] as List<dynamic>;
-    final duringItems = duringEvents.map((event) {
-      final eventMap = event as Map<String, dynamic>;
-      return FoodItemData(
-        id: eventMap['item'].toString().toLowerCase().replaceAll(' ', '_'),
-        name: eventMap['item'],
-        quantity: '${eventMap['servings']} serving${eventMap['servings'] == 1 ? '' : 's'}',
-        imageAddress: eventMap['image_address'] as String?,
-        description: 'At ${eventMap['at_min']} minutes',
-        nutritionalInfo: NutritionalInfo(
-          calories: 0,
-          carbs: (eventMap['carbs_g'] as num).round(),
-          protein: 0,
-          fat: 0,
-          sodium: (eventMap['sodium_mg'] as num).round(),
-        ),
-      );
-    }).toList();
+    // Convert before section - transform each item using the service
+    final beforeData = plan['before'] as Map<String, dynamic>?;
+    final beforeItems = <FoodItemData>[];
+    if (beforeData != null && beforeData['items'] is List) {
+      for (final item in beforeData['items'] as List<dynamic>) {
+        final itemMap = item as Map<String, dynamic>;
+        final foodItemData = await transformationService.transformEdgeFunctionItem(itemMap);
+        beforeItems.add(foodItemData);
+      }
+    }
+
+    // Convert during section - handle events array
+    final duringData = plan['during'] as Map<String, dynamic>?;
+    final duringItems = <FoodItemData>[];
+    if (duringData != null && duringData['events'] is List) {
+      for (final event in duringData['events'] as List<dynamic>) {
+        final eventMap = event as Map<String, dynamic>;
+        // Add timing information for during-run items
+        eventMap['timing'] = 'At ${eventMap['at_min']} minutes';
+        final foodItemData = await transformationService.transformEdgeFunctionItem(eventMap);
+        duringItems.add(foodItemData);
+      }
+    }
 
     // Convert after section
-    final afterData = plan['after'] as Map<String, dynamic>;
-    final afterItems = (afterData['items'] as List<dynamic>).map((item) {
-      final itemMap = item as Map<String, dynamic>;
-      return FoodItemData(
-        id: itemMap['name'].toString().toLowerCase().replaceAll(' ', '_'),
-        name: itemMap['name'],
-        quantity: '${itemMap['servings']} serving${itemMap['servings'] == 1 ? '' : 's'}',
-        imageAddress: itemMap['image_address'] as String?,
-        description: '',
-        nutritionalInfo: NutritionalInfo(
-          calories: 0,
-          carbs: (itemMap['carbs_g'] as num).round(),
-          protein: (itemMap['protein_g'] as num).round(),
-          fat: 0,
-          sodium: (itemMap['sodium_mg'] as num).round(),
-        ),
-      );
-    }).toList();
+    final afterData = plan['after'] as Map<String, dynamic>?;
+    final afterItems = <FoodItemData>[];
+    if (afterData != null && afterData['items'] is List) {
+      for (final item in afterData['items'] as List<dynamic>) {
+        final itemMap = item as Map<String, dynamic>;
+        final foodItemData = await transformationService.transformEdgeFunctionItem(itemMap);
+        afterItems.add(foodItemData);
+      }
+    }
 
-    // Calculate macro targets from targets
-    final beforeTargets = targets['before'] as Map<String, dynamic>;
-    final duringTargets = targets['during'] as Map<String, dynamic>;
-    final afterTargets = targets['after'] as Map<String, dynamic>;
-    
-    final totalCarbs = (beforeTargets['carbs_g'] as num).toDouble() + 
-                      (duringTargets['carbs_g_total'] as num).toDouble() + 
-                      (afterTargets['carbs_g'] as num).toDouble();
+    // Calculate macro targets if available
+    domain.MacroTargets? macroTargets;
+    if (targets != null) {
+      final beforeTargets = targets['before'] as Map<String, dynamic>?;
+      final duringTargets = targets['during'] as Map<String, dynamic>?;
+      final afterTargets = targets['after'] as Map<String, dynamic>?;
 
-    // Calculate total sodium and fluids
-    final beforeSodium = beforeTargets['sodium_mg'] as num?;
-    final duringSodium = duringTargets['sodium_mg_per_h'] as num?;
-    final afterSodium = afterTargets['sodium_mg'] as num?;
-    
-    final beforeFluids = beforeTargets['fluid_ml'] as num?;
-    final duringFluidsPerH = duringTargets['fluid_ml_per_h'] as num?;
-    final afterFluids = afterTargets['fluid_ml'] as num?;
-    final durationH = (inputs['durationMin'] as num).toDouble() / 60.0;
-    
-    // Convert fluids from ml to oz (1 ml = 0.033814 oz)
-    final mlToOz = 0.033814;
-    final totalFluidsOz = ((beforeFluids ?? 0) + 
-                          ((duringFluidsPerH ?? 0) * durationH) + 
-                          (afterFluids ?? 0)) * mlToOz;
-    
-    final totalSodiumMg = (beforeSodium ?? 0) + 
-                         ((duringSodium ?? 0) * durationH) + 
-                         (afterSodium ?? 0);
+      if (beforeTargets != null && duringTargets != null && afterTargets != null) {
+        final totalCarbs = (beforeTargets['carbs_g'] as num? ?? 0).toDouble() +
+                          (duringTargets['carbs_g_total'] as num? ?? 0).toDouble() +
+                          (afterTargets['carbs_g'] as num? ?? 0).toDouble();
+
+        // Calculate total sodium and fluids
+        final beforeSodium = beforeTargets['sodium_mg'] as num? ?? 0;
+        final duringSodium = duringTargets['sodium_mg_per_h'] as num? ?? 0;
+        final afterSodium = afterTargets['sodium_mg'] as num? ?? 0;
+
+        final beforeFluids = beforeTargets['fluid_ml'] as num? ?? 0;
+        final duringFluidsPerH = duringTargets['fluid_ml_per_h'] as num? ?? 0;
+        final afterFluids = afterTargets['fluid_ml'] as num? ?? 0;
+
+        // Estimate duration (fallback to reasonable default)
+        final durationH = 2.0; // Default 2 hours if not provided
+
+        // Convert fluids from ml to oz (1 ml = 0.033814 oz)
+        final mlToOz = 0.033814;
+        final totalFluidsOz = (beforeFluids + (duringFluidsPerH * durationH) + afterFluids) * mlToOz;
+        final totalSodiumMg = beforeSodium + (duringSodium * durationH) + afterSodium;
+
+        macroTargets = domain.MacroTargets(
+          calories: 0, // Will be calculated from food items
+          carbs: totalCarbs.round(),
+          protein: (afterTargets['protein_g'] as num? ?? 0).toDouble().round(),
+          fat: 0, // Not provided in current format
+          sodium: totalSodiumMg.round(),
+          fluids: totalFluidsOz.round(),
+          carbsRange: '80-90%',
+          proteinRange: '10-15%',
+          fatRange: '5-10%',
+        );
+      }
+    }
 
     return domain.NutritionPlan(
       id: planId,
       name: 'Personalized Nutrition Plan',
-      totalCalories: null, // Not provided in new format
-      macroTargets: domain.MacroTargets(
-        calories: 0, // Not calculated in new format
-        carbs: totalCarbs.round(),
-        protein: (afterTargets['protein_g'] as num).toDouble().round(),
-        fat: 0, // Not provided in new format
-        sodium: totalSodiumMg.round(),
-        fluids: totalFluidsOz.round(),
-        carbsRange: '80-90%',
-        proteinRange: '10-15%',
-        fatRange: '5-10%',
-      ),
+      totalCalories: null, // Calculate from food items if needed
+      macroTargets: macroTargets,
       sections: [
-        domain.PlanSection(
+        domain.PlanSection.withDefaults(
           id: 'before-run',
           title: 'Before Run',
-          subtitle: 'Fueling window: ${inputs['preWindowMin'] ?? 120} minutes before',
-          timing: '${inputs['preWindowMin'] ?? 120}min before',
+          subtitle: 'Fuel your performance',
+          timing: '2h before',
           foodItems: beforeItems,
         ),
-        domain.PlanSection(
+        domain.PlanSection.withDefaults(
           id: 'during-run',
           title: 'During Run',
-          subtitle: 'Every ${inputs['intervalMinutes'] ?? 30} minutes',
-          timing: 'Every ${inputs['intervalMinutes'] ?? 30}min',
+          subtitle: 'Maintain energy',
+          timing: 'Every 30min',
           foodItems: duringItems,
         ),
-        domain.PlanSection(
+        domain.PlanSection.withDefaults(
           id: 'after-run',
           title: 'After Run',
-          subtitle: 'Within 30 minutes',
-          timing: '30min',
+          subtitle: 'Recover strong',
+          timing: '30min after',
           foodItems: afterItems,
         ),
       ],
-      notes: 'Generated using enhanced run-plan algorithm',
+      notes: 'Generated using AI-powered nutrition planning',
       createdAt: DateTime.now(),
     );
+  }
+
+  /// Update plan feedback (rating and journal notes)
+  Future<void> updatePlanFeedback(String planId, int? rating, String? notes) async {
+    try {
+      await database.transaction(() async {
+        // Get the existing plan data
+        final existingPlan = await (database.select(database.nutritionPlans)
+          ..where((plan) => plan.id.equals(planId)))
+          .getSingleOrNull();
+        
+        if (existingPlan == null) {
+          throw Exception('Plan not found: $planId');
+        }
+
+        // Update the plan JSON data to include feedback
+        Map<String, dynamic> planJson = {};
+        if (existingPlan.planData != null && existingPlan.planData!.isNotEmpty) {
+          try {
+            planJson = jsonDecode(existingPlan.planData!) as Map<String, dynamic>;
+          } catch (e) {
+            print('Warning: Could not parse existing plan data JSON: $e');
+            planJson = {};
+          }
+        }
+        
+        // Update JSON with feedback
+        if (rating != null) planJson['planRating'] = rating;
+        if (notes != null) planJson['journalNotes'] = notes;
+        
+        // Clear the runDateTime so feedback won't be requested again
+        planJson.remove('runDateTime');
+        
+        final updatedPlanData = jsonEncode(planJson);
+
+        // Update the plan with new feedback
+        await (database.update(database.nutritionPlans)
+          ..where((plan) => plan.id.equals(planId)))
+          .write(NutritionPlansCompanion(
+            planRating: rating != null ? Value(rating) : Value.absent(),
+            journalNotes: notes != null ? Value(notes) : Value.absent(),
+            planData: Value(updatedPlanData), // Update JSON data too
+            runDateTime: const Value(null), // Clear runDateTime to prevent feedback loop
+            updatedAt: Value(DateTime.now()),
+          ));
+      });
+      
+      print('✅ Plan feedback updated: planId=$planId, rating=$rating, notes=$notes');
+    } catch (e, stackTrace) {
+      print('❌ Failed to update plan feedback: $e');
+      await sentryService.reportDatabaseError(e, stackTrace: stackTrace, operation: 'updatePlanFeedback');
+      rethrow;
+    }
+  }
+
+  /// Update plan run date/time
+  Future<void> updatePlanRunDateTime(String planId, DateTime runDateTime) async {
+    try {
+      await database.transaction(() async {
+        await (database.update(database.nutritionPlans)
+          ..where((plan) => plan.id.equals(planId)))
+          .write(NutritionPlansCompanion(
+            runDateTime: Value(runDateTime),
+            updatedAt: Value(DateTime.now()),
+          ));
+      });
+      
+      print('✅ Plan run date updated: planId=$planId, runDateTime=$runDateTime');
+    } catch (e, stackTrace) {
+      print('❌ Failed to update plan run date: $e');
+      await sentryService.reportDatabaseError(e, stackTrace: stackTrace, operation: 'updatePlanRunDateTime');
+      rethrow;
+    }
+  }
+
+  /// Get plans pending feedback (past run date with no rating)
+  Future<List<domain.NutritionPlan>> getPlansPendingFeedback(String deviceId) async {
+    try {
+      final now = DateTime.now();
+      final query = database.select(database.nutritionPlans)
+        ..where((plan) => 
+          plan.userId.equals(deviceId) &
+          plan.runDateTime.isNotNull() &
+          plan.runDateTime.isSmallerThanValue(now) &
+          plan.planRating.isNull())
+        ..orderBy([(plan) => OrderingTerm.desc(plan.runDateTime)])
+        ..limit(5); // Limit to most recent 5 pending plans
+
+      final results = await query.get();
+      final plans = <domain.NutritionPlan>[];
+      
+      for (final row in results) {
+        try {
+          final planData = jsonDecode(row.planData) as Map<String, dynamic>;
+          final plan = domain.NutritionPlan.fromJson({
+            ...planData,
+            'runDateTime': row.runDateTime?.toIso8601String(),
+            'planRating': row.planRating,
+            'journalNotes': row.journalNotes,
+          });
+          plans.add(plan);
+        } catch (e) {
+          print('❌ Failed to parse plan ${row.id}: $e');
+          // Skip invalid plans
+          continue;
+        }
+      }
+      
+      print('✅ Found ${plans.length} plans pending feedback');
+      return plans;
+    } catch (e, stackTrace) {
+      print('❌ Failed to get plans pending feedback: $e');
+      await sentryService.reportDatabaseError(e, stackTrace: stackTrace, operation: 'getPlansPendingFeedback');
+      return [];
+    }
+  }
+
+  /// Get all nutrition plans for a user
+  Future<List<domain.NutritionPlan>> getUserNutritionPlans(String deviceId) async {
+    try {
+      final query = database.select(database.nutritionPlans)
+        ..where((plan) => plan.userId.equals(deviceId))
+        ..orderBy([(plan) => OrderingTerm.desc(plan.createdAt)]);
+
+      final results = await query.get();
+      final plans = <domain.NutritionPlan>[];
+      
+      for (final row in results) {
+        try {
+          final planData = jsonDecode(row.planData) as Map<String, dynamic>;
+          final plan = domain.NutritionPlan.fromJson({
+            ...planData,
+            'runDateTime': row.runDateTime?.toIso8601String(),
+            'planRating': row.planRating,
+            'journalNotes': row.journalNotes,
+          });
+          plans.add(plan);
+        } catch (e) {
+          print('❌ Failed to parse plan ${row.id}: $e');
+          // Skip invalid plans
+          continue;
+        }
+      }
+      
+      print('✅ Retrieved ${plans.length} nutrition plans for user $deviceId');
+      return plans;
+    } catch (e, stackTrace) {
+      print('❌ Failed to get user nutrition plans: $e');
+      await sentryService.reportDatabaseError(e, stackTrace: stackTrace, operation: 'getUserNutritionPlans');
+      return [];
+    }
   }
 }
 
@@ -700,12 +832,14 @@ class CreateNutritionPlanResult {
 /// Riverpod provider for NutritionPlanRepository
 @riverpod
 Future<NutritionPlanRepository> nutritionPlanRepository(Ref ref) async {
-  final database = await ref.watch(databaseProvider.future);
+  final database = ref.watch(appDatabaseProvider);
   final sentryService = ref.watch(sentryServiceProvider);
-  
+  final transformationService = ref.watch(foodDataTransformationServiceProvider);
+
   return NutritionPlanRepository(
     supabase: Supabase.instance.client,
     database: database,
     sentryService: sentryService,
+    transformationService: transformationService,
   );
 }

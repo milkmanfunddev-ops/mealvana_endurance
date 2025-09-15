@@ -73,6 +73,9 @@ dependencies:
   # Local Notifications
   flutter_local_notifications: ^19.4.1
   timezone: ^0.10.0
+  
+  # Speech Recognition
+  speech_to_text: ^6.6.0
 
 dev_dependencies:
   sentry_dart_plugin: ^3.1.1
@@ -81,11 +84,15 @@ dev_dependencies:
 
   flutter_lints: ^5.0.0
   
+  # Testing
+  mocktail: ^1.0.4
+  
   # Code Generation
-  build_runner: ^2.4.7
-  riverpod_generator: ^2.4.0
-  drift_dev: ^2.20.0
-  freezed: ^2.4.6
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.4.3
+  drift_dev: ^2.20.3
+  freezed: ^2.5.7
+  analyzer: ^6.11.0
   
   # App Icons & Splash Screen
   flutter_launcher_icons: ^0.14.3

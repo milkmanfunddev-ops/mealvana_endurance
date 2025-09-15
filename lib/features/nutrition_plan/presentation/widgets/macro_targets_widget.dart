@@ -5,7 +5,7 @@ import '../../domain/macro_targets.dart' as targets_model;
 import '../../domain/nutrition_plan.dart';
 
 /// Macro targets display widget with progress bars matching original design
-/// Now stateless and takes parameters to avoid controller watching and rebuilds
+/// Fixed to properly use detailed MacroTargets and correct unit conversions
 class MacroTargetsWidget extends StatelessWidget {
   const MacroTargetsWidget({
     super.key,
@@ -18,58 +18,59 @@ class MacroTargetsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (targets == null && plan?.macroTargets == null) {
+    if (targets == null) {
       return const SizedBox.shrink();
     }
     
-    // Use passed targets or convert from plan
-    final macroTargets = targets != null 
-        ? _convertToSimpleMacroTargets(targets!)
-        : plan!.macroTargets!;
-    
-    return _buildMacroTargetsWithProgressBars(macroTargets, plan);
+    return _buildMacroTargetsWithProgressBars(targets!, plan);
   }
 
-  /// Convert detailed macro targets to simple macro targets by summing all sections
-  MacroTargets _convertToSimpleMacroTargets(targets_model.MacroTargets detailedTargets) {
-    final totalCarbs = detailedTargets.preRun.carbsG + 
-                      detailedTargets.duringRun.carbTotalG + 
-                      detailedTargets.postRun.carbsG;
-    
-    // During run doesn't have protein, so just pre + post run
-    final totalProtein = detailedTargets.preRun.proteinG + 
-                        detailedTargets.postRun.proteinG;
-    
-    final totalFat = detailedTargets.preRun.fatCapG;
-    
-    final totalCalories = detailedTargets.metrics.caloriesGrossKcal;
-    
-    return MacroTargets(
-      calories: totalCalories.round(),
-      carbs: totalCarbs.round(),
-      protein: totalProtein.round(),
-      fat: totalFat.round(),
-    );
-  }
-
-  Widget _buildMacroTargetsWithProgressBars(MacroTargets macroTargets, NutritionPlan? plan) {
-    // Calculate current values from plan sections if available
+  Widget _buildMacroTargetsWithProgressBars(targets_model.MacroTargets detailedTargets, NutritionPlan? plan) {
+    // Calculate current values from food items in ALL plan sections (NUMERATOR - actual consumption)
+    // This sums nutrition from food items across all three phases: before + during + after
     int currentCarbs = 0;
     int currentSodium = 0;
-    double currentFluids = 0.0;
+    double currentFluids = 0.0; // in ml
     
     if (plan != null) {
       for (final section in plan.sections) {
+        print('🔍 MacroTargetsWidget: Processing ${section.title} section with ${section.foodItems.length} food items');
         for (final foodItem in section.foodItems) {
           final nutrition = foodItem.nutritionalInfo;
           if (nutrition != null) {
-            currentCarbs += nutrition.carbs ?? 0;
-            currentSodium += nutrition.sodium ?? 0;
-            currentFluids += nutrition.fluids ?? 0.0;
+            final itemCarbs = nutrition.carbs ?? 0;
+            final itemSodium = nutrition.sodium ?? 0;
+            final itemFluids = nutrition.fluids ?? 0.0;
+            
+            print('  📊 ${foodItem.name} (${foodItem.quantity}): ${itemSodium}mg sodium, ${itemFluids}ml fluids, ${itemCarbs}g carbs');
+            
+            currentCarbs += itemCarbs;
+            currentSodium += itemSodium;
+            currentFluids += itemFluids; // This is in ml from FoodItemData
           }
         }
       }
+      print('🎯 MacroTargetsWidget TOTALS: ${currentSodium}mg sodium, ${currentFluids.round()}ml fluids, ${currentCarbs}g carbs');
     }
+    
+    // Target values from detailed targets (DENOMINATOR - what should be consumed)
+    // Sum ALL phases: pre-run + during-run + post-run
+    final targetCarbs = (detailedTargets.preRun.carbsG + 
+                        detailedTargets.duringRun.carbTotalG + 
+                        detailedTargets.postRun.carbsG).round();
+    
+    final targetSodium = (detailedTargets.preRun.sodiumMg + 
+                         detailedTargets.duringRun.sodiumTotalMg + 
+                         detailedTargets.postRun.sodiumMg).round();
+    
+    final targetFluids = (detailedTargets.preRun.fluidsMl + 
+                         detailedTargets.duringRun.fluidTotalMl + 
+                         detailedTargets.postRun.fluidsMl).round(); // in ml
+    
+    // Widget now correctly calculates:
+    // - NUMERATOR (current): Sum of actual food item nutrition across all phases (changes when user edits plan)
+    // - DENOMINATOR (targets): Sum of ALL phases from generate-macros detailed macro targets (constant)
+    // - Units: ml for fluids, mg for sodium, g for carbs
     
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -106,7 +107,7 @@ class MacroTargetsWidget extends StatelessWidget {
           _buildProgressItem(
             'Carbohydrates',
             currentCarbs,
-            macroTargets.carbs,
+            targetCarbs,
             'g',
             AppTheme.carbsColor,
           ),
@@ -116,18 +117,18 @@ class MacroTargetsWidget extends StatelessWidget {
           _buildProgressItem(
             'Sodium',
             currentSodium,
-            macroTargets.sodium ?? 2245, // Default from image - sodium is nullable
+            targetSodium,
             'mg',
             AppTheme.primary600,
           ),
           SizedBox(height: 16.h),
           
-          // Fluids progress bar
+          // Fluids progress bar - now showing in ml instead of L
           _buildProgressItem(
             'Fluids',
-            (currentFluids / 1000).round(), // Convert ml to L
-            ((macroTargets.fluids ?? 630) / 1000).round(), // Default from image - fluids is nullable
-            'L',
+            currentFluids.round(),
+            targetFluids,
+            'ml',
             AppTheme.primary600,
           ),
         ],
@@ -137,6 +138,7 @@ class MacroTargetsWidget extends StatelessWidget {
 
   Widget _buildProgressItem(String label, int current, int target, String unit, Color color) {
     final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+    final dynamicColor = _getColorForProgress(current, target);
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +166,7 @@ class MacroTargetsWidget extends StatelessWidget {
             widthFactor: progress,
             child: Container(
               decoration: BoxDecoration(
-                color: color,
+                color: dynamicColor,
                 borderRadius: BorderRadius.circular(4.r),
               ),
             ),
@@ -172,15 +174,37 @@ class MacroTargetsWidget extends StatelessWidget {
         ),
         SizedBox(height: 4.h),
         
-        // Current/Target text
+        // Current/Target text with dynamic color
         Text(
           '$current/$target $unit',
           style: AppTheme.noteStyle.copyWith(
-            color: AppTheme.baseGrey,
+            color: dynamicColor,
             fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
     );
+  }
+  
+  /// Get color based on progress towards target using theme colors
+  /// Green: 80-120% of target (close to target)
+  /// Yellow: 120-150% of target (significantly over)
+  /// Red: <80% or >150% of target (way off)
+  Color _getColorForProgress(int current, int target) {
+    if (target <= 0) return AppTheme.baseGrey;
+    
+    final ratio = current / target;
+    
+    if (ratio >= 0.8 && ratio <= 1.2) {
+      // Close to target (80-120%) - Success Green
+      return AppTheme.primary600;
+    } else if (ratio > 1.2 && ratio <= 1.5) {
+      // Significantly over (120-150%) - Warning Yellow
+      return AppTheme.warning500;
+    } else {
+      // Way off (<80% or >150%) - Error Red
+      return AppTheme.highlight400;
+    }
   }
 }

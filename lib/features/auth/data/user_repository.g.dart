@@ -6,7 +6,7 @@ part of 'user_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$userRepositoryHash() => r'd6517ea89624c99f7d07a54089d0820fab12b0c3';
+String _$userRepositoryHash() => r'1d61cd058fd2a4a6e0d69348f1d3d85b35076895';
 
 /// Repository provider following Andrea's pattern
 ///

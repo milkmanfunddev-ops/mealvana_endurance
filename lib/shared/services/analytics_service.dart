@@ -2,36 +2,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'logging_service.dart';
 
-/// Comprehensive analytics service for tracking user engagement and app usage
-/// Designed specifically for Mealvana Endurance nutrition app
+/// Analytics service implementing Mealvana Endurance tracking plan
+/// Based on mixpanel_tracking_plan.csv - tracks ONLY approved events
 class AnalyticsService {
   AnalyticsService(this.ref);
   final Ref ref;
   
   Mixpanel? _mixpanel;
   bool _isInitialized = false;
+  LoggingService get _logger => AppLogger.instance;
   
-  /// Initialize Mixpanel with your project token
+  /// Initialize Mixpanel with project token from environment
   Future<void> initialize() async {
     if (_isInitialized) return;
     
     try {
-      // Mealvana Endurance Mixpanel project token
-      const projectToken = 'bd8fe50bb67b1dd0860351e6297347db';
+      // Get project token from environment - fallback for development
+      const projectToken = String.fromEnvironment(
+        'MIXPANEL_PROJECT_TOKEN',
+        defaultValue: 'bd8fe50bb67b1dd0860351e6297347db' // TODO: Move to .env
+      );
       
       _mixpanel = await Mixpanel.init(
         projectToken,
-        trackAutomaticEvents: false, // We'll track events manually for better control
+        trackAutomaticEvents: false, // Manual tracking per tracking plan
       );
       
       // Set up super properties (properties attached to every event)
       await _setupSuperProperties();
       
       _isInitialized = true;
-      print('✅ Mixpanel Analytics initialized successfully');
+      _logger.info('Analytics service initialized', context: 'ANALYTICS');
     } catch (e) {
-      print('❌ Failed to initialize Mixpanel: $e');
+      _logger.error('Failed to initialize Mixpanel',
+        context: 'ANALYTICS',
+        error: e
+      );
     }
   }
   
@@ -62,7 +70,10 @@ class AnalyticsService {
       
       _mixpanel!.registerSuperProperties(superProps);
     } catch (e) {
-      print('Failed to set super properties: $e');
+      _logger.error('Failed to set super properties',
+        context: 'ANALYTICS',
+        error: e
+      );
     }
   }
   
@@ -125,7 +136,7 @@ class AnalyticsService {
         });
       }
     } catch (e) {
-      print('Failed to identify user: $e');
+      _logger.error('Failed to identify user', context: 'ANALYTICS', error: e);
     }
   }
   
@@ -137,7 +148,7 @@ class AnalyticsService {
       track('user_reset');
       _mixpanel!.reset();
     } catch (e) {
-      print('Failed to reset user: $e');
+      _logger.error('Failed to reset user', context: 'ANALYTICS', error: e);
     }
   }
   
@@ -148,7 +159,7 @@ class AnalyticsService {
     try {
       _mixpanel!.track(eventName, properties: properties);
     } catch (e) {
-      print('Failed to track event $eventName: $e');
+      _logger.error('Failed to track event $eventName', context: 'ANALYTICS', error: e);
     }
   }
   
@@ -159,7 +170,7 @@ class AnalyticsService {
     try {
       _mixpanel!.timeEvent(eventName);
     } catch (e) {
-      print('Failed to time event $eventName: $e');
+      _logger.error('Failed to time event $eventName', context: 'ANALYTICS', error: e);
     }
   }
   
@@ -170,7 +181,7 @@ class AnalyticsService {
     try {
       _mixpanel!.flush();
     } catch (e) {
-      print('Failed to flush events: $e');
+      _logger.error('Failed to flush events', context: 'ANALYTICS', error: e);
     }
   }
   
@@ -191,11 +202,6 @@ class AnalyticsService {
   
   // MARK: - Onboarding Events - PARTIALLY DEPRECATED
   
-  /// Track onboarding started - DEPRECATED
-  @Deprecated('Not required for North-Star metric')
-  Future<void> trackOnboardingStarted() async {
-    // Removed - not part of North-Star metric
-  }
   
   /// Track onboarding step completed - DEPRECATED
   @Deprecated('Not required for North-Star metric')
@@ -436,6 +442,200 @@ class AnalyticsService {
     // Removed - not part of North-Star metric
   }
 
+  // MARK: - Tracking Plan Events (CSV-based)
+  
+  /// Track app opened/brought to foreground
+  Future<void> trackAppOpen({
+    String? source, // cold_start, background, etc.
+  }) async {
+    await track('app_open', properties: {
+      if (source != null) 'source': source,
+    });
+  }
+  
+  /// Track onboarding started
+  Future<void> trackOnboardingStarted({
+    String? screen,
+  }) async {
+    await track('onboarding_started', properties: {
+      if (screen != null) 'screen': screen,
+    });
+  }
+  
+  /// Track user profile saved in settings
+  Future<void> trackProfileSaved({
+    String? gender,
+    int? age,
+    double? heightCm,
+    double? weightKg,
+    bool? runWithBottle,
+  }) async {
+    await track('profile_saved', properties: {
+      if (gender != null) 'gender': gender,
+      if (age != null) 'age': age,
+      if (heightCm != null) 'height_cm': heightCm,
+      if (weightKg != null) 'weight_kg': weightKg,
+      if (runWithBottle != null) 'run_with_bottle': runWithBottle,
+    });
+  }
+  
+  /// Track food preferences saved
+  Future<void> trackPreferencesSaved({
+    required int loveCount,
+    required int avoidCount,
+  }) async {
+    await track('preferences_saved', properties: {
+      'love_count': loveCount,
+      'avoid_count': avoidCount,
+    });
+  }
+  
+  /// Track create plan button clicked
+  Future<void> trackCreatePlanClicked({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
+    required String activityType,
+    required double distanceMi,
+    required double durationMin,
+    required double paceSecPerMile,
+    required double timeBeforeRunMin,
+    required String gutTrainingLevel,
+    required String sweatRateLevel,
+    required double temperatureC,
+    required double humidityPct,
+    required bool runWithBottle,
+    // Macro targets
+    required double carbsPreG,
+    required double carbsDuringG,
+    required double carbsPostG,
+    required double proteinPreG,
+    required double proteinPostG,
+    required double fluidsPreMl,
+    required double fluidsDuringMl,
+    required double fluidsPostMl,
+    required double sodiumPreMg,
+    required double sodiumDuringMg,
+    required double sodiumPostMg,
+  }) async {
+    await track('create_plan_clicked', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
+      'activity_type': activityType,
+      'distance_mi': distanceMi,
+      'duration_min': durationMin,
+      'pace_sec_per_mile': paceSecPerMile,
+      'time_before_run_min': timeBeforeRunMin,
+      'gut_training_level': gutTrainingLevel,
+      'sweat_rate_level': sweatRateLevel,
+      'temperature_c': temperatureC,
+      'humidity_pct': humidityPct,
+      'run_with_bottle': runWithBottle,
+      'carbs_pre_g': carbsPreG,
+      'carbs_during_g': carbsDuringG,
+      'carbs_post_g': carbsPostG,
+      'protein_pre_g': proteinPreG,
+      'protein_post_g': proteinPostG,
+      'fluids_pre_ml': fluidsPreMl,
+      'fluids_during_ml': fluidsDuringMl,
+      'fluids_post_ml': fluidsPostMl,
+      'sodium_pre_mg': sodiumPreMg,
+      'sodium_during_mg': sodiumDuringMg,
+      'sodium_post_mg': sodiumPostMg,
+    });
+  }
+  
+  /// Track plan generated successfully (updated with CSV schema)
+  Future<void> trackPlanGeneratedNew({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
+    required String activityType,
+    required double distanceMi,
+    required double durationMin,
+    required double paceSecPerMile,
+    required double timeBeforeRunMin,
+    required String gutTrainingLevel,
+    required String sweatRateLevel,
+    required double temperatureC,
+    required double humidityPct,
+    required bool runWithBottle,
+    // Macro targets
+    required double carbsPreG,
+    required double carbsDuringG,
+    required double carbsPostG,
+    required double proteinPreG,
+    required double proteinPostG,
+    required double fluidsPreMl,
+    required double fluidsDuringMl,
+    required double fluidsPostMl,
+    required double sodiumPreMg,
+    required double sodiumDuringMg,
+    required double sodiumPostMg,
+    // Plan results
+    required int itemsPreCount,
+    required int itemsDuringCount,
+    required int itemsPostCount,
+    required double carbsTotalG,
+    required double sodiumTotalMg,
+    required double fluidsTotalMl,
+    required double carbsCoveragePct,
+    required double sodiumCoveragePct,
+    required double fluidsCoveragePct,
+  }) async {
+    await track('plan_generated', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
+      'activity_type': activityType,
+      'distance_mi': distanceMi,
+      'duration_min': durationMin,
+      'pace_sec_per_mile': paceSecPerMile,
+      'time_before_run_min': timeBeforeRunMin,
+      'gut_training_level': gutTrainingLevel,
+      'sweat_rate_level': sweatRateLevel,
+      'temperature_c': temperatureC,
+      'humidity_pct': humidityPct,
+      'run_with_bottle': runWithBottle,
+      'carbs_pre_g': carbsPreG,
+      'carbs_during_g': carbsDuringG,
+      'carbs_post_g': carbsPostG,
+      'protein_pre_g': proteinPreG,
+      'protein_post_g': proteinPostG,
+      'fluids_pre_ml': fluidsPreMl,
+      'fluids_during_ml': fluidsDuringMl,
+      'fluids_post_ml': fluidsPostMl,
+      'sodium_pre_mg': sodiumPreMg,
+      'sodium_during_mg': sodiumDuringMg,
+      'sodium_post_mg': sodiumPostMg,
+      'items_pre_count': itemsPreCount,
+      'items_during_count': itemsDuringCount,
+      'items_post_count': itemsPostCount,
+      'carbs_total_g': carbsTotalG,
+      'sodium_total_mg': sodiumTotalMg,
+      'fluids_total_ml': fluidsTotalMl,
+      'carbs_coverage_pct': carbsCoveragePct,
+      'sodium_coverage_pct': sodiumCoveragePct,
+      'fluids_coverage_pct': fluidsCoveragePct,
+    });
+  }
+  
+  /// Track plan screen viewed
+  Future<void> trackPlanViewed({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
+    String? section, // pre, during, post
+  }) async {
+    await track('plan_viewed', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
+      if (section != null) 'section': section,
+    });
+  }
+
   // MARK: - North-Star Metric Events (Mixpanel Requirements)
   
   /// Track plan flow started - generates plan_id and starts the North-Star funnel
@@ -500,10 +700,14 @@ class AnalyticsService {
   /// Track reminder set - optional but recommended
   Future<void> trackReminderSet({
     required String planId,
+    String? screen,
+    String? experimentVariant,
     required String remindAtIso, // ISO-8601 string with timezone
   }) async {
     await track('reminder_set', properties: {
       'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
       'remind_at_iso': remindAtIso,
     });
   }
@@ -512,9 +716,13 @@ class AnalyticsService {
   /// Called when local push notification is delivered
   Future<void> trackReminderFired({
     required String planId,
+    String? screen,
+    String? experimentVariant,
   }) async {
     await track('reminder_fired', properties: {
       'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
     });
   }
   
@@ -523,32 +731,78 @@ class AnalyticsService {
   Future<void> trackPlanOpenedFromReminder({
     required String planId,
     required String screen,
+    String? experimentVariant,
   }) async {
     await track('plan_opened_from_reminder', properties: {
       'plan_id': planId,
       'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
     });
   }
   
-  // MARK: - Quality Events (Mixpanel Recommended)
+  // MARK: - Quality Events (CSV-based)
   
-  /// Track when user views macro targets
-  Future<void> trackTargetsViewed() async {
-    await track('targets_viewed');
+  /// Track when user views macro targets (updated to match CSV schema)
+  Future<void> trackTargetsViewed({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
+    required double carbsPreG,
+    required double carbsDuringG,
+    required double carbsPostG,
+    required double proteinPreG,
+    required double proteinPostG,
+    required double fluidsPreMl,
+    required double fluidsDuringMl,
+    required double fluidsPostMl,
+    required double sodiumPreMg,
+    required double sodiumDuringMg,
+    required double sodiumPostMg,
+  }) async {
+    await track('targets_viewed', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
+      'carbs_pre_g': carbsPreG,
+      'carbs_during_g': carbsDuringG,
+      'carbs_post_g': carbsPostG,
+      'protein_pre_g': proteinPreG,
+      'protein_post_g': proteinPostG,
+      'fluids_pre_ml': fluidsPreMl,
+      'fluids_during_ml': fluidsDuringMl,
+      'fluids_post_ml': fluidsPostMl,
+      'sodium_pre_mg': sodiumPreMg,
+      'sodium_during_mg': sodiumDuringMg,
+      'sodium_post_mg': sodiumPostMg,
+    });
   }
   
   /// Track when edit all macros dialog is opened
-  Future<void> trackEditAllMacrosOpened() async {
-    await track('edit_all_macros_opened');
+  Future<void> trackEditAllMacrosOpened({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
+  }) async {
+    await track('edit_all_macros_opened', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
+    });
   }
   
   /// Track when a specific macro value is changed
   Future<void> trackMacrosChanged({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
     required String macro,
     required dynamic oldValue,
     required dynamic newValue,
   }) async {
     await track('macros_changed', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
       'macro': macro,
       'old_value': oldValue,
       'new_value': newValue,
@@ -557,61 +811,128 @@ class AnalyticsService {
   
   /// Track when a food item is added to a plan
   Future<void> trackItemAdded({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
+    required String section, // pre, during, post
     required String itemName,
-    required String section, // pre_run, during_run, post_run
+    required String itemSource, // generic, branded, etc.
+    required double carbsG,
+    required double proteinG,
+    required double fluidsMl,
+    required double sodiumMg,
   }) async {
     await track('item_added', properties: {
-      'item_name': itemName,
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
       'section': section,
+      'item_name': itemName,
+      'item_source': itemSource,
+      'carbs_g': carbsG,
+      'protein_g': proteinG,
+      'fluids_ml': fluidsMl,
+      'sodium_mg': sodiumMg,
     });
   }
   
   /// Track when a food item is removed from a plan
   Future<void> trackItemRemoved({
-    required String itemName,
+    required String planId,
+    String? screen,
+    String? experimentVariant,
     required String section,
+    required String itemName,
   }) async {
     await track('item_removed', properties: {
-      'item_name': itemName,
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
       'section': section,
+      'item_name': itemName,
     });
   }
   
   /// Track when food item quantity is changed
   Future<void> trackItemQuantityChanged({
-    required String itemName,
+    required String planId,
+    String? screen,
+    String? experimentVariant,
     required String section,
-    required double oldQuantity,
-    required double newQuantity,
+    required String itemName,
+    required double oldQty,
+    required double newQty,
+    required String qtyUnit, // oz, g, ml, etc.
   }) async {
     await track('item_quantity_changed', properties: {
-      'item_name': itemName,
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
       'section': section,
-      'old_quantity': oldQuantity,
-      'new_quantity': newQuantity,
+      'item_name': itemName,
+      'old_qty': oldQty,
+      'new_qty': newQty,
+      'qty_unit': qtyUnit,
     });
   }
   
   /// Track when guidelines/help content is opened
   Future<void> trackGuidelinesOpened({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
     required String topic,
   }) async {
     await track('guidelines_opened', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
       'topic': topic,
     });
   }
   
   /// Track when feedback prompt is shown to user
-  Future<void> trackFeedbackPromptShown() async {
-    await track('feedback_prompt_shown');
+  Future<void> trackFeedbackPromptShown({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
+  }) async {
+    await track('feedback_prompt_shown', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
+    });
   }
   
+  /// Track feedback submitted (from CSV schema)
+  Future<void> trackFeedbackSubmittedNew({
+    required String planId,
+    String? screen,
+    String? experimentVariant,
+    required int planMatchRating, // 1-5 scale
+    required String appIntent, // like_it | has_potential | not_interested | remind_me
+  }) async {
+    await track('feedback_submitted', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
+      'plan_match_rating': planMatchRating,
+      'app_intent': appIntent,
+    });
+  }
+
   /// Track when plan is exported/shared
   Future<void> trackPlanExported({
-    required String channel, // email, text, copy, etc.
+    required String planId,
+    String? screen,
+    String? experimentVariant,
+    required String channel, // share_sheet, email, etc.
     required String format, // pdf, text, json, etc.
   }) async {
     await track('plan_exported', properties: {
+      'plan_id': planId,
+      if (screen != null) 'screen': screen,
+      if (experimentVariant != null) 'experiment_variant': experimentVariant,
       'channel': channel,
       'format': format,
     });

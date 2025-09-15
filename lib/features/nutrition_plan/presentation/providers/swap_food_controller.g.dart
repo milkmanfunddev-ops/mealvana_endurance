@@ -6,7 +6,7 @@ part of 'swap_food_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$foodRepositoryHash() => r'95e9fd133d2de8149d39c9f32fd3db0d8860a642';
+String _$foodRepositoryHash() => r'01690ac89647b154cd2c79e39fc98eaf3463bea5';
 
 /// Provider for food repository
 ///
@@ -26,7 +26,7 @@ final foodRepositoryProvider = AutoDisposeProvider<FoodRepository>.internal(
 // ignore: unused_element
 typedef FoodRepositoryRef = AutoDisposeProviderRef<FoodRepository>;
 String _$swapFoodControllerHash() =>
-    r'c175a45093a2e34282a6dad2ab287ca1aa2030e9';
+    r'5190da0a1e04f55771351f2f467ad50dc401395e';
 
 /// Copied from Dart SDK
 class _SystemHash {

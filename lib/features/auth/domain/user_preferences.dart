@@ -14,6 +14,7 @@ class UserProfile {
   final GutTraining gutTraining;
   final bool onboardingCompleted;
   final String appVersion;
+  final bool swipeHintShown;
 
   UserProfile({
     required this.id,
@@ -28,6 +29,7 @@ class UserProfile {
     this.gutTraining = GutTraining.high,
     this.onboardingCompleted = false,
     required this.appVersion,
+    this.swipeHintShown = false,
   });
 
   /// Calculate age from birthday
@@ -77,6 +79,7 @@ class UserProfile {
       ),
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       appVersion: json['app_version'] as String? ?? '1.0.0',
+      swipeHintShown: json['swipe_hint_shown'] as bool? ?? false,
     );
   }
 
@@ -93,6 +96,7 @@ class UserProfile {
       'gut_training_level': gutTraining.name,
       'onboarding_completed': onboardingCompleted,
       'app_version': appVersion,
+      'swipe_hint_shown': swipeHintShown,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -111,6 +115,7 @@ class UserProfile {
     GutTraining? gutTraining,
     bool? onboardingCompleted,
     String? appVersion,
+    bool? swipeHintShown,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -125,6 +130,7 @@ class UserProfile {
       gutTraining: gutTraining ?? this.gutTraining,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       appVersion: appVersion ?? this.appVersion,
+      swipeHintShown: swipeHintShown ?? this.swipeHintShown,
     );
   }
 }

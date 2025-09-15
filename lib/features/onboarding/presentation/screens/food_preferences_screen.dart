@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/services/sentry_service.dart';
+import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
 import '../providers/onboarding_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
@@ -19,7 +20,8 @@ class FoodPreferencesScreen extends ConsumerStatefulWidget {
   const FoodPreferencesScreen({super.key});
 
   @override
-  ConsumerState<FoodPreferencesScreen> createState() => _FoodPreferencesScreenState();
+  ConsumerState<FoodPreferencesScreen> createState() =>
+      _FoodPreferencesScreenState();
 }
 
 class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
@@ -36,13 +38,13 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   Future<void> _loadFoods() async {
     try {
       final foodRepository = ref.read(foodRepositoryProvider);
-      final foods = await foodRepository.getAllFoods();
+      final foods = await foodRepository.getFoodsForPreferences();
       setState(() {
         _foods = foods;
         _isLoading = false;
-        // Initialize all foods as dislike by default
+        // Initialize all foods as willing_to_try by default for better UX
         for (final food in foods) {
-          _selectedPreferences[food.name] = FoodPreference.dislike;
+          _selectedPreferences[food.name] = FoodPreference.willingToTry;
         }
       });
     } catch (e) {
@@ -74,11 +76,26 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       );
     }
 
-    final title = content.getValue(ContentKeys.foodPreferencesTitle, defaultValue: 'Food Preferences');
-    final likeLabel = content.getValue(ContentKeys.foodPreferencesOptionLike, defaultValue: 'Love');
-    final willingLabel = content.getValue(ContentKeys.foodPreferencesOptionWillingToTry, defaultValue: 'Willing to Try');
-    final dislikeLabel = content.getValue(ContentKeys.foodPreferencesOptionDislike, defaultValue: 'Avoid');
-    final completeLabel = content.getValue(ContentKeys.foodPreferencesCompleteButton, defaultValue: 'Complete Setup');
+    final title = content.getValue(
+      ContentKeys.foodPreferencesTitle,
+      defaultValue: 'Food Preferences',
+    );
+    final likeLabel = content.getValue(
+      ContentKeys.foodPreferencesOptionLike,
+      defaultValue: 'Love',
+    );
+    final willingLabel = content.getValue(
+      ContentKeys.foodPreferencesOptionWillingToTry,
+      defaultValue: 'Willing to Try',
+    );
+    final dislikeLabel = content.getValue(
+      ContentKeys.foodPreferencesOptionDislike,
+      defaultValue: 'Avoid',
+    );
+    final completeLabel = content.getValue(
+      ContentKeys.foodPreferencesCompleteButton,
+      defaultValue: 'Complete Setup',
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
@@ -88,9 +105,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         leading: const CustomAppBarBackButton(),
         title: Text(title),
         centerTitle: true,
-        iconTheme: IconThemeData(
-          color: AppTheme.baseWhite,
-        ),
+        iconTheme: IconThemeData(color: AppTheme.baseWhite),
       ),
       body: Column(
         children: [
@@ -101,7 +116,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
               separatorBuilder: (context, index) => SizedBox(height: 8.h),
               itemBuilder: (context, index) {
                 final food = _foods[index];
-                final selected = _selectedPreferences[food.name] ?? FoodPreference.dislike;
+                final selected =
+                    _selectedPreferences[food.name] ??
+                    FoodPreference.willingToTry;
                 return FoodPreferenceChipItem(
                   food: food,
                   selected: selected,
@@ -117,19 +134,20 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
               },
             ),
           ),
-
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: asyncState.isLoading ? null : _completeOnboarding,
-                child: asyncState.isLoading
-                    ? const CircularProgressIndicator()
-                    : Text(completeLabel),
-              ),
-            ),
-          ),
+          asyncState.isLoading
+              ? CircularProgressIndicator()
+              : Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 34.h),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: PrimaryButton(
+                      onPressed: asyncState.isLoading
+                          ? null
+                          : _completeOnboarding,
+                      text: completeLabel,
+                    ),
+                  ),
+                ),
         ],
       ),
     );

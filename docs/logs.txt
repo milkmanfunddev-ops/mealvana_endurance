@@ -1,370 +1,265 @@
-Launching lib/main.dart on iPhone 15 Pro Max in debug mode...
-Xcode build done.                                           13.9s
-2
-[ERROR:flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.mm(129)] Could not register as server for FlutterDartVMServicePublisher, permission denied. Check your 'Local Network' permissions for this app in the Privacy section of the system Settings.
-Connecting to VM Service at ws://127.0.0.1:61548/6eeox6edAQo=/ws
-Connected to the VM Service.
+Restarted application in 2,158ms.
 flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: 📊 Initializing Drift database...
-flutter: ✅ Drift database initialized successfully
-flutter:    - Users: 0
-flutter:    - Preferences: 0
-flutter:    - Plans: 0
-flutter: ✅ Mixpanel Analytics initialized successfully
-flutter: 📊 Analytics initialized with device ID: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
-flutter: 📊 Sentry user context set with device ID: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
-flutter: 🔍 Checking for existing user session...
-flutter: 🔍 Local user check: No local user
-flutter: 👤 No user session - new installation
-flutter: 📋 No user found - skipping plan initialization
-flutter: ✅ App startup initialization completed
-flutter: 🔍 Determining initial screen after app startup:
-flutter:   User exists: false
-flutter:   User ID: none
-flutter:   Onboarding complete: false
-flutter:   → Navigating to WelcomeScreen (no user)
-flutter: 🔑 Creating user with device ID: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────<…>
+flutter: \^[[38;5;12m│ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:130:15)<…>
+logging_service.dart:130
+flutter: \^[[38;5;12m│ #1   LoggingService.info (package:mealvana_endurance/shared/services/logging_service.dart:57:5)<…>
+logging_service.dart:57
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄<…>
+flutter: \^[[38;5;12m│ 17:08:11.348 (+0:00:00.437374)<…>
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄<…>
+flutter: \^[[38;5;12m│ 💡 [ANALYTICS] Analytics service initialized<…>
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────<…>
 flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
+flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:130:15)
+logging_service.dart:130
 flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
 logging_service.dart:42
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.015 (+0:00:21.149778)
+flutter: │ 17:08:12.335 (+0:00:01.424437)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Applesauce pouch, imageAddress: https://www.seekpng.com/png/full/54-543201_no-sugar-added-apple-sauce-fruit-pouch-tree.png, brandId: null}
+flutter: │ 🐛 Successfully synced 28 foods to local database
 flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
+flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:130:15)
+logging_service.dart:130
 flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
 logging_service.dart:42
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.026 (+0:00:21.160542)
+flutter: │ 17:08:12.337 (+0:00:01.425855)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Bagel (plain), imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F96F.png, brandId: null}
+flutter: │ 🐛 Synced 28 generic foods to local database
 flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.027 (+0:00:21.161522)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Bananas sliced, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F34C.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.028 (+0:00:21.162160)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Carb drink mix (generic), imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F964.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.028 (+0:00:21.162720)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Chocolate milk, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F95B.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.030 (+0:00:21.164164)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Coconut water, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F965.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.031 (+0:00:21.165327)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Coffee, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/2615.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.033 (+0:00:21.167547)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Dates, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F347.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.036 (+0:00:21.170250)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Electrolyte tablet, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F48A.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.037 (+0:00:21.171847)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Energy chews, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F36C.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.040 (+0:00:21.174252)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Gels, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F9F4.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.042 (+0:00:21.176482)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Greek yogurt with berries, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F963.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.044 (+0:00:21.178878)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Honey packet, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F36F.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.046 (+0:00:21.180610)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Maple syrup packet, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F341.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.048 (+0:00:21.182848)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Oatmeal, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F963.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.049 (+0:00:21.184107)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Orange juice, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F34A.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.051 (+0:00:21.185398)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Pickle juice shot, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F952.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.052 (+0:00:21.186874)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Pretzels (salted minis), imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F968.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.053 (+0:00:21.188043)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Protein bar, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F36B.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.055 (+0:00:21.190103)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Raisins (mini box), imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F347.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.057 (+0:00:21.192012)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Rice cakes (plain), imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F358.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.059 (+0:00:21.193733)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Salt capsules, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F48A.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.061 (+0:00:21.195203)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Sports drink, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F964.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.061 (+0:00:21.195842)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: Water, imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F4A7.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:07.062 (+0:00:21.196785)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [FoodRepository] Creating FoodItem from Supabase data
-flutter: │ 🐛 Data: {foodName: White rice (cooked), imageAddress: https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/1F35A.png, brandId: null}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: 👤 Food preferences - Current user: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
-flutter: 🍎 Food preferences - Count: 25
-flutter: 🍎 Saving food preferences for device: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
-flutter: 🍎 Preferences count: 25
-flutter: 🍎 Request body: {device_id: 1F4088E1-6E78-4C0E-A072-B9390BB015E3, food_preferences: {Applesauce pouch: like, Bagel (plain): like, Bananas sliced: like, Carb drink mix (generic): like, Chocolate milk: like, Coconut water: like, Coffee: like, Dates: like, Electrolyte tablet: like, Energy chews: like, Gels: like, Greek yogurt with berries: like, Honey packet: like, Maple syrup packet: like, Oatmeal: like, Orange juice: like, Pickle juice shot: like, Pretzels (salted minis): like, Protein bar: like, Raisins (mini box): like, Rice cakes (plain): like, Salt capsules: like, Sports drink: like, Water: like, White rice (cooked): like}}
 flutter: 🔍 DEBUG: NutritionPlanController.build() called
-flutter: 🔍 DEBUG: Checking for temp plan for user: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
-flutter: 🔍 Getting temporary plan for deviceId: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
-flutter: 📭 No temporary plan found
-flutter: 🔍 DEBUG: No temp plan found
-flutter: 🔍 DEBUG: No temp plan found, getting latest saved plan
-flutter: 🔍 Getting latest nutrition plan for deviceId: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
-flutter: 📱 Checking local Drift cache...
-flutter: 📭 No cached plan found, checking remote...
-flutter: ☁️ Checking Supabase for device_id: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
-flutter: 📭 No remote plan found
-flutter: 🔍 DEBUG: No saved plan found
+flutter: 🔍 DEBUG: Checking for temp plan for user: 87233D66-25FF-440C-B3E4-D020BD34ADD2
+flutter: 🔍 Getting temporary plan for deviceId: 87233D66-25FF-440C-B3E4-D020BD34ADD2
+flutter: ✅ Found temporary plan: AI-Generated Nutrition Plan
+flutter: 🔍 DEBUG: Found temp plan: improved-lp-1757973731585-34ADD2
+flutter: 🔍 DEBUG: Found temp plan: improved-lp-1757973731585-34ADD2, returning as unsaved
+flutter: 🎯 SharedPreferences check: hasShown = false
+flutter: 🚀 Starting animation
+flutter: DEBUG: Found cached macro targets:
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
+flutter:   Post-run carbs: 91.0g
+flutter:   Total carbs should be: 353.0g
+flutter:   Pre-run sodium: 450.0mg
+flutter:   During-run sodium: 1170.0mg
+flutter:   Post-run sodium: 625.0mg
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
+flutter:   Post-run fluids: 1250.0ml
+flutter:   Total fluids should be: 2943.0ml
+flutter:   isUserModified: false
+flutter: DEBUG: Found cached macro targets:
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
+flutter:   Post-run carbs: 91.0g
+flutter:   Total carbs should be: 353.0g
+flutter:   Pre-run sodium: 450.0mg
+flutter:   During-run sodium: 1170.0mg
+flutter:   Post-run sodium: 625.0mg
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
+flutter:   Post-run fluids: 1250.0ml
+flutter:   Total fluids should be: 2943.0ml
+flutter:   isUserModified: false
+flutter: 🔍 MacroTargetsWidget: Processing Before Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 300mg sodium, 0.0ml fluids, 48g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 35g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 0.0ml fluids, 90g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 622.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing During Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 700mg sodium, 0.0ml fluids, 46g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 20g carbs
+flutter:   📊 Unknown Food (No description): 270mg sodium, 0.0ml fluids, 0g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1095.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing After Run section with 3 food items
+flutter:   📊 Unknown Food (No description): 120mg sodium, 0.0ml fluids, 28g carbs
+flutter:   📊 Unknown Food (No description): 400mg sodium, 0.0ml fluids, 70g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1273.0ml fluids, 0g carbs
+flutter: 🎯 MacroTargetsWidget TOTALS: 2190mg sodium, 2990ml fluids, 337g carbs
+flutter: 🔍 MacroTargetsWidget: Processing Before Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 300mg sodium, 0.0ml fluids, 48g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 35g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 0.0ml fluids, 90g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 622.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing During Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 700mg sodium, 0.0ml fluids, 46g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 20g carbs
+flutter:   📊 Unknown Food (No description): 270mg sodium, 0.0ml fluids, 0g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1095.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing After Run section with 3 food items
+flutter:   📊 Unknown Food (No description): 120mg sodium, 0.0ml fluids, 28g carbs
+flutter:   📊 Unknown Food (No description): 400mg sodium, 0.0ml fluids, 70g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1273.0ml fluids, 0g carbs
+flutter: 🎯 MacroTargetsWidget TOTALS: 2190mg sodium, 2990ml fluids, 337g carbs
 flutter: 🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)
-flutter: DEBUG: No cached macro targets found
+flutter: DEBUG: Found cached macro targets:
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
+flutter:   Post-run carbs: 91.0g
+flutter:   Total carbs should be: 353.0g
+flutter:   Pre-run sodium: 450.0mg
+flutter:   During-run sodium: 1170.0mg
+flutter:   Post-run sodium: 625.0mg
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
+flutter:   Post-run fluids: 1250.0ml
+flutter:   Total fluids should be: 2943.0ml
+flutter:   isUserModified: false
+flutter: DEBUG: Found cached macro targets:
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
+flutter:   Post-run carbs: 91.0g
+flutter:   Total carbs should be: 353.0g
+flutter:   Pre-run sodium: 450.0mg
+flutter:   During-run sodium: 1170.0mg
+flutter:   Post-run sodium: 625.0mg
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
+flutter:   Post-run fluids: 1250.0ml
+flutter:   Total fluids should be: 2943.0ml
+flutter:   isUserModified: false
+flutter: DEBUG: Found cached macro targets:
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
+flutter:   Post-run carbs: 91.0g
+flutter:   Total carbs should be: 353.0g
+flutter:   Pre-run sodium: 450.0mg
+flutter:   During-run sodium: 1170.0mg
+flutter:   Post-run sodium: 625.0mg
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
+flutter:   Post-run fluids: 1250.0ml
+flutter:   Total fluids should be: 2943.0ml
+flutter:   isUserModified: false
+flutter: 🔍 MacroTargetsWidget: Processing Before Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 300mg sodium, 0.0ml fluids, 48g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 35g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 0.0ml fluids, 90g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 622.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing During Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 700mg sodium, 0.0ml fluids, 46g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 20g carbs
+flutter:   📊 Unknown Food (No description): 270mg sodium, 0.0ml fluids, 0g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1095.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing After Run section with 3 food items
+flutter:   📊 Unknown Food (No description): 120mg sodium, 0.0ml fluids, 28g carbs
+flutter:   📊 Unknown Food (No description): 400mg sodium, 0.0ml fluids, 70g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1273.0ml fluids, 0g carbs
+flutter: 🎯 MacroTargetsWidget TOTALS: 2190mg sodium, 2990ml fluids, 337g carbs
 flutter: 🚀 DEBUG: Starting macro generation...
-flutter: 🔍 DEBUG: Distance: 16.0 miles
+flutter: 🔍 DEBUG: Distance: 12.0 miles
 flutter: 🔍 DEBUG: Pace: 9:00 minPerMile
 flutter: 🔍 DEBUG: Time before run: 120min
 flutter: 🔍 DEBUG: Gut training: high
 flutter: 🔍 DEBUG: Temperature: 20.0°C
 flutter: 🔍 DEBUG: Humidity: 60.0%
 flutter: 🔍 DEBUG: Sweat rate: medium
-flutter: 📊 DEBUG: Parsed distance: 16.0mi
+flutter: 📊 DEBUG: Parsed distance: 12.0mi
 flutter: 📊 DEBUG: Parsed pace: 9.0min/mi
+flutter: 🆔 DEBUG: Generated plan_id: c5505500-4db8-40ff-8f22-3476e71abfb9
 flutter: 🎯 DEBUG: Calling generateMacroTargets directly...
-flutter: 🔍 DEBUG: User profile - Age: 29, Gender: male, Weight: 76.2kg, Height: 193cm
+flutter: 🔍 DEBUG: User profile - Age: 30, Gender: male, Weight: 90.7kg, Height: 157cm
 flutter: 🔍 DEBUG: Edge function response keys: [duration_min, duration_h, pace_min_per_mile, speed_mph, distance_mi, distance_km, calories_net_kcal, calories_gross_kcal, MET, pre_run_carbs_g, pre_run_carbs_rule, pre_run_protein_g_optional, pre_run_fat_g_cap, during_rate_g_per_h, during_total_g, during_mass_norm_rate_g_per_h, during_abs_clamp_range_g_per_h, during_mass_norm_total_range_g, pre_run_water_ml, during_water_rate_ml_per_h, during_water_total_ml, pre_run_sodium_mg, during_sodium_rate_mg_per_h, during_sodium_total_mg, post_run_carbs_g, post_run_protein_g, post_run_water_ml, post_run_sodium_mg]
 flutter: 🔍 DEBUG: Sample values and types:
-flutter:   pre_run_carbs_g: 152 (int)
-flutter:   during_rate_g_per_h: 60 (int)
-flutter:   duration_h: 2.4 (double)
+flutter:   pre_run_carbs_g: 181 (int)
+flutter:   during_rate_g_per_h: 45 (int)
+flutter:   duration_h: 1.8 (double)
 flutter:   MET: 11.22 (double)
 flutter: 💾 DEBUG: MacroTargets generated successfully
 flutter: DEBUG: Found cached macro targets:
-flutter:   Pre-run carbs: 152.0g
-flutter:   During-run carbs: 144.0g
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
 flutter:   Post-run carbs: 91.0g
-flutter:   Total carbs should be: 387.0g
+flutter:   Total carbs should be: 353.0g
 flutter:   Pre-run sodium: 450.0mg
-flutter:   During-run sodium: 1560.0mg
+flutter:   During-run sodium: 1170.0mg
 flutter:   Post-run sodium: 625.0mg
-flutter:   Total sodium should be: 2635.0mg
-flutter:   Pre-run fluids: 555.0ml
-flutter:   During-run fluids: 1440.0ml
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
 flutter:   Post-run fluids: 1250.0ml
-flutter:   Total fluids should be: 3245.0ml
+flutter:   Total fluids should be: 2943.0ml
 flutter:   isUserModified: false
 flutter: ✅ DEBUG: Macro targets generated successfully!
+flutter: 🔍 MacroTargetsWidget: Processing Before Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 300mg sodium, 0.0ml fluids, 48g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 35g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 0.0ml fluids, 90g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 622.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing During Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 700mg sodium, 0.0ml fluids, 46g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 20g carbs
+flutter:   📊 Unknown Food (No description): 270mg sodium, 0.0ml fluids, 0g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1095.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing After Run section with 3 food items
+flutter:   📊 Unknown Food (No description): 120mg sodium, 0.0ml fluids, 28g carbs
+flutter:   📊 Unknown Food (No description): 400mg sodium, 0.0ml fluids, 70g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1273.0ml fluids, 0g carbs
+flutter: 🎯 MacroTargetsWidget TOTALS: 2190mg sodium, 2990ml fluids, 337g carbs
 flutter: DEBUG: Found cached macro targets:
-flutter:   Pre-run carbs: 152.0g
-flutter:   During-run carbs: 144.0g
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
 flutter:   Post-run carbs: 91.0g
-flutter:   Total carbs should be: 387.0g
+flutter:   Total carbs should be: 353.0g
 flutter:   Pre-run sodium: 450.0mg
-flutter:   During-run sodium: 1560.0mg
+flutter:   During-run sodium: 1170.0mg
 flutter:   Post-run sodium: 625.0mg
-flutter:   Total sodium should be: 2635.0mg
-flutter:   Pre-run fluids: 555.0ml
-flutter:   During-run fluids: 1440.0ml
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
 flutter:   Post-run fluids: 1250.0ml
-flutter:   Total fluids should be: 3245.0ml
+flutter:   Total fluids should be: 2943.0ml
+flutter:   isUserModified: false
+flutter: DEBUG: Found cached macro targets:
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
+flutter:   Post-run carbs: 91.0g
+flutter:   Total carbs should be: 353.0g
+flutter:   Pre-run sodium: 450.0mg
+flutter:   During-run sodium: 1170.0mg
+flutter:   Post-run sodium: 625.0mg
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
+flutter:   Post-run fluids: 1250.0ml
+flutter:   Total fluids should be: 2943.0ml
+flutter:   isUserModified: false
+flutter: 🔍 MacroTargetsWidget: Processing Before Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 300mg sodium, 0.0ml fluids, 48g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 35g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 0.0ml fluids, 90g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 622.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing During Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 700mg sodium, 0.0ml fluids, 46g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 20g carbs
+flutter:   📊 Unknown Food (No description): 270mg sodium, 0.0ml fluids, 0g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1095.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing After Run section with 3 food items
+flutter:   📊 Unknown Food (No description): 120mg sodium, 0.0ml fluids, 28g carbs
+flutter:   📊 Unknown Food (No description): 400mg sodium, 0.0ml fluids, 70g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1273.0ml fluids, 0g carbs
+flutter: 🎯 MacroTargetsWidget TOTALS: 2190mg sodium, 2990ml fluids, 337g carbs
+flutter: DEBUG: Found cached macro targets:
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
+flutter:   Post-run carbs: 91.0g
+flutter:   Total carbs should be: 353.0g
+flutter:   Pre-run sodium: 450.0mg
+flutter:   During-run sodium: 1170.0mg
+flutter:   Post-run sodium: 625.0mg
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
+flutter:   Post-run fluids: 1250.0ml
+flutter:   Total fluids should be: 2943.0ml
 flutter:   isUserModified: false
 flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
@@ -372,207 +267,185 @@ logging_service.dart:128
 flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
 logging_service.dart:42
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:44.626 (+0:00:58.760908)
+flutter: │ 17:08:18.211 (+0:00:07.299915)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 flutter: │ 🐛 [NUTRITION_PLAN] Macro targets prepared for edge function
-flutter: │ 🐛 Data: {preRunCarbs: 152.0, preRunProtein: 19.0, duringRunCarbsTotal: 144.0, postRunCarbs: 91.0, postRunProtein: 23.0, totalExpectedCarbs: 387.0}
+flutter: │ 🐛 Data: {preRunCarbs: 181.0, preRunProtein: 23.0, duringRunCarbsTotal: 81.0, postRunCarbs: 91.0, postRunProtein: 27.0, totalExpectedCarbs: 353.0}
 flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────<…>
+flutter: \^[[38;5;196m│ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)<…>
+logging_service.dart:128
+flutter: \^[[38;5;196m│ #1   LoggingService.error (package:mealvana_endurance/shared/services/logging_service.dart:89:5)<…>
+logging_service.dart:89
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄<…>
+flutter: \^[[38;5;196m│ 17:08:19.080 (+0:00:08.169082)<…>
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄<…>
+flutter: \^[[38;5;196m│ ⛔ [LLMNutritionPlanService] LLM Response Validation: Food Items vs Macro Targets Comparison<…>
+flutter: \^[[38;5;196m│ ⛔ Data: {macro_targets: {total_sodium_mg: 2245, total_fluids_ml: 2943.0, total_carbs_g: 353}, food_items_actual: {total_sodium_mg: 2190, total_fluids_ml: 2990.0, total_carbs_g: 337}, discrepancies: {sodium_difference_mg: -55, fluids_difference_ml: 47.0, carbs_difference_g: -16}, percentage_match: {sodium_percentage: 98, fluids_percentage: 102, carbs_percentage: 95}}<…>
+flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────<…>
 flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
 logging_service.dart:128
 flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
 logging_service.dart:42
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:45.127 (+0:00:59.261271)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [LLMNutritionPlanService] Starting LLM response conversion
-flutter: │ 🐛 Data: {rawDataKeys: [success, plan_id, detailed_message, plan, macro_targets], planDataKeys: [before, during, after], macroTargetsKeys: [pre_run, during_run, post_run]}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:45.128 (+0:00:59.262891)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [LLMNutritionPlanService] Extracted plan metadata
-flutter: │ 🐛 Data: {planId: lp-plan-1757086665079-B015E3, detailedMessage: Optimized nutrition plan using linear programming. Targets: Pre-run 152g carbs, During-run 144g carbs, Post-run 91g carbs.}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:45.129 (+0:00:59.263746)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [LLMNutritionPlanService] Converting before section
-flutter: │ 🐛 Data: {beforeItemsCount: 5}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:45.131 (+0:00:59.265174)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [LLMNutritionPlanService] Before section conversion completed
-flutter: │ 🐛 Data: {convertedItemsCount: 5}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:45.131 (+0:00:59.265873)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [LLMNutritionPlanService] Converting during section
-flutter: │ 🐛 Data: {duringItemsCount: 2}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:45.132 (+0:00:59.266991)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [LLMNutritionPlanService] During section conversion completed
-flutter: │ 🐛 Data: {convertedItemsCount: 2}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:45.133 (+0:00:59.267728)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [LLMNutritionPlanService] Converting after section
-flutter: │ 🐛 Data: {afterItemsCount: 5}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:45.135 (+0:00:59.269207)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [LLMNutritionPlanService] After section conversion completed
-flutter: │ 🐛 Data: {convertedItemsCount: 5}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   LoggingService._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:128:15)
-logging_service.dart:128
-flutter: │ #1   LoggingService.debug (package:mealvana_endurance/shared/services/logging_service.dart:42:5)
-logging_service.dart:42
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 10:37:45.136 (+0:00:59.270336)
+flutter: │ 17:08:19.081 (+0:00:08.170339)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 flutter: │ 🐛 [NUTRITION_PLAN] Nutrition plan creation completed
-flutter: │ 🐛 Data: {plan_id: lp-plan-1757086665079-B015E3, totalFoodItems: 12, beforeItems: 5, duringItems: 2, afterItems: 5}
+flutter: │ 🐛 Data: {plan_id: improved-lp-1757974098799-34ADD2, totalFoodItems: 11, beforeItems: 4, duringItems: 4, afterItems: 3}
 flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: 🔍 DEBUG: setGeneratedPlan() called for plan: lp-plan-1757086665079-B015E3
-flutter: 🔍 DEBUG: PlanSaveStatus.build() called - _explicitlyMarkedAsUnsaved: false
-flutter: 🔍 DEBUG: PlanSaveStatus.build() - returning default true (saved/no button)
-flutter: 🔍 DEBUG: PlanSaveStatus.markAsUnsaved() called
+flutter: 🔍 DEBUG: setGeneratedPlan() called for plan: improved-lp-1757974098799-34ADD2
+flutter: 🔍 DEBUG: planId for North-Star: c5505500-4db8-40ff-8f22-3476e71abfb9
 flutter: 🔍 DEBUG: Saving plan temporarily
-flutter: 🔍 DEBUG: PlanSaveStatus.build() called - _explicitlyMarkedAsUnsaved: false
-flutter: 🔍 DEBUG: PlanSaveStatus.build() - returning default true (saved/no button)
-flutter: 🔍 DEBUG: Plan save status - isSaved: true, planId: lp-plan-1757086665079-B015E3
-flutter: 🔍 DEBUG: Saving temp plan lp-plan-1757086665079-B015E3 for user: 1F4088E1-6E78-4C0E-A072-B9390BB015E3
-flutter: 🔄 Saving temporary plan: planId=lp-plan-1757086665079-B015E3, deviceId=1F4088E1-6E78-4C0E-A072-B9390BB015E3
+flutter: 🔍 MacroTargetsWidget: Processing Before Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 300mg sodium, 0.0ml fluids, 48g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 35g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 0.0ml fluids, 90g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 622.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing During Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 700mg sodium, 0.0ml fluids, 46g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 20g carbs
+flutter:   📊 Unknown Food (No description): 270mg sodium, 0.0ml fluids, 0g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1095.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing After Run section with 3 food items
+flutter:   📊 Unknown Food (No description): 120mg sodium, 0.0ml fluids, 28g carbs
+flutter:   📊 Unknown Food (No description): 400mg sodium, 0.0ml fluids, 70g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1273.0ml fluids, 0g carbs
+flutter: 🎯 MacroTargetsWidget TOTALS: 2190mg sodium, 2990ml fluids, 337g carbs
+flutter: 🔍 DEBUG: Saving temp plan improved-lp-1757974098799-34ADD2 for user: 87233D66-25FF-440C-B3E4-D020BD34ADD2
+flutter: 🔄 Saving temporary plan: planId=improved-lp-1757974098799-34ADD2, deviceId=87233D66-25FF-440C-B3E4-D020BD34ADD2
 flutter: DEBUG: Found cached macro targets:
-flutter:   Pre-run carbs: 152.0g
-flutter:   During-run carbs: 144.0g
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
 flutter:   Post-run carbs: 91.0g
-flutter:   Total carbs should be: 387.0g
+flutter:   Total carbs should be: 353.0g
 flutter:   Pre-run sodium: 450.0mg
-flutter:   During-run sodium: 1560.0mg
+flutter:   During-run sodium: 1170.0mg
 flutter:   Post-run sodium: 625.0mg
-flutter:   Total sodium should be: 2635.0mg
-flutter:   Pre-run fluids: 555.0ml
-flutter:   During-run fluids: 1440.0ml
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
 flutter:   Post-run fluids: 1250.0ml
-flutter:   Total fluids should be: 3245.0ml
+flutter:   Total fluids should be: 2943.0ml
 flutter:   isUserModified: false
 flutter: DEBUG: Found cached macro targets:
-flutter:   Pre-run carbs: 152.0g
-flutter:   During-run carbs: 144.0g
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
 flutter:   Post-run carbs: 91.0g
-flutter:   Total carbs should be: 387.0g
+flutter:   Total carbs should be: 353.0g
 flutter:   Pre-run sodium: 450.0mg
-flutter:   During-run sodium: 1560.0mg
+flutter:   During-run sodium: 1170.0mg
 flutter:   Post-run sodium: 625.0mg
-flutter:   Total sodium should be: 2635.0mg
-flutter:   Pre-run fluids: 555.0ml
-flutter:   During-run fluids: 1440.0ml
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
 flutter:   Post-run fluids: 1250.0ml
-flutter:   Total fluids should be: 3245.0ml
+flutter:   Total fluids should be: 2943.0ml
 flutter:   isUserModified: false
 flutter: ✅ Temporary plan saved successfully
 flutter: 🔍 DEBUG: Temp plan saved successfully
 flutter: 🔍 DEBUG: Removing plan from permanent local storage
 flutter: 🔍 DEBUG: setGeneratedPlan() completed
-2
-flutter: 🔍 DEBUG: Plan save status - isSaved: true, planId: lp-plan-1757086665079-B015E3
+flutter: 🔍 MacroTargetsWidget: Processing Before Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 300mg sodium, 0.0ml fluids, 48g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 35g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 0.0ml fluids, 90g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 622.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing During Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 700mg sodium, 0.0ml fluids, 46g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 20g carbs
+flutter:   📊 Unknown Food (No description): 270mg sodium, 0.0ml fluids, 0g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1095.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing After Run section with 3 food items
+flutter:   📊 Unknown Food (No description): 120mg sodium, 0.0ml fluids, 28g carbs
+flutter:   📊 Unknown Food (No description): 400mg sodium, 0.0ml fluids, 70g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1273.0ml fluids, 0g carbs
+flutter: 🎯 MacroTargetsWidget TOTALS: 2190mg sodium, 2990ml fluids, 337g carbs
+flutter: 🎯 SharedPreferences check: hasShown = false
+flutter: 🚀 Starting animation
 flutter: DEBUG: Found cached macro targets:
-flutter:   Pre-run carbs: 152.0g
-flutter:   During-run carbs: 144.0g
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
 flutter:   Post-run carbs: 91.0g
-flutter:   Total carbs should be: 387.0g
+flutter:   Total carbs should be: 353.0g
 flutter:   Pre-run sodium: 450.0mg
-flutter:   During-run sodium: 1560.0mg
+flutter:   During-run sodium: 1170.0mg
 flutter:   Post-run sodium: 625.0mg
-flutter:   Total sodium should be: 2635.0mg
-flutter:   Pre-run fluids: 555.0ml
-flutter:   During-run fluids: 1440.0ml
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
 flutter:   Post-run fluids: 1250.0ml
-flutter:   Total fluids should be: 3245.0ml
+flutter:   Total fluids should be: 2943.0ml
 flutter:   isUserModified: false
 flutter: DEBUG: Found cached macro targets:
-flutter:   Pre-run carbs: 152.0g
-flutter:   During-run carbs: 144.0g
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
 flutter:   Post-run carbs: 91.0g
-flutter:   Total carbs should be: 387.0g
+flutter:   Total carbs should be: 353.0g
 flutter:   Pre-run sodium: 450.0mg
-flutter:   During-run sodium: 1560.0mg
+flutter:   During-run sodium: 1170.0mg
 flutter:   Post-run sodium: 625.0mg
-flutter:   Total sodium should be: 2635.0mg
-flutter:   Pre-run fluids: 555.0ml
-flutter:   During-run fluids: 1440.0ml
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
 flutter:   Post-run fluids: 1250.0ml
-flutter:   Total fluids should be: 3245.0ml
+flutter:   Total fluids should be: 2943.0ml
 flutter:   isUserModified: false
 flutter: DEBUG: Found cached macro targets:
-flutter:   Pre-run carbs: 152.0g
-flutter:   During-run carbs: 144.0g
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
 flutter:   Post-run carbs: 91.0g
-flutter:   Total carbs should be: 387.0g
+flutter:   Total carbs should be: 353.0g
 flutter:   Pre-run sodium: 450.0mg
-flutter:   During-run sodium: 1560.0mg
+flutter:   During-run sodium: 1170.0mg
 flutter:   Post-run sodium: 625.0mg
-flutter:   Total sodium should be: 2635.0mg
-flutter:   Pre-run fluids: 555.0ml
-flutter:   During-run fluids: 1440.0ml
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
 flutter:   Post-run fluids: 1250.0ml
-flutter:   Total fluids should be: 3245.0ml
+flutter:   Total fluids should be: 2943.0ml
 flutter:   isUserModified: false
 flutter: DEBUG: Found cached macro targets:
-flutter:   Pre-run carbs: 152.0g
-flutter:   During-run carbs: 144.0g
+flutter:   Pre-run carbs: 181.0g
+flutter:   During-run carbs: 81.0g
 flutter:   Post-run carbs: 91.0g
-flutter:   Total carbs should be: 387.0g
+flutter:   Total carbs should be: 353.0g
 flutter:   Pre-run sodium: 450.0mg
-flutter:   During-run sodium: 1560.0mg
+flutter:   During-run sodium: 1170.0mg
 flutter:   Post-run sodium: 625.0mg
-flutter:   Total sodium should be: 2635.0mg
-flutter:   Pre-run fluids: 555.0ml
-flutter:   During-run fluids: 1440.0ml
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 613.0ml
+flutter:   During-run fluids: 1080.0ml
 flutter:   Post-run fluids: 1250.0ml
-flutter:   Total fluids should be: 3245.0ml
+flutter:   Total fluids should be: 2943.0ml
 flutter:   isUserModified: false
+flutter: 🔍 MacroTargetsWidget: Processing Before Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 300mg sodium, 0.0ml fluids, 48g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 35g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 0.0ml fluids, 90g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 622.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing During Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 700mg sodium, 0.0ml fluids, 46g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 20g carbs
+flutter:   📊 Unknown Food (No description): 270mg sodium, 0.0ml fluids, 0g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1095.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing After Run section with 3 food items
+flutter:   📊 Unknown Food (No description): 120mg sodium, 0.0ml fluids, 28g carbs
+flutter:   📊 Unknown Food (No description): 400mg sodium, 0.0ml fluids, 70g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1273.0ml fluids, 0g carbs
+flutter: 🎯 MacroTargetsWidget TOTALS: 2190mg sodium, 2990ml fluids, 337g carbs
+flutter: 🔍 MacroTargetsWidget: Processing Before Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 300mg sodium, 0.0ml fluids, 48g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 35g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 0.0ml fluids, 90g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 622.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing During Run section with 4 food items
+flutter:   📊 Unknown Food (No description): 700mg sodium, 0.0ml fluids, 46g carbs
+flutter:   📊 Unknown Food (No description): 200mg sodium, 0.0ml fluids, 20g carbs
+flutter:   📊 Unknown Food (No description): 270mg sodium, 0.0ml fluids, 0g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1095.0ml fluids, 0g carbs
+flutter: 🔍 MacroTargetsWidget: Processing After Run section with 3 food items
+flutter:   📊 Unknown Food (No description): 120mg sodium, 0.0ml fluids, 28g carbs
+flutter:   📊 Unknown Food (No description): 400mg sodium, 0.0ml fluids, 70g carbs
+flutter:   📊 Unknown Food (No description): 0mg sodium, 1273.0ml fluids, 0g carbs
+flutter: 🎯 MacroTargetsWidget TOTALS: 2190mg sodium, 2990ml fluids, 337g carbs

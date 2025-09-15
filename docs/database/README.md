@@ -1,85 +1,101 @@
-# Database Schema & Drift Migrations
+# Database Documentation
 
-This directory contains the complete database schema, Drift migrations, and documentation for the Mealvana Endurance nutrition planning system.
+## Overview
 
-## 📖 **📖 COMPLETE DRIFT GUIDE**
+Mealvana Endurance implements a sophisticated dual database architecture combining local-first storage with cloud synchronization. This design ensures the app works seamlessly offline while providing data backup, synchronization, and content management capabilities.
 
-**👉 [DRIFT.md](DRIFT.md)** - The definitive guide to Drift implementation in Mealvana Endurance. Contains:
-- Complete setup and configuration
-- Table definitions with relationships
-- Migration workflows and testing
-- Repository patterns and advanced queries
-- Performance optimization strategies
-- Best practices and troubleshooting
+## Architecture Summary
 
----
+### Dual Database System
+- **[Drift (SQLite)](drift/)**: Local offline-first storage with type-safe migrations
+- **[Supabase (PostgreSQL)](supabase/)**: Cloud backend with real-time capabilities and content management
 
-## 🔄 **Migration from Hive to Drift**
+### Key Principles
+- **Offline-First**: App fully functional without internet connection
+- **Device-Based Authentication**: No traditional user accounts, privacy-focused
+- **Content-Driven**: UI text and algorithm parameters managed server-side
+- **Safe Migrations**: Backup and rollback strategies for schema changes
 
-The app has migrated from Hive to Drift for superior data management:
-- **Type-Safe Migrations**: Built-in schema versioning with automatic code generation
-- **SQLite Backend**: More robust than Hive for complex relationships
-- **Migration Testing**: Auto-generated test cases for all schema changes
-- **Better Performance**: SQL queries with compile-time validation
+## Documentation Structure
 
-## 📁 **Files Overview**
+### 📁 [Architecture](architecture/)
+Foundational design principles and data flow patterns:
+- **[offline-first.md](architecture/offline-first.md)**: Local-first design principles and ownership patterns
+- **[data-flow.md](architecture/data-flow.md)**: Data synchronization flows between local and cloud storage
+- **[backup-strategy.md](architecture/backup-strategy.md)**: Migration safety and rollback procedures
 
-### **Migrations**
-- **`migrations/01-create-core-tables.sql`** - Creates all core tables with indexes and triggers
-- **`migrations/02-create-functions-and-rls.sql`** - Creates database functions and Row Level Security policies
+### 📁 [Drift (Local Database)](drift/)
+SQLite implementation with Dart code generation:
+- **[schema.md](drift/schema.md)**: Complete v2 schema with 10 tables and relationships
+- **[migration-strategy.md](drift/migration-strategy.md)**: "Fake History" migration approach from v1→v2
+- **[sync-service.md](drift/sync-service.md)**: 24-hour refresh cycle and sync coordination
+- **[repositories.md](drift/repositories.md)**: Repository pattern implementation with Riverpod
 
-### **Documentation**  
-- **`schema-overview.md`** - Complete database schema documentation
-- **`DEPLOYMENT-GUIDE.md`** - Step-by-step deployment instructions
+### 📁 [Supabase (Cloud Backend)](supabase/)  
+PostgreSQL backend with real-time and serverless capabilities:
+- **[schema.sql](supabase/schema.sql)**: Complete PostgreSQL schema with RLS policies
+- **[tables.md](supabase/tables.md)**: Detailed table documentation and usage patterns
+- **[edge-functions.md](supabase/edge-functions.md)**: AI nutrition plan generation and dynamic code deployment
+- **[rls-policies.md](supabase/rls-policies.md)**: Row Level Security implementation for privacy protection
 
-## 🗄️ **Database Schema Overview**
+## Current Status: V1 → V2 Migration
 
-### **Core Tables**
+The app is currently transitioning from a broken v1 implementation to a proper v2 architecture:
 
-| Table | Purpose | Key Features |
-|-------|---------|--------------|
-| `users` | User profiles and biometric data | Device-based auth, onboarding status |
-| `foods` | Food database | Structured serving data, nutritional info |
-| `categories` | Food timing categories | before_run, during_run, after_run |
-| `food_categories` | Food-to-category mapping | Many-to-many relationships |
-| `food_preferences` | User food preferences | like/dislike/willing_to_try |
-| `nutrition_plans` | Generated nutrition plans | Versioning, conflict resolution |
-| `feedback` | User feedback | Satisfaction ratings (1-3 scale) |
-| `app_content` | Dynamic app content | Localization, A/B testing |
+### V1 Issues (Current State)
+- ❌ Hardcoded schema version (always 1)
+- ❌ No real migrations (`m.createAll()` approach)
+- ❌ Manual schema management bypasses Drift
+- ❌ Food data not cached locally
+- ❌ Content stored in SharedPreferences
 
-### **Key Relationships**
+### V2 Target State (Documented)
+- ✅ Proper Drift migrations with versioning
+- ✅ 10 tables mirroring Supabase structure
+- ✅ Local food caching with 24-hour refresh
+- ✅ Content management in database
+- ✅ Backup and rollback protection
 
-```sql
-users (device_id) ←→ food_preferences (device_id)
-users (device_id) ←→ nutrition_plans (device_id)  
-foods (id) ←→ food_categories (food_id)
-categories (id) ←→ food_categories (category_id)
-```
+### Migration Approach
+**"Fake History" Strategy**: Treat v1 as if it was always a proper Drift migration while preserving all user data. See [migration-strategy.md](drift/migration-strategy.md) for complete implementation details.
 
-## 🚀 **Quick Start**
+## Quick Start
 
-### **1. Run Migrations**
-Execute these in order in your Supabase SQL Editor:
+### For Developers
 
-```sql
--- Step 1: Create all core tables
--- Copy and run: migrations/01-create-core-tables.sql
+1. **Understanding the Architecture**:
+   ```bash
+   # Start with architectural principles
+   docs/database/architecture/offline-first.md
+   docs/database/architecture/data-flow.md
+   ```
 
--- Step 2: Create functions and RLS policies  
--- Copy and run: migrations/02-create-functions-and-rls.sql
-```
+2. **Working with Local Storage**:
+   ```bash
+   # Drift implementation details
+   docs/database/drift/schema.md
+   docs/database/drift/repositories.md
+   ```
 
-### **2. Verify Installation**
-```sql
--- Check all tables exist
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public' 
-ORDER BY table_name;
+3. **Backend Integration**:
+   ```bash
+   # Supabase setup and policies
+   docs/database/supabase/tables.md
+   docs/database/supabase/rls-policies.md
+   ```
 
--- Test key functions
-SELECT upsert_food_preferences('test_device', '{"Oatmeal": "like"}'::jsonb);
-SELECT get_active_app_content('production', 'en-US');
-```
+### For AI Assistants
+
+**When working with database code:**
+- Consult `drift/schema.md` for current v2 table structure
+- Check `drift/repositories.md` for repository patterns
+- Use `architecture/data-flow.md` for sync logic understanding
+- Reference `supabase/tables.md` for backend table relationships
+
+**When making schema changes:**
+- Follow migration strategy in `drift/migration-strategy.md`
+- Implement backup procedures from `architecture/backup-strategy.md`
+- Update both Drift and Supabase documentation
 
 ## 🏗️ **Schema Highlights**
 

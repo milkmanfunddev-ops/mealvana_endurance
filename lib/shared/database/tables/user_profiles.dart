@@ -50,6 +50,9 @@ class UserProfilesTable extends Table {
   
   /// Temporary plan storage (unsaved plan that persists through app restart)
   TextColumn get tempPlanData => text().nullable()();
+  
+  /// Whether the swipe hint animation has been shown to this user
+  BoolColumn get swipeHintShown => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -1,20 +1,33 @@
 import 'package:flutter/material.dart';
 import '../../features/nutrition_plan/presentation/screens/current_plan_screen.dart';
+import '../../features/user_journal/presentation/screens/voice_memo_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../theme/app_theme.dart';
 
 class TabsScreen extends StatefulWidget {
-  const TabsScreen({super.key});
+  const TabsScreen({
+    super.key,
+    this.initialTabIndex = 0,
+  });
+
+  final int initialTabIndex;
 
   @override
   State<TabsScreen> createState() => _TabsScreenState();
 }
 
 class _TabsScreenState extends State<TabsScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialTabIndex;
+  }
   
   List<Widget> get _screens => [
     const CurrentPlanScreen(), // CurrentPlanScreen shows the plan or empty state
-    // const RecipesScreen(),
+    const VoiceMemoScreen(), // Workout notes/journal entries
     const SettingsScreen(),
   ];
 
@@ -32,19 +45,19 @@ class _TabsScreenState extends State<TabsScreen> {
       ),
       label: 'Plan',
     ),
-    // BottomNavigationBarItem(
-    //   icon: Image.asset(
-    //     'assets/icons/recipes.png',
-    //     width: 24,
-    //     height: 24,
-    //   ),
-    //   activeIcon: Image.asset(
-    //     'assets/icons/activeRecipes.png',
-    //     width: 24,
-    //     height: 24,
-    //   ),
-    //   label: 'Recipes',
-    // ),
+    BottomNavigationBarItem(
+      icon: Icon(
+        Icons.notes,
+        size: 24,
+        color: Colors.grey,
+      ),
+      activeIcon: Icon(
+        Icons.notes,
+        size: 24,
+        color: AppTheme.primary900, // Use primary900 instead of primaryColor
+      ),
+      label: 'Workout Notes',
+    ),
     BottomNavigationBarItem(
       icon: Image.asset(
         'assets/icons/settings.png',
@@ -76,7 +89,7 @@ class _TabsScreenState extends State<TabsScreen> {
         },
         items: _tabs,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Theme.of(context).primaryColor,
+        selectedItemColor: AppTheme.primary900,
         unselectedItemColor: Colors.grey,
         showSelectedLabels: false,
         showUnselectedLabels: false,

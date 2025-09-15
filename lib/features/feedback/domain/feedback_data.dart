@@ -151,27 +151,82 @@ enum MissedReason {
 /// Notification preference for reminders
 class NotificationPreference {
   const NotificationPreference({
-    required this.dayOfWeek,
+    this.dayOfWeek,
     required this.hour,
     required this.minute,
     required this.isRecurring,
+    this.customDate,
   });
 
-  final int dayOfWeek; // 1=Monday, 4=Thursday, 6=Saturday
+  final int? dayOfWeek; // 1=Monday, 4=Thursday, 6=Saturday - nullable for custom dates
   final int hour;
   final int minute;
   final bool isRecurring;
+  final DateTime? customDate; // For specific date selection
+
+  /// Factory constructor for default Thursday at 5 PM
+  factory NotificationPreference.defaultThursday({required bool isRecurring}) {
+    return NotificationPreference(
+      dayOfWeek: 4, // Thursday
+      hour: 17, // 5 PM
+      minute: 0,
+      isRecurring: isRecurring,
+    );
+  }
+
+  /// Factory constructor for custom date/time
+  factory NotificationPreference.custom({
+    required DateTime dateTime,
+    required bool isRecurring,
+  }) {
+    return NotificationPreference(
+      dayOfWeek: isRecurring ? dateTime.weekday : null,
+      hour: dateTime.hour,
+      minute: dateTime.minute,
+      isRecurring: isRecurring,
+      customDate: isRecurring ? null : dateTime,
+    );
+  }
 
   DateTime getNextReminderDate() {
     final now = DateTime.now();
+    
+    // If it's a one-time reminder with custom date, use that date
+    if (!isRecurring && customDate != null) {
+      return customDate!;
+    }
+    
+    // For recurring reminders or dayOfWeek-based reminders
+    final targetDayOfWeek = dayOfWeek ?? DateTime.thursday;
     var scheduledDate = DateTime(now.year, now.month, now.day, hour, minute);
     
     // Find next occurrence of the specified day
-    while (scheduledDate.weekday != dayOfWeek || scheduledDate.isBefore(now)) {
+    while (scheduledDate.weekday != targetDayOfWeek || scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
     
     return scheduledDate;
+  }
+
+  /// Get a human-readable description of this reminder
+  String getDescription() {
+    if (!isRecurring && customDate != null) {
+      final date = customDate!;
+      final weekday = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][date.weekday];
+      final hour12 = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+      final amPm = date.hour >= 12 ? 'PM' : 'AM';
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$weekday, ${date.month}/${date.day} at $hour12:$minute $amPm (one-time)';
+    }
+    
+    final targetDay = dayOfWeek ?? 4;
+    final weekday = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][targetDay];
+    final hour12 = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    final amPm = hour >= 12 ? 'PM' : 'AM';
+    final minuteStr = minute.toString().padLeft(2, '0');
+    final frequency = isRecurring ? 'recurring' : 'one-time';
+    
+    return '$weekday at $hour12:$minuteStr $amPm ($frequency)';
   }
 
   Map<String, dynamic> toJson() => {
@@ -179,7 +234,36 @@ class NotificationPreference {
     'hour': hour,
     'minute': minute,
     'isRecurring': isRecurring,
+    'customDate': customDate?.toIso8601String(),
   };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NotificationPreference &&
+          runtimeType == other.runtimeType &&
+          dayOfWeek == other.dayOfWeek &&
+          hour == other.hour &&
+          minute == other.minute &&
+          isRecurring == other.isRecurring &&
+          customDate == other.customDate;
+
+  @override
+  int get hashCode =>
+      dayOfWeek.hashCode ^
+      hour.hashCode ^
+      minute.hashCode ^
+      isRecurring.hashCode ^
+      customDate.hashCode;
+}
+
+/// Reminder type for survey UI state
+enum ReminderType {
+  defaultTime('Default time (Thursday at 5:00 PM)'),
+  custom('Custom date and time');
+
+  const ReminderType(this.label);
+  final String label;
 }
 
 /// Complete survey response model

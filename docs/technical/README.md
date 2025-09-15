@@ -397,9 +397,9 @@ class NotificationService {
 - **Testing**: Platform-specific testing on physical devices
 - **App Store**: May require notification entitlement documentation
 
-## Data Persistence with Drift
+## Data Persistence with Drift (Schema v2)
 
-### Database Setup and Configuration
+### Database Setup and Configuration  
 ```dart
 // lib/shared/database/app_database.dart
 import 'package:drift/drift.dart';
@@ -407,22 +407,34 @@ import 'package:drift_flutter/drift_flutter.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Users, NutritionPlans, FoodPreferences])
+@DriftDatabase(tables: [
+  // Core v1 tables
+  UserProfilesTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
+  // New v2 tables
+  FoodsTable, CategoriesTable, FoodCategoriesTable, BrandsTable, AppContentTable,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2; // Current version with v1→v2 migration
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (m) async {
         await m.createAll();
+        await _populateDefaultData();
       },
       onUpgrade: stepByStep(
-        // Generated migration steps will go here
+        from1To2: (m, schema) async {
+          // Big Bang migration: Add all v2 tables
+          await _migrateV1ToV2(m, schema);
+        },
       ),
+      beforeOpen: (details) async {
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
     );
   }
 
@@ -458,7 +470,7 @@ class Users extends Table {
 }
 ```
 
-### Repository Implementation
+### Repository Implementation (Updated for Schema v2)
 ```dart
 class DriftUserRepository implements UserRepository {
   DriftUserRepository(this._database);
@@ -466,35 +478,58 @@ class DriftUserRepository implements UserRepository {
 
   @override
   Future<UserProfile?> getProfile(String deviceId) async {
-    return await (_database.select(_database.users)
+    return await (_database.select(_database.userProfilesTable)
           ..where((u) => u.deviceId.equals(deviceId)))
         .getSingleOrNull();
   }
 
   @override
   Future<void> updateProfile(String deviceId, UserProfile profile) async {
-    await _database.update(_database.users).replace(profile);
+    await _database.into(_database.userProfilesTable).insertOnConflictUpdate(profile);
   }
 
   @override
   Stream<UserProfile?> watchProfile(String deviceId) {
-    return (_database.select(_database.users)
+    return (_database.select(_database.userProfilesTable)
           ..where((u) => u.deviceId.equals(deviceId)))
         .watchSingleOrNull();
+  }
+
+  // New v2 methods for cached food data
+  @override
+  Future<List<Food>> getCachedFoods() async {
+    return await _database.select(_database.foodsTable).get();
+  }
+
+  @override
+  Future<void> cacheFoods(List<Food> foods) async {
+    await _database.batch((batch) {
+      batch.insertAllOnConflictUpdate(_database.foodsTable, foods);
+    });
   }
 }
 ```
 
-### Migration Management
+### Migration Management (Schema v2)
 ```bash
-# Generate new schema version after changes
+# Current migration status: v1 → v2 COMPLETED
+# - Added 5 new tables: foods, categories, food_categories, brands, app_content  
+# - Used "Big Bang" migration approach for all v2 changes
+
+# For future schema changes:
+# 1. Update table definitions in lib/shared/database/tables/
+# 2. Increment schemaVersion in AppDatabase (currently = 2)
+# 3. Generate new migration
 dart run drift_dev make-migrations
 
-# Export schema for version control
+# Export schema for version control  
 dart run drift_dev schema dump lib/shared/database/app_database.dart drift_schemas/
 
 # Generate migration test code
 dart run drift_dev schema generate drift_schemas/ test/generated_migrations/
+
+# Test migrations before deployment
+dart test test/generated_migrations/
 ```
 
 ## App Icons and Splash Screens
@@ -737,28 +772,30 @@ Each specialized guide contains comprehensive examples, best practices, and prod
 
 ## 🔥 Known Issues & Solutions
 
-### Migration from Hive to Drift
+### Database Schema Evolution
 
-**Status**: ✅ **COMPLETED** - App successfully migrated to Drift
+**Current Status**: ✅ **Drift v2 Active** - Dual database architecture implemented
 
-**Benefits Achieved**:
-- **Type Safety**: No more runtime type cast errors
-- **Schema Versioning**: Built-in migration system prevents data corruption
-- **Better Performance**: SQL queries optimized at compile time
-- **Migration Testing**: Auto-generated tests for all schema changes
+**Schema v2 Benefits Achieved**:
+- **Comprehensive Food Caching**: 24-hour refresh cycles for food data
+- **Content Management**: Dynamic UI text stored in app_content table  
+- **Brand Integration**: Affiliate marketing support with brands table
+- **Type-Safe Relationships**: Many-to-many food-category relationships
+- **Migration Safety**: Big Bang v1→v2 migration completed successfully
 
-**Migration Steps Completed**:
-1. ✅ Updated all documentation to reflect Drift usage
-2. ✅ Created new database schema with proper relationships
-3. ✅ Implemented type-safe queries and migrations
-4. ✅ Added comprehensive migration testing
+**v1 → v2 Migration Completed**:
+1. ✅ **5 New Tables Added**: foods, categories, food_categories, brands, app_content
+2. ✅ **schemaVersion Updated**: From 1 to 2 with automated migration
+3. ✅ **Big Bang Approach**: All v2 changes deployed simultaneously
+4. ✅ **Content Migration**: Moved from SharedPreferences to Drift app_content table
+5. ✅ **Food Caching**: Implemented 24-hour sync cycles for reference data
 
-**For Future Schema Changes**:
+**For Future Schema Changes (v2 → v3)**:
 1. Update table definitions in `lib/shared/database/tables/`
-2. Increment `schemaVersion` in `AppDatabase`
+2. Increment `schemaVersion` in `AppDatabase` (currently = 2)
 3. Run `dart run drift_dev make-migrations`
-4. Test migrations with generated test suite
-5. Deploy with confidence knowing migrations are type-safe
+4. Add migration logic in `from2To3` method
+5. Test with generated migration test suite
 
 ### Other Common Issues
 

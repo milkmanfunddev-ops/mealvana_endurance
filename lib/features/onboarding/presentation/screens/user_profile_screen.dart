@@ -386,14 +386,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> with Anal
               SizedBox(height: 40.h),
               
               // Continue button
-              SizedBox(
+              PrimaryButton(
+                text: 'Continue',
+                onPressed: asyncState.isLoading ? null : _submitProfile,
+                isLoading: asyncState.isLoading,
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: asyncState.isLoading ? null : _submitProfile,
-                  child: asyncState.isLoading 
-                      ? const CircularProgressIndicator()
-                      : const Text('Continue'),
-                ),
               ),
               
               SizedBox(height: 24.h),

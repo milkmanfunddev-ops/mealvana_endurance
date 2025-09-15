@@ -8,13 +8,13 @@ Mealvana Endurance implements a "fat backend" architecture where business logic,
 
 ### 1. Content Management System (CMS)
 
-The app fetches UI text and algorithm parameters from Supabase at startup, caches them locally in Hive, and falls back to bundled JSON files when offline.
+The app fetches UI text and algorithm parameters from Supabase at startup, caches them locally in Drift SQLite app_content table, and falls back to bundled JSON files when offline.
 
 ```
 ┌─────────────────┐         ┌──────────────────┐         ┌─────────────────┐
 │                 │         │                  │         │                 │
-│   Supabase DB   │────────►│  Content Service │────────►│   Hive Cache    │
-│  (app_content)  │  Fetch  │                  │  Store  │   (Local DB)    │
+│   Supabase DB   │────────►│  Content Service │────────►│ Drift SQLite    │
+│  (app_content)  │  Fetch  │                  │  Store  │ (app_content)   │
 │                 │         │                  │         │                 │
 └─────────────────┘         └──────────────────┘         └─────────────────┘
         │                            │                            │
@@ -23,7 +23,7 @@ The app fetches UI text and algorithm parameters from Supabase at startup, cache
         │                   ┌──────────────────┐                 │
         │                   │                  │                 │
         │                   │   UI Components  │◄────────────────┘
-        │                   │                  │    Fast Access
+        │                   │                  │   Type-Safe Access
         │                   └──────────────────┘
         │                            ▲
         │                            │ Fallback

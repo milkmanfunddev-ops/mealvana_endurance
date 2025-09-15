@@ -1,0 +1,11 @@
+user_property,type,example,description
+distinct_id,string,uuid-or-auth-id,Stable user id used across devices
+gender,string,female,From settings
+age,number,42,Computed from birthday
+height_cm,number,155,From settings
+weight_kg,number,47.6,From settings
+location_city,string,Birmingham,If permissioned
+experience_level,string,marathoner,Optional: 5k/10k/HM/Marathon/Ultra
+run_with_bottle,boolean,True,User preference
+signup_source,string,TestFlight,Acquisition channel
+first_plan_date,date,2025-09-01,Date of first plan_saved

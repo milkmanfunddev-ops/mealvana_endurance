@@ -7,6 +7,7 @@ import '../../domain/food_item.dart';
 import '../../data/food_repository.dart';
 import '../providers/nutrition_plan_controller.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/database/database_provider.dart';
 
 part 'swap_food_controller.g.dart';
 
@@ -50,7 +51,8 @@ class SwapFoodState {
 /// Provider for food repository
 @riverpod
 FoodRepository foodRepository(Ref ref) {
-  return FoodRepository(Supabase.instance.client);
+  final database = ref.read(appDatabaseProvider);
+  return FoodRepository(Supabase.instance.client, database);
 }
 
 /// Controller for swap food functionality - takes category as parameter
@@ -110,11 +112,6 @@ class SwapFoodController extends _$SwapFoodController {
       final foodRepository = ref.read(foodRepositoryProvider);
       final genericFoodItems = await foodRepository.getAllFoods();
       
-      AppLogger.instance.debug('Loaded generic foods for recommendations',
-        context: 'SwapFoodController',
-        data: {'count': genericFoodItems.length},
-      );
-      
       // Convert FoodItems to Food domain objects for the swap controller
       return genericFoodItems.map((foodItem) => _convertFoodItemToFood(foodItem)).toList();
     } catch (e) {
@@ -133,10 +130,6 @@ class SwapFoodController extends _$SwapFoodController {
       final foodRepository = ref.read(foodRepositoryProvider);
       final allFoodItems = await foodRepository.getAllFoodsIncludingBranded();
       
-      AppLogger.instance.debug('Loaded all foods including branded for search',
-        context: 'SwapFoodController',
-        data: {'count': allFoodItems.length},
-      );
       
       // Convert FoodItems to Food domain objects for the swap controller
       return allFoodItems.map((foodItem) => _convertFoodItemToFood(foodItem)).toList();
@@ -151,15 +144,6 @@ class SwapFoodController extends _$SwapFoodController {
   
   /// Convert FoodItem to Food domain object
   Food _convertFoodItemToFood(FoodItem foodItem) {
-    AppLogger.instance.debug('Converting FoodItem to Food domain object',
-      context: 'SwapFoodController',
-      data: {
-        'foodName': foodItem.name,
-        'imageAddress': foodItem.imageAddress,
-        'foodId': foodItem.id,
-      },
-    );
-    
     return Food(
       id: foodItem.id,
       name: foodItem.name,
@@ -197,15 +181,6 @@ class SwapFoodController extends _$SwapFoodController {
       final filtered = searchPool.where((food) {
         return food.name.toLowerCase().contains(query.toLowerCase());
       }).toList();
-      
-      AppLogger.instance.debug('Search performed',
-        context: 'SwapFoodController',
-        data: {
-          'searchQuery': query,
-          'searchPoolSize': searchPool.length,
-          'resultsFound': filtered.length,
-        },
-      );
       
       state = AsyncValue.data(currentState.copyWith(
         searchQuery: query,

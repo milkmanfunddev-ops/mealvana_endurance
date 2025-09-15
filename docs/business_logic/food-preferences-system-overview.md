@@ -68,16 +68,19 @@ CREATE TABLE food_preferences (
 - ✅ Updates user's `onboarding_completed` status
 - ✅ Returns saved preferences for confirmation
 
-### 2. **Create Nutrition Plan (Updated)**
-**Endpoint:** `/functions/v1/create-nutrition-plan`
+### 2. **Generate Nutrition Plan (AI-First System)**
+**Primary Endpoint:** `/functions/v1/generate-ai-nutrition-plan`  
+**Fallback Endpoint:** `/functions/v1/run-plan`
 
 **Enhanced Logic:**
-- ✅ Fetches user food preferences from database
-- ✅ Creates three priority categories:
-  1. **Liked foods** (highest priority)
-  2. **Willing-to-try foods** (medium priority)  
-  3. **Other foods** (lowest priority)
-- ✅ Uses structured serving data for proper quantity formatting
+- ✅ **AI-Powered**: Primary system uses LLM integration with linear programming optimization
+- ✅ **Algorithmic Fallback**: Fast, reliable ACSM-based calculations when AI unavailable
+- ✅ **Preference Integration**: Fetches user food preferences from database for both systems
+- ✅ **Advanced Scoring**: Three-tier priority with sophisticated preference weighting:
+  1. **Liked foods** (+20 points, highest priority)
+  2. **Willing-to-try foods** (+5 points, medium priority)  
+  3. **Other foods** (0 points, lowest priority)
+- ✅ **Structured Data**: Uses database serving information for proper quantity formatting
 
 ## 🏆 **Food Selection Priority System**
 
@@ -130,21 +133,27 @@ Data saved to food_preferences table
 onboarding_completed = true
 ```
 
-### **2. Nutrition Plan Generation**
+### **2. AI-First Nutrition Plan Generation**
 ```
-create-nutrition-plan edge function
+Primary: generate-ai-nutrition-plan edge function
     ↓
 Fetch user food preferences
     ↓
-Create priority food lists (liked → willing-to-try → others)
+LLM + Linear Programming Optimization
+    ├─ Advanced preference scoring (+20/+5/0 points)
+    ├─ Multi-objective constraint solving
+    └─ Context-aware personalization
+    ↓ (if AI fails or unavailable)
+Fallback: run-plan edge function
     ↓
-Filter foods by category (before/during/after)
-    ↓
-Select foods using priority order
+Fast algorithmic calculation (ACSM formulas)
+    ├─ Create priority food lists (liked → willing-to-try → others)
+    ├─ Filter foods by phase appropriateness
+    └─ Apply preference scoring with deterministic selection
     ↓
 Format quantities with structured serving data
     ↓
-Return personalized nutrition plan
+Return personalized nutrition plan (AI or algorithmic)
 ```
 
 ## 📝 **Key Benefits**

@@ -19,17 +19,16 @@ The app organizes data into structured SQLite tables with proper relationships:
 ```dart
 // lib/shared/database/app_database.dart
 @DriftDatabase(tables: [
-  Users,
-  FoodPreferences, 
-  NutritionPlans,
-  AppContent,
-  Feedback,
+  // Core v1 tables
+  UserProfilesTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
+  // New v2 tables
+  FoodsTable, CategoriesTable, FoodCategoriesTable, BrandsTable, AppContentTable,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
@@ -69,9 +68,9 @@ The database maintains strongly-typed tables for endurance nutrition planning:
 **Nutrition Plans Table**: Stores generated plans with JSONB data for flexibility and versioning for conflict resolution.
 
 ```dart
-// lib/shared/database/tables/users.dart
+// lib/shared/database/tables/user_profiles_table.dart
 @DataClassName('UserProfile')
-class Users extends Table {
+class UserProfilesTable extends Table {
   TextColumn get deviceId => text()();
   IntColumn get gender => intEnum<Gender>()();
   DateTimeColumn get birthday => dateTime()();
@@ -92,11 +91,11 @@ class Users extends Table {
   Set<Column> get primaryKey => {deviceId};
 }
 
-// lib/shared/database/tables/food_preferences.dart  
+// lib/shared/database/tables/food_preferences_table.dart  
 @DataClassName('FoodPreference')
-class FoodPreferences extends Table {
+class FoodPreferencesTable extends Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
-  TextColumn get deviceId => text().references(Users, #deviceId, onDelete: KeyAction.cascade)();
+  TextColumn get deviceId => text().references(UserProfilesTable, #deviceId, onDelete: KeyAction.cascade)();
   TextColumn get foodName => text()();
   IntColumn get preference => intEnum<PreferenceType>()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentTimestamp)();
@@ -130,25 +129,25 @@ class DriftUserRepository implements UserRepository {
 
   @override
   Future<UserProfile?> getCurrentUser() async {
-    return await (_database.select(_database.users))
+    return await (_database.select(_database.userProfilesTable))
         .getSingleOrNull();
   }
 
   @override
   Future<void> saveUserProfile(UserProfile profile) async {
     await _database.transaction(() async {
-      await _database.into(_database.users).insertOnConflictUpdate(profile);
+      await _database.into(_database.userProfilesTable).insertOnConflictUpdate(profile);
     });
   }
 
   @override
   Stream<UserProfile?> watchCurrentUser() {
-    return _database.select(_database.users).watchSingleOrNull();
+    return _database.select(_database.userProfilesTable).watchSingleOrNull();
   }
 
   @override
   Future<List<FoodPreference>> getFoodPreferences(String deviceId) async {
-    return await (_database.select(_database.foodPreferences)
+    return await (_database.select(_database.foodPreferencesTable)
           ..where((fp) => fp.deviceId.equals(deviceId)))
         .get();
   }
@@ -160,7 +159,7 @@ class DriftUserRepository implements UserRepository {
   ) async {
     await _database.transaction(() async {
       // Clear existing preferences
-      await (_database.delete(_database.foodPreferences)
+      await (_database.delete(_database.foodPreferencesTable)
             ..where((fp) => fp.deviceId.equals(deviceId)))
           .go();
       
@@ -168,7 +167,7 @@ class DriftUserRepository implements UserRepository {
       await _database.batch((batch) {
         for (final entry in preferences.entries) {
           batch.insert(
-            _database.foodPreferences,
+            _database.foodPreferencesTable,
             FoodPreferencesCompanion.insert(
               deviceId: deviceId,
               foodName: entry.key,
@@ -264,14 +263,14 @@ MigrationStrategy get migration {
     onUpgrade: stepByStep(
       from1To2: (m, schema) async {
         // Add new column with default value
-        await m.addColumn(schema.users, schema.users.onboardingCompleted);
+        await m.addColumn(schema.userProfilesTable, schema.userProfilesTable.onboardingCompleted);
       },
       from2To3: (m, schema) async {
         // Create new table
-        await m.createTable(schema.foodPreferences);
+        await m.createTable(schema.foodPreferencesTable);
         
         // Add foreign key constraint
-        await m.addColumn(schema.foodPreferences, schema.foodPreferences.deviceId);
+        await m.addColumn(schema.foodPreferencesTable, schema.foodPreferencesTable.deviceId);
       },
       from3To4: (m, schema) async {
         // Complex table migration with data transformation

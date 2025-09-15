@@ -17,6 +17,9 @@ class SurveyState {
     this.confidenceLevel,
     this.reuseIntent,
     this.reminderPreference,
+    this.customReminderDate,
+    this.isRecurring = false,
+    this.noReminderNeeded = false,
     this.missedReason,
     this.missedOther,
     this.isSubmitting = false,
@@ -25,6 +28,9 @@ class SurveyState {
   final ConfidenceLevel? confidenceLevel;
   final ReuseIntent? reuseIntent;
   final NotificationPreference? reminderPreference;
+  final DateTime? customReminderDate;
+  final bool isRecurring;
+  final bool noReminderNeeded;
   final MissedReason? missedReason;
   final String? missedOther;
   final bool isSubmitting;
@@ -33,6 +39,9 @@ class SurveyState {
     ConfidenceLevel? confidenceLevel,
     ReuseIntent? reuseIntent,
     NotificationPreference? reminderPreference,
+    DateTime? customReminderDate,
+    bool? isRecurring,
+    bool? noReminderNeeded,
     MissedReason? missedReason,
     String? missedOther,
     bool? isSubmitting,
@@ -41,6 +50,9 @@ class SurveyState {
       confidenceLevel: confidenceLevel ?? this.confidenceLevel,
       reuseIntent: reuseIntent ?? this.reuseIntent,
       reminderPreference: reminderPreference ?? this.reminderPreference,
+      customReminderDate: customReminderDate ?? this.customReminderDate,
+      isRecurring: isRecurring ?? this.isRecurring,
+      noReminderNeeded: noReminderNeeded ?? this.noReminderNeeded,
       missedReason: missedReason ?? this.missedReason,
       missedOther: missedOther ?? this.missedOther,
       isSubmitting: isSubmitting ?? this.isSubmitting,
@@ -51,7 +63,8 @@ class SurveyState {
   
   bool get isPage2Complete {
     if (reuseIntent == ReuseIntent.yes) {
-      return reminderPreference != null;
+      // Always allow completion - user can choose no reminder or set reminder
+      return true;
     } else {
       return missedReason != null && 
              (missedReason != MissedReason.other || (missedOther?.trim().isNotEmpty ?? false));
@@ -59,10 +72,24 @@ class SurveyState {
   }
 
   SurveyResponse toSurveyResponse({String? deviceId, String? planName}) {
+    NotificationPreference? finalReminderPreference;
+    
+    if (!noReminderNeeded && reuseIntent == ReuseIntent.yes) {
+      if (customReminderDate != null) {
+        finalReminderPreference = NotificationPreference.custom(
+          dateTime: customReminderDate!,
+          isRecurring: isRecurring,
+        );
+      } else {
+        // Default to Thursday at 5:00 PM if no custom date is set
+        finalReminderPreference = NotificationPreference.defaultThursday(isRecurring: isRecurring);
+      }
+    }
+    
     return SurveyResponse(
       confidenceLevel: confidenceLevel!,
       reuseIntent: reuseIntent!,
-      reminderPreference: reminderPreference,
+      reminderPreference: finalReminderPreference,
       missedReason: missedReason,
       missedOther: missedOther,
       deviceId: deviceId,
@@ -99,17 +126,67 @@ class SurveyController extends _$SurveyController {
       state = AsyncValue.data(currentState.copyWith(
         reuseIntent: intent,
         reminderPreference: null,
+        customReminderDate: null,
+        isRecurring: false,
+        noReminderNeeded: false,
         missedReason: null,
         missedOther: null,
       ));
     }
   }
 
-  /// Update notification preference (Page 2 - for "yes" reuse intent)
-  void setReminderPreference(NotificationPreference? preference) {
+  /// Set reminder type (default vs custom) - DEPRECATED: No longer needed with simplified UI
+  void setReminderType(ReminderType type) {
+    // This method is no longer needed since we removed separate reminder type selection
+    // The UI now directly sets custom reminder date or uses defaults
+  }
+
+  /// Set custom reminder date/time
+  void setCustomReminderDate(DateTime dateTime) {
     final currentState = state.value;
     if (currentState != null) {
-      state = AsyncValue.data(currentState.copyWith(reminderPreference: preference));
+      state = AsyncValue.data(currentState.copyWith(
+        customReminderDate: dateTime,
+        noReminderNeeded: false,
+      ));
+    }
+  }
+
+  /// Set whether reminder is recurring
+  void setIsRecurring(bool isRecurring) {
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(
+        isRecurring: isRecurring,
+        noReminderNeeded: false,
+      ));
+    }
+  }
+
+  /// Set no reminder needed
+  void setNoReminderNeeded(bool noReminder) {
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(
+        noReminderNeeded: noReminder,
+        customReminderDate: null,
+        isRecurring: false,
+      ));
+    }
+  }
+
+  /// Update notification preference (Page 2 - for "yes" reuse intent) - Legacy method for compatibility
+  void setReminderPreference(NotificationPreference? preference) {
+    if (preference == null) {
+      setNoReminderNeeded(true);
+    } else {
+      final currentState = state.value;
+      if (currentState != null) {
+        state = AsyncValue.data(currentState.copyWith(
+          reminderPreference: preference,
+          noReminderNeeded: false,
+        ));
+      }
     }
   }
 

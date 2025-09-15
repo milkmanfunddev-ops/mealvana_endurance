@@ -30,26 +30,30 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 // Import all table definitions
-import 'tables/users.dart';
-import 'tables/food_preferences.dart';
+import 'tables/user_profiles_table.dart';
+import 'tables/food_preferences_table.dart';
 import 'tables/nutrition_plans.dart';
-import 'tables/app_content.dart';
+import 'tables/app_content_table.dart';
 import 'tables/feedback.dart';
+import 'tables/foods_table.dart';
+import 'tables/categories_table.dart';
+import 'tables/food_categories_table.dart';
+import 'tables/brands_table.dart';
+import 'tables/macro_targets_table.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(tables: [
-  Users,
-  FoodPreferences,
-  NutritionPlans,
-  AppContent,
-  Feedback,
+  // Core v1 tables
+  UserProfilesTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
+  // New v2 tables
+  FoodsTable, CategoriesTable, FoodCategoriesTable, BrandsTable, AppContentTable,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
@@ -83,11 +87,11 @@ class AppDatabase extends _$AppDatabase {
 ### Table Definitions
 
 ```dart
-// lib/shared/database/tables/users.dart
+// lib/shared/database/tables/user_profiles_table.dart
 import 'package:drift/drift.dart';
 
 @DataClassName('UserProfile')
-class Users extends Table {
+class UserProfilesTable extends Table {
   TextColumn get deviceId => text()();
   IntColumn get gender => intEnum<Gender>()();
   DateTimeColumn get birthday => dateTime()();
@@ -108,11 +112,11 @@ class Users extends Table {
   Set<Column> get primaryKey => {deviceId};
 }
 
-// lib/shared/database/tables/food_preferences.dart
+// lib/shared/database/tables/food_preferences_table.dart
 @DataClassName('FoodPreference')
-class FoodPreferences extends Table {
+class FoodPreferencesTable extends Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
-  TextColumn get deviceId => text().references(Users, #deviceId, onDelete: KeyAction.cascade)();
+  TextColumn get deviceId => text().references(UserProfilesTable, #deviceId, onDelete: KeyAction.cascade)();
   TextColumn get foodName => text()();
   IntColumn get preference => intEnum<PreferenceType>()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentTimestamp)();
@@ -163,12 +167,19 @@ MigrationStrategy get migration {
     },
     onUpgrade: stepByStep(
       from1To2: (m, schema) async {
-        // Add new column with default value
-        await m.addColumn(schema.users, schema.users.onboardingCompleted);
+        // Create new v2 tables for comprehensive food database
+        await m.createTable(schema.foodsTable);
+        await m.createTable(schema.categoriesTable);
+        await m.createTable(schema.foodCategoriesTable);
+        await m.createTable(schema.brandsTable);
+        await m.createTable(schema.appContentTable);
+        
+        // Add any new columns to existing tables if needed
+        // await m.addColumn(schema.userProfilesTable, schema.userProfilesTable.newColumn);
       },
       from2To3: (m, schema) async {
-        // Create new table
-        await m.createTable(schema.foodPreferences);
+        // Future migrations would go here
+        // await m.createTable(schema.futureTable);
       },
       from3To4: (m, schema) async {
         // Complex migration with data transformation
@@ -253,25 +264,25 @@ class DriftUserRepository implements UserRepository {
   @override
   Future<UserProfile?> getCurrentUser() async {
     // Type-safe query with compile-time validation
-    return await (_database.select(_database.users))
+    return await (_database.select(_database.userProfilesTable))
         .getSingleOrNull();
   }
 
   @override
   Future<void> saveUserProfile(UserProfile profile) async {
     await _database.transaction(() async {
-      await _database.into(_database.users).insertOnConflictUpdate(profile);
+      await _database.into(_database.userProfilesTable).insertOnConflictUpdate(profile);
     });
   }
 
   @override
   Stream<UserProfile?> watchCurrentUser() {
-    return _database.select(_database.users).watchSingleOrNull();
+    return _database.select(_database.userProfilesTable).watchSingleOrNull();
   }
 
   @override
   Future<List<FoodPreference>> getFoodPreferences(String deviceId) async {
-    return await (_database.select(_database.foodPreferences)
+    return await (_database.select(_database.foodPreferencesTable)
           ..where((fp) => fp.deviceId.equals(deviceId)))
         .get();
   }
@@ -283,13 +294,13 @@ class DriftUserRepository implements UserRepository {
   ) async {
     await _database.transaction(() async {
       // Clear existing preferences
-      await (_database.delete(_database.foodPreferences)
+      await (_database.delete(_database.foodPreferencesTable)
             ..where((fp) => fp.deviceId.equals(deviceId)))
           .go();
       
       // Insert new preferences
       for (final entry in preferences.entries) {
-        await _database.into(_database.foodPreferences).insert(
+        await _database.into(_database.foodPreferencesTable).insert(
           FoodPreferencesCompanion.insert(
             deviceId: deviceId,
             foodName: entry.key,
