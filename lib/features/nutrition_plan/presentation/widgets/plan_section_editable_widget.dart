@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 import '../../../../theme/app_theme.dart';
+import '../../domain/macro_targets.dart' as targets_model;
 import 'swipeable_food_item.dart';
 import 'add_food_button.dart';
 import 'section_subtitle_widget.dart';
@@ -14,6 +15,7 @@ class PlanSectionEditableWidget extends StatefulWidget {
     super.key,
     required this.section,
     required this.plan,
+    this.macroTargets,
     this.onFoodItemTap,
     this.onSwapFood,
     this.onDeleteFood,
@@ -22,6 +24,7 @@ class PlanSectionEditableWidget extends StatefulWidget {
 
   final PlanSection section;
   final NutritionPlan plan;
+  final targets_model.MacroTargets? macroTargets;
   final Function(String foodItemId)? onFoodItemTap;
   final Function(String foodItemId, String foodName)? onSwapFood;
   final Function(String foodItemId)? onDeleteFood;
@@ -66,6 +69,7 @@ class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
             SectionSubtitleWidget(
               section: widget.section,
               plan: widget.plan,
+              macroTargets: widget.macroTargets,
             ),
           ],
         ),

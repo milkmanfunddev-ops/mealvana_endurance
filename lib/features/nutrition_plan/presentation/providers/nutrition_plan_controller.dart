@@ -58,7 +58,6 @@ class NutritionPlanState {
 class NutritionPlanController extends _$NutritionPlanController {
   NutritionPlanService get _nutritionPlanService => ref.read(nutritionPlanServiceProvider);
   ContentService get _contentService => ref.read(contentServiceProvider);
-  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
   
   /// Save an updated plan to both local and remote storage
   Future<void> _saveUpdatedPlan(NutritionPlan updatedPlan) async {
@@ -305,7 +304,7 @@ class NutritionPlanController extends _$NutritionPlanController {
         }
         
         // Track the North-Star plan_saved event
-        await _analytics.trackPlanSaved(
+        await AnalyticsService.trackPlanSaved(
           planId: currentState.planId!,
           carbsTotalG: carbsTotalG,
           sodiumTotalMg: sodiumTotalMg,
@@ -560,11 +559,26 @@ class NutritionPlanController extends _$NutritionPlanController {
       
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
-      
+
+      // Track item_added event
+      final multiplier = customAmount ?? food.servingAmount ?? 1.0;
+      AnalyticsService.trackItemAdded(
+        planId: updatedPlan.id ?? 'unknown',
+        screen: 'plan_screen',
+        experimentVariant: 'auto_items_v1',
+        section: _mapCategoryToSection(category),
+        itemName: food.name,
+        itemSource: 'generic', // Most foods are generic unless specified otherwise
+        carbsG: ((food.carbsPerServing ?? 0) * multiplier),
+        proteinG: ((food.proteinPerServing ?? 0) * multiplier),
+        fluidsMl: ((food.fluidMlPerServing ?? 0) * multiplier),
+        sodiumMg: ((food.sodiumMg ?? 0) * multiplier),
+      );
+
       return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
     });
   }
-  
+
   /// Delete a food item from the current plan
   Future<void> deleteFoodItem(String foodId, String category) async {
     final currentState = state.valueOrNull;
@@ -575,23 +589,38 @@ class NutritionPlanController extends _$NutritionPlanController {
     state = const AsyncLoading();
     
     state = await AsyncValue.guard(() async {
+      // Find the item being deleted for analytics tracking
+      String? deletedItemName;
+      for (final section in currentPlan.sections) {
+        if ((category == 'before_run' && section.title == 'Before Run') ||
+            (category == 'during_run' && section.title == 'During Run') ||
+            (category == 'after_run' && section.title == 'After Run')) {
+          final itemToDelete = section.foodItems.firstWhere(
+            (item) => item.id == foodId,
+            orElse: () => FoodItemData(id: '', name: 'Unknown', quantity: ''),
+          );
+          deletedItemName = itemToDelete.name;
+          break;
+        }
+      }
+
       // Create a new plan without the deleted food
       final updatedSections = currentPlan.sections.map((section) {
         if ((category == 'before_run' && section.title == 'Before Run') ||
             (category == 'during_run' && section.title == 'During Run') ||
             (category == 'after_run' && section.title == 'After Run')) {
           final updatedItems = section.foodItems.where((item) => item.id != foodId).toList();
-          
+
           return section.copyWith(
             foodItems: updatedItems,
           );
         }
         return section;
       }).toList();
-      
+
       // Recalculate macro targets based on new food items
       final updatedMacroTargets = _recalculateMacroTargets(currentPlan.copyWith(sections: updatedSections));
-      
+
       // Create updated plan with recalculated macros
       final updatedPlan = currentPlan.copyWith(
         sections: updatedSections,
@@ -599,10 +628,21 @@ class NutritionPlanController extends _$NutritionPlanController {
         totalCalories: updatedMacroTargets.calories,
         updatedAt: DateTime.now(),
       );
-      
+
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
-      
+
+      // Track item_removed event
+      if (deletedItemName != null) {
+        AnalyticsService.trackItemRemoved(
+          planId: updatedPlan.id ?? 'unknown',
+          screen: 'plan_screen',
+          experimentVariant: 'auto_items_v1',
+          section: _mapCategoryToSection(category),
+          itemName: deletedItemName,
+        );
+      }
+
       return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
     });
   }
@@ -611,12 +651,36 @@ class NutritionPlanController extends _$NutritionPlanController {
   Future<void> updateFoodQuantity(String foodId, String category, double newQuantity) async {
     final currentState = state.valueOrNull;
     if (currentState?.plan == null) return;
-    
+
     final currentPlan = currentState!.plan!;
-    
+
+    // Capture old quantity and item name for analytics tracking
+    String? itemName;
+    double? oldQuantity;
+
+    for (final section in currentPlan.sections) {
+      if ((category == 'before_run' && section.title == 'Before Run') ||
+          (category == 'during_run' && section.title == 'During Run') ||
+          (category == 'after_run' && section.title == 'After Run')) {
+        final item = section.foodItems.firstWhere(
+          (item) => item.id == foodId,
+          orElse: () => FoodItemData(id: '', name: 'Unknown', quantity: ''),
+        );
+        if (item.id == foodId) {
+          itemName = item.name;
+          // Extract the current quantity from the quantity string (e.g., "2.5 cups" -> 2.5)
+          final currentQuantityMatch = RegExp(r'^([\d.]+)').firstMatch(item.quantity);
+          oldQuantity = currentQuantityMatch != null
+              ? double.tryParse(currentQuantityMatch.group(1)!) ?? 1.0
+              : 1.0;
+          break;
+        }
+      }
+    }
+
     // Don't set loading state to avoid UI rebuilds during quantity editing
     // state = const AsyncLoading();
-    
+
     try {
       // Create a new plan with the updated food quantity
       final updatedSections = currentPlan.sections.map((section) {
@@ -684,7 +748,21 @@ class NutritionPlanController extends _$NutritionPlanController {
       
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
-      
+
+      // Track item_quantity_changed event
+      if (itemName != null && oldQuantity != null) {
+        AnalyticsService.trackItemQuantityChanged(
+          planId: updatedPlan.id ?? 'unknown',
+          screen: 'plan_screen',
+          experimentVariant: 'auto_items_v1',
+          section: _mapCategoryToSection(category),
+          itemName: itemName,
+          oldQty: oldQuantity,
+          newQty: newQuantity,
+          qtyUnit: 'servings', // Default unit since we're tracking quantity changes
+        );
+      }
+
       // Update state without loading state to prevent UI rebuilds
       state = AsyncData(NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved));
     } catch (error, stackTrace) {
@@ -721,8 +799,22 @@ class NutritionPlanController extends _$NutritionPlanController {
   }
 
   String getErrorMessage(String? error) {
-    return _contentService.getValue(ContentKeys.errorGeneric, 
+    return _contentService.getValue(ContentKeys.errorGeneric,
         defaultValue: error ?? 'Something went wrong. Please try again.');
+  }
+
+  /// Helper method to map category strings to analytics section names
+  String _mapCategoryToSection(String category) {
+    switch (category) {
+      case 'before_run':
+        return 'pre';
+      case 'during_run':
+        return 'during';
+      case 'after_run':
+        return 'post';
+      default:
+        return category;
+    }
   }
 }
 

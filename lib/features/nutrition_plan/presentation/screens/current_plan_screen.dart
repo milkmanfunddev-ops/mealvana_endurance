@@ -11,6 +11,8 @@ import '../../../feedback/domain/feedback_data.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/mixins/analytics_mixin.dart';
+import '../../../../shared/services/analytics_service.dart';
 import '../providers/nutrition_plan_controller.dart';
 import '../widgets/macro_targets_widget.dart';
 import '../../domain/macro_targets.dart' as targets_model;
@@ -26,7 +28,7 @@ class CurrentPlanScreen extends ConsumerStatefulWidget {
 }
 
 class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AnalyticsMixin {
   bool _showFeedback = false;
   late AnimationController _feedbackController;
 
@@ -369,7 +371,16 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
                   .read(nutritionPlanControllerProvider.notifier)
                   .getCachedMacroTargets(),
               builder: (context, snapshot) {
-                return MacroTargetsWidget(plan: plan, targets: snapshot.data);
+                final targets = snapshot.data;
+
+                // Track targets_viewed event when targets are loaded and displayed
+                if (targets != null && snapshot.connectionState == ConnectionState.done) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _trackTargetsViewed(plan, targets);
+                  });
+                }
+
+                return MacroTargetsWidget(plan: plan, targets: targets);
               },
             ),
           ),
@@ -377,21 +388,29 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
           SizedBox(height: 24.h),
 
           // Plan Container with nutrition plan
-          PlanContainer(
-            plan: plan,
-            onFoodItemTap: (foodItemId) {
-              // Handle food item tap - expand details
-            },
-            onSwapFood: (foodItemId, foodName, category) {
-              context.push(
-                '/swap-food',
-                extra: {
-                  'foodToSwapId': foodItemId,
-                  'foodToSwapName': foodName,
-                  'category': category,
+          FutureBuilder<targets_model.MacroTargets?>(
+            future: ref
+                .read(nutritionPlanControllerProvider.notifier)
+                .getCachedMacroTargets(),
+            builder: (context, snapshot) {
+              final macroTargets = snapshot.data;
+
+              return PlanContainer(
+                plan: plan,
+                macroTargets: macroTargets,
+                onFoodItemTap: (foodItemId) {
+                  // Handle food item tap - expand details
                 },
-              );
-            },
+                onSwapFood: (foodItemId, foodName, category) {
+                  context.push(
+                    '/swap-food',
+                    extra: {
+                      'foodToSwapId': foodItemId,
+                      'foodToSwapName': foodName,
+                      'category': category,
+                    },
+                  );
+                },
             onDeleteFood: (foodItemId, category) async {
               final confirm = await showDialog<bool>(
                 context: context,
@@ -426,6 +445,8 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
               await ref
                   .read(nutritionPlanControllerProvider.notifier)
                   .updateFoodQuantity(foodItemId, category, newQuantity);
+            },
+              );
             },
           ),
 
@@ -542,6 +563,27 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
           ),
         ],
       ),
+    );
+  }
+
+  /// Track targets_viewed event when macro targets card is displayed
+  void _trackTargetsViewed(NutritionPlan? plan, targets_model.MacroTargets targets) {
+    // Call the analytics service method for targets_viewed
+    AnalyticsService.trackTargetsViewed(
+      planId: plan?.id ?? 'unknown',
+      screen: 'plan_screen',
+      experimentVariant: 'auto_items_v1', // Default variant
+      carbsPreG: targets.preRun.carbsG,
+      carbsDuringG: targets.duringRun.carbTotalG,
+      carbsPostG: targets.postRun.carbsG,
+      proteinPreG: targets.preRun.proteinG,
+      proteinPostG: targets.postRun.proteinG,
+      fluidsPreMl: targets.preRun.fluidsMl,
+      fluidsDuringMl: targets.duringRun.fluidTotalMl,
+      fluidsPostMl: targets.postRun.fluidsMl,
+      sodiumPreMg: targets.preRun.sodiumMg,
+      sodiumDuringMg: targets.duringRun.sodiumTotalMg,
+      sodiumPostMg: targets.postRun.sodiumMg,
     );
   }
 }

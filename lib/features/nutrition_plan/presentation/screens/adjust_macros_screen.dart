@@ -365,7 +365,7 @@ class AdjustMacrosScreen extends ConsumerWidget {
         // Help icon positioned at the left, above the Carbs icon
         GestureDetector(
           onTap: () {
-            ref.read(analyticsServiceProvider).track('Help Button Tapped', properties: {
+            AnalyticsService.track('Help Button Tapped', properties: {
               'Screen': 'Adjust Macros',
             });
             _showHelpBottomSheet(context, ref);
@@ -645,6 +645,13 @@ class AdjustMacrosScreen extends ConsumerWidget {
   }
 
   void _showEditAllMacrosDialog(BuildContext context, WidgetRef ref, MacroTargets macros) {
+    // Track edit_all_macros_opened event
+    AnalyticsService.trackEditAllMacrosOpened(
+      planId: 'pre_generation', // No actual plan exists yet - this is pre-generation editing
+      screen: 'adjust_macros_screen',
+      experimentVariant: 'auto_items_v1', // Default variant
+    );
+
     showDialog(
       context: context,
       builder: (context) => _EditAllMacrosDialog(
@@ -654,6 +661,14 @@ class AdjustMacrosScreen extends ConsumerWidget {
   }
 
   void _showHelpBottomSheet(BuildContext context, WidgetRef ref) {
+    // Track guidelines_opened event
+    AnalyticsService.trackGuidelinesOpened(
+      planId: 'pre_generation',
+      screen: 'adjust_macros_screen',
+      experimentVariant: 'auto_items_v1',
+      topic: 'macro_calculation',
+    );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

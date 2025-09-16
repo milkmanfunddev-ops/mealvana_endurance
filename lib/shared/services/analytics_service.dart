@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -7,15 +6,12 @@ import 'logging_service.dart';
 /// Analytics service implementing Mealvana Endurance tracking plan
 /// Based on mixpanel_tracking_plan.csv - tracks ONLY approved events
 class AnalyticsService {
-  AnalyticsService(this.ref);
-  final Ref ref;
-  
-  Mixpanel? _mixpanel;
-  bool _isInitialized = false;
-  LoggingService get _logger => AppLogger.instance;
+  static Mixpanel? _mixpanel;
+  static bool _isInitialized = false;
+  static LoggingService get _logger => AppLogger.instance;
   
   /// Initialize Mixpanel with project token from environment
-  Future<void> initialize() async {
+  static Future<void> initialize() async {
     if (_isInitialized) return;
     
     try {
@@ -44,7 +40,7 @@ class AnalyticsService {
   }
   
   /// Set up super properties that will be attached to every event
-  Future<void> _setupSuperProperties() async {
+  static Future<void> _setupSuperProperties() async {
     if (_mixpanel == null) return;
     
     try {
@@ -79,7 +75,7 @@ class AnalyticsService {
   
   /// Identify a user (call when user completes onboarding or logs in)
   /// Can be called with just device ID for anonymous users
-  Future<void> identifyUser(String userId, {
+  static Future<void> identifyUser(String userId, {
     Map<String, dynamic>? properties,
     String? gender,
     int? age,
@@ -141,7 +137,7 @@ class AnalyticsService {
   }
   
   /// Reset user identity (call on logout or data reset)
-  Future<void> resetUser() async {
+  static Future<void> resetUser() async {
     if (_mixpanel == null) return;
     
     try {
@@ -153,7 +149,7 @@ class AnalyticsService {
   }
   
   /// Track a custom event with optional properties
-  Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {
+  static Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {
     if (_mixpanel == null) return;
     
     try {
@@ -164,7 +160,7 @@ class AnalyticsService {
   }
   
   /// Time an event (useful for measuring how long operations take)
-  Future<void> timeEvent(String eventName) async {
+  static Future<void> timeEvent(String eventName) async {
     if (_mixpanel == null) return;
     
     try {
@@ -175,7 +171,7 @@ class AnalyticsService {
   }
   
   /// Flush events to Mixpanel servers immediately
-  Future<void> flush() async {
+  static Future<void> flush() async {
     if (_mixpanel == null) return;
     
     try {
@@ -190,13 +186,13 @@ class AnalyticsService {
   
   /// Track app launch - DEPRECATED
   @Deprecated('Not required for North-Star metric')
-  Future<void> trackAppLaunched() async {
+  static Future<void> trackAppLaunched() async {
     // Removed - not part of North-Star metric
   }
   
   /// Track app backgrounded - DEPRECATED  
   @Deprecated('Not required for North-Star metric')
-  Future<void> trackAppBackgrounded() async {
+  static Future<void> trackAppBackgrounded() async {
     // Removed - not part of North-Star metric
   }
   
@@ -205,12 +201,12 @@ class AnalyticsService {
   
   /// Track onboarding step completed - DEPRECATED
   @Deprecated('Not required for North-Star metric')
-  Future<void> trackOnboardingStepCompleted(String step) async {
+  static Future<void> trackOnboardingStepCompleted(String step) async {
     // Removed - not part of North-Star metric
   }
   
   /// Track onboarding completed
-  Future<void> trackOnboardingCompleted({
+  static Future<void> trackOnboardingCompleted({
     required Duration timeTaken,
     required String gender,
     required int age,
@@ -231,7 +227,7 @@ class AnalyticsService {
   }
   
   /// Track onboarding abandoned
-  Future<void> trackOnboardingAbandoned(String lastStep) async {
+  static Future<void> trackOnboardingAbandoned(String lastStep) async {
     await track('Onboarding Abandoned', properties: {
       'Last Step': lastStep,
     });
@@ -242,7 +238,7 @@ class AnalyticsService {
   /// Track nutrition plan generation started - DEPRECATED
   /// Use plan_flow_started instead for North-Star metric
   @Deprecated('Use plan_flow_started instead')
-  Future<void> trackNutritionPlanGenerationStarted({
+  static Future<void> trackNutritionPlanGenerationStarted({
     required double distanceMiles,
     required double paceMinutesPerMile,
     required double timeBeforeRunHours,
@@ -260,7 +256,7 @@ class AnalyticsService {
   /// Track nutrition plan generated successfully - DEPRECATED
   /// Use plan_saved instead for North-Star metric
   @Deprecated('Use plan_saved instead')
-  Future<void> trackNutritionPlanGenerated({
+  static Future<void> trackNutritionPlanGenerated({
     required double distanceMiles,
     required double paceMinutesPerMile,
     required int totalCalories,
@@ -285,7 +281,7 @@ class AnalyticsService {
   /// Track nutrition plan generation failed - DEPRECATED
   /// Use error_shown instead
   @Deprecated('Use error_shown instead')
-  Future<void> trackNutritionPlanGenerationFailed({
+  static Future<void> trackNutritionPlanGenerationFailed({
     required String errorMessage,
     required double distanceMiles,
     required double paceMinutesPerMile,
@@ -300,7 +296,7 @@ class AnalyticsService {
   /// Track nutrition plan saved - DEPRECATED
   /// Use plan_saved instead for North-Star metric
   @Deprecated('Use plan_saved instead')
-  Future<void> trackNutritionPlanSaved({
+  static Future<void> trackNutritionPlanSaved({
     required String planId,
     required double distanceMiles,
     required int totalCalories,
@@ -313,7 +309,7 @@ class AnalyticsService {
   }
   
   /// Track nutrition plan viewed
-  Future<void> trackNutritionPlanViewed({
+  static Future<void> trackNutritionPlanViewed({
     required String planId,
     required double distanceMiles,
     required int totalCalories,
@@ -326,7 +322,7 @@ class AnalyticsService {
   }
   
   /// Track nutrition plan shared
-  Future<void> trackNutritionPlanShared({
+  static Future<void> trackNutritionPlanShared({
     required String planId,
     required String shareMethod,
   }) async {
@@ -341,13 +337,13 @@ class AnalyticsService {
   
   /// Track screen viewed - DEPRECATED
   @Deprecated('Not required for North-Star metric - use specific events instead')
-  Future<void> trackScreenViewed(String screenName) async {
+  static Future<void> trackScreenViewed(String screenName) async {
     // Removed - not part of North-Star metric
   }
   
   /// Track food preference changed - DEPRECATED
   @Deprecated('Not required for North-Star metric')
-  Future<void> trackFoodPreferenceChanged({
+  static Future<void> trackFoodPreferenceChanged({
     required String foodItem,
     required String preference,
   }) async {
@@ -356,7 +352,7 @@ class AnalyticsService {
   
   /// Track settings changed - DEPRECATED
   @Deprecated('Not required for North-Star metric')
-  Future<void> trackSettingsChanged({
+  static Future<void> trackSettingsChanged({
     required String setting,
     required String oldValue,
     required String newValue,
@@ -366,7 +362,7 @@ class AnalyticsService {
   
   /// Track search performed - DEPRECATED
   @Deprecated('Not required for North-Star metric')
-  Future<void> trackSearchPerformed({
+  static Future<void> trackSearchPerformed({
     required String query,
     required int resultsCount,
   }) async {
@@ -376,7 +372,7 @@ class AnalyticsService {
   // MARK: - Feedback Events
   
   /// Track feedback submitted
-  Future<void> trackFeedbackSubmitted({
+  static Future<void> trackFeedbackSubmitted({
     required String type,
     required String message,
     int? rating,
@@ -389,7 +385,7 @@ class AnalyticsService {
   }
   
   /// Track survey completed
-  Future<void> trackSurveyCompleted({
+  static Future<void> trackSurveyCompleted({
     required int confidenceLevel,
     required String reuseIntent,
     required bool reminderRequested,
@@ -406,7 +402,7 @@ class AnalyticsService {
   // MARK: - Error Events
   
   /// Track app error
-  Future<void> trackError({
+  static Future<void> trackError({
     required String errorType,
     required String errorMessage,
     String? screenName,
@@ -427,13 +423,13 @@ class AnalyticsService {
   
   /// Track app startup time - DEPRECATED
   @Deprecated('Not required for North-Star metric')
-  Future<void> trackAppStartupTime(Duration startupTime) async {
+  static Future<void> trackAppStartupTime(Duration startupTime) async {
     // Removed - not part of North-Star metric
   }
   
   /// Track Edge Function performance - DEPRECATED
   @Deprecated('Not required for North-Star metric')
-  Future<void> trackEdgeFunctionPerformance({
+  static Future<void> trackEdgeFunctionPerformance({
     required String functionName,
     required Duration responseTime,
     required bool success,
@@ -445,7 +441,7 @@ class AnalyticsService {
   // MARK: - Tracking Plan Events (CSV-based)
   
   /// Track app opened/brought to foreground
-  Future<void> trackAppOpen({
+  static Future<void> trackAppOpen({
     String? source, // cold_start, background, etc.
   }) async {
     await track('app_open', properties: {
@@ -454,7 +450,7 @@ class AnalyticsService {
   }
   
   /// Track onboarding started
-  Future<void> trackOnboardingStarted({
+  static Future<void> trackOnboardingStarted({
     String? screen,
   }) async {
     await track('onboarding_started', properties: {
@@ -463,7 +459,7 @@ class AnalyticsService {
   }
   
   /// Track user profile saved in settings
-  Future<void> trackProfileSaved({
+  static Future<void> trackProfileSaved({
     String? gender,
     int? age,
     double? heightCm,
@@ -480,7 +476,7 @@ class AnalyticsService {
   }
   
   /// Track food preferences saved
-  Future<void> trackPreferencesSaved({
+  static Future<void> trackPreferencesSaved({
     required int loveCount,
     required int avoidCount,
   }) async {
@@ -491,7 +487,7 @@ class AnalyticsService {
   }
   
   /// Track create plan button clicked
-  Future<void> trackCreatePlanClicked({
+  static Future<void> trackCreatePlanClicked({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -547,7 +543,7 @@ class AnalyticsService {
   }
   
   /// Track plan generated successfully (updated with CSV schema)
-  Future<void> trackPlanGeneratedNew({
+  static Future<void> trackPlanGeneratedNew({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -622,7 +618,7 @@ class AnalyticsService {
   }
   
   /// Track plan screen viewed
-  Future<void> trackPlanViewed({
+  static Future<void> trackPlanViewed({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -640,7 +636,7 @@ class AnalyticsService {
   
   /// Track plan flow started - generates plan_id and starts the North-Star funnel
   /// This is the entry point for the successful fueling plan metric
-  Future<void> trackPlanFlowStarted({
+  static Future<void> trackPlanFlowStarted({
     required String planId, // UUID v4 generated at this point
     required String screen,
     required String activityType,
@@ -669,7 +665,7 @@ class AnalyticsService {
   }
   
   /// Track plan saved - second step in North-Star funnel
-  Future<void> trackPlanSaved({
+  static Future<void> trackPlanSaved({
     required String planId,
     required double carbsTotalG,
     required double sodiumTotalMg,
@@ -698,7 +694,7 @@ class AnalyticsService {
   }
   
   /// Track reminder set - optional but recommended
-  Future<void> trackReminderSet({
+  static Future<void> trackReminderSet({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -714,7 +710,7 @@ class AnalyticsService {
   
   /// Track reminder fired - third step in North-Star funnel
   /// Called when local push notification is delivered
-  Future<void> trackReminderFired({
+  static Future<void> trackReminderFired({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -728,7 +724,7 @@ class AnalyticsService {
   
   /// Track plan opened from reminder - final step in North-Star funnel
   /// Called when user taps notification and lands on the plan
-  Future<void> trackPlanOpenedFromReminder({
+  static Future<void> trackPlanOpenedFromReminder({
     required String planId,
     required String screen,
     String? experimentVariant,
@@ -743,7 +739,7 @@ class AnalyticsService {
   // MARK: - Quality Events (CSV-based)
   
   /// Track when user views macro targets (updated to match CSV schema)
-  Future<void> trackTargetsViewed({
+  static Future<void> trackTargetsViewed({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -778,7 +774,7 @@ class AnalyticsService {
   }
   
   /// Track when edit all macros dialog is opened
-  Future<void> trackEditAllMacrosOpened({
+  static Future<void> trackEditAllMacrosOpened({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -791,7 +787,7 @@ class AnalyticsService {
   }
   
   /// Track when a specific macro value is changed
-  Future<void> trackMacrosChanged({
+  static Future<void> trackMacrosChanged({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -810,7 +806,7 @@ class AnalyticsService {
   }
   
   /// Track when a food item is added to a plan
-  Future<void> trackItemAdded({
+  static Future<void> trackItemAdded({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -837,7 +833,7 @@ class AnalyticsService {
   }
   
   /// Track when a food item is removed from a plan
-  Future<void> trackItemRemoved({
+  static Future<void> trackItemRemoved({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -854,7 +850,7 @@ class AnalyticsService {
   }
   
   /// Track when food item quantity is changed
-  Future<void> trackItemQuantityChanged({
+  static Future<void> trackItemQuantityChanged({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -877,7 +873,7 @@ class AnalyticsService {
   }
   
   /// Track when guidelines/help content is opened
-  Future<void> trackGuidelinesOpened({
+  static Future<void> trackGuidelinesOpened({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -892,7 +888,7 @@ class AnalyticsService {
   }
   
   /// Track when feedback prompt is shown to user
-  Future<void> trackFeedbackPromptShown({
+  static Future<void> trackFeedbackPromptShown({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -905,7 +901,7 @@ class AnalyticsService {
   }
   
   /// Track feedback submitted (from CSV schema)
-  Future<void> trackFeedbackSubmittedNew({
+  static Future<void> trackFeedbackSubmittedNew({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -922,7 +918,7 @@ class AnalyticsService {
   }
 
   /// Track when plan is exported/shared
-  Future<void> trackPlanExported({
+  static Future<void> trackPlanExported({
     required String planId,
     String? screen,
     String? experimentVariant,
@@ -939,7 +935,7 @@ class AnalyticsService {
   }
   
   /// Track when error is shown to user
-  Future<void> trackErrorShown({
+  static Future<void> trackErrorShown({
     required String errorCode,
     required String message,
     required String screen,
@@ -952,7 +948,3 @@ class AnalyticsService {
   }
 }
 
-/// Provider for AnalyticsService
-final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
-  return AnalyticsService(ref);
-});

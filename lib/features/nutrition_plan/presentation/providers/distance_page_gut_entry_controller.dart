@@ -189,12 +189,11 @@ class DistancePageGutEntryState {
 @riverpod
 class DistancePageGutEntryController extends _$DistancePageGutEntryController {
   ContentService get _contentService => ref.read(contentServiceProvider);
-  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
   @override
   FutureOr<DistancePageGutEntryState> build() async {
     // Track screen view
-    _analytics.trackScreenViewed('Main Nutrition Plan Screen');
+    AnalyticsService.trackScreenViewed('Main Nutrition Plan Screen');
     
     // Load content synchronously from in-memory cache
     final title = _contentService.getValue(ContentKeys.mainScreenTitle, defaultValue: 'Mealvana Endurance');
@@ -329,7 +328,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         print('🆔 DEBUG: Generated plan_id: $planId');
 
         // Track plan flow started - North-Star metric entry point
-        await _analytics.trackPlanFlowStarted(
+        await AnalyticsService.trackPlanFlowStarted(
           planId: planId,
           screen: 'Adjust Your Macros',
           activityType: 'running', // Could be parameterized later
@@ -375,7 +374,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         print('❌ DEBUG: Error generating macro targets: $error');
         
         // Track the error
-        _analytics.trackError(
+        AnalyticsService.trackError(
           errorType: 'Macro Targets Generation Error',
           errorMessage: error.toString(),
           screenName: 'Distance Page Gut Entry',
@@ -386,7 +385,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         );
         
         // Track macro generation failed
-        _analytics.trackNutritionPlanGenerationFailed(
+        AnalyticsService.trackNutritionPlanGenerationFailed(
           errorMessage: error.toString(),
           distanceMiles: double.tryParse(distanceText) ?? 5.0,
           paceMinutesPerMile: double.tryParse(paceText) ?? 8.5,
@@ -408,7 +407,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     double? humidityPct,
   }) async {
     // Track macro generation started
-    _analytics.trackNutritionPlanGenerationStarted(
+    AnalyticsService.trackNutritionPlanGenerationStarted(
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
       timeBeforeRunHours: timeBeforeRunMinutes / 60.0,
@@ -554,7 +553,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     await repository.saveMacroTargets(macroTargets);
 
     // Track successful macro generation
-    _analytics.trackNutritionPlanGenerated(
+    AnalyticsService.trackNutritionPlanGenerated(
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
       totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
@@ -577,13 +576,16 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     
     if (cachedTargets == null) return;
     
-    // Track macro adjustment
-    _analytics.track('Macro Value Adjusted', properties: {
-      'Section': section.name,
-      'Field': field.name,
-      'New Value': newValue,
-      'Previous Value': _getFieldCurrentValue(cachedTargets, field),
-    });
+    // Track macro adjustment using documented macros_changed event
+    final oldValue = _getFieldCurrentValue(cachedTargets, field);
+    AnalyticsService.trackMacrosChanged(
+      planId: 'pre_generation', // No actual plan exists yet - this is pre-generation editing
+      screen: 'adjust_macros_screen',
+      experimentVariant: 'auto_items_v1', // Default variant
+      macro: '${section.name}_${field.name}', // e.g., "preRun_carbsG"
+      oldValue: oldValue ?? 0.0,
+      newValue: newValue,
+    );
 
     try {
       final updatedTargets = await repository.updateMacroTargets(
@@ -594,7 +596,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
       );
 
       // Track successful update
-      _analytics.track('Macro Value Updated Successfully', properties: {
+      AnalyticsService.track('Macro Value Updated Successfully', properties: {
         'Section': section.name,
         'Field': field.name,
         'Final Value': newValue,
@@ -608,7 +610,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
 
     } catch (error, stackTrace) {
       // Track error
-      _analytics.trackError(
+      AnalyticsService.trackError(
         errorType: 'Macro Update Error',
         errorMessage: error.toString(),
         screenName: 'Adjust Macros',
@@ -631,7 +633,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     if (cachedTargets == null) return;
 
     // Track reset action
-    _analytics.track('Macro Values Reset', properties: {
+    AnalyticsService.track('Macro Values Reset', properties: {
       'Previous Modifications Count': _countModifiedFields(cachedTargets),
     });
 
@@ -652,7 +654,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         await repository.saveMacroTargets(restoredTargets);
         
         // Track successful reset
-        _analytics.track('Macro Values Reset Successfully');
+        AnalyticsService.track('Macro Values Reset Successfully');
         
         // Update state with the restored targets
         final currentState = state.valueOrNull;
@@ -677,7 +679,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
       
     } catch (error, stackTrace) {
       // Track error
-      _analytics.trackError(
+      AnalyticsService.trackError(
         errorType: 'Macro Reset Error',
         errorMessage: error.toString(),
         screenName: 'Adjust Macros',
@@ -767,11 +769,11 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
       );
       
       // Track successful save
-      _analytics.track('All Macro Changes Saved Successfully');
+      AnalyticsService.track('All Macro Changes Saved Successfully');
       
     } catch (error, stackTrace) {
       // Track error
-      _analytics.trackError(
+      AnalyticsService.trackError(
         errorType: 'Save All Macros Error',
         errorMessage: error.toString(),
         screenName: 'Adjust Macros',
@@ -797,8 +799,8 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     final modifiedFieldsCount = _countModifiedFields(macroTargets);
     
     // Track plan creation start
-    _analytics.timeEvent('Nutrition Plan Created from Adjusted Macros');
-    _analytics.track('Nutrition Plan Creation Started from Adjusted Macros', properties: {
+    AnalyticsService.timeEvent('Nutrition Plan Created from Adjusted Macros');
+    AnalyticsService.track('Nutrition Plan Creation Started from Adjusted Macros', properties: {
       'Distance (miles)': macroTargets.metrics.distanceMi,
       'Duration (hours)': macroTargets.metrics.durationH,
       'Modified Fields Count': modifiedFieldsCount,
@@ -814,7 +816,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
 
         if (nutritionPlan != null) {
           // Track successful plan creation
-          _analytics.track('Nutrition Plan Created from Adjusted Macros', properties: {
+          AnalyticsService.track('Nutrition Plan Created from Adjusted Macros', properties: {
             'Distance (miles)': macroTargets.metrics.distanceMi,
             'Duration (hours)': macroTargets.metrics.durationH,
             'Total Calories': macroTargets.metrics.caloriesNetKcal.round(),
@@ -839,7 +841,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         
       } catch (error, stackTrace) {
         // Track error
-        _analytics.trackError(
+        AnalyticsService.trackError(
           errorType: 'Plan Creation Error',
           errorMessage: error.toString(),
           screenName: 'Adjust Macros',

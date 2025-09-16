@@ -9,11 +9,12 @@ class OnboardingService {
   OnboardingService(this.ref);
   final Ref ref;
 
+  /// Track onboarding start time for duration calculation
+  DateTime? _onboardingStartTime;
+
   /// Get auth service for user operations
   AuthService get _authService => ref.read(authServiceProvider);
-  
-  /// Get analytics service for tracking
-  AnalyticsService get _analyticsService => ref.read(analyticsServiceProvider);
+
 
   /// Complete user profile creation step
   Future<UserProfile> createUserProfile({
@@ -24,8 +25,11 @@ class OnboardingService {
     required double weightPounds,
     required bool runsWithWaterBottle,
   }) async {
+    // Mark onboarding start time
+    _onboardingStartTime = DateTime.now();
+
     // Track onboarding step completion
-    await _analyticsService.trackOnboardingStepCompleted('User Profile');
+    await AnalyticsService.trackOnboardingStepCompleted('User Profile');
     
     final user = await _authService.createUser(
       gender: gender,
@@ -37,7 +41,7 @@ class OnboardingService {
     );
     
     // Identify the user in analytics with all their properties
-    await _analyticsService.identifyUser(
+    await AnalyticsService.identifyUser(
       user.id,
       properties: {
         'Gender': gender.name,
@@ -58,7 +62,7 @@ class OnboardingService {
     Map<String, FoodPreference> preferences
   ) async {
     // Track onboarding step completion
-    await _analyticsService.trackOnboardingStepCompleted('Food Preferences');
+    await AnalyticsService.trackOnboardingStepCompleted('Food Preferences');
     
     await _authService.saveFoodPreferences(userId, preferences);
     
@@ -66,7 +70,7 @@ class OnboardingService {
     final user = await _authService.getCurrentUser();
     if (user != null) {
       // Update user profile to mark onboarding as complete
-      await _analyticsService.identifyUser(
+      await AnalyticsService.identifyUser(
         user.id,
         properties: {
           'Has Completed Onboarding': true,
@@ -75,8 +79,13 @@ class OnboardingService {
         },
       );
       
-      await _analyticsService.trackOnboardingCompleted(
-        timeTaken: Duration.zero, // TODO: Track actual time
+      // Calculate onboarding duration
+      final onboardingDuration = _onboardingStartTime != null
+          ? DateTime.now().difference(_onboardingStartTime!)
+          : Duration.zero;
+
+      await AnalyticsService.trackOnboardingCompleted(
+        timeTaken: onboardingDuration,
         gender: user.gender.name,
         age: user.age,
         weightPounds: user.weightPounds,

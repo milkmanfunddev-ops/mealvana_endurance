@@ -21,7 +21,6 @@ class NutritionPlanService {
   AuthService get _authService => ref.read(authServiceProvider);
   // Content service removed since algorithm logic moved to Edge Functions
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
-  AnalyticsService get _analyticsService => ref.read(analyticsServiceProvider);
   LLMNutritionPlanService get _llmService => ref.read(llmNutritionPlanServiceProvider);
   SentryService get _sentryService => ref.read(sentryServiceProvider);
   
@@ -46,7 +45,7 @@ class NutritionPlanService {
     }
 
     // Track plan generation started
-    await _analyticsService.trackNutritionPlanGenerationStarted(
+    await AnalyticsService.trackNutritionPlanGenerationStarted(
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
       timeBeforeRunHours: timeBeforeRunHours,
@@ -73,7 +72,7 @@ class NutritionPlanService {
         await planRepository.cachePlanLocally(user.id, llmPlan);
         
         // Track successful LLM plan generation
-        await _analyticsService.trackNutritionPlanGenerated(
+        await AnalyticsService.trackNutritionPlanGenerated(
           distanceMiles: distanceMiles,
           paceMinutesPerMile: paceMinutesPerMile,
           totalCalories: llmPlan.totalCalories ?? 0,
@@ -138,7 +137,7 @@ class NutritionPlanService {
         final plan = result.plan!;
         
         // Track successful plan generation
-        await _analyticsService.trackNutritionPlanGenerated(
+        await AnalyticsService.trackNutritionPlanGenerated(
           distanceMiles: distanceMiles,
           paceMinutesPerMile: paceMinutesPerMile,
           totalCalories: plan.totalCalories ?? 0,
@@ -150,7 +149,7 @@ class NutritionPlanService {
         );
         
         // Track Edge Function performance
-        await _analyticsService.trackEdgeFunctionPerformance(
+        await AnalyticsService.trackEdgeFunctionPerformance(
           functionName: 'run-plan',
           responseTime: responseTime,
           success: true,
@@ -161,14 +160,14 @@ class NutritionPlanService {
         return plan;
       } else {
         // Track failed generation
-        await _analyticsService.trackNutritionPlanGenerationFailed(
+        await AnalyticsService.trackNutritionPlanGenerationFailed(
           errorMessage: result.message ?? 'Unknown error',
           distanceMiles: distanceMiles,
           paceMinutesPerMile: paceMinutesPerMile,
         );
         
         // Track Edge Function performance
-        await _analyticsService.trackEdgeFunctionPerformance(
+        await AnalyticsService.trackEdgeFunctionPerformance(
           functionName: 'run-plan',
           responseTime: responseTime,
           success: false,
@@ -181,14 +180,14 @@ class NutritionPlanService {
       final responseTime = DateTime.now().difference(startTime);
       
       // Track failed generation
-      await _analyticsService.trackNutritionPlanGenerationFailed(
+      await AnalyticsService.trackNutritionPlanGenerationFailed(
         errorMessage: e.toString(),
         distanceMiles: distanceMiles,
         paceMinutesPerMile: paceMinutesPerMile,
       );
       
       // Track Edge Function performance
-      await _analyticsService.trackEdgeFunctionPerformance(
+      await AnalyticsService.trackEdgeFunctionPerformance(
         functionName: 'run-plan',
         responseTime: responseTime,
         success: false,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/nutrition_plan.dart';
+import '../../domain/macro_targets.dart' as targets_model;
 
 /// Separate widget for section subtitles that can be updated independently
 /// Takes the plan as a parameter to calculate totals without watching controller
@@ -10,129 +11,200 @@ class SectionSubtitleWidget extends StatelessWidget {
     super.key,
     required this.section,
     required this.plan,
+    this.macroTargets,
   });
 
   final PlanSection section;
   final NutritionPlan plan;
+  final targets_model.MacroTargets? macroTargets;
 
   @override
   Widget build(BuildContext context) {
-    return _buildColorizedSubtitle();
+    return _buildBadgeSubtitle();
   }
 
-  /// Build colorized subtitle with individual ratio colors
-  Widget _buildColorizedSubtitle() {
+  /// Build badge-based subtitle with individual ratio pills
+  Widget _buildBadgeSubtitle() {
     final totals = _calculateSectionTotals();
     final carbs = totals['carbs']!;
     final protein = totals['protein']!;
     final fluids = totals['fluids']!;
     final sodium = totals['sodium']!;
-    
-    List<InlineSpan> spans = [];
-    
+
+    List<Widget> badges = [];
+
+    // If no macro targets provided, fall back to plan section targets (legacy)
+    if (macroTargets == null) {
+      return _buildLegacyBadgeSubtitle(carbs, protein, fluids, sodium);
+    }
+
     switch (section.title) {
       case 'Before Run':
-        final carbsTarget = plan.sections[0].carbsTarget?.toInt() ?? 0;
-        final proteinTarget = plan.sections[0].proteinTarget?.toInt() ?? 0;
-        final fluidsTarget = plan.sections[0].fluidsTarget?.toInt() ?? 0;
-        final sodiumTarget = plan.sections[0].sodiumTarget?.toInt() ?? 0;
-        
-        spans = [
-          _buildColorizedRatio(carbs, carbsTarget, 'g carbs'),
-          const TextSpan(text: ', '),
-          _buildColorizedRatio(protein, proteinTarget, 'g protein'),
-          const TextSpan(text: ', '),
-          _buildColorizedRatio(fluids, fluidsTarget, 'ml fluids'),
-          const TextSpan(text: ', '),
-          _buildColorizedRatio(sodium, sodiumTarget, 'mg sodium'),
+        final carbsTarget = macroTargets!.preRun.carbsG.round();
+        final fluidsTarget = macroTargets!.preRun.fluidsMl.round();
+        final sodiumTarget = macroTargets!.preRun.sodiumMg.round();
+
+        badges = [
+          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+          _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
         ];
         break;
-        
+
       case 'During Run':
-        final carbsTarget = plan.sections[1].carbsTarget?.toInt() ?? 0;
-        final fluidsTarget = plan.sections[1].fluidsTarget?.toInt() ?? 0;
-        final sodiumTarget = plan.sections[1].sodiumTarget?.toInt() ?? 0;
-        
-        spans = [
-          _buildColorizedRatio(carbs, carbsTarget, 'g carbs'),
-          const TextSpan(text: ', '),
-          _buildColorizedRatio(fluids, fluidsTarget, 'ml fluids'),
-          const TextSpan(text: ', '),
-          _buildColorizedRatio(sodium, sodiumTarget, 'mg sodium'),
+        final carbsTarget = macroTargets!.duringRun.carbTotalG.round();
+        final fluidsTarget = macroTargets!.duringRun.fluidTotalMl.round();
+        final sodiumTarget = macroTargets!.duringRun.sodiumTotalMg.round();
+
+        badges = [
+          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+          _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
         ];
         break;
-        
+
       case 'After Run':
-        final carbsTarget = plan.sections[2].carbsTarget?.toInt() ?? 0;
-        final proteinTarget = plan.sections[2].proteinTarget?.toInt() ?? 0;
-        final fluidsTarget = plan.sections[2].fluidsTarget?.toInt() ?? 0;
-        final sodiumTarget = plan.sections[2].sodiumTarget?.toInt() ?? 0;
-        
-        spans = [
-          _buildColorizedRatio(carbs, carbsTarget, 'g carbs'),
-          const TextSpan(text: ', '),
-          _buildColorizedRatio(protein, proteinTarget, 'g protein'),
-          const TextSpan(text: ', '),
-          _buildColorizedRatio(fluids, fluidsTarget, 'ml fluids'),
-          const TextSpan(text: ', '),
-          _buildColorizedRatio(sodium, sodiumTarget, 'mg sodium'),
+        final carbsTarget = macroTargets!.postRun.carbsG.round();
+        final proteinTarget = macroTargets!.postRun.proteinG.round();
+        final fluidsTarget = macroTargets!.postRun.fluidsMl.round();
+
+        badges = [
+          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+          _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
         ];
         break;
-        
+
       default:
         return Text(
           section.subtitle ?? '',
           style: AppTheme.noteStyle.copyWith(
             color: AppTheme.primary600,
-            fontSize: 13.sp,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w500,
           ),
         );
     }
-    
-    return RichText(
-      text: TextSpan(
-        style: AppTheme.noteStyle.copyWith(
-          color: AppTheme.primary600,
-          fontSize: 13.sp,
-          fontWeight: FontWeight.w500,
+
+    return Wrap(
+      spacing: 8.w,
+      runSpacing: 4.h,
+      children: badges,
+    );
+  }
+
+  /// Build individual macro badge
+  Widget _buildMacroBadge(String label, int current, int target, String unit, Color color) {
+    final ratioWithUnit = '$current/$target$unit';
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
         ),
-        children: spans,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            ratioWithUnit,
+            style: AppTheme.textStyle.copyWith(
+              color: color,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 1.h),
+          Text(
+            label,
+            style: AppTheme.noteStyle.copyWith(
+              color: color,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
-  
-  /// Build a colorized ratio text span (e.g. "25/30g carbs")
-  TextSpan _buildColorizedRatio(int current, int target, String unit) {
-    final color = _getColorForProgress(current, target);
-    
-    return TextSpan(
-      text: '$current/$target$unit',
-      style: TextStyle(
-        color: color,
-        fontWeight: FontWeight.w600,
-      ),
+
+  /// Legacy fallback for when MacroTargets is not provided
+  Widget _buildLegacyBadgeSubtitle(int carbs, int protein, int fluids, int sodium) {
+    List<Widget> badges = [];
+
+    switch (section.title) {
+      case 'Before Run':
+        final carbsTarget = plan.sections[0].carbsTarget?.toInt() ?? 0;
+        final fluidsTarget = plan.sections[0].fluidsTarget?.toInt() ?? 0;
+        final sodiumTarget = plan.sections[0].sodiumTarget?.toInt() ?? 0;
+
+        badges = [
+          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+          _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+        ];
+        break;
+
+      case 'During Run':
+        final carbsTarget = plan.sections[1].carbsTarget?.toInt() ?? 0;
+        final fluidsTarget = plan.sections[1].fluidsTarget?.toInt() ?? 0;
+        final sodiumTarget = plan.sections[1].sodiumTarget?.toInt() ?? 0;
+
+        badges = [
+          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+          _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+        ];
+        break;
+
+      case 'After Run':
+        final carbsTarget = plan.sections[2].carbsTarget?.toInt() ?? 0;
+        final proteinTarget = plan.sections[2].proteinTarget?.toInt() ?? 0;
+        final fluidsTarget = plan.sections[2].fluidsTarget?.toInt() ?? 0;
+
+        badges = [
+          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+          _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
+        ];
+        break;
+
+      default:
+        return Text(
+          section.subtitle ?? '',
+          style: AppTheme.noteStyle.copyWith(
+            color: AppTheme.primary600,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        );
+    }
+
+    return Wrap(
+      spacing: 8.w,
+      runSpacing: 4.h,
+      children: badges,
     );
   }
-  
-  /// Get color based on progress towards target using theme colors
-  /// Green: 80-120% of target (close to target)
-  /// Yellow: 120-150% of target (significantly over)
-  /// Red: <80% or >150% of target (way off)
+
+  /// Get color based on progress towards target
+  /// Primary900: Within 10% of target (good)
+  /// Highlight400: Over 10% off target (needs attention)
   Color _getColorForProgress(int current, int target) {
-    if (target <= 0) return AppTheme.baseGrey;
-    
-    final ratio = current / target;
-    
-    if (ratio >= 0.8 && ratio <= 1.2) {
-      // Close to target (80-120%) - Success Green
-      return AppTheme.primary600;
-    } else if (ratio > 1.2 && ratio <= 1.5) {
-      // Significantly over (120-150%) - Warning Yellow
-      return AppTheme.warning500;
-    } else {
-      // Way off (<80% or >150%) - Error Red
+    if (target <= 0) return AppTheme.primary900;
+
+    final percentageOff = (current - target).abs() / target;
+
+    if (percentageOff > 0.2) {
+      // More than 10% off target
       return AppTheme.highlight400;
+    } else {
+      // Within 10% of target
+      return AppTheme.primary900;
     }
   }
 

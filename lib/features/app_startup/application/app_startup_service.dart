@@ -39,22 +39,17 @@ class AppStartupService {
   
   /// Initialize analytics service with proper user identification
   Future<void> initializeAnalytics() async {
-    final analyticsService = ref.read(analyticsServiceProvider);
-    
     // Initialize Mixpanel
-    await analyticsService.initialize();
-    
-    // Connect analytics service to notification service for North-Star tracking
-    NotificationService.setAnalyticsService(analyticsService);
-    
+    await AnalyticsService.initialize();
+
     // Get or create device ID for user identification
     final deviceId = await getOrCreateDeviceId();
-    
+
     // Identify user in Mixpanel (anonymous until they create profile)
-    await analyticsService.identifyUser(deviceId);
-    
+    await AnalyticsService.identifyUser(deviceId);
+
     // Track app launch
-    await analyticsService.trackAppLaunched();
+    await AnalyticsService.trackAppLaunched();
   }
   
   /// Set Sentry user context during app startup
@@ -118,7 +113,6 @@ class AppStartupService {
   Future<void> checkUserSession() async {
     try {
       final authService = ref.read(authServiceProvider);
-      final analyticsService = ref.read(analyticsServiceProvider);
       final database = ref.read(appDatabaseProvider);
       
       // Check if user exists in Drift database
@@ -126,7 +120,7 @@ class AppStartupService {
       
       if (user != null) {
         // User exists locally - identify them properly in analytics
-        await analyticsService.identifyUser(
+        await AnalyticsService.identifyUser(
           user.id,
           properties: {
             'Gender': user.gender.name,

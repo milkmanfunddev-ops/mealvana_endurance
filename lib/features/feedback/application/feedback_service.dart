@@ -13,8 +13,6 @@ class FeedbackService {
   FeedbackService(this.ref);
   final Ref ref;
   
-  /// Get analytics service
-  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
   
   /// Get feedback repository
   FeedbackRepository get _repository => ref.read(feedbackRepositoryProvider);
@@ -52,7 +50,7 @@ class FeedbackService {
       await _repository.saveSurveyResponse(fullResponse);
 
       // Track survey completion
-      await _analytics.trackSurveyCompleted(
+      await AnalyticsService.trackSurveyCompleted(
         confidenceLevel: response.confidenceLevel.value,
         reuseIntent: response.reuseIntent.value,
         reminderRequested: response.reminderPreference != null,
@@ -235,7 +233,7 @@ class FeedbackService {
     }
 
     // Track feedback submission attempt
-    await _analytics.trackFeedbackSubmitted(
+    await AnalyticsService.trackFeedbackSubmitted(
       type: 'Plan Feedback',
       message: feedback.suggestions ?? '',
       rating: _satisfactionToRating(feedback.satisfactionLevel),

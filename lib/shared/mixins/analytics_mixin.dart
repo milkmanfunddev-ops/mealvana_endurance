@@ -6,13 +6,11 @@ import '../services/analytics_service.dart';
 /// Provides easy access to common tracking methods
 mixin AnalyticsMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   
-  /// Get the analytics service
-  AnalyticsService get analytics => ref.read(analyticsServiceProvider);
   
   /// Track screen view automatically when widget is built
   void trackScreenView(String screenName) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      analytics.trackScreenViewed(screenName);
+      AnalyticsService.trackScreenViewed(screenName);
     });
   }
   
@@ -24,7 +22,7 @@ mixin AnalyticsMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   
   /// Track button press or interaction
   Future<void> trackInteraction(String action, {Map<String, dynamic>? properties}) async {
-    await analytics.track(action, properties: properties);
+    await AnalyticsService.track(action, properties: properties);
   }
   
   /// Track form submission
@@ -33,7 +31,7 @@ mixin AnalyticsMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     String? errorMessage,
     Map<String, dynamic>? formData,
   }) async {
-    await analytics.track('Form Submitted', properties: {
+    await AnalyticsService.track('Form Submitted', properties: {
       'Form Name': formName,
       'Success': success,
       'Error Message': errorMessage,
@@ -43,7 +41,7 @@ mixin AnalyticsMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   
   /// Track navigation action
   Future<void> trackNavigation(String destination, {String? source}) async {
-    await analytics.track('Navigation', properties: {
+    await AnalyticsService.track('Navigation', properties: {
       'Destination': destination,
       'Source': source ?? T.toString(),
     });
@@ -54,7 +52,7 @@ mixin AnalyticsMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     String? errorType,
     Map<String, dynamic>? additionalContext,
   }) async {
-    await analytics.trackError(
+    await AnalyticsService.trackError(
       errorType: errorType ?? 'Screen Error',
       errorMessage: errorMessage,
       screenName: T.toString(),
@@ -72,15 +70,13 @@ mixin AnalyticsMixinStateless {
     String action, {
     Map<String, dynamic>? properties,
   }) async {
-    final analytics = ref.read(analyticsServiceProvider);
-    await analytics.track(action, properties: properties);
+    await AnalyticsService.track(action, properties: properties);
   }
   
   /// Track screen view from stateless widget
   void trackScreenView(WidgetRef ref, String screenName) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final analytics = ref.read(analyticsServiceProvider);
-      analytics.trackScreenViewed(screenName);
+      AnalyticsService.trackScreenViewed(screenName);
     });
   }
 }

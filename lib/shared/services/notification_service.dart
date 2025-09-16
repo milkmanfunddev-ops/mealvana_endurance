@@ -11,13 +11,8 @@ import 'analytics_service.dart';
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
-  static AnalyticsService? _analytics; // Analytics service for tracking
   static String? _pendingNavigationPlanId; // Plan ID to navigate to when app becomes active
   
-  /// Set analytics service for tracking North-Star metrics
-  static void setAnalyticsService(AnalyticsService analytics) {
-    _analytics = analytics;
-  }
   
   /// Initialize the notification service
   /// Should be called during app startup
@@ -55,10 +50,10 @@ class NotificationService {
     print('🔔 DEBUG: Notification tapped: ${response.payload}');
     
     // Extract planId from payload and track North-Star event
-    if (response.payload != null && _analytics != null) {
+    if (response.payload != null) {
       try {
         final planId = response.payload!;
-        _analytics!.trackPlanOpenedFromReminder(
+        AnalyticsService.trackPlanOpenedFromReminder(
           planId: planId,
           screen: 'Plan How Well', // Will navigate to the plan rating screen
         );
@@ -149,9 +144,9 @@ class NotificationService {
     final scheduledTZ = tz.TZDateTime.from(scheduledDate, tz.local);
     
     // Track North-Star metric: reminder_set
-    if (planId != null && _analytics != null) {
+    if (planId != null) {
       try {
-        await _analytics!.trackReminderSet(
+        await AnalyticsService.trackReminderSet(
           planId: planId,
           remindAtIso: scheduledDate.toIso8601String(),
         );
@@ -225,13 +220,11 @@ class NotificationService {
   /// Call this when a reminder notification is delivered
   /// Since we can't detect actual delivery, this should be called when appropriate
   static Future<void> trackReminderFired(String planId) async {
-    if (_analytics != null) {
-      try {
-        await _analytics!.trackReminderFired(planId: planId);
-        print('📊 DEBUG: Tracked reminder_fired for planId: $planId');
-      } catch (e) {
-        print('❌ DEBUG: Failed to track reminder_fired: $e');
-      }
+    try {
+      await AnalyticsService.trackReminderFired(planId: planId);
+      print('📊 DEBUG: Tracked reminder_fired for planId: $planId');
+    } catch (e) {
+      print('❌ DEBUG: Failed to track reminder_fired: $e');
     }
   }
 }

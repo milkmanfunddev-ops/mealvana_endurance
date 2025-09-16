@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/nutrition_plan.dart';
+import '../../domain/macro_targets.dart' as targets_model;
 import 'plan_sections_widget.dart';
 
 /// Main container for nutrition plan display
@@ -11,6 +12,7 @@ class PlanContainer extends StatefulWidget {
   const PlanContainer({
     super.key,
     this.plan, // Made optional and ignored - child widgets watch controller
+    this.macroTargets,
     this.onFoodItemTap,
     this.showMacroTargets = true,
     this.onSwapFood,
@@ -19,6 +21,7 @@ class PlanContainer extends StatefulWidget {
   });
 
   final NutritionPlan? plan; // Now optional and ignored
+  final targets_model.MacroTargets? macroTargets;
   final Function(String foodItemId)? onFoodItemTap;
   final bool showMacroTargets;
   final Function(String foodItemId, String foodName, String category)? onSwapFood;
@@ -59,6 +62,7 @@ class _PlanContainerState extends State<PlanContainer> {
             if (widget.plan != null)
               PlanSectionsWidget(
                 plan: widget.plan!,
+                macroTargets: widget.macroTargets,
                 onFoodItemTap: widget.onFoodItemTap,
                 onSwapFood: widget.onSwapFood,
                 onDeleteFood: widget.onDeleteFood,
