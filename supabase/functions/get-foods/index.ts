@@ -22,7 +22,7 @@ serve(async (req) => {
       }
     )
 
-    const { category } = await req.json()
+    const { category, generic_only } = await req.json()
 
     // Get category ID based on category name
     let categoryId: number | null = null
@@ -48,6 +48,11 @@ serve(async (req) => {
       query = query.eq('food_categories.category_id', categoryId)
     }
 
+    // Filter for generic foods only if requested
+    if (generic_only) {
+      query = query.is('brand_id', null)
+    }
+
     // Execute query
     const { data: foods, error } = await query
 
@@ -59,6 +64,8 @@ serve(async (req) => {
     const formattedFoods = foods?.map(food => ({
       id: food.id,
       name: food.name,
+      display_name: food.display_name,
+      display_name_plural: food.display_name_plural,
       image_address: food.image_address,
       description: food.description,
       instructions: food.instructions,
@@ -68,11 +75,7 @@ serve(async (req) => {
       calories_per_serving: food.calories_per_serving || 0,
       protein_per_serving: food.protein_per_serving || 0,
       fat_per_serving: food.fat_per_serving || 0,
-      serving_size: food.serving_size,
-      serving_amount: food.serving_amount,
-      serving_unit: food.serving_unit,
-      serving_unit_plural: food.serving_unit_plural,
-      serving_qualifier: food.serving_qualifier,
+      serving_amount: food.serving_amount || 1.0,
       before_run_suitable: food.before_run_suitable,
       during_run_suitable: food.during_run_suitable,
       run_portable: food.run_portable,
@@ -83,9 +86,10 @@ serve(async (req) => {
       caffeine_mg: food.caffeine_mg,
       potassium_mg: food.potassium_mg,
       brand_id: food.brand_id,
-      product_type: food.product_type,
-      purchase_url: food.purchase_url,
-      affiliate_source: food.affiliate_source
+      show_in_preferences: food.show_in_preferences,
+      is_electrolyte: food.is_electrolyte,
+      to_exclude_from_solver: food.to_exclude_from_solver,
+      created_at: food.created_at
     })) || []
 
     return new Response(
@@ -97,8 +101,9 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error fetching foods:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,

@@ -5,7 +5,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Mealvana Run</string>
+		<string>Endurance</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -55,5 +55,7 @@
 		<string>This app uses speech recognition to help you record voice notes about your nutrition plan experience and feedback.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>This app uses the microphone to record voice notes about your nutrition plan experience and feedback.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>This app needs camera access to scan QR codes and barcodes on food products to quickly add them to your nutrition plan.</string>
 	</dict>
 </plist>

@@ -9,11 +9,11 @@ class FoodItem {
   final List<FoodCategory> categories;
   
   // Serving Information
-  final String? servingSize; // Legacy field - keep for compatibility
-  final double? servingAmount;
-  final String? servingUnit;
-  final String? servingUnitPlural;
-  final String? servingQualifier;
+  final String? servingSize; // Legacy field - deprecated in simplified approach
+  final double? servingAmount; // Should always be 1.0 in simplified approach
+  final String? servingUnit; // Deprecated - use displayName instead
+  final String? servingUnitPlural; // Deprecated - use displayNamePlural instead
+  final String? servingQualifier; // Deprecated - included in displayName
 
   // Suitability Flags
   final bool beforeRunSuitable;
@@ -38,14 +38,17 @@ class FoodItem {
   final int? caffeineMg;
   final int? potassiumMg;
 
+  // Product categorization
+  final String? productTypeId; // References product_types.id
+
   /// Legacy nutritional information - deprecated, use explicit fields
   final NutritionInfo? nutrition;
   final List<String> tags;
 
-  // New database fields for display and solver control
-  final String? displayName;
-  final String? displayNamePlural;
-  final String? displayOverride;
+  // Simplified display approach - replaces complex serving unit logic
+  final String? displayName; // e.g., "cup cooked oatmeal"
+  final String? displayNamePlural; // e.g., "cups cooked oatmeal"
+  final String? displayOverride; // Deprecated - to be removed
   final bool toExcludeFromSolver;
 
   FoodItem({
@@ -75,6 +78,7 @@ class FoodItem {
     this.sodiumMg,
     this.caffeineMg,
     this.potassiumMg,
+    this.productTypeId,
     this.nutrition,
     this.tags = const [],
     this.displayName,
@@ -83,12 +87,20 @@ class FoodItem {
     this.toExcludeFromSolver = false,
   });
 
-  /// Get the full S3 image URL for this food item
-  /// Constructs URL from S3 bucket base URL + image_address field
+  /// Get the full image URL for this food item
+  /// Returns Open Food Facts URLs directly, or constructs S3 URL for other images
   String? get imageUrl {
     if (imageAddress == null || imageAddress!.isEmpty) {
       return null;
     }
+
+    // If the image address is already a full Open Food Facts URL, return it directly
+    if (imageAddress!.startsWith('https://images.openfoodfacts.org/') ||
+        imageAddress!.startsWith('https://static.openfoodfacts.org/')) {
+      return imageAddress;
+    }
+
+    // Otherwise, construct S3 URL for legacy/existing foods
     return 'https://milkman-dev.s3.us-east-2.amazonaws.com/foods/$imageAddress';
   }
 
@@ -124,9 +136,8 @@ class FoodItem {
       sodiumMg: json['sodium_mg'] as int?,
       caffeineMg: json['caffeine_mg'] as int?,
       potassiumMg: json['potassium_mg'] as int?,
-      nutrition: json['nutritional_info'] != null
-        ? NutritionInfo.fromJson(json['nutritional_info'] as Map<String, dynamic>)
-        : null,
+      productTypeId: json['product_type_id']?.toString(),
+      nutrition: null, // Removed - using explicit nutrition fields
       tags: List<String>.from(json['tags'] ?? []),
       displayName: json['display_name']?.toString(),
       displayNamePlural: json['display_name_plural']?.toString(),
@@ -163,7 +174,7 @@ class FoodItem {
       'sodium_mg': sodiumMg,
       'caffeine_mg': caffeineMg,
       'potassium_mg': potassiumMg,
-      'nutritional_info': nutrition?.toJson(),
+      'product_type_id': productTypeId,
       'tags': tags,
       'display_name': displayName,
       'display_name_plural': displayNamePlural,
@@ -177,13 +188,22 @@ class FoodItem {
     return categories.contains(category);
   }
   
-  /// Format quantity for display (e.g., "3 cups", "2.3 servings")
+  /// Format quantity for display using simplified display name approach
+  /// If display names are available, use them. Otherwise fall back to complex logic.
   String formatQuantity(double quantity) {
+    // NEW SIMPLIFIED APPROACH: Use display names if available
+    if (displayName != null && displayName!.isNotEmpty) {
+      return quantity == 1
+          ? '1 $displayName'
+          : '${_formatQuantityNumber(quantity)} ${displayNamePlural ?? displayName}';
+    }
+
+    // LEGACY FALLBACK: Complex serving unit logic for compatibility
     final baseAmount = servingAmount ?? 1.0;
     final totalAmount = quantity * baseAmount;
     final unit = servingUnitPlural ?? servingUnit ?? 'serving';
     final qualifier = servingQualifier ?? '';
-    
+
     String quantityText;
     if (totalAmount == 1) {
       quantityText = '1 ${servingUnit ?? 'serving'}';
@@ -192,12 +212,21 @@ class FoodItem {
     } else {
       quantityText = '${totalAmount.toStringAsFixed(1)} $unit';
     }
-    
+
     if (qualifier.isNotEmpty) {
       quantityText += ', $qualifier';
     }
-    
+
     return quantityText;
+  }
+
+  /// Helper method to format quantity numbers consistently
+  String _formatQuantityNumber(double quantity) {
+    if (quantity % 1 == 0) {
+      return quantity.toInt().toString();
+    } else {
+      return quantity.toStringAsFixed(1);
+    }
   }
 
   /// Get effective carbs per serving (from explicit field or legacy nutrition)

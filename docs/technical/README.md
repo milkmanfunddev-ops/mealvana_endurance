@@ -397,6 +397,44 @@ class NotificationService {
 - **Testing**: Platform-specific testing on physical devices
 - **App Store**: May require notification entitlement documentation
 
+## Edge Functions Integration
+
+### Supabase Edge Functions Architecture
+
+Mealvana Endurance uses a **fat backend architecture** with Supabase Edge Functions handling complex business logic. This approach ensures:
+
+- **Server-side Algorithm Control**: Nutrition algorithms can be updated without app releases
+- **Data Consistency**: Complex validations and business rules enforced on the server
+- **Performance**: Optimized calculations running in Edge runtime
+- **Security**: Sensitive operations protected by server-side validation
+
+**🚨 CRITICAL: Edge Function Data Format Requirements**
+
+All Edge Functions expect enum values in **underscore format** (`willing_to_try`, `dislike`, `like`), not camelCase. When calling Edge Functions, always use:
+
+```dart
+// ✅ CORRECT - Use .value for Edge Function calls
+final preferences = foodPreferences.map(
+  (key, value) => MapEntry(key, value.value), // .value gives underscore format
+);
+
+// ❌ WRONG - Don't use .name for Edge Functions
+final preferences = foodPreferences.map(
+  (key, value) => MapEntry(key, value.name), // .name gives camelCase
+);
+```
+
+**Key Edge Functions:**
+
+- **create-user**: User registration with device-based authentication
+- **save-food-preferences**: Food preference persistence with validation
+- **run-plan**: Deterministic nutrition plan generation (algorithmic fallback)
+- **generate-ai-nutrition-plan**: AI-powered nutrition optimization with linear programming
+- **get-foods**: Food data retrieval with category filtering
+- **barcode-lookup**: Product identification via multiple API providers
+
+**📚 Complete Edge Functions Guide**: [edge-functions/README.md](edge-functions/README.md)
+
 ## Data Persistence with Drift (Schema v2)
 
 ### Database Setup and Configuration  

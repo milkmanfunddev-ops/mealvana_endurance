@@ -26,7 +26,7 @@ final foodRepositoryProvider = AutoDisposeProvider<FoodRepository>.internal(
 // ignore: unused_element
 typedef FoodRepositoryRef = AutoDisposeProviderRef<FoodRepository>;
 String _$swapFoodControllerHash() =>
-    r'5190da0a1e04f55771351f2f467ad50dc401395e';
+    r'57b3645bebd2899b5a93c991848e1489b3ebda37';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -51,36 +51,36 @@ class _SystemHash {
 
 abstract class _$SwapFoodController
     extends BuildlessAutoDisposeAsyncNotifier<SwapFoodState> {
-  late final String category;
+  late final SwapFoodParams params;
 
   FutureOr<SwapFoodState> build(
-    String category,
+    SwapFoodParams params,
   );
 }
 
-/// Controller for swap food functionality - takes category as parameter
+/// Controller for swap food functionality - takes swap parameters
 ///
 /// Copied from [SwapFoodController].
 @ProviderFor(SwapFoodController)
 const swapFoodControllerProvider = SwapFoodControllerFamily();
 
-/// Controller for swap food functionality - takes category as parameter
+/// Controller for swap food functionality - takes swap parameters
 ///
 /// Copied from [SwapFoodController].
 class SwapFoodControllerFamily extends Family<AsyncValue<SwapFoodState>> {
-  /// Controller for swap food functionality - takes category as parameter
+  /// Controller for swap food functionality - takes swap parameters
   ///
   /// Copied from [SwapFoodController].
   const SwapFoodControllerFamily();
 
-  /// Controller for swap food functionality - takes category as parameter
+  /// Controller for swap food functionality - takes swap parameters
   ///
   /// Copied from [SwapFoodController].
   SwapFoodControllerProvider call(
-    String category,
+    SwapFoodParams params,
   ) {
     return SwapFoodControllerProvider(
-      category,
+      params,
     );
   }
 
@@ -89,7 +89,7 @@ class SwapFoodControllerFamily extends Family<AsyncValue<SwapFoodState>> {
     covariant SwapFoodControllerProvider provider,
   ) {
     return call(
-      provider.category,
+      provider.params,
     );
   }
 
@@ -108,18 +108,18 @@ class SwapFoodControllerFamily extends Family<AsyncValue<SwapFoodState>> {
   String? get name => r'swapFoodControllerProvider';
 }
 
-/// Controller for swap food functionality - takes category as parameter
+/// Controller for swap food functionality - takes swap parameters
 ///
 /// Copied from [SwapFoodController].
 class SwapFoodControllerProvider extends AutoDisposeAsyncNotifierProviderImpl<
     SwapFoodController, SwapFoodState> {
-  /// Controller for swap food functionality - takes category as parameter
+  /// Controller for swap food functionality - takes swap parameters
   ///
   /// Copied from [SwapFoodController].
   SwapFoodControllerProvider(
-    String category,
+    SwapFoodParams params,
   ) : this._internal(
-          () => SwapFoodController()..category = category,
+          () => SwapFoodController()..params = params,
           from: swapFoodControllerProvider,
           name: r'swapFoodControllerProvider',
           debugGetCreateSourceHash:
@@ -129,7 +129,7 @@ class SwapFoodControllerProvider extends AutoDisposeAsyncNotifierProviderImpl<
           dependencies: SwapFoodControllerFamily._dependencies,
           allTransitiveDependencies:
               SwapFoodControllerFamily._allTransitiveDependencies,
-          category: category,
+          params: params,
         );
 
   SwapFoodControllerProvider._internal(
@@ -139,17 +139,17 @@ class SwapFoodControllerProvider extends AutoDisposeAsyncNotifierProviderImpl<
     required super.allTransitiveDependencies,
     required super.debugGetCreateSourceHash,
     required super.from,
-    required this.category,
+    required this.params,
   }) : super.internal();
 
-  final String category;
+  final SwapFoodParams params;
 
   @override
   FutureOr<SwapFoodState> runNotifierBuild(
     covariant SwapFoodController notifier,
   ) {
     return notifier.build(
-      category,
+      params,
     );
   }
 
@@ -158,13 +158,13 @@ class SwapFoodControllerProvider extends AutoDisposeAsyncNotifierProviderImpl<
     return ProviderOverride(
       origin: this,
       override: SwapFoodControllerProvider._internal(
-        () => create()..category = category,
+        () => create()..params = params,
         from: from,
         name: null,
         dependencies: null,
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
-        category: category,
+        params: params,
       ),
     );
   }
@@ -177,13 +177,13 @@ class SwapFoodControllerProvider extends AutoDisposeAsyncNotifierProviderImpl<
 
   @override
   bool operator ==(Object other) {
-    return other is SwapFoodControllerProvider && other.category == category;
+    return other is SwapFoodControllerProvider && other.params == params;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, category.hashCode);
+    hash = _SystemHash.combine(hash, params.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -193,8 +193,8 @@ class SwapFoodControllerProvider extends AutoDisposeAsyncNotifierProviderImpl<
 // ignore: unused_element
 mixin SwapFoodControllerRef
     on AutoDisposeAsyncNotifierProviderRef<SwapFoodState> {
-  /// The parameter `category` of this provider.
-  String get category;
+  /// The parameter `params` of this provider.
+  SwapFoodParams get params;
 }
 
 class _SwapFoodControllerProviderElement
@@ -203,7 +203,7 @@ class _SwapFoodControllerProviderElement
   _SwapFoodControllerProviderElement(super.provider);
 
   @override
-  String get category => (origin as SwapFoodControllerProvider).category;
+  SwapFoodParams get params => (origin as SwapFoodControllerProvider).params;
 }
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

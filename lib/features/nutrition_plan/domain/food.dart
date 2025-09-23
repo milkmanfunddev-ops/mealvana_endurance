@@ -5,6 +5,12 @@ class Food {
   final String? description;
   final String? instructions;
   final double? servingAmount;
+
+  // Simplified display approach
+  final String? displayName;        // e.g., "cup cooked oatmeal"
+  final String? displayNamePlural;  // e.g., "cups cooked oatmeal"
+
+  // Deprecated fields (legacy compatibility)
   final String? servingUnit;
   final String? servingUnitPlural;
   final String? servingQualifier;
@@ -17,6 +23,7 @@ class Food {
   final double? fatPerServing;
   final int? caffeineMg;
   final int? potassiumMg;
+  final String? productTypeId; // References product_types.id
   final bool beforeRunSuitable;
   final bool duringRunSuitable;
   final bool runPortable;
@@ -32,6 +39,8 @@ class Food {
     this.description,
     this.instructions,
     this.servingAmount,
+    this.displayName,
+    this.displayNamePlural,
     this.servingUnit,
     this.servingUnitPlural,
     this.servingQualifier,
@@ -44,6 +53,7 @@ class Food {
     this.fatPerServing,
     this.caffeineMg,
     this.potassiumMg,
+    this.productTypeId,
     this.beforeRunSuitable = false,
     this.duringRunSuitable = false,
     this.runPortable = false,
@@ -61,6 +71,8 @@ class Food {
       description: json['description'] as String?,
       instructions: json['instructions'] as String?,
       servingAmount: (json['serving_amount'] as num?)?.toDouble(),
+      displayName: json['display_name'] as String?,
+      displayNamePlural: json['display_name_plural'] as String?,
       servingUnit: json['serving_unit'] as String?,
       servingUnitPlural: json['serving_unit_plural'] as String?,
       servingQualifier: json['serving_qualifier'] as String?,
@@ -73,6 +85,7 @@ class Food {
       fatPerServing: (json['fat_per_serving'] as num?)?.toDouble(),
       caffeineMg: json['caffeine_mg'] as int?,
       potassiumMg: json['potassium_mg'] as int?,
+      productTypeId: json['product_type_id'] as String?,
       beforeRunSuitable: json['before_run_suitable'] as bool? ?? false,
       duringRunSuitable: json['during_run_suitable'] as bool? ?? false,
       runPortable: json['run_portable'] as bool? ?? false,
@@ -83,37 +96,51 @@ class Food {
     );
   }
 
-  /// Get the full S3 image URL for this food
-  /// Constructs URL from S3 bucket base URL + image_address field
+  /// Get the full image URL for this food
+  /// Returns Open Food Facts URLs directly, or constructs S3 URL for other images
   String? get imageUrl {
     if (imageAddress == null || imageAddress!.isEmpty) {
       return null;
     }
+
+    // If the image address is already a full Open Food Facts URL, return it directly
+    if (imageAddress!.startsWith('https://images.openfoodfacts.org/') ||
+        imageAddress!.startsWith('https://static.openfoodfacts.org/')) {
+      return imageAddress;
+    }
+
+    // Otherwise, construct S3 URL for legacy/existing foods
     return 'https://milkman-dev.s3.us-east-2.amazonaws.com/foods/$imageAddress';
   }
 
-  /// Generate quantity display string with amount, unit, qualifier, and name
-  /// Examples: "1 cup cooked oatmeal", "2 medium bananas sliced", "4 energy gels"
+  /// Generate quantity display string using simplified display approach
+  /// Examples: "1 cup cooked oatmeal", "2 cups cooked oatmeal", "1 medium banana"
   String generateQuantityDisplay({double? customAmount}) {
     final amount = customAmount ?? servingAmount ?? 1.0;
     final amountStr = amount == amount.toInt() ? amount.toInt().toString() : amount.toStringAsFixed(1);
-    
-    // Determine unit (singular vs plural)
+
+    // NEW SIMPLIFIED APPROACH: Use display names if available
+    if (displayName != null && displayName!.isNotEmpty) {
+      return amount == 1
+          ? '$amountStr $displayName'
+          : '$amountStr ${displayNamePlural ?? displayName}';
+    }
+
+    // LEGACY FALLBACK: Complex serving unit logic for compatibility
     final unit = amount > 1 && servingUnitPlural != null && servingUnitPlural!.isNotEmpty
         ? servingUnitPlural!
         : servingUnit ?? 'serving';
-    
-    // Build the complete description
+
     final parts = <String>[];
     parts.add(amountStr);
     parts.add(unit);
-    
+
     if (servingQualifier != null && servingQualifier!.isNotEmpty) {
       parts.add(servingQualifier!);
     }
-    
+
     parts.add(name.toLowerCase());
-    
+
     return parts.join(' ');
   }
 
@@ -125,6 +152,8 @@ class Food {
       'description': description,
       'instructions': instructions,
       'serving_amount': servingAmount,
+      'display_name': displayName,
+      'display_name_plural': displayNamePlural,
       'serving_unit': servingUnit,
       'serving_unit_plural': servingUnitPlural,
       'serving_qualifier': servingQualifier,
@@ -137,6 +166,7 @@ class Food {
       'fat_per_serving': fatPerServing,
       'caffeine_mg': caffeineMg,
       'potassium_mg': potassiumMg,
+      'product_type_id': productTypeId,
       'before_run_suitable': beforeRunSuitable,
       'during_run_suitable': duringRunSuitable,
       'run_portable': runPortable,

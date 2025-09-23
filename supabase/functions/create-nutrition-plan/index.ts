@@ -21,43 +21,41 @@ interface FoodItem {
   description?: string;
   instructions?: string;
   serving_amount: number;
-  serving_unit: string;
+
+  // Simplified display approach
+  display_name?: string;        // e.g., "cup cooked oatmeal"
+  display_name_plural?: string; // e.g., "cups cooked oatmeal"
+
+  // Deprecated fields (legacy compatibility)
+  serving_unit?: string;
   serving_unit_plural?: string;
   serving_qualifier?: string;
+
   food_categories: Array<{ category_id: number }>;
-  
+
   // Suitability flags
   before_run_suitable: boolean;
   during_run_suitable: boolean;
   run_portable: boolean;
   requires_preparation: boolean;
   aid_station_available: boolean;
-  
+
   // Serving constraints
   max_servings_before?: number;
   max_servings_during?: number;
-  
+
   // Explicit nutritional data per serving
   carbs_per_serving?: number;
   protein_per_serving?: number;
   fat_per_serving?: number;
   calories_per_serving?: number;
   fluid_ml_per_serving?: number;
-  
+
   // Micronutrients
   sodium_mg?: number;
   caffeine_mg?: number;
   potassium_mg?: number;
-  
-  // Legacy nutritional info for backward compatibility
-  nutritional_info?: {
-    carbs_per_serving?: number;
-    protein_per_serving?: number;
-    fat_per_serving?: number;
-    calories_per_serving?: number;
-    sodium_mg?: number;
-    serving_size?: string;
-  };
+
 }
 
 interface NutritionCalculations {
@@ -135,7 +133,7 @@ serve(async (req) => {
 
     const likedFoods = foodPreferences?.filter(fp => fp.preference === 'like').map(fp => fp.food_name) ?? []
 
-    // Get all foods from database with new structure
+    // Get all foods from database with simplified display approach
     const { data: foods, error: foodsError } = await supabaseClient
       .from('foods')
       .select(`
@@ -145,9 +143,8 @@ serve(async (req) => {
         description,
         instructions,
         serving_amount,
-        serving_unit,
-        serving_unit_plural,
-        serving_qualifier,
+        display_name,
+        display_name_plural,
         before_run_suitable,
         during_run_suitable,
         run_portable,
@@ -447,7 +444,7 @@ function selectFoodsForCategory({ foods, likedFoods, carbTarget, category }: {
 
   // Helper function to get effective carbs per serving
   const getEffectiveCarbs = (food: FoodItem): number => {
-    return food.carbs_per_serving ?? food.nutritional_info?.carbs_per_serving ?? 0
+    return food.carbs_per_serving ?? 0
   }
 
   // Filter foods based on new suitability flags
@@ -538,11 +535,11 @@ function selectFoodsForCategory({ foods, likedFoods, carbTarget, category }: {
 
 function createFoodItemData(food: FoodItem, quantity: number) {
   // Helper functions to get effective nutritional values
-  const getEffectiveCarbs = () => food.carbs_per_serving ?? food.nutritional_info?.carbs_per_serving ?? 0
-  const getEffectiveProtein = () => food.protein_per_serving ?? food.nutritional_info?.protein_per_serving ?? 0
-  const getEffectiveFat = () => food.fat_per_serving ?? food.nutritional_info?.fat_per_serving ?? 0
-  const getEffectiveCalories = () => food.calories_per_serving ?? food.nutritional_info?.calories_per_serving ?? 0
-  const getEffectiveSodium = () => food.sodium_mg ?? food.nutritional_info?.sodium_mg ?? 0
+  const getEffectiveCarbs = () => food.carbs_per_serving ?? 0
+  const getEffectiveProtein = () => food.protein_per_serving ?? 0
+  const getEffectiveFat = () => food.fat_per_serving ?? 0
+  const getEffectiveCalories = () => food.calories_per_serving ?? 0
+  const getEffectiveSodium = () => food.sodium_mg ?? 0
   
   const adjustedCarbs = Math.round(getEffectiveCarbs() * quantity)
   const adjustedProtein = Math.round(getEffectiveProtein() * quantity)
@@ -550,25 +547,34 @@ function createFoodItemData(food: FoodItem, quantity: number) {
   const adjustedCalories = Math.round(getEffectiveCalories() * quantity)
   const adjustedSodium = getEffectiveSodium() > 0 ? Math.round(getEffectiveSodium() * quantity) : undefined
 
-  // Calculate total amount using structured serving data
-  const totalAmount = quantity * food.serving_amount
-  
-  // Format quantity using structured serving data
+  // SIMPLIFIED QUANTITY FORMATTING: Use display names if available, fallback to complex logic
   let quantityText: string
-  if (totalAmount === 1) {
-    quantityText = `1 ${food.serving_unit}`
+
+  if (food.display_name && food.display_name.trim()) {
+    // NEW SIMPLIFIED APPROACH: Use display names
+    const displayName = quantity === 1 ? food.display_name : (food.display_name_plural || food.display_name)
+    quantityText = quantity % 1 === 0
+      ? `${quantity.toFixed(0)} ${displayName}`
+      : `${quantity.toFixed(1)} ${displayName}`
   } else {
-    const unit = food.serving_unit_plural || food.serving_unit
-    if (totalAmount % 1 === 0) {
-      quantityText = `${totalAmount.toFixed(0)} ${unit}`
+    // LEGACY FALLBACK: Complex serving unit logic for compatibility
+    const totalAmount = quantity * (food.serving_amount || 1.0)
+
+    if (totalAmount === 1) {
+      quantityText = `1 ${food.serving_unit || 'serving'}`
     } else {
-      quantityText = `${totalAmount.toFixed(1)} ${unit}`
+      const unit = food.serving_unit_plural || food.serving_unit || 'servings'
+      if (totalAmount % 1 === 0) {
+        quantityText = `${totalAmount.toFixed(0)} ${unit}`
+      } else {
+        quantityText = `${totalAmount.toFixed(1)} ${unit}`
+      }
     }
-  }
-  
-  // Add qualifier if present
-  if (food.serving_qualifier) {
-    quantityText += `, ${food.serving_qualifier}`
+
+    // Add qualifier if present (legacy only)
+    if (food.serving_qualifier) {
+      quantityText += `, ${food.serving_qualifier}`
+    }
   }
 
   return {

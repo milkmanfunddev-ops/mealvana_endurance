@@ -245,6 +245,7 @@ class _CurrentPlanScreenState extends ConsumerState<CurrentPlanScreen>
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: "nutrition-plan-fab",
         onPressed: () {
           context.push('/distancepacegut');
         },

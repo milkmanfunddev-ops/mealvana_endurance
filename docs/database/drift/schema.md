@@ -1,20 +1,17 @@
-# Drift Database Schema (Version 6)
+# Drift Database Schema (Version 1)
 
 ## Overview
 
-The Drift database serves as the local, offline-first storage for Mealvana Endurance. Version 6 builds upon the foundation established in v2 with incremental improvements for better display names and solver optimization.
+The Drift database serves as the local, offline-first storage for Mealvana Endurance. Version 1 represents a complete schema redesign to align with the new Supabase backend structure, focusing on simplified food management and enhanced product categorization.
 
 ## Schema Evolution
 
-### Version 1 → Version 2 Migration
-- **Preserved Tables**: user_profiles, food_preferences, nutrition_plans, macro_targets, feedback
-- **New Tables**: foods, categories, food_categories, brands, app_content
-- **Migration Strategy**: "Fake History" approach - treat v1 as always having proper Drift migrations
-
-### Version 5 → Version 6 Migration
-- **Added Fields**: `display_name_plural` and `to_exclude_from_solver` to foods table
-- **Purpose**: Better UI display names and solver optimization control
-- **Migration Strategy**: Column additions using `addColumn()` operations
+### Fresh Start - Version 1 (2025)
+- **New Architecture**: Complete alignment with updated Supabase schema
+- **Added Tables**: product_types (for smart food recommendations)
+- **Simplified Foods**: Removed complex serving logic, added simplified display names
+- **Enhanced Plans**: Added complete metadata and versioning support
+- **Migration Strategy**: Clean slate approach - all existing databases reset to v1
 
 ## Table Definitions
 
@@ -76,34 +73,75 @@ class FoodPreferencesTable extends Table {
 }
 ```
 
+**🚨 CRITICAL: Enum Format Constraint**
+
+The `preference` column has a CHECK constraint that enforces underscore format:
+
+```sql
+CHECK (preference IN ('like', 'dislike', 'willing_to_try'))
+```
+
+**When writing to this table:**
+```dart
+// ✅ CORRECT - Use .value to get underscore format
+preference: entry.value.value, // "willing_to_try"
+
+// ❌ WRONG - .name gives camelCase and fails constraint
+preference: entry.value.name,  // "willingToTry" - CHECK constraint violation!
+```
+
+**When reading from this table:**
+```dart
+// ✅ CORRECT - Match against .value
+final preference = FoodPreference.values.firstWhere(
+  (p) => p.value == row.preference, // Matches "willing_to_try"
+  orElse: () => FoodPreference.dislike,
+);
+```
+
 ### 3. nutrition_plans
 
-**Purpose**: Generated nutrition plans with full history
+**Purpose**: Generated nutrition plans with full history and versioning
 **Primary Key**: id (UUID)
 
 ```dart
 @DataClassName('NutritionPlanEntry')
 class NutritionPlans extends Table {
-  TextColumn get id => text()();                   // UUID (PK)
-  TextColumn get userId => text()();               // References user_profiles.id
-  TextColumn get planName => text()();             // User-friendly plan name
-  TextColumn get planData => text()();             // JSON nutrition plan data
-  RealColumn get distanceMiles => real().nullable()();
-  RealColumn get paceMinutesPerMile => real().nullable()();
-  IntColumn get totalCalories => integer().nullable()();
+  /// UUID primary key (matches Supabase nutrition_plans.id)
+  TextColumn get id => text().withLength(min: 36, max: 36)();
+
+  /// Device ID (foreign key reference to users.device_id)
+  TextColumn get deviceId => text().named('device_id')();
+
+  /// Plan data stored as JSON (matches Supabase nutrition_plans.plan_data)
+  TextColumn get planData => text().named('plan_data')();
+
+  /// Plan metadata (matches Supabase schema)
+  TextColumn get planId => text().named('plan_id')();
+  TextColumn get planName => text().named('plan_name')();
+  RealColumn get distanceMiles => real().nullable().named('distance_miles')();
+  RealColumn get paceMinutesPerMile => real().nullable().named('pace_minutes_per_mile')();
+  IntColumn get totalCalories => integer().nullable().named('total_calories')();
   TextColumn get notes => text().nullable()();
+
+  /// Versioning and sync (matches Supabase schema)
   IntColumn get version => integer().withDefault(const Constant(1))();
-  DateTimeColumn get createdAt => dateTime()();
-  DateTimeColumn get updatedAt => dateTime()();
-  
-  // Sync tracking
-  TextColumn get lastModifiedBy => text().nullable()();
-  DateTimeColumn get clientUpdatedAt => dateTime().nullable()();
-  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
-  TextColumn get conflictResolution => text().nullable()();
+  TextColumn get lastModifiedBy => text().nullable().named('last_modified_by')();
+  DateTimeColumn get clientUpdatedAt => dateTime().nullable().named('client_updated_at')();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false)).named('is_deleted')();
+  TextColumn get conflictResolution => text().nullable().named('conflict_resolution')();
+
+  /// Timestamps (matches Supabase schema)
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
 
   @override
   Set<Column> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    'UNIQUE(device_id, plan_id)', // Match Supabase unique constraint
+  ];
 }
 ```
 
@@ -182,7 +220,7 @@ class FeedbackTable extends Table {
 }
 ```
 
-### 6. foods ⭐ NEW IN V2
+### 6. foods ⭐ UPDATED IN V1
 
 **Purpose**: Local cache of food database from Supabase
 **Primary Key**: id (UUID)
@@ -190,62 +228,104 @@ class FeedbackTable extends Table {
 ```dart
 @DataClassName('FoodEntry')
 class FoodsTable extends Table {
-  TextColumn get id => text()();                   // UUID (PK)
+  /// UUID primary key (matches Supabase foods.id)
+  TextColumn get id => text().withLength(min: 36, max: 36)();
+
+  /// Food name (matches Supabase foods.name)
   TextColumn get name => text().nullable()();
-  TextColumn get displayName => text().nullable()(); // Display name for UI
-  TextColumn get displayNamePlural => text().nullable()(); // Plural form for UI
-  TextColumn get imageAddress => text().nullable()();
-  TextColumn get description => text().nullable()();
-  TextColumn get instructions => text().nullable()();
-  TextColumn get nutritionalInfo => text().nullable()(); // JSON
-  DateTimeColumn get createdAt => dateTime().nullable()();
 
-  // Serving information
-  RealColumn get servingAmount => real().nullable()();
-  TextColumn get servingUnit => text().nullable()();
-  TextColumn get servingUnitPlural => text().nullable()();
-  TextColumn get servingQualifier => text().nullable()();
-  TextColumn get servingSize => text().nullable()();
+  /// Image URL (matches Supabase foods.image_address)
+  TextColumn get imageAddress => text().nullable().named('image_address')();
 
-  // Suitability flags
-  BoolColumn get beforeRunSuitable => boolean().withDefault(const Constant(false))();
-  BoolColumn get duringRunSuitable => boolean().withDefault(const Constant(false))();
-  BoolColumn get afterRunSuitable => boolean().withDefault(const Constant(false))();
-  BoolColumn get runPortable => boolean().withDefault(const Constant(false))();
-  BoolColumn get requiresPreparation => boolean().withDefault(const Constant(false))();
-  BoolColumn get aidStationAvailable => boolean().withDefault(const Constant(false))();
-  BoolColumn get isElectrolyte => boolean().withDefault(const Constant(false))();
-  BoolColumn get toExcludeFromSolver => boolean().withDefault(const Constant(false))();
-  IntColumn get maxServingsBefore => integer().nullable()();
-  IntColumn get maxServingsDuring => integer().nullable()();
-  IntColumn get maxServingsAfter => integer().nullable()();
+  /// When the food was created (matches Supabase foods.created_at)
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
 
-  // Nutritional values per serving
-  IntColumn get sodiumMg => integer().nullable()();
-  IntColumn get caffeineMg => integer().nullable()();
-  IntColumn get potassiumMg => integer().nullable()();
-  RealColumn get fatPerServing => real().nullable()();
-  RealColumn get carbsPerServing => real().nullable()();
-  RealColumn get proteinPerServing => real().nullable()();
-  IntColumn get caloriesPerServing => integer().nullable()();
-  RealColumn get fluidMlPerServing => real().nullable()();
+  // Simplified serving information (matches new Supabase schema)
+  RealColumn get servingAmount => real().nullable().named('serving_amount')();
 
-  // Brand and purchasing
-  TextColumn get brandId => text().nullable()();   // References brands.id
-  TextColumn get productType => text().nullable()(); // gel/chew/drink_mix/etc
-  TextColumn get purchaseUrl => text().nullable()();
-  TextColumn get affiliateSource => text().nullable()();
+  // Serving limits (matches Supabase schema)
+  IntColumn get maxServingsBefore => integer().nullable().named('max_servings_before')();
+  IntColumn get maxServingsDuring => integer().nullable().named('max_servings_during')();
+  IntColumn get maxServingsAfter => integer().nullable().named('max_servings_after')();
 
-  // Food preferences filtering (added in v2.1)
-  BoolColumn get showInPreferences => boolean().withDefault(const Constant(false))();
-  IntColumn get preferencePriority => integer().withDefault(const Constant(999))();
+  // Nutritional values per serving (matches Supabase schema)
+  IntColumn get sodiumMg => integer().nullable().named('sodium_mg')();
+  IntColumn get caffeineMg => integer().nullable().named('caffeine_mg')();
+  IntColumn get potassiumMg => integer().nullable().named('potassium_mg')();
+  RealColumn get fatPerServing => real().nullable().named('fat_per_serving')();
+  RealColumn get carbsPerServing => real().nullable().named('carbs_per_serving')();
+  RealColumn get proteinPerServing => real().nullable().named('protein_per_serving')();
+  IntColumn get caloriesPerServing => integer().nullable().named('calories_per_serving')();
+  RealColumn get fluidMlPerServing => real().nullable().named('fluid_ml_per_serving')();
+
+  // Branding and categorization (matches new Supabase schema)
+  TextColumn get brandId => text().nullable().named('brand_id')(); // References brands.id
+  TextColumn get productTypeId => text().nullable().named('product_type_id')(); // References product_types.id
+
+  // Food preferences and solver configuration (matches Supabase schema)
+  BoolColumn get showInPreferences => boolean().withDefault(const Constant(false)).named('show_in_preferences')();
+  BoolColumn get isElectrolyte => boolean().withDefault(const Constant(false)).named('is_electrolyte')();
+  BoolColumn get toExcludeFromSolver => boolean().withDefault(const Constant(false)).named('to_exclude_from_solver')();
+
+  // Simplified display names (matches new Supabase schema)
+  TextColumn get displayName => text().nullable().withLength(max: 100).named('display_name')(); // e.g., "gel", "banana"
+  TextColumn get displayNamePlural => text().nullable().withLength(max: 100).named('display_name_plural')(); // e.g., "gels", "bananas"
+
+  // Serving description (matches Supabase schema)
+  TextColumn get servingDescription => text().nullable().named('serving_description')(); // e.g., "1 medium", "1 cup cooked"
+
+  // Additional fields matching Supabase
+  TextColumn get description => text().nullable()(); // Product description
 
   @override
   Set<Column> get primaryKey => {id};
 }
 ```
 
-### 7. categories ⭐ NEW IN V2
+### 7. product_types ⭐ NEW IN V1
+
+**Purpose**: Standardized food product categories for better recommendations
+**Primary Key**: id (UUID)
+
+```dart
+@DataClassName('ProductTypeEntry')
+class ProductTypesTable extends Table {
+  /// UUID primary key (matches Supabase product_types.id)
+  TextColumn get id => text().withLength(min: 36, max: 36)();
+
+  /// Unique code identifier (matches Supabase product_types.code)
+  TextColumn get code => text()();
+
+  /// Display name (matches Supabase product_types.name)
+  TextColumn get name => text()();
+
+  /// Plural form for UI (matches Supabase product_types.name_plural)
+  TextColumn get namePlural => text().named('name_plural')();
+
+  /// Sort order for UI display (matches Supabase product_types.sort_order)
+  IntColumn get sortOrder => integer().nullable().named('sort_order')();
+
+  /// When the type was created (matches Supabase product_types.created_at)
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    'UNIQUE(code)', // Match Supabase unique constraint on code
+  ];
+}
+```
+
+**Pre-populated Data**:
+The table includes 16 standardized product types:
+- gel, chew, drink_mix, pill, bar, candy
+- fruit_fresh, fruit_dried, nut_seed
+- dairy, grain, vegetable, meat_fish
+- water, sports_drink, other
+
+### 8. categories ⭐ NEW IN V2
 
 **Purpose**: Food timing categories
 **Primary Key**: id (Integer)
@@ -330,12 +410,13 @@ class AppContentTable extends Table {
 
 ### Explicit Relationships
 - **food_preferences.userId** → **user_profiles.id**
-- **nutrition_plans.userId** → **user_profiles.id**
+- **nutrition_plans.deviceId** → **user_profiles.id**
 - **macro_targets.userId** → **user_profiles.id**
 - **macro_targets.planId** → **nutrition_plans.id** (optional)
 - **food_categories.foodId** → **foods.id**
 - **food_categories.categoryId** → **categories.id**
 - **foods.brandId** → **brands.id** (optional)
+- **foods.productTypeId** → **product_types.id** (optional)
 
 ### Implicit Relationships
 - **food_preferences.foodId** matches **foods.name** or **foods.id**
@@ -355,15 +436,19 @@ CREATE INDEX idx_food_preferences_user ON food_preferences(user_id);
 CREATE INDEX idx_food_preferences_user_food ON food_preferences(user_id, food_id);
 
 -- Plan queries
-CREATE INDEX idx_nutrition_plans_user_created ON nutrition_plans(user_id, created_at DESC);
-CREATE INDEX idx_nutrition_plans_user_active ON nutrition_plans(user_id) WHERE is_deleted = 0;
+CREATE INDEX idx_nutrition_plans_device_created ON nutrition_plans(device_id, created_at DESC);
+CREATE INDEX idx_nutrition_plans_device_active ON nutrition_plans(device_id) WHERE is_deleted = 0;
+CREATE INDEX idx_nutrition_plans_device_plan ON nutrition_plans(device_id, plan_id);
 
 -- Food searches
 CREATE INDEX idx_foods_name ON foods(name);
-CREATE INDEX idx_foods_before_run ON foods(before_run_suitable) WHERE before_run_suitable = 1;
-CREATE INDEX idx_foods_during_run ON foods(during_run_suitable) WHERE during_run_suitable = 1;
 CREATE INDEX idx_foods_preferences ON foods(show_in_preferences) WHERE show_in_preferences = 1;
-CREATE INDEX idx_foods_preference_priority ON foods(preference_priority, name);
+CREATE INDEX idx_foods_product_type ON foods(product_type_id);
+CREATE INDEX idx_foods_brand ON foods(brand_id);
+
+-- Product type lookups
+CREATE INDEX idx_product_types_code ON product_types(code);
+CREATE INDEX idx_product_types_sort ON product_types(sort_order, name);
 
 -- Category lookups
 CREATE INDEX idx_food_categories_category ON food_categories(category_id);
@@ -403,7 +488,7 @@ await database.saveFoodPreferences(userId, preferences);
 // Get foods by category
 final beforeRunFoods = await (database.select(database.foodsTable)
   ..join([
-    leftOuterJoin(database.foodCategoriesTable, 
+    leftOuterJoin(database.foodCategoriesTable,
       database.foodCategoriesTable.foodId.equalsExp(database.foodsTable.id))
   ])
   ..where(database.categoriesTable.name.equals('before_run'))).get();
@@ -412,20 +497,29 @@ final beforeRunFoods = await (database.select(database.foodsTable)
 final searchResults = await (database.select(database.foodsTable)
   ..where(database.foodsTable.name.like('%$searchTerm%'))).get();
 
-// Get foods for preferences screen (ordered by priority)
+// Get foods for preferences screen
 final preferenceFoods = await (database.select(database.foodsTable)
   ..where(database.foodsTable.showInPreferences.equals(true))
   ..orderBy([
-    (t) => OrderingTerm.asc(t.preferencePriority),
     (t) => OrderingTerm.asc(t.name)
   ])).get();
 
-// Get foods with brand information
-final foodsWithBrands = await (database.select(database.foodsTable)
+// Get foods with brand and product type information
+final foodsWithDetails = await (database.select(database.foodsTable)
   ..join([
     leftOuterJoin(database.brandsTable,
-      database.brandsTable.id.equalsExp(database.foodsTable.brandId))
+      database.brandsTable.id.equalsExp(database.foodsTable.brandId)),
+    leftOuterJoin(database.productTypesTable,
+      database.productTypesTable.id.equalsExp(database.foodsTable.productTypeId))
   ])).get();
+
+// Get foods by product type
+final gelFoods = await (database.select(database.foodsTable)
+  ..join([
+    innerJoin(database.productTypesTable,
+      database.productTypesTable.id.equalsExp(database.foodsTable.productTypeId))
+  ])
+  ..where(database.productTypesTable.code.equals('gel'))).get();
 ```
 
 ### Nutrition Plan Management
@@ -433,11 +527,17 @@ final foodsWithBrands = await (database.select(database.foodsTable)
 // Save new plan
 await database.saveNutritionPlan(plan);
 
-// Get user's latest plan
-final latestPlan = await database.getLatestNutritionPlan(userId);
+// Get device's latest plan
+final latestPlan = await database.getLatestNutritionPlan(deviceId);
 
-// Get plan history
-final allPlans = await database.getAllNutritionPlans(userId);
+// Get plan history for device
+final allPlans = await database.getAllNutritionPlans(deviceId);
+
+// Get plan by device and plan ID
+final specificPlan = await (database.select(database.nutritionPlans)
+  ..where((t) => t.deviceId.equals(deviceId) &
+                 t.planId.equals(planId) &
+                 t.isDeleted.equals(false))).getSingleOrNull();
 
 // Delete plan (soft delete)
 await database.deleteNutritionPlan(planId);

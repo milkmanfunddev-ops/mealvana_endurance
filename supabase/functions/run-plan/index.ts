@@ -41,12 +41,15 @@ type Food = {
   description?: string | null;      // Fixed: matches database
   instructions?: string | null;     // Fixed: matches database
 
-  // Serving meta
-  serving_amount?: number | null;
-  serving_unit?: string | null;
-  serving_qualifier?: string | null;
-  serving_unit_plural?: string | null;
-  serving_size?: string | null;
+  // Simplified serving approach (always 1.0)
+  serving_amount?: number | null; // Always 1.0 in simplified approach
+
+  // Simplified display names (replaces complex serving unit logic)
+  display_name?: string | null;        // e.g., "cup cooked oatmeal"
+  display_name_plural?: string | null; // e.g., "cups cooked oatmeal"
+
+  // Deprecated fields (removed in simplified approach):
+  // serving_unit, serving_qualifier, serving_unit_plural, serving_size
 
   // Per-serving nutrition
   sodium_mg?: number | null;
@@ -267,7 +270,8 @@ function calcTargets(inp: Inputs): Targets {
 async function fetchFoods(): Promise<Food[]> {
   const cols = [
     "id","name","image_address","description","instructions",      // Fixed: correct field names
-    "serving_amount","serving_unit","serving_qualifier","serving_unit_plural","serving_size",
+    "serving_amount","display_name","display_name_plural",  // Simplified approach
+    // Removed: "serving_unit","serving_qualifier","serving_unit_plural","serving_size",
     "sodium_mg","caffeine_mg","potassium_mg","fat_per_serving","carbs_per_serving","protein_per_serving","calories_per_serving",
     "fluid_ml_per_serving",
     "before_run_suitable","during_run_suitable","run_portable","requires_preparation","aid_station_available",

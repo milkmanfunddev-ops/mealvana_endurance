@@ -149,6 +149,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
       // Feedback Drawer as Overlay  
       floatingActionButton: _showFeedbackDrawer
           ? FloatingActionButton(
+              heroTag: "sample-plan-fab",
               onPressed: () => setState(() => _showFeedbackDrawer = false),
               child: const Icon(Icons.close),
             )

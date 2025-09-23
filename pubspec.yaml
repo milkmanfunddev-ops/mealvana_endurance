@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.4.0+21
+version: 1.5.0+22
 
 environment:
   sdk: ^3.8.1
@@ -76,6 +76,9 @@ dependencies:
   
   # Speech Recognition
   speech_to_text: ^6.6.0
+
+  # Barcode Scanning
+  mobile_scanner: ^7.0.1
 
 dev_dependencies:
   sentry_dart_plugin: ^3.1.1
@@ -185,25 +188,18 @@ flutter:
 
 # Flutter Launcher Icons configuration
 flutter_launcher_icons:
+  android: "launcher_icon"
   ios: true
-  android: true
-  image_path_ios: "assets/images/main_icon_no_text.png"
-  image_path_android: "assets/images/main_icon_no_text.png"
-  adaptive_icon_background: "assets/images/app_icon_background.png"
-  adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
+  image_path: "assets/images/endurance_launcher_icon_1024.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/images/endurance_launcher_icon_1024.png"
   remove_alpha_ios: true
   web:
     generate: true
-    image_path: "assets/images/main_icon_no_text.png"
+    image_path: "assets/images/endurance_launcher_icon_1024.png"
 
-# Flutter Native Splash configuration
-flutter_native_splash:
-  color: "#f5f5f5"
-  image: "assets/images/main_icon.png"
-  android_12:
-    color: "#f5f5f5"
-    icon_background_color: "#f5f5f5"
-    image: "assets/images/main_icon.png"
+
 
 sentry:
   upload_debug_symbols: true

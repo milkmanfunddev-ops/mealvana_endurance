@@ -125,5 +125,28 @@
   "success": {
     "feedback_submitted": "✅ Thank you for your feedback!",
     "profile_saved": "Profile saved successfully!"
+  },
+  "carb_loading": {
+    "header_title": "Marathon",
+    "carb_target_label": "carbs/kg target",
+    "countdown_days": "days",
+    "loading_starts": "Carb loading starts in {days} days",
+    "loading_active": "Carb loading in progress",
+    "race_day": "Race day - time to fuel!",
+    "preparation_complete": "Race preparation complete",
+    "day_begin": "Begin",
+    "day_peak": "Peak",
+    "day_fuel": "Fuel",
+    "quick_add_title": "Quick Add (+50g carbs each):",
+    "added_carbs": "Added: +{amount}g carbs",
+    "meal_breakfast": "Breakfast",
+    "meal_lunch": "Lunch",
+    "meal_snack1": "Snack",
+    "meal_snack2": "Snack",
+    "meal_dinner": "Dinner",
+    "no_plan_title": "No Carb Loading Plan",
+    "no_plan_description": "Create a carb loading plan to start tracking your race preparation.",
+    "create_plan_button": "Create Plan",
+    "error_loading": "Error Loading Plan"
   }
 }

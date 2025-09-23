@@ -11,6 +11,19 @@ import '../../../../shared/database/database_provider.dart';
 
 part 'swap_food_controller.g.dart';
 
+/// Parameters for the swap food controller
+class SwapFoodParams {
+  const SwapFoodParams({
+    required this.category,
+    this.originalFoodId,
+    this.originalFoodName,
+  });
+
+  final String category; // Keep for context (before_run, during_run, after_run)
+  final String? originalFoodId; // Food being swapped (for product type matching)
+  final String? originalFoodName; // Food name being swapped (fallback if ID lookup fails)
+}
+
 /// State for the swap food screen
 class SwapFoodState {
   const SwapFoodState({
@@ -21,7 +34,7 @@ class SwapFoodState {
     this.searchQuery = '',
     this.isSearching = false,
   });
-  
+
   final List<Food> availableFoods; // Generic foods for recommendations
   final List<Food> searchResults; // Current search results or recommendations
   final List<Food>? allFoodsForSearch; // All foods (including branded) for searching
@@ -34,6 +47,7 @@ class SwapFoodState {
     List<Food>? searchResults,
     List<Food>? allFoodsForSearch,
     Food? selectedFood,
+    bool clearSelectedFood = false,
     String? searchQuery,
     bool? isSearching,
   }) {
@@ -41,7 +55,7 @@ class SwapFoodState {
       availableFoods: availableFoods ?? this.availableFoods,
       searchResults: searchResults ?? this.searchResults,
       allFoodsForSearch: allFoodsForSearch ?? this.allFoodsForSearch,
-      selectedFood: selectedFood ?? this.selectedFood,
+      selectedFood: clearSelectedFood ? null : (selectedFood ?? this.selectedFood),
       searchQuery: searchQuery ?? this.searchQuery,
       isSearching: isSearching ?? this.isSearching,
     );
@@ -55,54 +69,98 @@ FoodRepository foodRepository(Ref ref) {
   return FoodRepository(Supabase.instance.client, database);
 }
 
-/// Controller for swap food functionality - takes category as parameter
+/// Controller for swap food functionality - takes swap parameters
 @riverpod
 class SwapFoodController extends _$SwapFoodController {
-  
+
   @override
-  FutureOr<SwapFoodState> build(String category) {
-    // Auto-initialize with foods for the given category
-    return _loadFoodsForCategory(category);
+  FutureOr<SwapFoodState> build(SwapFoodParams params) async {
+    // Auto-initialize with foods based on original food's product type
+    return await _loadFoodsForSwapping(params);
   }
   
-  Future<SwapFoodState> _loadFoodsForCategory(String category) async {
-    // Load generic foods for recommendations and all foods (including branded) for search
+  Future<SwapFoodState> _loadFoodsForSwapping(SwapFoodParams params) async {
+    // Load all foods (no category restrictions)
+    AppLogger.instance.debug('Loading generic foods for swap food page');
     final genericFoods = await _getGenericFoodsWithCache();
+    AppLogger.instance.debug('Loaded ${genericFoods.length} generic foods');
+
+    AppLogger.instance.debug('Loading all foods including branded');
     final allFoods = await _getAllFoodsIncludingBrandedWithCache();
-    
-    // Filter generic foods by category suitability for recommendations
-    final availableFoods = genericFoods.where((food) {
-      switch (category) {
-        case 'before_run':
-          return food.beforeRunSuitable;
-        case 'during_run':
-          return food.duringRunSuitable;
-        case 'after_run':
-          return true; // Assuming all foods are suitable after run
-        default:
-          return false;
-      }
-    }).toList();
-    
-    // Filter ALL foods (including branded) by category for search capability  
-    final allCategoryFoods = allFoods.where((food) {
-      switch (category) {
-        case 'before_run':
-          return food.beforeRunSuitable;
-        case 'during_run':
-          return food.duringRunSuitable;
-        case 'after_run':
-          return true;
-        default:
-          return false;
-      }
-    }).toList();
-    
-    return SwapFoodState(
-      availableFoods: availableFoods, // Generic foods for recommendations
-      searchResults: availableFoods, // Initially show generic foods, will be replaced on search
-      allFoodsForSearch: allCategoryFoods, // All foods (including branded) for search
+    AppLogger.instance.debug('Loaded ${allFoods.length} total foods (including branded)');
+
+    // Find the original food to get its product type
+    Food? originalFood;
+    if (params.originalFoodId != null) {
+      originalFood = allFoods.where((food) => food.id == params.originalFoodId).firstOrNull;
+      AppLogger.instance.debug('Found original food: ${originalFood?.name}, productTypeId: ${originalFood?.productTypeId}');
+    } else {
+      AppLogger.instance.debug('No original food ID provided - this is an "Add" operation');
+    }
+
+    // Get recommendations based on same product type
+    AppLogger.instance.debug('Getting product type recommendations');
+    final availableFoods = await _getRecommendationsByProductType(
+      originalFood,
+      genericFoods,
+      allFoods,
     );
+    AppLogger.instance.debug('Got ${availableFoods.length} recommendations');
+
+    return SwapFoodState(
+      availableFoods: availableFoods, // Recommendations (same product type)
+      searchResults: availableFoods, // Initially show recommendations
+      allFoodsForSearch: allFoods, // All foods for search (no category restrictions)
+    );
+  }
+
+  /// Get up to 3 recommendations of the same product type
+  /// Prioritize generic foods, then branded foods if needed
+  Future<List<Food>> _getRecommendationsByProductType(
+    Food? originalFood,
+    List<Food> genericFoods,
+    List<Food> allFoods,
+  ) async {
+    // If no original food or no product type, return empty recommendations
+    if (originalFood == null || originalFood.productTypeId == null) {
+      return [];
+    }
+
+    try {
+      final targetProductTypeId = originalFood.productTypeId!;
+
+      // First, get generic foods with same product type (excluding the original food)
+      final genericMatches = genericFoods.where((food) =>
+        food.productTypeId == targetProductTypeId &&
+        food.id != originalFood.id
+      ).toList();
+
+      final recommendations = <Food>[];
+
+      // Add up to 3 generic foods first
+      recommendations.addAll(genericMatches.take(3));
+
+      // If we need more recommendations to reach 3, add branded foods
+      if (recommendations.length < 3) {
+        final brandedMatches = allFoods.where((food) =>
+          food.productTypeId == targetProductTypeId &&
+          food.id != originalFood.id && // Exclude the original food
+          !genericFoods.contains(food) // Exclude generic foods we already added
+        ).toList();
+
+        final remaining = 3 - recommendations.length;
+        recommendations.addAll(brandedMatches.take(remaining));
+      }
+
+      return recommendations;
+
+    } catch (e) {
+      AppLogger.instance.error('Error getting recommendations by product type',
+        context: 'SwapFoodController',
+        error: e,
+      );
+      return [];
+    }
   }
   
   /// Get generic foods only (for recommendations)
@@ -151,7 +209,11 @@ class SwapFoodController extends _$SwapFoodController {
       description: foodItem.description,
       instructions: foodItem.instructions,
       servingAmount: foodItem.servingAmount,
+      displayName: foodItem.displayName,
+      displayNamePlural: foodItem.displayNamePlural,
       servingUnit: foodItem.servingUnit,
+      servingUnitPlural: foodItem.servingUnitPlural,
+      servingQualifier: foodItem.servingQualifier,
       beforeRunSuitable: foodItem.beforeRunSuitable,
       duringRunSuitable: foodItem.duringRunSuitable,
       carbsPerServing: foodItem.carbsPerServing,
@@ -160,6 +222,7 @@ class SwapFoodController extends _$SwapFoodController {
       caloriesPerServing: foodItem.caloriesPerServing,
       fluidMlPerServing: foodItem.fluidMlPerServing,
       sodiumMg: foodItem.sodiumMg,
+      productTypeId: foodItem.productTypeId,
     );
   }
   
@@ -167,25 +230,28 @@ class SwapFoodController extends _$SwapFoodController {
   void updateSearch(String query) {
     final currentState = state.valueOrNull;
     if (currentState == null) return;
-    
+
     if (query.isEmpty) {
       // No search - show recommended alternatives (generic foods)
       state = AsyncValue.data(currentState.copyWith(
         searchQuery: '',
         searchResults: currentState.availableFoods, // Generic foods
         isSearching: false,
+        // Keep selected food when clearing search
       ));
     } else {
-      // Search in ALL foods (including branded)
+      // Search in ALL foods (including branded) - case-insensitive partial matching
+      // Clear selected food when starting a new search
       final searchPool = currentState.allFoodsForSearch ?? currentState.availableFoods;
       final filtered = searchPool.where((food) {
         return food.name.toLowerCase().contains(query.toLowerCase());
       }).toList();
-      
+
       state = AsyncValue.data(currentState.copyWith(
         searchQuery: query,
         searchResults: filtered, // Both generic AND branded foods
         isSearching: true,
+        clearSelectedFood: true, // Clear selected food when starting new search
       ));
     }
   }
@@ -202,8 +268,8 @@ class SwapFoodController extends _$SwapFoodController {
   void clearSelection() {
     final currentState = state.valueOrNull;
     if (currentState == null) return;
-    
-    state = AsyncValue.data(currentState.copyWith(selectedFood: null));
+
+    state = AsyncValue.data(currentState.copyWith(clearSelectedFood: true));
   }
   
   /// Swap a food in the nutrition plan

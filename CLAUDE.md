@@ -109,6 +109,9 @@ The app implements a "fat backend" strategy where business logic and content are
 
 📚 **Full Documentation**: [/docs/technical/fat-backend-architecture.md](/docs/technical/fat-backend-architecture.md)
 
+## Agents Available
+- docs-manager.  Please use for creating, amanging or updating our documentation.
+
 ## Project Structure
 
 ```

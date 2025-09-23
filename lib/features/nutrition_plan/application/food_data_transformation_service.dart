@@ -75,6 +75,8 @@ class FoodDataTransformationService {
       description: foodDetails.description,
       timing: item['timing'] as String?,
       instructions: foodDetails.instructions,
+      displayName: foodDetails.displayName,
+      displayNamePlural: foodDetails.displayNamePlural,
       nutritionalInfo: NutritionalInfo(
         calories: item['calories'] as int?,
         carbs: item['carbs_grams'] != null ? (item['carbs_grams'] as num).round() : null,
@@ -95,8 +97,8 @@ class FoodDataTransformationService {
 
     // Use singular vs plural display names from database
     final isPlural = quantity != 1;
-    final displayName = isPlural
-        ? (foodDetails.displayNamePlural ?? foodDetails.displayName ?? foodDetails.name)
+    final displayName = isPlural && foodDetails.displayNamePlural?.isNotEmpty == true
+        ? foodDetails.displayNamePlural!
         : (foodDetails.displayName ?? foodDetails.name);
 
     final unit = foodDetails.servingUnit ?? '';

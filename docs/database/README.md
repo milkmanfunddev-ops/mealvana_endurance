@@ -26,8 +26,8 @@ Foundational design principles and data flow patterns:
 
 ### 📁 [Drift (Local Database)](drift/)
 SQLite implementation with Dart code generation:
-- **[schema.md](drift/schema.md)**: Complete v2 schema with 10 tables and relationships
-- **[migration-strategy.md](drift/migration-strategy.md)**: "Fake History" migration approach from v1→v2
+- **[schema.md](drift/schema.md)**: Complete v1 schema with updated tables and relationships
+- **[migration-strategy.md](drift/migration-strategy.md)**: Schema migration strategies and best practices
 - **[sync-service.md](drift/sync-service.md)**: 24-hour refresh cycle and sync coordination
 - **[repositories.md](drift/repositories.md)**: Repository pattern implementation with Riverpod
 
@@ -38,26 +38,26 @@ PostgreSQL backend with real-time and serverless capabilities:
 - **[edge-functions.md](supabase/edge-functions.md)**: AI nutrition plan generation and dynamic code deployment
 - **[rls-policies.md](supabase/rls-policies.md)**: Row Level Security implementation for privacy protection
 
-## Current Status: V1 → V2 Migration
+## Current Status: V1 Clean Schema Implementation
 
-The app is currently transitioning from a broken v1 implementation to a proper v2 architecture:
+The app has been updated with a clean v1 schema implementation aligned with the new Supabase backend:
 
-### V1 Issues (Current State)
-- ❌ Hardcoded schema version (always 1)
-- ❌ No real migrations (`m.createAll()` approach)
-- ❌ Manual schema management bypasses Drift
-- ❌ Food data not cached locally
-- ❌ Content stored in SharedPreferences
+### V1 Current Implementation
+- ✅ Clean Drift schema matching Supabase structure
+- ✅ Product types table for standardized food categorization
+- ✅ Simplified foods table with display names and product type references
+- ✅ Enhanced nutrition plans with complete versioning and metadata
+- ✅ Device-based authentication (no traditional user accounts)
+- ✅ Local food caching with Supabase sync capability
 
-### V2 Target State (Documented)
-- ✅ Proper Drift migrations with versioning
-- ✅ 10 tables mirroring Supabase structure
-- ✅ Local food caching with 24-hour refresh
-- ✅ Content management in database
-- ✅ Backup and rollback protection
+### Key Schema Updates
+- **Product Types**: New standardized categorization system (16 types)
+- **Foods Table**: Simplified serving logic, added display names and product type references
+- **Nutrition Plans**: Complete overhaul with versioning, conflict resolution, and device-based tracking
+- **Database Methods**: Updated to work with new field names and structures
 
-### Migration Approach
-**"Fake History" Strategy**: Treat v1 as if it was always a proper Drift migration while preserving all user data. See [migration-strategy.md](drift/migration-strategy.md) for complete implementation details.
+### Fresh Start Approach
+**V1 Fresh Implementation**: Starting with a clean v1 schema that mirrors the updated Supabase backend structure, ensuring consistency between local and cloud storage from the beginning.
 
 ## Quick Start
 
@@ -87,15 +87,44 @@ The app is currently transitioning from a broken v1 implementation to a proper v
 ### For AI Assistants
 
 **When working with database code:**
-- Consult `drift/schema.md` for current v2 table structure
+- Consult `drift/schema.md` for current v1 table structure
 - Check `drift/repositories.md` for repository patterns
 - Use `architecture/data-flow.md` for sync logic understanding
 - Reference `supabase/tables.md` for backend table relationships
+
+**🚨 CRITICAL: Enum Format Requirements**
+
+**When working with enum values in database operations:**
+
+```dart
+// ✅ CORRECT - For LOCAL database operations, use .value
+await database.saveFoodPreferences(deviceId, preferences.map(
+  (key, value) => MapEntry(key, value.value), // Stores: willing_to_try
+));
+
+// ✅ CORRECT - For reading from LOCAL database, match against .value
+final preference = FoodPreference.values.firstWhere(
+  (p) => p.value == row.preference, // Expects: willing_to_try
+  orElse: () => FoodPreference.dislike,
+);
+
+// ❌ WRONG - Don't use .name for database operations
+await database.saveFoodPreferences(deviceId, preferences.map(
+  (key, value) => MapEntry(key, value.name), // Would store: willingToTry - FAILS!
+));
+```
+
+**Why this matters:**
+- Database CHECK constraints expect underscore format: `preference IN ('like', 'dislike', 'willing_to_try')`
+- Edge Functions expect underscore format for consistency
+- Local database mirrors cloud database format exactly
+- Using `.name` instead of `.value` causes CHECK constraint failures
 
 **When making schema changes:**
 - Follow migration strategy in `drift/migration-strategy.md`
 - Implement backup procedures from `architecture/backup-strategy.md`
 - Update both Drift and Supabase documentation
+- Test enum format consistency across all database operations
 
 ## 🏗️ **Schema Highlights**
 
@@ -114,14 +143,22 @@ JOIN categories c ON fc.category_id = c.id
 GROUP BY f.id, f.name;
 ```
 
-### **Structured Serving Data**
+### **Simplified Serving Data & Product Types**
 ```sql
--- No more hardcoded parsing - proper database fields
+-- Simplified serving structure with standardized product categories
 CREATE TABLE foods (
-  serving_amount NUMERIC,     -- e.g., 1, 0.5, 2
-  serving_unit TEXT,         -- e.g., "cup", "medium"  
-  serving_unit_plural TEXT,  -- e.g., "cups", "medium"
-  serving_qualifier TEXT     -- e.g., "cooked", "sliced"
+  serving_amount NUMERIC,               -- e.g., 1, 0.5, 2
+  serving_description TEXT,             -- e.g., "1 medium", "1 cup cooked"
+  display_name VARCHAR(100),            -- e.g., "gel", "banana"
+  display_name_plural VARCHAR(100),     -- e.g., "gels", "bananas"
+  product_type_id UUID REFERENCES product_types(id)
+);
+
+CREATE TABLE product_types (
+  id UUID PRIMARY KEY,
+  code TEXT UNIQUE,                     -- e.g., "gel", "fruit_fresh"
+  name TEXT,                           -- e.g., "Gel", "Fresh Fruit"
+  name_plural TEXT                     -- e.g., "Gels", "Fresh Fruits"
 );
 ```
 
@@ -138,11 +175,19 @@ SELECT upsert_food_preferences(device_id, preferences_jsonb);
 
 ### **Versioning & Conflict Resolution**
 ```sql
--- Optimistic concurrency control for nutrition plans
+-- Device-based nutrition plans with optimistic concurrency control
 CREATE TABLE nutrition_plans (
+  id UUID PRIMARY KEY,
+  device_id TEXT NOT NULL,              -- Device-based authentication
+  plan_id TEXT NOT NULL,                -- User-defined plan identifier
+  plan_name TEXT NOT NULL,              -- Display name
+  plan_data TEXT NOT NULL,              -- JSON plan content
   version INTEGER DEFAULT 1,
-  conflict_resolution TEXT DEFAULT 'last_write_wins',
-  client_updated_at TIMESTAMPTZ
+  last_modified_by TEXT,
+  client_updated_at TIMESTAMPTZ,
+  is_deleted BOOLEAN DEFAULT FALSE,
+  conflict_resolution TEXT,
+  UNIQUE(device_id, plan_id)            -- One plan per device per plan_id
 );
 ```
 

@@ -106,83 +106,105 @@ CREATE TABLE public.nutrition_plans (
 - `idx_nutrition_plans_device_updated`: Sync queries
 - `idx_nutrition_plans_active`: Active plans only
 
-### 3. foods
+### 3. product_types (NEW)
 
-**Purpose**: Master food database with nutritional information and affiliate data
+**Purpose**: Standardized food product type categorization
 **Primary Key**: id (UUID)
-**Foreign Key**: brand_id → brands(id)
+**Unique Constraint**: code
+
+```sql
+CREATE TABLE public.product_types (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    code        text UNIQUE NOT NULL,
+    name        text NOT NULL,
+    name_plural text NOT NULL,
+    sort_order  integer,
+    created_at  timestamptz DEFAULT now()
+);
+```
+
+**Sample Data**:
+- `gel` → "Gel", "Gels" (sort: 10)
+- `chew` → "Chew", "Chews" (sort: 20)
+- `drink_mix` → "Drink mix", "Drink mixes" (sort: 30)
+- `electrolyte_only` → "Electrolyte-only", "Electrolyte-only" (sort: 40)
+- `sports_drink` → "Sports drink", "Sports drinks" (sort: 50)
+- `bar` → "Bar", "Bars" (sort: 60)
+- `waffle` → "Waffle", "Waffles" (sort: 70)
+- `capsule` → "Capsule", "Capsules" (sort: 80)
+- `real_food` → "Real food", "Real foods" (sort: 90)
+- `recovery_shake` → "Recovery shake", "Recovery shakes" (sort: 100)
+
+**Key Features**:
+- **Standardized Types**: Consistent product categorization across the system
+- **Display Names**: Proper singular/plural forms for UI display
+- **Sorting**: Configurable sort order for UI presentation
+
+### 4. foods (UPDATED)
+
+**Purpose**: Master food database with nutritional information and simplified display names
+**Primary Key**: id (UUID)
+**Foreign Keys**: brand_id → brands(id), product_type_id → product_types(id)
 
 ```sql
 CREATE TABLE public.foods (
-    id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name                  text,
-    image_address         text,
-    description           text,
-    instructions          text,
-    nutritional_info      jsonb DEFAULT '{}',
-    created_at            timestamptz DEFAULT now(),
-    
-    -- Serving information
-    serving_amount        numeric,
-    serving_unit          text,
-    serving_unit_plural   text,
-    serving_qualifier     text,
-    serving_size          text,
-    
-    -- Suitability flags
-    before_run_suitable   boolean DEFAULT false,
-    during_run_suitable   boolean DEFAULT false,
-    after_run_suitable    boolean DEFAULT false,
-    run_portable          boolean DEFAULT false,
-    requires_preparation  boolean DEFAULT false,
-    aid_station_available boolean DEFAULT false,
-    is_electrolyte        boolean DEFAULT false,
-    max_servings_before   integer,
-    max_servings_during   integer,
-    max_servings_after    integer,
-    
+    id                     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name                   text,
+    image_address          text,
+    created_at             timestamptz DEFAULT now(),
+
+    -- Simplified serving information (UPDATED)
+    serving_amount         numeric DEFAULT 1.0,
+    display_name           varchar(100),      -- NEW: Simplified display (e.g. "gel", "banana")
+    display_name_plural    varchar(100),      -- NEW: Plural form (e.g. "gels", "bananas")
+
+    -- Serving limits
+    max_servings_before    integer,
+    max_servings_during    integer,
+    max_servings_after     integer,
+
     -- Nutritional values per serving
-    sodium_mg             integer,
-    caffeine_mg           integer,
-    potassium_mg          integer,
-    fat_per_serving       numeric(10, 2),
-    carbs_per_serving     numeric(10, 2),
-    protein_per_serving   numeric(10, 2),
-    calories_per_serving  integer,
-    fluid_ml_per_serving  numeric(10, 1),
-    
-    -- Branding and purchasing
-    brand_id              uuid REFERENCES brands(id),
-    product_type          text CHECK (product_type IN (
-        'gel', 'chew', 'drink_mix', 'electrolyte_only', 'sports_drink',
-        'bar', 'waffle', 'capsule', 'real_food', 'recovery_shake'
-    )),
-    purchase_url          text,
-    affiliate_source      text,
-    
-    -- Food preferences filtering (added in v2.1)
-    show_in_preferences   boolean DEFAULT false,
-    preference_priority   integer DEFAULT 999
+    sodium_mg              integer,
+    caffeine_mg            integer,
+    potassium_mg           integer,
+    fat_per_serving        numeric(10, 2),
+    carbs_per_serving      numeric(10, 2),
+    protein_per_serving    numeric(10, 2),
+    calories_per_serving   integer,
+    fluid_ml_per_serving   numeric(10, 1),
+
+    -- Branding and categorization
+    brand_id               uuid REFERENCES brands(id),
+    product_type_id        uuid REFERENCES product_types(id),  -- UPDATED: Now references product_types table
+
+    -- Food preferences and solver configuration
+    show_in_preferences    boolean DEFAULT false,
+    is_electrolyte         boolean DEFAULT false,
+    to_exclude_from_solver boolean DEFAULT false
 );
 ```
 
 **Key Features**:
-- **Comprehensive Nutrition Data**: Complete macro and micronutrient information
-- **Serving Flexibility**: Structured serving size data (no more parsing!)
-- **Timing Suitability**: Boolean flags for before/during/after run appropriateness
-- **Affiliate Integration**: Purchase URLs and affiliate tracking
-- **Brand Relationships**: Optional brand association for monetization
-- **Food Preferences Filtering**: Curated subset for onboarding with priority ordering (v2.1)
+- **Simplified Display Names**: Uses display_name/display_name_plural instead of complex serving unit logic
+- **Standardized Product Types**: References product_types table for consistent categorization
+- **Comprehensive Nutrition Data**: Complete macro and micronutrient information per serving
+- **Solver Integration**: Configuration flags for nutrition optimization algorithm
+- **Brand Relationships**: Optional brand association for affiliate marketing
+
+**Schema Changes (Foods Table Simplification)**:
+- ❌ **REMOVED**: `serving_unit`, `serving_unit_plural`, `serving_qualifier`, `serving_size` (complex logic)
+- ❌ **REMOVED**: `product_type` (text field)
+- ❌ **REMOVED**: `description`, `instructions`, `nutritional_info` (moved to other systems)
+- ❌ **REMOVED**: Suitability flags (`before_run_suitable`, etc.) - now determined by food_categories relationships
+- ✅ **ADDED**: `display_name`, `display_name_plural` (simplified quantity formatting)
+- ✅ **ADDED**: `product_type_id` (references product_types table)
+- ✅ **RETAINED**: All nutritional values and core functionality
 
 **Indexes**:
 - `uq_foods_lower_name`: Case-insensitive unique names
-- `idx_foods_suitability_before`: Fast before-run food queries
-- `idx_foods_suitability_during`: Fast during-run food queries
-- `idx_foods_brand`: Brand-specific queries
-- `idx_foods_preferences`: Fast food preferences filtering
-- `idx_foods_preference_priority`: Ordered display for preferences screen
+- `idx_foods_product_type_id`: Fast product type filtering
 
-### 4. categories
+### 5. categories
 
 **Purpose**: Food timing categories (before_run, during_run, after_run)
 **Primary Key**: id (integer)

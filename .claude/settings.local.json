@@ -107,7 +107,15 @@
       "Bash(supabase db diff:*)",
       "Bash(supabase link:*)",
       "Bash(nc:*)",
-      "mcp__serena__think_about_whether_you_are_done"
+      "mcp__serena__think_about_whether_you_are_done",
+      "WebFetch(domain:world.openfoodfacts.org)",
+      "mcp__serena__think_about_task_adherence",
+      "Bash(supabase status:*)",
+      "Bash(supabase projects:*)",
+      "Bash(magick:*)",
+      "Bash(identify:*)",
+      "Bash(xcrun simctl erase:*)",
+      "Bash(xcrun simctl shutdown:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -169,24 +169,27 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
 
   /// Generate updated quantity display for the current quantity
   String _generateUpdatedQuantityDisplay() {
+    final quantityStr = _currentQuantity == _currentQuantity.toInt() ?
+        _currentQuantity.toInt().toString() :
+        _currentQuantity.toStringAsFixed(1);
+
+    // Use proper plural/singular form based on current quantity
+    final displayName = _getDisplayName().toLowerCase();
+
     final parts = widget.foodItem.quantity.split(' ');
     if (parts.length > 1) {
-      final quantityStr = _currentQuantity == _currentQuantity.toInt() ?
-          _currentQuantity.toInt().toString() :
-          _currentQuantity.toStringAsFixed(1);
       final unit = parts.skip(1).join(' '); // e.g., "tablets", "bagel", "fl oz"
-      final foodName = _getDisplayName().toLowerCase();
 
       // Check if the unit already contains the food name (to avoid duplication)
-      if (unit.toLowerCase().contains(foodName) || foodName.contains(unit.toLowerCase())) {
+      if (unit.toLowerCase().contains(displayName) || displayName.contains(unit.toLowerCase())) {
         // Unit already contains food name (e.g., "bagel" contains "bagel")
         return '$quantityStr $unit';
       } else {
         // Unit doesn't contain food name, add it (e.g., "tablets" + "electrolyte tablet")
-        return '$quantityStr $unit $foodName';
+        return '$quantityStr $unit $displayName';
       }
     }
-    return '${_currentQuantity == _currentQuantity.toInt() ? _currentQuantity.toInt().toString() : _currentQuantity.toStringAsFixed(1)} ${_getDisplayName().toLowerCase()}';
+    return '$quantityStr $displayName';
   }
 
   @override

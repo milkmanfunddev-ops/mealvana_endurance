@@ -14,67 +14,41 @@ class FoodRepository {
   final SupabaseClient _supabase;
   final AppDatabase _database;
 
-  /// Get all generic foods from Supabase (brand_id IS NULL)
+  /// Get all generic foods using get-foods Edge Function (brand_id IS NULL)
   /// Use this for "Recommended Alternatives" - generic foods only
   /// Also syncs the foods to local database for offline access
   Future<List<FoodItem>> getAllFoods() async {
     try {
-      final response = await _supabase
-          .from('foods')
-          .select('''
-            id,
-            name,
-            display_name,
-            image_address,
-            description,
-            instructions,
-            nutritional_info,
-            serving_amount,
-            serving_unit,
-            serving_unit_plural,
-            serving_qualifier,
-            before_run_suitable,
-            during_run_suitable,
-            run_portable,
-            requires_preparation,
-            aid_station_available,
-            max_servings_before,
-            max_servings_during,
-            carbs_per_serving,
-            protein_per_serving,
-            fat_per_serving,
-            calories_per_serving,
-            fluid_ml_per_serving,
-            sodium_mg,
-            caffeine_mg,
-            potassium_mg,
-            serving_size,
-            brand_id,
-            show_in_preferences,
-            preference_priority,
-            created_at,
-            food_categories (
-              category_id
-            ),
-            display_name_plural,
-            display_override,
-            to_exclude_from_solver,
-            is_electrolyte
-          ''')
-          .isFilter('brand_id', null)  // Only get generic foods (no brand)
-          .order('name', ascending: true);
+      // Call get-foods Edge Function without category to get all generic foods
+      final response = await _supabase.functions.invoke('get-foods', body: {
+        'category': null,  // No category filter - get all foods
+        'generic_only': true,  // Only get generic foods (no brand)
+      });
 
-      final List<dynamic> data = response as List<dynamic>;
-      final foods = data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
+      if (response.status != 200) {
+        throw Exception('Edge Function error: ${response.data?['error'] ?? 'Unknown error'}');
+      }
+
+      final data = response.data;
+      if (data == null || data['foods'] == null) {
+        throw Exception('Invalid response from get-foods Edge Function');
+      }
+
+      final List<dynamic> foodsData = data['foods'] as List<dynamic>;
+
+      // Filter for generic foods only (brand_id IS NULL)
+      final genericFoodsData = foodsData.where((food) => food['brand_id'] == null).toList();
+
+      final foods = genericFoodsData.map((json) => _mapEdgeFunctionFoodToFoodItem(json)).toList();
 
       // Sync foods to local database for offline access
-      await _syncFoodsToLocalDatabase(data);
+      await _syncFoodsToLocalDatabase(genericFoodsData);
 
-      AppLogger.instance.debug('Synced ${foods.length} generic foods to local database');
+      AppLogger.instance.debug('Synced ${foods.length} generic foods to local database via Edge Function');
 
       return foods;
     } catch (e) {
-      AppLogger.instance.error('Error fetching generic foods from Supabase',
+      AppLogger.instance.error('Error fetching generic foods from get-foods Edge Function',
         context: 'FoodRepository',
         error: e,
       );
@@ -83,7 +57,7 @@ class FoodRepository {
     }
   }
 
-  /// Get foods for the preferences screen (curated 12 foods ordered by priority)
+  /// Get foods for the preferences screen (curated foods with show_in_preferences=true)
   Future<List<FoodItem>> getFoodsForPreferences() async {
     try {
       final response = await _supabase
@@ -91,21 +65,13 @@ class FoodRepository {
           .select('''
             id,
             name,
+            display_name,
+            display_name_plural,
             image_address,
-            description,
-            instructions,
-            nutritional_info,
             serving_amount,
-            serving_unit,
-            serving_unit_plural,
-            serving_qualifier,
-            before_run_suitable,
-            during_run_suitable,
-            run_portable,
-            requires_preparation,
-            aid_station_available,
             max_servings_before,
             max_servings_during,
+            max_servings_after,
             carbs_per_serving,
             protein_per_serving,
             fat_per_serving,
@@ -114,20 +80,17 @@ class FoodRepository {
             sodium_mg,
             caffeine_mg,
             potassium_mg,
-            serving_size,
             brand_id,
+            product_type_id,
             show_in_preferences,
-            preference_priority,
-            created_at,
-            food_categories (
-              category_id
-            )
+            is_electrolyte,
+            to_exclude_from_solver,
+            created_at
           ''')
           .eq('show_in_preferences', true)
           .isFilter('brand_id', null)  // Only get generic foods (no brand)
-          .order('preference_priority', ascending: true)
           .order('name', ascending: true);
-      
+
       final List<dynamic> data = response as List<dynamic>;
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
@@ -140,32 +103,23 @@ class FoodRepository {
     }
   }
 
-  /// Get foods by category using the new join table with category_id
-  Future<List<FoodItem>> getFoodsByCategory(FoodCategory category) async {
+  /// Get ALL foods from Supabase including both generic and branded
+  /// Use this for search functionality to include branded foods
+  /// Also syncs ALL foods to local database for offline access
+  Future<List<FoodItem>> getAllFoodsIncludingBranded() async {
     try {
-      // First get the category ID
-      final categoryId = _getCategoryId(category);
-      
       final response = await _supabase
           .from('foods')
           .select('''
             id,
             name,
+            display_name,
+            display_name_plural,
             image_address,
-            description,
-            instructions,
-            nutritional_info,
             serving_amount,
-            serving_unit,
-            serving_unit_plural,
-            serving_qualifier,
-            before_run_suitable,
-            during_run_suitable,
-            run_portable,
-            requires_preparation,
-            aid_station_available,
             max_servings_before,
             max_servings_during,
+            max_servings_after,
             carbs_per_serving,
             protein_per_serving,
             fat_per_serving,
@@ -174,78 +128,62 @@ class FoodRepository {
             sodium_mg,
             caffeine_mg,
             potassium_mg,
-            serving_size,
-            created_at,
-            food_categories!inner (
-              category_id
-            )
+            brand_id,
+            product_type_id,
+            show_in_preferences,
+            is_electrolyte,
+            to_exclude_from_solver,
+            created_at
           ''')
-          .eq('food_categories.category_id', categoryId)
+          // NO brand_id filter - include both generic (null) and branded (not null)
           .order('name', ascending: true);
-      
+
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
+      final foods = data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
+
+      // Sync ALL foods to local database for offline access
+      await _syncFoodsToLocalDatabase(data);
+
+      AppLogger.instance.debug('Synced ${foods.length} foods (including branded) to local database');
+
+      return foods;
     } catch (e) {
-      AppLogger.instance.error('Error fetching foods by category from Supabase',
+      AppLogger.instance.error('Error fetching all foods including branded from Supabase',
         context: 'FoodRepository',
-        data: {'category': category.dbValue},
         error: e,
       );
       return [];
     }
   }
 
-  /// Get a specific food by name with its categories
-  Future<FoodItem?> getFoodByName(String name) async {
+  /// Get foods by category (filtered by suitability flags)
+  /// Since the Supabase schema doesn't have category join tables, we filter by suitability
+  Future<List<FoodItem>> getFoodsByCategory(FoodCategory category) async {
     try {
-      final response = await _supabase
-          .from('foods')
-          .select('''
-            id,
-            name,
-            image_address,
-            description,
-            instructions,
-            nutritional_info,
-            serving_amount,
-            serving_unit,
-            serving_unit_plural,
-            serving_qualifier,
-            before_run_suitable,
-            during_run_suitable,
-            run_portable,
-            requires_preparation,
-            aid_station_available,
-            max_servings_before,
-            max_servings_during,
-            carbs_per_serving,
-            protein_per_serving,
-            fat_per_serving,
-            calories_per_serving,
-            fluid_ml_per_serving,
-            sodium_mg,
-            caffeine_mg,
-            potassium_mg,
-            serving_size,
-            created_at,
-            food_categories (
-              category_id
-            )
-          ''')
-          .eq('name', name)
-          .maybeSingle();
+      // Get all foods first
+      final allFoods = await getAllFoods();
 
-      if (response != null) {
-        return _mapSupabaseFoodToFoodItem(response);
-      }
-      return null;
+      // Filter based on category suitability
+      final filteredFoods = allFoods.where((food) {
+        switch (category) {
+          case FoodCategory.beforeRun:
+            return food.beforeRunSuitable;
+          case FoodCategory.duringRun:
+            return food.duringRunSuitable;
+          case FoodCategory.afterRun:
+            return true; // All foods are suitable after run
+        }
+      }).toList();
+
+      AppLogger.instance.debug('Found ${filteredFoods.length} foods for category ${category.name}');
+      return filteredFoods;
     } catch (e) {
-      AppLogger.instance.error('Error fetching food by name from Supabase',
+      AppLogger.instance.error('Error fetching foods by category',
         context: 'FoodRepository',
-        data: {'foodName': name},
+        data: {'category': category.name},
         error: e,
       );
-      return null;
+      return [];
     }
   }
 
@@ -276,117 +214,76 @@ class FoodRepository {
     }
   }
 
-  /// Get ALL foods from Supabase including both generic and branded
-  /// Use this for search functionality to include branded foods
-  /// Also syncs ALL foods to local database for offline access
-  Future<List<FoodItem>> getAllFoodsIncludingBranded() async {
+  /// Get a specific food by name from local database
+  Future<FoodItem?> getFoodByName(String name) async {
     try {
-      final response = await _supabase
-          .from('foods')
-          .select('''
-            id,
-            name,
-            image_address,
-            description,
-            instructions,
-            nutritional_info,
-            serving_amount,
-            serving_unit,
-            serving_unit_plural,
-            serving_qualifier,
-            before_run_suitable,
-            during_run_suitable,
-            run_portable,
-            requires_preparation,
-            aid_station_available,
-            max_servings_before,
-            max_servings_during,
-            carbs_per_serving,
-            protein_per_serving,
-            fat_per_serving,
-            calories_per_serving,
-            fluid_ml_per_serving,
-            sodium_mg,
-            caffeine_mg,
-            potassium_mg,
-            serving_size,
-            brand_id,
-            show_in_preferences,
-            preference_priority,
-            created_at,
-            food_categories (
-              category_id
-            ),
-            display_name_plural,
-            display_override,
-            to_exclude_from_solver
-          ''')
-          // NO brand_id filter - include both generic (null) and branded (not null)
-          .order('name', ascending: true);
+      // Try to get from local database first
+      final foodEntry = await (_database.select(_database.foodsTable)
+        ..where((f) => f.name.equals(name)))
+        .getSingleOrNull();
 
-      final List<dynamic> data = response as List<dynamic>;
-      final foods = data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
+      if (foodEntry != null) {
+        return _mapLocalFoodToFoodItem(foodEntry);
+      }
 
-      // Sync ALL foods to local database for offline access
-      await _syncFoodsToLocalDatabase(data);
-
-      AppLogger.instance.debug('Synced ${foods.length} foods (including branded) to local database');
-
-      return foods;
-    } catch (e) {
-      AppLogger.instance.error('Error fetching all foods including branded from Supabase',
+      AppLogger.instance.warning('Food not found in local database',
         context: 'FoodRepository',
+        data: {'foodName': name},
+      );
+      return null;
+    } catch (e) {
+      AppLogger.instance.error('Error fetching food by name from local database',
+        context: 'FoodRepository',
+        data: {'foodName': name},
+        error: e,
+      );
+      return null;
+    }
+  }
+
+  /// Get preferred foods based on user likes (filtered by category and preferences)
+  Future<List<FoodItem>> getPreferredFoods(
+    FoodCategory category,
+    List<String> likedFoodNames,
+    List<String> willingToTryNames,
+  ) async {
+    try {
+      final categoryFoods = await getFoodsByCategory(category);
+      final preferredFoods = categoryFoods.where((food) {
+        return likedFoodNames.contains(food.name) ||
+               willingToTryNames.contains(food.name);
+      }).toList();
+
+      AppLogger.instance.debug('Found ${preferredFoods.length} preferred foods for category ${category.name}');
+      return preferredFoods;
+    } catch (e) {
+      AppLogger.instance.error('Error fetching preferred foods',
+        context: 'FoodRepository',
+        data: {'category': category.name},
         error: e,
       );
       return [];
     }
   }
 
-  /// Search foods by name or description with categories
+  /// Search foods by name (uses local database)
   Future<List<FoodItem>> searchFoods(String query) async {
     try {
+      if (query.isEmpty) return [];
+
       final lowerQuery = query.toLowerCase();
-      final response = await _supabase
-          .from('foods')
-          .select('''
-            id,
-            name,
-            image_address,
-            description,
-            instructions,
-            nutritional_info,
-            serving_amount,
-            serving_unit,
-            serving_unit_plural,
-            serving_qualifier,
-            before_run_suitable,
-            during_run_suitable,
-            run_portable,
-            requires_preparation,
-            aid_station_available,
-            max_servings_before,
-            max_servings_during,
-            carbs_per_serving,
-            protein_per_serving,
-            fat_per_serving,
-            calories_per_serving,
-            fluid_ml_per_serving,
-            sodium_mg,
-            caffeine_mg,
-            potassium_mg,
-            serving_size,
-            created_at,
-            food_categories (
-              category_id
-            )
-          ''')
-          .or('name.ilike.%$lowerQuery%,description.ilike.%$lowerQuery%')
-          .order('name', ascending: true);
-      
-      final List<dynamic> data = response as List<dynamic>;
-      return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
+
+      // Search in local database
+      final foodEntries = await (_database.select(_database.foodsTable)
+        ..where((f) => f.name.like('%$lowerQuery%')))
+        .get();
+
+      final foods = foodEntries.map((entry) => _mapLocalFoodToFoodItem(entry)).toList();
+
+      AppLogger.instance.debug('Found ${foods.length} foods matching query: $query');
+      return foods;
     } catch (e) {
-      AppLogger.instance.error('Error searching foods in Supabase',
+      AppLogger.instance.error('Error searching foods',
         context: 'FoodRepository',
         data: {'searchQuery': query},
         error: e,
@@ -395,80 +292,52 @@ class FoodRepository {
     }
   }
 
-  /// Get preferred foods based on user likes (now works with multi-category foods)
-  Future<List<FoodItem>> getPreferredFoods(
-    FoodCategory category,
-    List<String> likedFoodNames,
-    List<String> willingToTryNames,
-  ) async {
-    final categoryFoods = await getFoodsByCategory(category);
-    return categoryFoods.where((food) {
-      return likedFoodNames.contains(food.name) || 
-             willingToTryNames.contains(food.name);
-    }).toList();
-  }
-
-  /// Get all foods that can be used for multiple categories
-  Future<List<FoodItem>> getFoodsForCategories(List<FoodCategory> categories) async {
-    final allFoods = await getAllFoods();
-    return allFoods.where((food) {
-      return categories.any((category) => food.belongsToCategory(category));
-    }).toList();
-  }
-
   /// Map Supabase food data to FoodItem domain object
   FoodItem _mapSupabaseFoodToFoodItem(Map<String, dynamic> json) {
-    final nutritionalInfo = json['nutritional_info'] as Map<String, dynamic>? ?? {};
-    
-    // Extract nutrition values with defaults for legacy compatibility
-    final calories = _extractNutritionValue(nutritionalInfo, ['calories', 'calories_per_serving'], 0.0);
-    final carbs = _extractNutritionValue(nutritionalInfo, ['carbs_per_serving', 'carbs'], 0.0);
-    final protein = _extractNutritionValue(nutritionalInfo, ['protein_per_serving', 'protein'], 0.0);
-    final fat = _extractNutritionValue(nutritionalInfo, ['fat_per_serving', 'fat'], 0.0);
-    final sodium = _extractNutritionValue(nutritionalInfo, ['sodium_mg', 'sodium'], 0.0);
-    final fiber = _extractNutritionValue(nutritionalInfo, ['fiber_per_serving', 'fiber'], 0.0);
-    final sugar = _extractNutritionValue(nutritionalInfo, ['sugar_per_serving', 'sugar'], 0.0);
-    final fluids = _extractNutritionValue(nutritionalInfo, ['fluids', 'fluids_per_serving'], 0.0);
+    // Extract nutrition values directly from explicit columns
+    final calories = (json['calories_per_serving'] as num?)?.toDouble() ?? 0.0;
+    final carbs = (json['carbs_per_serving'] as num?)?.toDouble() ?? 0.0;
+    final protein = (json['protein_per_serving'] as num?)?.toDouble() ?? 0.0;
+    final fat = (json['fat_per_serving'] as num?)?.toDouble() ?? 0.0;
+    final sodium = (json['sodium_mg'] as num?)?.toDouble() ?? 0.0;
+    final fluids = (json['fluid_ml_per_serving'] as num?)?.toDouble() ?? 0.0;
 
-    // Extract structured serving data from database
+    // Simplified serving approach - always 1.0 for new simplified approach
     final servingAmount = (json['serving_amount'] as num?)?.toDouble() ?? 1.0;
-    final servingUnit = json['serving_unit'] as String? ?? 'serving';
-    final servingUnitPlural = json['serving_unit_plural'] as String?;
-    final servingQualifier = json['serving_qualifier'] as String?;
-    
-    // Create legacy serving size for compatibility
-    final servingSize = servingQualifier != null && servingQualifier.isNotEmpty 
-        ? '$servingAmount $servingUnit, $servingQualifier'
-        : '$servingAmount $servingUnit';
 
-    // Extract categories from the food_categories join
-    final categories = _extractCategoriesFromJoin(json);
+    // Deprecated legacy fields - set to null for simplified approach
+    const String? servingUnit = null;
+    const String? servingUnitPlural = null;
+    const String? servingQualifier = null;
+    const String? servingSize = null; // Deprecated
 
-    // Get carbs for tag generation (prefer explicit field over legacy)
-    final effectiveCarbs = (json['carbs_per_serving'] as num?)?.toDouble() ?? carbs;
-    final effectiveProtein = (json['protein_per_serving'] as num?)?.toDouble() ?? protein;
-    final effectiveFat = (json['fat_per_serving'] as num?)?.toDouble() ?? fat;
+    // Since the Supabase schema doesn't have these columns, set sensible defaults
+    const bool beforeRunSuitable = true; // Default to true
+    const bool duringRunSuitable = false; // Default to false for safety
+    const bool runPortable = true;
+    const bool requiresPreparation = false;
+    const bool aidStationAvailable = false;
 
     // Debug logging
     final imageAddress = json['image_address'] as String?;
-    
+
     return FoodItem(
-      id: _generateIdFromName(json['name'] as String),
+      id: json['id'] as String,
       name: json['name'] as String,
       imageAddress: imageAddress,
-      description: json['description'] as String?,
-      instructions: json['instructions'] as String?,
-      categories: categories,
+      description: null, // Not available in Supabase schema
+      instructions: null, // Not available in Supabase schema
+      categories: [], // Would need separate query for categories
       servingSize: servingSize,
       servingAmount: servingAmount,
       servingUnit: servingUnit,
       servingUnitPlural: servingUnitPlural,
       servingQualifier: servingQualifier,
-      beforeRunSuitable: json['before_run_suitable'] == true,
-      duringRunSuitable: json['during_run_suitable'] == true,
-      runPortable: json['run_portable'] == true,
-      requiresPreparation: json['requires_preparation'] == true,
-      aidStationAvailable: json['aid_station_available'] == true,
+      beforeRunSuitable: beforeRunSuitable,
+      duringRunSuitable: duringRunSuitable,
+      runPortable: runPortable,
+      requiresPreparation: requiresPreparation,
+      aidStationAvailable: aidStationAvailable,
       maxServingsBefore: json['max_servings_before'] as int?,
       maxServingsDuring: json['max_servings_during'] as int?,
       carbsPerServing: (json['carbs_per_serving'] as num?)?.toDouble(),
@@ -479,46 +348,120 @@ class FoodRepository {
       sodiumMg: json['sodium_mg'] as int?,
       caffeineMg: json['caffeine_mg'] as int?,
       potassiumMg: json['potassium_mg'] as int?,
+      productTypeId: json['product_type_id'] as String?,
       nutrition: NutritionInfo(
         calories: calories,
         carbs: carbs,
         protein: protein,
         fat: fat,
         sodium: sodium,
-        fiber: fiber,
-        sugar: sugar,
+        fiber: 0.0, // Not stored separately in database
+        sugar: 0.0, // Not stored separately in database
         fluids: fluids,
       ),
-      tags: _generateTagsFromNutrition(effectiveCarbs, effectiveProtein, effectiveFat),
+      tags: _generateTagsFromNutrition(carbs, protein, fat),
       displayName: json['display_name'] as String?,
       displayNamePlural: json['display_name_plural'] as String?,
-      displayOverride: json['display_override'] as String?,
+      displayOverride: null, // Removed - no longer needed in simplified approach
+      toExcludeFromSolver: json['to_exclude_from_solver'] == true,
+    );
+  }
+
+  /// Map Edge Function food data to FoodItem domain object
+  FoodItem _mapEdgeFunctionFoodToFoodItem(Map<String, dynamic> json) {
+    // Extract nutrition values directly from explicit columns
+    final calories = (json['calories_per_serving'] as num?)?.toDouble() ?? 0.0;
+    final carbs = (json['carbs_per_serving'] as num?)?.toDouble() ?? 0.0;
+    final protein = (json['protein_per_serving'] as num?)?.toDouble() ?? 0.0;
+    final fat = (json['fat_per_serving'] as num?)?.toDouble() ?? 0.0;
+    final sodium = (json['sodium_mg'] as num?)?.toDouble() ?? 0.0;
+    final fluids = (json['fluid_ml_per_serving'] as num?)?.toDouble() ?? 0.0;
+
+    // Simplified serving approach - always 1.0 for new simplified approach
+    final servingAmount = (json['serving_amount'] as num?)?.toDouble() ?? 1.0;
+
+    // Deprecated legacy fields - set to null for simplified approach
+    const String? servingUnit = null;
+    const String? servingUnitPlural = null;
+    const String? servingQualifier = null;
+    const String? servingSize = null; // Deprecated
+
+    // Extract suitability flags from Edge Function response
+    final beforeRunSuitable = json['before_run_suitable'] as bool? ?? true;
+    final duringRunSuitable = json['during_run_suitable'] as bool? ?? false;
+    final runPortable = json['run_portable'] as bool? ?? true;
+    final requiresPreparation = json['requires_preparation'] as bool? ?? false;
+    final aidStationAvailable = json['aid_station_available'] as bool? ?? false;
+
+    // Debug logging
+    final imageAddress = json['image_address'] as String?;
+
+    return FoodItem(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      imageAddress: imageAddress,
+      description: json['description'] as String?,
+      instructions: json['instructions'] as String?,
+      categories: [], // Would need separate query for categories
+      servingSize: servingSize,
+      servingAmount: servingAmount,
+      servingUnit: servingUnit,
+      servingUnitPlural: servingUnitPlural,
+      servingQualifier: servingQualifier,
+      beforeRunSuitable: beforeRunSuitable,
+      duringRunSuitable: duringRunSuitable,
+      runPortable: runPortable,
+      requiresPreparation: requiresPreparation,
+      aidStationAvailable: aidStationAvailable,
+      maxServingsBefore: json['max_servings_before'] as int?,
+      maxServingsDuring: json['max_servings_during'] as int?,
+      carbsPerServing: (json['carbs_per_serving'] as num?)?.toDouble(),
+      proteinPerServing: (json['protein_per_serving'] as num?)?.toDouble(),
+      fatPerServing: (json['fat_per_serving'] as num?)?.toDouble(),
+      caloriesPerServing: json['calories_per_serving'] as int?,
+      fluidMlPerServing: (json['fluid_ml_per_serving'] as num?)?.toDouble(),
+      sodiumMg: json['sodium_mg'] as int?,
+      caffeineMg: json['caffeine_mg'] as int?,
+      potassiumMg: json['potassium_mg'] as int?,
+      productTypeId: json['product_type_id'] as String?,
+      nutrition: NutritionInfo(
+        calories: calories,
+        carbs: carbs,
+        protein: protein,
+        fat: fat,
+        sodium: sodium,
+        fiber: 0.0, // Not stored separately in database
+        sugar: 0.0, // Not stored separately in database
+        fluids: fluids,
+      ),
+      tags: _generateTagsFromNutrition(carbs, protein, fat),
+      displayName: json['display_name'] as String?,
+      displayNamePlural: json['display_name_plural'] as String?,
+      displayOverride: null, // Removed - no longer needed in simplified approach
       toExcludeFromSolver: json['to_exclude_from_solver'] == true,
     );
   }
 
   /// Map local Drift food entry to FoodItem
   FoodItem _mapLocalFoodToFoodItem(FoodEntry entry) {
-    // Parse nutritional_info JSON if available
-    final nutritionalInfo = entry.nutritionalInfo as Map<String, dynamic>? ?? {};
-
-    final carbs = (entry.carbsPerServing ?? nutritionalInfo['carbs'])?.toDouble();
-    final protein = (entry.proteinPerServing ?? nutritionalInfo['protein'])?.toDouble();
-    final fat = (entry.fatPerServing ?? nutritionalInfo['fat'])?.toDouble();
-    final calories = entry.caloriesPerServing ?? nutritionalInfo['calories'] as int?;
-    final sodium = (entry.sodiumMg ?? nutritionalInfo['sodium'])?.toDouble();
-    final fluids = (entry.fluidMlPerServing ?? nutritionalInfo['fluids'])?.toDouble();
+    // Use explicit columns from Drift database
+    final carbs = entry.carbsPerServing?.toDouble();
+    final protein = entry.proteinPerServing?.toDouble();
+    final fat = entry.fatPerServing?.toDouble();
+    final calories = entry.caloriesPerServing;
+    final sodium = entry.sodiumMg?.toDouble();
+    final fluids = entry.fluidMlPerServing?.toDouble();
 
     return FoodItem(
       id: entry.id,
-      name: entry.name,
+      name: entry.name ?? '',
       imageAddress: entry.imageAddress,
       description: entry.description ?? '',
       instructions: entry.instructions,
-      servingAmount: entry.servingAmount,
-      servingUnit: entry.servingUnit ?? 'serving',
-      servingUnitPlural: entry.servingUnitPlural,
-      servingQualifier: entry.servingQualifier,
+      servingAmount: 1.0, // Always 1.0 in simplified approach
+      servingUnit: null, // Deprecated - use displayName instead
+      servingUnitPlural: null, // Deprecated - use displayNamePlural instead
+      servingQualifier: null, // Deprecated - included in displayName
       beforeRunSuitable: entry.beforeRunSuitable,
       duringRunSuitable: entry.duringRunSuitable,
       runPortable: entry.runPortable,
@@ -534,6 +477,7 @@ class FoodRepository {
       sodiumMg: entry.sodiumMg,
       caffeineMg: entry.caffeineMg,
       potassiumMg: entry.potassiumMg,
+      productTypeId: null, // Removed field, use productType instead
       nutrition: NutritionInfo(
         calories: (calories?.round() ?? 0).toDouble(),
         carbs: (carbs?.round() ?? 0).toDouble(),
@@ -544,76 +488,14 @@ class FoodRepository {
         sugar: 0.0, // Not stored separately in local database
         fluids: (fluids?.round() ?? 0).toDouble(),
       ),
-      tags: _generateTagsFromNutrition(carbs, protein, fat),
+      tags: _generateTagsFromNutrition(carbs ?? 0, protein ?? 0, fat ?? 0),
       displayName: entry.displayName,
       displayNamePlural: entry.displayNamePlural,
-      displayOverride: entry.displayOverride,
+      displayOverride: null, // Removed - no longer needed in simplified approach
       categories: [], // Categories would need to be fetched separately if needed
-      toExcludeFromSolver: entry.toExcludeFromSolver,
+      toExcludeFromSolver: false, // Field removed from schema, default to false
     );
   }
-
-  /// Extract categories from the food_categories join
-  List<FoodCategory> _extractCategoriesFromJoin(Map<String, dynamic> json) {
-    final foodCategories = json['food_categories'] as List<dynamic>?;
-    if (foodCategories != null && foodCategories.isNotEmpty) {
-      return foodCategories
-          .map((fc) => _getCategoryFromId(fc['category_id'] as int))
-          .toList();
-    }
-    
-    // No categories found - return empty list
-    return [];
-  }
-
-  /// Map category ID to FoodCategory enum
-  FoodCategory _getCategoryFromId(int categoryId) {
-    switch (categoryId) {
-      case 1:
-        return FoodCategory.beforeRun;
-      case 2:
-        return FoodCategory.duringRun;
-      case 3:
-        return FoodCategory.afterRun;
-      default:
-        return FoodCategory.beforeRun;
-    }
-  }
-
-  /// Get category ID from FoodCategory enum
-  int _getCategoryId(FoodCategory category) {
-    switch (category) {
-      case FoodCategory.beforeRun:
-        return 1;
-      case FoodCategory.duringRun:
-        return 2;
-      case FoodCategory.afterRun:
-        return 3;
-    }
-  }
-
-  /// Extract nutrition value with fallback keys
-  double _extractNutritionValue(Map<String, dynamic> nutrition, List<String> keys, double? defaultValue) {
-    for (final key in keys) {
-      final value = nutrition[key];
-      if (value != null) {
-        if (value is num) return value.toDouble();
-        if (value is String) {
-          final parsed = double.tryParse(value);
-          if (parsed != null) return parsed;
-        }
-      }
-    }
-    return defaultValue ?? 0.0;
-  }
-
-  /// Generate ID from food name (for compatibility with existing code)
-  String _generateIdFromName(String name) {
-    return name.toLowerCase()
-        .replaceAll(' ', '_')
-        .replaceAll(RegExp(r'[^a-z0-9_]'), '');
-  }
-
 
   /// Generate tags based on nutritional profile
   List<String> _generateTagsFromNutrition(double carbs, double protein, double fat) {
@@ -639,19 +521,17 @@ class FoodRepository {
       final foodsToInsert = supabaseFoodsData.map((json) {
         return FoodsTableCompanion.insert(
           id: json['id'] as String,
-          name: json['name'] as String,
+          name: Value(json['name'] as String?),
           imageAddress: Value(json['image_address'] as String?),
-          description: Value(json['description'] as String?),
-          instructions: Value(json['instructions'] as String?),
-          servingAmount: Value((json['serving_amount'] as num?)?.toDouble()),
-          servingUnit: Value(json['serving_unit'] as String?),
-          servingUnitPlural: Value(json['serving_unit_plural'] as String?),
-          servingQualifier: Value(json['serving_qualifier'] as String?),
-          beforeRunSuitable: Value(json['before_run_suitable'] == true),
-          duringRunSuitable: Value(json['during_run_suitable'] == true),
-          runPortable: Value(json['run_portable'] == true),
-          requiresPreparation: Value(json['requires_preparation'] == true),
-          aidStationAvailable: Value(json['aid_station_available'] == true),
+          description: Value(null), // Not available in Supabase schema
+          instructions: Value(null), // Not available in Supabase schema
+          servingAmount: Value((json['serving_amount'] as num?)?.toDouble() ?? 1.0),
+          // Deprecated fields removed: servingUnit, servingUnitPlural, servingQualifier
+          beforeRunSuitable: Value(true), // Default since not in Supabase schema
+          duringRunSuitable: Value(false), // Default since not in Supabase schema
+          runPortable: Value(true), // Default since not in Supabase schema
+          requiresPreparation: Value(false), // Default since not in Supabase schema
+          aidStationAvailable: Value(false), // Default since not in Supabase schema
           maxServingsBefore: Value(json['max_servings_before'] as int?),
           maxServingsDuring: Value(json['max_servings_during'] as int?),
           carbsPerServing: Value((json['carbs_per_serving'] as num?)?.toDouble()),
@@ -662,14 +542,12 @@ class FoodRepository {
           sodiumMg: Value(json['sodium_mg'] as int?),
           caffeineMg: Value(json['caffeine_mg'] as int?),
           potassiumMg: Value(json['potassium_mg'] as int?),
-          servingSize: Value(json['serving_size'] as String?),
+          // Deprecated field removed: servingSize
           brandId: Value(json['brand_id'] as String?),
           showInPreferences: Value(json['show_in_preferences'] == true),
-          preferencePriority: Value(json['preference_priority'] as int? ?? 999),
+          preferencePriority: Value(999), // Default since not in Supabase schema
           displayName: Value(json['display_name'] as String?),
           displayNamePlural: Value(json['display_name_plural'] as String?),
-          displayOverride: Value(json['display_override'] as String?),
-          toExcludeFromSolver: Value(json['to_exclude_from_solver'] == true),
           isElectrolyte: Value(json['is_electrolyte'] == true),
           createdAt: Value(DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now()),
         );
@@ -692,7 +570,6 @@ class FoodRepository {
       // Don't rethrow - app should continue even if sync fails
     }
   }
-
 }
 
 /// Riverpod provider for FoodRepository
@@ -713,7 +590,7 @@ final foodsByCategoryProvider = FutureProvider.family<List<FoodItem>, FoodCatego
   return await repository.getFoodsByCategory(category);
 });
 
-/// Provider for foods for preferences screen (curated 12 foods)
+/// Provider for foods for preferences screen (curated foods)
 final preferenceFoodsProvider = FutureProvider<List<FoodItem>>((ref) async {
   final repository = ref.read(foodRepositoryProvider);
   return await repository.getFoodsForPreferences();

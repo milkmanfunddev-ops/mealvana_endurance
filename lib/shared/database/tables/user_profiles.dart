@@ -1,64 +1,105 @@
 import 'package:drift/drift.dart';
-import '../../../features/auth/domain/user_preferences.dart' as domain;
+import 'dart:convert';
 
-/// User profiles table definition for Drift
+/// User profiles table definition for Drift - matches Supabase users table schema
 /// Stores user biometric data and preferences
 @DataClassName('UserProfileEntry')
 class UserProfilesTable extends Table {
-  /// Device ID used as user identifier (maps to device_id in Supabase users table)
-  TextColumn get id => text()();
-  
-  /// User's gender (stored as string enum)
-  TextColumn get gender => text()();
-  
+  /// UUID primary key (matches Supabase users.id)
+  TextColumn get id => text().withLength(min: 36, max: 36)();
+
+  /// Device ID used as unique identifier (matches Supabase users.device_id)
+  TextColumn get deviceId => text().unique().named('device_id')();
+
+  /// When the profile was created (matches Supabase users.created_at)
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
+
+  /// When the profile was last updated (matches Supabase users.updated_at)
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
+
+  /// User's gender (stored as string enum: 'male', 'female', 'other')
+  TextColumn get gender => text().nullable()();
+
   /// User's birthday
-  DateTimeColumn get birthday => dateTime()();
-  
+  DateTimeColumn get birthday => dateTime().nullable()();
+
   /// Height in feet (integer part)
-  IntColumn get heightFeet => integer()();
-  
+  IntColumn get heightFeet => integer().nullable().named('height_feet')();
+
   /// Height in inches (remaining part)
-  IntColumn get heightInches => integer()();
-  
-  /// Weight in pounds
-  RealColumn get weightPounds => real()();
-  
+  IntColumn get heightInches => integer().nullable().named('height_inches')();
+
+  /// Weight in pounds (numeric with 2 decimal places to match Supabase)
+  RealColumn get weightPounds => real().nullable().named('weight_pounds')();
+
   /// Whether user runs with a water bottle
-  BoolColumn get runsWithWaterBottle => boolean()();
-  
-  /// Gut training level (stored as string enum)
-  TextColumn get gutTraining => text()();
-  
+  BoolColumn get runsWithWaterBottle => boolean().withDefault(const Constant(false)).named('runs_with_water_bottle')();
+
+  /// Food preferences stored as JSONB (matches Supabase users.food_preferences)
+  TextColumn get foodPreferences => text().map(const FoodPreferencesJsonConverter()).withDefault(const Constant('{}')).named('food_preferences')();
+
+  /// Preferred distance unit: 'miles' or 'kilometers'
+  TextColumn get preferredDistanceUnit => text().withDefault(const Constant('miles')).named('preferred_distance_unit')();
+
+  /// Preferred pace unit: 'min_per_mile' or 'min_per_km'
+  TextColumn get preferredPaceUnit => text().withDefault(const Constant('min_per_mile')).named('preferred_pace_unit')();
+
+  /// Gut training level (stored as string enum: 'low', 'moderate', 'high')
+  TextColumn get gutTrainingLevel => text().withDefault(const Constant('moderate')).named('gut_training_level')();
+
   /// Whether user has completed onboarding
-  BoolColumn get onboardingCompleted => boolean().withDefault(const Constant(false))();
-  
-  /// When the profile was created
-  DateTimeColumn get createdAt => dateTime()();
-  
-  /// When the profile was last updated
-  DateTimeColumn get updatedAt => dateTime()();
-  
+  BoolColumn get onboardingCompleted => boolean().withDefault(const Constant(false)).named('onboarding_completed')();
+
+  /// Last time user was active
+  DateTimeColumn get lastActiveAt => dateTime().withDefault(currentDateAndTime).named('last_active_at')();
+
   /// App version when profile was created/updated
-  TextColumn get appVersion => text()();
-  
-  /// Notification preferences
-  BoolColumn get notificationsEnabled => boolean().withDefault(const Constant(false))();
-  IntColumn get defaultReminderDay => integer().withDefault(const Constant(4))(); // Thursday
-  IntColumn get defaultReminderHour => integer().withDefault(const Constant(17))(); // 5 PM
-  IntColumn get defaultReminderMinute => integer().withDefault(const Constant(0))();
-  BoolColumn get defaultReminderRecurring => boolean().withDefault(const Constant(false))();
-  
-  /// Temporary plan storage (unsaved plan that persists through app restart)
-  TextColumn get tempPlanData => text().nullable()();
-  
-  /// Whether the swipe hint animation has been shown to this user
-  BoolColumn get swipeHintShown => boolean().withDefault(const Constant(false))();
+  TextColumn get appVersion => text().nullable().named('app_version')();
+
+  /// Notification preferences (matches Supabase users schema)
+  BoolColumn get notificationsEnabled => boolean().withDefault(const Constant(false)).named('notifications_enabled')();
+  IntColumn get defaultReminderDay => integer().withDefault(const Constant(4)).named('default_reminder_day')(); // Thursday
+  IntColumn get defaultReminderHour => integer().withDefault(const Constant(17)).named('default_reminder_hour')(); // 5 PM
+  IntColumn get defaultReminderMinute => integer().withDefault(const Constant(0)).named('default_reminder_minute')();
+  BoolColumn get defaultReminderRecurring => boolean().withDefault(const Constant(false)).named('default_reminder_recurring')();
+
+  /// Temporary plan storage (unsaved plan that persists through app restart) - Drift-only field
+  TextColumn get tempPlanData => text().nullable().named('temp_plan_data')();
+
+  /// Whether the swipe hint animation has been shown to this user - Drift-only field
+  BoolColumn get swipeHintShown => boolean().withDefault(const Constant(false)).named('swipe_hint_shown')();
 
   @override
   Set<Column> get primaryKey => {id};
 
   @override
   String get tableName => 'users';
+
+  @override
+  List<String> get customConstraints => [
+    'UNIQUE(device_id)', // Ensure device_id is unique
+  ];
+}
+
+/// JSON type converter for food preferences JSONB field
+class FoodPreferencesJsonConverter extends TypeConverter<Map<String, dynamic>, String> {
+  const FoodPreferencesJsonConverter();
+
+  @override
+  Map<String, dynamic> fromSql(String fromDb) {
+    try {
+      return Map<String, dynamic>.from(
+        const JsonDecoder().convert(fromDb)
+      );
+    } catch (e) {
+      return {};
+    }
+  }
+
+  @override
+  String toSql(Map<String, dynamic> value) {
+    return const JsonEncoder().convert(value);
+  }
 }
 
 // Extensions and helpers removed - conversions handled in app_database.dart

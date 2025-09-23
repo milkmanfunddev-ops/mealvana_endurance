@@ -70,6 +70,22 @@ class AuthRepositoryEdge {
       }
     } catch (e) {
       print('Error calling create-user Edge Function: $e');
+
+      // Handle 409 Conflict (user already exists) as success
+      if (e is FunctionException && e.status == 409) {
+        print('User already exists - treating as success and fetching existing user');
+
+        // Try to fetch the existing user
+        final existingUser = await getUserByDeviceId(deviceId);
+        if (existingUser != null) {
+          return CreateUserResult(
+            success: true,
+            user: existingUser,
+            message: 'User already exists',
+          );
+        }
+      }
+
       return CreateUserResult(
         success: false,
         message: 'Failed to create user: $e',

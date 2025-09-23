@@ -10,6 +10,7 @@ import '../../features/onboarding/presentation/screens/food_preferences_screen.d
 import '../../features/nutrition_plan/presentation/screens/current_plan_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart';
+import '../../features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_edit_screen.dart';
 import '../../features/feedback/presentation/screens/survey_screen.dart';
@@ -146,6 +147,20 @@ class AppRouter {
             foodToSwapId: extra?['foodToSwapId'] as String?,
             foodToSwapName: extra?['foodToSwapName'] as String?,
             category: extra?['category'] as String? ?? 'before_run',
+          );
+        },
+      ),
+
+      // Barcode Scanner Screen - Scan barcodes to add/swap foods
+      GoRoute(
+        path: '/barcode-scanner',
+        name: 'barcode-scanner',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return BarcodeScannerScreen(
+            category: extra?['category'] as String? ?? 'before_run',
+            foodToSwapId: extra?['foodToSwapId'] as String?,
+            foodToSwapName: extra?['foodToSwapName'] as String?,
           );
         },
       ),

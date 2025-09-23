@@ -31,9 +31,9 @@ class AppStartupWidget extends ConsumerWidget {
     );
   }
 
-  /// Handle navigation after startup and return loading widget
+  /// Handle navigation after startup and return minimal placeholder
   Widget _handleNavigation(BuildContext context, AppStartupData appStartupData) {
-    
+
     // Navigate to appropriate screen using postFrameCallback to avoid build context issues
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (appStartupData.user == null) {
@@ -47,8 +47,11 @@ class AppStartupWidget extends ConsumerWidget {
         context.go('/main');
       }
     });
-    
-    // Return a loading placeholder while navigation occurs
-    return const AppStartupLoadingWidget();
+
+    // Return minimal placeholder to prevent flash - just white screen
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Container(),
+    );
   }
 }

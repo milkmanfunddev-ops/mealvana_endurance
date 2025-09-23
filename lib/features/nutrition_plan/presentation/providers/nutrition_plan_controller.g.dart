@@ -49,7 +49,7 @@ final nutritionRecommendationsProvider =
 // ignore: unused_element
 typedef NutritionRecommendationsRef = AutoDisposeProviderRef<List<String>>;
 String _$nutritionPlanControllerHash() =>
-    r'47ca45bc8b1f76a69a5e02d2dbeb76ba7d1a3508';
+    r'4521cb28bae652e924e1b423e3c560df28fcb5c8';
 
 /// Controller for managing nutrition plan generation and display with save state
 ///

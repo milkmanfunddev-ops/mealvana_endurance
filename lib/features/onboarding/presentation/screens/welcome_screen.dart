@@ -14,7 +14,7 @@ class WelcomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -22,27 +22,23 @@ class WelcomeScreen extends ConsumerWidget {
             children: [
               SizedBox(height: 80.h),
 
-              // App logo/icon placeholder
+              // App logo
               Container(
                 width: 120.w,
                 height: 120.h,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary100,
-                  borderRadius: BorderRadius.circular(60.r),
-                  boxShadow: [AppTheme.dropShadow],
-                ),
-                child: Icon(
-                  Icons.run_circle,
-                  size: 64.w,
-                  color: AppTheme.primary600,
+                child: Image.asset(
+                  'assets/images/endurance_welcome_logo.png',
+                  width: 120.w,
+                  height: 120.h,
+                  fit: BoxFit.contain,
                 ),
               ),
 
-              SizedBox(height: 40.h),
+              SizedBox(height: 16.h),
 
               // App title
               Text(
-                'Mealvana Endurance',
+                'Endurance',
                 style: AppTheme.heading1Style.copyWith(
                   color: AppTheme.primary900,
                   fontSize: 32.sp,
@@ -62,7 +58,7 @@ class WelcomeScreen extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               
-              SizedBox(height: 60.h),
+              SizedBox(height: 32.h),
               
               // Features list
               _FeatureItem(

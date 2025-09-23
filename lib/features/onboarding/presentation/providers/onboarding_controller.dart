@@ -52,24 +52,35 @@ class OnboardingController extends _$OnboardingController {
   Future<bool> saveFoodPreferences(Map<String, FoodPreference> preferences) async {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
-    
+
     print('👤 Food preferences - Current user: ${currentUser?.id ?? "null"}');
     print('🍎 Food preferences - Count: ${preferences.length}');
-    
+
     if (currentUser == null) {
-      final errorMsg = _contentService.getValue(ContentKeys.errorGeneric, 
+      final errorMsg = _contentService.getValue(ContentKeys.errorGeneric,
           defaultValue: 'No user profile found. Please complete user profile first.');
+      print('❌ Food preferences - No current user found');
       state = AsyncError(errorMsg, StackTrace.current);
       return false;
     }
 
+    print('🚀 Food preferences - Starting save process for user: ${currentUser.id}');
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
+      print('📞 Food preferences - Calling onboarding service');
       await _onboardingService.saveFoodPreferences(currentUser.id, preferences);
+      print('✅ Food preferences - Save completed successfully');
       // Update our session user reference
       _currentUser = currentUser;
     });
+
+    if (state.hasError) {
+      print('❌ Food preferences - Error occurred: ${state.error}');
+      print('📍 Food preferences - Stack trace: ${state.stackTrace}');
+    } else {
+      print('🎉 Food preferences - Save operation completed without errors');
+    }
 
     return !state.hasError;
   }

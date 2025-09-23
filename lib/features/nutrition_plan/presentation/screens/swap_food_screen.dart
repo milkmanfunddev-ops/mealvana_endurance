@@ -28,10 +28,16 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
 class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   final _searchController = TextEditingController();
   double _selectedQuantity = 1.0;
+  late final SwapFoodParams _params;
 
   @override
   void initState() {
     super.initState();
+    _params = SwapFoodParams(
+      category: widget.category,
+      originalFoodId: widget.foodToSwapId,
+      originalFoodName: widget.foodToSwapName,
+    );
     // No need to manually load foods - controller auto-initializes
   }
 
@@ -42,14 +48,19 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   void _onSearchChanged(String query) {
-    ref.read(swapFoodControllerProvider(widget.category).notifier)
+    ref.read(swapFoodControllerProvider(_params).notifier)
       .updateSearch(query);
   }
 
   void _selectFood(Food food) {
-    ref.read(swapFoodControllerProvider(widget.category).notifier)
+    ref.read(swapFoodControllerProvider(_params).notifier)
       .selectFood(food);
-    _searchController.text = food.name;
+
+    // Clear the search field when a food is selected
+    _searchController.clear();
+    // Update search to show recommended alternatives again
+    _onSearchChanged('');
+
     // Reset quantity when selecting a new food
     setState(() {
       _selectedQuantity = food.servingAmount ?? 1.0;
@@ -71,12 +82,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   Future<void> _handleAction() async {
-    final controllerState = ref.read(swapFoodControllerProvider(widget.category));
+    final controllerState = ref.read(swapFoodControllerProvider(_params));
     final selectedFood = controllerState.valueOrNull?.selectedFood;
-    
+
     if (selectedFood == null) return;
 
-    final controller = ref.read(swapFoodControllerProvider(widget.category).notifier);
+    final controller = ref.read(swapFoodControllerProvider(_params).notifier);
     
     if (widget.foodToSwapId != null) {
       // Swap existing food
@@ -102,7 +113,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controllerState = ref.watch(swapFoodControllerProvider(widget.category));
+    final controllerState = ref.watch(swapFoodControllerProvider(_params));
     final isSwapping = widget.foodToSwapId != null;
     final title = isSwapping ? 'Swap ${widget.foodToSwapName ?? 'Food'}' : 'Add Food';
     final buttonText = isSwapping ? 'Swap food' : 'Add food';
@@ -136,7 +147,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                 children: [
                   Text('Error loading foods: $error'),
                   ElevatedButton(
-                    onPressed: () => ref.invalidate(swapFoodControllerProvider(widget.category)),
+                    onPressed: () => ref.invalidate(swapFoodControllerProvider(_params)),
                     child: Text('Retry'),
                   ),
                 ],
@@ -177,11 +188,63 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(height: 16.h),
 
-                // Selected food details
-                if (state.selectedFood != null) ...[
+                // Scan Barcode Button
+                Container(
+                  width: double.infinity,
+                  height: 48.h,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary900,
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: InkWell(
+                    onTap: () async {
+                      final result = await context.pushNamed<Food>(
+                        'barcode-scanner',
+                        extra: {
+                          'category': widget.category,
+                          'foodToSwapId': widget.foodToSwapId,
+                          'foodToSwapName': widget.foodToSwapName,
+                        },
+                      );
+
+                      // If a food was successfully scanned, select it with quantity 1
+                      if (result != null) {
+                        _selectFood(result);
+                        setState(() {
+                          _selectedQuantity = 1.0;
+                        });
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.qr_code_scanner,
+                          color: AppTheme.baseWhite,
+                          size: 20.sp,
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Scan Barcode',
+                          style: AppTheme.textStyle.copyWith(
+                            color: AppTheme.baseWhite,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 16.h),
+
+                // Selected food details - only show when not actively searching
+                if (state.selectedFood != null && state.searchQuery.isEmpty) ...[
                   Container(
                     padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
@@ -339,8 +402,8 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                   ),
                 ],
 
-                // Action button
-                if (state.selectedFood != null) ...[
+                // Action button - only show when food is selected and not actively searching
+                if (state.selectedFood != null && state.searchQuery.isEmpty) ...[
                   SizedBox(height: 16.h),
                   PrimaryButton(
                     text: buttonText,
@@ -399,7 +462,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
             SizedBox(width: 12.w),
             Expanded(
               child: Text(
-                food.generateQuantityDisplay(),
+                food.name,
                 style: AppTheme.textStyle.copyWith(
                   color: AppTheme.baseBlack,
                   fontSize: 14.sp,

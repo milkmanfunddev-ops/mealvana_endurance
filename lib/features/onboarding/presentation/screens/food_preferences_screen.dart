@@ -56,10 +56,29 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   }
 
   Future<void> _completeOnboarding() async {
+    print('🔄 Food preferences screen - Complete onboarding button pressed');
+    print('📊 Food preferences screen - Selected preferences count: ${_selectedPreferences.length}');
+
     final controller = ref.read(onboardingControllerProvider.notifier);
+    print('🎮 Food preferences screen - Calling controller.saveFoodPreferences');
+
     final success = await controller.saveFoodPreferences(_selectedPreferences);
+    print('📋 Food preferences screen - Save result: $success');
+
     if (success && mounted) {
+      print('🎯 Food preferences screen - Success! Navigating to /main');
       context.go('/main');
+    } else {
+      print('❌ Food preferences screen - Failed to save or not mounted. Success: $success, Mounted: $mounted');
+      if (!success) {
+        // Show error message to user
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save food preferences. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

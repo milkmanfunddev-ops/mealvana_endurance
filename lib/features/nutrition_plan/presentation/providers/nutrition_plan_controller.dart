@@ -465,7 +465,10 @@ class NutritionPlanController extends _$NutritionPlanController {
                 name: newFood.name,
                 quantity: newFood.generateQuantityDisplay(customAmount: customAmount),
                 imageAddress: newFood.imageAddress,
+                description: newFood.description,
                 instructions: newFood.instructions,
+                displayName: newFood.displayName,
+                displayNamePlural: newFood.displayNamePlural,
                 nutritionalInfo: NutritionalInfo(
                   calories: ((newFood.caloriesPerServing ?? 0) * multiplier).toInt(),
                   carbs: ((newFood.carbsPerServing ?? 0) * multiplier).toInt(),
@@ -525,7 +528,10 @@ class NutritionPlanController extends _$NutritionPlanController {
             name: food.name,
             quantity: food.generateQuantityDisplay(customAmount: customAmount),
             imageAddress: food.imageAddress,
+            description: food.description,
             instructions: food.instructions,
+            displayName: food.displayName,
+            displayNamePlural: food.displayNamePlural,
             nutritionalInfo: NutritionalInfo(
               calories: ((food.caloriesPerServing ?? 0) * multiplier).toInt(),
               carbs: ((food.carbsPerServing ?? 0) * multiplier).toInt(),
@@ -701,11 +707,33 @@ class NutritionPlanController extends _$NutritionPlanController {
                 
                 final scaleFactor = newQuantity / currentQuantity;
                 
-                // Generate new quantity display string
-                final quantityParts = item.quantity.split(' ');
-                final newQuantityDisplay = quantityParts.length > 1
-                    ? '${newQuantity == newQuantity.toInt() ? newQuantity.toInt().toString() : newQuantity.toStringAsFixed(1)} ${quantityParts.skip(1).join(' ')}'
-                    : '${newQuantity == newQuantity.toInt() ? newQuantity.toInt().toString() : newQuantity.toStringAsFixed(1)} ${item.name.toLowerCase()}';
+                // Generate new quantity display string using proper plural logic
+                final quantityStr = newQuantity == newQuantity.toInt() ? newQuantity.toInt().toString() : newQuantity.toStringAsFixed(1);
+                final isPlural = newQuantity != 1.0;
+
+                // DEBUG: Let's see what display name data we have
+                print('🔍 DEBUG updateFoodQuantity for ${item.name}:');
+                print('  - displayName: "${item.displayName}"');
+                print('  - displayNamePlural: "${item.displayNamePlural}"');
+                print('  - newQuantity: $newQuantity, isPlural: $isPlural');
+
+                // Use appropriate display name based on NEW quantity (not old quantity)
+                String displayName;
+                if (isPlural && item.displayNamePlural?.isNotEmpty == true) {
+                  displayName = item.displayNamePlural!;
+                  print('  - Using plural: "$displayName"');
+                } else if (item.displayName?.isNotEmpty == true) {
+                  displayName = item.displayName!;
+                  print('  - Using singular: "$displayName"');
+                } else {
+                  displayName = item.name;
+                  print('  - Using fallback name: "$displayName"');
+                }
+
+                // SIMPLE: Always use format "<quantity> <display_name>"
+                // Don't try to parse units - just use the display name based on quantity
+                final newQuantityDisplay = '$quantityStr $displayName';
+                print('  - Final display: "$newQuantityDisplay"');
                 
                 return FoodItemData(
                   id: item.id,
@@ -714,6 +742,8 @@ class NutritionPlanController extends _$NutritionPlanController {
                   imageAddress: item.imageAddress,
                   instructions: item.instructions,
                   description: item.description,
+                  displayName: item.displayName,
+                  displayNamePlural: item.displayNamePlural,
                   nutritionalInfo: NutritionalInfo(
                     calories: (currentNutrition.calories! * scaleFactor).round(),
                     carbs: (currentNutrition.carbs! * scaleFactor).round(),

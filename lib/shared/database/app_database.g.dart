@@ -13,51 +13,106 @@ class $UserProfilesTableTable extends UserProfilesTable
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   static const VerificationMeta _genderMeta = const VerificationMeta('gender');
   @override
   late final GeneratedColumn<String> gender = GeneratedColumn<String>(
-      'gender', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      'gender', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _birthdayMeta =
       const VerificationMeta('birthday');
   @override
   late final GeneratedColumn<DateTime> birthday = GeneratedColumn<DateTime>(
-      'birthday', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+      'birthday', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   static const VerificationMeta _heightFeetMeta =
       const VerificationMeta('heightFeet');
   @override
   late final GeneratedColumn<int> heightFeet = GeneratedColumn<int>(
-      'height_feet', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
+      'height_feet', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _heightInchesMeta =
       const VerificationMeta('heightInches');
   @override
   late final GeneratedColumn<int> heightInches = GeneratedColumn<int>(
-      'height_inches', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
+      'height_inches', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _weightPoundsMeta =
       const VerificationMeta('weightPounds');
   @override
   late final GeneratedColumn<double> weightPounds = GeneratedColumn<double>(
-      'weight_pounds', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      'weight_pounds', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
   static const VerificationMeta _runsWithWaterBottleMeta =
       const VerificationMeta('runsWithWaterBottle');
   @override
   late final GeneratedColumn<bool> runsWithWaterBottle = GeneratedColumn<bool>(
       'runs_with_water_bottle', aliasedName, false,
       type: DriftSqlType.bool,
-      requiredDuringInsert: true,
+      requiredDuringInsert: false,
       defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("runs_with_water_bottle" IN (0, 1))'));
-  static const VerificationMeta _gutTrainingMeta =
-      const VerificationMeta('gutTraining');
+          'CHECK ("runs_with_water_bottle" IN (0, 1))'),
+      defaultValue: const Constant(false));
   @override
-  late final GeneratedColumn<String> gutTraining = GeneratedColumn<String>(
-      'gut_training', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+  late final GeneratedColumnWithTypeConverter<Map<String, dynamic>, String>
+      foodPreferences = GeneratedColumn<String>(
+              'food_preferences', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: const Constant('{}'))
+          .withConverter<Map<String, dynamic>>(
+              $UserProfilesTableTable.$converterfoodPreferences);
+  static const VerificationMeta _preferredDistanceUnitMeta =
+      const VerificationMeta('preferredDistanceUnit');
+  @override
+  late final GeneratedColumn<String> preferredDistanceUnit =
+      GeneratedColumn<String>('preferred_distance_unit', aliasedName, false,
+          type: DriftSqlType.string,
+          requiredDuringInsert: false,
+          defaultValue: const Constant('miles'));
+  static const VerificationMeta _preferredPaceUnitMeta =
+      const VerificationMeta('preferredPaceUnit');
+  @override
+  late final GeneratedColumn<String> preferredPaceUnit =
+      GeneratedColumn<String>('preferred_pace_unit', aliasedName, false,
+          type: DriftSqlType.string,
+          requiredDuringInsert: false,
+          defaultValue: const Constant('min_per_mile'));
+  static const VerificationMeta _gutTrainingLevelMeta =
+      const VerificationMeta('gutTrainingLevel');
+  @override
+  late final GeneratedColumn<String> gutTrainingLevel = GeneratedColumn<String>(
+      'gut_training_level', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('moderate'));
   static const VerificationMeta _onboardingCompletedMeta =
       const VerificationMeta('onboardingCompleted');
   @override
@@ -68,24 +123,20 @@ class $UserProfilesTableTable extends UserProfilesTable
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("onboarding_completed" IN (0, 1))'),
       defaultValue: const Constant(false));
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
+  static const VerificationMeta _lastActiveAtMeta =
+      const VerificationMeta('lastActiveAt');
   @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
-  static const VerificationMeta _updatedAtMeta =
-      const VerificationMeta('updatedAt');
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-      'updated_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  late final GeneratedColumn<DateTime> lastActiveAt = GeneratedColumn<DateTime>(
+      'last_active_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   static const VerificationMeta _appVersionMeta =
       const VerificationMeta('appVersion');
   @override
   late final GeneratedColumn<String> appVersion = GeneratedColumn<String>(
-      'app_version', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      'app_version', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _notificationsEnabledMeta =
       const VerificationMeta('notificationsEnabled');
   @override
@@ -150,16 +201,21 @@ class $UserProfilesTableTable extends UserProfilesTable
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        deviceId,
+        createdAt,
+        updatedAt,
         gender,
         birthday,
         heightFeet,
         heightInches,
         weightPounds,
         runsWithWaterBottle,
-        gutTraining,
+        foodPreferences,
+        preferredDistanceUnit,
+        preferredPaceUnit,
+        gutTrainingLevel,
         onboardingCompleted,
-        createdAt,
-        updatedAt,
+        lastActiveAt,
         appVersion,
         notificationsEnabled,
         defaultReminderDay,
@@ -184,57 +240,69 @@ class $UserProfilesTableTable extends UserProfilesTable
     } else if (isInserting) {
       context.missing(_idMeta);
     }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
     if (data.containsKey('gender')) {
       context.handle(_genderMeta,
           gender.isAcceptableOrUnknown(data['gender']!, _genderMeta));
-    } else if (isInserting) {
-      context.missing(_genderMeta);
     }
     if (data.containsKey('birthday')) {
       context.handle(_birthdayMeta,
           birthday.isAcceptableOrUnknown(data['birthday']!, _birthdayMeta));
-    } else if (isInserting) {
-      context.missing(_birthdayMeta);
     }
     if (data.containsKey('height_feet')) {
       context.handle(
           _heightFeetMeta,
           heightFeet.isAcceptableOrUnknown(
               data['height_feet']!, _heightFeetMeta));
-    } else if (isInserting) {
-      context.missing(_heightFeetMeta);
     }
     if (data.containsKey('height_inches')) {
       context.handle(
           _heightInchesMeta,
           heightInches.isAcceptableOrUnknown(
               data['height_inches']!, _heightInchesMeta));
-    } else if (isInserting) {
-      context.missing(_heightInchesMeta);
     }
     if (data.containsKey('weight_pounds')) {
       context.handle(
           _weightPoundsMeta,
           weightPounds.isAcceptableOrUnknown(
               data['weight_pounds']!, _weightPoundsMeta));
-    } else if (isInserting) {
-      context.missing(_weightPoundsMeta);
     }
     if (data.containsKey('runs_with_water_bottle')) {
       context.handle(
           _runsWithWaterBottleMeta,
           runsWithWaterBottle.isAcceptableOrUnknown(
               data['runs_with_water_bottle']!, _runsWithWaterBottleMeta));
-    } else if (isInserting) {
-      context.missing(_runsWithWaterBottleMeta);
     }
-    if (data.containsKey('gut_training')) {
+    if (data.containsKey('preferred_distance_unit')) {
       context.handle(
-          _gutTrainingMeta,
-          gutTraining.isAcceptableOrUnknown(
-              data['gut_training']!, _gutTrainingMeta));
-    } else if (isInserting) {
-      context.missing(_gutTrainingMeta);
+          _preferredDistanceUnitMeta,
+          preferredDistanceUnit.isAcceptableOrUnknown(
+              data['preferred_distance_unit']!, _preferredDistanceUnitMeta));
+    }
+    if (data.containsKey('preferred_pace_unit')) {
+      context.handle(
+          _preferredPaceUnitMeta,
+          preferredPaceUnit.isAcceptableOrUnknown(
+              data['preferred_pace_unit']!, _preferredPaceUnitMeta));
+    }
+    if (data.containsKey('gut_training_level')) {
+      context.handle(
+          _gutTrainingLevelMeta,
+          gutTrainingLevel.isAcceptableOrUnknown(
+              data['gut_training_level']!, _gutTrainingLevelMeta));
     }
     if (data.containsKey('onboarding_completed')) {
       context.handle(
@@ -242,25 +310,17 @@ class $UserProfilesTableTable extends UserProfilesTable
           onboardingCompleted.isAcceptableOrUnknown(
               data['onboarding_completed']!, _onboardingCompletedMeta));
     }
-    if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta,
-          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
-    } else if (isInserting) {
-      context.missing(_updatedAtMeta);
+    if (data.containsKey('last_active_at')) {
+      context.handle(
+          _lastActiveAtMeta,
+          lastActiveAt.isAcceptableOrUnknown(
+              data['last_active_at']!, _lastActiveAtMeta));
     }
     if (data.containsKey('app_version')) {
       context.handle(
           _appVersionMeta,
           appVersion.isAcceptableOrUnknown(
               data['app_version']!, _appVersionMeta));
-    } else if (isInserting) {
-      context.missing(_appVersionMeta);
     }
     if (data.containsKey('notifications_enabled')) {
       context.handle(
@@ -316,28 +376,40 @@ class $UserProfilesTableTable extends UserProfilesTable
     return UserProfileEntry(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      gender: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}gender'])!,
-      birthday: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}birthday'])!,
-      heightFeet: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}height_feet'])!,
-      heightInches: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}height_inches'])!,
-      weightPounds: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}weight_pounds'])!,
-      runsWithWaterBottle: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}runs_with_water_bottle'])!,
-      gutTraining: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}gut_training'])!,
-      onboardingCompleted: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}onboarding_completed'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      gender: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}gender']),
+      birthday: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}birthday']),
+      heightFeet: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}height_feet']),
+      heightInches: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}height_inches']),
+      weightPounds: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}weight_pounds']),
+      runsWithWaterBottle: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}runs_with_water_bottle'])!,
+      foodPreferences: $UserProfilesTableTable.$converterfoodPreferences
+          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.string,
+              data['${effectivePrefix}food_preferences'])!),
+      preferredDistanceUnit: attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}preferred_distance_unit'])!,
+      preferredPaceUnit: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}preferred_pace_unit'])!,
+      gutTrainingLevel: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}gut_training_level'])!,
+      onboardingCompleted: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}onboarding_completed'])!,
+      lastActiveAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_active_at'])!,
       appVersion: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}app_version'])!,
+          .read(DriftSqlType.string, data['${effectivePrefix}app_version']),
       notificationsEnabled: attachedDatabase.typeMapping.read(
           DriftSqlType.bool, data['${effectivePrefix}notifications_enabled'])!,
       defaultReminderDay: attachedDatabase.typeMapping.read(
@@ -360,71 +432,94 @@ class $UserProfilesTableTable extends UserProfilesTable
   $UserProfilesTableTable createAlias(String alias) {
     return $UserProfilesTableTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Map<String, dynamic>, String> $converterfoodPreferences =
+      const FoodPreferencesJsonConverter();
 }
 
 class UserProfileEntry extends DataClass
     implements Insertable<UserProfileEntry> {
-  /// Device ID used as user identifier (maps to device_id in Supabase users table)
+  /// UUID primary key (matches Supabase users.id)
   final String id;
 
-  /// User's gender (stored as string enum)
-  final String gender;
+  /// Device ID used as unique identifier (matches Supabase users.device_id)
+  final String deviceId;
+
+  /// When the profile was created (matches Supabase users.created_at)
+  final DateTime createdAt;
+
+  /// When the profile was last updated (matches Supabase users.updated_at)
+  final DateTime updatedAt;
+
+  /// User's gender (stored as string enum: 'male', 'female', 'other')
+  final String? gender;
 
   /// User's birthday
-  final DateTime birthday;
+  final DateTime? birthday;
 
   /// Height in feet (integer part)
-  final int heightFeet;
+  final int? heightFeet;
 
   /// Height in inches (remaining part)
-  final int heightInches;
+  final int? heightInches;
 
-  /// Weight in pounds
-  final double weightPounds;
+  /// Weight in pounds (numeric with 2 decimal places to match Supabase)
+  final double? weightPounds;
 
   /// Whether user runs with a water bottle
   final bool runsWithWaterBottle;
 
-  /// Gut training level (stored as string enum)
-  final String gutTraining;
+  /// Food preferences stored as JSONB (matches Supabase users.food_preferences)
+  final Map<String, dynamic> foodPreferences;
+
+  /// Preferred distance unit: 'miles' or 'kilometers'
+  final String preferredDistanceUnit;
+
+  /// Preferred pace unit: 'min_per_mile' or 'min_per_km'
+  final String preferredPaceUnit;
+
+  /// Gut training level (stored as string enum: 'low', 'moderate', 'high')
+  final String gutTrainingLevel;
 
   /// Whether user has completed onboarding
   final bool onboardingCompleted;
 
-  /// When the profile was created
-  final DateTime createdAt;
-
-  /// When the profile was last updated
-  final DateTime updatedAt;
+  /// Last time user was active
+  final DateTime lastActiveAt;
 
   /// App version when profile was created/updated
-  final String appVersion;
+  final String? appVersion;
 
-  /// Notification preferences
+  /// Notification preferences (matches Supabase users schema)
   final bool notificationsEnabled;
   final int defaultReminderDay;
   final int defaultReminderHour;
   final int defaultReminderMinute;
   final bool defaultReminderRecurring;
 
-  /// Temporary plan storage (unsaved plan that persists through app restart)
+  /// Temporary plan storage (unsaved plan that persists through app restart) - Drift-only field
   final String? tempPlanData;
 
-  /// Whether the swipe hint animation has been shown to this user
+  /// Whether the swipe hint animation has been shown to this user - Drift-only field
   final bool swipeHintShown;
   const UserProfileEntry(
       {required this.id,
-      required this.gender,
-      required this.birthday,
-      required this.heightFeet,
-      required this.heightInches,
-      required this.weightPounds,
-      required this.runsWithWaterBottle,
-      required this.gutTraining,
-      required this.onboardingCompleted,
+      required this.deviceId,
       required this.createdAt,
       required this.updatedAt,
-      required this.appVersion,
+      this.gender,
+      this.birthday,
+      this.heightFeet,
+      this.heightInches,
+      this.weightPounds,
+      required this.runsWithWaterBottle,
+      required this.foodPreferences,
+      required this.preferredDistanceUnit,
+      required this.preferredPaceUnit,
+      required this.gutTrainingLevel,
+      required this.onboardingCompleted,
+      required this.lastActiveAt,
+      this.appVersion,
       required this.notificationsEnabled,
       required this.defaultReminderDay,
       required this.defaultReminderHour,
@@ -436,17 +531,38 @@ class UserProfileEntry extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['gender'] = Variable<String>(gender);
-    map['birthday'] = Variable<DateTime>(birthday);
-    map['height_feet'] = Variable<int>(heightFeet);
-    map['height_inches'] = Variable<int>(heightInches);
-    map['weight_pounds'] = Variable<double>(weightPounds);
-    map['runs_with_water_bottle'] = Variable<bool>(runsWithWaterBottle);
-    map['gut_training'] = Variable<String>(gutTraining);
-    map['onboarding_completed'] = Variable<bool>(onboardingCompleted);
+    map['device_id'] = Variable<String>(deviceId);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['app_version'] = Variable<String>(appVersion);
+    if (!nullToAbsent || gender != null) {
+      map['gender'] = Variable<String>(gender);
+    }
+    if (!nullToAbsent || birthday != null) {
+      map['birthday'] = Variable<DateTime>(birthday);
+    }
+    if (!nullToAbsent || heightFeet != null) {
+      map['height_feet'] = Variable<int>(heightFeet);
+    }
+    if (!nullToAbsent || heightInches != null) {
+      map['height_inches'] = Variable<int>(heightInches);
+    }
+    if (!nullToAbsent || weightPounds != null) {
+      map['weight_pounds'] = Variable<double>(weightPounds);
+    }
+    map['runs_with_water_bottle'] = Variable<bool>(runsWithWaterBottle);
+    {
+      map['food_preferences'] = Variable<String>($UserProfilesTableTable
+          .$converterfoodPreferences
+          .toSql(foodPreferences));
+    }
+    map['preferred_distance_unit'] = Variable<String>(preferredDistanceUnit);
+    map['preferred_pace_unit'] = Variable<String>(preferredPaceUnit);
+    map['gut_training_level'] = Variable<String>(gutTrainingLevel);
+    map['onboarding_completed'] = Variable<bool>(onboardingCompleted);
+    map['last_active_at'] = Variable<DateTime>(lastActiveAt);
+    if (!nullToAbsent || appVersion != null) {
+      map['app_version'] = Variable<String>(appVersion);
+    }
     map['notifications_enabled'] = Variable<bool>(notificationsEnabled);
     map['default_reminder_day'] = Variable<int>(defaultReminderDay);
     map['default_reminder_hour'] = Variable<int>(defaultReminderHour);
@@ -463,17 +579,33 @@ class UserProfileEntry extends DataClass
   UserProfilesTableCompanion toCompanion(bool nullToAbsent) {
     return UserProfilesTableCompanion(
       id: Value(id),
-      gender: Value(gender),
-      birthday: Value(birthday),
-      heightFeet: Value(heightFeet),
-      heightInches: Value(heightInches),
-      weightPounds: Value(weightPounds),
-      runsWithWaterBottle: Value(runsWithWaterBottle),
-      gutTraining: Value(gutTraining),
-      onboardingCompleted: Value(onboardingCompleted),
+      deviceId: Value(deviceId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
-      appVersion: Value(appVersion),
+      gender:
+          gender == null && nullToAbsent ? const Value.absent() : Value(gender),
+      birthday: birthday == null && nullToAbsent
+          ? const Value.absent()
+          : Value(birthday),
+      heightFeet: heightFeet == null && nullToAbsent
+          ? const Value.absent()
+          : Value(heightFeet),
+      heightInches: heightInches == null && nullToAbsent
+          ? const Value.absent()
+          : Value(heightInches),
+      weightPounds: weightPounds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weightPounds),
+      runsWithWaterBottle: Value(runsWithWaterBottle),
+      foodPreferences: Value(foodPreferences),
+      preferredDistanceUnit: Value(preferredDistanceUnit),
+      preferredPaceUnit: Value(preferredPaceUnit),
+      gutTrainingLevel: Value(gutTrainingLevel),
+      onboardingCompleted: Value(onboardingCompleted),
+      lastActiveAt: Value(lastActiveAt),
+      appVersion: appVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(appVersion),
       notificationsEnabled: Value(notificationsEnabled),
       defaultReminderDay: Value(defaultReminderDay),
       defaultReminderHour: Value(defaultReminderHour),
@@ -491,19 +623,26 @@ class UserProfileEntry extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return UserProfileEntry(
       id: serializer.fromJson<String>(json['id']),
-      gender: serializer.fromJson<String>(json['gender']),
-      birthday: serializer.fromJson<DateTime>(json['birthday']),
-      heightFeet: serializer.fromJson<int>(json['heightFeet']),
-      heightInches: serializer.fromJson<int>(json['heightInches']),
-      weightPounds: serializer.fromJson<double>(json['weightPounds']),
-      runsWithWaterBottle:
-          serializer.fromJson<bool>(json['runsWithWaterBottle']),
-      gutTraining: serializer.fromJson<String>(json['gutTraining']),
-      onboardingCompleted:
-          serializer.fromJson<bool>(json['onboardingCompleted']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      appVersion: serializer.fromJson<String>(json['appVersion']),
+      gender: serializer.fromJson<String?>(json['gender']),
+      birthday: serializer.fromJson<DateTime?>(json['birthday']),
+      heightFeet: serializer.fromJson<int?>(json['heightFeet']),
+      heightInches: serializer.fromJson<int?>(json['heightInches']),
+      weightPounds: serializer.fromJson<double?>(json['weightPounds']),
+      runsWithWaterBottle:
+          serializer.fromJson<bool>(json['runsWithWaterBottle']),
+      foodPreferences:
+          serializer.fromJson<Map<String, dynamic>>(json['foodPreferences']),
+      preferredDistanceUnit:
+          serializer.fromJson<String>(json['preferredDistanceUnit']),
+      preferredPaceUnit: serializer.fromJson<String>(json['preferredPaceUnit']),
+      gutTrainingLevel: serializer.fromJson<String>(json['gutTrainingLevel']),
+      onboardingCompleted:
+          serializer.fromJson<bool>(json['onboardingCompleted']),
+      lastActiveAt: serializer.fromJson<DateTime>(json['lastActiveAt']),
+      appVersion: serializer.fromJson<String?>(json['appVersion']),
       notificationsEnabled:
           serializer.fromJson<bool>(json['notificationsEnabled']),
       defaultReminderDay: serializer.fromJson<int>(json['defaultReminderDay']),
@@ -522,17 +661,23 @@ class UserProfileEntry extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'gender': serializer.toJson<String>(gender),
-      'birthday': serializer.toJson<DateTime>(birthday),
-      'heightFeet': serializer.toJson<int>(heightFeet),
-      'heightInches': serializer.toJson<int>(heightInches),
-      'weightPounds': serializer.toJson<double>(weightPounds),
-      'runsWithWaterBottle': serializer.toJson<bool>(runsWithWaterBottle),
-      'gutTraining': serializer.toJson<String>(gutTraining),
-      'onboardingCompleted': serializer.toJson<bool>(onboardingCompleted),
+      'deviceId': serializer.toJson<String>(deviceId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'appVersion': serializer.toJson<String>(appVersion),
+      'gender': serializer.toJson<String?>(gender),
+      'birthday': serializer.toJson<DateTime?>(birthday),
+      'heightFeet': serializer.toJson<int?>(heightFeet),
+      'heightInches': serializer.toJson<int?>(heightInches),
+      'weightPounds': serializer.toJson<double?>(weightPounds),
+      'runsWithWaterBottle': serializer.toJson<bool>(runsWithWaterBottle),
+      'foodPreferences':
+          serializer.toJson<Map<String, dynamic>>(foodPreferences),
+      'preferredDistanceUnit': serializer.toJson<String>(preferredDistanceUnit),
+      'preferredPaceUnit': serializer.toJson<String>(preferredPaceUnit),
+      'gutTrainingLevel': serializer.toJson<String>(gutTrainingLevel),
+      'onboardingCompleted': serializer.toJson<bool>(onboardingCompleted),
+      'lastActiveAt': serializer.toJson<DateTime>(lastActiveAt),
+      'appVersion': serializer.toJson<String?>(appVersion),
       'notificationsEnabled': serializer.toJson<bool>(notificationsEnabled),
       'defaultReminderDay': serializer.toJson<int>(defaultReminderDay),
       'defaultReminderHour': serializer.toJson<int>(defaultReminderHour),
@@ -546,17 +691,22 @@ class UserProfileEntry extends DataClass
 
   UserProfileEntry copyWith(
           {String? id,
-          String? gender,
-          DateTime? birthday,
-          int? heightFeet,
-          int? heightInches,
-          double? weightPounds,
-          bool? runsWithWaterBottle,
-          String? gutTraining,
-          bool? onboardingCompleted,
+          String? deviceId,
           DateTime? createdAt,
           DateTime? updatedAt,
-          String? appVersion,
+          Value<String?> gender = const Value.absent(),
+          Value<DateTime?> birthday = const Value.absent(),
+          Value<int?> heightFeet = const Value.absent(),
+          Value<int?> heightInches = const Value.absent(),
+          Value<double?> weightPounds = const Value.absent(),
+          bool? runsWithWaterBottle,
+          Map<String, dynamic>? foodPreferences,
+          String? preferredDistanceUnit,
+          String? preferredPaceUnit,
+          String? gutTrainingLevel,
+          bool? onboardingCompleted,
+          DateTime? lastActiveAt,
+          Value<String?> appVersion = const Value.absent(),
           bool? notificationsEnabled,
           int? defaultReminderDay,
           int? defaultReminderHour,
@@ -566,17 +716,25 @@ class UserProfileEntry extends DataClass
           bool? swipeHintShown}) =>
       UserProfileEntry(
         id: id ?? this.id,
-        gender: gender ?? this.gender,
-        birthday: birthday ?? this.birthday,
-        heightFeet: heightFeet ?? this.heightFeet,
-        heightInches: heightInches ?? this.heightInches,
-        weightPounds: weightPounds ?? this.weightPounds,
-        runsWithWaterBottle: runsWithWaterBottle ?? this.runsWithWaterBottle,
-        gutTraining: gutTraining ?? this.gutTraining,
-        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+        deviceId: deviceId ?? this.deviceId,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
-        appVersion: appVersion ?? this.appVersion,
+        gender: gender.present ? gender.value : this.gender,
+        birthday: birthday.present ? birthday.value : this.birthday,
+        heightFeet: heightFeet.present ? heightFeet.value : this.heightFeet,
+        heightInches:
+            heightInches.present ? heightInches.value : this.heightInches,
+        weightPounds:
+            weightPounds.present ? weightPounds.value : this.weightPounds,
+        runsWithWaterBottle: runsWithWaterBottle ?? this.runsWithWaterBottle,
+        foodPreferences: foodPreferences ?? this.foodPreferences,
+        preferredDistanceUnit:
+            preferredDistanceUnit ?? this.preferredDistanceUnit,
+        preferredPaceUnit: preferredPaceUnit ?? this.preferredPaceUnit,
+        gutTrainingLevel: gutTrainingLevel ?? this.gutTrainingLevel,
+        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+        lastActiveAt: lastActiveAt ?? this.lastActiveAt,
+        appVersion: appVersion.present ? appVersion.value : this.appVersion,
         notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
         defaultReminderDay: defaultReminderDay ?? this.defaultReminderDay,
         defaultReminderHour: defaultReminderHour ?? this.defaultReminderHour,
@@ -591,6 +749,9 @@ class UserProfileEntry extends DataClass
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
     return UserProfileEntry(
       id: data.id.present ? data.id.value : this.id,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       gender: data.gender.present ? data.gender.value : this.gender,
       birthday: data.birthday.present ? data.birthday.value : this.birthday,
       heightFeet:
@@ -604,13 +765,24 @@ class UserProfileEntry extends DataClass
       runsWithWaterBottle: data.runsWithWaterBottle.present
           ? data.runsWithWaterBottle.value
           : this.runsWithWaterBottle,
-      gutTraining:
-          data.gutTraining.present ? data.gutTraining.value : this.gutTraining,
+      foodPreferences: data.foodPreferences.present
+          ? data.foodPreferences.value
+          : this.foodPreferences,
+      preferredDistanceUnit: data.preferredDistanceUnit.present
+          ? data.preferredDistanceUnit.value
+          : this.preferredDistanceUnit,
+      preferredPaceUnit: data.preferredPaceUnit.present
+          ? data.preferredPaceUnit.value
+          : this.preferredPaceUnit,
+      gutTrainingLevel: data.gutTrainingLevel.present
+          ? data.gutTrainingLevel.value
+          : this.gutTrainingLevel,
       onboardingCompleted: data.onboardingCompleted.present
           ? data.onboardingCompleted.value
           : this.onboardingCompleted,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      lastActiveAt: data.lastActiveAt.present
+          ? data.lastActiveAt.value
+          : this.lastActiveAt,
       appVersion:
           data.appVersion.present ? data.appVersion.value : this.appVersion,
       notificationsEnabled: data.notificationsEnabled.present
@@ -641,16 +813,21 @@ class UserProfileEntry extends DataClass
   String toString() {
     return (StringBuffer('UserProfileEntry(')
           ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
           ..write('gender: $gender, ')
           ..write('birthday: $birthday, ')
           ..write('heightFeet: $heightFeet, ')
           ..write('heightInches: $heightInches, ')
           ..write('weightPounds: $weightPounds, ')
           ..write('runsWithWaterBottle: $runsWithWaterBottle, ')
-          ..write('gutTraining: $gutTraining, ')
+          ..write('foodPreferences: $foodPreferences, ')
+          ..write('preferredDistanceUnit: $preferredDistanceUnit, ')
+          ..write('preferredPaceUnit: $preferredPaceUnit, ')
+          ..write('gutTrainingLevel: $gutTrainingLevel, ')
           ..write('onboardingCompleted: $onboardingCompleted, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
+          ..write('lastActiveAt: $lastActiveAt, ')
           ..write('appVersion: $appVersion, ')
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('defaultReminderDay: $defaultReminderDay, ')
@@ -664,41 +841,52 @@ class UserProfileEntry extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
-      id,
-      gender,
-      birthday,
-      heightFeet,
-      heightInches,
-      weightPounds,
-      runsWithWaterBottle,
-      gutTraining,
-      onboardingCompleted,
-      createdAt,
-      updatedAt,
-      appVersion,
-      notificationsEnabled,
-      defaultReminderDay,
-      defaultReminderHour,
-      defaultReminderMinute,
-      defaultReminderRecurring,
-      tempPlanData,
-      swipeHintShown);
+  int get hashCode => Object.hashAll([
+        id,
+        deviceId,
+        createdAt,
+        updatedAt,
+        gender,
+        birthday,
+        heightFeet,
+        heightInches,
+        weightPounds,
+        runsWithWaterBottle,
+        foodPreferences,
+        preferredDistanceUnit,
+        preferredPaceUnit,
+        gutTrainingLevel,
+        onboardingCompleted,
+        lastActiveAt,
+        appVersion,
+        notificationsEnabled,
+        defaultReminderDay,
+        defaultReminderHour,
+        defaultReminderMinute,
+        defaultReminderRecurring,
+        tempPlanData,
+        swipeHintShown
+      ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is UserProfileEntry &&
           other.id == this.id &&
+          other.deviceId == this.deviceId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
           other.gender == this.gender &&
           other.birthday == this.birthday &&
           other.heightFeet == this.heightFeet &&
           other.heightInches == this.heightInches &&
           other.weightPounds == this.weightPounds &&
           other.runsWithWaterBottle == this.runsWithWaterBottle &&
-          other.gutTraining == this.gutTraining &&
+          other.foodPreferences == this.foodPreferences &&
+          other.preferredDistanceUnit == this.preferredDistanceUnit &&
+          other.preferredPaceUnit == this.preferredPaceUnit &&
+          other.gutTrainingLevel == this.gutTrainingLevel &&
           other.onboardingCompleted == this.onboardingCompleted &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
+          other.lastActiveAt == this.lastActiveAt &&
           other.appVersion == this.appVersion &&
           other.notificationsEnabled == this.notificationsEnabled &&
           other.defaultReminderDay == this.defaultReminderDay &&
@@ -711,17 +899,22 @@ class UserProfileEntry extends DataClass
 
 class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<String> id;
-  final Value<String> gender;
-  final Value<DateTime> birthday;
-  final Value<int> heightFeet;
-  final Value<int> heightInches;
-  final Value<double> weightPounds;
-  final Value<bool> runsWithWaterBottle;
-  final Value<String> gutTraining;
-  final Value<bool> onboardingCompleted;
+  final Value<String> deviceId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
-  final Value<String> appVersion;
+  final Value<String?> gender;
+  final Value<DateTime?> birthday;
+  final Value<int?> heightFeet;
+  final Value<int?> heightInches;
+  final Value<double?> weightPounds;
+  final Value<bool> runsWithWaterBottle;
+  final Value<Map<String, dynamic>> foodPreferences;
+  final Value<String> preferredDistanceUnit;
+  final Value<String> preferredPaceUnit;
+  final Value<String> gutTrainingLevel;
+  final Value<bool> onboardingCompleted;
+  final Value<DateTime> lastActiveAt;
+  final Value<String?> appVersion;
   final Value<bool> notificationsEnabled;
   final Value<int> defaultReminderDay;
   final Value<int> defaultReminderHour;
@@ -732,16 +925,21 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<int> rowid;
   const UserProfilesTableCompanion({
     this.id = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
     this.gender = const Value.absent(),
     this.birthday = const Value.absent(),
     this.heightFeet = const Value.absent(),
     this.heightInches = const Value.absent(),
     this.weightPounds = const Value.absent(),
     this.runsWithWaterBottle = const Value.absent(),
-    this.gutTraining = const Value.absent(),
+    this.foodPreferences = const Value.absent(),
+    this.preferredDistanceUnit = const Value.absent(),
+    this.preferredPaceUnit = const Value.absent(),
+    this.gutTrainingLevel = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
+    this.lastActiveAt = const Value.absent(),
     this.appVersion = const Value.absent(),
     this.notificationsEnabled = const Value.absent(),
     this.defaultReminderDay = const Value.absent(),
@@ -754,17 +952,22 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   });
   UserProfilesTableCompanion.insert({
     required String id,
-    required String gender,
-    required DateTime birthday,
-    required int heightFeet,
-    required int heightInches,
-    required double weightPounds,
-    required bool runsWithWaterBottle,
-    required String gutTraining,
+    required String deviceId,
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.gender = const Value.absent(),
+    this.birthday = const Value.absent(),
+    this.heightFeet = const Value.absent(),
+    this.heightInches = const Value.absent(),
+    this.weightPounds = const Value.absent(),
+    this.runsWithWaterBottle = const Value.absent(),
+    this.foodPreferences = const Value.absent(),
+    this.preferredDistanceUnit = const Value.absent(),
+    this.preferredPaceUnit = const Value.absent(),
+    this.gutTrainingLevel = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
-    required DateTime createdAt,
-    required DateTime updatedAt,
-    required String appVersion,
+    this.lastActiveAt = const Value.absent(),
+    this.appVersion = const Value.absent(),
     this.notificationsEnabled = const Value.absent(),
     this.defaultReminderDay = const Value.absent(),
     this.defaultReminderHour = const Value.absent(),
@@ -774,28 +977,24 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.swipeHintShown = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
-        gender = Value(gender),
-        birthday = Value(birthday),
-        heightFeet = Value(heightFeet),
-        heightInches = Value(heightInches),
-        weightPounds = Value(weightPounds),
-        runsWithWaterBottle = Value(runsWithWaterBottle),
-        gutTraining = Value(gutTraining),
-        createdAt = Value(createdAt),
-        updatedAt = Value(updatedAt),
-        appVersion = Value(appVersion);
+        deviceId = Value(deviceId);
   static Insertable<UserProfileEntry> custom({
     Expression<String>? id,
+    Expression<String>? deviceId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
     Expression<String>? gender,
     Expression<DateTime>? birthday,
     Expression<int>? heightFeet,
     Expression<int>? heightInches,
     Expression<double>? weightPounds,
     Expression<bool>? runsWithWaterBottle,
-    Expression<String>? gutTraining,
+    Expression<String>? foodPreferences,
+    Expression<String>? preferredDistanceUnit,
+    Expression<String>? preferredPaceUnit,
+    Expression<String>? gutTrainingLevel,
     Expression<bool>? onboardingCompleted,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? lastActiveAt,
     Expression<String>? appVersion,
     Expression<bool>? notificationsEnabled,
     Expression<int>? defaultReminderDay,
@@ -808,6 +1007,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (deviceId != null) 'device_id': deviceId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
       if (gender != null) 'gender': gender,
       if (birthday != null) 'birthday': birthday,
       if (heightFeet != null) 'height_feet': heightFeet,
@@ -815,11 +1017,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       if (weightPounds != null) 'weight_pounds': weightPounds,
       if (runsWithWaterBottle != null)
         'runs_with_water_bottle': runsWithWaterBottle,
-      if (gutTraining != null) 'gut_training': gutTraining,
+      if (foodPreferences != null) 'food_preferences': foodPreferences,
+      if (preferredDistanceUnit != null)
+        'preferred_distance_unit': preferredDistanceUnit,
+      if (preferredPaceUnit != null) 'preferred_pace_unit': preferredPaceUnit,
+      if (gutTrainingLevel != null) 'gut_training_level': gutTrainingLevel,
       if (onboardingCompleted != null)
         'onboarding_completed': onboardingCompleted,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
+      if (lastActiveAt != null) 'last_active_at': lastActiveAt,
       if (appVersion != null) 'app_version': appVersion,
       if (notificationsEnabled != null)
         'notifications_enabled': notificationsEnabled,
@@ -839,17 +1044,22 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
 
   UserProfilesTableCompanion copyWith(
       {Value<String>? id,
-      Value<String>? gender,
-      Value<DateTime>? birthday,
-      Value<int>? heightFeet,
-      Value<int>? heightInches,
-      Value<double>? weightPounds,
-      Value<bool>? runsWithWaterBottle,
-      Value<String>? gutTraining,
-      Value<bool>? onboardingCompleted,
+      Value<String>? deviceId,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
-      Value<String>? appVersion,
+      Value<String?>? gender,
+      Value<DateTime?>? birthday,
+      Value<int?>? heightFeet,
+      Value<int?>? heightInches,
+      Value<double?>? weightPounds,
+      Value<bool>? runsWithWaterBottle,
+      Value<Map<String, dynamic>>? foodPreferences,
+      Value<String>? preferredDistanceUnit,
+      Value<String>? preferredPaceUnit,
+      Value<String>? gutTrainingLevel,
+      Value<bool>? onboardingCompleted,
+      Value<DateTime>? lastActiveAt,
+      Value<String?>? appVersion,
       Value<bool>? notificationsEnabled,
       Value<int>? defaultReminderDay,
       Value<int>? defaultReminderHour,
@@ -860,16 +1070,22 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       Value<int>? rowid}) {
     return UserProfilesTableCompanion(
       id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       gender: gender ?? this.gender,
       birthday: birthday ?? this.birthday,
       heightFeet: heightFeet ?? this.heightFeet,
       heightInches: heightInches ?? this.heightInches,
       weightPounds: weightPounds ?? this.weightPounds,
       runsWithWaterBottle: runsWithWaterBottle ?? this.runsWithWaterBottle,
-      gutTraining: gutTraining ?? this.gutTraining,
+      foodPreferences: foodPreferences ?? this.foodPreferences,
+      preferredDistanceUnit:
+          preferredDistanceUnit ?? this.preferredDistanceUnit,
+      preferredPaceUnit: preferredPaceUnit ?? this.preferredPaceUnit,
+      gutTrainingLevel: gutTrainingLevel ?? this.gutTrainingLevel,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       appVersion: appVersion ?? this.appVersion,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       defaultReminderDay: defaultReminderDay ?? this.defaultReminderDay,
@@ -890,6 +1106,15 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
     if (gender.present) {
       map['gender'] = Variable<String>(gender.value);
     }
@@ -908,17 +1133,26 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (runsWithWaterBottle.present) {
       map['runs_with_water_bottle'] = Variable<bool>(runsWithWaterBottle.value);
     }
-    if (gutTraining.present) {
-      map['gut_training'] = Variable<String>(gutTraining.value);
+    if (foodPreferences.present) {
+      map['food_preferences'] = Variable<String>($UserProfilesTableTable
+          .$converterfoodPreferences
+          .toSql(foodPreferences.value));
+    }
+    if (preferredDistanceUnit.present) {
+      map['preferred_distance_unit'] =
+          Variable<String>(preferredDistanceUnit.value);
+    }
+    if (preferredPaceUnit.present) {
+      map['preferred_pace_unit'] = Variable<String>(preferredPaceUnit.value);
+    }
+    if (gutTrainingLevel.present) {
+      map['gut_training_level'] = Variable<String>(gutTrainingLevel.value);
     }
     if (onboardingCompleted.present) {
       map['onboarding_completed'] = Variable<bool>(onboardingCompleted.value);
     }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    if (lastActiveAt.present) {
+      map['last_active_at'] = Variable<DateTime>(lastActiveAt.value);
     }
     if (appVersion.present) {
       map['app_version'] = Variable<String>(appVersion.value);
@@ -956,16 +1190,21 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   String toString() {
     return (StringBuffer('UserProfilesTableCompanion(')
           ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
           ..write('gender: $gender, ')
           ..write('birthday: $birthday, ')
           ..write('heightFeet: $heightFeet, ')
           ..write('heightInches: $heightInches, ')
           ..write('weightPounds: $weightPounds, ')
           ..write('runsWithWaterBottle: $runsWithWaterBottle, ')
-          ..write('gutTraining: $gutTraining, ')
+          ..write('foodPreferences: $foodPreferences, ')
+          ..write('preferredDistanceUnit: $preferredDistanceUnit, ')
+          ..write('preferredPaceUnit: $preferredPaceUnit, ')
+          ..write('gutTrainingLevel: $gutTrainingLevel, ')
           ..write('onboardingCompleted: $onboardingCompleted, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
+          ..write('lastActiveAt: $lastActiveAt, ')
           ..write('appVersion: $appVersion, ')
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('defaultReminderDay: $defaultReminderDay, ')
@@ -986,15 +1225,25 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $FoodPreferencesTableTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
-      'user_id', aliasedName, false,
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _foodIdMeta = const VerificationMeta('foodId');
+  static const VerificationMeta _foodNameMeta =
+      const VerificationMeta('foodName');
   @override
-  late final GeneratedColumn<String> foodId = GeneratedColumn<String>(
-      'food_id', aliasedName, false,
+  late final GeneratedColumn<String> foodName = GeneratedColumn<String>(
+      'food_name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _preferenceMeta =
       const VerificationMeta('preference');
@@ -1007,16 +1256,20 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
       'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   static const VerificationMeta _updatedAtMeta =
       const VerificationMeta('updatedAt');
   @override
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
       'updated_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   @override
   List<GeneratedColumn> get $columns =>
-      [userId, foodId, preference, createdAt, updatedAt];
+      [id, deviceId, foodName, preference, createdAt, updatedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1028,17 +1281,22 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('user_id')) {
-      context.handle(_userIdMeta,
-          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
-      context.missing(_userIdMeta);
+      context.missing(_idMeta);
     }
-    if (data.containsKey('food_id')) {
-      context.handle(_foodIdMeta,
-          foodId.isAcceptableOrUnknown(data['food_id']!, _foodIdMeta));
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
     } else if (isInserting) {
-      context.missing(_foodIdMeta);
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('food_name')) {
+      context.handle(_foodNameMeta,
+          foodName.isAcceptableOrUnknown(data['food_name']!, _foodNameMeta));
+    } else if (isInserting) {
+      context.missing(_foodNameMeta);
     }
     if (data.containsKey('preference')) {
       context.handle(
@@ -1051,28 +1309,26 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
     }
     if (data.containsKey('updated_at')) {
       context.handle(_updatedAtMeta,
           updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
-    } else if (isInserting) {
-      context.missing(_updatedAtMeta);
     }
     return context;
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {userId, foodId};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   FoodPreferenceEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return FoodPreferenceEntry(
-      userId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
-      foodId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}food_id'])!,
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id'])!,
+      foodName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}food_name'])!,
       preference: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}preference'])!,
       createdAt: attachedDatabase.typeMapping
@@ -1090,31 +1346,36 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
 
 class FoodPreferenceEntry extends DataClass
     implements Insertable<FoodPreferenceEntry> {
-  /// User ID (foreign key reference)
-  final String userId;
+  /// UUID primary key (matches Supabase food_preferences.id)
+  final String id;
 
-  /// Food ID or name
-  final String foodId;
+  /// Device ID (foreign key reference to users.device_id)
+  final String deviceId;
 
-  /// Preference type (like, dislike, neutral, willingToTry)
+  /// Food name (should match foods.name) - matches Supabase food_preferences.food_name
+  final String foodName;
+
+  /// Preference type: 'like', 'dislike', 'willing_to_try' (matches Supabase constraint)
   final String preference;
 
-  /// When the preference was created
+  /// When the preference was created (matches Supabase food_preferences.created_at)
   final DateTime createdAt;
 
-  /// When the preference was last updated
+  /// When the preference was last updated (matches Supabase food_preferences.updated_at)
   final DateTime updatedAt;
   const FoodPreferenceEntry(
-      {required this.userId,
-      required this.foodId,
+      {required this.id,
+      required this.deviceId,
+      required this.foodName,
       required this.preference,
       required this.createdAt,
       required this.updatedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['user_id'] = Variable<String>(userId);
-    map['food_id'] = Variable<String>(foodId);
+    map['id'] = Variable<String>(id);
+    map['device_id'] = Variable<String>(deviceId);
+    map['food_name'] = Variable<String>(foodName);
     map['preference'] = Variable<String>(preference);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -1123,8 +1384,9 @@ class FoodPreferenceEntry extends DataClass
 
   FoodPreferencesTableCompanion toCompanion(bool nullToAbsent) {
     return FoodPreferencesTableCompanion(
-      userId: Value(userId),
-      foodId: Value(foodId),
+      id: Value(id),
+      deviceId: Value(deviceId),
+      foodName: Value(foodName),
       preference: Value(preference),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -1135,8 +1397,9 @@ class FoodPreferenceEntry extends DataClass
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return FoodPreferenceEntry(
-      userId: serializer.fromJson<String>(json['userId']),
-      foodId: serializer.fromJson<String>(json['foodId']),
+      id: serializer.fromJson<String>(json['id']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      foodName: serializer.fromJson<String>(json['foodName']),
       preference: serializer.fromJson<String>(json['preference']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1146,8 +1409,9 @@ class FoodPreferenceEntry extends DataClass
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'userId': serializer.toJson<String>(userId),
-      'foodId': serializer.toJson<String>(foodId),
+      'id': serializer.toJson<String>(id),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'foodName': serializer.toJson<String>(foodName),
       'preference': serializer.toJson<String>(preference),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -1155,22 +1419,25 @@ class FoodPreferenceEntry extends DataClass
   }
 
   FoodPreferenceEntry copyWith(
-          {String? userId,
-          String? foodId,
+          {String? id,
+          String? deviceId,
+          String? foodName,
           String? preference,
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       FoodPreferenceEntry(
-        userId: userId ?? this.userId,
-        foodId: foodId ?? this.foodId,
+        id: id ?? this.id,
+        deviceId: deviceId ?? this.deviceId,
+        foodName: foodName ?? this.foodName,
         preference: preference ?? this.preference,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
   FoodPreferenceEntry copyWithCompanion(FoodPreferencesTableCompanion data) {
     return FoodPreferenceEntry(
-      userId: data.userId.present ? data.userId.value : this.userId,
-      foodId: data.foodId.present ? data.foodId.value : this.foodId,
+      id: data.id.present ? data.id.value : this.id,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      foodName: data.foodName.present ? data.foodName.value : this.foodName,
       preference:
           data.preference.present ? data.preference.value : this.preference,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -1181,8 +1448,9 @@ class FoodPreferenceEntry extends DataClass
   @override
   String toString() {
     return (StringBuffer('FoodPreferenceEntry(')
-          ..write('userId: $userId, ')
-          ..write('foodId: $foodId, ')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('foodName: $foodName, ')
           ..write('preference: $preference, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -1192,13 +1460,14 @@ class FoodPreferenceEntry extends DataClass
 
   @override
   int get hashCode =>
-      Object.hash(userId, foodId, preference, createdAt, updatedAt);
+      Object.hash(id, deviceId, foodName, preference, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is FoodPreferenceEntry &&
-          other.userId == this.userId &&
-          other.foodId == this.foodId &&
+          other.id == this.id &&
+          other.deviceId == this.deviceId &&
+          other.foodName == this.foodName &&
           other.preference == this.preference &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -1206,43 +1475,47 @@ class FoodPreferenceEntry extends DataClass
 
 class FoodPreferencesTableCompanion
     extends UpdateCompanion<FoodPreferenceEntry> {
-  final Value<String> userId;
-  final Value<String> foodId;
+  final Value<String> id;
+  final Value<String> deviceId;
+  final Value<String> foodName;
   final Value<String> preference;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const FoodPreferencesTableCompanion({
-    this.userId = const Value.absent(),
-    this.foodId = const Value.absent(),
+    this.id = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.foodName = const Value.absent(),
     this.preference = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodPreferencesTableCompanion.insert({
-    required String userId,
-    required String foodId,
+    required String id,
+    required String deviceId,
+    required String foodName,
     required String preference,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
-  })  : userId = Value(userId),
-        foodId = Value(foodId),
-        preference = Value(preference),
-        createdAt = Value(createdAt),
-        updatedAt = Value(updatedAt);
+  })  : id = Value(id),
+        deviceId = Value(deviceId),
+        foodName = Value(foodName),
+        preference = Value(preference);
   static Insertable<FoodPreferenceEntry> custom({
-    Expression<String>? userId,
-    Expression<String>? foodId,
+    Expression<String>? id,
+    Expression<String>? deviceId,
+    Expression<String>? foodName,
     Expression<String>? preference,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (userId != null) 'user_id': userId,
-      if (foodId != null) 'food_id': foodId,
+      if (id != null) 'id': id,
+      if (deviceId != null) 'device_id': deviceId,
+      if (foodName != null) 'food_name': foodName,
       if (preference != null) 'preference': preference,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1251,15 +1524,17 @@ class FoodPreferencesTableCompanion
   }
 
   FoodPreferencesTableCompanion copyWith(
-      {Value<String>? userId,
-      Value<String>? foodId,
+      {Value<String>? id,
+      Value<String>? deviceId,
+      Value<String>? foodName,
       Value<String>? preference,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<int>? rowid}) {
     return FoodPreferencesTableCompanion(
-      userId: userId ?? this.userId,
-      foodId: foodId ?? this.foodId,
+      id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
+      foodName: foodName ?? this.foodName,
       preference: preference ?? this.preference,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1270,11 +1545,14 @@ class FoodPreferencesTableCompanion
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (userId.present) {
-      map['user_id'] = Variable<String>(userId.value);
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
     }
-    if (foodId.present) {
-      map['food_id'] = Variable<String>(foodId.value);
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (foodName.present) {
+      map['food_name'] = Variable<String>(foodName.value);
     }
     if (preference.present) {
       map['preference'] = Variable<String>(preference.value);
@@ -1294,8 +1572,9 @@ class FoodPreferencesTableCompanion
   @override
   String toString() {
     return (StringBuffer('FoodPreferencesTableCompanion(')
-          ..write('userId: $userId, ')
-          ..write('foodId: $foodId, ')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('foodName: $foodName, ')
           ..write('preference: $preference, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1306,7 +1585,7 @@ class FoodPreferencesTableCompanion
 }
 
 class $NutritionPlansTable extends NutritionPlans
-    with TableInfo<$NutritionPlansTable, NutritionPlan> {
+    with TableInfo<$NutritionPlansTable, NutritionPlanEntry> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1315,11 +1594,15 @@ class $NutritionPlansTable extends NutritionPlans
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
   @override
-  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
-      'user_id', aliasedName, false,
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _planDataMeta =
       const VerificationMeta('planData');
@@ -1327,44 +1610,108 @@ class $NutritionPlansTable extends NutritionPlans
   late final GeneratedColumn<String> planData = GeneratedColumn<String>(
       'plan_data', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _runDateTimeMeta =
-      const VerificationMeta('runDateTime');
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
   @override
-  late final GeneratedColumn<DateTime> runDateTime = GeneratedColumn<DateTime>(
-      'run_date_time', aliasedName, true,
-      type: DriftSqlType.dateTime, requiredDuringInsert: false);
-  static const VerificationMeta _planRatingMeta =
-      const VerificationMeta('planRating');
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+      'plan_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _planNameMeta =
+      const VerificationMeta('planName');
   @override
-  late final GeneratedColumn<int> planRating = GeneratedColumn<int>(
-      'plan_rating', aliasedName, true,
+  late final GeneratedColumn<String> planName = GeneratedColumn<String>(
+      'plan_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _distanceMilesMeta =
+      const VerificationMeta('distanceMiles');
+  @override
+  late final GeneratedColumn<double> distanceMiles = GeneratedColumn<double>(
+      'distance_miles', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _paceMinutesPerMileMeta =
+      const VerificationMeta('paceMinutesPerMile');
+  @override
+  late final GeneratedColumn<double> paceMinutesPerMile =
+      GeneratedColumn<double>('pace_minutes_per_mile', aliasedName, true,
+          type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _totalCaloriesMeta =
+      const VerificationMeta('totalCalories');
+  @override
+  late final GeneratedColumn<int> totalCalories = GeneratedColumn<int>(
+      'total_calories', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
-  static const VerificationMeta _journalNotesMeta =
-      const VerificationMeta('journalNotes');
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
-  late final GeneratedColumn<String> journalNotes = GeneratedColumn<String>(
-      'journal_notes', aliasedName, true,
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+      'notes', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _lastModifiedByMeta =
+      const VerificationMeta('lastModifiedBy');
+  @override
+  late final GeneratedColumn<String> lastModifiedBy = GeneratedColumn<String>(
+      'last_modified_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _clientUpdatedAtMeta =
+      const VerificationMeta('clientUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> clientUpdatedAt =
+      GeneratedColumn<DateTime>('client_updated_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _isDeletedMeta =
+      const VerificationMeta('isDeleted');
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+      'is_deleted', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_deleted" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _conflictResolutionMeta =
+      const VerificationMeta('conflictResolution');
+  @override
+  late final GeneratedColumn<String> conflictResolution =
+      GeneratedColumn<String>('conflict_resolution', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
       'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   static const VerificationMeta _updatedAtMeta =
       const VerificationMeta('updatedAt');
   @override
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
       'updated_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   @override
   List<GeneratedColumn> get $columns => [
         id,
-        userId,
+        deviceId,
         planData,
-        runDateTime,
-        planRating,
-        journalNotes,
+        planId,
+        planName,
+        distanceMiles,
+        paceMinutesPerMile,
+        totalCalories,
+        notes,
+        version,
+        lastModifiedBy,
+        clientUpdatedAt,
+        isDeleted,
+        conflictResolution,
         createdAt,
         updatedAt
       ];
@@ -1374,7 +1721,7 @@ class $NutritionPlansTable extends NutritionPlans
   String get actualTableName => $name;
   static const String $name = 'nutrition_plans';
   @override
-  VerificationContext validateIntegrity(Insertable<NutritionPlan> instance,
+  VerificationContext validateIntegrity(Insertable<NutritionPlanEntry> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -1383,11 +1730,11 @@ class $NutritionPlansTable extends NutritionPlans
     } else if (isInserting) {
       context.missing(_idMeta);
     }
-    if (data.containsKey('user_id')) {
-      context.handle(_userIdMeta,
-          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
     } else if (isInserting) {
-      context.missing(_userIdMeta);
+      context.missing(_deviceIdMeta);
     }
     if (data.containsKey('plan_data')) {
       context.handle(_planDataMeta,
@@ -1395,35 +1742,73 @@ class $NutritionPlansTable extends NutritionPlans
     } else if (isInserting) {
       context.missing(_planDataMeta);
     }
-    if (data.containsKey('run_date_time')) {
-      context.handle(
-          _runDateTimeMeta,
-          runDateTime.isAcceptableOrUnknown(
-              data['run_date_time']!, _runDateTimeMeta));
+    if (data.containsKey('plan_id')) {
+      context.handle(_planIdMeta,
+          planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta));
+    } else if (isInserting) {
+      context.missing(_planIdMeta);
     }
-    if (data.containsKey('plan_rating')) {
-      context.handle(
-          _planRatingMeta,
-          planRating.isAcceptableOrUnknown(
-              data['plan_rating']!, _planRatingMeta));
+    if (data.containsKey('plan_name')) {
+      context.handle(_planNameMeta,
+          planName.isAcceptableOrUnknown(data['plan_name']!, _planNameMeta));
+    } else if (isInserting) {
+      context.missing(_planNameMeta);
     }
-    if (data.containsKey('journal_notes')) {
+    if (data.containsKey('distance_miles')) {
       context.handle(
-          _journalNotesMeta,
-          journalNotes.isAcceptableOrUnknown(
-              data['journal_notes']!, _journalNotesMeta));
+          _distanceMilesMeta,
+          distanceMiles.isAcceptableOrUnknown(
+              data['distance_miles']!, _distanceMilesMeta));
+    }
+    if (data.containsKey('pace_minutes_per_mile')) {
+      context.handle(
+          _paceMinutesPerMileMeta,
+          paceMinutesPerMile.isAcceptableOrUnknown(
+              data['pace_minutes_per_mile']!, _paceMinutesPerMileMeta));
+    }
+    if (data.containsKey('total_calories')) {
+      context.handle(
+          _totalCaloriesMeta,
+          totalCalories.isAcceptableOrUnknown(
+              data['total_calories']!, _totalCaloriesMeta));
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+          _notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('last_modified_by')) {
+      context.handle(
+          _lastModifiedByMeta,
+          lastModifiedBy.isAcceptableOrUnknown(
+              data['last_modified_by']!, _lastModifiedByMeta));
+    }
+    if (data.containsKey('client_updated_at')) {
+      context.handle(
+          _clientUpdatedAtMeta,
+          clientUpdatedAt.isAcceptableOrUnknown(
+              data['client_updated_at']!, _clientUpdatedAtMeta));
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(_isDeletedMeta,
+          isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta));
+    }
+    if (data.containsKey('conflict_resolution')) {
+      context.handle(
+          _conflictResolutionMeta,
+          conflictResolution.isAcceptableOrUnknown(
+              data['conflict_resolution']!, _conflictResolutionMeta));
     }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
     }
     if (data.containsKey('updated_at')) {
       context.handle(_updatedAtMeta,
           updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
-    } else if (isInserting) {
-      context.missing(_updatedAtMeta);
     }
     return context;
   }
@@ -1431,21 +1816,37 @@ class $NutritionPlansTable extends NutritionPlans
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  NutritionPlan map(Map<String, dynamic> data, {String? tablePrefix}) {
+  NutritionPlanEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return NutritionPlan(
+    return NutritionPlanEntry(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      userId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id'])!,
       planData: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}plan_data'])!,
-      runDateTime: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}run_date_time']),
-      planRating: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}plan_rating']),
-      journalNotes: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}journal_notes']),
+      planId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}plan_id'])!,
+      planName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}plan_name'])!,
+      distanceMiles: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}distance_miles']),
+      paceMinutesPerMile: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}pace_minutes_per_mile']),
+      totalCalories: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}total_calories']),
+      notes: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}notes']),
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      lastModifiedBy: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}last_modified_by']),
+      clientUpdatedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}client_updated_at']),
+      isDeleted: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_deleted'])!,
+      conflictResolution: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}conflict_resolution']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -1459,54 +1860,82 @@ class $NutritionPlansTable extends NutritionPlans
   }
 }
 
-class NutritionPlan extends DataClass implements Insertable<NutritionPlan> {
-  /// Plan ID (primary key)
+class NutritionPlanEntry extends DataClass
+    implements Insertable<NutritionPlanEntry> {
+  /// UUID primary key (matches Supabase nutrition_plans.id)
   final String id;
 
-  /// User ID (foreign key reference)
-  final String userId;
+  /// Device ID (foreign key reference to users.device_id)
+  final String deviceId;
 
-  /// Plan data stored as JSON string
+  /// Plan data stored as JSON (matches Supabase nutrition_plans.plan_data)
   final String planData;
 
-  /// Scheduled run date and time
-  final DateTime? runDateTime;
+  /// Plan metadata (matches Supabase schema)
+  final String planId;
+  final String planName;
+  final double? distanceMiles;
+  final double? paceMinutesPerMile;
+  final int? totalCalories;
+  final String? notes;
 
-  /// User's rating of plan effectiveness (1-3 scale)
-  /// 1 = Could be better, 2 = Neutral, 3 = Satisfied
-  final int? planRating;
+  /// Versioning and sync (matches Supabase schema)
+  final int version;
+  final String? lastModifiedBy;
+  final DateTime? clientUpdatedAt;
+  final bool isDeleted;
+  final String? conflictResolution;
 
-  /// User's journal notes about the plan
-  final String? journalNotes;
-
-  /// When the plan was created
+  /// Timestamps (matches Supabase schema)
   final DateTime createdAt;
-
-  /// When the plan was last updated
   final DateTime updatedAt;
-  const NutritionPlan(
+  const NutritionPlanEntry(
       {required this.id,
-      required this.userId,
+      required this.deviceId,
       required this.planData,
-      this.runDateTime,
-      this.planRating,
-      this.journalNotes,
+      required this.planId,
+      required this.planName,
+      this.distanceMiles,
+      this.paceMinutesPerMile,
+      this.totalCalories,
+      this.notes,
+      required this.version,
+      this.lastModifiedBy,
+      this.clientUpdatedAt,
+      required this.isDeleted,
+      this.conflictResolution,
       required this.createdAt,
       required this.updatedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['user_id'] = Variable<String>(userId);
+    map['device_id'] = Variable<String>(deviceId);
     map['plan_data'] = Variable<String>(planData);
-    if (!nullToAbsent || runDateTime != null) {
-      map['run_date_time'] = Variable<DateTime>(runDateTime);
+    map['plan_id'] = Variable<String>(planId);
+    map['plan_name'] = Variable<String>(planName);
+    if (!nullToAbsent || distanceMiles != null) {
+      map['distance_miles'] = Variable<double>(distanceMiles);
     }
-    if (!nullToAbsent || planRating != null) {
-      map['plan_rating'] = Variable<int>(planRating);
+    if (!nullToAbsent || paceMinutesPerMile != null) {
+      map['pace_minutes_per_mile'] = Variable<double>(paceMinutesPerMile);
     }
-    if (!nullToAbsent || journalNotes != null) {
-      map['journal_notes'] = Variable<String>(journalNotes);
+    if (!nullToAbsent || totalCalories != null) {
+      map['total_calories'] = Variable<int>(totalCalories);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || lastModifiedBy != null) {
+      map['last_modified_by'] = Variable<String>(lastModifiedBy);
+    }
+    if (!nullToAbsent || clientUpdatedAt != null) {
+      map['client_updated_at'] = Variable<DateTime>(clientUpdatedAt);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || conflictResolution != null) {
+      map['conflict_resolution'] = Variable<String>(conflictResolution);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -1516,32 +1945,57 @@ class NutritionPlan extends DataClass implements Insertable<NutritionPlan> {
   NutritionPlansCompanion toCompanion(bool nullToAbsent) {
     return NutritionPlansCompanion(
       id: Value(id),
-      userId: Value(userId),
+      deviceId: Value(deviceId),
       planData: Value(planData),
-      runDateTime: runDateTime == null && nullToAbsent
+      planId: Value(planId),
+      planName: Value(planName),
+      distanceMiles: distanceMiles == null && nullToAbsent
           ? const Value.absent()
-          : Value(runDateTime),
-      planRating: planRating == null && nullToAbsent
+          : Value(distanceMiles),
+      paceMinutesPerMile: paceMinutesPerMile == null && nullToAbsent
           ? const Value.absent()
-          : Value(planRating),
-      journalNotes: journalNotes == null && nullToAbsent
+          : Value(paceMinutesPerMile),
+      totalCalories: totalCalories == null && nullToAbsent
           ? const Value.absent()
-          : Value(journalNotes),
+          : Value(totalCalories),
+      notes:
+          notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      version: Value(version),
+      lastModifiedBy: lastModifiedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedBy),
+      clientUpdatedAt: clientUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientUpdatedAt),
+      isDeleted: Value(isDeleted),
+      conflictResolution: conflictResolution == null && nullToAbsent
+          ? const Value.absent()
+          : Value(conflictResolution),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
   }
 
-  factory NutritionPlan.fromJson(Map<String, dynamic> json,
+  factory NutritionPlanEntry.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return NutritionPlan(
+    return NutritionPlanEntry(
       id: serializer.fromJson<String>(json['id']),
-      userId: serializer.fromJson<String>(json['userId']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
       planData: serializer.fromJson<String>(json['planData']),
-      runDateTime: serializer.fromJson<DateTime?>(json['runDateTime']),
-      planRating: serializer.fromJson<int?>(json['planRating']),
-      journalNotes: serializer.fromJson<String?>(json['journalNotes']),
+      planId: serializer.fromJson<String>(json['planId']),
+      planName: serializer.fromJson<String>(json['planName']),
+      distanceMiles: serializer.fromJson<double?>(json['distanceMiles']),
+      paceMinutesPerMile:
+          serializer.fromJson<double?>(json['paceMinutesPerMile']),
+      totalCalories: serializer.fromJson<int?>(json['totalCalories']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      version: serializer.fromJson<int>(json['version']),
+      lastModifiedBy: serializer.fromJson<String?>(json['lastModifiedBy']),
+      clientUpdatedAt: serializer.fromJson<DateTime?>(json['clientUpdatedAt']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      conflictResolution:
+          serializer.fromJson<String?>(json['conflictResolution']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1551,48 +2005,96 @@ class NutritionPlan extends DataClass implements Insertable<NutritionPlan> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'userId': serializer.toJson<String>(userId),
+      'deviceId': serializer.toJson<String>(deviceId),
       'planData': serializer.toJson<String>(planData),
-      'runDateTime': serializer.toJson<DateTime?>(runDateTime),
-      'planRating': serializer.toJson<int?>(planRating),
-      'journalNotes': serializer.toJson<String?>(journalNotes),
+      'planId': serializer.toJson<String>(planId),
+      'planName': serializer.toJson<String>(planName),
+      'distanceMiles': serializer.toJson<double?>(distanceMiles),
+      'paceMinutesPerMile': serializer.toJson<double?>(paceMinutesPerMile),
+      'totalCalories': serializer.toJson<int?>(totalCalories),
+      'notes': serializer.toJson<String?>(notes),
+      'version': serializer.toJson<int>(version),
+      'lastModifiedBy': serializer.toJson<String?>(lastModifiedBy),
+      'clientUpdatedAt': serializer.toJson<DateTime?>(clientUpdatedAt),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'conflictResolution': serializer.toJson<String?>(conflictResolution),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
 
-  NutritionPlan copyWith(
+  NutritionPlanEntry copyWith(
           {String? id,
-          String? userId,
+          String? deviceId,
           String? planData,
-          Value<DateTime?> runDateTime = const Value.absent(),
-          Value<int?> planRating = const Value.absent(),
-          Value<String?> journalNotes = const Value.absent(),
+          String? planId,
+          String? planName,
+          Value<double?> distanceMiles = const Value.absent(),
+          Value<double?> paceMinutesPerMile = const Value.absent(),
+          Value<int?> totalCalories = const Value.absent(),
+          Value<String?> notes = const Value.absent(),
+          int? version,
+          Value<String?> lastModifiedBy = const Value.absent(),
+          Value<DateTime?> clientUpdatedAt = const Value.absent(),
+          bool? isDeleted,
+          Value<String?> conflictResolution = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
-      NutritionPlan(
+      NutritionPlanEntry(
         id: id ?? this.id,
-        userId: userId ?? this.userId,
+        deviceId: deviceId ?? this.deviceId,
         planData: planData ?? this.planData,
-        runDateTime: runDateTime.present ? runDateTime.value : this.runDateTime,
-        planRating: planRating.present ? planRating.value : this.planRating,
-        journalNotes:
-            journalNotes.present ? journalNotes.value : this.journalNotes,
+        planId: planId ?? this.planId,
+        planName: planName ?? this.planName,
+        distanceMiles:
+            distanceMiles.present ? distanceMiles.value : this.distanceMiles,
+        paceMinutesPerMile: paceMinutesPerMile.present
+            ? paceMinutesPerMile.value
+            : this.paceMinutesPerMile,
+        totalCalories:
+            totalCalories.present ? totalCalories.value : this.totalCalories,
+        notes: notes.present ? notes.value : this.notes,
+        version: version ?? this.version,
+        lastModifiedBy:
+            lastModifiedBy.present ? lastModifiedBy.value : this.lastModifiedBy,
+        clientUpdatedAt: clientUpdatedAt.present
+            ? clientUpdatedAt.value
+            : this.clientUpdatedAt,
+        isDeleted: isDeleted ?? this.isDeleted,
+        conflictResolution: conflictResolution.present
+            ? conflictResolution.value
+            : this.conflictResolution,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
-  NutritionPlan copyWithCompanion(NutritionPlansCompanion data) {
-    return NutritionPlan(
+  NutritionPlanEntry copyWithCompanion(NutritionPlansCompanion data) {
+    return NutritionPlanEntry(
       id: data.id.present ? data.id.value : this.id,
-      userId: data.userId.present ? data.userId.value : this.userId,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
       planData: data.planData.present ? data.planData.value : this.planData,
-      runDateTime:
-          data.runDateTime.present ? data.runDateTime.value : this.runDateTime,
-      planRating:
-          data.planRating.present ? data.planRating.value : this.planRating,
-      journalNotes: data.journalNotes.present
-          ? data.journalNotes.value
-          : this.journalNotes,
+      planId: data.planId.present ? data.planId.value : this.planId,
+      planName: data.planName.present ? data.planName.value : this.planName,
+      distanceMiles: data.distanceMiles.present
+          ? data.distanceMiles.value
+          : this.distanceMiles,
+      paceMinutesPerMile: data.paceMinutesPerMile.present
+          ? data.paceMinutesPerMile.value
+          : this.paceMinutesPerMile,
+      totalCalories: data.totalCalories.present
+          ? data.totalCalories.value
+          : this.totalCalories,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      version: data.version.present ? data.version.value : this.version,
+      lastModifiedBy: data.lastModifiedBy.present
+          ? data.lastModifiedBy.value
+          : this.lastModifiedBy,
+      clientUpdatedAt: data.clientUpdatedAt.present
+          ? data.clientUpdatedAt.value
+          : this.clientUpdatedAt,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      conflictResolution: data.conflictResolution.present
+          ? data.conflictResolution.value
+          : this.conflictResolution,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1600,13 +2102,21 @@ class NutritionPlan extends DataClass implements Insertable<NutritionPlan> {
 
   @override
   String toString() {
-    return (StringBuffer('NutritionPlan(')
+    return (StringBuffer('NutritionPlanEntry(')
           ..write('id: $id, ')
-          ..write('userId: $userId, ')
+          ..write('deviceId: $deviceId, ')
           ..write('planData: $planData, ')
-          ..write('runDateTime: $runDateTime, ')
-          ..write('planRating: $planRating, ')
-          ..write('journalNotes: $journalNotes, ')
+          ..write('planId: $planId, ')
+          ..write('planName: $planName, ')
+          ..write('distanceMiles: $distanceMiles, ')
+          ..write('paceMinutesPerMile: $paceMinutesPerMile, ')
+          ..write('totalCalories: $totalCalories, ')
+          ..write('notes: $notes, ')
+          ..write('version: $version, ')
+          ..write('lastModifiedBy: $lastModifiedBy, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('conflictResolution: $conflictResolution, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1614,76 +2124,140 @@ class NutritionPlan extends DataClass implements Insertable<NutritionPlan> {
   }
 
   @override
-  int get hashCode => Object.hash(id, userId, planData, runDateTime, planRating,
-      journalNotes, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+      id,
+      deviceId,
+      planData,
+      planId,
+      planName,
+      distanceMiles,
+      paceMinutesPerMile,
+      totalCalories,
+      notes,
+      version,
+      lastModifiedBy,
+      clientUpdatedAt,
+      isDeleted,
+      conflictResolution,
+      createdAt,
+      updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is NutritionPlan &&
+      (other is NutritionPlanEntry &&
           other.id == this.id &&
-          other.userId == this.userId &&
+          other.deviceId == this.deviceId &&
           other.planData == this.planData &&
-          other.runDateTime == this.runDateTime &&
-          other.planRating == this.planRating &&
-          other.journalNotes == this.journalNotes &&
+          other.planId == this.planId &&
+          other.planName == this.planName &&
+          other.distanceMiles == this.distanceMiles &&
+          other.paceMinutesPerMile == this.paceMinutesPerMile &&
+          other.totalCalories == this.totalCalories &&
+          other.notes == this.notes &&
+          other.version == this.version &&
+          other.lastModifiedBy == this.lastModifiedBy &&
+          other.clientUpdatedAt == this.clientUpdatedAt &&
+          other.isDeleted == this.isDeleted &&
+          other.conflictResolution == this.conflictResolution &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
 
-class NutritionPlansCompanion extends UpdateCompanion<NutritionPlan> {
+class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
   final Value<String> id;
-  final Value<String> userId;
+  final Value<String> deviceId;
   final Value<String> planData;
-  final Value<DateTime?> runDateTime;
-  final Value<int?> planRating;
-  final Value<String?> journalNotes;
+  final Value<String> planId;
+  final Value<String> planName;
+  final Value<double?> distanceMiles;
+  final Value<double?> paceMinutesPerMile;
+  final Value<int?> totalCalories;
+  final Value<String?> notes;
+  final Value<int> version;
+  final Value<String?> lastModifiedBy;
+  final Value<DateTime?> clientUpdatedAt;
+  final Value<bool> isDeleted;
+  final Value<String?> conflictResolution;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const NutritionPlansCompanion({
     this.id = const Value.absent(),
-    this.userId = const Value.absent(),
+    this.deviceId = const Value.absent(),
     this.planData = const Value.absent(),
-    this.runDateTime = const Value.absent(),
-    this.planRating = const Value.absent(),
-    this.journalNotes = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.planName = const Value.absent(),
+    this.distanceMiles = const Value.absent(),
+    this.paceMinutesPerMile = const Value.absent(),
+    this.totalCalories = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.version = const Value.absent(),
+    this.lastModifiedBy = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.conflictResolution = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   NutritionPlansCompanion.insert({
     required String id,
-    required String userId,
+    required String deviceId,
     required String planData,
-    this.runDateTime = const Value.absent(),
-    this.planRating = const Value.absent(),
-    this.journalNotes = const Value.absent(),
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    required String planId,
+    required String planName,
+    this.distanceMiles = const Value.absent(),
+    this.paceMinutesPerMile = const Value.absent(),
+    this.totalCalories = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.version = const Value.absent(),
+    this.lastModifiedBy = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.conflictResolution = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
-        userId = Value(userId),
+        deviceId = Value(deviceId),
         planData = Value(planData),
-        createdAt = Value(createdAt),
-        updatedAt = Value(updatedAt);
-  static Insertable<NutritionPlan> custom({
+        planId = Value(planId),
+        planName = Value(planName);
+  static Insertable<NutritionPlanEntry> custom({
     Expression<String>? id,
-    Expression<String>? userId,
+    Expression<String>? deviceId,
     Expression<String>? planData,
-    Expression<DateTime>? runDateTime,
-    Expression<int>? planRating,
-    Expression<String>? journalNotes,
+    Expression<String>? planId,
+    Expression<String>? planName,
+    Expression<double>? distanceMiles,
+    Expression<double>? paceMinutesPerMile,
+    Expression<int>? totalCalories,
+    Expression<String>? notes,
+    Expression<int>? version,
+    Expression<String>? lastModifiedBy,
+    Expression<DateTime>? clientUpdatedAt,
+    Expression<bool>? isDeleted,
+    Expression<String>? conflictResolution,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (userId != null) 'user_id': userId,
+      if (deviceId != null) 'device_id': deviceId,
       if (planData != null) 'plan_data': planData,
-      if (runDateTime != null) 'run_date_time': runDateTime,
-      if (planRating != null) 'plan_rating': planRating,
-      if (journalNotes != null) 'journal_notes': journalNotes,
+      if (planId != null) 'plan_id': planId,
+      if (planName != null) 'plan_name': planName,
+      if (distanceMiles != null) 'distance_miles': distanceMiles,
+      if (paceMinutesPerMile != null)
+        'pace_minutes_per_mile': paceMinutesPerMile,
+      if (totalCalories != null) 'total_calories': totalCalories,
+      if (notes != null) 'notes': notes,
+      if (version != null) 'version': version,
+      if (lastModifiedBy != null) 'last_modified_by': lastModifiedBy,
+      if (clientUpdatedAt != null) 'client_updated_at': clientUpdatedAt,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (conflictResolution != null) 'conflict_resolution': conflictResolution,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1692,21 +2266,37 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlan> {
 
   NutritionPlansCompanion copyWith(
       {Value<String>? id,
-      Value<String>? userId,
+      Value<String>? deviceId,
       Value<String>? planData,
-      Value<DateTime?>? runDateTime,
-      Value<int?>? planRating,
-      Value<String?>? journalNotes,
+      Value<String>? planId,
+      Value<String>? planName,
+      Value<double?>? distanceMiles,
+      Value<double?>? paceMinutesPerMile,
+      Value<int?>? totalCalories,
+      Value<String?>? notes,
+      Value<int>? version,
+      Value<String?>? lastModifiedBy,
+      Value<DateTime?>? clientUpdatedAt,
+      Value<bool>? isDeleted,
+      Value<String?>? conflictResolution,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<int>? rowid}) {
     return NutritionPlansCompanion(
       id: id ?? this.id,
-      userId: userId ?? this.userId,
+      deviceId: deviceId ?? this.deviceId,
       planData: planData ?? this.planData,
-      runDateTime: runDateTime ?? this.runDateTime,
-      planRating: planRating ?? this.planRating,
-      journalNotes: journalNotes ?? this.journalNotes,
+      planId: planId ?? this.planId,
+      planName: planName ?? this.planName,
+      distanceMiles: distanceMiles ?? this.distanceMiles,
+      paceMinutesPerMile: paceMinutesPerMile ?? this.paceMinutesPerMile,
+      totalCalories: totalCalories ?? this.totalCalories,
+      notes: notes ?? this.notes,
+      version: version ?? this.version,
+      lastModifiedBy: lastModifiedBy ?? this.lastModifiedBy,
+      clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      conflictResolution: conflictResolution ?? this.conflictResolution,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1719,20 +2309,44 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlan> {
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
-    if (userId.present) {
-      map['user_id'] = Variable<String>(userId.value);
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
     }
     if (planData.present) {
       map['plan_data'] = Variable<String>(planData.value);
     }
-    if (runDateTime.present) {
-      map['run_date_time'] = Variable<DateTime>(runDateTime.value);
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
     }
-    if (planRating.present) {
-      map['plan_rating'] = Variable<int>(planRating.value);
+    if (planName.present) {
+      map['plan_name'] = Variable<String>(planName.value);
     }
-    if (journalNotes.present) {
-      map['journal_notes'] = Variable<String>(journalNotes.value);
+    if (distanceMiles.present) {
+      map['distance_miles'] = Variable<double>(distanceMiles.value);
+    }
+    if (paceMinutesPerMile.present) {
+      map['pace_minutes_per_mile'] = Variable<double>(paceMinutesPerMile.value);
+    }
+    if (totalCalories.present) {
+      map['total_calories'] = Variable<int>(totalCalories.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (lastModifiedBy.present) {
+      map['last_modified_by'] = Variable<String>(lastModifiedBy.value);
+    }
+    if (clientUpdatedAt.present) {
+      map['client_updated_at'] = Variable<DateTime>(clientUpdatedAt.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (conflictResolution.present) {
+      map['conflict_resolution'] = Variable<String>(conflictResolution.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -1750,11 +2364,19 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlan> {
   String toString() {
     return (StringBuffer('NutritionPlansCompanion(')
           ..write('id: $id, ')
-          ..write('userId: $userId, ')
+          ..write('deviceId: $deviceId, ')
           ..write('planData: $planData, ')
-          ..write('runDateTime: $runDateTime, ')
-          ..write('planRating: $planRating, ')
-          ..write('journalNotes: $journalNotes, ')
+          ..write('planId: $planId, ')
+          ..write('planName: $planName, ')
+          ..write('distanceMiles: $distanceMiles, ')
+          ..write('paceMinutesPerMile: $paceMinutesPerMile, ')
+          ..write('totalCalories: $totalCalories, ')
+          ..write('notes: $notes, ')
+          ..write('version: $version, ')
+          ..write('lastModifiedBy: $lastModifiedBy, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('conflictResolution: $conflictResolution, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -4080,44 +4702,20 @@ class $FoodsTableTable extends FoodsTable
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
       additionalChecks:
-          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 50),
+          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
       type: DriftSqlType.string,
       requiredDuringInsert: true);
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
-      'name', aliasedName, false,
-      additionalChecks:
-          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 255),
-      type: DriftSqlType.string,
-      requiredDuringInsert: true);
+      'name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _imageAddressMeta =
       const VerificationMeta('imageAddress');
   @override
   late final GeneratedColumn<String> imageAddress = GeneratedColumn<String>(
       'image_address', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _descriptionMeta =
-      const VerificationMeta('description');
-  @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-      'description', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _instructionsMeta =
-      const VerificationMeta('instructions');
-  @override
-  late final GeneratedColumn<String> instructions = GeneratedColumn<String>(
-      'instructions', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  @override
-  late final GeneratedColumnWithTypeConverter<Map<String, dynamic>, String>
-      nutritionalInfo = GeneratedColumn<String>(
-              'nutritional_info', aliasedName, false,
-              type: DriftSqlType.string,
-              requiredDuringInsert: false,
-              defaultValue: const Constant('{}'))
-          .withConverter<Map<String, dynamic>>(
-              $FoodsTableTable.$converternutritionalInfo);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -4132,30 +4730,24 @@ class $FoodsTableTable extends FoodsTable
   late final GeneratedColumn<double> servingAmount = GeneratedColumn<double>(
       'serving_amount', aliasedName, true,
       type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _servingUnitMeta =
-      const VerificationMeta('servingUnit');
+  static const VerificationMeta _maxServingsBeforeMeta =
+      const VerificationMeta('maxServingsBefore');
   @override
-  late final GeneratedColumn<String> servingUnit = GeneratedColumn<String>(
-      'serving_unit', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _servingUnitPluralMeta =
-      const VerificationMeta('servingUnitPlural');
+  late final GeneratedColumn<int> maxServingsBefore = GeneratedColumn<int>(
+      'max_servings_before', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _maxServingsDuringMeta =
+      const VerificationMeta('maxServingsDuring');
   @override
-  late final GeneratedColumn<String> servingUnitPlural =
-      GeneratedColumn<String>('serving_unit_plural', aliasedName, true,
-          type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _servingQualifierMeta =
-      const VerificationMeta('servingQualifier');
+  late final GeneratedColumn<int> maxServingsDuring = GeneratedColumn<int>(
+      'max_servings_during', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _maxServingsAfterMeta =
+      const VerificationMeta('maxServingsAfter');
   @override
-  late final GeneratedColumn<String> servingQualifier = GeneratedColumn<String>(
-      'serving_qualifier', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _servingSizeMeta =
-      const VerificationMeta('servingSize');
-  @override
-  late final GeneratedColumn<String> servingSize = GeneratedColumn<String>(
-      'serving_size', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+  late final GeneratedColumn<int> maxServingsAfter = GeneratedColumn<int>(
+      'max_servings_after', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _beforeRunSuitableMeta =
       const VerificationMeta('beforeRunSuitable');
   @override
@@ -4175,16 +4767,6 @@ class $FoodsTableTable extends FoodsTable
       requiredDuringInsert: false,
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("during_run_suitable" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  static const VerificationMeta _afterRunSuitableMeta =
-      const VerificationMeta('afterRunSuitable');
-  @override
-  late final GeneratedColumn<bool> afterRunSuitable = GeneratedColumn<bool>(
-      'after_run_suitable', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("after_run_suitable" IN (0, 1))'),
       defaultValue: const Constant(false));
   static const VerificationMeta _runPortableMeta =
       const VerificationMeta('runPortable');
@@ -4216,44 +4798,6 @@ class $FoodsTableTable extends FoodsTable
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("aid_station_available" IN (0, 1))'),
       defaultValue: const Constant(false));
-  static const VerificationMeta _isElectrolyteMeta =
-      const VerificationMeta('isElectrolyte');
-  @override
-  late final GeneratedColumn<bool> isElectrolyte = GeneratedColumn<bool>(
-      'is_electrolyte', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("is_electrolyte" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  static const VerificationMeta _toExcludeFromSolverMeta =
-      const VerificationMeta('toExcludeFromSolver');
-  @override
-  late final GeneratedColumn<bool> toExcludeFromSolver = GeneratedColumn<bool>(
-      'to_exclude_from_solver', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("to_exclude_from_solver" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  static const VerificationMeta _maxServingsBeforeMeta =
-      const VerificationMeta('maxServingsBefore');
-  @override
-  late final GeneratedColumn<int> maxServingsBefore = GeneratedColumn<int>(
-      'max_servings_before', aliasedName, true,
-      type: DriftSqlType.int, requiredDuringInsert: false);
-  static const VerificationMeta _maxServingsDuringMeta =
-      const VerificationMeta('maxServingsDuring');
-  @override
-  late final GeneratedColumn<int> maxServingsDuring = GeneratedColumn<int>(
-      'max_servings_during', aliasedName, true,
-      type: DriftSqlType.int, requiredDuringInsert: false);
-  static const VerificationMeta _maxServingsAfterMeta =
-      const VerificationMeta('maxServingsAfter');
-  @override
-  late final GeneratedColumn<int> maxServingsAfter = GeneratedColumn<int>(
-      'max_servings_after', aliasedName, true,
-      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _sodiumMgMeta =
       const VerificationMeta('sodiumMg');
   @override
@@ -4308,6 +4852,99 @@ class $FoodsTableTable extends FoodsTable
   late final GeneratedColumn<String> brandId = GeneratedColumn<String>(
       'brand_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _showInPreferencesMeta =
+      const VerificationMeta('showInPreferences');
+  @override
+  late final GeneratedColumn<bool> showInPreferences = GeneratedColumn<bool>(
+      'show_in_preferences', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("show_in_preferences" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _isElectrolyteMeta =
+      const VerificationMeta('isElectrolyte');
+  @override
+  late final GeneratedColumn<bool> isElectrolyte = GeneratedColumn<bool>(
+      'is_electrolyte', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_electrolyte" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _displayNameMeta =
+      const VerificationMeta('displayName');
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+      'display_name', aliasedName, true,
+      additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 100),
+      type: DriftSqlType.string,
+      requiredDuringInsert: false);
+  static const VerificationMeta _displayNamePluralMeta =
+      const VerificationMeta('displayNamePlural');
+  @override
+  late final GeneratedColumn<String> displayNamePlural =
+      GeneratedColumn<String>('display_name_plural', aliasedName, true,
+          additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 100),
+          type: DriftSqlType.string,
+          requiredDuringInsert: false);
+  static const VerificationMeta _servingDescriptionMeta =
+      const VerificationMeta('servingDescription');
+  @override
+  late final GeneratedColumn<String> servingDescription =
+      GeneratedColumn<String>('serving_description', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _instructionsMeta =
+      const VerificationMeta('instructions');
+  @override
+  late final GeneratedColumn<String> instructions = GeneratedColumn<String>(
+      'instructions', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _nutritionalInfoMeta =
+      const VerificationMeta('nutritionalInfo');
+  @override
+  late final GeneratedColumn<String> nutritionalInfo = GeneratedColumn<String>(
+      'nutritional_info', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _servingUnitMeta =
+      const VerificationMeta('servingUnit');
+  @override
+  late final GeneratedColumn<String> servingUnit = GeneratedColumn<String>(
+      'serving_unit', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _servingUnitPluralMeta =
+      const VerificationMeta('servingUnitPlural');
+  @override
+  late final GeneratedColumn<String> servingUnitPlural =
+      GeneratedColumn<String>('serving_unit_plural', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _servingQualifierMeta =
+      const VerificationMeta('servingQualifier');
+  @override
+  late final GeneratedColumn<String> servingQualifier = GeneratedColumn<String>(
+      'serving_qualifier', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _servingSizeMeta =
+      const VerificationMeta('servingSize');
+  @override
+  late final GeneratedColumn<String> servingSize = GeneratedColumn<String>(
+      'serving_size', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _afterRunSuitableMeta =
+      const VerificationMeta('afterRunSuitable');
+  @override
+  late final GeneratedColumn<bool> afterRunSuitable = GeneratedColumn<bool>(
+      'after_run_suitable', aliasedName, true,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("after_run_suitable" IN (0, 1))'));
   static const VerificationMeta _productTypeMeta =
       const VerificationMeta('productType');
   @override
@@ -4326,73 +4963,27 @@ class $FoodsTableTable extends FoodsTable
   late final GeneratedColumn<String> affiliateSource = GeneratedColumn<String>(
       'affiliate_source', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _showInPreferencesMeta =
-      const VerificationMeta('showInPreferences');
-  @override
-  late final GeneratedColumn<bool> showInPreferences = GeneratedColumn<bool>(
-      'show_in_preferences', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("show_in_preferences" IN (0, 1))'),
-      defaultValue: const Constant(false));
   static const VerificationMeta _preferencePriorityMeta =
       const VerificationMeta('preferencePriority');
   @override
   late final GeneratedColumn<int> preferencePriority = GeneratedColumn<int>(
-      'preference_priority', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(999));
-  static const VerificationMeta _displayNameMeta =
-      const VerificationMeta('displayName');
-  @override
-  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
-      'display_name', aliasedName, true,
-      additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 100),
-      type: DriftSqlType.string,
-      requiredDuringInsert: false);
-  static const VerificationMeta _displayNamePluralMeta =
-      const VerificationMeta('displayNamePlural');
-  @override
-  late final GeneratedColumn<String> displayNamePlural =
-      GeneratedColumn<String>('display_name_plural', aliasedName, true,
-          additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 100),
-          type: DriftSqlType.string,
-          requiredDuringInsert: false);
-  static const VerificationMeta _displayOverrideMeta =
-      const VerificationMeta('displayOverride');
-  @override
-  late final GeneratedColumn<String> displayOverride = GeneratedColumn<String>(
-      'display_override', aliasedName, true,
-      additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 100),
-      type: DriftSqlType.string,
-      requiredDuringInsert: false);
+      'preference_priority', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
         name,
         imageAddress,
-        description,
-        instructions,
-        nutritionalInfo,
         createdAt,
         servingAmount,
-        servingUnit,
-        servingUnitPlural,
-        servingQualifier,
-        servingSize,
-        beforeRunSuitable,
-        duringRunSuitable,
-        afterRunSuitable,
-        runPortable,
-        requiresPreparation,
-        aidStationAvailable,
-        isElectrolyte,
-        toExcludeFromSolver,
         maxServingsBefore,
         maxServingsDuring,
         maxServingsAfter,
+        beforeRunSuitable,
+        duringRunSuitable,
+        runPortable,
+        requiresPreparation,
+        aidStationAvailable,
         sodiumMg,
         caffeineMg,
         potassiumMg,
@@ -4402,14 +4993,23 @@ class $FoodsTableTable extends FoodsTable
         caloriesPerServing,
         fluidMlPerServing,
         brandId,
+        showInPreferences,
+        isElectrolyte,
+        displayName,
+        displayNamePlural,
+        servingDescription,
+        description,
+        instructions,
+        nutritionalInfo,
+        servingUnit,
+        servingUnitPlural,
+        servingQualifier,
+        servingSize,
+        afterRunSuitable,
         productType,
         purchaseUrl,
         affiliateSource,
-        showInPreferences,
-        preferencePriority,
-        displayName,
-        displayNamePlural,
-        displayOverride
+        preferencePriority
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4429,26 +5029,12 @@ class $FoodsTableTable extends FoodsTable
     if (data.containsKey('name')) {
       context.handle(
           _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
     }
     if (data.containsKey('image_address')) {
       context.handle(
           _imageAddressMeta,
           imageAddress.isAcceptableOrUnknown(
               data['image_address']!, _imageAddressMeta));
-    }
-    if (data.containsKey('description')) {
-      context.handle(
-          _descriptionMeta,
-          description.isAcceptableOrUnknown(
-              data['description']!, _descriptionMeta));
-    }
-    if (data.containsKey('instructions')) {
-      context.handle(
-          _instructionsMeta,
-          instructions.isAcceptableOrUnknown(
-              data['instructions']!, _instructionsMeta));
     }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
@@ -4459,78 +5045,6 @@ class $FoodsTableTable extends FoodsTable
           _servingAmountMeta,
           servingAmount.isAcceptableOrUnknown(
               data['serving_amount']!, _servingAmountMeta));
-    }
-    if (data.containsKey('serving_unit')) {
-      context.handle(
-          _servingUnitMeta,
-          servingUnit.isAcceptableOrUnknown(
-              data['serving_unit']!, _servingUnitMeta));
-    }
-    if (data.containsKey('serving_unit_plural')) {
-      context.handle(
-          _servingUnitPluralMeta,
-          servingUnitPlural.isAcceptableOrUnknown(
-              data['serving_unit_plural']!, _servingUnitPluralMeta));
-    }
-    if (data.containsKey('serving_qualifier')) {
-      context.handle(
-          _servingQualifierMeta,
-          servingQualifier.isAcceptableOrUnknown(
-              data['serving_qualifier']!, _servingQualifierMeta));
-    }
-    if (data.containsKey('serving_size')) {
-      context.handle(
-          _servingSizeMeta,
-          servingSize.isAcceptableOrUnknown(
-              data['serving_size']!, _servingSizeMeta));
-    }
-    if (data.containsKey('before_run_suitable')) {
-      context.handle(
-          _beforeRunSuitableMeta,
-          beforeRunSuitable.isAcceptableOrUnknown(
-              data['before_run_suitable']!, _beforeRunSuitableMeta));
-    }
-    if (data.containsKey('during_run_suitable')) {
-      context.handle(
-          _duringRunSuitableMeta,
-          duringRunSuitable.isAcceptableOrUnknown(
-              data['during_run_suitable']!, _duringRunSuitableMeta));
-    }
-    if (data.containsKey('after_run_suitable')) {
-      context.handle(
-          _afterRunSuitableMeta,
-          afterRunSuitable.isAcceptableOrUnknown(
-              data['after_run_suitable']!, _afterRunSuitableMeta));
-    }
-    if (data.containsKey('run_portable')) {
-      context.handle(
-          _runPortableMeta,
-          runPortable.isAcceptableOrUnknown(
-              data['run_portable']!, _runPortableMeta));
-    }
-    if (data.containsKey('requires_preparation')) {
-      context.handle(
-          _requiresPreparationMeta,
-          requiresPreparation.isAcceptableOrUnknown(
-              data['requires_preparation']!, _requiresPreparationMeta));
-    }
-    if (data.containsKey('aid_station_available')) {
-      context.handle(
-          _aidStationAvailableMeta,
-          aidStationAvailable.isAcceptableOrUnknown(
-              data['aid_station_available']!, _aidStationAvailableMeta));
-    }
-    if (data.containsKey('is_electrolyte')) {
-      context.handle(
-          _isElectrolyteMeta,
-          isElectrolyte.isAcceptableOrUnknown(
-              data['is_electrolyte']!, _isElectrolyteMeta));
-    }
-    if (data.containsKey('to_exclude_from_solver')) {
-      context.handle(
-          _toExcludeFromSolverMeta,
-          toExcludeFromSolver.isAcceptableOrUnknown(
-              data['to_exclude_from_solver']!, _toExcludeFromSolverMeta));
     }
     if (data.containsKey('max_servings_before')) {
       context.handle(
@@ -4549,6 +5063,36 @@ class $FoodsTableTable extends FoodsTable
           _maxServingsAfterMeta,
           maxServingsAfter.isAcceptableOrUnknown(
               data['max_servings_after']!, _maxServingsAfterMeta));
+    }
+    if (data.containsKey('before_run_suitable')) {
+      context.handle(
+          _beforeRunSuitableMeta,
+          beforeRunSuitable.isAcceptableOrUnknown(
+              data['before_run_suitable']!, _beforeRunSuitableMeta));
+    }
+    if (data.containsKey('during_run_suitable')) {
+      context.handle(
+          _duringRunSuitableMeta,
+          duringRunSuitable.isAcceptableOrUnknown(
+              data['during_run_suitable']!, _duringRunSuitableMeta));
+    }
+    if (data.containsKey('run_portable')) {
+      context.handle(
+          _runPortableMeta,
+          runPortable.isAcceptableOrUnknown(
+              data['run_portable']!, _runPortableMeta));
+    }
+    if (data.containsKey('requires_preparation')) {
+      context.handle(
+          _requiresPreparationMeta,
+          requiresPreparation.isAcceptableOrUnknown(
+              data['requires_preparation']!, _requiresPreparationMeta));
+    }
+    if (data.containsKey('aid_station_available')) {
+      context.handle(
+          _aidStationAvailableMeta,
+          aidStationAvailable.isAcceptableOrUnknown(
+              data['aid_station_available']!, _aidStationAvailableMeta));
     }
     if (data.containsKey('sodium_mg')) {
       context.handle(_sodiumMgMeta,
@@ -4600,6 +5144,84 @@ class $FoodsTableTable extends FoodsTable
       context.handle(_brandIdMeta,
           brandId.isAcceptableOrUnknown(data['brand_id']!, _brandIdMeta));
     }
+    if (data.containsKey('show_in_preferences')) {
+      context.handle(
+          _showInPreferencesMeta,
+          showInPreferences.isAcceptableOrUnknown(
+              data['show_in_preferences']!, _showInPreferencesMeta));
+    }
+    if (data.containsKey('is_electrolyte')) {
+      context.handle(
+          _isElectrolyteMeta,
+          isElectrolyte.isAcceptableOrUnknown(
+              data['is_electrolyte']!, _isElectrolyteMeta));
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+          _displayNameMeta,
+          displayName.isAcceptableOrUnknown(
+              data['display_name']!, _displayNameMeta));
+    }
+    if (data.containsKey('display_name_plural')) {
+      context.handle(
+          _displayNamePluralMeta,
+          displayNamePlural.isAcceptableOrUnknown(
+              data['display_name_plural']!, _displayNamePluralMeta));
+    }
+    if (data.containsKey('serving_description')) {
+      context.handle(
+          _servingDescriptionMeta,
+          servingDescription.isAcceptableOrUnknown(
+              data['serving_description']!, _servingDescriptionMeta));
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('instructions')) {
+      context.handle(
+          _instructionsMeta,
+          instructions.isAcceptableOrUnknown(
+              data['instructions']!, _instructionsMeta));
+    }
+    if (data.containsKey('nutritional_info')) {
+      context.handle(
+          _nutritionalInfoMeta,
+          nutritionalInfo.isAcceptableOrUnknown(
+              data['nutritional_info']!, _nutritionalInfoMeta));
+    }
+    if (data.containsKey('serving_unit')) {
+      context.handle(
+          _servingUnitMeta,
+          servingUnit.isAcceptableOrUnknown(
+              data['serving_unit']!, _servingUnitMeta));
+    }
+    if (data.containsKey('serving_unit_plural')) {
+      context.handle(
+          _servingUnitPluralMeta,
+          servingUnitPlural.isAcceptableOrUnknown(
+              data['serving_unit_plural']!, _servingUnitPluralMeta));
+    }
+    if (data.containsKey('serving_qualifier')) {
+      context.handle(
+          _servingQualifierMeta,
+          servingQualifier.isAcceptableOrUnknown(
+              data['serving_qualifier']!, _servingQualifierMeta));
+    }
+    if (data.containsKey('serving_size')) {
+      context.handle(
+          _servingSizeMeta,
+          servingSize.isAcceptableOrUnknown(
+              data['serving_size']!, _servingSizeMeta));
+    }
+    if (data.containsKey('after_run_suitable')) {
+      context.handle(
+          _afterRunSuitableMeta,
+          afterRunSuitable.isAcceptableOrUnknown(
+              data['after_run_suitable']!, _afterRunSuitableMeta));
+    }
     if (data.containsKey('product_type')) {
       context.handle(
           _productTypeMeta,
@@ -4618,35 +5240,11 @@ class $FoodsTableTable extends FoodsTable
           affiliateSource.isAcceptableOrUnknown(
               data['affiliate_source']!, _affiliateSourceMeta));
     }
-    if (data.containsKey('show_in_preferences')) {
-      context.handle(
-          _showInPreferencesMeta,
-          showInPreferences.isAcceptableOrUnknown(
-              data['show_in_preferences']!, _showInPreferencesMeta));
-    }
     if (data.containsKey('preference_priority')) {
       context.handle(
           _preferencePriorityMeta,
           preferencePriority.isAcceptableOrUnknown(
               data['preference_priority']!, _preferencePriorityMeta));
-    }
-    if (data.containsKey('display_name')) {
-      context.handle(
-          _displayNameMeta,
-          displayName.isAcceptableOrUnknown(
-              data['display_name']!, _displayNameMeta));
-    }
-    if (data.containsKey('display_name_plural')) {
-      context.handle(
-          _displayNamePluralMeta,
-          displayNamePlural.isAcceptableOrUnknown(
-              data['display_name_plural']!, _displayNamePluralMeta));
-    }
-    if (data.containsKey('display_override')) {
-      context.handle(
-          _displayOverrideMeta,
-          displayOverride.isAcceptableOrUnknown(
-              data['display_override']!, _displayOverrideMeta));
     }
     return context;
   }
@@ -4660,50 +5258,29 @@ class $FoodsTableTable extends FoodsTable
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       name: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+          .read(DriftSqlType.string, data['${effectivePrefix}name']),
       imageAddress: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}image_address']),
-      description: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}description']),
-      instructions: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}instructions']),
-      nutritionalInfo: $FoodsTableTable.$converternutritionalInfo.fromSql(
-          attachedDatabase.typeMapping.read(DriftSqlType.string,
-              data['${effectivePrefix}nutritional_info'])!),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       servingAmount: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}serving_amount']),
-      servingUnit: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}serving_unit']),
-      servingUnitPlural: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}serving_unit_plural']),
-      servingQualifier: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}serving_qualifier']),
-      servingSize: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}serving_size']),
-      beforeRunSuitable: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}before_run_suitable'])!,
-      duringRunSuitable: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}during_run_suitable'])!,
-      afterRunSuitable: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}after_run_suitable'])!,
-      runPortable: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}run_portable'])!,
-      requiresPreparation: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}requires_preparation'])!,
-      aidStationAvailable: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}aid_station_available'])!,
-      isElectrolyte: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_electrolyte'])!,
-      toExcludeFromSolver: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}to_exclude_from_solver'])!,
       maxServingsBefore: attachedDatabase.typeMapping.read(
           DriftSqlType.int, data['${effectivePrefix}max_servings_before']),
       maxServingsDuring: attachedDatabase.typeMapping.read(
           DriftSqlType.int, data['${effectivePrefix}max_servings_during']),
       maxServingsAfter: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}max_servings_after']),
+      beforeRunSuitable: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}before_run_suitable'])!,
+      duringRunSuitable: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}during_run_suitable'])!,
+      runPortable: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}run_portable'])!,
+      requiresPreparation: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}requires_preparation'])!,
+      aidStationAvailable: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}aid_station_available'])!,
       sodiumMg: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}sodium_mg']),
       caffeineMg: attachedDatabase.typeMapping
@@ -4722,22 +5299,40 @@ class $FoodsTableTable extends FoodsTable
           DriftSqlType.double, data['${effectivePrefix}fluid_ml_per_serving']),
       brandId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}brand_id']),
+      showInPreferences: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}show_in_preferences'])!,
+      isElectrolyte: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_electrolyte'])!,
+      displayName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}display_name']),
+      displayNamePlural: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}display_name_plural']),
+      servingDescription: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}serving_description']),
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      instructions: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}instructions']),
+      nutritionalInfo: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}nutritional_info']),
+      servingUnit: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}serving_unit']),
+      servingUnitPlural: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}serving_unit_plural']),
+      servingQualifier: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}serving_qualifier']),
+      servingSize: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}serving_size']),
+      afterRunSuitable: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}after_run_suitable']),
       productType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}product_type']),
       purchaseUrl: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}purchase_url']),
       affiliateSource: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}affiliate_source']),
-      showInPreferences: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}show_in_preferences'])!,
       preferencePriority: attachedDatabase.typeMapping.read(
-          DriftSqlType.int, data['${effectivePrefix}preference_priority'])!,
-      displayName: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}display_name']),
-      displayNamePlural: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}display_name_plural']),
-      displayOverride: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}display_override']),
+          DriftSqlType.int, data['${effectivePrefix}preference_priority']),
     );
   }
 
@@ -4745,35 +5340,29 @@ class $FoodsTableTable extends FoodsTable
   $FoodsTableTable createAlias(String alias) {
     return $FoodsTableTable(attachedDatabase, alias);
   }
-
-  static TypeConverter<Map<String, dynamic>, String> $converternutritionalInfo =
-      const CustomJsonTypeConverter();
 }
 
 class FoodEntry extends DataClass implements Insertable<FoodEntry> {
+  /// UUID primary key (matches Supabase foods.id)
   final String id;
-  final String name;
+
+  /// Food name (matches Supabase foods.name)
+  final String? name;
+
+  /// Image URL (matches Supabase foods.image_address)
   final String? imageAddress;
-  final String? description;
-  final String? instructions;
-  final Map<String, dynamic> nutritionalInfo;
+
+  /// When the food was created (matches Supabase foods.created_at)
   final DateTime createdAt;
   final double? servingAmount;
-  final String? servingUnit;
-  final String? servingUnitPlural;
-  final String? servingQualifier;
-  final String? servingSize;
-  final bool beforeRunSuitable;
-  final bool duringRunSuitable;
-  final bool afterRunSuitable;
-  final bool runPortable;
-  final bool requiresPreparation;
-  final bool aidStationAvailable;
-  final bool isElectrolyte;
-  final bool toExcludeFromSolver;
   final int? maxServingsBefore;
   final int? maxServingsDuring;
   final int? maxServingsAfter;
+  final bool beforeRunSuitable;
+  final bool duringRunSuitable;
+  final bool runPortable;
+  final bool requiresPreparation;
+  final bool aidStationAvailable;
   final int? sodiumMg;
   final int? caffeineMg;
   final int? potassiumMg;
@@ -4783,38 +5372,37 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
   final int? caloriesPerServing;
   final double? fluidMlPerServing;
   final String? brandId;
+  final bool showInPreferences;
+  final bool isElectrolyte;
+  final String? displayName;
+  final String? displayNamePlural;
+  final String? servingDescription;
+  final String? description;
+  final String? instructions;
+  final String? nutritionalInfo;
+  final String? servingUnit;
+  final String? servingUnitPlural;
+  final String? servingQualifier;
+  final String? servingSize;
+  final bool? afterRunSuitable;
   final String? productType;
   final String? purchaseUrl;
   final String? affiliateSource;
-  final bool showInPreferences;
-  final int preferencePriority;
-  final String? displayName;
-  final String? displayNamePlural;
-  final String? displayOverride;
+  final int? preferencePriority;
   const FoodEntry(
       {required this.id,
-      required this.name,
+      this.name,
       this.imageAddress,
-      this.description,
-      this.instructions,
-      required this.nutritionalInfo,
       required this.createdAt,
       this.servingAmount,
-      this.servingUnit,
-      this.servingUnitPlural,
-      this.servingQualifier,
-      this.servingSize,
-      required this.beforeRunSuitable,
-      required this.duringRunSuitable,
-      required this.afterRunSuitable,
-      required this.runPortable,
-      required this.requiresPreparation,
-      required this.aidStationAvailable,
-      required this.isElectrolyte,
-      required this.toExcludeFromSolver,
       this.maxServingsBefore,
       this.maxServingsDuring,
       this.maxServingsAfter,
+      required this.beforeRunSuitable,
+      required this.duringRunSuitable,
+      required this.runPortable,
+      required this.requiresPreparation,
+      required this.aidStationAvailable,
       this.sodiumMg,
       this.caffeineMg,
       this.potassiumMg,
@@ -4824,56 +5412,37 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       this.caloriesPerServing,
       this.fluidMlPerServing,
       this.brandId,
+      required this.showInPreferences,
+      required this.isElectrolyte,
+      this.displayName,
+      this.displayNamePlural,
+      this.servingDescription,
+      this.description,
+      this.instructions,
+      this.nutritionalInfo,
+      this.servingUnit,
+      this.servingUnitPlural,
+      this.servingQualifier,
+      this.servingSize,
+      this.afterRunSuitable,
       this.productType,
       this.purchaseUrl,
       this.affiliateSource,
-      required this.showInPreferences,
-      required this.preferencePriority,
-      this.displayName,
-      this.displayNamePlural,
-      this.displayOverride});
+      this.preferencePriority});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
+    }
     if (!nullToAbsent || imageAddress != null) {
       map['image_address'] = Variable<String>(imageAddress);
-    }
-    if (!nullToAbsent || description != null) {
-      map['description'] = Variable<String>(description);
-    }
-    if (!nullToAbsent || instructions != null) {
-      map['instructions'] = Variable<String>(instructions);
-    }
-    {
-      map['nutritional_info'] = Variable<String>(
-          $FoodsTableTable.$converternutritionalInfo.toSql(nutritionalInfo));
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || servingAmount != null) {
       map['serving_amount'] = Variable<double>(servingAmount);
     }
-    if (!nullToAbsent || servingUnit != null) {
-      map['serving_unit'] = Variable<String>(servingUnit);
-    }
-    if (!nullToAbsent || servingUnitPlural != null) {
-      map['serving_unit_plural'] = Variable<String>(servingUnitPlural);
-    }
-    if (!nullToAbsent || servingQualifier != null) {
-      map['serving_qualifier'] = Variable<String>(servingQualifier);
-    }
-    if (!nullToAbsent || servingSize != null) {
-      map['serving_size'] = Variable<String>(servingSize);
-    }
-    map['before_run_suitable'] = Variable<bool>(beforeRunSuitable);
-    map['during_run_suitable'] = Variable<bool>(duringRunSuitable);
-    map['after_run_suitable'] = Variable<bool>(afterRunSuitable);
-    map['run_portable'] = Variable<bool>(runPortable);
-    map['requires_preparation'] = Variable<bool>(requiresPreparation);
-    map['aid_station_available'] = Variable<bool>(aidStationAvailable);
-    map['is_electrolyte'] = Variable<bool>(isElectrolyte);
-    map['to_exclude_from_solver'] = Variable<bool>(toExcludeFromSolver);
     if (!nullToAbsent || maxServingsBefore != null) {
       map['max_servings_before'] = Variable<int>(maxServingsBefore);
     }
@@ -4883,6 +5452,11 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     if (!nullToAbsent || maxServingsAfter != null) {
       map['max_servings_after'] = Variable<int>(maxServingsAfter);
     }
+    map['before_run_suitable'] = Variable<bool>(beforeRunSuitable);
+    map['during_run_suitable'] = Variable<bool>(duringRunSuitable);
+    map['run_portable'] = Variable<bool>(runPortable);
+    map['requires_preparation'] = Variable<bool>(requiresPreparation);
+    map['aid_station_available'] = Variable<bool>(aidStationAvailable);
     if (!nullToAbsent || sodiumMg != null) {
       map['sodium_mg'] = Variable<int>(sodiumMg);
     }
@@ -4910,6 +5484,41 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     if (!nullToAbsent || brandId != null) {
       map['brand_id'] = Variable<String>(brandId);
     }
+    map['show_in_preferences'] = Variable<bool>(showInPreferences);
+    map['is_electrolyte'] = Variable<bool>(isElectrolyte);
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
+    }
+    if (!nullToAbsent || displayNamePlural != null) {
+      map['display_name_plural'] = Variable<String>(displayNamePlural);
+    }
+    if (!nullToAbsent || servingDescription != null) {
+      map['serving_description'] = Variable<String>(servingDescription);
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || instructions != null) {
+      map['instructions'] = Variable<String>(instructions);
+    }
+    if (!nullToAbsent || nutritionalInfo != null) {
+      map['nutritional_info'] = Variable<String>(nutritionalInfo);
+    }
+    if (!nullToAbsent || servingUnit != null) {
+      map['serving_unit'] = Variable<String>(servingUnit);
+    }
+    if (!nullToAbsent || servingUnitPlural != null) {
+      map['serving_unit_plural'] = Variable<String>(servingUnitPlural);
+    }
+    if (!nullToAbsent || servingQualifier != null) {
+      map['serving_qualifier'] = Variable<String>(servingQualifier);
+    }
+    if (!nullToAbsent || servingSize != null) {
+      map['serving_size'] = Variable<String>(servingSize);
+    }
+    if (!nullToAbsent || afterRunSuitable != null) {
+      map['after_run_suitable'] = Variable<bool>(afterRunSuitable);
+    }
     if (!nullToAbsent || productType != null) {
       map['product_type'] = Variable<String>(productType);
     }
@@ -4919,16 +5528,8 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     if (!nullToAbsent || affiliateSource != null) {
       map['affiliate_source'] = Variable<String>(affiliateSource);
     }
-    map['show_in_preferences'] = Variable<bool>(showInPreferences);
-    map['preference_priority'] = Variable<int>(preferencePriority);
-    if (!nullToAbsent || displayName != null) {
-      map['display_name'] = Variable<String>(displayName);
-    }
-    if (!nullToAbsent || displayNamePlural != null) {
-      map['display_name_plural'] = Variable<String>(displayNamePlural);
-    }
-    if (!nullToAbsent || displayOverride != null) {
-      map['display_override'] = Variable<String>(displayOverride);
+    if (!nullToAbsent || preferencePriority != null) {
+      map['preference_priority'] = Variable<int>(preferencePriority);
     }
     return map;
   }
@@ -4936,41 +5537,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
   FoodsTableCompanion toCompanion(bool nullToAbsent) {
     return FoodsTableCompanion(
       id: Value(id),
-      name: Value(name),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
       imageAddress: imageAddress == null && nullToAbsent
           ? const Value.absent()
           : Value(imageAddress),
-      description: description == null && nullToAbsent
-          ? const Value.absent()
-          : Value(description),
-      instructions: instructions == null && nullToAbsent
-          ? const Value.absent()
-          : Value(instructions),
-      nutritionalInfo: Value(nutritionalInfo),
       createdAt: Value(createdAt),
       servingAmount: servingAmount == null && nullToAbsent
           ? const Value.absent()
           : Value(servingAmount),
-      servingUnit: servingUnit == null && nullToAbsent
-          ? const Value.absent()
-          : Value(servingUnit),
-      servingUnitPlural: servingUnitPlural == null && nullToAbsent
-          ? const Value.absent()
-          : Value(servingUnitPlural),
-      servingQualifier: servingQualifier == null && nullToAbsent
-          ? const Value.absent()
-          : Value(servingQualifier),
-      servingSize: servingSize == null && nullToAbsent
-          ? const Value.absent()
-          : Value(servingSize),
-      beforeRunSuitable: Value(beforeRunSuitable),
-      duringRunSuitable: Value(duringRunSuitable),
-      afterRunSuitable: Value(afterRunSuitable),
-      runPortable: Value(runPortable),
-      requiresPreparation: Value(requiresPreparation),
-      aidStationAvailable: Value(aidStationAvailable),
-      isElectrolyte: Value(isElectrolyte),
-      toExcludeFromSolver: Value(toExcludeFromSolver),
       maxServingsBefore: maxServingsBefore == null && nullToAbsent
           ? const Value.absent()
           : Value(maxServingsBefore),
@@ -4980,6 +5554,11 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       maxServingsAfter: maxServingsAfter == null && nullToAbsent
           ? const Value.absent()
           : Value(maxServingsAfter),
+      beforeRunSuitable: Value(beforeRunSuitable),
+      duringRunSuitable: Value(duringRunSuitable),
+      runPortable: Value(runPortable),
+      requiresPreparation: Value(requiresPreparation),
+      aidStationAvailable: Value(aidStationAvailable),
       sodiumMg: sodiumMg == null && nullToAbsent
           ? const Value.absent()
           : Value(sodiumMg),
@@ -5007,6 +5586,41 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       brandId: brandId == null && nullToAbsent
           ? const Value.absent()
           : Value(brandId),
+      showInPreferences: Value(showInPreferences),
+      isElectrolyte: Value(isElectrolyte),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      displayNamePlural: displayNamePlural == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayNamePlural),
+      servingDescription: servingDescription == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingDescription),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      instructions: instructions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(instructions),
+      nutritionalInfo: nutritionalInfo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nutritionalInfo),
+      servingUnit: servingUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingUnit),
+      servingUnitPlural: servingUnitPlural == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingUnitPlural),
+      servingQualifier: servingQualifier == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingQualifier),
+      servingSize: servingSize == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingSize),
+      afterRunSuitable: afterRunSuitable == null && nullToAbsent
+          ? const Value.absent()
+          : Value(afterRunSuitable),
       productType: productType == null && nullToAbsent
           ? const Value.absent()
           : Value(productType),
@@ -5016,17 +5630,9 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       affiliateSource: affiliateSource == null && nullToAbsent
           ? const Value.absent()
           : Value(affiliateSource),
-      showInPreferences: Value(showInPreferences),
-      preferencePriority: Value(preferencePriority),
-      displayName: displayName == null && nullToAbsent
+      preferencePriority: preferencePriority == null && nullToAbsent
           ? const Value.absent()
-          : Value(displayName),
-      displayNamePlural: displayNamePlural == null && nullToAbsent
-          ? const Value.absent()
-          : Value(displayNamePlural),
-      displayOverride: displayOverride == null && nullToAbsent
-          ? const Value.absent()
-          : Value(displayOverride),
+          : Value(preferencePriority),
     );
   }
 
@@ -5035,33 +5641,20 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return FoodEntry(
       id: serializer.fromJson<String>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
+      name: serializer.fromJson<String?>(json['name']),
       imageAddress: serializer.fromJson<String?>(json['imageAddress']),
-      description: serializer.fromJson<String?>(json['description']),
-      instructions: serializer.fromJson<String?>(json['instructions']),
-      nutritionalInfo:
-          serializer.fromJson<Map<String, dynamic>>(json['nutritionalInfo']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       servingAmount: serializer.fromJson<double?>(json['servingAmount']),
-      servingUnit: serializer.fromJson<String?>(json['servingUnit']),
-      servingUnitPlural:
-          serializer.fromJson<String?>(json['servingUnitPlural']),
-      servingQualifier: serializer.fromJson<String?>(json['servingQualifier']),
-      servingSize: serializer.fromJson<String?>(json['servingSize']),
+      maxServingsBefore: serializer.fromJson<int?>(json['maxServingsBefore']),
+      maxServingsDuring: serializer.fromJson<int?>(json['maxServingsDuring']),
+      maxServingsAfter: serializer.fromJson<int?>(json['maxServingsAfter']),
       beforeRunSuitable: serializer.fromJson<bool>(json['beforeRunSuitable']),
       duringRunSuitable: serializer.fromJson<bool>(json['duringRunSuitable']),
-      afterRunSuitable: serializer.fromJson<bool>(json['afterRunSuitable']),
       runPortable: serializer.fromJson<bool>(json['runPortable']),
       requiresPreparation:
           serializer.fromJson<bool>(json['requiresPreparation']),
       aidStationAvailable:
           serializer.fromJson<bool>(json['aidStationAvailable']),
-      isElectrolyte: serializer.fromJson<bool>(json['isElectrolyte']),
-      toExcludeFromSolver:
-          serializer.fromJson<bool>(json['toExcludeFromSolver']),
-      maxServingsBefore: serializer.fromJson<int?>(json['maxServingsBefore']),
-      maxServingsDuring: serializer.fromJson<int?>(json['maxServingsDuring']),
-      maxServingsAfter: serializer.fromJson<int?>(json['maxServingsAfter']),
       sodiumMg: serializer.fromJson<int?>(json['sodiumMg']),
       caffeineMg: serializer.fromJson<int?>(json['caffeineMg']),
       potassiumMg: serializer.fromJson<int?>(json['potassiumMg']),
@@ -5073,15 +5666,26 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       fluidMlPerServing:
           serializer.fromJson<double?>(json['fluidMlPerServing']),
       brandId: serializer.fromJson<String?>(json['brandId']),
-      productType: serializer.fromJson<String?>(json['productType']),
-      purchaseUrl: serializer.fromJson<String?>(json['purchaseUrl']),
-      affiliateSource: serializer.fromJson<String?>(json['affiliateSource']),
       showInPreferences: serializer.fromJson<bool>(json['showInPreferences']),
-      preferencePriority: serializer.fromJson<int>(json['preferencePriority']),
+      isElectrolyte: serializer.fromJson<bool>(json['isElectrolyte']),
       displayName: serializer.fromJson<String?>(json['displayName']),
       displayNamePlural:
           serializer.fromJson<String?>(json['displayNamePlural']),
-      displayOverride: serializer.fromJson<String?>(json['displayOverride']),
+      servingDescription:
+          serializer.fromJson<String?>(json['servingDescription']),
+      description: serializer.fromJson<String?>(json['description']),
+      instructions: serializer.fromJson<String?>(json['instructions']),
+      nutritionalInfo: serializer.fromJson<String?>(json['nutritionalInfo']),
+      servingUnit: serializer.fromJson<String?>(json['servingUnit']),
+      servingUnitPlural:
+          serializer.fromJson<String?>(json['servingUnitPlural']),
+      servingQualifier: serializer.fromJson<String?>(json['servingQualifier']),
+      servingSize: serializer.fromJson<String?>(json['servingSize']),
+      afterRunSuitable: serializer.fromJson<bool?>(json['afterRunSuitable']),
+      productType: serializer.fromJson<String?>(json['productType']),
+      purchaseUrl: serializer.fromJson<String?>(json['purchaseUrl']),
+      affiliateSource: serializer.fromJson<String?>(json['affiliateSource']),
+      preferencePriority: serializer.fromJson<int?>(json['preferencePriority']),
     );
   }
   @override
@@ -5089,29 +5693,18 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'name': serializer.toJson<String>(name),
+      'name': serializer.toJson<String?>(name),
       'imageAddress': serializer.toJson<String?>(imageAddress),
-      'description': serializer.toJson<String?>(description),
-      'instructions': serializer.toJson<String?>(instructions),
-      'nutritionalInfo':
-          serializer.toJson<Map<String, dynamic>>(nutritionalInfo),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'servingAmount': serializer.toJson<double?>(servingAmount),
-      'servingUnit': serializer.toJson<String?>(servingUnit),
-      'servingUnitPlural': serializer.toJson<String?>(servingUnitPlural),
-      'servingQualifier': serializer.toJson<String?>(servingQualifier),
-      'servingSize': serializer.toJson<String?>(servingSize),
-      'beforeRunSuitable': serializer.toJson<bool>(beforeRunSuitable),
-      'duringRunSuitable': serializer.toJson<bool>(duringRunSuitable),
-      'afterRunSuitable': serializer.toJson<bool>(afterRunSuitable),
-      'runPortable': serializer.toJson<bool>(runPortable),
-      'requiresPreparation': serializer.toJson<bool>(requiresPreparation),
-      'aidStationAvailable': serializer.toJson<bool>(aidStationAvailable),
-      'isElectrolyte': serializer.toJson<bool>(isElectrolyte),
-      'toExcludeFromSolver': serializer.toJson<bool>(toExcludeFromSolver),
       'maxServingsBefore': serializer.toJson<int?>(maxServingsBefore),
       'maxServingsDuring': serializer.toJson<int?>(maxServingsDuring),
       'maxServingsAfter': serializer.toJson<int?>(maxServingsAfter),
+      'beforeRunSuitable': serializer.toJson<bool>(beforeRunSuitable),
+      'duringRunSuitable': serializer.toJson<bool>(duringRunSuitable),
+      'runPortable': serializer.toJson<bool>(runPortable),
+      'requiresPreparation': serializer.toJson<bool>(requiresPreparation),
+      'aidStationAvailable': serializer.toJson<bool>(aidStationAvailable),
       'sodiumMg': serializer.toJson<int?>(sodiumMg),
       'caffeineMg': serializer.toJson<int?>(caffeineMg),
       'potassiumMg': serializer.toJson<int?>(potassiumMg),
@@ -5121,41 +5714,40 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       'caloriesPerServing': serializer.toJson<int?>(caloriesPerServing),
       'fluidMlPerServing': serializer.toJson<double?>(fluidMlPerServing),
       'brandId': serializer.toJson<String?>(brandId),
+      'showInPreferences': serializer.toJson<bool>(showInPreferences),
+      'isElectrolyte': serializer.toJson<bool>(isElectrolyte),
+      'displayName': serializer.toJson<String?>(displayName),
+      'displayNamePlural': serializer.toJson<String?>(displayNamePlural),
+      'servingDescription': serializer.toJson<String?>(servingDescription),
+      'description': serializer.toJson<String?>(description),
+      'instructions': serializer.toJson<String?>(instructions),
+      'nutritionalInfo': serializer.toJson<String?>(nutritionalInfo),
+      'servingUnit': serializer.toJson<String?>(servingUnit),
+      'servingUnitPlural': serializer.toJson<String?>(servingUnitPlural),
+      'servingQualifier': serializer.toJson<String?>(servingQualifier),
+      'servingSize': serializer.toJson<String?>(servingSize),
+      'afterRunSuitable': serializer.toJson<bool?>(afterRunSuitable),
       'productType': serializer.toJson<String?>(productType),
       'purchaseUrl': serializer.toJson<String?>(purchaseUrl),
       'affiliateSource': serializer.toJson<String?>(affiliateSource),
-      'showInPreferences': serializer.toJson<bool>(showInPreferences),
-      'preferencePriority': serializer.toJson<int>(preferencePriority),
-      'displayName': serializer.toJson<String?>(displayName),
-      'displayNamePlural': serializer.toJson<String?>(displayNamePlural),
-      'displayOverride': serializer.toJson<String?>(displayOverride),
+      'preferencePriority': serializer.toJson<int?>(preferencePriority),
     };
   }
 
   FoodEntry copyWith(
           {String? id,
-          String? name,
+          Value<String?> name = const Value.absent(),
           Value<String?> imageAddress = const Value.absent(),
-          Value<String?> description = const Value.absent(),
-          Value<String?> instructions = const Value.absent(),
-          Map<String, dynamic>? nutritionalInfo,
           DateTime? createdAt,
           Value<double?> servingAmount = const Value.absent(),
-          Value<String?> servingUnit = const Value.absent(),
-          Value<String?> servingUnitPlural = const Value.absent(),
-          Value<String?> servingQualifier = const Value.absent(),
-          Value<String?> servingSize = const Value.absent(),
-          bool? beforeRunSuitable,
-          bool? duringRunSuitable,
-          bool? afterRunSuitable,
-          bool? runPortable,
-          bool? requiresPreparation,
-          bool? aidStationAvailable,
-          bool? isElectrolyte,
-          bool? toExcludeFromSolver,
           Value<int?> maxServingsBefore = const Value.absent(),
           Value<int?> maxServingsDuring = const Value.absent(),
           Value<int?> maxServingsAfter = const Value.absent(),
+          bool? beforeRunSuitable,
+          bool? duringRunSuitable,
+          bool? runPortable,
+          bool? requiresPreparation,
+          bool? aidStationAvailable,
           Value<int?> sodiumMg = const Value.absent(),
           Value<int?> caffeineMg = const Value.absent(),
           Value<int?> potassiumMg = const Value.absent(),
@@ -5165,42 +5757,31 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           Value<int?> caloriesPerServing = const Value.absent(),
           Value<double?> fluidMlPerServing = const Value.absent(),
           Value<String?> brandId = const Value.absent(),
+          bool? showInPreferences,
+          bool? isElectrolyte,
+          Value<String?> displayName = const Value.absent(),
+          Value<String?> displayNamePlural = const Value.absent(),
+          Value<String?> servingDescription = const Value.absent(),
+          Value<String?> description = const Value.absent(),
+          Value<String?> instructions = const Value.absent(),
+          Value<String?> nutritionalInfo = const Value.absent(),
+          Value<String?> servingUnit = const Value.absent(),
+          Value<String?> servingUnitPlural = const Value.absent(),
+          Value<String?> servingQualifier = const Value.absent(),
+          Value<String?> servingSize = const Value.absent(),
+          Value<bool?> afterRunSuitable = const Value.absent(),
           Value<String?> productType = const Value.absent(),
           Value<String?> purchaseUrl = const Value.absent(),
           Value<String?> affiliateSource = const Value.absent(),
-          bool? showInPreferences,
-          int? preferencePriority,
-          Value<String?> displayName = const Value.absent(),
-          Value<String?> displayNamePlural = const Value.absent(),
-          Value<String?> displayOverride = const Value.absent()}) =>
+          Value<int?> preferencePriority = const Value.absent()}) =>
       FoodEntry(
         id: id ?? this.id,
-        name: name ?? this.name,
+        name: name.present ? name.value : this.name,
         imageAddress:
             imageAddress.present ? imageAddress.value : this.imageAddress,
-        description: description.present ? description.value : this.description,
-        instructions:
-            instructions.present ? instructions.value : this.instructions,
-        nutritionalInfo: nutritionalInfo ?? this.nutritionalInfo,
         createdAt: createdAt ?? this.createdAt,
         servingAmount:
             servingAmount.present ? servingAmount.value : this.servingAmount,
-        servingUnit: servingUnit.present ? servingUnit.value : this.servingUnit,
-        servingUnitPlural: servingUnitPlural.present
-            ? servingUnitPlural.value
-            : this.servingUnitPlural,
-        servingQualifier: servingQualifier.present
-            ? servingQualifier.value
-            : this.servingQualifier,
-        servingSize: servingSize.present ? servingSize.value : this.servingSize,
-        beforeRunSuitable: beforeRunSuitable ?? this.beforeRunSuitable,
-        duringRunSuitable: duringRunSuitable ?? this.duringRunSuitable,
-        afterRunSuitable: afterRunSuitable ?? this.afterRunSuitable,
-        runPortable: runPortable ?? this.runPortable,
-        requiresPreparation: requiresPreparation ?? this.requiresPreparation,
-        aidStationAvailable: aidStationAvailable ?? this.aidStationAvailable,
-        isElectrolyte: isElectrolyte ?? this.isElectrolyte,
-        toExcludeFromSolver: toExcludeFromSolver ?? this.toExcludeFromSolver,
         maxServingsBefore: maxServingsBefore.present
             ? maxServingsBefore.value
             : this.maxServingsBefore,
@@ -5210,6 +5791,11 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
         maxServingsAfter: maxServingsAfter.present
             ? maxServingsAfter.value
             : this.maxServingsAfter,
+        beforeRunSuitable: beforeRunSuitable ?? this.beforeRunSuitable,
+        duringRunSuitable: duringRunSuitable ?? this.duringRunSuitable,
+        runPortable: runPortable ?? this.runPortable,
+        requiresPreparation: requiresPreparation ?? this.requiresPreparation,
+        aidStationAvailable: aidStationAvailable ?? this.aidStationAvailable,
         sodiumMg: sodiumMg.present ? sodiumMg.value : this.sodiumMg,
         caffeineMg: caffeineMg.present ? caffeineMg.value : this.caffeineMg,
         potassiumMg: potassiumMg.present ? potassiumMg.value : this.potassiumMg,
@@ -5228,20 +5814,40 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
             ? fluidMlPerServing.value
             : this.fluidMlPerServing,
         brandId: brandId.present ? brandId.value : this.brandId,
+        showInPreferences: showInPreferences ?? this.showInPreferences,
+        isElectrolyte: isElectrolyte ?? this.isElectrolyte,
+        displayName: displayName.present ? displayName.value : this.displayName,
+        displayNamePlural: displayNamePlural.present
+            ? displayNamePlural.value
+            : this.displayNamePlural,
+        servingDescription: servingDescription.present
+            ? servingDescription.value
+            : this.servingDescription,
+        description: description.present ? description.value : this.description,
+        instructions:
+            instructions.present ? instructions.value : this.instructions,
+        nutritionalInfo: nutritionalInfo.present
+            ? nutritionalInfo.value
+            : this.nutritionalInfo,
+        servingUnit: servingUnit.present ? servingUnit.value : this.servingUnit,
+        servingUnitPlural: servingUnitPlural.present
+            ? servingUnitPlural.value
+            : this.servingUnitPlural,
+        servingQualifier: servingQualifier.present
+            ? servingQualifier.value
+            : this.servingQualifier,
+        servingSize: servingSize.present ? servingSize.value : this.servingSize,
+        afterRunSuitable: afterRunSuitable.present
+            ? afterRunSuitable.value
+            : this.afterRunSuitable,
         productType: productType.present ? productType.value : this.productType,
         purchaseUrl: purchaseUrl.present ? purchaseUrl.value : this.purchaseUrl,
         affiliateSource: affiliateSource.present
             ? affiliateSource.value
             : this.affiliateSource,
-        showInPreferences: showInPreferences ?? this.showInPreferences,
-        preferencePriority: preferencePriority ?? this.preferencePriority,
-        displayName: displayName.present ? displayName.value : this.displayName,
-        displayNamePlural: displayNamePlural.present
-            ? displayNamePlural.value
-            : this.displayNamePlural,
-        displayOverride: displayOverride.present
-            ? displayOverride.value
-            : this.displayOverride,
+        preferencePriority: preferencePriority.present
+            ? preferencePriority.value
+            : this.preferencePriority,
       );
   FoodEntry copyWithCompanion(FoodsTableCompanion data) {
     return FoodEntry(
@@ -5250,51 +5856,10 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       imageAddress: data.imageAddress.present
           ? data.imageAddress.value
           : this.imageAddress,
-      description:
-          data.description.present ? data.description.value : this.description,
-      instructions: data.instructions.present
-          ? data.instructions.value
-          : this.instructions,
-      nutritionalInfo: data.nutritionalInfo.present
-          ? data.nutritionalInfo.value
-          : this.nutritionalInfo,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       servingAmount: data.servingAmount.present
           ? data.servingAmount.value
           : this.servingAmount,
-      servingUnit:
-          data.servingUnit.present ? data.servingUnit.value : this.servingUnit,
-      servingUnitPlural: data.servingUnitPlural.present
-          ? data.servingUnitPlural.value
-          : this.servingUnitPlural,
-      servingQualifier: data.servingQualifier.present
-          ? data.servingQualifier.value
-          : this.servingQualifier,
-      servingSize:
-          data.servingSize.present ? data.servingSize.value : this.servingSize,
-      beforeRunSuitable: data.beforeRunSuitable.present
-          ? data.beforeRunSuitable.value
-          : this.beforeRunSuitable,
-      duringRunSuitable: data.duringRunSuitable.present
-          ? data.duringRunSuitable.value
-          : this.duringRunSuitable,
-      afterRunSuitable: data.afterRunSuitable.present
-          ? data.afterRunSuitable.value
-          : this.afterRunSuitable,
-      runPortable:
-          data.runPortable.present ? data.runPortable.value : this.runPortable,
-      requiresPreparation: data.requiresPreparation.present
-          ? data.requiresPreparation.value
-          : this.requiresPreparation,
-      aidStationAvailable: data.aidStationAvailable.present
-          ? data.aidStationAvailable.value
-          : this.aidStationAvailable,
-      isElectrolyte: data.isElectrolyte.present
-          ? data.isElectrolyte.value
-          : this.isElectrolyte,
-      toExcludeFromSolver: data.toExcludeFromSolver.present
-          ? data.toExcludeFromSolver.value
-          : this.toExcludeFromSolver,
       maxServingsBefore: data.maxServingsBefore.present
           ? data.maxServingsBefore.value
           : this.maxServingsBefore,
@@ -5304,6 +5869,20 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       maxServingsAfter: data.maxServingsAfter.present
           ? data.maxServingsAfter.value
           : this.maxServingsAfter,
+      beforeRunSuitable: data.beforeRunSuitable.present
+          ? data.beforeRunSuitable.value
+          : this.beforeRunSuitable,
+      duringRunSuitable: data.duringRunSuitable.present
+          ? data.duringRunSuitable.value
+          : this.duringRunSuitable,
+      runPortable:
+          data.runPortable.present ? data.runPortable.value : this.runPortable,
+      requiresPreparation: data.requiresPreparation.present
+          ? data.requiresPreparation.value
+          : this.requiresPreparation,
+      aidStationAvailable: data.aidStationAvailable.present
+          ? data.aidStationAvailable.value
+          : this.aidStationAvailable,
       sodiumMg: data.sodiumMg.present ? data.sodiumMg.value : this.sodiumMg,
       caffeineMg:
           data.caffeineMg.present ? data.caffeineMg.value : this.caffeineMg,
@@ -5325,6 +5904,41 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           ? data.fluidMlPerServing.value
           : this.fluidMlPerServing,
       brandId: data.brandId.present ? data.brandId.value : this.brandId,
+      showInPreferences: data.showInPreferences.present
+          ? data.showInPreferences.value
+          : this.showInPreferences,
+      isElectrolyte: data.isElectrolyte.present
+          ? data.isElectrolyte.value
+          : this.isElectrolyte,
+      displayName:
+          data.displayName.present ? data.displayName.value : this.displayName,
+      displayNamePlural: data.displayNamePlural.present
+          ? data.displayNamePlural.value
+          : this.displayNamePlural,
+      servingDescription: data.servingDescription.present
+          ? data.servingDescription.value
+          : this.servingDescription,
+      description:
+          data.description.present ? data.description.value : this.description,
+      instructions: data.instructions.present
+          ? data.instructions.value
+          : this.instructions,
+      nutritionalInfo: data.nutritionalInfo.present
+          ? data.nutritionalInfo.value
+          : this.nutritionalInfo,
+      servingUnit:
+          data.servingUnit.present ? data.servingUnit.value : this.servingUnit,
+      servingUnitPlural: data.servingUnitPlural.present
+          ? data.servingUnitPlural.value
+          : this.servingUnitPlural,
+      servingQualifier: data.servingQualifier.present
+          ? data.servingQualifier.value
+          : this.servingQualifier,
+      servingSize:
+          data.servingSize.present ? data.servingSize.value : this.servingSize,
+      afterRunSuitable: data.afterRunSuitable.present
+          ? data.afterRunSuitable.value
+          : this.afterRunSuitable,
       productType:
           data.productType.present ? data.productType.value : this.productType,
       purchaseUrl:
@@ -5332,20 +5946,9 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       affiliateSource: data.affiliateSource.present
           ? data.affiliateSource.value
           : this.affiliateSource,
-      showInPreferences: data.showInPreferences.present
-          ? data.showInPreferences.value
-          : this.showInPreferences,
       preferencePriority: data.preferencePriority.present
           ? data.preferencePriority.value
           : this.preferencePriority,
-      displayName:
-          data.displayName.present ? data.displayName.value : this.displayName,
-      displayNamePlural: data.displayNamePlural.present
-          ? data.displayNamePlural.value
-          : this.displayNamePlural,
-      displayOverride: data.displayOverride.present
-          ? data.displayOverride.value
-          : this.displayOverride,
     );
   }
 
@@ -5355,26 +5958,16 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('imageAddress: $imageAddress, ')
-          ..write('description: $description, ')
-          ..write('instructions: $instructions, ')
-          ..write('nutritionalInfo: $nutritionalInfo, ')
           ..write('createdAt: $createdAt, ')
           ..write('servingAmount: $servingAmount, ')
-          ..write('servingUnit: $servingUnit, ')
-          ..write('servingUnitPlural: $servingUnitPlural, ')
-          ..write('servingQualifier: $servingQualifier, ')
-          ..write('servingSize: $servingSize, ')
-          ..write('beforeRunSuitable: $beforeRunSuitable, ')
-          ..write('duringRunSuitable: $duringRunSuitable, ')
-          ..write('afterRunSuitable: $afterRunSuitable, ')
-          ..write('runPortable: $runPortable, ')
-          ..write('requiresPreparation: $requiresPreparation, ')
-          ..write('aidStationAvailable: $aidStationAvailable, ')
-          ..write('isElectrolyte: $isElectrolyte, ')
-          ..write('toExcludeFromSolver: $toExcludeFromSolver, ')
           ..write('maxServingsBefore: $maxServingsBefore, ')
           ..write('maxServingsDuring: $maxServingsDuring, ')
           ..write('maxServingsAfter: $maxServingsAfter, ')
+          ..write('beforeRunSuitable: $beforeRunSuitable, ')
+          ..write('duringRunSuitable: $duringRunSuitable, ')
+          ..write('runPortable: $runPortable, ')
+          ..write('requiresPreparation: $requiresPreparation, ')
+          ..write('aidStationAvailable: $aidStationAvailable, ')
           ..write('sodiumMg: $sodiumMg, ')
           ..write('caffeineMg: $caffeineMg, ')
           ..write('potassiumMg: $potassiumMg, ')
@@ -5384,14 +5977,23 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           ..write('caloriesPerServing: $caloriesPerServing, ')
           ..write('fluidMlPerServing: $fluidMlPerServing, ')
           ..write('brandId: $brandId, ')
+          ..write('showInPreferences: $showInPreferences, ')
+          ..write('isElectrolyte: $isElectrolyte, ')
+          ..write('displayName: $displayName, ')
+          ..write('displayNamePlural: $displayNamePlural, ')
+          ..write('servingDescription: $servingDescription, ')
+          ..write('description: $description, ')
+          ..write('instructions: $instructions, ')
+          ..write('nutritionalInfo: $nutritionalInfo, ')
+          ..write('servingUnit: $servingUnit, ')
+          ..write('servingUnitPlural: $servingUnitPlural, ')
+          ..write('servingQualifier: $servingQualifier, ')
+          ..write('servingSize: $servingSize, ')
+          ..write('afterRunSuitable: $afterRunSuitable, ')
           ..write('productType: $productType, ')
           ..write('purchaseUrl: $purchaseUrl, ')
           ..write('affiliateSource: $affiliateSource, ')
-          ..write('showInPreferences: $showInPreferences, ')
-          ..write('preferencePriority: $preferencePriority, ')
-          ..write('displayName: $displayName, ')
-          ..write('displayNamePlural: $displayNamePlural, ')
-          ..write('displayOverride: $displayOverride')
+          ..write('preferencePriority: $preferencePriority')
           ..write(')'))
         .toString();
   }
@@ -5401,26 +6003,16 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
         id,
         name,
         imageAddress,
-        description,
-        instructions,
-        nutritionalInfo,
         createdAt,
         servingAmount,
-        servingUnit,
-        servingUnitPlural,
-        servingQualifier,
-        servingSize,
-        beforeRunSuitable,
-        duringRunSuitable,
-        afterRunSuitable,
-        runPortable,
-        requiresPreparation,
-        aidStationAvailable,
-        isElectrolyte,
-        toExcludeFromSolver,
         maxServingsBefore,
         maxServingsDuring,
         maxServingsAfter,
+        beforeRunSuitable,
+        duringRunSuitable,
+        runPortable,
+        requiresPreparation,
+        aidStationAvailable,
         sodiumMg,
         caffeineMg,
         potassiumMg,
@@ -5430,14 +6022,23 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
         caloriesPerServing,
         fluidMlPerServing,
         brandId,
+        showInPreferences,
+        isElectrolyte,
+        displayName,
+        displayNamePlural,
+        servingDescription,
+        description,
+        instructions,
+        nutritionalInfo,
+        servingUnit,
+        servingUnitPlural,
+        servingQualifier,
+        servingSize,
+        afterRunSuitable,
         productType,
         purchaseUrl,
         affiliateSource,
-        showInPreferences,
-        preferencePriority,
-        displayName,
-        displayNamePlural,
-        displayOverride
+        preferencePriority
       ]);
   @override
   bool operator ==(Object other) =>
@@ -5446,26 +6047,16 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           other.id == this.id &&
           other.name == this.name &&
           other.imageAddress == this.imageAddress &&
-          other.description == this.description &&
-          other.instructions == this.instructions &&
-          other.nutritionalInfo == this.nutritionalInfo &&
           other.createdAt == this.createdAt &&
           other.servingAmount == this.servingAmount &&
-          other.servingUnit == this.servingUnit &&
-          other.servingUnitPlural == this.servingUnitPlural &&
-          other.servingQualifier == this.servingQualifier &&
-          other.servingSize == this.servingSize &&
-          other.beforeRunSuitable == this.beforeRunSuitable &&
-          other.duringRunSuitable == this.duringRunSuitable &&
-          other.afterRunSuitable == this.afterRunSuitable &&
-          other.runPortable == this.runPortable &&
-          other.requiresPreparation == this.requiresPreparation &&
-          other.aidStationAvailable == this.aidStationAvailable &&
-          other.isElectrolyte == this.isElectrolyte &&
-          other.toExcludeFromSolver == this.toExcludeFromSolver &&
           other.maxServingsBefore == this.maxServingsBefore &&
           other.maxServingsDuring == this.maxServingsDuring &&
           other.maxServingsAfter == this.maxServingsAfter &&
+          other.beforeRunSuitable == this.beforeRunSuitable &&
+          other.duringRunSuitable == this.duringRunSuitable &&
+          other.runPortable == this.runPortable &&
+          other.requiresPreparation == this.requiresPreparation &&
+          other.aidStationAvailable == this.aidStationAvailable &&
           other.sodiumMg == this.sodiumMg &&
           other.caffeineMg == this.caffeineMg &&
           other.potassiumMg == this.potassiumMg &&
@@ -5475,40 +6066,39 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           other.caloriesPerServing == this.caloriesPerServing &&
           other.fluidMlPerServing == this.fluidMlPerServing &&
           other.brandId == this.brandId &&
+          other.showInPreferences == this.showInPreferences &&
+          other.isElectrolyte == this.isElectrolyte &&
+          other.displayName == this.displayName &&
+          other.displayNamePlural == this.displayNamePlural &&
+          other.servingDescription == this.servingDescription &&
+          other.description == this.description &&
+          other.instructions == this.instructions &&
+          other.nutritionalInfo == this.nutritionalInfo &&
+          other.servingUnit == this.servingUnit &&
+          other.servingUnitPlural == this.servingUnitPlural &&
+          other.servingQualifier == this.servingQualifier &&
+          other.servingSize == this.servingSize &&
+          other.afterRunSuitable == this.afterRunSuitable &&
           other.productType == this.productType &&
           other.purchaseUrl == this.purchaseUrl &&
           other.affiliateSource == this.affiliateSource &&
-          other.showInPreferences == this.showInPreferences &&
-          other.preferencePriority == this.preferencePriority &&
-          other.displayName == this.displayName &&
-          other.displayNamePlural == this.displayNamePlural &&
-          other.displayOverride == this.displayOverride);
+          other.preferencePriority == this.preferencePriority);
 }
 
 class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
   final Value<String> id;
-  final Value<String> name;
+  final Value<String?> name;
   final Value<String?> imageAddress;
-  final Value<String?> description;
-  final Value<String?> instructions;
-  final Value<Map<String, dynamic>> nutritionalInfo;
   final Value<DateTime> createdAt;
   final Value<double?> servingAmount;
-  final Value<String?> servingUnit;
-  final Value<String?> servingUnitPlural;
-  final Value<String?> servingQualifier;
-  final Value<String?> servingSize;
-  final Value<bool> beforeRunSuitable;
-  final Value<bool> duringRunSuitable;
-  final Value<bool> afterRunSuitable;
-  final Value<bool> runPortable;
-  final Value<bool> requiresPreparation;
-  final Value<bool> aidStationAvailable;
-  final Value<bool> isElectrolyte;
-  final Value<bool> toExcludeFromSolver;
   final Value<int?> maxServingsBefore;
   final Value<int?> maxServingsDuring;
   final Value<int?> maxServingsAfter;
+  final Value<bool> beforeRunSuitable;
+  final Value<bool> duringRunSuitable;
+  final Value<bool> runPortable;
+  final Value<bool> requiresPreparation;
+  final Value<bool> aidStationAvailable;
   final Value<int?> sodiumMg;
   final Value<int?> caffeineMg;
   final Value<int?> potassiumMg;
@@ -5518,39 +6108,38 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
   final Value<int?> caloriesPerServing;
   final Value<double?> fluidMlPerServing;
   final Value<String?> brandId;
+  final Value<bool> showInPreferences;
+  final Value<bool> isElectrolyte;
+  final Value<String?> displayName;
+  final Value<String?> displayNamePlural;
+  final Value<String?> servingDescription;
+  final Value<String?> description;
+  final Value<String?> instructions;
+  final Value<String?> nutritionalInfo;
+  final Value<String?> servingUnit;
+  final Value<String?> servingUnitPlural;
+  final Value<String?> servingQualifier;
+  final Value<String?> servingSize;
+  final Value<bool?> afterRunSuitable;
   final Value<String?> productType;
   final Value<String?> purchaseUrl;
   final Value<String?> affiliateSource;
-  final Value<bool> showInPreferences;
-  final Value<int> preferencePriority;
-  final Value<String?> displayName;
-  final Value<String?> displayNamePlural;
-  final Value<String?> displayOverride;
+  final Value<int?> preferencePriority;
   final Value<int> rowid;
   const FoodsTableCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.imageAddress = const Value.absent(),
-    this.description = const Value.absent(),
-    this.instructions = const Value.absent(),
-    this.nutritionalInfo = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.servingAmount = const Value.absent(),
-    this.servingUnit = const Value.absent(),
-    this.servingUnitPlural = const Value.absent(),
-    this.servingQualifier = const Value.absent(),
-    this.servingSize = const Value.absent(),
-    this.beforeRunSuitable = const Value.absent(),
-    this.duringRunSuitable = const Value.absent(),
-    this.afterRunSuitable = const Value.absent(),
-    this.runPortable = const Value.absent(),
-    this.requiresPreparation = const Value.absent(),
-    this.aidStationAvailable = const Value.absent(),
-    this.isElectrolyte = const Value.absent(),
-    this.toExcludeFromSolver = const Value.absent(),
     this.maxServingsBefore = const Value.absent(),
     this.maxServingsDuring = const Value.absent(),
     this.maxServingsAfter = const Value.absent(),
+    this.beforeRunSuitable = const Value.absent(),
+    this.duringRunSuitable = const Value.absent(),
+    this.runPortable = const Value.absent(),
+    this.requiresPreparation = const Value.absent(),
+    this.aidStationAvailable = const Value.absent(),
     this.sodiumMg = const Value.absent(),
     this.caffeineMg = const Value.absent(),
     this.potassiumMg = const Value.absent(),
@@ -5560,40 +6149,39 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     this.caloriesPerServing = const Value.absent(),
     this.fluidMlPerServing = const Value.absent(),
     this.brandId = const Value.absent(),
+    this.showInPreferences = const Value.absent(),
+    this.isElectrolyte = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.displayNamePlural = const Value.absent(),
+    this.servingDescription = const Value.absent(),
+    this.description = const Value.absent(),
+    this.instructions = const Value.absent(),
+    this.nutritionalInfo = const Value.absent(),
+    this.servingUnit = const Value.absent(),
+    this.servingUnitPlural = const Value.absent(),
+    this.servingQualifier = const Value.absent(),
+    this.servingSize = const Value.absent(),
+    this.afterRunSuitable = const Value.absent(),
     this.productType = const Value.absent(),
     this.purchaseUrl = const Value.absent(),
     this.affiliateSource = const Value.absent(),
-    this.showInPreferences = const Value.absent(),
     this.preferencePriority = const Value.absent(),
-    this.displayName = const Value.absent(),
-    this.displayNamePlural = const Value.absent(),
-    this.displayOverride = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodsTableCompanion.insert({
     required String id,
-    required String name,
+    this.name = const Value.absent(),
     this.imageAddress = const Value.absent(),
-    this.description = const Value.absent(),
-    this.instructions = const Value.absent(),
-    this.nutritionalInfo = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.servingAmount = const Value.absent(),
-    this.servingUnit = const Value.absent(),
-    this.servingUnitPlural = const Value.absent(),
-    this.servingQualifier = const Value.absent(),
-    this.servingSize = const Value.absent(),
-    this.beforeRunSuitable = const Value.absent(),
-    this.duringRunSuitable = const Value.absent(),
-    this.afterRunSuitable = const Value.absent(),
-    this.runPortable = const Value.absent(),
-    this.requiresPreparation = const Value.absent(),
-    this.aidStationAvailable = const Value.absent(),
-    this.isElectrolyte = const Value.absent(),
-    this.toExcludeFromSolver = const Value.absent(),
     this.maxServingsBefore = const Value.absent(),
     this.maxServingsDuring = const Value.absent(),
     this.maxServingsAfter = const Value.absent(),
+    this.beforeRunSuitable = const Value.absent(),
+    this.duringRunSuitable = const Value.absent(),
+    this.runPortable = const Value.absent(),
+    this.requiresPreparation = const Value.absent(),
+    this.aidStationAvailable = const Value.absent(),
     this.sodiumMg = const Value.absent(),
     this.caffeineMg = const Value.absent(),
     this.potassiumMg = const Value.absent(),
@@ -5603,41 +6191,39 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     this.caloriesPerServing = const Value.absent(),
     this.fluidMlPerServing = const Value.absent(),
     this.brandId = const Value.absent(),
+    this.showInPreferences = const Value.absent(),
+    this.isElectrolyte = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.displayNamePlural = const Value.absent(),
+    this.servingDescription = const Value.absent(),
+    this.description = const Value.absent(),
+    this.instructions = const Value.absent(),
+    this.nutritionalInfo = const Value.absent(),
+    this.servingUnit = const Value.absent(),
+    this.servingUnitPlural = const Value.absent(),
+    this.servingQualifier = const Value.absent(),
+    this.servingSize = const Value.absent(),
+    this.afterRunSuitable = const Value.absent(),
     this.productType = const Value.absent(),
     this.purchaseUrl = const Value.absent(),
     this.affiliateSource = const Value.absent(),
-    this.showInPreferences = const Value.absent(),
     this.preferencePriority = const Value.absent(),
-    this.displayName = const Value.absent(),
-    this.displayNamePlural = const Value.absent(),
-    this.displayOverride = const Value.absent(),
     this.rowid = const Value.absent(),
-  })  : id = Value(id),
-        name = Value(name);
+  }) : id = Value(id);
   static Insertable<FoodEntry> custom({
     Expression<String>? id,
     Expression<String>? name,
     Expression<String>? imageAddress,
-    Expression<String>? description,
-    Expression<String>? instructions,
-    Expression<String>? nutritionalInfo,
     Expression<DateTime>? createdAt,
     Expression<double>? servingAmount,
-    Expression<String>? servingUnit,
-    Expression<String>? servingUnitPlural,
-    Expression<String>? servingQualifier,
-    Expression<String>? servingSize,
-    Expression<bool>? beforeRunSuitable,
-    Expression<bool>? duringRunSuitable,
-    Expression<bool>? afterRunSuitable,
-    Expression<bool>? runPortable,
-    Expression<bool>? requiresPreparation,
-    Expression<bool>? aidStationAvailable,
-    Expression<bool>? isElectrolyte,
-    Expression<bool>? toExcludeFromSolver,
     Expression<int>? maxServingsBefore,
     Expression<int>? maxServingsDuring,
     Expression<int>? maxServingsAfter,
+    Expression<bool>? beforeRunSuitable,
+    Expression<bool>? duringRunSuitable,
+    Expression<bool>? runPortable,
+    Expression<bool>? requiresPreparation,
+    Expression<bool>? aidStationAvailable,
     Expression<int>? sodiumMg,
     Expression<int>? caffeineMg,
     Expression<int>? potassiumMg,
@@ -5647,43 +6233,41 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     Expression<int>? caloriesPerServing,
     Expression<double>? fluidMlPerServing,
     Expression<String>? brandId,
+    Expression<bool>? showInPreferences,
+    Expression<bool>? isElectrolyte,
+    Expression<String>? displayName,
+    Expression<String>? displayNamePlural,
+    Expression<String>? servingDescription,
+    Expression<String>? description,
+    Expression<String>? instructions,
+    Expression<String>? nutritionalInfo,
+    Expression<String>? servingUnit,
+    Expression<String>? servingUnitPlural,
+    Expression<String>? servingQualifier,
+    Expression<String>? servingSize,
+    Expression<bool>? afterRunSuitable,
     Expression<String>? productType,
     Expression<String>? purchaseUrl,
     Expression<String>? affiliateSource,
-    Expression<bool>? showInPreferences,
     Expression<int>? preferencePriority,
-    Expression<String>? displayName,
-    Expression<String>? displayNamePlural,
-    Expression<String>? displayOverride,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (imageAddress != null) 'image_address': imageAddress,
-      if (description != null) 'description': description,
-      if (instructions != null) 'instructions': instructions,
-      if (nutritionalInfo != null) 'nutritional_info': nutritionalInfo,
       if (createdAt != null) 'created_at': createdAt,
       if (servingAmount != null) 'serving_amount': servingAmount,
-      if (servingUnit != null) 'serving_unit': servingUnit,
-      if (servingUnitPlural != null) 'serving_unit_plural': servingUnitPlural,
-      if (servingQualifier != null) 'serving_qualifier': servingQualifier,
-      if (servingSize != null) 'serving_size': servingSize,
+      if (maxServingsBefore != null) 'max_servings_before': maxServingsBefore,
+      if (maxServingsDuring != null) 'max_servings_during': maxServingsDuring,
+      if (maxServingsAfter != null) 'max_servings_after': maxServingsAfter,
       if (beforeRunSuitable != null) 'before_run_suitable': beforeRunSuitable,
       if (duringRunSuitable != null) 'during_run_suitable': duringRunSuitable,
-      if (afterRunSuitable != null) 'after_run_suitable': afterRunSuitable,
       if (runPortable != null) 'run_portable': runPortable,
       if (requiresPreparation != null)
         'requires_preparation': requiresPreparation,
       if (aidStationAvailable != null)
         'aid_station_available': aidStationAvailable,
-      if (isElectrolyte != null) 'is_electrolyte': isElectrolyte,
-      if (toExcludeFromSolver != null)
-        'to_exclude_from_solver': toExcludeFromSolver,
-      if (maxServingsBefore != null) 'max_servings_before': maxServingsBefore,
-      if (maxServingsDuring != null) 'max_servings_during': maxServingsDuring,
-      if (maxServingsAfter != null) 'max_servings_after': maxServingsAfter,
       if (sodiumMg != null) 'sodium_mg': sodiumMg,
       if (caffeineMg != null) 'caffeine_mg': caffeineMg,
       if (potassiumMg != null) 'potassium_mg': potassiumMg,
@@ -5694,42 +6278,41 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
         'calories_per_serving': caloriesPerServing,
       if (fluidMlPerServing != null) 'fluid_ml_per_serving': fluidMlPerServing,
       if (brandId != null) 'brand_id': brandId,
+      if (showInPreferences != null) 'show_in_preferences': showInPreferences,
+      if (isElectrolyte != null) 'is_electrolyte': isElectrolyte,
+      if (displayName != null) 'display_name': displayName,
+      if (displayNamePlural != null) 'display_name_plural': displayNamePlural,
+      if (servingDescription != null) 'serving_description': servingDescription,
+      if (description != null) 'description': description,
+      if (instructions != null) 'instructions': instructions,
+      if (nutritionalInfo != null) 'nutritional_info': nutritionalInfo,
+      if (servingUnit != null) 'serving_unit': servingUnit,
+      if (servingUnitPlural != null) 'serving_unit_plural': servingUnitPlural,
+      if (servingQualifier != null) 'serving_qualifier': servingQualifier,
+      if (servingSize != null) 'serving_size': servingSize,
+      if (afterRunSuitable != null) 'after_run_suitable': afterRunSuitable,
       if (productType != null) 'product_type': productType,
       if (purchaseUrl != null) 'purchase_url': purchaseUrl,
       if (affiliateSource != null) 'affiliate_source': affiliateSource,
-      if (showInPreferences != null) 'show_in_preferences': showInPreferences,
       if (preferencePriority != null) 'preference_priority': preferencePriority,
-      if (displayName != null) 'display_name': displayName,
-      if (displayNamePlural != null) 'display_name_plural': displayNamePlural,
-      if (displayOverride != null) 'display_override': displayOverride,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
   FoodsTableCompanion copyWith(
       {Value<String>? id,
-      Value<String>? name,
+      Value<String?>? name,
       Value<String?>? imageAddress,
-      Value<String?>? description,
-      Value<String?>? instructions,
-      Value<Map<String, dynamic>>? nutritionalInfo,
       Value<DateTime>? createdAt,
       Value<double?>? servingAmount,
-      Value<String?>? servingUnit,
-      Value<String?>? servingUnitPlural,
-      Value<String?>? servingQualifier,
-      Value<String?>? servingSize,
-      Value<bool>? beforeRunSuitable,
-      Value<bool>? duringRunSuitable,
-      Value<bool>? afterRunSuitable,
-      Value<bool>? runPortable,
-      Value<bool>? requiresPreparation,
-      Value<bool>? aidStationAvailable,
-      Value<bool>? isElectrolyte,
-      Value<bool>? toExcludeFromSolver,
       Value<int?>? maxServingsBefore,
       Value<int?>? maxServingsDuring,
       Value<int?>? maxServingsAfter,
+      Value<bool>? beforeRunSuitable,
+      Value<bool>? duringRunSuitable,
+      Value<bool>? runPortable,
+      Value<bool>? requiresPreparation,
+      Value<bool>? aidStationAvailable,
       Value<int?>? sodiumMg,
       Value<int?>? caffeineMg,
       Value<int?>? potassiumMg,
@@ -5739,39 +6322,38 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
       Value<int?>? caloriesPerServing,
       Value<double?>? fluidMlPerServing,
       Value<String?>? brandId,
+      Value<bool>? showInPreferences,
+      Value<bool>? isElectrolyte,
+      Value<String?>? displayName,
+      Value<String?>? displayNamePlural,
+      Value<String?>? servingDescription,
+      Value<String?>? description,
+      Value<String?>? instructions,
+      Value<String?>? nutritionalInfo,
+      Value<String?>? servingUnit,
+      Value<String?>? servingUnitPlural,
+      Value<String?>? servingQualifier,
+      Value<String?>? servingSize,
+      Value<bool?>? afterRunSuitable,
       Value<String?>? productType,
       Value<String?>? purchaseUrl,
       Value<String?>? affiliateSource,
-      Value<bool>? showInPreferences,
-      Value<int>? preferencePriority,
-      Value<String?>? displayName,
-      Value<String?>? displayNamePlural,
-      Value<String?>? displayOverride,
+      Value<int?>? preferencePriority,
       Value<int>? rowid}) {
     return FoodsTableCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       imageAddress: imageAddress ?? this.imageAddress,
-      description: description ?? this.description,
-      instructions: instructions ?? this.instructions,
-      nutritionalInfo: nutritionalInfo ?? this.nutritionalInfo,
       createdAt: createdAt ?? this.createdAt,
       servingAmount: servingAmount ?? this.servingAmount,
-      servingUnit: servingUnit ?? this.servingUnit,
-      servingUnitPlural: servingUnitPlural ?? this.servingUnitPlural,
-      servingQualifier: servingQualifier ?? this.servingQualifier,
-      servingSize: servingSize ?? this.servingSize,
-      beforeRunSuitable: beforeRunSuitable ?? this.beforeRunSuitable,
-      duringRunSuitable: duringRunSuitable ?? this.duringRunSuitable,
-      afterRunSuitable: afterRunSuitable ?? this.afterRunSuitable,
-      runPortable: runPortable ?? this.runPortable,
-      requiresPreparation: requiresPreparation ?? this.requiresPreparation,
-      aidStationAvailable: aidStationAvailable ?? this.aidStationAvailable,
-      isElectrolyte: isElectrolyte ?? this.isElectrolyte,
-      toExcludeFromSolver: toExcludeFromSolver ?? this.toExcludeFromSolver,
       maxServingsBefore: maxServingsBefore ?? this.maxServingsBefore,
       maxServingsDuring: maxServingsDuring ?? this.maxServingsDuring,
       maxServingsAfter: maxServingsAfter ?? this.maxServingsAfter,
+      beforeRunSuitable: beforeRunSuitable ?? this.beforeRunSuitable,
+      duringRunSuitable: duringRunSuitable ?? this.duringRunSuitable,
+      runPortable: runPortable ?? this.runPortable,
+      requiresPreparation: requiresPreparation ?? this.requiresPreparation,
+      aidStationAvailable: aidStationAvailable ?? this.aidStationAvailable,
       sodiumMg: sodiumMg ?? this.sodiumMg,
       caffeineMg: caffeineMg ?? this.caffeineMg,
       potassiumMg: potassiumMg ?? this.potassiumMg,
@@ -5781,14 +6363,23 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
       caloriesPerServing: caloriesPerServing ?? this.caloriesPerServing,
       fluidMlPerServing: fluidMlPerServing ?? this.fluidMlPerServing,
       brandId: brandId ?? this.brandId,
+      showInPreferences: showInPreferences ?? this.showInPreferences,
+      isElectrolyte: isElectrolyte ?? this.isElectrolyte,
+      displayName: displayName ?? this.displayName,
+      displayNamePlural: displayNamePlural ?? this.displayNamePlural,
+      servingDescription: servingDescription ?? this.servingDescription,
+      description: description ?? this.description,
+      instructions: instructions ?? this.instructions,
+      nutritionalInfo: nutritionalInfo ?? this.nutritionalInfo,
+      servingUnit: servingUnit ?? this.servingUnit,
+      servingUnitPlural: servingUnitPlural ?? this.servingUnitPlural,
+      servingQualifier: servingQualifier ?? this.servingQualifier,
+      servingSize: servingSize ?? this.servingSize,
+      afterRunSuitable: afterRunSuitable ?? this.afterRunSuitable,
       productType: productType ?? this.productType,
       purchaseUrl: purchaseUrl ?? this.purchaseUrl,
       affiliateSource: affiliateSource ?? this.affiliateSource,
-      showInPreferences: showInPreferences ?? this.showInPreferences,
       preferencePriority: preferencePriority ?? this.preferencePriority,
-      displayName: displayName ?? this.displayName,
-      displayNamePlural: displayNamePlural ?? this.displayNamePlural,
-      displayOverride: displayOverride ?? this.displayOverride,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5805,58 +6396,11 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     if (imageAddress.present) {
       map['image_address'] = Variable<String>(imageAddress.value);
     }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
-    }
-    if (instructions.present) {
-      map['instructions'] = Variable<String>(instructions.value);
-    }
-    if (nutritionalInfo.present) {
-      map['nutritional_info'] = Variable<String>($FoodsTableTable
-          .$converternutritionalInfo
-          .toSql(nutritionalInfo.value));
-    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
     if (servingAmount.present) {
       map['serving_amount'] = Variable<double>(servingAmount.value);
-    }
-    if (servingUnit.present) {
-      map['serving_unit'] = Variable<String>(servingUnit.value);
-    }
-    if (servingUnitPlural.present) {
-      map['serving_unit_plural'] = Variable<String>(servingUnitPlural.value);
-    }
-    if (servingQualifier.present) {
-      map['serving_qualifier'] = Variable<String>(servingQualifier.value);
-    }
-    if (servingSize.present) {
-      map['serving_size'] = Variable<String>(servingSize.value);
-    }
-    if (beforeRunSuitable.present) {
-      map['before_run_suitable'] = Variable<bool>(beforeRunSuitable.value);
-    }
-    if (duringRunSuitable.present) {
-      map['during_run_suitable'] = Variable<bool>(duringRunSuitable.value);
-    }
-    if (afterRunSuitable.present) {
-      map['after_run_suitable'] = Variable<bool>(afterRunSuitable.value);
-    }
-    if (runPortable.present) {
-      map['run_portable'] = Variable<bool>(runPortable.value);
-    }
-    if (requiresPreparation.present) {
-      map['requires_preparation'] = Variable<bool>(requiresPreparation.value);
-    }
-    if (aidStationAvailable.present) {
-      map['aid_station_available'] = Variable<bool>(aidStationAvailable.value);
-    }
-    if (isElectrolyte.present) {
-      map['is_electrolyte'] = Variable<bool>(isElectrolyte.value);
-    }
-    if (toExcludeFromSolver.present) {
-      map['to_exclude_from_solver'] = Variable<bool>(toExcludeFromSolver.value);
     }
     if (maxServingsBefore.present) {
       map['max_servings_before'] = Variable<int>(maxServingsBefore.value);
@@ -5866,6 +6410,21 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     }
     if (maxServingsAfter.present) {
       map['max_servings_after'] = Variable<int>(maxServingsAfter.value);
+    }
+    if (beforeRunSuitable.present) {
+      map['before_run_suitable'] = Variable<bool>(beforeRunSuitable.value);
+    }
+    if (duringRunSuitable.present) {
+      map['during_run_suitable'] = Variable<bool>(duringRunSuitable.value);
+    }
+    if (runPortable.present) {
+      map['run_portable'] = Variable<bool>(runPortable.value);
+    }
+    if (requiresPreparation.present) {
+      map['requires_preparation'] = Variable<bool>(requiresPreparation.value);
+    }
+    if (aidStationAvailable.present) {
+      map['aid_station_available'] = Variable<bool>(aidStationAvailable.value);
     }
     if (sodiumMg.present) {
       map['sodium_mg'] = Variable<int>(sodiumMg.value);
@@ -5894,6 +6453,45 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     if (brandId.present) {
       map['brand_id'] = Variable<String>(brandId.value);
     }
+    if (showInPreferences.present) {
+      map['show_in_preferences'] = Variable<bool>(showInPreferences.value);
+    }
+    if (isElectrolyte.present) {
+      map['is_electrolyte'] = Variable<bool>(isElectrolyte.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (displayNamePlural.present) {
+      map['display_name_plural'] = Variable<String>(displayNamePlural.value);
+    }
+    if (servingDescription.present) {
+      map['serving_description'] = Variable<String>(servingDescription.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (instructions.present) {
+      map['instructions'] = Variable<String>(instructions.value);
+    }
+    if (nutritionalInfo.present) {
+      map['nutritional_info'] = Variable<String>(nutritionalInfo.value);
+    }
+    if (servingUnit.present) {
+      map['serving_unit'] = Variable<String>(servingUnit.value);
+    }
+    if (servingUnitPlural.present) {
+      map['serving_unit_plural'] = Variable<String>(servingUnitPlural.value);
+    }
+    if (servingQualifier.present) {
+      map['serving_qualifier'] = Variable<String>(servingQualifier.value);
+    }
+    if (servingSize.present) {
+      map['serving_size'] = Variable<String>(servingSize.value);
+    }
+    if (afterRunSuitable.present) {
+      map['after_run_suitable'] = Variable<bool>(afterRunSuitable.value);
+    }
     if (productType.present) {
       map['product_type'] = Variable<String>(productType.value);
     }
@@ -5903,20 +6501,8 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     if (affiliateSource.present) {
       map['affiliate_source'] = Variable<String>(affiliateSource.value);
     }
-    if (showInPreferences.present) {
-      map['show_in_preferences'] = Variable<bool>(showInPreferences.value);
-    }
     if (preferencePriority.present) {
       map['preference_priority'] = Variable<int>(preferencePriority.value);
-    }
-    if (displayName.present) {
-      map['display_name'] = Variable<String>(displayName.value);
-    }
-    if (displayNamePlural.present) {
-      map['display_name_plural'] = Variable<String>(displayNamePlural.value);
-    }
-    if (displayOverride.present) {
-      map['display_override'] = Variable<String>(displayOverride.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -5930,26 +6516,16 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('imageAddress: $imageAddress, ')
-          ..write('description: $description, ')
-          ..write('instructions: $instructions, ')
-          ..write('nutritionalInfo: $nutritionalInfo, ')
           ..write('createdAt: $createdAt, ')
           ..write('servingAmount: $servingAmount, ')
-          ..write('servingUnit: $servingUnit, ')
-          ..write('servingUnitPlural: $servingUnitPlural, ')
-          ..write('servingQualifier: $servingQualifier, ')
-          ..write('servingSize: $servingSize, ')
-          ..write('beforeRunSuitable: $beforeRunSuitable, ')
-          ..write('duringRunSuitable: $duringRunSuitable, ')
-          ..write('afterRunSuitable: $afterRunSuitable, ')
-          ..write('runPortable: $runPortable, ')
-          ..write('requiresPreparation: $requiresPreparation, ')
-          ..write('aidStationAvailable: $aidStationAvailable, ')
-          ..write('isElectrolyte: $isElectrolyte, ')
-          ..write('toExcludeFromSolver: $toExcludeFromSolver, ')
           ..write('maxServingsBefore: $maxServingsBefore, ')
           ..write('maxServingsDuring: $maxServingsDuring, ')
           ..write('maxServingsAfter: $maxServingsAfter, ')
+          ..write('beforeRunSuitable: $beforeRunSuitable, ')
+          ..write('duringRunSuitable: $duringRunSuitable, ')
+          ..write('runPortable: $runPortable, ')
+          ..write('requiresPreparation: $requiresPreparation, ')
+          ..write('aidStationAvailable: $aidStationAvailable, ')
           ..write('sodiumMg: $sodiumMg, ')
           ..write('caffeineMg: $caffeineMg, ')
           ..write('potassiumMg: $potassiumMg, ')
@@ -5959,14 +6535,23 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
           ..write('caloriesPerServing: $caloriesPerServing, ')
           ..write('fluidMlPerServing: $fluidMlPerServing, ')
           ..write('brandId: $brandId, ')
+          ..write('showInPreferences: $showInPreferences, ')
+          ..write('isElectrolyte: $isElectrolyte, ')
+          ..write('displayName: $displayName, ')
+          ..write('displayNamePlural: $displayNamePlural, ')
+          ..write('servingDescription: $servingDescription, ')
+          ..write('description: $description, ')
+          ..write('instructions: $instructions, ')
+          ..write('nutritionalInfo: $nutritionalInfo, ')
+          ..write('servingUnit: $servingUnit, ')
+          ..write('servingUnitPlural: $servingUnitPlural, ')
+          ..write('servingQualifier: $servingQualifier, ')
+          ..write('servingSize: $servingSize, ')
+          ..write('afterRunSuitable: $afterRunSuitable, ')
           ..write('productType: $productType, ')
           ..write('purchaseUrl: $purchaseUrl, ')
           ..write('affiliateSource: $affiliateSource, ')
-          ..write('showInPreferences: $showInPreferences, ')
           ..write('preferencePriority: $preferencePriority, ')
-          ..write('displayName: $displayName, ')
-          ..write('displayNamePlural: $displayNamePlural, ')
-          ..write('displayOverride: $displayOverride, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6773,6 +7358,369 @@ class BrandsTableCompanion extends UpdateCompanion<BrandEntry> {
           ..write('affiliateNetwork: $affiliateNetwork, ')
           ..write('defaultAffiliateUrl: $defaultAffiliateUrl, ')
           ..write('notes: $notes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProductTypesTableTable extends ProductTypesTable
+    with TableInfo<$ProductTypesTableTable, ProductTypeEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProductTypesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+      'code', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _namePluralMeta =
+      const VerificationMeta('namePlural');
+  @override
+  late final GeneratedColumn<String> namePlural = GeneratedColumn<String>(
+      'name_plural', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sortOrderMeta =
+      const VerificationMeta('sortOrder');
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+      'sort_order', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, code, name, namePlural, sortOrder, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'product_types_table';
+  @override
+  VerificationContext validateIntegrity(Insertable<ProductTypeEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+          _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('name_plural')) {
+      context.handle(
+          _namePluralMeta,
+          namePlural.isAcceptableOrUnknown(
+              data['name_plural']!, _namePluralMeta));
+    } else if (isInserting) {
+      context.missing(_namePluralMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(_sortOrderMeta,
+          sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProductTypeEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProductTypeEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      code: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      namePlural: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name_plural'])!,
+      sortOrder: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sort_order']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $ProductTypesTableTable createAlias(String alias) {
+    return $ProductTypesTableTable(attachedDatabase, alias);
+  }
+}
+
+class ProductTypeEntry extends DataClass
+    implements Insertable<ProductTypeEntry> {
+  /// UUID primary key (matches Supabase product_types.id)
+  final String id;
+
+  /// Product type code (unique, matches Supabase product_types.code)
+  final String code;
+
+  /// Display name singular (matches Supabase product_types.name)
+  final String name;
+
+  /// Display name plural (matches Supabase product_types.name_plural)
+  final String namePlural;
+
+  /// Sort order for UI display (matches Supabase product_types.sort_order)
+  final int? sortOrder;
+
+  /// When the product type was created (matches Supabase product_types.created_at)
+  final DateTime createdAt;
+  const ProductTypeEntry(
+      {required this.id,
+      required this.code,
+      required this.name,
+      required this.namePlural,
+      this.sortOrder,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['code'] = Variable<String>(code);
+    map['name'] = Variable<String>(name);
+    map['name_plural'] = Variable<String>(namePlural);
+    if (!nullToAbsent || sortOrder != null) {
+      map['sort_order'] = Variable<int>(sortOrder);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ProductTypesTableCompanion toCompanion(bool nullToAbsent) {
+    return ProductTypesTableCompanion(
+      id: Value(id),
+      code: Value(code),
+      name: Value(name),
+      namePlural: Value(namePlural),
+      sortOrder: sortOrder == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sortOrder),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ProductTypeEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProductTypeEntry(
+      id: serializer.fromJson<String>(json['id']),
+      code: serializer.fromJson<String>(json['code']),
+      name: serializer.fromJson<String>(json['name']),
+      namePlural: serializer.fromJson<String>(json['namePlural']),
+      sortOrder: serializer.fromJson<int?>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'code': serializer.toJson<String>(code),
+      'name': serializer.toJson<String>(name),
+      'namePlural': serializer.toJson<String>(namePlural),
+      'sortOrder': serializer.toJson<int?>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ProductTypeEntry copyWith(
+          {String? id,
+          String? code,
+          String? name,
+          String? namePlural,
+          Value<int?> sortOrder = const Value.absent(),
+          DateTime? createdAt}) =>
+      ProductTypeEntry(
+        id: id ?? this.id,
+        code: code ?? this.code,
+        name: name ?? this.name,
+        namePlural: namePlural ?? this.namePlural,
+        sortOrder: sortOrder.present ? sortOrder.value : this.sortOrder,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  ProductTypeEntry copyWithCompanion(ProductTypesTableCompanion data) {
+    return ProductTypeEntry(
+      id: data.id.present ? data.id.value : this.id,
+      code: data.code.present ? data.code.value : this.code,
+      name: data.name.present ? data.name.value : this.name,
+      namePlural:
+          data.namePlural.present ? data.namePlural.value : this.namePlural,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProductTypeEntry(')
+          ..write('id: $id, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('namePlural: $namePlural, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, code, name, namePlural, sortOrder, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProductTypeEntry &&
+          other.id == this.id &&
+          other.code == this.code &&
+          other.name == this.name &&
+          other.namePlural == this.namePlural &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt);
+}
+
+class ProductTypesTableCompanion extends UpdateCompanion<ProductTypeEntry> {
+  final Value<String> id;
+  final Value<String> code;
+  final Value<String> name;
+  final Value<String> namePlural;
+  final Value<int?> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const ProductTypesTableCompanion({
+    this.id = const Value.absent(),
+    this.code = const Value.absent(),
+    this.name = const Value.absent(),
+    this.namePlural = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProductTypesTableCompanion.insert({
+    required String id,
+    required String code,
+    required String name,
+    required String namePlural,
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        code = Value(code),
+        name = Value(name),
+        namePlural = Value(namePlural);
+  static Insertable<ProductTypeEntry> custom({
+    Expression<String>? id,
+    Expression<String>? code,
+    Expression<String>? name,
+    Expression<String>? namePlural,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (code != null) 'code': code,
+      if (name != null) 'name': name,
+      if (namePlural != null) 'name_plural': namePlural,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProductTypesTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? code,
+      Value<String>? name,
+      Value<String>? namePlural,
+      Value<int?>? sortOrder,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
+    return ProductTypesTableCompanion(
+      id: id ?? this.id,
+      code: code ?? this.code,
+      name: name ?? this.name,
+      namePlural: namePlural ?? this.namePlural,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (namePlural.present) {
+      map['name_plural'] = Variable<String>(namePlural.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProductTypesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('namePlural: $namePlural, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7774,6 +8722,1466 @@ class WorkoutNotesTableCompanion extends UpdateCompanion<WorkoutNoteEntry> {
   }
 }
 
+class $CarbLoadingTableTable extends CarbLoadingTable
+    with TableInfo<$CarbLoadingTableTable, CarbLoadingEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CarbLoadingTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _raceDateMeta =
+      const VerificationMeta('raceDate');
+  @override
+  late final GeneratedColumn<DateTime> raceDate = GeneratedColumn<DateTime>(
+      'race_date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _raceDistanceMeta =
+      const VerificationMeta('raceDistance');
+  @override
+  late final GeneratedColumn<String> raceDistance = GeneratedColumn<String>(
+      'race_distance', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _trainingVolumeMeta =
+      const VerificationMeta('trainingVolume');
+  @override
+  late final GeneratedColumn<String> trainingVolume = GeneratedColumn<String>(
+      'training_volume', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _planDataMeta =
+      const VerificationMeta('planData');
+  @override
+  late final GeneratedColumn<String> planData = GeneratedColumn<String>(
+      'plan_data', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        userId,
+        raceDate,
+        raceDistance,
+        trainingVolume,
+        planData,
+        createdAt,
+        updatedAt,
+        isActive
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'carb_loading_plans';
+  @override
+  VerificationContext validateIntegrity(Insertable<CarbLoadingEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('race_date')) {
+      context.handle(_raceDateMeta,
+          raceDate.isAcceptableOrUnknown(data['race_date']!, _raceDateMeta));
+    } else if (isInserting) {
+      context.missing(_raceDateMeta);
+    }
+    if (data.containsKey('race_distance')) {
+      context.handle(
+          _raceDistanceMeta,
+          raceDistance.isAcceptableOrUnknown(
+              data['race_distance']!, _raceDistanceMeta));
+    } else if (isInserting) {
+      context.missing(_raceDistanceMeta);
+    }
+    if (data.containsKey('training_volume')) {
+      context.handle(
+          _trainingVolumeMeta,
+          trainingVolume.isAcceptableOrUnknown(
+              data['training_volume']!, _trainingVolumeMeta));
+    } else if (isInserting) {
+      context.missing(_trainingVolumeMeta);
+    }
+    if (data.containsKey('plan_data')) {
+      context.handle(_planDataMeta,
+          planData.isAcceptableOrUnknown(data['plan_data']!, _planDataMeta));
+    } else if (isInserting) {
+      context.missing(_planDataMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CarbLoadingEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CarbLoadingEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      raceDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}race_date'])!,
+      raceDistance: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}race_distance'])!,
+      trainingVolume: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}training_volume'])!,
+      planData: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}plan_data'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+    );
+  }
+
+  @override
+  $CarbLoadingTableTable createAlias(String alias) {
+    return $CarbLoadingTableTable(attachedDatabase, alias);
+  }
+}
+
+class CarbLoadingEntry extends DataClass
+    implements Insertable<CarbLoadingEntry> {
+  final String id;
+  final String userId;
+  final DateTime raceDate;
+  final String raceDistance;
+  final String trainingVolume;
+  final String planData;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isActive;
+  const CarbLoadingEntry(
+      {required this.id,
+      required this.userId,
+      required this.raceDate,
+      required this.raceDistance,
+      required this.trainingVolume,
+      required this.planData,
+      required this.createdAt,
+      required this.updatedAt,
+      required this.isActive});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['race_date'] = Variable<DateTime>(raceDate);
+    map['race_distance'] = Variable<String>(raceDistance);
+    map['training_volume'] = Variable<String>(trainingVolume);
+    map['plan_data'] = Variable<String>(planData);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_active'] = Variable<bool>(isActive);
+    return map;
+  }
+
+  CarbLoadingTableCompanion toCompanion(bool nullToAbsent) {
+    return CarbLoadingTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      raceDate: Value(raceDate),
+      raceDistance: Value(raceDistance),
+      trainingVolume: Value(trainingVolume),
+      planData: Value(planData),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      isActive: Value(isActive),
+    );
+  }
+
+  factory CarbLoadingEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CarbLoadingEntry(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      raceDate: serializer.fromJson<DateTime>(json['raceDate']),
+      raceDistance: serializer.fromJson<String>(json['raceDistance']),
+      trainingVolume: serializer.fromJson<String>(json['trainingVolume']),
+      planData: serializer.fromJson<String>(json['planData']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'raceDate': serializer.toJson<DateTime>(raceDate),
+      'raceDistance': serializer.toJson<String>(raceDistance),
+      'trainingVolume': serializer.toJson<String>(trainingVolume),
+      'planData': serializer.toJson<String>(planData),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isActive': serializer.toJson<bool>(isActive),
+    };
+  }
+
+  CarbLoadingEntry copyWith(
+          {String? id,
+          String? userId,
+          DateTime? raceDate,
+          String? raceDistance,
+          String? trainingVolume,
+          String? planData,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          bool? isActive}) =>
+      CarbLoadingEntry(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        raceDate: raceDate ?? this.raceDate,
+        raceDistance: raceDistance ?? this.raceDistance,
+        trainingVolume: trainingVolume ?? this.trainingVolume,
+        planData: planData ?? this.planData,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        isActive: isActive ?? this.isActive,
+      );
+  CarbLoadingEntry copyWithCompanion(CarbLoadingTableCompanion data) {
+    return CarbLoadingEntry(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      raceDate: data.raceDate.present ? data.raceDate.value : this.raceDate,
+      raceDistance: data.raceDistance.present
+          ? data.raceDistance.value
+          : this.raceDistance,
+      trainingVolume: data.trainingVolume.present
+          ? data.trainingVolume.value
+          : this.trainingVolume,
+      planData: data.planData.present ? data.planData.value : this.planData,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CarbLoadingEntry(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('raceDate: $raceDate, ')
+          ..write('raceDistance: $raceDistance, ')
+          ..write('trainingVolume: $trainingVolume, ')
+          ..write('planData: $planData, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isActive: $isActive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, userId, raceDate, raceDistance,
+      trainingVolume, planData, createdAt, updatedAt, isActive);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CarbLoadingEntry &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.raceDate == this.raceDate &&
+          other.raceDistance == this.raceDistance &&
+          other.trainingVolume == this.trainingVolume &&
+          other.planData == this.planData &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.isActive == this.isActive);
+}
+
+class CarbLoadingTableCompanion extends UpdateCompanion<CarbLoadingEntry> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<DateTime> raceDate;
+  final Value<String> raceDistance;
+  final Value<String> trainingVolume;
+  final Value<String> planData;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isActive;
+  final Value<int> rowid;
+  const CarbLoadingTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.raceDate = const Value.absent(),
+    this.raceDistance = const Value.absent(),
+    this.trainingVolume = const Value.absent(),
+    this.planData = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CarbLoadingTableCompanion.insert({
+    required String id,
+    required String userId,
+    required DateTime raceDate,
+    required String raceDistance,
+    required String trainingVolume,
+    required String planData,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        userId = Value(userId),
+        raceDate = Value(raceDate),
+        raceDistance = Value(raceDistance),
+        trainingVolume = Value(trainingVolume),
+        planData = Value(planData),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<CarbLoadingEntry> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? raceDate,
+    Expression<String>? raceDistance,
+    Expression<String>? trainingVolume,
+    Expression<String>? planData,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isActive,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (raceDate != null) 'race_date': raceDate,
+      if (raceDistance != null) 'race_distance': raceDistance,
+      if (trainingVolume != null) 'training_volume': trainingVolume,
+      if (planData != null) 'plan_data': planData,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isActive != null) 'is_active': isActive,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CarbLoadingTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? userId,
+      Value<DateTime>? raceDate,
+      Value<String>? raceDistance,
+      Value<String>? trainingVolume,
+      Value<String>? planData,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<bool>? isActive,
+      Value<int>? rowid}) {
+    return CarbLoadingTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      raceDate: raceDate ?? this.raceDate,
+      raceDistance: raceDistance ?? this.raceDistance,
+      trainingVolume: trainingVolume ?? this.trainingVolume,
+      planData: planData ?? this.planData,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isActive: isActive ?? this.isActive,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (raceDate.present) {
+      map['race_date'] = Variable<DateTime>(raceDate.value);
+    }
+    if (raceDistance.present) {
+      map['race_distance'] = Variable<String>(raceDistance.value);
+    }
+    if (trainingVolume.present) {
+      map['training_volume'] = Variable<String>(trainingVolume.value);
+    }
+    if (planData.present) {
+      map['plan_data'] = Variable<String>(planData.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CarbLoadingTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('raceDate: $raceDate, ')
+          ..write('raceDistance: $raceDistance, ')
+          ..write('trainingVolume: $trainingVolume, ')
+          ..write('planData: $planData, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isActive: $isActive, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CarbLoadingSimpleTableTable extends CarbLoadingSimpleTable
+    with TableInfo<$CarbLoadingSimpleTableTable, CarbLoadingSimpleEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CarbLoadingSimpleTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _raceDateMeta =
+      const VerificationMeta('raceDate');
+  @override
+  late final GeneratedColumn<DateTime> raceDate = GeneratedColumn<DateTime>(
+      'race_date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _raceDistanceMeta =
+      const VerificationMeta('raceDistance');
+  @override
+  late final GeneratedColumn<String> raceDistance = GeneratedColumn<String>(
+      'race_distance', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _trainingVolumeMeta =
+      const VerificationMeta('trainingVolume');
+  @override
+  late final GeneratedColumn<String> trainingVolume = GeneratedColumn<String>(
+      'training_volume', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _dailyCarbTargetGMeta =
+      const VerificationMeta('dailyCarbTargetG');
+  @override
+  late final GeneratedColumn<int> dailyCarbTargetG = GeneratedColumn<int>(
+      'daily_carb_target_g', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _dailyServingsTargetMeta =
+      const VerificationMeta('dailyServingsTarget');
+  @override
+  late final GeneratedColumn<int> dailyServingsTarget = GeneratedColumn<int>(
+      'daily_servings_target', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _bodyWeightKgMeta =
+      const VerificationMeta('bodyWeightKg');
+  @override
+  late final GeneratedColumn<double> bodyWeightKg = GeneratedColumn<double>(
+      'body_weight_kg', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _carbsPerKgTargetMeta =
+      const VerificationMeta('carbsPerKgTarget');
+  @override
+  late final GeneratedColumn<double> carbsPerKgTarget = GeneratedColumn<double>(
+      'carbs_per_kg_target', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _daySelectionsJsonMeta =
+      const VerificationMeta('daySelectionsJson');
+  @override
+  late final GeneratedColumn<String> daySelectionsJson =
+      GeneratedColumn<String>('day_selections_json', aliasedName, false,
+          type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        userId,
+        raceDate,
+        raceDistance,
+        trainingVolume,
+        dailyCarbTargetG,
+        dailyServingsTarget,
+        bodyWeightKg,
+        carbsPerKgTarget,
+        daySelectionsJson,
+        createdAt,
+        updatedAt,
+        isActive
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'carb_loading_simple_plans';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<CarbLoadingSimpleEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('race_date')) {
+      context.handle(_raceDateMeta,
+          raceDate.isAcceptableOrUnknown(data['race_date']!, _raceDateMeta));
+    } else if (isInserting) {
+      context.missing(_raceDateMeta);
+    }
+    if (data.containsKey('race_distance')) {
+      context.handle(
+          _raceDistanceMeta,
+          raceDistance.isAcceptableOrUnknown(
+              data['race_distance']!, _raceDistanceMeta));
+    } else if (isInserting) {
+      context.missing(_raceDistanceMeta);
+    }
+    if (data.containsKey('training_volume')) {
+      context.handle(
+          _trainingVolumeMeta,
+          trainingVolume.isAcceptableOrUnknown(
+              data['training_volume']!, _trainingVolumeMeta));
+    } else if (isInserting) {
+      context.missing(_trainingVolumeMeta);
+    }
+    if (data.containsKey('daily_carb_target_g')) {
+      context.handle(
+          _dailyCarbTargetGMeta,
+          dailyCarbTargetG.isAcceptableOrUnknown(
+              data['daily_carb_target_g']!, _dailyCarbTargetGMeta));
+    } else if (isInserting) {
+      context.missing(_dailyCarbTargetGMeta);
+    }
+    if (data.containsKey('daily_servings_target')) {
+      context.handle(
+          _dailyServingsTargetMeta,
+          dailyServingsTarget.isAcceptableOrUnknown(
+              data['daily_servings_target']!, _dailyServingsTargetMeta));
+    } else if (isInserting) {
+      context.missing(_dailyServingsTargetMeta);
+    }
+    if (data.containsKey('body_weight_kg')) {
+      context.handle(
+          _bodyWeightKgMeta,
+          bodyWeightKg.isAcceptableOrUnknown(
+              data['body_weight_kg']!, _bodyWeightKgMeta));
+    } else if (isInserting) {
+      context.missing(_bodyWeightKgMeta);
+    }
+    if (data.containsKey('carbs_per_kg_target')) {
+      context.handle(
+          _carbsPerKgTargetMeta,
+          carbsPerKgTarget.isAcceptableOrUnknown(
+              data['carbs_per_kg_target']!, _carbsPerKgTargetMeta));
+    } else if (isInserting) {
+      context.missing(_carbsPerKgTargetMeta);
+    }
+    if (data.containsKey('day_selections_json')) {
+      context.handle(
+          _daySelectionsJsonMeta,
+          daySelectionsJson.isAcceptableOrUnknown(
+              data['day_selections_json']!, _daySelectionsJsonMeta));
+    } else if (isInserting) {
+      context.missing(_daySelectionsJsonMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CarbLoadingSimpleEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CarbLoadingSimpleEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      raceDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}race_date'])!,
+      raceDistance: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}race_distance'])!,
+      trainingVolume: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}training_volume'])!,
+      dailyCarbTargetG: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}daily_carb_target_g'])!,
+      dailyServingsTarget: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}daily_servings_target'])!,
+      bodyWeightKg: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}body_weight_kg'])!,
+      carbsPerKgTarget: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}carbs_per_kg_target'])!,
+      daySelectionsJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}day_selections_json'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+    );
+  }
+
+  @override
+  $CarbLoadingSimpleTableTable createAlias(String alias) {
+    return $CarbLoadingSimpleTableTable(attachedDatabase, alias);
+  }
+}
+
+class CarbLoadingSimpleEntry extends DataClass
+    implements Insertable<CarbLoadingSimpleEntry> {
+  final String id;
+  final String userId;
+  final DateTime raceDate;
+  final String raceDistance;
+  final String trainingVolume;
+  final int dailyCarbTargetG;
+  final int dailyServingsTarget;
+  final double bodyWeightKg;
+  final double carbsPerKgTarget;
+  final String daySelectionsJson;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isActive;
+  const CarbLoadingSimpleEntry(
+      {required this.id,
+      required this.userId,
+      required this.raceDate,
+      required this.raceDistance,
+      required this.trainingVolume,
+      required this.dailyCarbTargetG,
+      required this.dailyServingsTarget,
+      required this.bodyWeightKg,
+      required this.carbsPerKgTarget,
+      required this.daySelectionsJson,
+      required this.createdAt,
+      required this.updatedAt,
+      required this.isActive});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['race_date'] = Variable<DateTime>(raceDate);
+    map['race_distance'] = Variable<String>(raceDistance);
+    map['training_volume'] = Variable<String>(trainingVolume);
+    map['daily_carb_target_g'] = Variable<int>(dailyCarbTargetG);
+    map['daily_servings_target'] = Variable<int>(dailyServingsTarget);
+    map['body_weight_kg'] = Variable<double>(bodyWeightKg);
+    map['carbs_per_kg_target'] = Variable<double>(carbsPerKgTarget);
+    map['day_selections_json'] = Variable<String>(daySelectionsJson);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_active'] = Variable<bool>(isActive);
+    return map;
+  }
+
+  CarbLoadingSimpleTableCompanion toCompanion(bool nullToAbsent) {
+    return CarbLoadingSimpleTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      raceDate: Value(raceDate),
+      raceDistance: Value(raceDistance),
+      trainingVolume: Value(trainingVolume),
+      dailyCarbTargetG: Value(dailyCarbTargetG),
+      dailyServingsTarget: Value(dailyServingsTarget),
+      bodyWeightKg: Value(bodyWeightKg),
+      carbsPerKgTarget: Value(carbsPerKgTarget),
+      daySelectionsJson: Value(daySelectionsJson),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      isActive: Value(isActive),
+    );
+  }
+
+  factory CarbLoadingSimpleEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CarbLoadingSimpleEntry(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      raceDate: serializer.fromJson<DateTime>(json['raceDate']),
+      raceDistance: serializer.fromJson<String>(json['raceDistance']),
+      trainingVolume: serializer.fromJson<String>(json['trainingVolume']),
+      dailyCarbTargetG: serializer.fromJson<int>(json['dailyCarbTargetG']),
+      dailyServingsTarget:
+          serializer.fromJson<int>(json['dailyServingsTarget']),
+      bodyWeightKg: serializer.fromJson<double>(json['bodyWeightKg']),
+      carbsPerKgTarget: serializer.fromJson<double>(json['carbsPerKgTarget']),
+      daySelectionsJson: serializer.fromJson<String>(json['daySelectionsJson']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'raceDate': serializer.toJson<DateTime>(raceDate),
+      'raceDistance': serializer.toJson<String>(raceDistance),
+      'trainingVolume': serializer.toJson<String>(trainingVolume),
+      'dailyCarbTargetG': serializer.toJson<int>(dailyCarbTargetG),
+      'dailyServingsTarget': serializer.toJson<int>(dailyServingsTarget),
+      'bodyWeightKg': serializer.toJson<double>(bodyWeightKg),
+      'carbsPerKgTarget': serializer.toJson<double>(carbsPerKgTarget),
+      'daySelectionsJson': serializer.toJson<String>(daySelectionsJson),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isActive': serializer.toJson<bool>(isActive),
+    };
+  }
+
+  CarbLoadingSimpleEntry copyWith(
+          {String? id,
+          String? userId,
+          DateTime? raceDate,
+          String? raceDistance,
+          String? trainingVolume,
+          int? dailyCarbTargetG,
+          int? dailyServingsTarget,
+          double? bodyWeightKg,
+          double? carbsPerKgTarget,
+          String? daySelectionsJson,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          bool? isActive}) =>
+      CarbLoadingSimpleEntry(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        raceDate: raceDate ?? this.raceDate,
+        raceDistance: raceDistance ?? this.raceDistance,
+        trainingVolume: trainingVolume ?? this.trainingVolume,
+        dailyCarbTargetG: dailyCarbTargetG ?? this.dailyCarbTargetG,
+        dailyServingsTarget: dailyServingsTarget ?? this.dailyServingsTarget,
+        bodyWeightKg: bodyWeightKg ?? this.bodyWeightKg,
+        carbsPerKgTarget: carbsPerKgTarget ?? this.carbsPerKgTarget,
+        daySelectionsJson: daySelectionsJson ?? this.daySelectionsJson,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        isActive: isActive ?? this.isActive,
+      );
+  CarbLoadingSimpleEntry copyWithCompanion(
+      CarbLoadingSimpleTableCompanion data) {
+    return CarbLoadingSimpleEntry(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      raceDate: data.raceDate.present ? data.raceDate.value : this.raceDate,
+      raceDistance: data.raceDistance.present
+          ? data.raceDistance.value
+          : this.raceDistance,
+      trainingVolume: data.trainingVolume.present
+          ? data.trainingVolume.value
+          : this.trainingVolume,
+      dailyCarbTargetG: data.dailyCarbTargetG.present
+          ? data.dailyCarbTargetG.value
+          : this.dailyCarbTargetG,
+      dailyServingsTarget: data.dailyServingsTarget.present
+          ? data.dailyServingsTarget.value
+          : this.dailyServingsTarget,
+      bodyWeightKg: data.bodyWeightKg.present
+          ? data.bodyWeightKg.value
+          : this.bodyWeightKg,
+      carbsPerKgTarget: data.carbsPerKgTarget.present
+          ? data.carbsPerKgTarget.value
+          : this.carbsPerKgTarget,
+      daySelectionsJson: data.daySelectionsJson.present
+          ? data.daySelectionsJson.value
+          : this.daySelectionsJson,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CarbLoadingSimpleEntry(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('raceDate: $raceDate, ')
+          ..write('raceDistance: $raceDistance, ')
+          ..write('trainingVolume: $trainingVolume, ')
+          ..write('dailyCarbTargetG: $dailyCarbTargetG, ')
+          ..write('dailyServingsTarget: $dailyServingsTarget, ')
+          ..write('bodyWeightKg: $bodyWeightKg, ')
+          ..write('carbsPerKgTarget: $carbsPerKgTarget, ')
+          ..write('daySelectionsJson: $daySelectionsJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isActive: $isActive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      userId,
+      raceDate,
+      raceDistance,
+      trainingVolume,
+      dailyCarbTargetG,
+      dailyServingsTarget,
+      bodyWeightKg,
+      carbsPerKgTarget,
+      daySelectionsJson,
+      createdAt,
+      updatedAt,
+      isActive);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CarbLoadingSimpleEntry &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.raceDate == this.raceDate &&
+          other.raceDistance == this.raceDistance &&
+          other.trainingVolume == this.trainingVolume &&
+          other.dailyCarbTargetG == this.dailyCarbTargetG &&
+          other.dailyServingsTarget == this.dailyServingsTarget &&
+          other.bodyWeightKg == this.bodyWeightKg &&
+          other.carbsPerKgTarget == this.carbsPerKgTarget &&
+          other.daySelectionsJson == this.daySelectionsJson &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.isActive == this.isActive);
+}
+
+class CarbLoadingSimpleTableCompanion
+    extends UpdateCompanion<CarbLoadingSimpleEntry> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<DateTime> raceDate;
+  final Value<String> raceDistance;
+  final Value<String> trainingVolume;
+  final Value<int> dailyCarbTargetG;
+  final Value<int> dailyServingsTarget;
+  final Value<double> bodyWeightKg;
+  final Value<double> carbsPerKgTarget;
+  final Value<String> daySelectionsJson;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isActive;
+  final Value<int> rowid;
+  const CarbLoadingSimpleTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.raceDate = const Value.absent(),
+    this.raceDistance = const Value.absent(),
+    this.trainingVolume = const Value.absent(),
+    this.dailyCarbTargetG = const Value.absent(),
+    this.dailyServingsTarget = const Value.absent(),
+    this.bodyWeightKg = const Value.absent(),
+    this.carbsPerKgTarget = const Value.absent(),
+    this.daySelectionsJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CarbLoadingSimpleTableCompanion.insert({
+    required String id,
+    required String userId,
+    required DateTime raceDate,
+    required String raceDistance,
+    required String trainingVolume,
+    required int dailyCarbTargetG,
+    required int dailyServingsTarget,
+    required double bodyWeightKg,
+    required double carbsPerKgTarget,
+    required String daySelectionsJson,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.isActive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        userId = Value(userId),
+        raceDate = Value(raceDate),
+        raceDistance = Value(raceDistance),
+        trainingVolume = Value(trainingVolume),
+        dailyCarbTargetG = Value(dailyCarbTargetG),
+        dailyServingsTarget = Value(dailyServingsTarget),
+        bodyWeightKg = Value(bodyWeightKg),
+        carbsPerKgTarget = Value(carbsPerKgTarget),
+        daySelectionsJson = Value(daySelectionsJson),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<CarbLoadingSimpleEntry> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? raceDate,
+    Expression<String>? raceDistance,
+    Expression<String>? trainingVolume,
+    Expression<int>? dailyCarbTargetG,
+    Expression<int>? dailyServingsTarget,
+    Expression<double>? bodyWeightKg,
+    Expression<double>? carbsPerKgTarget,
+    Expression<String>? daySelectionsJson,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isActive,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (raceDate != null) 'race_date': raceDate,
+      if (raceDistance != null) 'race_distance': raceDistance,
+      if (trainingVolume != null) 'training_volume': trainingVolume,
+      if (dailyCarbTargetG != null) 'daily_carb_target_g': dailyCarbTargetG,
+      if (dailyServingsTarget != null)
+        'daily_servings_target': dailyServingsTarget,
+      if (bodyWeightKg != null) 'body_weight_kg': bodyWeightKg,
+      if (carbsPerKgTarget != null) 'carbs_per_kg_target': carbsPerKgTarget,
+      if (daySelectionsJson != null) 'day_selections_json': daySelectionsJson,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isActive != null) 'is_active': isActive,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CarbLoadingSimpleTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? userId,
+      Value<DateTime>? raceDate,
+      Value<String>? raceDistance,
+      Value<String>? trainingVolume,
+      Value<int>? dailyCarbTargetG,
+      Value<int>? dailyServingsTarget,
+      Value<double>? bodyWeightKg,
+      Value<double>? carbsPerKgTarget,
+      Value<String>? daySelectionsJson,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<bool>? isActive,
+      Value<int>? rowid}) {
+    return CarbLoadingSimpleTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      raceDate: raceDate ?? this.raceDate,
+      raceDistance: raceDistance ?? this.raceDistance,
+      trainingVolume: trainingVolume ?? this.trainingVolume,
+      dailyCarbTargetG: dailyCarbTargetG ?? this.dailyCarbTargetG,
+      dailyServingsTarget: dailyServingsTarget ?? this.dailyServingsTarget,
+      bodyWeightKg: bodyWeightKg ?? this.bodyWeightKg,
+      carbsPerKgTarget: carbsPerKgTarget ?? this.carbsPerKgTarget,
+      daySelectionsJson: daySelectionsJson ?? this.daySelectionsJson,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isActive: isActive ?? this.isActive,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (raceDate.present) {
+      map['race_date'] = Variable<DateTime>(raceDate.value);
+    }
+    if (raceDistance.present) {
+      map['race_distance'] = Variable<String>(raceDistance.value);
+    }
+    if (trainingVolume.present) {
+      map['training_volume'] = Variable<String>(trainingVolume.value);
+    }
+    if (dailyCarbTargetG.present) {
+      map['daily_carb_target_g'] = Variable<int>(dailyCarbTargetG.value);
+    }
+    if (dailyServingsTarget.present) {
+      map['daily_servings_target'] = Variable<int>(dailyServingsTarget.value);
+    }
+    if (bodyWeightKg.present) {
+      map['body_weight_kg'] = Variable<double>(bodyWeightKg.value);
+    }
+    if (carbsPerKgTarget.present) {
+      map['carbs_per_kg_target'] = Variable<double>(carbsPerKgTarget.value);
+    }
+    if (daySelectionsJson.present) {
+      map['day_selections_json'] = Variable<String>(daySelectionsJson.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CarbLoadingSimpleTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('raceDate: $raceDate, ')
+          ..write('raceDistance: $raceDistance, ')
+          ..write('trainingVolume: $trainingVolume, ')
+          ..write('dailyCarbTargetG: $dailyCarbTargetG, ')
+          ..write('dailyServingsTarget: $dailyServingsTarget, ')
+          ..write('bodyWeightKg: $bodyWeightKg, ')
+          ..write('carbsPerKgTarget: $carbsPerKgTarget, ')
+          ..write('daySelectionsJson: $daySelectionsJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isActive: $isActive, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $EdgeFunctionsTableTable extends EdgeFunctionsTable
+    with TableInfo<$EdgeFunctionsTableTable, EdgeFunctionEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EdgeFunctionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+      'code', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [id, name, code, createdAt, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'edge_functions_table';
+  @override
+  VerificationContext validateIntegrity(Insertable<EdgeFunctionEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+          _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  EdgeFunctionEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EdgeFunctionEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      code: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $EdgeFunctionsTableTable createAlias(String alias) {
+    return $EdgeFunctionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class EdgeFunctionEntry extends DataClass
+    implements Insertable<EdgeFunctionEntry> {
+  /// UUID primary key (matches Supabase edge_functions.id)
+  final String id;
+
+  /// Function name (unique identifier)
+  final String name;
+
+  /// Function code (JavaScript/TypeScript source)
+  final String code;
+
+  /// When the function was created (matches Supabase edge_functions.created_at)
+  final DateTime createdAt;
+
+  /// When the function was last updated (matches Supabase edge_functions.updated_at)
+  final DateTime updatedAt;
+  const EdgeFunctionEntry(
+      {required this.id,
+      required this.name,
+      required this.code,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['code'] = Variable<String>(code);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  EdgeFunctionsTableCompanion toCompanion(bool nullToAbsent) {
+    return EdgeFunctionsTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      code: Value(code),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory EdgeFunctionEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EdgeFunctionEntry(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      code: serializer.fromJson<String>(json['code']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'code': serializer.toJson<String>(code),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  EdgeFunctionEntry copyWith(
+          {String? id,
+          String? name,
+          String? code,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      EdgeFunctionEntry(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        code: code ?? this.code,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  EdgeFunctionEntry copyWithCompanion(EdgeFunctionsTableCompanion data) {
+    return EdgeFunctionEntry(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      code: data.code.present ? data.code.value : this.code,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EdgeFunctionEntry(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('code: $code, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, code, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EdgeFunctionEntry &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.code == this.code &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class EdgeFunctionsTableCompanion extends UpdateCompanion<EdgeFunctionEntry> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> code;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const EdgeFunctionsTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.code = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EdgeFunctionsTableCompanion.insert({
+    required String id,
+    required String name,
+    required String code,
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        code = Value(code);
+  static Insertable<EdgeFunctionEntry> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? code,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (code != null) 'code': code,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EdgeFunctionsTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String>? code,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return EdgeFunctionsTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      code: code ?? this.code,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EdgeFunctionsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('code: $code, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7791,10 +10199,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FoodCategoriesTableTable foodCategoriesTable =
       $FoodCategoriesTableTable(this);
   late final $BrandsTableTable brandsTable = $BrandsTableTable(this);
+  late final $ProductTypesTableTable productTypesTable =
+      $ProductTypesTableTable(this);
   late final $AppContentTableTable appContentTable =
       $AppContentTableTable(this);
   late final $WorkoutNotesTableTable workoutNotesTable =
       $WorkoutNotesTableTable(this);
+  late final $CarbLoadingTableTable carbLoadingTable =
+      $CarbLoadingTableTable(this);
+  late final $CarbLoadingSimpleTableTable carbLoadingSimpleTable =
+      $CarbLoadingSimpleTableTable(this);
+  late final $EdgeFunctionsTableTable edgeFunctionsTable =
+      $EdgeFunctionsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7809,8 +10225,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         categoriesTable,
         foodCategoriesTable,
         brandsTable,
+        productTypesTable,
         appContentTable,
-        workoutNotesTable
+        workoutNotesTable,
+        carbLoadingTable,
+        carbLoadingSimpleTable,
+        edgeFunctionsTable
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
@@ -7829,17 +10249,22 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 typedef $$UserProfilesTableTableCreateCompanionBuilder
     = UserProfilesTableCompanion Function({
   required String id,
-  required String gender,
-  required DateTime birthday,
-  required int heightFeet,
-  required int heightInches,
-  required double weightPounds,
-  required bool runsWithWaterBottle,
-  required String gutTraining,
+  required String deviceId,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> gender,
+  Value<DateTime?> birthday,
+  Value<int?> heightFeet,
+  Value<int?> heightInches,
+  Value<double?> weightPounds,
+  Value<bool> runsWithWaterBottle,
+  Value<Map<String, dynamic>> foodPreferences,
+  Value<String> preferredDistanceUnit,
+  Value<String> preferredPaceUnit,
+  Value<String> gutTrainingLevel,
   Value<bool> onboardingCompleted,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-  required String appVersion,
+  Value<DateTime> lastActiveAt,
+  Value<String?> appVersion,
   Value<bool> notificationsEnabled,
   Value<int> defaultReminderDay,
   Value<int> defaultReminderHour,
@@ -7852,17 +10277,22 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder
 typedef $$UserProfilesTableTableUpdateCompanionBuilder
     = UserProfilesTableCompanion Function({
   Value<String> id,
-  Value<String> gender,
-  Value<DateTime> birthday,
-  Value<int> heightFeet,
-  Value<int> heightInches,
-  Value<double> weightPounds,
-  Value<bool> runsWithWaterBottle,
-  Value<String> gutTraining,
-  Value<bool> onboardingCompleted,
+  Value<String> deviceId,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
-  Value<String> appVersion,
+  Value<String?> gender,
+  Value<DateTime?> birthday,
+  Value<int?> heightFeet,
+  Value<int?> heightInches,
+  Value<double?> weightPounds,
+  Value<bool> runsWithWaterBottle,
+  Value<Map<String, dynamic>> foodPreferences,
+  Value<String> preferredDistanceUnit,
+  Value<String> preferredPaceUnit,
+  Value<String> gutTrainingLevel,
+  Value<bool> onboardingCompleted,
+  Value<DateTime> lastActiveAt,
+  Value<String?> appVersion,
   Value<bool> notificationsEnabled,
   Value<int> defaultReminderDay,
   Value<int> defaultReminderHour,
@@ -7885,6 +10315,15 @@ class $$UserProfilesTableTableFilterComposer
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get gender => $composableBuilder(
       column: $table.gender, builder: (column) => ColumnFilters(column));
 
@@ -7904,18 +10343,30 @@ class $$UserProfilesTableTableFilterComposer
       column: $table.runsWithWaterBottle,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get gutTraining => $composableBuilder(
-      column: $table.gutTraining, builder: (column) => ColumnFilters(column));
+  ColumnWithTypeConverterFilters<Map<String, dynamic>, Map<String, dynamic>,
+          String>
+      get foodPreferences => $composableBuilder(
+          column: $table.foodPreferences,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<String> get preferredDistanceUnit => $composableBuilder(
+      column: $table.preferredDistanceUnit,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get preferredPaceUnit => $composableBuilder(
+      column: $table.preferredPaceUnit,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get gutTrainingLevel => $composableBuilder(
+      column: $table.gutTrainingLevel,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get onboardingCompleted => $composableBuilder(
       column: $table.onboardingCompleted,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get lastActiveAt => $composableBuilder(
+      column: $table.lastActiveAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get appVersion => $composableBuilder(
       column: $table.appVersion, builder: (column) => ColumnFilters(column));
@@ -7960,6 +10411,15 @@ class $$UserProfilesTableTableOrderingComposer
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get gender => $composableBuilder(
       column: $table.gender, builder: (column) => ColumnOrderings(column));
 
@@ -7981,18 +10441,29 @@ class $$UserProfilesTableTableOrderingComposer
       column: $table.runsWithWaterBottle,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get gutTraining => $composableBuilder(
-      column: $table.gutTraining, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get foodPreferences => $composableBuilder(
+      column: $table.foodPreferences,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get preferredDistanceUnit => $composableBuilder(
+      column: $table.preferredDistanceUnit,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get preferredPaceUnit => $composableBuilder(
+      column: $table.preferredPaceUnit,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get gutTrainingLevel => $composableBuilder(
+      column: $table.gutTrainingLevel,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<bool> get onboardingCompleted => $composableBuilder(
       column: $table.onboardingCompleted,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get lastActiveAt => $composableBuilder(
+      column: $table.lastActiveAt,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get appVersion => $composableBuilder(
       column: $table.appVersion, builder: (column) => ColumnOrderings(column));
@@ -8038,6 +10509,15 @@ class $$UserProfilesTableTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
   GeneratedColumn<String> get gender =>
       $composableBuilder(column: $table.gender, builder: (column) => column);
 
@@ -8056,17 +10536,24 @@ class $$UserProfilesTableTableAnnotationComposer
   GeneratedColumn<bool> get runsWithWaterBottle => $composableBuilder(
       column: $table.runsWithWaterBottle, builder: (column) => column);
 
-  GeneratedColumn<String> get gutTraining => $composableBuilder(
-      column: $table.gutTraining, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<Map<String, dynamic>, String>
+      get foodPreferences => $composableBuilder(
+          column: $table.foodPreferences, builder: (column) => column);
+
+  GeneratedColumn<String> get preferredDistanceUnit => $composableBuilder(
+      column: $table.preferredDistanceUnit, builder: (column) => column);
+
+  GeneratedColumn<String> get preferredPaceUnit => $composableBuilder(
+      column: $table.preferredPaceUnit, builder: (column) => column);
+
+  GeneratedColumn<String> get gutTrainingLevel => $composableBuilder(
+      column: $table.gutTrainingLevel, builder: (column) => column);
 
   GeneratedColumn<bool> get onboardingCompleted => $composableBuilder(
       column: $table.onboardingCompleted, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get lastActiveAt => $composableBuilder(
+      column: $table.lastActiveAt, builder: (column) => column);
 
   GeneratedColumn<String> get appVersion => $composableBuilder(
       column: $table.appVersion, builder: (column) => column);
@@ -8122,17 +10609,22 @@ class $$UserProfilesTableTableTableManager extends RootTableManager<
                   $db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
-            Value<String> gender = const Value.absent(),
-            Value<DateTime> birthday = const Value.absent(),
-            Value<int> heightFeet = const Value.absent(),
-            Value<int> heightInches = const Value.absent(),
-            Value<double> weightPounds = const Value.absent(),
-            Value<bool> runsWithWaterBottle = const Value.absent(),
-            Value<String> gutTraining = const Value.absent(),
-            Value<bool> onboardingCompleted = const Value.absent(),
+            Value<String> deviceId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
-            Value<String> appVersion = const Value.absent(),
+            Value<String?> gender = const Value.absent(),
+            Value<DateTime?> birthday = const Value.absent(),
+            Value<int?> heightFeet = const Value.absent(),
+            Value<int?> heightInches = const Value.absent(),
+            Value<double?> weightPounds = const Value.absent(),
+            Value<bool> runsWithWaterBottle = const Value.absent(),
+            Value<Map<String, dynamic>> foodPreferences = const Value.absent(),
+            Value<String> preferredDistanceUnit = const Value.absent(),
+            Value<String> preferredPaceUnit = const Value.absent(),
+            Value<String> gutTrainingLevel = const Value.absent(),
+            Value<bool> onboardingCompleted = const Value.absent(),
+            Value<DateTime> lastActiveAt = const Value.absent(),
+            Value<String?> appVersion = const Value.absent(),
             Value<bool> notificationsEnabled = const Value.absent(),
             Value<int> defaultReminderDay = const Value.absent(),
             Value<int> defaultReminderHour = const Value.absent(),
@@ -8144,16 +10636,21 @@ class $$UserProfilesTableTableTableManager extends RootTableManager<
           }) =>
               UserProfilesTableCompanion(
             id: id,
+            deviceId: deviceId,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
             gender: gender,
             birthday: birthday,
             heightFeet: heightFeet,
             heightInches: heightInches,
             weightPounds: weightPounds,
             runsWithWaterBottle: runsWithWaterBottle,
-            gutTraining: gutTraining,
+            foodPreferences: foodPreferences,
+            preferredDistanceUnit: preferredDistanceUnit,
+            preferredPaceUnit: preferredPaceUnit,
+            gutTrainingLevel: gutTrainingLevel,
             onboardingCompleted: onboardingCompleted,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
+            lastActiveAt: lastActiveAt,
             appVersion: appVersion,
             notificationsEnabled: notificationsEnabled,
             defaultReminderDay: defaultReminderDay,
@@ -8166,17 +10663,22 @@ class $$UserProfilesTableTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String id,
-            required String gender,
-            required DateTime birthday,
-            required int heightFeet,
-            required int heightInches,
-            required double weightPounds,
-            required bool runsWithWaterBottle,
-            required String gutTraining,
+            required String deviceId,
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> gender = const Value.absent(),
+            Value<DateTime?> birthday = const Value.absent(),
+            Value<int?> heightFeet = const Value.absent(),
+            Value<int?> heightInches = const Value.absent(),
+            Value<double?> weightPounds = const Value.absent(),
+            Value<bool> runsWithWaterBottle = const Value.absent(),
+            Value<Map<String, dynamic>> foodPreferences = const Value.absent(),
+            Value<String> preferredDistanceUnit = const Value.absent(),
+            Value<String> preferredPaceUnit = const Value.absent(),
+            Value<String> gutTrainingLevel = const Value.absent(),
             Value<bool> onboardingCompleted = const Value.absent(),
-            required DateTime createdAt,
-            required DateTime updatedAt,
-            required String appVersion,
+            Value<DateTime> lastActiveAt = const Value.absent(),
+            Value<String?> appVersion = const Value.absent(),
             Value<bool> notificationsEnabled = const Value.absent(),
             Value<int> defaultReminderDay = const Value.absent(),
             Value<int> defaultReminderHour = const Value.absent(),
@@ -8188,16 +10690,21 @@ class $$UserProfilesTableTableTableManager extends RootTableManager<
           }) =>
               UserProfilesTableCompanion.insert(
             id: id,
+            deviceId: deviceId,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
             gender: gender,
             birthday: birthday,
             heightFeet: heightFeet,
             heightInches: heightInches,
             weightPounds: weightPounds,
             runsWithWaterBottle: runsWithWaterBottle,
-            gutTraining: gutTraining,
+            foodPreferences: foodPreferences,
+            preferredDistanceUnit: preferredDistanceUnit,
+            preferredPaceUnit: preferredPaceUnit,
+            gutTrainingLevel: gutTrainingLevel,
             onboardingCompleted: onboardingCompleted,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
+            lastActiveAt: lastActiveAt,
             appVersion: appVersion,
             notificationsEnabled: notificationsEnabled,
             defaultReminderDay: defaultReminderDay,
@@ -8232,17 +10739,19 @@ typedef $$UserProfilesTableTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function()>;
 typedef $$FoodPreferencesTableTableCreateCompanionBuilder
     = FoodPreferencesTableCompanion Function({
-  required String userId,
-  required String foodId,
+  required String id,
+  required String deviceId,
+  required String foodName,
   required String preference,
-  required DateTime createdAt,
-  required DateTime updatedAt,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
   Value<int> rowid,
 });
 typedef $$FoodPreferencesTableTableUpdateCompanionBuilder
     = FoodPreferencesTableCompanion Function({
-  Value<String> userId,
-  Value<String> foodId,
+  Value<String> id,
+  Value<String> deviceId,
+  Value<String> foodName,
   Value<String> preference,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
@@ -8258,11 +10767,14 @@ class $$FoodPreferencesTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get userId => $composableBuilder(
-      column: $table.userId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get foodId => $composableBuilder(
-      column: $table.foodId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get foodName => $composableBuilder(
+      column: $table.foodName, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get preference => $composableBuilder(
       column: $table.preference, builder: (column) => ColumnFilters(column));
@@ -8283,11 +10795,14 @@ class $$FoodPreferencesTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get userId => $composableBuilder(
-      column: $table.userId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get foodId => $composableBuilder(
-      column: $table.foodId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get foodName => $composableBuilder(
+      column: $table.foodName, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get preference => $composableBuilder(
       column: $table.preference, builder: (column) => ColumnOrderings(column));
@@ -8308,11 +10823,14 @@ class $$FoodPreferencesTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get userId =>
-      $composableBuilder(column: $table.userId, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get foodId =>
-      $composableBuilder(column: $table.foodId, builder: (column) => column);
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get foodName =>
+      $composableBuilder(column: $table.foodName, builder: (column) => column);
 
   GeneratedColumn<String> get preference => $composableBuilder(
       column: $table.preference, builder: (column) => column);
@@ -8354,32 +10872,36 @@ class $$FoodPreferencesTableTableTableManager extends RootTableManager<
               $$FoodPreferencesTableTableAnnotationComposer(
                   $db: db, $table: table),
           updateCompanionCallback: ({
-            Value<String> userId = const Value.absent(),
-            Value<String> foodId = const Value.absent(),
+            Value<String> id = const Value.absent(),
+            Value<String> deviceId = const Value.absent(),
+            Value<String> foodName = const Value.absent(),
             Value<String> preference = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FoodPreferencesTableCompanion(
-            userId: userId,
-            foodId: foodId,
+            id: id,
+            deviceId: deviceId,
+            foodName: foodName,
             preference: preference,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
-            required String userId,
-            required String foodId,
+            required String id,
+            required String deviceId,
+            required String foodName,
             required String preference,
-            required DateTime createdAt,
-            required DateTime updatedAt,
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FoodPreferencesTableCompanion.insert(
-            userId: userId,
-            foodId: foodId,
+            id: id,
+            deviceId: deviceId,
+            foodName: foodName,
             preference: preference,
             createdAt: createdAt,
             updatedAt: updatedAt,
@@ -8412,23 +10934,39 @@ typedef $$FoodPreferencesTableTableProcessedTableManager
 typedef $$NutritionPlansTableCreateCompanionBuilder = NutritionPlansCompanion
     Function({
   required String id,
-  required String userId,
+  required String deviceId,
   required String planData,
-  Value<DateTime?> runDateTime,
-  Value<int?> planRating,
-  Value<String?> journalNotes,
-  required DateTime createdAt,
-  required DateTime updatedAt,
+  required String planId,
+  required String planName,
+  Value<double?> distanceMiles,
+  Value<double?> paceMinutesPerMile,
+  Value<int?> totalCalories,
+  Value<String?> notes,
+  Value<int> version,
+  Value<String?> lastModifiedBy,
+  Value<DateTime?> clientUpdatedAt,
+  Value<bool> isDeleted,
+  Value<String?> conflictResolution,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
   Value<int> rowid,
 });
 typedef $$NutritionPlansTableUpdateCompanionBuilder = NutritionPlansCompanion
     Function({
   Value<String> id,
-  Value<String> userId,
+  Value<String> deviceId,
   Value<String> planData,
-  Value<DateTime?> runDateTime,
-  Value<int?> planRating,
-  Value<String?> journalNotes,
+  Value<String> planId,
+  Value<String> planName,
+  Value<double?> distanceMiles,
+  Value<double?> paceMinutesPerMile,
+  Value<int?> totalCalories,
+  Value<String?> notes,
+  Value<int> version,
+  Value<String?> lastModifiedBy,
+  Value<DateTime?> clientUpdatedAt,
+  Value<bool> isDeleted,
+  Value<String?> conflictResolution,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -8446,20 +10984,48 @@ class $$NutritionPlansTableFilterComposer
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get userId => $composableBuilder(
-      column: $table.userId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get planData => $composableBuilder(
       column: $table.planData, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get runDateTime => $composableBuilder(
-      column: $table.runDateTime, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get planId => $composableBuilder(
+      column: $table.planId, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<int> get planRating => $composableBuilder(
-      column: $table.planRating, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get planName => $composableBuilder(
+      column: $table.planName, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get journalNotes => $composableBuilder(
-      column: $table.journalNotes, builder: (column) => ColumnFilters(column));
+  ColumnFilters<double> get distanceMiles => $composableBuilder(
+      column: $table.distanceMiles, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get paceMinutesPerMile => $composableBuilder(
+      column: $table.paceMinutesPerMile,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get totalCalories => $composableBuilder(
+      column: $table.totalCalories, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get notes => $composableBuilder(
+      column: $table.notes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastModifiedBy => $composableBuilder(
+      column: $table.lastModifiedBy,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get conflictResolution => $composableBuilder(
+      column: $table.conflictResolution,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -8480,20 +11046,49 @@ class $$NutritionPlansTableOrderingComposer
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get userId => $composableBuilder(
-      column: $table.userId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get planData => $composableBuilder(
       column: $table.planData, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get runDateTime => $composableBuilder(
-      column: $table.runDateTime, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get planId => $composableBuilder(
+      column: $table.planId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<int> get planRating => $composableBuilder(
-      column: $table.planRating, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get planName => $composableBuilder(
+      column: $table.planName, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get journalNotes => $composableBuilder(
-      column: $table.journalNotes,
+  ColumnOrderings<double> get distanceMiles => $composableBuilder(
+      column: $table.distanceMiles,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get paceMinutesPerMile => $composableBuilder(
+      column: $table.paceMinutesPerMile,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get totalCalories => $composableBuilder(
+      column: $table.totalCalories,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+      column: $table.notes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastModifiedBy => $composableBuilder(
+      column: $table.lastModifiedBy,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get conflictResolution => $composableBuilder(
+      column: $table.conflictResolution,
       builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
@@ -8515,20 +11110,44 @@ class $$NutritionPlansTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get userId =>
-      $composableBuilder(column: $table.userId, builder: (column) => column);
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
 
   GeneratedColumn<String> get planData =>
       $composableBuilder(column: $table.planData, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get runDateTime => $composableBuilder(
-      column: $table.runDateTime, builder: (column) => column);
+  GeneratedColumn<String> get planId =>
+      $composableBuilder(column: $table.planId, builder: (column) => column);
 
-  GeneratedColumn<int> get planRating => $composableBuilder(
-      column: $table.planRating, builder: (column) => column);
+  GeneratedColumn<String> get planName =>
+      $composableBuilder(column: $table.planName, builder: (column) => column);
 
-  GeneratedColumn<String> get journalNotes => $composableBuilder(
-      column: $table.journalNotes, builder: (column) => column);
+  GeneratedColumn<double> get distanceMiles => $composableBuilder(
+      column: $table.distanceMiles, builder: (column) => column);
+
+  GeneratedColumn<double> get paceMinutesPerMile => $composableBuilder(
+      column: $table.paceMinutesPerMile, builder: (column) => column);
+
+  GeneratedColumn<int> get totalCalories => $composableBuilder(
+      column: $table.totalCalories, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<String> get lastModifiedBy => $composableBuilder(
+      column: $table.lastModifiedBy, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<String> get conflictResolution => $composableBuilder(
+      column: $table.conflictResolution, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -8540,17 +11159,17 @@ class $$NutritionPlansTableAnnotationComposer
 class $$NutritionPlansTableTableManager extends RootTableManager<
     _$AppDatabase,
     $NutritionPlansTable,
-    NutritionPlan,
+    NutritionPlanEntry,
     $$NutritionPlansTableFilterComposer,
     $$NutritionPlansTableOrderingComposer,
     $$NutritionPlansTableAnnotationComposer,
     $$NutritionPlansTableCreateCompanionBuilder,
     $$NutritionPlansTableUpdateCompanionBuilder,
     (
-      NutritionPlan,
-      BaseReferences<_$AppDatabase, $NutritionPlansTable, NutritionPlan>
+      NutritionPlanEntry,
+      BaseReferences<_$AppDatabase, $NutritionPlansTable, NutritionPlanEntry>
     ),
-    NutritionPlan,
+    NutritionPlanEntry,
     PrefetchHooks Function()> {
   $$NutritionPlansTableTableManager(
       _$AppDatabase db, $NutritionPlansTable table)
@@ -8565,44 +11184,76 @@ class $$NutritionPlansTableTableManager extends RootTableManager<
               $$NutritionPlansTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
-            Value<String> userId = const Value.absent(),
+            Value<String> deviceId = const Value.absent(),
             Value<String> planData = const Value.absent(),
-            Value<DateTime?> runDateTime = const Value.absent(),
-            Value<int?> planRating = const Value.absent(),
-            Value<String?> journalNotes = const Value.absent(),
+            Value<String> planId = const Value.absent(),
+            Value<String> planName = const Value.absent(),
+            Value<double?> distanceMiles = const Value.absent(),
+            Value<double?> paceMinutesPerMile = const Value.absent(),
+            Value<int?> totalCalories = const Value.absent(),
+            Value<String?> notes = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<String?> lastModifiedBy = const Value.absent(),
+            Value<DateTime?> clientUpdatedAt = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<String?> conflictResolution = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               NutritionPlansCompanion(
             id: id,
-            userId: userId,
+            deviceId: deviceId,
             planData: planData,
-            runDateTime: runDateTime,
-            planRating: planRating,
-            journalNotes: journalNotes,
+            planId: planId,
+            planName: planName,
+            distanceMiles: distanceMiles,
+            paceMinutesPerMile: paceMinutesPerMile,
+            totalCalories: totalCalories,
+            notes: notes,
+            version: version,
+            lastModifiedBy: lastModifiedBy,
+            clientUpdatedAt: clientUpdatedAt,
+            isDeleted: isDeleted,
+            conflictResolution: conflictResolution,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             required String id,
-            required String userId,
+            required String deviceId,
             required String planData,
-            Value<DateTime?> runDateTime = const Value.absent(),
-            Value<int?> planRating = const Value.absent(),
-            Value<String?> journalNotes = const Value.absent(),
-            required DateTime createdAt,
-            required DateTime updatedAt,
+            required String planId,
+            required String planName,
+            Value<double?> distanceMiles = const Value.absent(),
+            Value<double?> paceMinutesPerMile = const Value.absent(),
+            Value<int?> totalCalories = const Value.absent(),
+            Value<String?> notes = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<String?> lastModifiedBy = const Value.absent(),
+            Value<DateTime?> clientUpdatedAt = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<String?> conflictResolution = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               NutritionPlansCompanion.insert(
             id: id,
-            userId: userId,
+            deviceId: deviceId,
             planData: planData,
-            runDateTime: runDateTime,
-            planRating: planRating,
-            journalNotes: journalNotes,
+            planId: planId,
+            planName: planName,
+            distanceMiles: distanceMiles,
+            paceMinutesPerMile: paceMinutesPerMile,
+            totalCalories: totalCalories,
+            notes: notes,
+            version: version,
+            lastModifiedBy: lastModifiedBy,
+            clientUpdatedAt: clientUpdatedAt,
+            isDeleted: isDeleted,
+            conflictResolution: conflictResolution,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -8617,17 +11268,17 @@ class $$NutritionPlansTableTableManager extends RootTableManager<
 typedef $$NutritionPlansTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
     $NutritionPlansTable,
-    NutritionPlan,
+    NutritionPlanEntry,
     $$NutritionPlansTableFilterComposer,
     $$NutritionPlansTableOrderingComposer,
     $$NutritionPlansTableAnnotationComposer,
     $$NutritionPlansTableCreateCompanionBuilder,
     $$NutritionPlansTableUpdateCompanionBuilder,
     (
-      NutritionPlan,
-      BaseReferences<_$AppDatabase, $NutritionPlansTable, NutritionPlan>
+      NutritionPlanEntry,
+      BaseReferences<_$AppDatabase, $NutritionPlansTable, NutritionPlanEntry>
     ),
-    NutritionPlan,
+    NutritionPlanEntry,
     PrefetchHooks Function()>;
 typedef $$MacroTargetsTableTableCreateCompanionBuilder
     = MacroTargetsTableCompanion Function({
@@ -9595,28 +12246,18 @@ typedef $$FeedbackTableTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function()>;
 typedef $$FoodsTableTableCreateCompanionBuilder = FoodsTableCompanion Function({
   required String id,
-  required String name,
+  Value<String?> name,
   Value<String?> imageAddress,
-  Value<String?> description,
-  Value<String?> instructions,
-  Value<Map<String, dynamic>> nutritionalInfo,
   Value<DateTime> createdAt,
   Value<double?> servingAmount,
-  Value<String?> servingUnit,
-  Value<String?> servingUnitPlural,
-  Value<String?> servingQualifier,
-  Value<String?> servingSize,
-  Value<bool> beforeRunSuitable,
-  Value<bool> duringRunSuitable,
-  Value<bool> afterRunSuitable,
-  Value<bool> runPortable,
-  Value<bool> requiresPreparation,
-  Value<bool> aidStationAvailable,
-  Value<bool> isElectrolyte,
-  Value<bool> toExcludeFromSolver,
   Value<int?> maxServingsBefore,
   Value<int?> maxServingsDuring,
   Value<int?> maxServingsAfter,
+  Value<bool> beforeRunSuitable,
+  Value<bool> duringRunSuitable,
+  Value<bool> runPortable,
+  Value<bool> requiresPreparation,
+  Value<bool> aidStationAvailable,
   Value<int?> sodiumMg,
   Value<int?> caffeineMg,
   Value<int?> potassiumMg,
@@ -9626,40 +12267,39 @@ typedef $$FoodsTableTableCreateCompanionBuilder = FoodsTableCompanion Function({
   Value<int?> caloriesPerServing,
   Value<double?> fluidMlPerServing,
   Value<String?> brandId,
+  Value<bool> showInPreferences,
+  Value<bool> isElectrolyte,
+  Value<String?> displayName,
+  Value<String?> displayNamePlural,
+  Value<String?> servingDescription,
+  Value<String?> description,
+  Value<String?> instructions,
+  Value<String?> nutritionalInfo,
+  Value<String?> servingUnit,
+  Value<String?> servingUnitPlural,
+  Value<String?> servingQualifier,
+  Value<String?> servingSize,
+  Value<bool?> afterRunSuitable,
   Value<String?> productType,
   Value<String?> purchaseUrl,
   Value<String?> affiliateSource,
-  Value<bool> showInPreferences,
-  Value<int> preferencePriority,
-  Value<String?> displayName,
-  Value<String?> displayNamePlural,
-  Value<String?> displayOverride,
+  Value<int?> preferencePriority,
   Value<int> rowid,
 });
 typedef $$FoodsTableTableUpdateCompanionBuilder = FoodsTableCompanion Function({
   Value<String> id,
-  Value<String> name,
+  Value<String?> name,
   Value<String?> imageAddress,
-  Value<String?> description,
-  Value<String?> instructions,
-  Value<Map<String, dynamic>> nutritionalInfo,
   Value<DateTime> createdAt,
   Value<double?> servingAmount,
-  Value<String?> servingUnit,
-  Value<String?> servingUnitPlural,
-  Value<String?> servingQualifier,
-  Value<String?> servingSize,
-  Value<bool> beforeRunSuitable,
-  Value<bool> duringRunSuitable,
-  Value<bool> afterRunSuitable,
-  Value<bool> runPortable,
-  Value<bool> requiresPreparation,
-  Value<bool> aidStationAvailable,
-  Value<bool> isElectrolyte,
-  Value<bool> toExcludeFromSolver,
   Value<int?> maxServingsBefore,
   Value<int?> maxServingsDuring,
   Value<int?> maxServingsAfter,
+  Value<bool> beforeRunSuitable,
+  Value<bool> duringRunSuitable,
+  Value<bool> runPortable,
+  Value<bool> requiresPreparation,
+  Value<bool> aidStationAvailable,
   Value<int?> sodiumMg,
   Value<int?> caffeineMg,
   Value<int?> potassiumMg,
@@ -9669,14 +12309,23 @@ typedef $$FoodsTableTableUpdateCompanionBuilder = FoodsTableCompanion Function({
   Value<int?> caloriesPerServing,
   Value<double?> fluidMlPerServing,
   Value<String?> brandId,
+  Value<bool> showInPreferences,
+  Value<bool> isElectrolyte,
+  Value<String?> displayName,
+  Value<String?> displayNamePlural,
+  Value<String?> servingDescription,
+  Value<String?> description,
+  Value<String?> instructions,
+  Value<String?> nutritionalInfo,
+  Value<String?> servingUnit,
+  Value<String?> servingUnitPlural,
+  Value<String?> servingQualifier,
+  Value<String?> servingSize,
+  Value<bool?> afterRunSuitable,
   Value<String?> productType,
   Value<String?> purchaseUrl,
   Value<String?> affiliateSource,
-  Value<bool> showInPreferences,
-  Value<int> preferencePriority,
-  Value<String?> displayName,
-  Value<String?> displayNamePlural,
-  Value<String?> displayOverride,
+  Value<int?> preferencePriority,
   Value<int> rowid,
 });
 
@@ -9720,67 +12369,11 @@ class $$FoodsTableTableFilterComposer
   ColumnFilters<String> get imageAddress => $composableBuilder(
       column: $table.imageAddress, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get description => $composableBuilder(
-      column: $table.description, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get instructions => $composableBuilder(
-      column: $table.instructions, builder: (column) => ColumnFilters(column));
-
-  ColumnWithTypeConverterFilters<Map<String, dynamic>, Map<String, dynamic>,
-          String>
-      get nutritionalInfo => $composableBuilder(
-          column: $table.nutritionalInfo,
-          builder: (column) => ColumnWithTypeConverterFilters(column));
-
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get servingAmount => $composableBuilder(
       column: $table.servingAmount, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get servingUnit => $composableBuilder(
-      column: $table.servingUnit, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get servingUnitPlural => $composableBuilder(
-      column: $table.servingUnitPlural,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get servingQualifier => $composableBuilder(
-      column: $table.servingQualifier,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get servingSize => $composableBuilder(
-      column: $table.servingSize, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get beforeRunSuitable => $composableBuilder(
-      column: $table.beforeRunSuitable,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get duringRunSuitable => $composableBuilder(
-      column: $table.duringRunSuitable,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get afterRunSuitable => $composableBuilder(
-      column: $table.afterRunSuitable,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get runPortable => $composableBuilder(
-      column: $table.runPortable, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get requiresPreparation => $composableBuilder(
-      column: $table.requiresPreparation,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get aidStationAvailable => $composableBuilder(
-      column: $table.aidStationAvailable,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get isElectrolyte => $composableBuilder(
-      column: $table.isElectrolyte, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get toExcludeFromSolver => $composableBuilder(
-      column: $table.toExcludeFromSolver,
-      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get maxServingsBefore => $composableBuilder(
       column: $table.maxServingsBefore,
@@ -9792,6 +12385,25 @@ class $$FoodsTableTableFilterComposer
 
   ColumnFilters<int> get maxServingsAfter => $composableBuilder(
       column: $table.maxServingsAfter,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get beforeRunSuitable => $composableBuilder(
+      column: $table.beforeRunSuitable,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get duringRunSuitable => $composableBuilder(
+      column: $table.duringRunSuitable,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get runPortable => $composableBuilder(
+      column: $table.runPortable, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get requiresPreparation => $composableBuilder(
+      column: $table.requiresPreparation,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get aidStationAvailable => $composableBuilder(
+      column: $table.aidStationAvailable,
       builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get sodiumMg => $composableBuilder(
@@ -9825,6 +12437,52 @@ class $$FoodsTableTableFilterComposer
   ColumnFilters<String> get brandId => $composableBuilder(
       column: $table.brandId, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<bool> get showInPreferences => $composableBuilder(
+      column: $table.showInPreferences,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isElectrolyte => $composableBuilder(
+      column: $table.isElectrolyte, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get displayNamePlural => $composableBuilder(
+      column: $table.displayNamePlural,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get servingDescription => $composableBuilder(
+      column: $table.servingDescription,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get instructions => $composableBuilder(
+      column: $table.instructions, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get nutritionalInfo => $composableBuilder(
+      column: $table.nutritionalInfo,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get servingUnit => $composableBuilder(
+      column: $table.servingUnit, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get servingUnitPlural => $composableBuilder(
+      column: $table.servingUnitPlural,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get servingQualifier => $composableBuilder(
+      column: $table.servingQualifier,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get servingSize => $composableBuilder(
+      column: $table.servingSize, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get afterRunSuitable => $composableBuilder(
+      column: $table.afterRunSuitable,
+      builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get productType => $composableBuilder(
       column: $table.productType, builder: (column) => ColumnFilters(column));
 
@@ -9835,23 +12493,8 @@ class $$FoodsTableTableFilterComposer
       column: $table.affiliateSource,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<bool> get showInPreferences => $composableBuilder(
-      column: $table.showInPreferences,
-      builder: (column) => ColumnFilters(column));
-
   ColumnFilters<int> get preferencePriority => $composableBuilder(
       column: $table.preferencePriority,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get displayName => $composableBuilder(
-      column: $table.displayName, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get displayNamePlural => $composableBuilder(
-      column: $table.displayNamePlural,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get displayOverride => $composableBuilder(
-      column: $table.displayOverride,
       builder: (column) => ColumnFilters(column));
 
   Expression<bool> foodCategoriesTableRefs(
@@ -9895,67 +12538,11 @@ class $$FoodsTableTableOrderingComposer
       column: $table.imageAddress,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get description => $composableBuilder(
-      column: $table.description, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get instructions => $composableBuilder(
-      column: $table.instructions,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get nutritionalInfo => $composableBuilder(
-      column: $table.nutritionalInfo,
-      builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<double> get servingAmount => $composableBuilder(
       column: $table.servingAmount,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get servingUnit => $composableBuilder(
-      column: $table.servingUnit, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get servingUnitPlural => $composableBuilder(
-      column: $table.servingUnitPlural,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get servingQualifier => $composableBuilder(
-      column: $table.servingQualifier,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get servingSize => $composableBuilder(
-      column: $table.servingSize, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get beforeRunSuitable => $composableBuilder(
-      column: $table.beforeRunSuitable,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get duringRunSuitable => $composableBuilder(
-      column: $table.duringRunSuitable,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get afterRunSuitable => $composableBuilder(
-      column: $table.afterRunSuitable,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get runPortable => $composableBuilder(
-      column: $table.runPortable, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get requiresPreparation => $composableBuilder(
-      column: $table.requiresPreparation,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get aidStationAvailable => $composableBuilder(
-      column: $table.aidStationAvailable,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get isElectrolyte => $composableBuilder(
-      column: $table.isElectrolyte,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get toExcludeFromSolver => $composableBuilder(
-      column: $table.toExcludeFromSolver,
       builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get maxServingsBefore => $composableBuilder(
@@ -9968,6 +12555,25 @@ class $$FoodsTableTableOrderingComposer
 
   ColumnOrderings<int> get maxServingsAfter => $composableBuilder(
       column: $table.maxServingsAfter,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get beforeRunSuitable => $composableBuilder(
+      column: $table.beforeRunSuitable,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get duringRunSuitable => $composableBuilder(
+      column: $table.duringRunSuitable,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get runPortable => $composableBuilder(
+      column: $table.runPortable, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get requiresPreparation => $composableBuilder(
+      column: $table.requiresPreparation,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get aidStationAvailable => $composableBuilder(
+      column: $table.aidStationAvailable,
       builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get sodiumMg => $composableBuilder(
@@ -10002,6 +12608,54 @@ class $$FoodsTableTableOrderingComposer
   ColumnOrderings<String> get brandId => $composableBuilder(
       column: $table.brandId, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get showInPreferences => $composableBuilder(
+      column: $table.showInPreferences,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isElectrolyte => $composableBuilder(
+      column: $table.isElectrolyte,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get displayNamePlural => $composableBuilder(
+      column: $table.displayNamePlural,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get servingDescription => $composableBuilder(
+      column: $table.servingDescription,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get instructions => $composableBuilder(
+      column: $table.instructions,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get nutritionalInfo => $composableBuilder(
+      column: $table.nutritionalInfo,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get servingUnit => $composableBuilder(
+      column: $table.servingUnit, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get servingUnitPlural => $composableBuilder(
+      column: $table.servingUnitPlural,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get servingQualifier => $composableBuilder(
+      column: $table.servingQualifier,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get servingSize => $composableBuilder(
+      column: $table.servingSize, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get afterRunSuitable => $composableBuilder(
+      column: $table.afterRunSuitable,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get productType => $composableBuilder(
       column: $table.productType, builder: (column) => ColumnOrderings(column));
 
@@ -10012,23 +12666,8 @@ class $$FoodsTableTableOrderingComposer
       column: $table.affiliateSource,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<bool> get showInPreferences => $composableBuilder(
-      column: $table.showInPreferences,
-      builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<int> get preferencePriority => $composableBuilder(
       column: $table.preferencePriority,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get displayName => $composableBuilder(
-      column: $table.displayName, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get displayNamePlural => $composableBuilder(
-      column: $table.displayNamePlural,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get displayOverride => $composableBuilder(
-      column: $table.displayOverride,
       builder: (column) => ColumnOrderings(column));
 }
 
@@ -10050,57 +12689,11 @@ class $$FoodsTableTableAnnotationComposer
   GeneratedColumn<String> get imageAddress => $composableBuilder(
       column: $table.imageAddress, builder: (column) => column);
 
-  GeneratedColumn<String> get description => $composableBuilder(
-      column: $table.description, builder: (column) => column);
-
-  GeneratedColumn<String> get instructions => $composableBuilder(
-      column: $table.instructions, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<Map<String, dynamic>, String>
-      get nutritionalInfo => $composableBuilder(
-          column: $table.nutritionalInfo, builder: (column) => column);
-
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
   GeneratedColumn<double> get servingAmount => $composableBuilder(
       column: $table.servingAmount, builder: (column) => column);
-
-  GeneratedColumn<String> get servingUnit => $composableBuilder(
-      column: $table.servingUnit, builder: (column) => column);
-
-  GeneratedColumn<String> get servingUnitPlural => $composableBuilder(
-      column: $table.servingUnitPlural, builder: (column) => column);
-
-  GeneratedColumn<String> get servingQualifier => $composableBuilder(
-      column: $table.servingQualifier, builder: (column) => column);
-
-  GeneratedColumn<String> get servingSize => $composableBuilder(
-      column: $table.servingSize, builder: (column) => column);
-
-  GeneratedColumn<bool> get beforeRunSuitable => $composableBuilder(
-      column: $table.beforeRunSuitable, builder: (column) => column);
-
-  GeneratedColumn<bool> get duringRunSuitable => $composableBuilder(
-      column: $table.duringRunSuitable, builder: (column) => column);
-
-  GeneratedColumn<bool> get afterRunSuitable => $composableBuilder(
-      column: $table.afterRunSuitable, builder: (column) => column);
-
-  GeneratedColumn<bool> get runPortable => $composableBuilder(
-      column: $table.runPortable, builder: (column) => column);
-
-  GeneratedColumn<bool> get requiresPreparation => $composableBuilder(
-      column: $table.requiresPreparation, builder: (column) => column);
-
-  GeneratedColumn<bool> get aidStationAvailable => $composableBuilder(
-      column: $table.aidStationAvailable, builder: (column) => column);
-
-  GeneratedColumn<bool> get isElectrolyte => $composableBuilder(
-      column: $table.isElectrolyte, builder: (column) => column);
-
-  GeneratedColumn<bool> get toExcludeFromSolver => $composableBuilder(
-      column: $table.toExcludeFromSolver, builder: (column) => column);
 
   GeneratedColumn<int> get maxServingsBefore => $composableBuilder(
       column: $table.maxServingsBefore, builder: (column) => column);
@@ -10110,6 +12703,21 @@ class $$FoodsTableTableAnnotationComposer
 
   GeneratedColumn<int> get maxServingsAfter => $composableBuilder(
       column: $table.maxServingsAfter, builder: (column) => column);
+
+  GeneratedColumn<bool> get beforeRunSuitable => $composableBuilder(
+      column: $table.beforeRunSuitable, builder: (column) => column);
+
+  GeneratedColumn<bool> get duringRunSuitable => $composableBuilder(
+      column: $table.duringRunSuitable, builder: (column) => column);
+
+  GeneratedColumn<bool> get runPortable => $composableBuilder(
+      column: $table.runPortable, builder: (column) => column);
+
+  GeneratedColumn<bool> get requiresPreparation => $composableBuilder(
+      column: $table.requiresPreparation, builder: (column) => column);
+
+  GeneratedColumn<bool> get aidStationAvailable => $composableBuilder(
+      column: $table.aidStationAvailable, builder: (column) => column);
 
   GeneratedColumn<int> get sodiumMg =>
       $composableBuilder(column: $table.sodiumMg, builder: (column) => column);
@@ -10138,6 +12746,45 @@ class $$FoodsTableTableAnnotationComposer
   GeneratedColumn<String> get brandId =>
       $composableBuilder(column: $table.brandId, builder: (column) => column);
 
+  GeneratedColumn<bool> get showInPreferences => $composableBuilder(
+      column: $table.showInPreferences, builder: (column) => column);
+
+  GeneratedColumn<bool> get isElectrolyte => $composableBuilder(
+      column: $table.isElectrolyte, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => column);
+
+  GeneratedColumn<String> get displayNamePlural => $composableBuilder(
+      column: $table.displayNamePlural, builder: (column) => column);
+
+  GeneratedColumn<String> get servingDescription => $composableBuilder(
+      column: $table.servingDescription, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get instructions => $composableBuilder(
+      column: $table.instructions, builder: (column) => column);
+
+  GeneratedColumn<String> get nutritionalInfo => $composableBuilder(
+      column: $table.nutritionalInfo, builder: (column) => column);
+
+  GeneratedColumn<String> get servingUnit => $composableBuilder(
+      column: $table.servingUnit, builder: (column) => column);
+
+  GeneratedColumn<String> get servingUnitPlural => $composableBuilder(
+      column: $table.servingUnitPlural, builder: (column) => column);
+
+  GeneratedColumn<String> get servingQualifier => $composableBuilder(
+      column: $table.servingQualifier, builder: (column) => column);
+
+  GeneratedColumn<String> get servingSize => $composableBuilder(
+      column: $table.servingSize, builder: (column) => column);
+
+  GeneratedColumn<bool> get afterRunSuitable => $composableBuilder(
+      column: $table.afterRunSuitable, builder: (column) => column);
+
   GeneratedColumn<String> get productType => $composableBuilder(
       column: $table.productType, builder: (column) => column);
 
@@ -10147,20 +12794,8 @@ class $$FoodsTableTableAnnotationComposer
   GeneratedColumn<String> get affiliateSource => $composableBuilder(
       column: $table.affiliateSource, builder: (column) => column);
 
-  GeneratedColumn<bool> get showInPreferences => $composableBuilder(
-      column: $table.showInPreferences, builder: (column) => column);
-
   GeneratedColumn<int> get preferencePriority => $composableBuilder(
       column: $table.preferencePriority, builder: (column) => column);
-
-  GeneratedColumn<String> get displayName => $composableBuilder(
-      column: $table.displayName, builder: (column) => column);
-
-  GeneratedColumn<String> get displayNamePlural => $composableBuilder(
-      column: $table.displayNamePlural, builder: (column) => column);
-
-  GeneratedColumn<String> get displayOverride => $composableBuilder(
-      column: $table.displayOverride, builder: (column) => column);
 
   Expression<T> foodCategoriesTableRefs<T extends Object>(
       Expression<T> Function($$FoodCategoriesTableTableAnnotationComposer a)
@@ -10210,28 +12845,18 @@ class $$FoodsTableTableTableManager extends RootTableManager<
               $$FoodsTableTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
-            Value<String> name = const Value.absent(),
+            Value<String?> name = const Value.absent(),
             Value<String?> imageAddress = const Value.absent(),
-            Value<String?> description = const Value.absent(),
-            Value<String?> instructions = const Value.absent(),
-            Value<Map<String, dynamic>> nutritionalInfo = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<double?> servingAmount = const Value.absent(),
-            Value<String?> servingUnit = const Value.absent(),
-            Value<String?> servingUnitPlural = const Value.absent(),
-            Value<String?> servingQualifier = const Value.absent(),
-            Value<String?> servingSize = const Value.absent(),
-            Value<bool> beforeRunSuitable = const Value.absent(),
-            Value<bool> duringRunSuitable = const Value.absent(),
-            Value<bool> afterRunSuitable = const Value.absent(),
-            Value<bool> runPortable = const Value.absent(),
-            Value<bool> requiresPreparation = const Value.absent(),
-            Value<bool> aidStationAvailable = const Value.absent(),
-            Value<bool> isElectrolyte = const Value.absent(),
-            Value<bool> toExcludeFromSolver = const Value.absent(),
             Value<int?> maxServingsBefore = const Value.absent(),
             Value<int?> maxServingsDuring = const Value.absent(),
             Value<int?> maxServingsAfter = const Value.absent(),
+            Value<bool> beforeRunSuitable = const Value.absent(),
+            Value<bool> duringRunSuitable = const Value.absent(),
+            Value<bool> runPortable = const Value.absent(),
+            Value<bool> requiresPreparation = const Value.absent(),
+            Value<bool> aidStationAvailable = const Value.absent(),
             Value<int?> sodiumMg = const Value.absent(),
             Value<int?> caffeineMg = const Value.absent(),
             Value<int?> potassiumMg = const Value.absent(),
@@ -10241,40 +12866,39 @@ class $$FoodsTableTableTableManager extends RootTableManager<
             Value<int?> caloriesPerServing = const Value.absent(),
             Value<double?> fluidMlPerServing = const Value.absent(),
             Value<String?> brandId = const Value.absent(),
+            Value<bool> showInPreferences = const Value.absent(),
+            Value<bool> isElectrolyte = const Value.absent(),
+            Value<String?> displayName = const Value.absent(),
+            Value<String?> displayNamePlural = const Value.absent(),
+            Value<String?> servingDescription = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> instructions = const Value.absent(),
+            Value<String?> nutritionalInfo = const Value.absent(),
+            Value<String?> servingUnit = const Value.absent(),
+            Value<String?> servingUnitPlural = const Value.absent(),
+            Value<String?> servingQualifier = const Value.absent(),
+            Value<String?> servingSize = const Value.absent(),
+            Value<bool?> afterRunSuitable = const Value.absent(),
             Value<String?> productType = const Value.absent(),
             Value<String?> purchaseUrl = const Value.absent(),
             Value<String?> affiliateSource = const Value.absent(),
-            Value<bool> showInPreferences = const Value.absent(),
-            Value<int> preferencePriority = const Value.absent(),
-            Value<String?> displayName = const Value.absent(),
-            Value<String?> displayNamePlural = const Value.absent(),
-            Value<String?> displayOverride = const Value.absent(),
+            Value<int?> preferencePriority = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FoodsTableCompanion(
             id: id,
             name: name,
             imageAddress: imageAddress,
-            description: description,
-            instructions: instructions,
-            nutritionalInfo: nutritionalInfo,
             createdAt: createdAt,
             servingAmount: servingAmount,
-            servingUnit: servingUnit,
-            servingUnitPlural: servingUnitPlural,
-            servingQualifier: servingQualifier,
-            servingSize: servingSize,
-            beforeRunSuitable: beforeRunSuitable,
-            duringRunSuitable: duringRunSuitable,
-            afterRunSuitable: afterRunSuitable,
-            runPortable: runPortable,
-            requiresPreparation: requiresPreparation,
-            aidStationAvailable: aidStationAvailable,
-            isElectrolyte: isElectrolyte,
-            toExcludeFromSolver: toExcludeFromSolver,
             maxServingsBefore: maxServingsBefore,
             maxServingsDuring: maxServingsDuring,
             maxServingsAfter: maxServingsAfter,
+            beforeRunSuitable: beforeRunSuitable,
+            duringRunSuitable: duringRunSuitable,
+            runPortable: runPortable,
+            requiresPreparation: requiresPreparation,
+            aidStationAvailable: aidStationAvailable,
             sodiumMg: sodiumMg,
             caffeineMg: caffeineMg,
             potassiumMg: potassiumMg,
@@ -10284,40 +12908,39 @@ class $$FoodsTableTableTableManager extends RootTableManager<
             caloriesPerServing: caloriesPerServing,
             fluidMlPerServing: fluidMlPerServing,
             brandId: brandId,
+            showInPreferences: showInPreferences,
+            isElectrolyte: isElectrolyte,
+            displayName: displayName,
+            displayNamePlural: displayNamePlural,
+            servingDescription: servingDescription,
+            description: description,
+            instructions: instructions,
+            nutritionalInfo: nutritionalInfo,
+            servingUnit: servingUnit,
+            servingUnitPlural: servingUnitPlural,
+            servingQualifier: servingQualifier,
+            servingSize: servingSize,
+            afterRunSuitable: afterRunSuitable,
             productType: productType,
             purchaseUrl: purchaseUrl,
             affiliateSource: affiliateSource,
-            showInPreferences: showInPreferences,
             preferencePriority: preferencePriority,
-            displayName: displayName,
-            displayNamePlural: displayNamePlural,
-            displayOverride: displayOverride,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             required String id,
-            required String name,
+            Value<String?> name = const Value.absent(),
             Value<String?> imageAddress = const Value.absent(),
-            Value<String?> description = const Value.absent(),
-            Value<String?> instructions = const Value.absent(),
-            Value<Map<String, dynamic>> nutritionalInfo = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<double?> servingAmount = const Value.absent(),
-            Value<String?> servingUnit = const Value.absent(),
-            Value<String?> servingUnitPlural = const Value.absent(),
-            Value<String?> servingQualifier = const Value.absent(),
-            Value<String?> servingSize = const Value.absent(),
-            Value<bool> beforeRunSuitable = const Value.absent(),
-            Value<bool> duringRunSuitable = const Value.absent(),
-            Value<bool> afterRunSuitable = const Value.absent(),
-            Value<bool> runPortable = const Value.absent(),
-            Value<bool> requiresPreparation = const Value.absent(),
-            Value<bool> aidStationAvailable = const Value.absent(),
-            Value<bool> isElectrolyte = const Value.absent(),
-            Value<bool> toExcludeFromSolver = const Value.absent(),
             Value<int?> maxServingsBefore = const Value.absent(),
             Value<int?> maxServingsDuring = const Value.absent(),
             Value<int?> maxServingsAfter = const Value.absent(),
+            Value<bool> beforeRunSuitable = const Value.absent(),
+            Value<bool> duringRunSuitable = const Value.absent(),
+            Value<bool> runPortable = const Value.absent(),
+            Value<bool> requiresPreparation = const Value.absent(),
+            Value<bool> aidStationAvailable = const Value.absent(),
             Value<int?> sodiumMg = const Value.absent(),
             Value<int?> caffeineMg = const Value.absent(),
             Value<int?> potassiumMg = const Value.absent(),
@@ -10327,40 +12950,39 @@ class $$FoodsTableTableTableManager extends RootTableManager<
             Value<int?> caloriesPerServing = const Value.absent(),
             Value<double?> fluidMlPerServing = const Value.absent(),
             Value<String?> brandId = const Value.absent(),
+            Value<bool> showInPreferences = const Value.absent(),
+            Value<bool> isElectrolyte = const Value.absent(),
+            Value<String?> displayName = const Value.absent(),
+            Value<String?> displayNamePlural = const Value.absent(),
+            Value<String?> servingDescription = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> instructions = const Value.absent(),
+            Value<String?> nutritionalInfo = const Value.absent(),
+            Value<String?> servingUnit = const Value.absent(),
+            Value<String?> servingUnitPlural = const Value.absent(),
+            Value<String?> servingQualifier = const Value.absent(),
+            Value<String?> servingSize = const Value.absent(),
+            Value<bool?> afterRunSuitable = const Value.absent(),
             Value<String?> productType = const Value.absent(),
             Value<String?> purchaseUrl = const Value.absent(),
             Value<String?> affiliateSource = const Value.absent(),
-            Value<bool> showInPreferences = const Value.absent(),
-            Value<int> preferencePriority = const Value.absent(),
-            Value<String?> displayName = const Value.absent(),
-            Value<String?> displayNamePlural = const Value.absent(),
-            Value<String?> displayOverride = const Value.absent(),
+            Value<int?> preferencePriority = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FoodsTableCompanion.insert(
             id: id,
             name: name,
             imageAddress: imageAddress,
-            description: description,
-            instructions: instructions,
-            nutritionalInfo: nutritionalInfo,
             createdAt: createdAt,
             servingAmount: servingAmount,
-            servingUnit: servingUnit,
-            servingUnitPlural: servingUnitPlural,
-            servingQualifier: servingQualifier,
-            servingSize: servingSize,
-            beforeRunSuitable: beforeRunSuitable,
-            duringRunSuitable: duringRunSuitable,
-            afterRunSuitable: afterRunSuitable,
-            runPortable: runPortable,
-            requiresPreparation: requiresPreparation,
-            aidStationAvailable: aidStationAvailable,
-            isElectrolyte: isElectrolyte,
-            toExcludeFromSolver: toExcludeFromSolver,
             maxServingsBefore: maxServingsBefore,
             maxServingsDuring: maxServingsDuring,
             maxServingsAfter: maxServingsAfter,
+            beforeRunSuitable: beforeRunSuitable,
+            duringRunSuitable: duringRunSuitable,
+            runPortable: runPortable,
+            requiresPreparation: requiresPreparation,
+            aidStationAvailable: aidStationAvailable,
             sodiumMg: sodiumMg,
             caffeineMg: caffeineMg,
             potassiumMg: potassiumMg,
@@ -10370,14 +12992,23 @@ class $$FoodsTableTableTableManager extends RootTableManager<
             caloriesPerServing: caloriesPerServing,
             fluidMlPerServing: fluidMlPerServing,
             brandId: brandId,
+            showInPreferences: showInPreferences,
+            isElectrolyte: isElectrolyte,
+            displayName: displayName,
+            displayNamePlural: displayNamePlural,
+            servingDescription: servingDescription,
+            description: description,
+            instructions: instructions,
+            nutritionalInfo: nutritionalInfo,
+            servingUnit: servingUnit,
+            servingUnitPlural: servingUnitPlural,
+            servingQualifier: servingQualifier,
+            servingSize: servingSize,
+            afterRunSuitable: afterRunSuitable,
             productType: productType,
             purchaseUrl: purchaseUrl,
             affiliateSource: affiliateSource,
-            showInPreferences: showInPreferences,
             preferencePriority: preferencePriority,
-            displayName: displayName,
-            displayNamePlural: displayNamePlural,
-            displayOverride: displayOverride,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -11155,6 +13786,196 @@ typedef $$BrandsTableTableProcessedTableManager = ProcessedTableManager<
     (BrandEntry, BaseReferences<_$AppDatabase, $BrandsTableTable, BrandEntry>),
     BrandEntry,
     PrefetchHooks Function()>;
+typedef $$ProductTypesTableTableCreateCompanionBuilder
+    = ProductTypesTableCompanion Function({
+  required String id,
+  required String code,
+  required String name,
+  required String namePlural,
+  Value<int?> sortOrder,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+typedef $$ProductTypesTableTableUpdateCompanionBuilder
+    = ProductTypesTableCompanion Function({
+  Value<String> id,
+  Value<String> code,
+  Value<String> name,
+  Value<String> namePlural,
+  Value<int?> sortOrder,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+class $$ProductTypesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ProductTypesTableTable> {
+  $$ProductTypesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get namePlural => $composableBuilder(
+      column: $table.namePlural, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+      column: $table.sortOrder, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$ProductTypesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProductTypesTableTable> {
+  $$ProductTypesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get namePlural => $composableBuilder(
+      column: $table.namePlural, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+      column: $table.sortOrder, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ProductTypesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProductTypesTableTable> {
+  $$ProductTypesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get namePlural => $composableBuilder(
+      column: $table.namePlural, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$ProductTypesTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ProductTypesTableTable,
+    ProductTypeEntry,
+    $$ProductTypesTableTableFilterComposer,
+    $$ProductTypesTableTableOrderingComposer,
+    $$ProductTypesTableTableAnnotationComposer,
+    $$ProductTypesTableTableCreateCompanionBuilder,
+    $$ProductTypesTableTableUpdateCompanionBuilder,
+    (
+      ProductTypeEntry,
+      BaseReferences<_$AppDatabase, $ProductTypesTableTable, ProductTypeEntry>
+    ),
+    ProductTypeEntry,
+    PrefetchHooks Function()> {
+  $$ProductTypesTableTableTableManager(
+      _$AppDatabase db, $ProductTypesTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProductTypesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProductTypesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProductTypesTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> code = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> namePlural = const Value.absent(),
+            Value<int?> sortOrder = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ProductTypesTableCompanion(
+            id: id,
+            code: code,
+            name: name,
+            namePlural: namePlural,
+            sortOrder: sortOrder,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String code,
+            required String name,
+            required String namePlural,
+            Value<int?> sortOrder = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ProductTypesTableCompanion.insert(
+            id: id,
+            code: code,
+            name: name,
+            namePlural: namePlural,
+            sortOrder: sortOrder,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ProductTypesTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ProductTypesTableTable,
+    ProductTypeEntry,
+    $$ProductTypesTableTableFilterComposer,
+    $$ProductTypesTableTableOrderingComposer,
+    $$ProductTypesTableTableAnnotationComposer,
+    $$ProductTypesTableTableCreateCompanionBuilder,
+    $$ProductTypesTableTableUpdateCompanionBuilder,
+    (
+      ProductTypeEntry,
+      BaseReferences<_$AppDatabase, $ProductTypesTableTable, ProductTypeEntry>
+    ),
+    ProductTypeEntry,
+    PrefetchHooks Function()>;
 typedef $$AppContentTableTableCreateCompanionBuilder = AppContentTableCompanion
     Function({
   required String id,
@@ -11639,6 +14460,730 @@ typedef $$WorkoutNotesTableTableProcessedTableManager = ProcessedTableManager<
     ),
     WorkoutNoteEntry,
     PrefetchHooks Function()>;
+typedef $$CarbLoadingTableTableCreateCompanionBuilder
+    = CarbLoadingTableCompanion Function({
+  required String id,
+  required String userId,
+  required DateTime raceDate,
+  required String raceDistance,
+  required String trainingVolume,
+  required String planData,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+typedef $$CarbLoadingTableTableUpdateCompanionBuilder
+    = CarbLoadingTableCompanion Function({
+  Value<String> id,
+  Value<String> userId,
+  Value<DateTime> raceDate,
+  Value<String> raceDistance,
+  Value<String> trainingVolume,
+  Value<String> planData,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+
+class $$CarbLoadingTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CarbLoadingTableTable> {
+  $$CarbLoadingTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get raceDate => $composableBuilder(
+      column: $table.raceDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get raceDistance => $composableBuilder(
+      column: $table.raceDistance, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get trainingVolume => $composableBuilder(
+      column: $table.trainingVolume,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get planData => $composableBuilder(
+      column: $table.planData, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+}
+
+class $$CarbLoadingTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CarbLoadingTableTable> {
+  $$CarbLoadingTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get raceDate => $composableBuilder(
+      column: $table.raceDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get raceDistance => $composableBuilder(
+      column: $table.raceDistance,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get trainingVolume => $composableBuilder(
+      column: $table.trainingVolume,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get planData => $composableBuilder(
+      column: $table.planData, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CarbLoadingTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CarbLoadingTableTable> {
+  $$CarbLoadingTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get raceDate =>
+      $composableBuilder(column: $table.raceDate, builder: (column) => column);
+
+  GeneratedColumn<String> get raceDistance => $composableBuilder(
+      column: $table.raceDistance, builder: (column) => column);
+
+  GeneratedColumn<String> get trainingVolume => $composableBuilder(
+      column: $table.trainingVolume, builder: (column) => column);
+
+  GeneratedColumn<String> get planData =>
+      $composableBuilder(column: $table.planData, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+}
+
+class $$CarbLoadingTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CarbLoadingTableTable,
+    CarbLoadingEntry,
+    $$CarbLoadingTableTableFilterComposer,
+    $$CarbLoadingTableTableOrderingComposer,
+    $$CarbLoadingTableTableAnnotationComposer,
+    $$CarbLoadingTableTableCreateCompanionBuilder,
+    $$CarbLoadingTableTableUpdateCompanionBuilder,
+    (
+      CarbLoadingEntry,
+      BaseReferences<_$AppDatabase, $CarbLoadingTableTable, CarbLoadingEntry>
+    ),
+    CarbLoadingEntry,
+    PrefetchHooks Function()> {
+  $$CarbLoadingTableTableTableManager(
+      _$AppDatabase db, $CarbLoadingTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CarbLoadingTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CarbLoadingTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CarbLoadingTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> userId = const Value.absent(),
+            Value<DateTime> raceDate = const Value.absent(),
+            Value<String> raceDistance = const Value.absent(),
+            Value<String> trainingVolume = const Value.absent(),
+            Value<String> planData = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CarbLoadingTableCompanion(
+            id: id,
+            userId: userId,
+            raceDate: raceDate,
+            raceDistance: raceDistance,
+            trainingVolume: trainingVolume,
+            planData: planData,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String userId,
+            required DateTime raceDate,
+            required String raceDistance,
+            required String trainingVolume,
+            required String planData,
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CarbLoadingTableCompanion.insert(
+            id: id,
+            userId: userId,
+            raceDate: raceDate,
+            raceDistance: raceDistance,
+            trainingVolume: trainingVolume,
+            planData: planData,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$CarbLoadingTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $CarbLoadingTableTable,
+    CarbLoadingEntry,
+    $$CarbLoadingTableTableFilterComposer,
+    $$CarbLoadingTableTableOrderingComposer,
+    $$CarbLoadingTableTableAnnotationComposer,
+    $$CarbLoadingTableTableCreateCompanionBuilder,
+    $$CarbLoadingTableTableUpdateCompanionBuilder,
+    (
+      CarbLoadingEntry,
+      BaseReferences<_$AppDatabase, $CarbLoadingTableTable, CarbLoadingEntry>
+    ),
+    CarbLoadingEntry,
+    PrefetchHooks Function()>;
+typedef $$CarbLoadingSimpleTableTableCreateCompanionBuilder
+    = CarbLoadingSimpleTableCompanion Function({
+  required String id,
+  required String userId,
+  required DateTime raceDate,
+  required String raceDistance,
+  required String trainingVolume,
+  required int dailyCarbTargetG,
+  required int dailyServingsTarget,
+  required double bodyWeightKg,
+  required double carbsPerKgTarget,
+  required String daySelectionsJson,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+typedef $$CarbLoadingSimpleTableTableUpdateCompanionBuilder
+    = CarbLoadingSimpleTableCompanion Function({
+  Value<String> id,
+  Value<String> userId,
+  Value<DateTime> raceDate,
+  Value<String> raceDistance,
+  Value<String> trainingVolume,
+  Value<int> dailyCarbTargetG,
+  Value<int> dailyServingsTarget,
+  Value<double> bodyWeightKg,
+  Value<double> carbsPerKgTarget,
+  Value<String> daySelectionsJson,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<bool> isActive,
+  Value<int> rowid,
+});
+
+class $$CarbLoadingSimpleTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CarbLoadingSimpleTableTable> {
+  $$CarbLoadingSimpleTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get raceDate => $composableBuilder(
+      column: $table.raceDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get raceDistance => $composableBuilder(
+      column: $table.raceDistance, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get trainingVolume => $composableBuilder(
+      column: $table.trainingVolume,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get dailyCarbTargetG => $composableBuilder(
+      column: $table.dailyCarbTargetG,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get dailyServingsTarget => $composableBuilder(
+      column: $table.dailyServingsTarget,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get bodyWeightKg => $composableBuilder(
+      column: $table.bodyWeightKg, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get carbsPerKgTarget => $composableBuilder(
+      column: $table.carbsPerKgTarget,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get daySelectionsJson => $composableBuilder(
+      column: $table.daySelectionsJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+}
+
+class $$CarbLoadingSimpleTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CarbLoadingSimpleTableTable> {
+  $$CarbLoadingSimpleTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get raceDate => $composableBuilder(
+      column: $table.raceDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get raceDistance => $composableBuilder(
+      column: $table.raceDistance,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get trainingVolume => $composableBuilder(
+      column: $table.trainingVolume,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get dailyCarbTargetG => $composableBuilder(
+      column: $table.dailyCarbTargetG,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get dailyServingsTarget => $composableBuilder(
+      column: $table.dailyServingsTarget,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get bodyWeightKg => $composableBuilder(
+      column: $table.bodyWeightKg,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get carbsPerKgTarget => $composableBuilder(
+      column: $table.carbsPerKgTarget,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get daySelectionsJson => $composableBuilder(
+      column: $table.daySelectionsJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CarbLoadingSimpleTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CarbLoadingSimpleTableTable> {
+  $$CarbLoadingSimpleTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get raceDate =>
+      $composableBuilder(column: $table.raceDate, builder: (column) => column);
+
+  GeneratedColumn<String> get raceDistance => $composableBuilder(
+      column: $table.raceDistance, builder: (column) => column);
+
+  GeneratedColumn<String> get trainingVolume => $composableBuilder(
+      column: $table.trainingVolume, builder: (column) => column);
+
+  GeneratedColumn<int> get dailyCarbTargetG => $composableBuilder(
+      column: $table.dailyCarbTargetG, builder: (column) => column);
+
+  GeneratedColumn<int> get dailyServingsTarget => $composableBuilder(
+      column: $table.dailyServingsTarget, builder: (column) => column);
+
+  GeneratedColumn<double> get bodyWeightKg => $composableBuilder(
+      column: $table.bodyWeightKg, builder: (column) => column);
+
+  GeneratedColumn<double> get carbsPerKgTarget => $composableBuilder(
+      column: $table.carbsPerKgTarget, builder: (column) => column);
+
+  GeneratedColumn<String> get daySelectionsJson => $composableBuilder(
+      column: $table.daySelectionsJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+}
+
+class $$CarbLoadingSimpleTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CarbLoadingSimpleTableTable,
+    CarbLoadingSimpleEntry,
+    $$CarbLoadingSimpleTableTableFilterComposer,
+    $$CarbLoadingSimpleTableTableOrderingComposer,
+    $$CarbLoadingSimpleTableTableAnnotationComposer,
+    $$CarbLoadingSimpleTableTableCreateCompanionBuilder,
+    $$CarbLoadingSimpleTableTableUpdateCompanionBuilder,
+    (
+      CarbLoadingSimpleEntry,
+      BaseReferences<_$AppDatabase, $CarbLoadingSimpleTableTable,
+          CarbLoadingSimpleEntry>
+    ),
+    CarbLoadingSimpleEntry,
+    PrefetchHooks Function()> {
+  $$CarbLoadingSimpleTableTableTableManager(
+      _$AppDatabase db, $CarbLoadingSimpleTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CarbLoadingSimpleTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CarbLoadingSimpleTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CarbLoadingSimpleTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> userId = const Value.absent(),
+            Value<DateTime> raceDate = const Value.absent(),
+            Value<String> raceDistance = const Value.absent(),
+            Value<String> trainingVolume = const Value.absent(),
+            Value<int> dailyCarbTargetG = const Value.absent(),
+            Value<int> dailyServingsTarget = const Value.absent(),
+            Value<double> bodyWeightKg = const Value.absent(),
+            Value<double> carbsPerKgTarget = const Value.absent(),
+            Value<String> daySelectionsJson = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CarbLoadingSimpleTableCompanion(
+            id: id,
+            userId: userId,
+            raceDate: raceDate,
+            raceDistance: raceDistance,
+            trainingVolume: trainingVolume,
+            dailyCarbTargetG: dailyCarbTargetG,
+            dailyServingsTarget: dailyServingsTarget,
+            bodyWeightKg: bodyWeightKg,
+            carbsPerKgTarget: carbsPerKgTarget,
+            daySelectionsJson: daySelectionsJson,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String userId,
+            required DateTime raceDate,
+            required String raceDistance,
+            required String trainingVolume,
+            required int dailyCarbTargetG,
+            required int dailyServingsTarget,
+            required double bodyWeightKg,
+            required double carbsPerKgTarget,
+            required String daySelectionsJson,
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<bool> isActive = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CarbLoadingSimpleTableCompanion.insert(
+            id: id,
+            userId: userId,
+            raceDate: raceDate,
+            raceDistance: raceDistance,
+            trainingVolume: trainingVolume,
+            dailyCarbTargetG: dailyCarbTargetG,
+            dailyServingsTarget: dailyServingsTarget,
+            bodyWeightKg: bodyWeightKg,
+            carbsPerKgTarget: carbsPerKgTarget,
+            daySelectionsJson: daySelectionsJson,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isActive: isActive,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$CarbLoadingSimpleTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $CarbLoadingSimpleTableTable,
+        CarbLoadingSimpleEntry,
+        $$CarbLoadingSimpleTableTableFilterComposer,
+        $$CarbLoadingSimpleTableTableOrderingComposer,
+        $$CarbLoadingSimpleTableTableAnnotationComposer,
+        $$CarbLoadingSimpleTableTableCreateCompanionBuilder,
+        $$CarbLoadingSimpleTableTableUpdateCompanionBuilder,
+        (
+          CarbLoadingSimpleEntry,
+          BaseReferences<_$AppDatabase, $CarbLoadingSimpleTableTable,
+              CarbLoadingSimpleEntry>
+        ),
+        CarbLoadingSimpleEntry,
+        PrefetchHooks Function()>;
+typedef $$EdgeFunctionsTableTableCreateCompanionBuilder
+    = EdgeFunctionsTableCompanion Function({
+  required String id,
+  required String name,
+  required String code,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+typedef $$EdgeFunctionsTableTableUpdateCompanionBuilder
+    = EdgeFunctionsTableCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String> code,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$EdgeFunctionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $EdgeFunctionsTableTable> {
+  $$EdgeFunctionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$EdgeFunctionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $EdgeFunctionsTableTable> {
+  $$EdgeFunctionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get code => $composableBuilder(
+      column: $table.code, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$EdgeFunctionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EdgeFunctionsTableTable> {
+  $$EdgeFunctionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$EdgeFunctionsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $EdgeFunctionsTableTable,
+    EdgeFunctionEntry,
+    $$EdgeFunctionsTableTableFilterComposer,
+    $$EdgeFunctionsTableTableOrderingComposer,
+    $$EdgeFunctionsTableTableAnnotationComposer,
+    $$EdgeFunctionsTableTableCreateCompanionBuilder,
+    $$EdgeFunctionsTableTableUpdateCompanionBuilder,
+    (
+      EdgeFunctionEntry,
+      BaseReferences<_$AppDatabase, $EdgeFunctionsTableTable, EdgeFunctionEntry>
+    ),
+    EdgeFunctionEntry,
+    PrefetchHooks Function()> {
+  $$EdgeFunctionsTableTableTableManager(
+      _$AppDatabase db, $EdgeFunctionsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EdgeFunctionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EdgeFunctionsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EdgeFunctionsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> code = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              EdgeFunctionsTableCompanion(
+            id: id,
+            name: name,
+            code: code,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            required String code,
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              EdgeFunctionsTableCompanion.insert(
+            id: id,
+            name: name,
+            code: code,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$EdgeFunctionsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $EdgeFunctionsTableTable,
+    EdgeFunctionEntry,
+    $$EdgeFunctionsTableTableFilterComposer,
+    $$EdgeFunctionsTableTableOrderingComposer,
+    $$EdgeFunctionsTableTableAnnotationComposer,
+    $$EdgeFunctionsTableTableCreateCompanionBuilder,
+    $$EdgeFunctionsTableTableUpdateCompanionBuilder,
+    (
+      EdgeFunctionEntry,
+      BaseReferences<_$AppDatabase, $EdgeFunctionsTableTable, EdgeFunctionEntry>
+    ),
+    EdgeFunctionEntry,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11661,8 +15206,17 @@ class $AppDatabaseManager {
       $$FoodCategoriesTableTableTableManager(_db, _db.foodCategoriesTable);
   $$BrandsTableTableTableManager get brandsTable =>
       $$BrandsTableTableTableManager(_db, _db.brandsTable);
+  $$ProductTypesTableTableTableManager get productTypesTable =>
+      $$ProductTypesTableTableTableManager(_db, _db.productTypesTable);
   $$AppContentTableTableTableManager get appContentTable =>
       $$AppContentTableTableTableManager(_db, _db.appContentTable);
   $$WorkoutNotesTableTableTableManager get workoutNotesTable =>
       $$WorkoutNotesTableTableTableManager(_db, _db.workoutNotesTable);
+  $$CarbLoadingTableTableTableManager get carbLoadingTable =>
+      $$CarbLoadingTableTableTableManager(_db, _db.carbLoadingTable);
+  $$CarbLoadingSimpleTableTableTableManager get carbLoadingSimpleTable =>
+      $$CarbLoadingSimpleTableTableTableManager(
+          _db, _db.carbLoadingSimpleTable);
+  $$EdgeFunctionsTableTableTableManager get edgeFunctionsTable =>
+      $$EdgeFunctionsTableTableTableManager(_db, _db.edgeFunctionsTable);
 }

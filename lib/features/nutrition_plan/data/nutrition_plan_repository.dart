@@ -281,7 +281,15 @@ class NutritionPlanRepository {
       print('💾 Caching plan locally: planId=${plan.id}, deviceId=$deviceId, name=${plan.name}');
       final planJson = json.encode(plan.toJson());
       print('📄 Plan JSON length: ${planJson.length} characters');
-      await database.saveNutritionPlan(plan.id, deviceId, planJson);
+      await database.saveNutritionPlan(
+        id: plan.id,
+        deviceId: deviceId,
+        planId: plan.id,
+        planName: plan.name,
+        planData: planJson,
+        totalCalories: plan.totalCalories,
+        notes: plan.notes,
+      );
       print('✅ Plan cached successfully in Drift database');
     } catch (e, stackTrace) {
       print('❌ Error caching plan locally: $e');
@@ -362,12 +370,12 @@ class NutritionPlanRepository {
     try {
       // First try local cache
       print('📱 Checking local Drift cache...');
-      final cachedPlanJson = await database.getLatestNutritionPlan(deviceId);
-      
-      if (cachedPlanJson != null && cachedPlanJson.isNotEmpty) {
+      final cachedPlanEntry = await database.getLatestNutritionPlan(deviceId);
+
+      if (cachedPlanEntry != null && cachedPlanEntry.planData.isNotEmpty) {
         print('✅ Found cached plan, parsing JSON...');
         try {
-          final planData = json.decode(cachedPlanJson);
+          final planData = json.decode(cachedPlanEntry.planData);
           final plan = domain.NutritionPlan.fromJson(planData);
           print('✅ Successfully parsed cached plan: ${plan.name} with ${plan.sections.length} sections');
           return plan;
@@ -517,9 +525,9 @@ class NutritionPlanRepository {
   /// Get latest cached plan (local only)
   Future<domain.NutritionPlan?> getLatestCachedPlan(String deviceId) async {
     try {
-      final cachedPlanJson = await database.getLatestNutritionPlan(deviceId);
-      if (cachedPlanJson != null) {
-        final planData = json.decode(cachedPlanJson);
+      final cachedPlanEntry = await database.getLatestNutritionPlan(deviceId);
+      if (cachedPlanEntry != null) {
+        final planData = json.decode(cachedPlanEntry.planData);
         return domain.NutritionPlan.fromJson(planData);
       }
       return null;
@@ -695,10 +703,7 @@ class NutritionPlanRepository {
         await (database.update(database.nutritionPlans)
           ..where((plan) => plan.id.equals(planId)))
           .write(NutritionPlansCompanion(
-            planRating: rating != null ? Value(rating) : Value.absent(),
-            journalNotes: notes != null ? Value(notes) : Value.absent(),
-            planData: Value(updatedPlanData), // Update JSON data too
-            runDateTime: const Value(null), // Clear runDateTime to prevent feedback loop
+            planData: Value(updatedPlanData), // Update JSON data with feedback
             updatedAt: Value(DateTime.now()),
           ));
       });
@@ -711,18 +716,28 @@ class NutritionPlanRepository {
     }
   }
 
-  /// Update plan run date/time
+  /// Update plan run date/time (store in JSON planData since runDateTime field doesn't exist)
   Future<void> updatePlanRunDateTime(String planId, DateTime runDateTime) async {
     try {
       await database.transaction(() async {
-        await (database.update(database.nutritionPlans)
-          ..where((plan) => plan.id.equals(planId)))
-          .write(NutritionPlansCompanion(
-            runDateTime: Value(runDateTime),
-            updatedAt: Value(DateTime.now()),
-          ));
+        // Get the existing plan to update the JSON data
+        final existingPlan = await (database.select(database.nutritionPlans)
+          ..where((plan) => plan.id.equals(planId))).getSingleOrNull();
+
+        if (existingPlan != null) {
+          // Update the JSON data to include runDateTime
+          final planJson = jsonDecode(existingPlan.planData) as Map<String, dynamic>;
+          planJson['runDateTime'] = runDateTime.toIso8601String();
+
+          await (database.update(database.nutritionPlans)
+            ..where((plan) => plan.id.equals(planId)))
+            .write(NutritionPlansCompanion(
+              planData: Value(jsonEncode(planJson)),
+              updatedAt: Value(DateTime.now()),
+            ));
+        }
       });
-      
+
       print('✅ Plan run date updated: planId=$planId, runDateTime=$runDateTime');
     } catch (e, stackTrace) {
       print('❌ Failed to update plan run date: $e');
@@ -736,27 +751,30 @@ class NutritionPlanRepository {
     try {
       final now = DateTime.now();
       final query = database.select(database.nutritionPlans)
-        ..where((plan) => 
-          plan.userId.equals(deviceId) &
-          plan.runDateTime.isNotNull() &
-          plan.runDateTime.isSmallerThanValue(now) &
-          plan.planRating.isNull())
-        ..orderBy([(plan) => OrderingTerm.desc(plan.runDateTime)])
-        ..limit(5); // Limit to most recent 5 pending plans
+        ..where((plan) =>
+          plan.deviceId.equals(deviceId) &
+          plan.isDeleted.equals(false))
+        ..orderBy([(plan) => OrderingTerm.desc(plan.updatedAt)])
+        ..limit(10); // Get recent plans and filter for pending feedback in code
 
       final results = await query.get();
       final plans = <domain.NutritionPlan>[];
-      
+
       for (final row in results) {
         try {
           final planData = jsonDecode(row.planData) as Map<String, dynamic>;
-          final plan = domain.NutritionPlan.fromJson({
-            ...planData,
-            'runDateTime': row.runDateTime?.toIso8601String(),
-            'planRating': row.planRating,
-            'journalNotes': row.journalNotes,
-          });
-          plans.add(plan);
+
+          // Check if plan has runDateTime but no rating (pending feedback)
+          final runDateTime = planData['runDateTime'] as String?;
+          final planRating = planData['planRating'] as int?;
+
+          if (runDateTime != null && planRating == null) {
+            final runDate = DateTime.parse(runDateTime);
+            if (runDate.isBefore(now)) {
+              final plan = domain.NutritionPlan.fromJson(planData);
+              plans.add(plan);
+            }
+          }
         } catch (e) {
           print('❌ Failed to parse plan ${row.id}: $e');
           // Skip invalid plans
@@ -777,21 +795,16 @@ class NutritionPlanRepository {
   Future<List<domain.NutritionPlan>> getUserNutritionPlans(String deviceId) async {
     try {
       final query = database.select(database.nutritionPlans)
-        ..where((plan) => plan.userId.equals(deviceId))
+        ..where((plan) => plan.deviceId.equals(deviceId) & plan.isDeleted.equals(false))
         ..orderBy([(plan) => OrderingTerm.desc(plan.createdAt)]);
 
       final results = await query.get();
       final plans = <domain.NutritionPlan>[];
-      
+
       for (final row in results) {
         try {
           final planData = jsonDecode(row.planData) as Map<String, dynamic>;
-          final plan = domain.NutritionPlan.fromJson({
-            ...planData,
-            'runDateTime': row.runDateTime?.toIso8601String(),
-            'planRating': row.planRating,
-            'journalNotes': row.journalNotes,
-          });
+          final plan = domain.NutritionPlan.fromJson(planData);
           plans.add(plan);
         } catch (e) {
           print('❌ Failed to parse plan ${row.id}: $e');

@@ -6,7 +6,7 @@ import '../domain/feedback_data.dart';
 import '../../../shared/services/analytics_service.dart';
 import '../../../shared/services/notification_service.dart';
 import '../data/feedback_repository.dart';
-import '../../../shared/database/app_database.dart';
+import '../../../shared/database/database_provider.dart';
 
 /// Service for submitting feedback to Google Forms and handling survey responses
 class FeedbackService {
@@ -86,17 +86,35 @@ class FeedbackService {
 
       // Calculate the next reminder date
       final reminderDate = preference.getNextReminderDate();
-      
+
+      // Get the latest plan ID for notification tracking
+      // Since notifications are for "how did your plan work", we need a plan ID for analytics
+      String? planId;
+      try {
+        final database = ref.read(appDatabaseProvider);
+        final plans = await database.select(database.nutritionPlans).get();
+        if (plans.isNotEmpty) {
+          // Get the most recent plan for tracking purposes
+          plans.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          planId = plans.first.id;
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ Could not get plan ID for notification: $e');
+        }
+      }
+
       // Schedule the reminder
       await NotificationService.scheduleReminder(
         scheduledDate: reminderDate,
         recurring: preference.isRecurring,
         title: 'How did your nutrition plan work?',
         body: 'Share your feedback to help us improve your fueling strategy.',
+        planId: planId, // Include planId for notification tap tracking
       );
 
       if (kDebugMode) {
-        print('✅ Reminder scheduled for ${reminderDate}');
+        print('✅ Reminder scheduled for $reminderDate');
       }
     } catch (error, stackTrace) {
       if (kDebugMode) {

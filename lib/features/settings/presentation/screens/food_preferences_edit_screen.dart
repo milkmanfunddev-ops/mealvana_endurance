@@ -38,22 +38,22 @@ class _FoodPreferencesEditScreenState extends ConsumerState<FoodPreferencesEditS
     try {
       final foodRepository = ref.read(foodRepositoryProvider);
       final authService = ref.read(authServiceProvider);
-      
-      // Load all foods
-      final foods = await foodRepository.getAllFoods();
-      
+
+      // Load curated foods for preferences (same as onboarding)
+      final foods = await foodRepository.getFoodsForPreferences();
+
       // Load existing preferences
       final currentUser = await authService.getCurrentUser();
       if (currentUser != null) {
         final existingPreferences = await authService.getFoodPreferences(currentUser.id);
-        
+
         setState(() {
           _foods = foods;
           _isLoading = false;
-          
-          // Set existing preferences or default to dislike
+
+          // Set existing preferences or default to willing_to_try (same as onboarding)
           for (final food in foods) {
-            _selectedPreferences[food.name] = existingPreferences?[food.name] ?? FoodPreference.dislike;
+            _selectedPreferences[food.name] = existingPreferences?[food.name] ?? FoodPreference.willingToTry;
           }
         });
       } else {
@@ -128,16 +128,6 @@ class _FoodPreferencesEditScreenState extends ConsumerState<FoodPreferencesEditS
     if (_isLoading) {
       return Scaffold(
         backgroundColor: AppTheme.baseCream,
-        appBar: AppBar(
-          backgroundColor: AppTheme.baseCream,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          leading: CustomAppBarBackButton(
-            onPressed: () => context.pop(),
-          ),
-          title: const Text('Food Preferences'),
-          centerTitle: true,
-        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -151,19 +141,11 @@ class _FoodPreferencesEditScreenState extends ConsumerState<FoodPreferencesEditS
       backgroundColor: AppTheme.baseCream,
       appBar: AppBar(
         backgroundColor: AppTheme.baseCream,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: CustomAppBarBackButton(
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          title,
-          style: AppTheme.titleStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 18.sp,
-          ),
-        ),
+        foregroundColor: AppTheme.baseWhite,
+        leading: const CustomAppBarBackButton(),
+        title: Text(title),
         centerTitle: true,
+        iconTheme: IconThemeData(color: AppTheme.baseWhite),
       ),
       body: Column(
         children: [
@@ -174,7 +156,7 @@ class _FoodPreferencesEditScreenState extends ConsumerState<FoodPreferencesEditS
               separatorBuilder: (context, index) => SizedBox(height: 8.h),
               itemBuilder: (context, index) {
                 final food = _foods[index];
-                final preference = _selectedPreferences[food.name] ?? FoodPreference.dislike;
+                final preference = _selectedPreferences[food.name] ?? FoodPreference.willingToTry;
                 
                 return FoodPreferenceChipItem(
                   food: food,
@@ -191,25 +173,20 @@ class _FoodPreferencesEditScreenState extends ConsumerState<FoodPreferencesEditS
               },
             ),
           ),
-          
-          // Save button
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: AppTheme.baseWhite,
-              border: Border(
-                top: BorderSide(
-                  color: AppTheme.baseGrey.withValues(alpha: 0.2),
-                  width: 1,
+
+          // Save button - match onboarding style
+          _isSaving
+              ? CircularProgressIndicator()
+              : Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 34.h),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: PrimaryButton(
+                      onPressed: _isSaving ? null : _savePreferences,
+                      text: 'Save Changes',
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            child: PrimaryButton(
-              text: _isSaving ? 'Saving...' : 'Save Changes',
-              onPressed: _isSaving ? null : _savePreferences,
-              width: double.infinity,
-            ),
-          ),
         ],
       ),
     );

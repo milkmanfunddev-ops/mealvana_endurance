@@ -16,31 +16,41 @@ import 'tables/foods_table.dart';
 import 'tables/categories_table.dart';
 import 'tables/food_categories_table.dart';
 import 'tables/brands_table.dart';
+import 'tables/product_types_table.dart';
 import 'tables/app_content_table.dart';
 import 'tables/workout_notes_table.dart';
+import 'tables/carb_loading_table.dart';
+import 'tables/carb_loading_simple_table.dart';
+import 'tables/edge_functions_table.dart';
 import '../services/logging_service.dart';
 
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
-/// V2 implementation with proper migrations and full table set
+/// V1 implementation with complete table set aligned with Supabase schema
 @DriftDatabase(tables: [
-  // Existing v1 tables (preserved)
+  // Core tables aligned with Supabase
   UserProfilesTable,
-  FoodPreferencesTable, 
+  FoodPreferencesTable,
   NutritionPlans,
   MacroTargetsTable,
   FeedbackTable,
-  
-  // New v2 tables
+
+  // Food system tables
   FoodsTable,
   CategoriesTable,
   FoodCategoriesTable,
   BrandsTable,
+  ProductTypesTable, // New table for product categorization
+
+  // Content management
   AppContentTable,
-  
-  // Workout notes table (v5)
+
+  // Additional features
   WorkoutNotesTable,
+  CarbLoadingTable,
+  CarbLoadingSimpleTable,
+  EdgeFunctionsTable,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -49,156 +59,74 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 8; // v7: Added display_override field to foods
+  int get schemaVersion => 2; // v2: Updated foods table to match Supabase schema
   
   LoggingService get _logger => AppLogger.instance;
 
-  /// Big Bang migration strategy: v1 → v2 with new tables
+  /// Generate a UUID for new records
+  String _generateUuid() {
+    // Generate a proper UUID that meets the 36-character requirement
+    final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+    final random1 = (DateTime.now().microsecond % 10000).toString().padLeft(4, '0');
+    final random2 = (DateTime.now().millisecond % 10000).toString().padLeft(4, '0');
+    final random3 = ((DateTime.now().second * 1000 + DateTime.now().millisecond) % 100000).toString().padLeft(5, '0');
+
+    // Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 characters total)
+    final uuid = '${timestamp.substring(timestamp.length - 8)}-${random1}-${random2}-${random3.substring(0, 4)}-${random3}${timestamp.substring(timestamp.length - 7)}';
+
+    return uuid;
+  }
+
+  /// Simple database setup for v1 - fresh start only
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
-        // For fresh installs, create all v2 tables
+        // Create all tables for fresh installs
+        _logger.database('Creating new v1 database schema');
         await m.createAll();
         await _populateDefaultData();
+        _logger.database('Database v1 schema created successfully');
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        _logger.database('Starting database migration', 
-          operation: 'migration',
-          data: {'from_version': from, 'to_version': to}
-        );
-        
-        if (from == 1 && to == 8) {
-          // Direct migration v1 → v8
-          await _migrateV1ToV2(m);  // Add new tables
-          await _migrateV2ToV3(m);  // Add swipeHintShown column
-          await _migrateV3ToV4(m);  // Add user journal fields
-          await _migrateV4ToV5(m);  // Add workout_notes table
-          await _migrateV5ToV6(m);  // Add display_name_plural and to_exclude_from_solver
-          await _migrateV6ToV7(m);  // Add display_override field
-          await _migrateV7ToV8(m);  // Sync column names with Supabase schema
-        } else if (from == 1 && to == 7) {
-          // Direct migration v1 → v7
-          await _migrateV1ToV2(m);  // Add new tables
-          await _migrateV2ToV3(m);  // Add swipeHintShown column
-          await _migrateV3ToV4(m);  // Add user journal fields
-          await _migrateV4ToV5(m);  // Add workout_notes table
-          await _migrateV5ToV6(m);  // Add display_name_plural and to_exclude_from_solver
-          await _migrateV6ToV7(m);  // Add display_override field
-        } else if (from == 1 && to == 6) {
-          // Direct migration v1 → v6
-          await _migrateV1ToV2(m);  // Add new tables
-          await _migrateV2ToV3(m);  // Add swipeHintShown column
-          await _migrateV3ToV4(m);  // Add user journal fields
-          await _migrateV4ToV5(m);  // Add workout_notes table
-          await _migrateV5ToV6(m);  // Add display_name_plural and to_exclude_from_solver
-        } else if (from == 1 && to == 5) {
-          // Direct migration v1 → v5
-          await _migrateV1ToV2(m);  // Add new tables
-          await _migrateV2ToV3(m);  // Add swipeHintShown column
-          await _migrateV3ToV4(m);  // Add user journal fields
-          await _migrateV4ToV5(m);  // Add workout_notes table
-        } else if (from == 1 && to == 4) {
-          // Direct migration v1 → v4
-          await _migrateV1ToV2(m);  // Add new tables
-          await _migrateV2ToV3(m);  // Add swipeHintShown column
-          await _migrateV3ToV4(m);  // Add user journal fields
-        } else if (from == 1 && to == 3) {
-          // Direct migration v1 → v3
-          await _migrateV1ToV2(m);  // Add new tables
-          await _migrateV2ToV3(m);  // Add swipeHintShown column
-        } else if (from == 1 && to == 2) {
-          await _migrateV1ToV2(m);
-        } else if (from == 2 && to == 8) {
-          await _migrateV2ToV3(m);
-          await _migrateV3ToV4(m);
-          await _migrateV4ToV5(m);
-          await _migrateV5ToV6(m);
-          await _migrateV6ToV7(m);
-          await _migrateV7ToV8(m);
-        } else if (from == 2 && to == 7) {
-          await _migrateV2ToV3(m);
-          await _migrateV3ToV4(m);
-          await _migrateV4ToV5(m);
-          await _migrateV5ToV6(m);
-          await _migrateV6ToV7(m);
-        } else if (from == 2 && to == 6) {
-          await _migrateV2ToV3(m);
-          await _migrateV3ToV4(m);
-          await _migrateV4ToV5(m);
-          await _migrateV5ToV6(m);
-        } else if (from == 2 && to == 5) {
-          await _migrateV2ToV3(m);
-          await _migrateV3ToV4(m);
-          await _migrateV4ToV5(m);
-        } else if (from == 2 && to == 4) {
-          await _migrateV2ToV3(m);
-          await _migrateV3ToV4(m);
-        } else if (from == 2 && to == 3) {
-          await _migrateV2ToV3(m);
-        } else if (from == 3 && to == 8) {
-          await _migrateV3ToV4(m);
-          await _migrateV4ToV5(m);
-          await _migrateV5ToV6(m);
-          await _migrateV6ToV7(m);
-          await _migrateV7ToV8(m);
-        } else if (from == 3 && to == 7) {
-          await _migrateV3ToV4(m);
-          await _migrateV4ToV5(m);
-          await _migrateV5ToV6(m);
-          await _migrateV6ToV7(m);
-        } else if (from == 3 && to == 6) {
-          await _migrateV3ToV4(m);
-          await _migrateV4ToV5(m);
-          await _migrateV5ToV6(m);
-        } else if (from == 3 && to == 5) {
-          await _migrateV3ToV4(m);
-          await _migrateV4ToV5(m);
-        } else if (from == 3 && to == 4) {
-          await _migrateV3ToV4(m);
-        } else if (from == 4 && to == 8) {
-          await _migrateV4ToV5(m);
-          await _migrateV5ToV6(m);
-          await _migrateV6ToV7(m);
-          await _migrateV7ToV8(m);
-        } else if (from == 4 && to == 7) {
-          await _migrateV4ToV5(m);
-          await _migrateV5ToV6(m);
-          await _migrateV6ToV7(m);
-        } else if (from == 4 && to == 6) {
-          await _migrateV4ToV5(m);
-          await _migrateV5ToV6(m);
-        } else if (from == 4 && to == 5) {
-          await _migrateV4ToV5(m);
-        } else if (from == 5 && to == 8) {
-          await _migrateV5ToV6(m);
-          await _migrateV6ToV7(m);
-          await _migrateV7ToV8(m);
-        } else if (from == 5 && to == 7) {
-          await _migrateV5ToV6(m);
-          await _migrateV6ToV7(m);
-        } else if (from == 5 && to == 6) {
-          await _migrateV5ToV6(m);
-        } else if (from == 6 && to == 8) {
-          await _migrateV6ToV7(m);
-          await _migrateV7ToV8(m);
-        } else if (from == 6 && to == 7) {
-          await _migrateV6ToV7(m);
-        } else if (from == 7 && to == 8) {
-          await _migrateV7ToV8(m);
-        } else {
-          // For future migrations, add more conditions here
-          _logger.warning('Unsupported migration path', 
-            context: 'DATABASE',
-            data: {'from': from, 'to': to}
-          );
-          throw UnsupportedError('Migration from v$from to v$to not supported');
+        // Handle any existing database by dropping all tables and recreating
+        _logger.database('Migrating database from v$from to v$to - dropping all tables and recreating');
+
+        try {
+          // Drop all existing tables in correct order (respecting foreign keys)
+          // Use try-catch for each table in case it doesn't exist
+          try { await m.drop(feedbackTable); } catch (e) { _logger.debug('Table feedbackTable does not exist, skipping drop'); }
+          try { await m.drop(nutritionPlans); } catch (e) { _logger.debug('Table nutritionPlans does not exist, skipping drop'); }
+          try { await m.drop(foodPreferencesTable); } catch (e) { _logger.debug('Table foodPreferencesTable does not exist, skipping drop'); }
+          try { await m.drop(userProfilesTable); } catch (e) { _logger.debug('Table userProfilesTable does not exist, skipping drop'); }
+          try { await m.drop(macroTargetsTable); } catch (e) { _logger.debug('Table macroTargetsTable does not exist, skipping drop'); }
+          try { await m.drop(foodCategoriesTable); } catch (e) { _logger.debug('Table foodCategoriesTable does not exist, skipping drop'); }
+          try { await m.drop(foodsTable); } catch (e) { _logger.debug('Table foodsTable does not exist, skipping drop'); }
+          try { await m.drop(categoriesTable); } catch (e) { _logger.debug('Table categoriesTable does not exist, skipping drop'); }
+          try { await m.drop(brandsTable); } catch (e) { _logger.debug('Table brandsTable does not exist, skipping drop'); }
+          try { await m.drop(appContentTable); } catch (e) { _logger.debug('Table appContentTable does not exist, skipping drop'); }
+          try { await m.drop(edgeFunctionsTable); } catch (e) { _logger.debug('Table edgeFunctionsTable does not exist, skipping drop'); }
+          try { await m.drop(workoutNotesTable); } catch (e) { _logger.debug('Table workoutNotesTable does not exist, skipping drop'); }
+          try { await m.drop(carbLoadingTable); } catch (e) { _logger.debug('Table carbLoadingTable does not exist, skipping drop'); }
+          try { await m.drop(carbLoadingSimpleTable); } catch (e) { _logger.debug('Table carbLoadingSimpleTable does not exist, skipping drop'); }
+          try { await m.drop(productTypesTable); } catch (e) { _logger.debug('Table productTypesTable does not exist, skipping drop'); }
+
+          _logger.database('All existing tables dropped successfully');
+
+          // Recreate all tables with current v1 schema
+          await m.createAll();
+          await _populateDefaultData();
+
+          _logger.database('Database reset to v1 schema completed successfully');
+        } catch (e) {
+          _logger.error('Database migration failed: $e');
+          rethrow;
         }
       },
       beforeOpen: (details) async {
         // Enable foreign key support
         await customStatement('PRAGMA foreign_keys = ON');
-        
+
         if (kDebugMode) {
           // Enable detailed logging in debug mode
           await customStatement('PRAGMA synchronous = NORMAL');
@@ -207,183 +135,6 @@ class AppDatabase extends _$AppDatabase {
       },
     );
   }
-  
-  /// Migrate from v1 to v2: Add new tables while preserving existing data
-  Future<void> _migrateV1ToV2(Migrator m) async {
-    _logger.database('Migrating database from v1 to v2');
-    
-    try {
-      // Step 1: Create new tables only (existing tables untouched)
-      _logger.database('Creating new v2 tables', operation: 'create_tables');
-      await m.createTable(foodsTable);
-      await m.createTable(categoriesTable);  
-      await m.createTable(foodCategoriesTable);
-      await m.createTable(brandsTable);
-      await m.createTable(appContentTable);
-      
-      // Step 2: Populate default data
-      await _populateDefaultData();
-      
-      _logger.database('Migration v1 → v2 completed successfully');
-    } catch (e, stackTrace) {
-      _logger.error('Migration v1 → v2 failed', 
-        context: 'DATABASE',
-        error: e,
-        stackTrace: stackTrace
-      );
-      rethrow;
-    }
-  }
-
-  /// Helper method to add a column only if it doesn't already exist
-  Future<void> _addColumnIfNotExists(Migrator m, TableInfo table, GeneratedColumn column, String columnName) async {
-    try {
-      await m.addColumn(table, column);
-      _logger.database('Added $columnName column successfully');
-    } catch (e) {
-      // Column likely already exists - check if it's the duplicate column error
-      if (e.toString().contains('duplicate column name: $columnName')) {
-        _logger.database('$columnName column already exists, skipping');
-      } else {
-        // Re-throw if it's a different error
-        rethrow;
-      }
-    }
-  }
-
-  /// Migrate from v2 to v3: Add swipeHintShown column to user_profiles table
-  Future<void> _migrateV2ToV3(Migrator m) async {
-    _logger.database('Migrating database from v2 to v3');
-
-    try {
-      // Check if column already exists before adding it
-      _logger.database('Adding swipeHintShown column to user_profiles table',
-        operation: 'alter_table');
-
-      await _addColumnIfNotExists(m, userProfilesTable, userProfilesTable.swipeHintShown, 'swipe_hint_shown');
-
-      _logger.database('Migration v2 → v3 completed successfully');
-    } catch (e, stackTrace) {
-      _logger.error('Migration v2 → v3 failed',
-        context: 'DATABASE',
-        error: e,
-        stackTrace: stackTrace
-      );
-      rethrow;
-    }
-  }
-  
-  /// Migrate from v3 to v4: Add user journal fields to nutrition_plans table
-  Future<void> _migrateV3ToV4(Migrator m) async {
-    _logger.database('Migrating database from v3 to v4');
-
-    try {
-      // Add user journal fields to the nutrition_plans table
-      _logger.database('Adding user journal columns to nutrition_plans table',
-        operation: 'alter_table');
-
-      // Add each column with defensive checks
-      await _addColumnIfNotExists(m, nutritionPlans, nutritionPlans.runDateTime, 'run_date_time');
-      await _addColumnIfNotExists(m, nutritionPlans, nutritionPlans.planRating, 'plan_rating');
-      await _addColumnIfNotExists(m, nutritionPlans, nutritionPlans.journalNotes, 'journal_notes');
-
-      _logger.database('Migration v3 → v4 completed successfully');
-    } catch (e, stackTrace) {
-      _logger.error('Migration v3 → v4 failed',
-        context: 'DATABASE',
-        error: e,
-        stackTrace: stackTrace
-      );
-      rethrow;
-    }
-  }
-  
-  /// Migrate from v4 to v5: Add workout_notes table
-  Future<void> _migrateV4ToV5(Migrator m) async {
-    _logger.database('Migrating database from v4 to v5');
-
-    try {
-      // Create the new workout_notes table
-      _logger.database('Creating workout_notes table', operation: 'create_table');
-      await m.createTable(workoutNotesTable);
-
-      _logger.database('Migration v4 → v5 completed successfully');
-    } catch (e, stackTrace) {
-      _logger.error('Migration v4 → v5 failed',
-        context: 'DATABASE',
-        error: e,
-        stackTrace: stackTrace
-      );
-      rethrow;
-    }
-  }
-
-  /// Migrate from v5 to v6: Add display_name_plural and to_exclude_from_solver to foods table
-  Future<void> _migrateV5ToV6(Migrator m) async {
-    _logger.database('Migrating database from v5 to v6');
-
-    try {
-      // Add display_name_plural column to foods table
-      _logger.database('Adding display_name_plural column to foods table',
-        operation: 'alter_table');
-      await _addColumnIfNotExists(m, foodsTable, foodsTable.displayNamePlural, 'display_name_plural');
-
-      // Add to_exclude_from_solver column to foods table
-      _logger.database('Adding to_exclude_from_solver column to foods table',
-        operation: 'alter_table');
-      await _addColumnIfNotExists(m, foodsTable, foodsTable.toExcludeFromSolver, 'to_exclude_from_solver');
-
-      _logger.database('Migration v5 → v6 completed successfully');
-    } catch (e, stackTrace) {
-      _logger.error('Migration v5 → v6 failed',
-        context: 'DATABASE',
-        error: e,
-        stackTrace: stackTrace
-      );
-      rethrow;
-    }
-  }
-
-  /// Migrate from v6 to v7: Add display_override field to foods table
-  Future<void> _migrateV6ToV7(Migrator m) async {
-    _logger.database('Migrating database from v6 to v7');
-
-    try {
-      // Add display_override column to foods table
-      _logger.database('Adding display_override column to foods table',
-        operation: 'alter_table');
-      await _addColumnIfNotExists(m, foodsTable, foodsTable.displayOverride, 'display_override');
-
-      _logger.database('Migration v6 → v7 completed successfully');
-    } catch (e, stackTrace) {
-      _logger.error('Migration v6 → v7 failed',
-        context: 'DATABASE',
-        error: e,
-        stackTrace: stackTrace
-      );
-      rethrow;
-    }
-  }
-
-  /// Migrate from v7 to v8: Sync column names with Supabase schema
-  Future<void> _migrateV7ToV8(Migrator m) async {
-    _logger.database('Migrating database from v7 to v8');
-
-    try {
-      // This migration only changes column name mappings via .named() in Dart code
-      // No actual database schema changes are needed since Drift handles the mapping
-      _logger.database('Synchronizing column names with Supabase schema');
-
-      _logger.database('Migration v7 → v8 completed successfully');
-    } catch (e, stackTrace) {
-      _logger.error('Migration v7 → v8 failed',
-        context: 'DATABASE',
-        error: e,
-        stackTrace: stackTrace
-      );
-      rethrow;
-    }
-  }
 
   /// Populate default data for new installations and migrations
   Future<void> _populateDefaultData() async {
@@ -391,23 +142,60 @@ class AppDatabase extends _$AppDatabase {
       // Step 1: Populate categories
       _logger.database('Populating categories', operation: 'populate_data');
       await batch((batch) {
-        batch.insert(categoriesTable, 
+        batch.insert(categoriesTable,
           CategoriesTableCompanion.insert(id: const Value(1), name: 'before_run'),
           mode: InsertMode.insertOrIgnore
         );
-        batch.insert(categoriesTable, 
+        batch.insert(categoriesTable,
           CategoriesTableCompanion.insert(id: const Value(2), name: 'during_run'),
           mode: InsertMode.insertOrIgnore
         );
-        batch.insert(categoriesTable, 
+        batch.insert(categoriesTable,
           CategoriesTableCompanion.insert(id: const Value(3), name: 'after_run'),
           mode: InsertMode.insertOrIgnore
         );
       });
-      
+
+      // Step 2: Populate product types with seed data
+      _logger.database('Populating product types', operation: 'populate_data');
+      await batch((batch) {
+        // Product types data provided by user
+        final productTypes = [
+          {'id': '8a847f4f-8c26-41ef-a1e2-132b404be95e', 'code': 'gel', 'name': 'Gel', 'namePlural': 'Gels', 'sortOrder': 10},
+          {'id': 'fc915f1b-d541-45fa-ae5c-695ee41073db', 'code': 'chew', 'name': 'Chew', 'namePlural': 'Chews', 'sortOrder': 20},
+          {'id': 'd3908cb2-a21d-4ef1-8d33-c999d29eefcc', 'code': 'drink_mix', 'name': 'Drink mix', 'namePlural': 'Drink mixes', 'sortOrder': 30},
+          {'id': '09930546-1942-485e-9728-bced1cf933a2', 'code': 'electrolyte_only', 'name': 'Electrolyte-only', 'namePlural': 'Electrolyte-only', 'sortOrder': 40},
+          {'id': 'b27bc986-1402-4e20-b022-a65b5ffbd4d2', 'code': 'sports_drink', 'name': 'Sports drink', 'namePlural': 'Sports drinks', 'sortOrder': 50},
+          {'id': '6102eea1-2dfe-44cf-8863-b258c27262ef', 'code': 'bar', 'name': 'Bar', 'namePlural': 'Bars', 'sortOrder': 60},
+          {'id': '666408c5-6d5b-4fc6-bda3-d6428e8362b9', 'code': 'waffle', 'name': 'Waffle', 'namePlural': 'Waffles', 'sortOrder': 70},
+          {'id': '52a0ff7c-a0f5-4e26-b409-2a7ce3298f4d', 'code': 'capsule', 'name': 'Capsule', 'namePlural': 'Capsules', 'sortOrder': 80},
+          {'id': '76c16c67-1746-47d7-adea-e5fc9dcd1f4d', 'code': 'real_food', 'name': 'Real food', 'namePlural': 'Real foods', 'sortOrder': 90},
+          {'id': 'cbcfd036-127c-43fb-88d5-34a9d9ba5db4', 'code': 'recovery_shake', 'name': 'Recovery shake', 'namePlural': 'Recovery shakes', 'sortOrder': 100},
+          {'id': '3b5d6f2e-3d3a-4b6a-9e3b-5c7a1f0d7a10', 'code': 'quick_carbs', 'name': 'Quick carb', 'namePlural': 'Quick carbs', 'sortOrder': 10},
+          {'id': '8f4f2c73-9a65-4d5a-b3be-9d5f9e2a1c2d', 'code': 'solid_carb_snacks', 'name': 'Solid carb snack', 'namePlural': 'Solid carb snacks', 'sortOrder': 20},
+          {'id': 'f2a8c4e1-7d82-4d9b-8b79-9a03e7b4a6c1', 'code': 'real_food_carbs', 'name': 'Real-food carb', 'namePlural': 'Real-food carbs', 'sortOrder': 30},
+          {'id': 'c7e2a1d4-5b6c-4f9d-8e2a-1a7c9b3e5d2f', 'code': 'hydration_with_carbs', 'name': 'Hydration with carbs', 'namePlural': 'Hydration with carbs', 'sortOrder': 40},
+          {'id': 'a1e2c3d4-b5a6-4c7d-8e9f-0a1b2c3d4e5f', 'code': 'electrolytes_fluids', 'name': 'Electrolytes & fluids', 'namePlural': 'Electrolytes & fluids', 'sortOrder': 50},
+          {'id': 'd4c3b2a1-6e5d-4c3b-8a9f-1e2d3c4b5a6f', 'code': 'protein_recovery', 'name': 'Protein & recovery', 'namePlural': 'Protein & recovery', 'sortOrder': 60},
+        ];
+
+        for (final productType in productTypes) {
+          batch.insert(productTypesTable,
+            ProductTypesTableCompanion.insert(
+              id: productType['id'] as String,
+              code: productType['code'] as String,
+              name: productType['name'] as String,
+              namePlural: productType['namePlural'] as String,
+              sortOrder: Value(productType['sortOrder'] as int),
+            ),
+            mode: InsertMode.insertOrIgnore
+          );
+        }
+      });
+
       _logger.database('Default data populated successfully');
     } catch (e) {
-      _logger.error('Failed to populate default data', 
+      _logger.error('Failed to populate default data',
         context: 'DATABASE',
         error: e
       );
@@ -429,17 +217,18 @@ class AppDatabase extends _$AppDatabase {
     await into(userProfilesTable).insertOnConflictUpdate(
       UserProfilesTableCompanion.insert(
         id: profile.id,
-        gender: profile.gender.name,
-        birthday: profile.birthday,
-        heightFeet: profile.heightFeet,
-        heightInches: profile.heightInches,
-        weightPounds: profile.weightPounds,
-        runsWithWaterBottle: profile.runsWithWaterBottle,
-        gutTraining: profile.gutTraining.name,
+        deviceId: profile.id, // Use profile.id as deviceId for device-based auth
+        gender: Value(profile.gender.name),
+        birthday: Value(profile.birthday),
+        heightFeet: Value(profile.heightFeet),
+        heightInches: Value(profile.heightInches),
+        weightPounds: Value(profile.weightPounds),
+        runsWithWaterBottle: Value(profile.runsWithWaterBottle),
+        gutTrainingLevel: Value(profile.gutTraining.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
-        createdAt: profile.createdAt,
-        updatedAt: profile.updatedAt,
-        appVersion: profile.appVersion,
+        createdAt: Value(profile.createdAt),
+        updatedAt: Value(profile.updatedAt),
+        appVersion: Value(profile.appVersion),
       ),
     );
   }
@@ -454,7 +243,7 @@ class AppDatabase extends _$AppDatabase {
         heightInches: Value(profile.heightInches),
         weightPounds: Value(profile.weightPounds),
         runsWithWaterBottle: Value(profile.runsWithWaterBottle),
-        gutTraining: Value(profile.gutTraining.name),
+        gutTrainingLevel: Value(profile.gutTraining.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
         updatedAt: Value(DateTime.now()),
         appVersion: Value(profile.appVersion),
@@ -469,21 +258,22 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Save food preferences for a user
-  Future<void> saveFoodPreferences(String userId, Map<String, domain.FoodPreference> preferences) async {
+  Future<void> saveFoodPreferences(String deviceId, Map<String, domain.FoodPreference> preferences) async {
     await batch((batch) {
       // First delete existing preferences for this user
-      batch.deleteWhere(foodPreferencesTable, (f) => f.userId.equals(userId));
-      
+      batch.deleteWhere(foodPreferencesTable, (f) => f.deviceId.equals(deviceId));
+
       // Insert new preferences
       for (final entry in preferences.entries) {
         batch.insert(
           foodPreferencesTable,
           FoodPreferencesTableCompanion.insert(
-            userId: userId,
-            foodId: entry.key,
-            preference: entry.value.name,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
+            id: _generateUuid(),
+            deviceId: deviceId,
+            foodName: entry.key,
+            preference: entry.value.value, // Use .value instead of .name to get database-compatible format
+            createdAt: Value(DateTime.now()),
+            updatedAt: Value(DateTime.now()),
           ),
           mode: InsertMode.insertOrReplace,
         );
@@ -492,47 +282,63 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Get food preferences for a user
-  Future<Map<String, domain.FoodPreference>> getUserFoodPreferences(String userId) async {
-    final query = select(foodPreferencesTable)..where((f) => f.userId.equals(userId));
+  Future<Map<String, domain.FoodPreference>> getUserFoodPreferences(String deviceId) async {
+    final query = select(foodPreferencesTable)..where((f) => f.deviceId.equals(deviceId));
     final results = await query.get();
-    
+
     final preferencesMap = <String, domain.FoodPreference>{};
     for (final row in results) {
       final preference = domain.FoodPreference.values.firstWhere(
-        (p) => p.name == row.preference,
+        (p) => p.value == row.preference, // Use .value to match database underscore format
         orElse: () => domain.FoodPreference.dislike,
       );
-      preferencesMap[row.foodId] = preference;
+      preferencesMap[row.foodName] = preference;
     }
-    
+
     return preferencesMap;
   }
 
   /// Get liked foods for a user
-  Future<List<String>> getLikedFoods(String userId) async {
+  Future<List<String>> getLikedFoods(String deviceId) async {
     final query = select(foodPreferencesTable)
-      ..where((f) => f.userId.equals(userId) & f.preference.equals('like'));
+      ..where((f) => f.deviceId.equals(deviceId) & f.preference.equals('like'));
     final results = await query.get();
-    return results.map((r) => r.foodId).toList();
+    return results.map((r) => r.foodName).toList();
   }
 
   /// Get disliked foods for a user
-  Future<List<String>> getDislikedFoods(String userId) async {
+  Future<List<String>> getDislikedFoods(String deviceId) async {
     final query = select(foodPreferencesTable)
-      ..where((f) => f.userId.equals(userId) & f.preference.equals('dislike'));
+      ..where((f) => f.deviceId.equals(deviceId) & f.preference.equals('dislike'));
     final results = await query.get();
-    return results.map((r) => r.foodId).toList();
+    return results.map((r) => r.foodName).toList();
   }
 
-  /// Save nutrition plan as JSON
-  Future<void> saveNutritionPlan(String planId, String userId, String planData) async {
+  /// Save nutrition plan with complete metadata (updated for new schema)
+  Future<void> saveNutritionPlan({
+    required String id,
+    required String deviceId,
+    required String planId,
+    required String planName,
+    required String planData,
+    double? distanceMiles,
+    double? paceMinutesPerMile,
+    int? totalCalories,
+    String? notes,
+  }) async {
     await into(nutritionPlans).insertOnConflictUpdate(
       NutritionPlansCompanion.insert(
-        id: planId,
-        userId: userId,
+        id: id,
+        deviceId: deviceId,
+        planId: planId,
+        planName: planName,
         planData: planData,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        distanceMiles: Value(distanceMiles),
+        paceMinutesPerMile: Value(paceMinutesPerMile),
+        totalCalories: Value(totalCalories),
+        notes: Value(notes),
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
       ),
     );
   }
@@ -556,28 +362,28 @@ class AppDatabase extends _$AppDatabase {
         .write(const UserProfilesTableCompanion(tempPlanData: Value(null)));
   }
 
-  /// Get latest nutrition plan for user
-  Future<String?> getLatestNutritionPlan(String userId) async {
+  /// Get latest nutrition plan for user (updated for new schema)
+  Future<NutritionPlanEntry?> getLatestNutritionPlan(String deviceId) async {
     final query = select(nutritionPlans)
-      ..where((n) => n.userId.equals(userId))
+      ..where((n) => n.deviceId.equals(deviceId) & n.isDeleted.equals(false))
       ..orderBy([
         (n) => OrderingTerm.desc(n.updatedAt),
         (n) => OrderingTerm.desc(n.id), // Secondary sort by ID to handle ties
       ])
       ..limit(1);
-    
+
     final results = await query.get();
-    return results.isNotEmpty ? results.first.planData : null;
+    return results.isNotEmpty ? results.first : null;
   }
 
-  /// Get all nutrition plans for user
-  Future<List<String>> getAllNutritionPlans(String userId) async {
+  /// Get all nutrition plans for user (updated for new schema)
+  Future<List<NutritionPlanEntry>> getAllNutritionPlans(String deviceId) async {
     final query = select(nutritionPlans)
-      ..where((n) => n.userId.equals(userId))
+      ..where((n) => n.deviceId.equals(deviceId) & n.isDeleted.equals(false))
       ..orderBy([(n) => OrderingTerm.desc(n.updatedAt)]);
-    
+
     final results = await query.get();
-    return results.map((r) => r.planData).toList();
+    return results;
   }
 
   /// Delete nutrition plan
@@ -604,7 +410,7 @@ class AppDatabase extends _$AppDatabase {
   /// Get database statistics (v2 with new tables)
   Future<Map<String, int>> getDatabaseStats() async {
     final userCount = await (selectOnly(userProfilesTable)..addColumns([userProfilesTable.id.count()])).getSingle();
-    final preferencesCount = await (selectOnly(foodPreferencesTable)..addColumns([foodPreferencesTable.userId.count()])).getSingle();
+    final preferencesCount = await (selectOnly(foodPreferencesTable)..addColumns([foodPreferencesTable.deviceId.count()])).getSingle();
     final plansCount = await (selectOnly(nutritionPlans)..addColumns([nutritionPlans.id.count()])).getSingle();
     
     // New v2 table stats
@@ -615,7 +421,7 @@ class AppDatabase extends _$AppDatabase {
     
     return {
       'users': userCount.read(userProfilesTable.id.count())!,
-      'preferences': preferencesCount.read(foodPreferencesTable.userId.count())!,
+      'preferences': preferencesCount.read(foodPreferencesTable.deviceId.count())!,
       'plans': plansCount.read(nutritionPlans.id.count())!,
       'foods': foodsCount.read(foodsTable.id.count())!,
       'categories': categoriesCount.read(categoriesTable.id.count())!,
@@ -699,24 +505,22 @@ class AppDatabase extends _$AppDatabase {
     );
   }
   
-  /// Helper method to map Supabase food data to FoodEntry
-  /// Since schemas are now identical, this is a direct mapping
+  /// Helper method to map Supabase food data to FoodEntry (updated for new simplified schema)
   FoodsTableCompanion _mapToFoodEntry(Map<String, dynamic> foodData) {
     return FoodsTableCompanion.insert(
       id: foodData['id'] ?? '',
-      name: foodData['name'] ?? '',
+      name: Value(foodData['name']),
       displayName: Value(foodData['display_name']),
-      displayNamePlural: Value(foodData['display_name_plural']),
-      displayOverride: Value(foodData['display_override']),
       imageAddress: Value(foodData['image_address']),
       description: Value(foodData['description']),
       instructions: Value(foodData['instructions']),
-      nutritionalInfo: Value(foodData['nutritional_info'] ?? {}),
+      nutritionalInfo: Value(foodData['nutritional_info']),
       servingAmount: Value(foodData['serving_amount']?.toDouble()),
       servingUnit: Value(foodData['serving_unit']),
       servingUnitPlural: Value(foodData['serving_unit_plural']),
       servingQualifier: Value(foodData['serving_qualifier']),
       servingSize: Value(foodData['serving_size']),
+      servingDescription: Value(foodData['serving_description']),
       beforeRunSuitable: Value(foodData['before_run_suitable'] ?? false),
       duringRunSuitable: Value(foodData['during_run_suitable'] ?? false),
       afterRunSuitable: Value(foodData['after_run_suitable'] ?? false),
@@ -724,7 +528,6 @@ class AppDatabase extends _$AppDatabase {
       requiresPreparation: Value(foodData['requires_preparation'] ?? false),
       aidStationAvailable: Value(foodData['aid_station_available'] ?? false),
       isElectrolyte: Value(foodData['is_electrolyte'] ?? false),
-      toExcludeFromSolver: Value(foodData['to_exclude_from_solver'] ?? false),
       maxServingsBefore: Value(foodData['max_servings_before']),
       maxServingsDuring: Value(foodData['max_servings_during']),
       maxServingsAfter: Value(foodData['max_servings_after']),
@@ -741,7 +544,7 @@ class AppDatabase extends _$AppDatabase {
       purchaseUrl: Value(foodData['purchase_url']),
       affiliateSource: Value(foodData['affiliate_source']),
       showInPreferences: Value(foodData['show_in_preferences'] ?? false),
-      preferencePriority: Value(foodData['preference_priority'] ?? 999),
+      preferencePriority: Value(foodData['preference_priority']),
     );
   }
 
@@ -850,19 +653,19 @@ class AppDatabase extends _$AppDatabase {
         (g) => g.name == dbUser.gender,
         orElse: () => domain.Gender.other,
       ),
-      birthday: dbUser.birthday,
-      heightFeet: dbUser.heightFeet,
-      heightInches: dbUser.heightInches,
-      weightPounds: dbUser.weightPounds,
+      birthday: dbUser.birthday ?? DateTime.now(),
+      heightFeet: dbUser.heightFeet ?? 0,
+      heightInches: dbUser.heightInches ?? 0,
+      weightPounds: dbUser.weightPounds ?? 0.0,
       runsWithWaterBottle: dbUser.runsWithWaterBottle,
       gutTraining: domain.GutTraining.values.firstWhere(
-        (g) => g.name == dbUser.gutTraining,
+        (g) => g.name == dbUser.gutTrainingLevel,
         orElse: () => domain.GutTraining.moderate,
       ),
       onboardingCompleted: dbUser.onboardingCompleted,
       createdAt: dbUser.createdAt,
       updatedAt: dbUser.updatedAt,
-      appVersion: dbUser.appVersion,
+      appVersion: dbUser.appVersion ?? '',
       swipeHintShown: dbUser.swipeHintShown,
     );
   }

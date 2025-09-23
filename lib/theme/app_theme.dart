@@ -8,11 +8,11 @@ import 'component_themes/app_bar_themes.dart';
 /// Implements Material Design 3 with nutrition-specific styling
 /// Light mode only - no dark theme support
 class AppTheme {
-  // Brand Colors - Primary (Blues)
-  static const Color primary900 = Color(0xFF001C71);
-  static const Color primary600 = Color(0xFF3366FF);
-  static const Color primary100 = Color(0xFFD6E0FF);
-  static const Color primary50 = Color(0xFFE0E8FF);
+  // Brand Colors - Primary (Blackberry - New Endurance Theme)
+  static const Color primary900 = Color(0xFF1C0E1B);  // Darker blackberry
+  static const Color primary600 = Color(0xFF381633);  // Main blackberry
+  static const Color primary100 = Color(0xFFE6D5E3);  // Light blackberry tint
+  static const Color primary50 = Color(0xFFF2EBF1);   // Very light blackberry
   
   // Highlight Colors (Coral/Pink)
   static const Color highlight600 = Color(0xFFD92D20);
@@ -25,7 +25,7 @@ class AppTheme {
   
   // Base Colors
   static const Color baseBlack = Color(0xFF000000);
-  static const Color baseCream = Color(0xFFF8F6EB);
+  static const Color baseCream = Color(0xFFF8F6EB);  // Cream from new palette
   static const Color baseWhite = Color(0xFFFFFFFF);
   static const Color baseGrey = Color(0xFF667085);
   
@@ -36,14 +36,14 @@ class AppTheme {
   static const Color proteinColor = Color(0xFFDC2597);      // Pink for protein
   static const Color carbsColor = Color(0xFFFFC629);        // Yellow for carbohydrates
   static const Color fatsColor = Color(0xFF3366FF);         // Blue for fats
-  static const Color caloriesColor = Color(0xFF001C71);     // Dark blue for calories
+  static const Color caloriesColor = Color(0xFF1C0E1B);     // Dark blackberry for calories
   static const Color sodiumColor = Color(0xFFFFC629);       // Yellow for sodium
   static const Color fluidsColor = Color(0xFF3366FF);       // Blue for fluids
   
   // Status colors
   static const Color successColor = Color(0xFF4CAF50);      // Green for success
   static const Color warningColor = Color(0xFFD92D20);      // Red for warnings
-  static const Color infoColor = Color(0xFF3366FF);         // Blue for info
+  static const Color infoColor = Color(0xFF381633);         // Blackberry for info
 
   /// Light theme configuration (only theme)
   static ThemeData get lightTheme {

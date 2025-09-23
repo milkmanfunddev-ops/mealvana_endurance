@@ -101,7 +101,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> with Anal
       ref.invalidate(userRepositoryProvider);
       
       if (mounted) {
-        context.go('/onboarding/food-preferences');
+        context.push('/onboarding/food-preferences');
       }
     } else if (mounted) {
       // Show error if user creation failed

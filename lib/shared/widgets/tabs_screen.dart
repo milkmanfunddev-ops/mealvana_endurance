@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../features/nutrition_plan/presentation/screens/current_plan_screen.dart';
 import '../../features/user_journal/presentation/screens/voice_memo_screen.dart';
+import '../../features/carb_loading/presentation/screens/carb_loading_screen_simple.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../theme/app_theme.dart';
 
@@ -28,6 +29,7 @@ class _TabsScreenState extends State<TabsScreen> {
   List<Widget> get _screens => [
     const CurrentPlanScreen(), // CurrentPlanScreen shows the plan or empty state
     const VoiceMemoScreen(), // Workout notes/journal entries
+    const CarbLoadingScreenSimple(), // Simplified carb loading plans
     const SettingsScreen(),
   ];
 
@@ -57,6 +59,19 @@ class _TabsScreenState extends State<TabsScreen> {
         color: AppTheme.primary900, // Use primary900 instead of primaryColor
       ),
       label: 'Workout Notes',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(
+        Icons.local_fire_department,
+        size: 24,
+        color: Colors.grey,
+      ),
+      activeIcon: Icon(
+        Icons.local_fire_department,
+        size: 24,
+        color: AppTheme.primary900,
+      ),
+      label: 'Carb Loading',
     ),
     BottomNavigationBarItem(
       icon: Image.asset(

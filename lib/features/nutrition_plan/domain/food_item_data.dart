@@ -27,12 +27,20 @@ class FoodItemData {
   final String? displayNamePlural; // Display name for plural quantities
   final String? displayOverride; // Override display name
 
-  /// Get the full S3 image URL for this food item data
-  /// Constructs URL from S3 bucket base URL + image_address field
+  /// Get the full image URL for this food item data
+  /// Returns Open Food Facts URLs directly, or constructs S3 URL for other images
   String? get imageUrl {
     if (imageAddress == null || imageAddress!.isEmpty) {
       return null;
     }
+
+    // If the image address is already a full Open Food Facts URL, return it directly
+    if (imageAddress!.startsWith('https://images.openfoodfacts.org/') ||
+        imageAddress!.startsWith('https://static.openfoodfacts.org/')) {
+      return imageAddress;
+    }
+
+    // Otherwise, construct S3 URL for legacy/existing foods
     return 'https://milkman-dev.s3.us-east-2.amazonaws.com/foods/$imageAddress';
   }
 
