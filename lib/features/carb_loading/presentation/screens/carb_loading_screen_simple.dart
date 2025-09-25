@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
+import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../application/carb_loading_controller_simple.dart';
 import '../../domain/carb_loading_plan_simple.dart';
 import '../widgets/carb_loading_header_card.dart';
 import '../widgets/carb_loading_day_tabs.dart';
 import '../widgets/carb_loading_meal_section.dart';
 import '../widgets/race_info_modal.dart';
+import '../widgets/daily_carb_progress_widget.dart';
+import '../widgets/edit_carb_target_dialog.dart';
 
 /// Simplified carb loading screen matching screenshot design exactly
 /// Focuses exclusively on carbohydrate tracking with 50g increments
@@ -18,10 +21,10 @@ class CarbLoadingScreenSimple extends ConsumerWidget {
     final controllerState = ref.watch(carbLoadingControllerSimpleProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppTheme.baseCream,
       appBar: AppBar(
         title: const Text('Carb Loading'),
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.baseCream,
         elevation: 0,
         actions: [
           PopupMenuButton<String>(
@@ -84,6 +87,15 @@ class CarbLoadingScreenSimple extends ConsumerWidget {
             onDaySelected: (day) {
               ref.read(carbLoadingControllerSimpleProvider.notifier).selectDay(day);
             },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Daily carb progress widget
+          DailyCarbProgressWidget(
+            plan: plan,
+            selectedDay: selectedDay,
+            onEditTarget: () => _showEditTargetDialog(context, ref, plan),
           ),
 
           const SizedBox(height: 16),
@@ -256,6 +268,23 @@ class CarbLoadingScreenSimple extends ConsumerWidget {
             raceDate: raceDate,
             raceDistance: raceDistance,
             trainingVolume: trainingVolume,
+          );
+        },
+      ),
+    );
+  }
+
+  void _showEditTargetDialog(BuildContext context, WidgetRef ref, CarbLoadingPlan plan) {
+    showDialog(
+      context: context,
+      builder: (context) => EditCarbTargetDialog(
+        currentCarbsPerKg: plan.carbsPerKgTarget,
+        currentDailyTargetG: plan.dailyCarbTargetG,
+        bodyWeightKg: plan.bodyWeightKg,
+        onSave: (carbsPerKg, dailyTargetG) {
+          ref.read(carbLoadingControllerSimpleProvider.notifier).updateCarbTarget(
+            carbsPerKg: carbsPerKg,
+            dailyTargetG: dailyTargetG,
           );
         },
       ),

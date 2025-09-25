@@ -171,7 +171,7 @@ class AppStartupService {
       // Always fetch fresh food data from Supabase
       final foodRepository = ref.read(foodRepositoryProvider);
 
-      // Only sync generic foods (brand_id IS NULL) to match edge function filtering
+      // Sync all foods from database
       // This ensures food IDs returned by edge functions can be resolved locally
       await foodRepository.getAllFoods();
 

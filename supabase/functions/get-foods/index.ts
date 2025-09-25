@@ -48,10 +48,7 @@ serve(async (req) => {
       query = query.eq('food_categories.category_id', categoryId)
     }
 
-    // Filter for generic foods only if requested
-    if (generic_only) {
-      query = query.is('brand_id', null)
-    }
+    // Note: generic_only filter removed since brand_id column was removed from schema
 
     // Execute query
     const { data: foods, error } = await query
@@ -85,7 +82,6 @@ serve(async (req) => {
       max_servings_during: food.max_servings_during,
       caffeine_mg: food.caffeine_mg,
       potassium_mg: food.potassium_mg,
-      brand_id: food.brand_id,
       show_in_preferences: food.show_in_preferences,
       is_electrolyte: food.is_electrolyte,
       to_exclude_from_solver: food.to_exclude_from_solver,

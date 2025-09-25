@@ -25,6 +25,13 @@ class ApiFoodProduct {
   // Data format indicator
   final String? nutritionDataPer; // "serving" or "100g"
 
+  // Beverage detection fields (for fluid extraction)
+  final String? categories; // Product categories from Open Food Facts
+  final double? servingQuantity; // serving_quantity from API
+  final String? servingQuantityUnit; // serving_quantity_unit from API
+  final double? productQuantity; // product_quantity from API (fallback)
+  final String? productQuantityUnit; // product_quantity_unit from API (fallback)
+
   // Source tracking
   final String apiSource; // "open_food_facts", "usda", "manual"
   final double confidenceScore;
@@ -47,6 +54,11 @@ class ApiFoodProduct {
     this.sodiumMgPerServing,
     this.servingGrams,
     this.nutritionDataPer,
+    this.categories,
+    this.servingQuantity,
+    this.servingQuantityUnit,
+    this.productQuantity,
+    this.productQuantityUnit,
     required this.apiSource,
     required this.confidenceScore,
   });
@@ -71,6 +83,11 @@ class ApiFoodProduct {
       sodiumMgPerServing: _parseDouble(data['sodium_mg_per_serving']),
       servingGrams: _parseDouble(data['serving_grams']),
       nutritionDataPer: data['nutrition_data_per'] as String?,
+      categories: data['categories'] as String?,
+      servingQuantity: _parseDouble(data['serving_quantity']),
+      servingQuantityUnit: data['serving_quantity_unit'] as String?,
+      productQuantity: _parseDouble(data['product_quantity']),
+      productQuantityUnit: data['product_quantity_unit'] as String?,
       apiSource: data['api_source'] as String? ?? 'unknown',
       confidenceScore: _parseDouble(data['confidence_score']) ?? 0.0,
     );

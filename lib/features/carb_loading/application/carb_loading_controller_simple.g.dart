@@ -29,7 +29,7 @@ final carbLoadingRepositorySimpleProvider =
 typedef CarbLoadingRepositorySimpleRef
     = AutoDisposeFutureProviderRef<CarbLoadingRepositorySimple>;
 String _$carbLoadingControllerSimpleHash() =>
-    r'1d1e6607981ffb58b7289ea2d63364b8a22c3fd9';
+    r'656d203ba4bc2dde3d1a1b78529bfab261195f95';
 
 /// Simplified carb loading controller following FOA patterns
 ///

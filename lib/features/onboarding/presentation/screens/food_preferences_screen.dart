@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mealvana_endurance/shared/services/sentry_service.dart';
-import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
 import '../providers/onboarding_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
-import '../../../nutrition_plan/data/food_repository.dart';
-import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/food_preference_widget.dart';
+import '../../../../shared/widgets/food_preferences_content.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 
@@ -26,34 +21,6 @@ class FoodPreferencesScreen extends ConsumerStatefulWidget {
 
 class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   final Map<String, FoodPreference> _selectedPreferences = {};
-  List<FoodItem> _foods = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFoods();
-  }
-
-  Future<void> _loadFoods() async {
-    try {
-      final foodRepository = ref.read(foodRepositoryProvider);
-      final foods = await foodRepository.getFoodsForPreferences();
-      setState(() {
-        _foods = foods;
-        _isLoading = false;
-        // Initialize all foods as willing_to_try by default for better UX
-        for (final food in foods) {
-          _selectedPreferences[food.name] = FoodPreference.willingToTry;
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      debugPrint('Error loading foods: $e');
-    }
-  }
 
   Future<void> _completeOnboarding() async {
     print('🔄 Food preferences screen - Complete onboarding button pressed');
@@ -84,32 +51,12 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final asyncState = ref.watch(onboardingControllerProvider);
     final content = ref.read(contentServiceProvider);
-
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppTheme.baseCream,
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
 
     final title = content.getValue(
       ContentKeys.foodPreferencesTitle,
       defaultValue: 'Food Preferences',
-    );
-    final likeLabel = content.getValue(
-      ContentKeys.foodPreferencesOptionLike,
-      defaultValue: 'Love',
-    );
-    final willingLabel = content.getValue(
-      ContentKeys.foodPreferencesOptionWillingToTry,
-      defaultValue: 'Willing to Try',
-    );
-    final dislikeLabel = content.getValue(
-      ContentKeys.foodPreferencesOptionDislike,
-      defaultValue: 'Avoid',
     );
     final completeLabel = content.getValue(
       ContentKeys.foodPreferencesCompleteButton,
@@ -126,48 +73,18 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         centerTitle: true,
         iconTheme: IconThemeData(color: AppTheme.baseWhite),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.separated(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              itemCount: _foods.length,
-              separatorBuilder: (context, index) => SizedBox(height: 8.h),
-              itemBuilder: (context, index) {
-                final food = _foods[index];
-                final selected =
-                    _selectedPreferences[food.name] ??
-                    FoodPreference.willingToTry;
-                return FoodPreferenceChipItem(
-                  food: food,
-                  selected: selected,
-                  likeLabel: likeLabel,
-                  willingLabel: willingLabel,
-                  dislikeLabel: dislikeLabel,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedPreferences[food.name] = value;
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-          asyncState.isLoading
-              ? CircularProgressIndicator()
-              : Padding(
-                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 34.h),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: PrimaryButton(
-                      onPressed: asyncState.isLoading
-                          ? null
-                          : _completeOnboarding,
-                      text: completeLabel,
-                    ),
-                  ),
-                ),
-        ],
+      body: FoodPreferencesContent(
+        selectedPreferences: _selectedPreferences,
+        onPreferenceChanged: (foodName, preference) {
+          setState(() {
+            _selectedPreferences[foodName] = preference;
+          });
+        },
+        onSave: asyncState.isLoading ? null : _completeOnboarding,
+        saveButtonText: completeLabel,
+        isSaving: asyncState.isLoading,
+        showSaveButton: true,
+        layout: FoodPreferencesLayout.onboarding,
       ),
     );
   }

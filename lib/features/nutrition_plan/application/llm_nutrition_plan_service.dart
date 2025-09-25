@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/nutrition_plan.dart';
 import '../domain/food_item_data.dart';
 import '../domain/macro_targets.dart' as targets;
-import '../data/food_repository.dart';
+import 'food_data_transformation_service.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../../../shared/services/sentry_service.dart';
@@ -16,7 +16,7 @@ class LLMNutritionPlanService {
 
   AuthService get _authService => ref.read(authServiceProvider);
   SentryService get _sentryService => ref.read(sentryServiceProvider);
-  FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
+  FoodDataTransformationService get _transformationService => ref.read(foodDataTransformationServiceProvider);
   SupabaseClient get _supabase => Supabase.instance.client;
 
   /// Generate a nutrition plan using the LLM edge function
@@ -206,34 +206,6 @@ class LLMNutritionPlanService {
   }
 
 
-  /// Get food details (display names and image) from local cache using food_id
-  Future<({String? name, String? imageAddress, String? displayName, String? displayNamePlural, String? displayOverride})> _getFoodDetailsFromCache(String? foodId) async {
-    if (foodId == null || foodId.isEmpty) {
-      return (name: null, imageAddress: null, displayName: null, displayNamePlural: null, displayOverride: null);
-    }
-
-    try {
-      final foodItem = await _foodRepository.getFoodById(foodId);
-      // Use display_name if available, fallback to name
-      final displayName = foodItem?.displayName?.isNotEmpty == true
-          ? foodItem!.displayName
-          : foodItem?.name;
-      return (
-        name: displayName,
-        imageAddress: foodItem?.imageAddress,
-        displayName: foodItem?.displayName,
-        displayNamePlural: foodItem?.displayNamePlural,
-        displayOverride: foodItem?.displayOverride,
-      );
-    } catch (e) {
-      AppLogger.instance.error('Error looking up food details from cache',
-        context: 'LLMNutritionPlanService',
-        data: {'foodId': foodId},
-        error: e,
-      );
-      return (name: null, imageAddress: null, displayName: null, displayNamePlural: null, displayOverride: null);
-    }
-  }
 
   /// Convert LLM response format to our NutritionPlan domain model
   Future<NutritionPlan> _convertLLMResponseToPlan(Map<String, dynamic> data, String userId) async {
@@ -246,41 +218,10 @@ class LLMNutritionPlanService {
     final beforeItems = <FoodItemData>[];
     for (final item in planData['before'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
-      final foodId = itemMap['food_id'] as String?;
-      final description = itemMap['description'] as String? ?? 'No description';
-      final timing = itemMap['timing'] as String? ?? '';
 
-      // Look up food details (name and image) from local cache using food_id
-      final foodDetails = await _getFoodDetailsFromCache(foodId);
-      final foodName = foodDetails.name ?? itemMap['food_name'] as String? ?? 'Unknown Food';
-      final imageAddress = foodDetails.imageAddress;
-
-      // Get the quantity as a number from the edge function
-      final quantityNum = (itemMap['quantity'] as num?)?.toDouble() ?? 1.0;
-      // Create a simple quantity display string
-      final quantityDisplay = quantityNum == quantityNum.toInt()
-          ? quantityNum.toInt().toString()
-          : quantityNum.toStringAsFixed(1);
-
-      beforeItems.add(FoodItemData(
-        id: foodId ?? foodName, // Use food_id if available, fallback to food_name
-        name: foodName,
-        quantity: quantityDisplay, // Simple quantity display like "1.5"
-        imageAddress: imageAddress, // From local cache
-        description: description, // Use description field properly
-        timing: timing, // Set timing field if it exists
-        nutritionalInfo: NutritionalInfo(
-          calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
-          carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
-          protein: (itemMap['protein_grams'] as num?)?.toInt() ?? 0,
-          fat: (itemMap['fat_grams'] as num?)?.toInt() ?? 0,
-          sodium: (itemMap['sodium_mg'] as num?)?.toInt() ?? 0,
-          fluids: (itemMap['fluids_ml'] as num?)?.toDouble() ?? 0.0,
-        ),
-        displayName: foodDetails.displayName,
-        displayNamePlural: foodDetails.displayNamePlural,
-        displayOverride: foodDetails.displayOverride,
-      ));
+      // Use transformation service for proper nutrition calculation
+      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      beforeItems.add(transformedFoodItem);
     }
     
     // Validation logging: Track sodium and fluids for before section
@@ -290,41 +231,10 @@ class LLMNutritionPlanService {
     final duringItems = <FoodItemData>[];
     for (final item in planData['during'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
-      final foodId = itemMap['food_id'] as String?;
-      final description = itemMap['description'] as String? ?? 'No description';
-      final timing = itemMap['timing'] as String? ?? '';
 
-      // Look up food details (name and image) from local cache using food_id
-      final foodDetails = await _getFoodDetailsFromCache(foodId);
-      final foodName = foodDetails.name ?? itemMap['food_name'] as String? ?? 'Unknown Food';
-      final imageAddress = foodDetails.imageAddress;
-
-      // Get the quantity as a number from the edge function
-      final quantityNum = (itemMap['quantity'] as num?)?.toDouble() ?? 1.0;
-      // Create a simple quantity display string
-      final quantityDisplay = quantityNum == quantityNum.toInt()
-          ? quantityNum.toInt().toString()
-          : quantityNum.toStringAsFixed(1);
-
-      duringItems.add(FoodItemData(
-        id: foodId ?? foodName, // Use food_id if available, fallback to food_name
-        name: foodName,
-        quantity: quantityDisplay, // Simple quantity display like "1.5"
-        imageAddress: imageAddress, // From local cache
-        description: description, // Use description field properly
-        timing: timing, // Set timing field if it exists
-        nutritionalInfo: NutritionalInfo(
-          calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
-          carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
-          protein: (itemMap['protein_grams'] as num?)?.toInt() ?? 0,
-          fat: (itemMap['fat_grams'] as num?)?.toInt() ?? 0,
-          sodium: (itemMap['sodium_mg'] as num?)?.toInt() ?? 0,
-          fluids: (itemMap['fluids_ml'] as num?)?.toDouble() ?? 0.0,
-        ),
-        displayName: foodDetails.displayName,
-        displayNamePlural: foodDetails.displayNamePlural,
-        displayOverride: foodDetails.displayOverride,
-      ));
+      // Use transformation service for proper nutrition calculation
+      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      duringItems.add(transformedFoodItem);
     }
     
     // Validation logging: Track sodium and fluids for during section
@@ -334,41 +244,10 @@ class LLMNutritionPlanService {
     final afterItems = <FoodItemData>[];
     for (final item in planData['after'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
-      final foodId = itemMap['food_id'] as String?;
-      final description = itemMap['description'] as String? ?? 'No description';
-      final timing = itemMap['timing'] as String? ?? '';
 
-      // Look up food details (name and image) from local cache using food_id
-      final foodDetails = await _getFoodDetailsFromCache(foodId);
-      final foodName = foodDetails.name ?? itemMap['food_name'] as String? ?? 'Unknown Food';
-      final imageAddress = foodDetails.imageAddress;
-
-      // Get the quantity as a number from the edge function
-      final quantityNum = (itemMap['quantity'] as num?)?.toDouble() ?? 1.0;
-      // Create a simple quantity display string
-      final quantityDisplay = quantityNum == quantityNum.toInt()
-          ? quantityNum.toInt().toString()
-          : quantityNum.toStringAsFixed(1);
-
-      afterItems.add(FoodItemData(
-        id: foodId ?? foodName, // Use food_id if available, fallback to food_name
-        name: foodName,
-        quantity: quantityDisplay, // Simple quantity display like "1.5"
-        imageAddress: imageAddress, // From local cache
-        description: description, // Use description field properly
-        timing: timing, // Set timing field if it exists
-        nutritionalInfo: NutritionalInfo(
-          calories: (itemMap['calories'] as num?)?.toInt() ?? 0,
-          carbs: (itemMap['carbs_grams'] as num?)?.toInt() ?? 0,
-          protein: (itemMap['protein_grams'] as num?)?.toInt() ?? 0,
-          fat: (itemMap['fat_grams'] as num?)?.toInt() ?? 0,
-          sodium: (itemMap['sodium_mg'] as num?)?.toInt() ?? 0,
-          fluids: (itemMap['fluids_ml'] as num?)?.toDouble() ?? 0.0,
-        ),
-        displayName: foodDetails.displayName,
-        displayNamePlural: foodDetails.displayNamePlural,
-        displayOverride: foodDetails.displayOverride,
-      ));
+      // Use transformation service for proper nutrition calculation
+      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      afterItems.add(transformedFoodItem);
     }
     
     // Validation logging: Track sodium and fluids for after section

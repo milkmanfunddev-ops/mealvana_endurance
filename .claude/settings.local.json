@@ -115,7 +115,9 @@
       "Bash(magick:*)",
       "Bash(identify:*)",
       "Bash(xcrun simctl erase:*)",
-      "Bash(xcrun simctl shutdown:*)"
+      "Bash(xcrun simctl shutdown:*)",
+      "WebFetch(domain:openfoodfacts.github.io)",
+      "WebFetch(domain:wiki.openfoodfacts.org)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

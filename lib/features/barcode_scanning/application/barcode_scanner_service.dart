@@ -138,7 +138,6 @@ class BarcodeScannerService {
       'protein_per_serving': food.proteinPerServing,
       'calories_per_serving': food.caloriesPerServing,
       'fluid_ml_per_serving': food.fluidMlPerServing,
-      'brand_id': null, // No brand association for scanned foods
       'product_type': 'scanned', // Mark as scanned product
       'purchase_url': null,
       'affiliate_source': null,

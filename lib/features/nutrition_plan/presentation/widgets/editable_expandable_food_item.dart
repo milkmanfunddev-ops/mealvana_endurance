@@ -272,7 +272,20 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                         color: AppTheme.baseGrey.withValues(alpha: 0.2),
                         margin: EdgeInsets.only(bottom: 16.h),
                       ),
-                      
+
+                      // Serving Size (if available)
+                      if (widget.foodItem.servingSize != null && widget.foodItem.servingSize!.isNotEmpty) ...[
+                        Text(
+                          widget.foodItem.servingSize!,
+                          style: AppTheme.textStyle.copyWith(
+                            color: AppTheme.primary900,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                      ],
+
                       // Quantity Controls (from swap food screen)
                       Container(
                         padding: EdgeInsets.all(8.w),
@@ -414,7 +427,8 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
   Widget _buildNutritionInfo() {
     final nutrition = widget.foodItem.nutritionalInfo!;
     // Use the original quantity for scaling calculations
-    final scaleFactor = _currentQuantity / _originalQuantity;
+    // Handle edge cases: if original quantity is 0 or invalid, use scale factor of 1.0
+    final scaleFactor = (_originalQuantity > 0) ? _currentQuantity / _originalQuantity : 1.0;
     
     return Container(
       padding: EdgeInsets.all(12.w),

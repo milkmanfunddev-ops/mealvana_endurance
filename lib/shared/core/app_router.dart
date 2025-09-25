@@ -13,6 +13,7 @@ import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart
 import '../../features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_edit_screen.dart';
+import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
 import '../../features/feedback/presentation/screens/survey_screen.dart';
 import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
 import '../../features/user_journal/presentation/screens/voice_notes_list_screen.dart';
@@ -135,6 +136,13 @@ class AppRouter {
         path: '/settings/food-preferences',
         name: 'settings-food-preferences',
         builder: (context, state) => const FoodPreferencesEditScreen(),
+      ),
+
+      // Add Food Screen - Add foods from settings food preferences
+      GoRoute(
+        path: '/settings/food-preferences/add-food',
+        name: 'settings-add-food',
+        builder: (context, state) => const AddFoodScreen(),
       ),
       
       // Swap/Add Food Screen - Add or swap foods in nutrition plan

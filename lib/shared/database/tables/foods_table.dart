@@ -40,8 +40,6 @@ class FoodsTable extends Table {
   IntColumn get caloriesPerServing => integer().nullable().named('calories_per_serving')();
   RealColumn get fluidMlPerServing => real().nullable().named('fluid_ml_per_serving')();
 
-  // Branding and categorization (matches Supabase schema)
-  TextColumn get brandId => text().nullable().named('brand_id')(); // References brands.id
 
   // Food preferences and solver configuration (matches Supabase schema)
   BoolColumn get showInPreferences => boolean().withDefault(const Constant(false)).named('show_in_preferences')();

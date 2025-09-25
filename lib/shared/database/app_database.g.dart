@@ -1594,10 +1594,7 @@ class $NutritionPlansTable extends NutritionPlans
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
-      additionalChecks:
-          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
-      type: DriftSqlType.string,
-      requiredDuringInsert: true);
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _deviceIdMeta =
       const VerificationMeta('deviceId');
   @override
@@ -1862,7 +1859,7 @@ class $NutritionPlansTable extends NutritionPlans
 
 class NutritionPlanEntry extends DataClass
     implements Insertable<NutritionPlanEntry> {
-  /// UUID primary key (matches Supabase nutrition_plans.id)
+  /// Primary key (matches Supabase nutrition_plans.id) - flexible length for various ID formats
   final String id;
 
   /// Device ID (foreign key reference to users.device_id)
@@ -4846,12 +4843,6 @@ class $FoodsTableTable extends FoodsTable
   late final GeneratedColumn<double> fluidMlPerServing =
       GeneratedColumn<double>('fluid_ml_per_serving', aliasedName, true,
           type: DriftSqlType.double, requiredDuringInsert: false);
-  static const VerificationMeta _brandIdMeta =
-      const VerificationMeta('brandId');
-  @override
-  late final GeneratedColumn<String> brandId = GeneratedColumn<String>(
-      'brand_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _showInPreferencesMeta =
       const VerificationMeta('showInPreferences');
   @override
@@ -4992,7 +4983,6 @@ class $FoodsTableTable extends FoodsTable
         proteinPerServing,
         caloriesPerServing,
         fluidMlPerServing,
-        brandId,
         showInPreferences,
         isElectrolyte,
         displayName,
@@ -5139,10 +5129,6 @@ class $FoodsTableTable extends FoodsTable
           _fluidMlPerServingMeta,
           fluidMlPerServing.isAcceptableOrUnknown(
               data['fluid_ml_per_serving']!, _fluidMlPerServingMeta));
-    }
-    if (data.containsKey('brand_id')) {
-      context.handle(_brandIdMeta,
-          brandId.isAcceptableOrUnknown(data['brand_id']!, _brandIdMeta));
     }
     if (data.containsKey('show_in_preferences')) {
       context.handle(
@@ -5297,8 +5283,6 @@ class $FoodsTableTable extends FoodsTable
           DriftSqlType.int, data['${effectivePrefix}calories_per_serving']),
       fluidMlPerServing: attachedDatabase.typeMapping.read(
           DriftSqlType.double, data['${effectivePrefix}fluid_ml_per_serving']),
-      brandId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}brand_id']),
       showInPreferences: attachedDatabase.typeMapping.read(
           DriftSqlType.bool, data['${effectivePrefix}show_in_preferences'])!,
       isElectrolyte: attachedDatabase.typeMapping
@@ -5371,7 +5355,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
   final double? proteinPerServing;
   final int? caloriesPerServing;
   final double? fluidMlPerServing;
-  final String? brandId;
   final bool showInPreferences;
   final bool isElectrolyte;
   final String? displayName;
@@ -5411,7 +5394,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       this.proteinPerServing,
       this.caloriesPerServing,
       this.fluidMlPerServing,
-      this.brandId,
       required this.showInPreferences,
       required this.isElectrolyte,
       this.displayName,
@@ -5480,9 +5462,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     }
     if (!nullToAbsent || fluidMlPerServing != null) {
       map['fluid_ml_per_serving'] = Variable<double>(fluidMlPerServing);
-    }
-    if (!nullToAbsent || brandId != null) {
-      map['brand_id'] = Variable<String>(brandId);
     }
     map['show_in_preferences'] = Variable<bool>(showInPreferences);
     map['is_electrolyte'] = Variable<bool>(isElectrolyte);
@@ -5583,9 +5562,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       fluidMlPerServing: fluidMlPerServing == null && nullToAbsent
           ? const Value.absent()
           : Value(fluidMlPerServing),
-      brandId: brandId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(brandId),
       showInPreferences: Value(showInPreferences),
       isElectrolyte: Value(isElectrolyte),
       displayName: displayName == null && nullToAbsent
@@ -5665,7 +5641,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       caloriesPerServing: serializer.fromJson<int?>(json['caloriesPerServing']),
       fluidMlPerServing:
           serializer.fromJson<double?>(json['fluidMlPerServing']),
-      brandId: serializer.fromJson<String?>(json['brandId']),
       showInPreferences: serializer.fromJson<bool>(json['showInPreferences']),
       isElectrolyte: serializer.fromJson<bool>(json['isElectrolyte']),
       displayName: serializer.fromJson<String?>(json['displayName']),
@@ -5713,7 +5688,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       'proteinPerServing': serializer.toJson<double?>(proteinPerServing),
       'caloriesPerServing': serializer.toJson<int?>(caloriesPerServing),
       'fluidMlPerServing': serializer.toJson<double?>(fluidMlPerServing),
-      'brandId': serializer.toJson<String?>(brandId),
       'showInPreferences': serializer.toJson<bool>(showInPreferences),
       'isElectrolyte': serializer.toJson<bool>(isElectrolyte),
       'displayName': serializer.toJson<String?>(displayName),
@@ -5756,7 +5730,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           Value<double?> proteinPerServing = const Value.absent(),
           Value<int?> caloriesPerServing = const Value.absent(),
           Value<double?> fluidMlPerServing = const Value.absent(),
-          Value<String?> brandId = const Value.absent(),
           bool? showInPreferences,
           bool? isElectrolyte,
           Value<String?> displayName = const Value.absent(),
@@ -5813,7 +5786,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
         fluidMlPerServing: fluidMlPerServing.present
             ? fluidMlPerServing.value
             : this.fluidMlPerServing,
-        brandId: brandId.present ? brandId.value : this.brandId,
         showInPreferences: showInPreferences ?? this.showInPreferences,
         isElectrolyte: isElectrolyte ?? this.isElectrolyte,
         displayName: displayName.present ? displayName.value : this.displayName,
@@ -5903,7 +5875,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       fluidMlPerServing: data.fluidMlPerServing.present
           ? data.fluidMlPerServing.value
           : this.fluidMlPerServing,
-      brandId: data.brandId.present ? data.brandId.value : this.brandId,
       showInPreferences: data.showInPreferences.present
           ? data.showInPreferences.value
           : this.showInPreferences,
@@ -5976,7 +5947,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           ..write('proteinPerServing: $proteinPerServing, ')
           ..write('caloriesPerServing: $caloriesPerServing, ')
           ..write('fluidMlPerServing: $fluidMlPerServing, ')
-          ..write('brandId: $brandId, ')
           ..write('showInPreferences: $showInPreferences, ')
           ..write('isElectrolyte: $isElectrolyte, ')
           ..write('displayName: $displayName, ')
@@ -6021,7 +5991,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
         proteinPerServing,
         caloriesPerServing,
         fluidMlPerServing,
-        brandId,
         showInPreferences,
         isElectrolyte,
         displayName,
@@ -6065,7 +6034,6 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           other.proteinPerServing == this.proteinPerServing &&
           other.caloriesPerServing == this.caloriesPerServing &&
           other.fluidMlPerServing == this.fluidMlPerServing &&
-          other.brandId == this.brandId &&
           other.showInPreferences == this.showInPreferences &&
           other.isElectrolyte == this.isElectrolyte &&
           other.displayName == this.displayName &&
@@ -6107,7 +6075,6 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
   final Value<double?> proteinPerServing;
   final Value<int?> caloriesPerServing;
   final Value<double?> fluidMlPerServing;
-  final Value<String?> brandId;
   final Value<bool> showInPreferences;
   final Value<bool> isElectrolyte;
   final Value<String?> displayName;
@@ -6148,7 +6115,6 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     this.proteinPerServing = const Value.absent(),
     this.caloriesPerServing = const Value.absent(),
     this.fluidMlPerServing = const Value.absent(),
-    this.brandId = const Value.absent(),
     this.showInPreferences = const Value.absent(),
     this.isElectrolyte = const Value.absent(),
     this.displayName = const Value.absent(),
@@ -6190,7 +6156,6 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     this.proteinPerServing = const Value.absent(),
     this.caloriesPerServing = const Value.absent(),
     this.fluidMlPerServing = const Value.absent(),
-    this.brandId = const Value.absent(),
     this.showInPreferences = const Value.absent(),
     this.isElectrolyte = const Value.absent(),
     this.displayName = const Value.absent(),
@@ -6232,7 +6197,6 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     Expression<double>? proteinPerServing,
     Expression<int>? caloriesPerServing,
     Expression<double>? fluidMlPerServing,
-    Expression<String>? brandId,
     Expression<bool>? showInPreferences,
     Expression<bool>? isElectrolyte,
     Expression<String>? displayName,
@@ -6277,7 +6241,6 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
       if (caloriesPerServing != null)
         'calories_per_serving': caloriesPerServing,
       if (fluidMlPerServing != null) 'fluid_ml_per_serving': fluidMlPerServing,
-      if (brandId != null) 'brand_id': brandId,
       if (showInPreferences != null) 'show_in_preferences': showInPreferences,
       if (isElectrolyte != null) 'is_electrolyte': isElectrolyte,
       if (displayName != null) 'display_name': displayName,
@@ -6321,7 +6284,6 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
       Value<double?>? proteinPerServing,
       Value<int?>? caloriesPerServing,
       Value<double?>? fluidMlPerServing,
-      Value<String?>? brandId,
       Value<bool>? showInPreferences,
       Value<bool>? isElectrolyte,
       Value<String?>? displayName,
@@ -6362,7 +6324,6 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
       proteinPerServing: proteinPerServing ?? this.proteinPerServing,
       caloriesPerServing: caloriesPerServing ?? this.caloriesPerServing,
       fluidMlPerServing: fluidMlPerServing ?? this.fluidMlPerServing,
-      brandId: brandId ?? this.brandId,
       showInPreferences: showInPreferences ?? this.showInPreferences,
       isElectrolyte: isElectrolyte ?? this.isElectrolyte,
       displayName: displayName ?? this.displayName,
@@ -6450,9 +6411,6 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     if (fluidMlPerServing.present) {
       map['fluid_ml_per_serving'] = Variable<double>(fluidMlPerServing.value);
     }
-    if (brandId.present) {
-      map['brand_id'] = Variable<String>(brandId.value);
-    }
     if (showInPreferences.present) {
       map['show_in_preferences'] = Variable<bool>(showInPreferences.value);
     }
@@ -6534,7 +6492,6 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
           ..write('proteinPerServing: $proteinPerServing, ')
           ..write('caloriesPerServing: $caloriesPerServing, ')
           ..write('fluidMlPerServing: $fluidMlPerServing, ')
-          ..write('brandId: $brandId, ')
           ..write('showInPreferences: $showInPreferences, ')
           ..write('isElectrolyte: $isElectrolyte, ')
           ..write('displayName: $displayName, ')
@@ -7721,6 +7678,1599 @@ class ProductTypesTableCompanion extends UpdateCompanion<ProductTypeEntry> {
           ..write('namePlural: $namePlural, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserFoodsTableTable extends UserFoodsTable
+    with TableInfo<$UserFoodsTableTable, UserFood> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserFoodsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _clientFoodIdMeta =
+      const VerificationMeta('clientFoodId');
+  @override
+  late final GeneratedColumn<String> clientFoodId = GeneratedColumn<String>(
+      'client_food_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _barcodeMeta =
+      const VerificationMeta('barcode');
+  @override
+  late final GeneratedColumn<String> barcode = GeneratedColumn<String>(
+      'barcode', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _displayNameMeta =
+      const VerificationMeta('displayName');
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+      'display_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _displayNamePluralMeta =
+      const VerificationMeta('displayNamePlural');
+  @override
+  late final GeneratedColumn<String> displayNamePlural =
+      GeneratedColumn<String>('display_name_plural', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _imageAddressMeta =
+      const VerificationMeta('imageAddress');
+  @override
+  late final GeneratedColumn<String> imageAddress = GeneratedColumn<String>(
+      'image_address', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _servingAmountMeta =
+      const VerificationMeta('servingAmount');
+  @override
+  late final GeneratedColumn<double> servingAmount = GeneratedColumn<double>(
+      'serving_amount', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _servingUnitMeta =
+      const VerificationMeta('servingUnit');
+  @override
+  late final GeneratedColumn<String> servingUnit = GeneratedColumn<String>(
+      'serving_unit', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _caloriesPerServingMeta =
+      const VerificationMeta('caloriesPerServing');
+  @override
+  late final GeneratedColumn<int> caloriesPerServing = GeneratedColumn<int>(
+      'calories_per_serving', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _carbsPerServingMeta =
+      const VerificationMeta('carbsPerServing');
+  @override
+  late final GeneratedColumn<double> carbsPerServing = GeneratedColumn<double>(
+      'carbs_per_serving', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _proteinPerServingMeta =
+      const VerificationMeta('proteinPerServing');
+  @override
+  late final GeneratedColumn<double> proteinPerServing =
+      GeneratedColumn<double>('protein_per_serving', aliasedName, true,
+          type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _fatPerServingMeta =
+      const VerificationMeta('fatPerServing');
+  @override
+  late final GeneratedColumn<double> fatPerServing = GeneratedColumn<double>(
+      'fat_per_serving', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _sodiumMgMeta =
+      const VerificationMeta('sodiumMg');
+  @override
+  late final GeneratedColumn<int> sodiumMg = GeneratedColumn<int>(
+      'sodium_mg', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _fluidMlPerServingMeta =
+      const VerificationMeta('fluidMlPerServing');
+  @override
+  late final GeneratedColumn<double> fluidMlPerServing =
+      GeneratedColumn<double>('fluid_ml_per_serving', aliasedName, true,
+          type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _productTypeIdMeta =
+      const VerificationMeta('productTypeId');
+  @override
+  late final GeneratedColumn<String> productTypeId = GeneratedColumn<String>(
+      'product_type_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isElectrolyteMeta =
+      const VerificationMeta('isElectrolyte');
+  @override
+  late final GeneratedColumn<bool> isElectrolyte = GeneratedColumn<bool>(
+      'is_electrolyte', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_electrolyte" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _toExcludeFromSolverMeta =
+      const VerificationMeta('toExcludeFromSolver');
+  @override
+  late final GeneratedColumn<bool> toExcludeFromSolver = GeneratedColumn<bool>(
+      'to_exclude_from_solver', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("to_exclude_from_solver" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _isDeletedMeta =
+      const VerificationMeta('isDeleted');
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+      'is_deleted', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_deleted" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _clientUpdatedAtMeta =
+      const VerificationMeta('clientUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> clientUpdatedAt =
+      GeneratedColumn<DateTime>('client_updated_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        deviceId,
+        clientFoodId,
+        barcode,
+        name,
+        displayName,
+        displayNamePlural,
+        description,
+        imageAddress,
+        servingAmount,
+        servingUnit,
+        caloriesPerServing,
+        carbsPerServing,
+        proteinPerServing,
+        fatPerServing,
+        sodiumMg,
+        fluidMlPerServing,
+        productTypeId,
+        isElectrolyte,
+        toExcludeFromSolver,
+        isDeleted,
+        createdAt,
+        updatedAt,
+        clientUpdatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_foods_table';
+  @override
+  VerificationContext validateIntegrity(Insertable<UserFood> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('client_food_id')) {
+      context.handle(
+          _clientFoodIdMeta,
+          clientFoodId.isAcceptableOrUnknown(
+              data['client_food_id']!, _clientFoodIdMeta));
+    }
+    if (data.containsKey('barcode')) {
+      context.handle(_barcodeMeta,
+          barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+          _displayNameMeta,
+          displayName.isAcceptableOrUnknown(
+              data['display_name']!, _displayNameMeta));
+    }
+    if (data.containsKey('display_name_plural')) {
+      context.handle(
+          _displayNamePluralMeta,
+          displayNamePlural.isAcceptableOrUnknown(
+              data['display_name_plural']!, _displayNamePluralMeta));
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('image_address')) {
+      context.handle(
+          _imageAddressMeta,
+          imageAddress.isAcceptableOrUnknown(
+              data['image_address']!, _imageAddressMeta));
+    }
+    if (data.containsKey('serving_amount')) {
+      context.handle(
+          _servingAmountMeta,
+          servingAmount.isAcceptableOrUnknown(
+              data['serving_amount']!, _servingAmountMeta));
+    }
+    if (data.containsKey('serving_unit')) {
+      context.handle(
+          _servingUnitMeta,
+          servingUnit.isAcceptableOrUnknown(
+              data['serving_unit']!, _servingUnitMeta));
+    }
+    if (data.containsKey('calories_per_serving')) {
+      context.handle(
+          _caloriesPerServingMeta,
+          caloriesPerServing.isAcceptableOrUnknown(
+              data['calories_per_serving']!, _caloriesPerServingMeta));
+    }
+    if (data.containsKey('carbs_per_serving')) {
+      context.handle(
+          _carbsPerServingMeta,
+          carbsPerServing.isAcceptableOrUnknown(
+              data['carbs_per_serving']!, _carbsPerServingMeta));
+    }
+    if (data.containsKey('protein_per_serving')) {
+      context.handle(
+          _proteinPerServingMeta,
+          proteinPerServing.isAcceptableOrUnknown(
+              data['protein_per_serving']!, _proteinPerServingMeta));
+    }
+    if (data.containsKey('fat_per_serving')) {
+      context.handle(
+          _fatPerServingMeta,
+          fatPerServing.isAcceptableOrUnknown(
+              data['fat_per_serving']!, _fatPerServingMeta));
+    }
+    if (data.containsKey('sodium_mg')) {
+      context.handle(_sodiumMgMeta,
+          sodiumMg.isAcceptableOrUnknown(data['sodium_mg']!, _sodiumMgMeta));
+    }
+    if (data.containsKey('fluid_ml_per_serving')) {
+      context.handle(
+          _fluidMlPerServingMeta,
+          fluidMlPerServing.isAcceptableOrUnknown(
+              data['fluid_ml_per_serving']!, _fluidMlPerServingMeta));
+    }
+    if (data.containsKey('product_type_id')) {
+      context.handle(
+          _productTypeIdMeta,
+          productTypeId.isAcceptableOrUnknown(
+              data['product_type_id']!, _productTypeIdMeta));
+    }
+    if (data.containsKey('is_electrolyte')) {
+      context.handle(
+          _isElectrolyteMeta,
+          isElectrolyte.isAcceptableOrUnknown(
+              data['is_electrolyte']!, _isElectrolyteMeta));
+    }
+    if (data.containsKey('to_exclude_from_solver')) {
+      context.handle(
+          _toExcludeFromSolverMeta,
+          toExcludeFromSolver.isAcceptableOrUnknown(
+              data['to_exclude_from_solver']!, _toExcludeFromSolverMeta));
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(_isDeletedMeta,
+          isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('client_updated_at')) {
+      context.handle(
+          _clientUpdatedAtMeta,
+          clientUpdatedAt.isAcceptableOrUnknown(
+              data['client_updated_at']!, _clientUpdatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UserFood map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserFood(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id'])!,
+      clientFoodId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}client_food_id']),
+      barcode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}barcode']),
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      displayName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}display_name']),
+      displayNamePlural: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}display_name_plural']),
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      imageAddress: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}image_address']),
+      servingAmount: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}serving_amount']),
+      servingUnit: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}serving_unit']),
+      caloriesPerServing: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}calories_per_serving']),
+      carbsPerServing: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}carbs_per_serving']),
+      proteinPerServing: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}protein_per_serving']),
+      fatPerServing: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}fat_per_serving']),
+      sodiumMg: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sodium_mg']),
+      fluidMlPerServing: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}fluid_ml_per_serving']),
+      productTypeId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}product_type_id']),
+      isElectrolyte: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_electrolyte'])!,
+      toExcludeFromSolver: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}to_exclude_from_solver'])!,
+      isDeleted: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_deleted'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      clientUpdatedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}client_updated_at']),
+    );
+  }
+
+  @override
+  $UserFoodsTableTable createAlias(String alias) {
+    return $UserFoodsTableTable(attachedDatabase, alias);
+  }
+}
+
+class UserFood extends DataClass implements Insertable<UserFood> {
+  /// UUID primary key (matches Supabase user_foods.id)
+  final String id;
+
+  /// Device ID of the user who created this food (matches Supabase user_foods.device_id)
+  final String deviceId;
+
+  /// Client-generated food ID for offline sync (matches Supabase user_foods.client_food_id)
+  final String? clientFoodId;
+
+  /// Barcode if scanned (matches Supabase user_foods.barcode)
+  final String? barcode;
+
+  /// Food name (matches Supabase user_foods.name)
+  final String name;
+
+  /// Display names (matches Supabase user_foods.display_name and display_name_plural)
+  final String? displayName;
+  final String? displayNamePlural;
+
+  /// Description (matches Supabase user_foods.description)
+  final String? description;
+
+  /// Image URL (matches Supabase user_foods.image_address)
+  final String? imageAddress;
+
+  /// Serving information (matches Supabase user_foods.serving_amount and serving_unit)
+  final double? servingAmount;
+  final String? servingUnit;
+
+  /// Nutritional values per serving (matches Supabase user_foods)
+  final int? caloriesPerServing;
+  final double? carbsPerServing;
+  final double? proteinPerServing;
+  final double? fatPerServing;
+  final int? sodiumMg;
+  final double? fluidMlPerServing;
+
+  /// Product type reference (matches Supabase user_foods.product_type_id)
+  final String? productTypeId;
+
+  /// Flags (matches Supabase user_foods)
+  final bool isElectrolyte;
+  final bool toExcludeFromSolver;
+  final bool isDeleted;
+
+  /// Timestamps (matches Supabase user_foods)
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? clientUpdatedAt;
+  const UserFood(
+      {required this.id,
+      required this.deviceId,
+      this.clientFoodId,
+      this.barcode,
+      required this.name,
+      this.displayName,
+      this.displayNamePlural,
+      this.description,
+      this.imageAddress,
+      this.servingAmount,
+      this.servingUnit,
+      this.caloriesPerServing,
+      this.carbsPerServing,
+      this.proteinPerServing,
+      this.fatPerServing,
+      this.sodiumMg,
+      this.fluidMlPerServing,
+      this.productTypeId,
+      required this.isElectrolyte,
+      required this.toExcludeFromSolver,
+      required this.isDeleted,
+      required this.createdAt,
+      required this.updatedAt,
+      this.clientUpdatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['device_id'] = Variable<String>(deviceId);
+    if (!nullToAbsent || clientFoodId != null) {
+      map['client_food_id'] = Variable<String>(clientFoodId);
+    }
+    if (!nullToAbsent || barcode != null) {
+      map['barcode'] = Variable<String>(barcode);
+    }
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
+    }
+    if (!nullToAbsent || displayNamePlural != null) {
+      map['display_name_plural'] = Variable<String>(displayNamePlural);
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || imageAddress != null) {
+      map['image_address'] = Variable<String>(imageAddress);
+    }
+    if (!nullToAbsent || servingAmount != null) {
+      map['serving_amount'] = Variable<double>(servingAmount);
+    }
+    if (!nullToAbsent || servingUnit != null) {
+      map['serving_unit'] = Variable<String>(servingUnit);
+    }
+    if (!nullToAbsent || caloriesPerServing != null) {
+      map['calories_per_serving'] = Variable<int>(caloriesPerServing);
+    }
+    if (!nullToAbsent || carbsPerServing != null) {
+      map['carbs_per_serving'] = Variable<double>(carbsPerServing);
+    }
+    if (!nullToAbsent || proteinPerServing != null) {
+      map['protein_per_serving'] = Variable<double>(proteinPerServing);
+    }
+    if (!nullToAbsent || fatPerServing != null) {
+      map['fat_per_serving'] = Variable<double>(fatPerServing);
+    }
+    if (!nullToAbsent || sodiumMg != null) {
+      map['sodium_mg'] = Variable<int>(sodiumMg);
+    }
+    if (!nullToAbsent || fluidMlPerServing != null) {
+      map['fluid_ml_per_serving'] = Variable<double>(fluidMlPerServing);
+    }
+    if (!nullToAbsent || productTypeId != null) {
+      map['product_type_id'] = Variable<String>(productTypeId);
+    }
+    map['is_electrolyte'] = Variable<bool>(isElectrolyte);
+    map['to_exclude_from_solver'] = Variable<bool>(toExcludeFromSolver);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || clientUpdatedAt != null) {
+      map['client_updated_at'] = Variable<DateTime>(clientUpdatedAt);
+    }
+    return map;
+  }
+
+  UserFoodsTableCompanion toCompanion(bool nullToAbsent) {
+    return UserFoodsTableCompanion(
+      id: Value(id),
+      deviceId: Value(deviceId),
+      clientFoodId: clientFoodId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientFoodId),
+      barcode: barcode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(barcode),
+      name: Value(name),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      displayNamePlural: displayNamePlural == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayNamePlural),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      imageAddress: imageAddress == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageAddress),
+      servingAmount: servingAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingAmount),
+      servingUnit: servingUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingUnit),
+      caloriesPerServing: caloriesPerServing == null && nullToAbsent
+          ? const Value.absent()
+          : Value(caloriesPerServing),
+      carbsPerServing: carbsPerServing == null && nullToAbsent
+          ? const Value.absent()
+          : Value(carbsPerServing),
+      proteinPerServing: proteinPerServing == null && nullToAbsent
+          ? const Value.absent()
+          : Value(proteinPerServing),
+      fatPerServing: fatPerServing == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fatPerServing),
+      sodiumMg: sodiumMg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodiumMg),
+      fluidMlPerServing: fluidMlPerServing == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fluidMlPerServing),
+      productTypeId: productTypeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(productTypeId),
+      isElectrolyte: Value(isElectrolyte),
+      toExcludeFromSolver: Value(toExcludeFromSolver),
+      isDeleted: Value(isDeleted),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      clientUpdatedAt: clientUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientUpdatedAt),
+    );
+  }
+
+  factory UserFood.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserFood(
+      id: serializer.fromJson<String>(json['id']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      clientFoodId: serializer.fromJson<String?>(json['clientFoodId']),
+      barcode: serializer.fromJson<String?>(json['barcode']),
+      name: serializer.fromJson<String>(json['name']),
+      displayName: serializer.fromJson<String?>(json['displayName']),
+      displayNamePlural:
+          serializer.fromJson<String?>(json['displayNamePlural']),
+      description: serializer.fromJson<String?>(json['description']),
+      imageAddress: serializer.fromJson<String?>(json['imageAddress']),
+      servingAmount: serializer.fromJson<double?>(json['servingAmount']),
+      servingUnit: serializer.fromJson<String?>(json['servingUnit']),
+      caloriesPerServing: serializer.fromJson<int?>(json['caloriesPerServing']),
+      carbsPerServing: serializer.fromJson<double?>(json['carbsPerServing']),
+      proteinPerServing:
+          serializer.fromJson<double?>(json['proteinPerServing']),
+      fatPerServing: serializer.fromJson<double?>(json['fatPerServing']),
+      sodiumMg: serializer.fromJson<int?>(json['sodiumMg']),
+      fluidMlPerServing:
+          serializer.fromJson<double?>(json['fluidMlPerServing']),
+      productTypeId: serializer.fromJson<String?>(json['productTypeId']),
+      isElectrolyte: serializer.fromJson<bool>(json['isElectrolyte']),
+      toExcludeFromSolver:
+          serializer.fromJson<bool>(json['toExcludeFromSolver']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      clientUpdatedAt: serializer.fromJson<DateTime?>(json['clientUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'clientFoodId': serializer.toJson<String?>(clientFoodId),
+      'barcode': serializer.toJson<String?>(barcode),
+      'name': serializer.toJson<String>(name),
+      'displayName': serializer.toJson<String?>(displayName),
+      'displayNamePlural': serializer.toJson<String?>(displayNamePlural),
+      'description': serializer.toJson<String?>(description),
+      'imageAddress': serializer.toJson<String?>(imageAddress),
+      'servingAmount': serializer.toJson<double?>(servingAmount),
+      'servingUnit': serializer.toJson<String?>(servingUnit),
+      'caloriesPerServing': serializer.toJson<int?>(caloriesPerServing),
+      'carbsPerServing': serializer.toJson<double?>(carbsPerServing),
+      'proteinPerServing': serializer.toJson<double?>(proteinPerServing),
+      'fatPerServing': serializer.toJson<double?>(fatPerServing),
+      'sodiumMg': serializer.toJson<int?>(sodiumMg),
+      'fluidMlPerServing': serializer.toJson<double?>(fluidMlPerServing),
+      'productTypeId': serializer.toJson<String?>(productTypeId),
+      'isElectrolyte': serializer.toJson<bool>(isElectrolyte),
+      'toExcludeFromSolver': serializer.toJson<bool>(toExcludeFromSolver),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'clientUpdatedAt': serializer.toJson<DateTime?>(clientUpdatedAt),
+    };
+  }
+
+  UserFood copyWith(
+          {String? id,
+          String? deviceId,
+          Value<String?> clientFoodId = const Value.absent(),
+          Value<String?> barcode = const Value.absent(),
+          String? name,
+          Value<String?> displayName = const Value.absent(),
+          Value<String?> displayNamePlural = const Value.absent(),
+          Value<String?> description = const Value.absent(),
+          Value<String?> imageAddress = const Value.absent(),
+          Value<double?> servingAmount = const Value.absent(),
+          Value<String?> servingUnit = const Value.absent(),
+          Value<int?> caloriesPerServing = const Value.absent(),
+          Value<double?> carbsPerServing = const Value.absent(),
+          Value<double?> proteinPerServing = const Value.absent(),
+          Value<double?> fatPerServing = const Value.absent(),
+          Value<int?> sodiumMg = const Value.absent(),
+          Value<double?> fluidMlPerServing = const Value.absent(),
+          Value<String?> productTypeId = const Value.absent(),
+          bool? isElectrolyte,
+          bool? toExcludeFromSolver,
+          bool? isDeleted,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> clientUpdatedAt = const Value.absent()}) =>
+      UserFood(
+        id: id ?? this.id,
+        deviceId: deviceId ?? this.deviceId,
+        clientFoodId:
+            clientFoodId.present ? clientFoodId.value : this.clientFoodId,
+        barcode: barcode.present ? barcode.value : this.barcode,
+        name: name ?? this.name,
+        displayName: displayName.present ? displayName.value : this.displayName,
+        displayNamePlural: displayNamePlural.present
+            ? displayNamePlural.value
+            : this.displayNamePlural,
+        description: description.present ? description.value : this.description,
+        imageAddress:
+            imageAddress.present ? imageAddress.value : this.imageAddress,
+        servingAmount:
+            servingAmount.present ? servingAmount.value : this.servingAmount,
+        servingUnit: servingUnit.present ? servingUnit.value : this.servingUnit,
+        caloriesPerServing: caloriesPerServing.present
+            ? caloriesPerServing.value
+            : this.caloriesPerServing,
+        carbsPerServing: carbsPerServing.present
+            ? carbsPerServing.value
+            : this.carbsPerServing,
+        proteinPerServing: proteinPerServing.present
+            ? proteinPerServing.value
+            : this.proteinPerServing,
+        fatPerServing:
+            fatPerServing.present ? fatPerServing.value : this.fatPerServing,
+        sodiumMg: sodiumMg.present ? sodiumMg.value : this.sodiumMg,
+        fluidMlPerServing: fluidMlPerServing.present
+            ? fluidMlPerServing.value
+            : this.fluidMlPerServing,
+        productTypeId:
+            productTypeId.present ? productTypeId.value : this.productTypeId,
+        isElectrolyte: isElectrolyte ?? this.isElectrolyte,
+        toExcludeFromSolver: toExcludeFromSolver ?? this.toExcludeFromSolver,
+        isDeleted: isDeleted ?? this.isDeleted,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        clientUpdatedAt: clientUpdatedAt.present
+            ? clientUpdatedAt.value
+            : this.clientUpdatedAt,
+      );
+  UserFood copyWithCompanion(UserFoodsTableCompanion data) {
+    return UserFood(
+      id: data.id.present ? data.id.value : this.id,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      clientFoodId: data.clientFoodId.present
+          ? data.clientFoodId.value
+          : this.clientFoodId,
+      barcode: data.barcode.present ? data.barcode.value : this.barcode,
+      name: data.name.present ? data.name.value : this.name,
+      displayName:
+          data.displayName.present ? data.displayName.value : this.displayName,
+      displayNamePlural: data.displayNamePlural.present
+          ? data.displayNamePlural.value
+          : this.displayNamePlural,
+      description:
+          data.description.present ? data.description.value : this.description,
+      imageAddress: data.imageAddress.present
+          ? data.imageAddress.value
+          : this.imageAddress,
+      servingAmount: data.servingAmount.present
+          ? data.servingAmount.value
+          : this.servingAmount,
+      servingUnit:
+          data.servingUnit.present ? data.servingUnit.value : this.servingUnit,
+      caloriesPerServing: data.caloriesPerServing.present
+          ? data.caloriesPerServing.value
+          : this.caloriesPerServing,
+      carbsPerServing: data.carbsPerServing.present
+          ? data.carbsPerServing.value
+          : this.carbsPerServing,
+      proteinPerServing: data.proteinPerServing.present
+          ? data.proteinPerServing.value
+          : this.proteinPerServing,
+      fatPerServing: data.fatPerServing.present
+          ? data.fatPerServing.value
+          : this.fatPerServing,
+      sodiumMg: data.sodiumMg.present ? data.sodiumMg.value : this.sodiumMg,
+      fluidMlPerServing: data.fluidMlPerServing.present
+          ? data.fluidMlPerServing.value
+          : this.fluidMlPerServing,
+      productTypeId: data.productTypeId.present
+          ? data.productTypeId.value
+          : this.productTypeId,
+      isElectrolyte: data.isElectrolyte.present
+          ? data.isElectrolyte.value
+          : this.isElectrolyte,
+      toExcludeFromSolver: data.toExcludeFromSolver.present
+          ? data.toExcludeFromSolver.value
+          : this.toExcludeFromSolver,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      clientUpdatedAt: data.clientUpdatedAt.present
+          ? data.clientUpdatedAt.value
+          : this.clientUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserFood(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientFoodId: $clientFoodId, ')
+          ..write('barcode: $barcode, ')
+          ..write('name: $name, ')
+          ..write('displayName: $displayName, ')
+          ..write('displayNamePlural: $displayNamePlural, ')
+          ..write('description: $description, ')
+          ..write('imageAddress: $imageAddress, ')
+          ..write('servingAmount: $servingAmount, ')
+          ..write('servingUnit: $servingUnit, ')
+          ..write('caloriesPerServing: $caloriesPerServing, ')
+          ..write('carbsPerServing: $carbsPerServing, ')
+          ..write('proteinPerServing: $proteinPerServing, ')
+          ..write('fatPerServing: $fatPerServing, ')
+          ..write('sodiumMg: $sodiumMg, ')
+          ..write('fluidMlPerServing: $fluidMlPerServing, ')
+          ..write('productTypeId: $productTypeId, ')
+          ..write('isElectrolyte: $isElectrolyte, ')
+          ..write('toExcludeFromSolver: $toExcludeFromSolver, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        id,
+        deviceId,
+        clientFoodId,
+        barcode,
+        name,
+        displayName,
+        displayNamePlural,
+        description,
+        imageAddress,
+        servingAmount,
+        servingUnit,
+        caloriesPerServing,
+        carbsPerServing,
+        proteinPerServing,
+        fatPerServing,
+        sodiumMg,
+        fluidMlPerServing,
+        productTypeId,
+        isElectrolyte,
+        toExcludeFromSolver,
+        isDeleted,
+        createdAt,
+        updatedAt,
+        clientUpdatedAt
+      ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserFood &&
+          other.id == this.id &&
+          other.deviceId == this.deviceId &&
+          other.clientFoodId == this.clientFoodId &&
+          other.barcode == this.barcode &&
+          other.name == this.name &&
+          other.displayName == this.displayName &&
+          other.displayNamePlural == this.displayNamePlural &&
+          other.description == this.description &&
+          other.imageAddress == this.imageAddress &&
+          other.servingAmount == this.servingAmount &&
+          other.servingUnit == this.servingUnit &&
+          other.caloriesPerServing == this.caloriesPerServing &&
+          other.carbsPerServing == this.carbsPerServing &&
+          other.proteinPerServing == this.proteinPerServing &&
+          other.fatPerServing == this.fatPerServing &&
+          other.sodiumMg == this.sodiumMg &&
+          other.fluidMlPerServing == this.fluidMlPerServing &&
+          other.productTypeId == this.productTypeId &&
+          other.isElectrolyte == this.isElectrolyte &&
+          other.toExcludeFromSolver == this.toExcludeFromSolver &&
+          other.isDeleted == this.isDeleted &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.clientUpdatedAt == this.clientUpdatedAt);
+}
+
+class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
+  final Value<String> id;
+  final Value<String> deviceId;
+  final Value<String?> clientFoodId;
+  final Value<String?> barcode;
+  final Value<String> name;
+  final Value<String?> displayName;
+  final Value<String?> displayNamePlural;
+  final Value<String?> description;
+  final Value<String?> imageAddress;
+  final Value<double?> servingAmount;
+  final Value<String?> servingUnit;
+  final Value<int?> caloriesPerServing;
+  final Value<double?> carbsPerServing;
+  final Value<double?> proteinPerServing;
+  final Value<double?> fatPerServing;
+  final Value<int?> sodiumMg;
+  final Value<double?> fluidMlPerServing;
+  final Value<String?> productTypeId;
+  final Value<bool> isElectrolyte;
+  final Value<bool> toExcludeFromSolver;
+  final Value<bool> isDeleted;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> clientUpdatedAt;
+  final Value<int> rowid;
+  const UserFoodsTableCompanion({
+    this.id = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientFoodId = const Value.absent(),
+    this.barcode = const Value.absent(),
+    this.name = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.displayNamePlural = const Value.absent(),
+    this.description = const Value.absent(),
+    this.imageAddress = const Value.absent(),
+    this.servingAmount = const Value.absent(),
+    this.servingUnit = const Value.absent(),
+    this.caloriesPerServing = const Value.absent(),
+    this.carbsPerServing = const Value.absent(),
+    this.proteinPerServing = const Value.absent(),
+    this.fatPerServing = const Value.absent(),
+    this.sodiumMg = const Value.absent(),
+    this.fluidMlPerServing = const Value.absent(),
+    this.productTypeId = const Value.absent(),
+    this.isElectrolyte = const Value.absent(),
+    this.toExcludeFromSolver = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserFoodsTableCompanion.insert({
+    required String id,
+    required String deviceId,
+    this.clientFoodId = const Value.absent(),
+    this.barcode = const Value.absent(),
+    required String name,
+    this.displayName = const Value.absent(),
+    this.displayNamePlural = const Value.absent(),
+    this.description = const Value.absent(),
+    this.imageAddress = const Value.absent(),
+    this.servingAmount = const Value.absent(),
+    this.servingUnit = const Value.absent(),
+    this.caloriesPerServing = const Value.absent(),
+    this.carbsPerServing = const Value.absent(),
+    this.proteinPerServing = const Value.absent(),
+    this.fatPerServing = const Value.absent(),
+    this.sodiumMg = const Value.absent(),
+    this.fluidMlPerServing = const Value.absent(),
+    this.productTypeId = const Value.absent(),
+    this.isElectrolyte = const Value.absent(),
+    this.toExcludeFromSolver = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        deviceId = Value(deviceId),
+        name = Value(name);
+  static Insertable<UserFood> custom({
+    Expression<String>? id,
+    Expression<String>? deviceId,
+    Expression<String>? clientFoodId,
+    Expression<String>? barcode,
+    Expression<String>? name,
+    Expression<String>? displayName,
+    Expression<String>? displayNamePlural,
+    Expression<String>? description,
+    Expression<String>? imageAddress,
+    Expression<double>? servingAmount,
+    Expression<String>? servingUnit,
+    Expression<int>? caloriesPerServing,
+    Expression<double>? carbsPerServing,
+    Expression<double>? proteinPerServing,
+    Expression<double>? fatPerServing,
+    Expression<int>? sodiumMg,
+    Expression<double>? fluidMlPerServing,
+    Expression<String>? productTypeId,
+    Expression<bool>? isElectrolyte,
+    Expression<bool>? toExcludeFromSolver,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? clientUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (deviceId != null) 'device_id': deviceId,
+      if (clientFoodId != null) 'client_food_id': clientFoodId,
+      if (barcode != null) 'barcode': barcode,
+      if (name != null) 'name': name,
+      if (displayName != null) 'display_name': displayName,
+      if (displayNamePlural != null) 'display_name_plural': displayNamePlural,
+      if (description != null) 'description': description,
+      if (imageAddress != null) 'image_address': imageAddress,
+      if (servingAmount != null) 'serving_amount': servingAmount,
+      if (servingUnit != null) 'serving_unit': servingUnit,
+      if (caloriesPerServing != null)
+        'calories_per_serving': caloriesPerServing,
+      if (carbsPerServing != null) 'carbs_per_serving': carbsPerServing,
+      if (proteinPerServing != null) 'protein_per_serving': proteinPerServing,
+      if (fatPerServing != null) 'fat_per_serving': fatPerServing,
+      if (sodiumMg != null) 'sodium_mg': sodiumMg,
+      if (fluidMlPerServing != null) 'fluid_ml_per_serving': fluidMlPerServing,
+      if (productTypeId != null) 'product_type_id': productTypeId,
+      if (isElectrolyte != null) 'is_electrolyte': isElectrolyte,
+      if (toExcludeFromSolver != null)
+        'to_exclude_from_solver': toExcludeFromSolver,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (clientUpdatedAt != null) 'client_updated_at': clientUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserFoodsTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? deviceId,
+      Value<String?>? clientFoodId,
+      Value<String?>? barcode,
+      Value<String>? name,
+      Value<String?>? displayName,
+      Value<String?>? displayNamePlural,
+      Value<String?>? description,
+      Value<String?>? imageAddress,
+      Value<double?>? servingAmount,
+      Value<String?>? servingUnit,
+      Value<int?>? caloriesPerServing,
+      Value<double?>? carbsPerServing,
+      Value<double?>? proteinPerServing,
+      Value<double?>? fatPerServing,
+      Value<int?>? sodiumMg,
+      Value<double?>? fluidMlPerServing,
+      Value<String?>? productTypeId,
+      Value<bool>? isElectrolyte,
+      Value<bool>? toExcludeFromSolver,
+      Value<bool>? isDeleted,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? clientUpdatedAt,
+      Value<int>? rowid}) {
+    return UserFoodsTableCompanion(
+      id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
+      clientFoodId: clientFoodId ?? this.clientFoodId,
+      barcode: barcode ?? this.barcode,
+      name: name ?? this.name,
+      displayName: displayName ?? this.displayName,
+      displayNamePlural: displayNamePlural ?? this.displayNamePlural,
+      description: description ?? this.description,
+      imageAddress: imageAddress ?? this.imageAddress,
+      servingAmount: servingAmount ?? this.servingAmount,
+      servingUnit: servingUnit ?? this.servingUnit,
+      caloriesPerServing: caloriesPerServing ?? this.caloriesPerServing,
+      carbsPerServing: carbsPerServing ?? this.carbsPerServing,
+      proteinPerServing: proteinPerServing ?? this.proteinPerServing,
+      fatPerServing: fatPerServing ?? this.fatPerServing,
+      sodiumMg: sodiumMg ?? this.sodiumMg,
+      fluidMlPerServing: fluidMlPerServing ?? this.fluidMlPerServing,
+      productTypeId: productTypeId ?? this.productTypeId,
+      isElectrolyte: isElectrolyte ?? this.isElectrolyte,
+      toExcludeFromSolver: toExcludeFromSolver ?? this.toExcludeFromSolver,
+      isDeleted: isDeleted ?? this.isDeleted,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (clientFoodId.present) {
+      map['client_food_id'] = Variable<String>(clientFoodId.value);
+    }
+    if (barcode.present) {
+      map['barcode'] = Variable<String>(barcode.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (displayNamePlural.present) {
+      map['display_name_plural'] = Variable<String>(displayNamePlural.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (imageAddress.present) {
+      map['image_address'] = Variable<String>(imageAddress.value);
+    }
+    if (servingAmount.present) {
+      map['serving_amount'] = Variable<double>(servingAmount.value);
+    }
+    if (servingUnit.present) {
+      map['serving_unit'] = Variable<String>(servingUnit.value);
+    }
+    if (caloriesPerServing.present) {
+      map['calories_per_serving'] = Variable<int>(caloriesPerServing.value);
+    }
+    if (carbsPerServing.present) {
+      map['carbs_per_serving'] = Variable<double>(carbsPerServing.value);
+    }
+    if (proteinPerServing.present) {
+      map['protein_per_serving'] = Variable<double>(proteinPerServing.value);
+    }
+    if (fatPerServing.present) {
+      map['fat_per_serving'] = Variable<double>(fatPerServing.value);
+    }
+    if (sodiumMg.present) {
+      map['sodium_mg'] = Variable<int>(sodiumMg.value);
+    }
+    if (fluidMlPerServing.present) {
+      map['fluid_ml_per_serving'] = Variable<double>(fluidMlPerServing.value);
+    }
+    if (productTypeId.present) {
+      map['product_type_id'] = Variable<String>(productTypeId.value);
+    }
+    if (isElectrolyte.present) {
+      map['is_electrolyte'] = Variable<bool>(isElectrolyte.value);
+    }
+    if (toExcludeFromSolver.present) {
+      map['to_exclude_from_solver'] = Variable<bool>(toExcludeFromSolver.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (clientUpdatedAt.present) {
+      map['client_updated_at'] = Variable<DateTime>(clientUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserFoodsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientFoodId: $clientFoodId, ')
+          ..write('barcode: $barcode, ')
+          ..write('name: $name, ')
+          ..write('displayName: $displayName, ')
+          ..write('displayNamePlural: $displayNamePlural, ')
+          ..write('description: $description, ')
+          ..write('imageAddress: $imageAddress, ')
+          ..write('servingAmount: $servingAmount, ')
+          ..write('servingUnit: $servingUnit, ')
+          ..write('caloriesPerServing: $caloriesPerServing, ')
+          ..write('carbsPerServing: $carbsPerServing, ')
+          ..write('proteinPerServing: $proteinPerServing, ')
+          ..write('fatPerServing: $fatPerServing, ')
+          ..write('sodiumMg: $sodiumMg, ')
+          ..write('fluidMlPerServing: $fluidMlPerServing, ')
+          ..write('productTypeId: $productTypeId, ')
+          ..write('isElectrolyte: $isElectrolyte, ')
+          ..write('toExcludeFromSolver: $toExcludeFromSolver, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserFoodCategoriesTableTable extends UserFoodCategoriesTable
+    with TableInfo<$UserFoodCategoriesTableTable, UserFoodCategory> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserFoodCategoriesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userFoodIdMeta =
+      const VerificationMeta('userFoodId');
+  @override
+  late final GeneratedColumn<String> userFoodId = GeneratedColumn<String>(
+      'user_food_id', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _categoryIdMeta =
+      const VerificationMeta('categoryId');
+  @override
+  late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
+      'category_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [userFoodId, categoryId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_food_categories_table';
+  @override
+  VerificationContext validateIntegrity(Insertable<UserFoodCategory> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_food_id')) {
+      context.handle(
+          _userFoodIdMeta,
+          userFoodId.isAcceptableOrUnknown(
+              data['user_food_id']!, _userFoodIdMeta));
+    } else if (isInserting) {
+      context.missing(_userFoodIdMeta);
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+          _categoryIdMeta,
+          categoryId.isAcceptableOrUnknown(
+              data['category_id']!, _categoryIdMeta));
+    } else if (isInserting) {
+      context.missing(_categoryIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userFoodId, categoryId};
+  @override
+  UserFoodCategory map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserFoodCategory(
+      userFoodId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_food_id'])!,
+      categoryId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}category_id'])!,
+    );
+  }
+
+  @override
+  $UserFoodCategoriesTableTable createAlias(String alias) {
+    return $UserFoodCategoriesTableTable(attachedDatabase, alias);
+  }
+}
+
+class UserFoodCategory extends DataClass
+    implements Insertable<UserFoodCategory> {
+  /// User food ID (matches Supabase user_food_categories.user_food_id)
+  final String userFoodId;
+
+  /// Category ID (matches Supabase user_food_categories.category_id)
+  final int categoryId;
+  const UserFoodCategory({required this.userFoodId, required this.categoryId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_food_id'] = Variable<String>(userFoodId);
+    map['category_id'] = Variable<int>(categoryId);
+    return map;
+  }
+
+  UserFoodCategoriesTableCompanion toCompanion(bool nullToAbsent) {
+    return UserFoodCategoriesTableCompanion(
+      userFoodId: Value(userFoodId),
+      categoryId: Value(categoryId),
+    );
+  }
+
+  factory UserFoodCategory.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserFoodCategory(
+      userFoodId: serializer.fromJson<String>(json['userFoodId']),
+      categoryId: serializer.fromJson<int>(json['categoryId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userFoodId': serializer.toJson<String>(userFoodId),
+      'categoryId': serializer.toJson<int>(categoryId),
+    };
+  }
+
+  UserFoodCategory copyWith({String? userFoodId, int? categoryId}) =>
+      UserFoodCategory(
+        userFoodId: userFoodId ?? this.userFoodId,
+        categoryId: categoryId ?? this.categoryId,
+      );
+  UserFoodCategory copyWithCompanion(UserFoodCategoriesTableCompanion data) {
+    return UserFoodCategory(
+      userFoodId:
+          data.userFoodId.present ? data.userFoodId.value : this.userFoodId,
+      categoryId:
+          data.categoryId.present ? data.categoryId.value : this.categoryId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserFoodCategory(')
+          ..write('userFoodId: $userFoodId, ')
+          ..write('categoryId: $categoryId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(userFoodId, categoryId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserFoodCategory &&
+          other.userFoodId == this.userFoodId &&
+          other.categoryId == this.categoryId);
+}
+
+class UserFoodCategoriesTableCompanion
+    extends UpdateCompanion<UserFoodCategory> {
+  final Value<String> userFoodId;
+  final Value<int> categoryId;
+  final Value<int> rowid;
+  const UserFoodCategoriesTableCompanion({
+    this.userFoodId = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserFoodCategoriesTableCompanion.insert({
+    required String userFoodId,
+    required int categoryId,
+    this.rowid = const Value.absent(),
+  })  : userFoodId = Value(userFoodId),
+        categoryId = Value(categoryId);
+  static Insertable<UserFoodCategory> custom({
+    Expression<String>? userFoodId,
+    Expression<int>? categoryId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userFoodId != null) 'user_food_id': userFoodId,
+      if (categoryId != null) 'category_id': categoryId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserFoodCategoriesTableCompanion copyWith(
+      {Value<String>? userFoodId, Value<int>? categoryId, Value<int>? rowid}) {
+    return UserFoodCategoriesTableCompanion(
+      userFoodId: userFoodId ?? this.userFoodId,
+      categoryId: categoryId ?? this.categoryId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userFoodId.present) {
+      map['user_food_id'] = Variable<String>(userFoodId.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<int>(categoryId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserFoodCategoriesTableCompanion(')
+          ..write('userFoodId: $userFoodId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserHiddenFoodsTableTable extends UserHiddenFoodsTable
+    with TableInfo<$UserHiddenFoodsTableTable, UserHiddenFood> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserHiddenFoodsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _foodIdMeta = const VerificationMeta('foodId');
+  @override
+  late final GeneratedColumn<String> foodId = GeneratedColumn<String>(
+      'food_id', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 36, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [deviceId, foodId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_hidden_foods_table';
+  @override
+  VerificationContext validateIntegrity(Insertable<UserHiddenFood> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('food_id')) {
+      context.handle(_foodIdMeta,
+          foodId.isAcceptableOrUnknown(data['food_id']!, _foodIdMeta));
+    } else if (isInserting) {
+      context.missing(_foodIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {deviceId, foodId};
+  @override
+  UserHiddenFood map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserHiddenFood(
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id'])!,
+      foodId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}food_id'])!,
+    );
+  }
+
+  @override
+  $UserHiddenFoodsTableTable createAlias(String alias) {
+    return $UserHiddenFoodsTableTable(attachedDatabase, alias);
+  }
+}
+
+class UserHiddenFood extends DataClass implements Insertable<UserHiddenFood> {
+  /// Device ID of the user (matches Supabase user_hidden_foods.device_id)
+  final String deviceId;
+
+  /// ID of the food to hide (matches Supabase user_hidden_foods.food_id)
+  final String foodId;
+  const UserHiddenFood({required this.deviceId, required this.foodId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['device_id'] = Variable<String>(deviceId);
+    map['food_id'] = Variable<String>(foodId);
+    return map;
+  }
+
+  UserHiddenFoodsTableCompanion toCompanion(bool nullToAbsent) {
+    return UserHiddenFoodsTableCompanion(
+      deviceId: Value(deviceId),
+      foodId: Value(foodId),
+    );
+  }
+
+  factory UserHiddenFood.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserHiddenFood(
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      foodId: serializer.fromJson<String>(json['foodId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'deviceId': serializer.toJson<String>(deviceId),
+      'foodId': serializer.toJson<String>(foodId),
+    };
+  }
+
+  UserHiddenFood copyWith({String? deviceId, String? foodId}) => UserHiddenFood(
+        deviceId: deviceId ?? this.deviceId,
+        foodId: foodId ?? this.foodId,
+      );
+  UserHiddenFood copyWithCompanion(UserHiddenFoodsTableCompanion data) {
+    return UserHiddenFood(
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      foodId: data.foodId.present ? data.foodId.value : this.foodId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserHiddenFood(')
+          ..write('deviceId: $deviceId, ')
+          ..write('foodId: $foodId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(deviceId, foodId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserHiddenFood &&
+          other.deviceId == this.deviceId &&
+          other.foodId == this.foodId);
+}
+
+class UserHiddenFoodsTableCompanion extends UpdateCompanion<UserHiddenFood> {
+  final Value<String> deviceId;
+  final Value<String> foodId;
+  final Value<int> rowid;
+  const UserHiddenFoodsTableCompanion({
+    this.deviceId = const Value.absent(),
+    this.foodId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserHiddenFoodsTableCompanion.insert({
+    required String deviceId,
+    required String foodId,
+    this.rowid = const Value.absent(),
+  })  : deviceId = Value(deviceId),
+        foodId = Value(foodId);
+  static Insertable<UserHiddenFood> custom({
+    Expression<String>? deviceId,
+    Expression<String>? foodId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (deviceId != null) 'device_id': deviceId,
+      if (foodId != null) 'food_id': foodId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserHiddenFoodsTableCompanion copyWith(
+      {Value<String>? deviceId, Value<String>? foodId, Value<int>? rowid}) {
+    return UserHiddenFoodsTableCompanion(
+      deviceId: deviceId ?? this.deviceId,
+      foodId: foodId ?? this.foodId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (foodId.present) {
+      map['food_id'] = Variable<String>(foodId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserHiddenFoodsTableCompanion(')
+          ..write('deviceId: $deviceId, ')
+          ..write('foodId: $foodId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10201,6 +11751,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BrandsTableTable brandsTable = $BrandsTableTable(this);
   late final $ProductTypesTableTable productTypesTable =
       $ProductTypesTableTable(this);
+  late final $UserFoodsTableTable userFoodsTable = $UserFoodsTableTable(this);
+  late final $UserFoodCategoriesTableTable userFoodCategoriesTable =
+      $UserFoodCategoriesTableTable(this);
+  late final $UserHiddenFoodsTableTable userHiddenFoodsTable =
+      $UserHiddenFoodsTableTable(this);
   late final $AppContentTableTable appContentTable =
       $AppContentTableTable(this);
   late final $WorkoutNotesTableTable workoutNotesTable =
@@ -10226,6 +11781,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         foodCategoriesTable,
         brandsTable,
         productTypesTable,
+        userFoodsTable,
+        userFoodCategoriesTable,
+        userHiddenFoodsTable,
         appContentTable,
         workoutNotesTable,
         carbLoadingTable,
@@ -12266,7 +13824,6 @@ typedef $$FoodsTableTableCreateCompanionBuilder = FoodsTableCompanion Function({
   Value<double?> proteinPerServing,
   Value<int?> caloriesPerServing,
   Value<double?> fluidMlPerServing,
-  Value<String?> brandId,
   Value<bool> showInPreferences,
   Value<bool> isElectrolyte,
   Value<String?> displayName,
@@ -12308,7 +13865,6 @@ typedef $$FoodsTableTableUpdateCompanionBuilder = FoodsTableCompanion Function({
   Value<double?> proteinPerServing,
   Value<int?> caloriesPerServing,
   Value<double?> fluidMlPerServing,
-  Value<String?> brandId,
   Value<bool> showInPreferences,
   Value<bool> isElectrolyte,
   Value<String?> displayName,
@@ -12433,9 +13989,6 @@ class $$FoodsTableTableFilterComposer
   ColumnFilters<double> get fluidMlPerServing => $composableBuilder(
       column: $table.fluidMlPerServing,
       builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get brandId => $composableBuilder(
-      column: $table.brandId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get showInPreferences => $composableBuilder(
       column: $table.showInPreferences,
@@ -12605,9 +14158,6 @@ class $$FoodsTableTableOrderingComposer
       column: $table.fluidMlPerServing,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get brandId => $composableBuilder(
-      column: $table.brandId, builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<bool> get showInPreferences => $composableBuilder(
       column: $table.showInPreferences,
       builder: (column) => ColumnOrderings(column));
@@ -12743,9 +14293,6 @@ class $$FoodsTableTableAnnotationComposer
   GeneratedColumn<double> get fluidMlPerServing => $composableBuilder(
       column: $table.fluidMlPerServing, builder: (column) => column);
 
-  GeneratedColumn<String> get brandId =>
-      $composableBuilder(column: $table.brandId, builder: (column) => column);
-
   GeneratedColumn<bool> get showInPreferences => $composableBuilder(
       column: $table.showInPreferences, builder: (column) => column);
 
@@ -12865,7 +14412,6 @@ class $$FoodsTableTableTableManager extends RootTableManager<
             Value<double?> proteinPerServing = const Value.absent(),
             Value<int?> caloriesPerServing = const Value.absent(),
             Value<double?> fluidMlPerServing = const Value.absent(),
-            Value<String?> brandId = const Value.absent(),
             Value<bool> showInPreferences = const Value.absent(),
             Value<bool> isElectrolyte = const Value.absent(),
             Value<String?> displayName = const Value.absent(),
@@ -12907,7 +14453,6 @@ class $$FoodsTableTableTableManager extends RootTableManager<
             proteinPerServing: proteinPerServing,
             caloriesPerServing: caloriesPerServing,
             fluidMlPerServing: fluidMlPerServing,
-            brandId: brandId,
             showInPreferences: showInPreferences,
             isElectrolyte: isElectrolyte,
             displayName: displayName,
@@ -12949,7 +14494,6 @@ class $$FoodsTableTableTableManager extends RootTableManager<
             Value<double?> proteinPerServing = const Value.absent(),
             Value<int?> caloriesPerServing = const Value.absent(),
             Value<double?> fluidMlPerServing = const Value.absent(),
-            Value<String?> brandId = const Value.absent(),
             Value<bool> showInPreferences = const Value.absent(),
             Value<bool> isElectrolyte = const Value.absent(),
             Value<String?> displayName = const Value.absent(),
@@ -12991,7 +14535,6 @@ class $$FoodsTableTableTableManager extends RootTableManager<
             proteinPerServing: proteinPerServing,
             caloriesPerServing: caloriesPerServing,
             fluidMlPerServing: fluidMlPerServing,
-            brandId: brandId,
             showInPreferences: showInPreferences,
             isElectrolyte: isElectrolyte,
             displayName: displayName,
@@ -13976,6 +15519,747 @@ typedef $$ProductTypesTableTableProcessedTableManager = ProcessedTableManager<
     ),
     ProductTypeEntry,
     PrefetchHooks Function()>;
+typedef $$UserFoodsTableTableCreateCompanionBuilder = UserFoodsTableCompanion
+    Function({
+  required String id,
+  required String deviceId,
+  Value<String?> clientFoodId,
+  Value<String?> barcode,
+  required String name,
+  Value<String?> displayName,
+  Value<String?> displayNamePlural,
+  Value<String?> description,
+  Value<String?> imageAddress,
+  Value<double?> servingAmount,
+  Value<String?> servingUnit,
+  Value<int?> caloriesPerServing,
+  Value<double?> carbsPerServing,
+  Value<double?> proteinPerServing,
+  Value<double?> fatPerServing,
+  Value<int?> sodiumMg,
+  Value<double?> fluidMlPerServing,
+  Value<String?> productTypeId,
+  Value<bool> isElectrolyte,
+  Value<bool> toExcludeFromSolver,
+  Value<bool> isDeleted,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> clientUpdatedAt,
+  Value<int> rowid,
+});
+typedef $$UserFoodsTableTableUpdateCompanionBuilder = UserFoodsTableCompanion
+    Function({
+  Value<String> id,
+  Value<String> deviceId,
+  Value<String?> clientFoodId,
+  Value<String?> barcode,
+  Value<String> name,
+  Value<String?> displayName,
+  Value<String?> displayNamePlural,
+  Value<String?> description,
+  Value<String?> imageAddress,
+  Value<double?> servingAmount,
+  Value<String?> servingUnit,
+  Value<int?> caloriesPerServing,
+  Value<double?> carbsPerServing,
+  Value<double?> proteinPerServing,
+  Value<double?> fatPerServing,
+  Value<int?> sodiumMg,
+  Value<double?> fluidMlPerServing,
+  Value<String?> productTypeId,
+  Value<bool> isElectrolyte,
+  Value<bool> toExcludeFromSolver,
+  Value<bool> isDeleted,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> clientUpdatedAt,
+  Value<int> rowid,
+});
+
+class $$UserFoodsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $UserFoodsTableTable> {
+  $$UserFoodsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get clientFoodId => $composableBuilder(
+      column: $table.clientFoodId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get barcode => $composableBuilder(
+      column: $table.barcode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get displayNamePlural => $composableBuilder(
+      column: $table.displayNamePlural,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get imageAddress => $composableBuilder(
+      column: $table.imageAddress, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get servingAmount => $composableBuilder(
+      column: $table.servingAmount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get servingUnit => $composableBuilder(
+      column: $table.servingUnit, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get caloriesPerServing => $composableBuilder(
+      column: $table.caloriesPerServing,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get carbsPerServing => $composableBuilder(
+      column: $table.carbsPerServing,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get proteinPerServing => $composableBuilder(
+      column: $table.proteinPerServing,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fatPerServing => $composableBuilder(
+      column: $table.fatPerServing, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get sodiumMg => $composableBuilder(
+      column: $table.sodiumMg, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fluidMlPerServing => $composableBuilder(
+      column: $table.fluidMlPerServing,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get productTypeId => $composableBuilder(
+      column: $table.productTypeId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isElectrolyte => $composableBuilder(
+      column: $table.isElectrolyte, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get toExcludeFromSolver => $composableBuilder(
+      column: $table.toExcludeFromSolver,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnFilters(column));
+}
+
+class $$UserFoodsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserFoodsTableTable> {
+  $$UserFoodsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get clientFoodId => $composableBuilder(
+      column: $table.clientFoodId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get barcode => $composableBuilder(
+      column: $table.barcode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get displayNamePlural => $composableBuilder(
+      column: $table.displayNamePlural,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get imageAddress => $composableBuilder(
+      column: $table.imageAddress,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get servingAmount => $composableBuilder(
+      column: $table.servingAmount,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get servingUnit => $composableBuilder(
+      column: $table.servingUnit, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get caloriesPerServing => $composableBuilder(
+      column: $table.caloriesPerServing,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get carbsPerServing => $composableBuilder(
+      column: $table.carbsPerServing,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get proteinPerServing => $composableBuilder(
+      column: $table.proteinPerServing,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fatPerServing => $composableBuilder(
+      column: $table.fatPerServing,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get sodiumMg => $composableBuilder(
+      column: $table.sodiumMg, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fluidMlPerServing => $composableBuilder(
+      column: $table.fluidMlPerServing,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get productTypeId => $composableBuilder(
+      column: $table.productTypeId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isElectrolyte => $composableBuilder(
+      column: $table.isElectrolyte,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get toExcludeFromSolver => $composableBuilder(
+      column: $table.toExcludeFromSolver,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$UserFoodsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserFoodsTableTable> {
+  $$UserFoodsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get clientFoodId => $composableBuilder(
+      column: $table.clientFoodId, builder: (column) => column);
+
+  GeneratedColumn<String> get barcode =>
+      $composableBuilder(column: $table.barcode, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => column);
+
+  GeneratedColumn<String> get displayNamePlural => $composableBuilder(
+      column: $table.displayNamePlural, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get imageAddress => $composableBuilder(
+      column: $table.imageAddress, builder: (column) => column);
+
+  GeneratedColumn<double> get servingAmount => $composableBuilder(
+      column: $table.servingAmount, builder: (column) => column);
+
+  GeneratedColumn<String> get servingUnit => $composableBuilder(
+      column: $table.servingUnit, builder: (column) => column);
+
+  GeneratedColumn<int> get caloriesPerServing => $composableBuilder(
+      column: $table.caloriesPerServing, builder: (column) => column);
+
+  GeneratedColumn<double> get carbsPerServing => $composableBuilder(
+      column: $table.carbsPerServing, builder: (column) => column);
+
+  GeneratedColumn<double> get proteinPerServing => $composableBuilder(
+      column: $table.proteinPerServing, builder: (column) => column);
+
+  GeneratedColumn<double> get fatPerServing => $composableBuilder(
+      column: $table.fatPerServing, builder: (column) => column);
+
+  GeneratedColumn<int> get sodiumMg =>
+      $composableBuilder(column: $table.sodiumMg, builder: (column) => column);
+
+  GeneratedColumn<double> get fluidMlPerServing => $composableBuilder(
+      column: $table.fluidMlPerServing, builder: (column) => column);
+
+  GeneratedColumn<String> get productTypeId => $composableBuilder(
+      column: $table.productTypeId, builder: (column) => column);
+
+  GeneratedColumn<bool> get isElectrolyte => $composableBuilder(
+      column: $table.isElectrolyte, builder: (column) => column);
+
+  GeneratedColumn<bool> get toExcludeFromSolver => $composableBuilder(
+      column: $table.toExcludeFromSolver, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt, builder: (column) => column);
+}
+
+class $$UserFoodsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $UserFoodsTableTable,
+    UserFood,
+    $$UserFoodsTableTableFilterComposer,
+    $$UserFoodsTableTableOrderingComposer,
+    $$UserFoodsTableTableAnnotationComposer,
+    $$UserFoodsTableTableCreateCompanionBuilder,
+    $$UserFoodsTableTableUpdateCompanionBuilder,
+    (UserFood, BaseReferences<_$AppDatabase, $UserFoodsTableTable, UserFood>),
+    UserFood,
+    PrefetchHooks Function()> {
+  $$UserFoodsTableTableTableManager(
+      _$AppDatabase db, $UserFoodsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserFoodsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserFoodsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserFoodsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> deviceId = const Value.absent(),
+            Value<String?> clientFoodId = const Value.absent(),
+            Value<String?> barcode = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> displayName = const Value.absent(),
+            Value<String?> displayNamePlural = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> imageAddress = const Value.absent(),
+            Value<double?> servingAmount = const Value.absent(),
+            Value<String?> servingUnit = const Value.absent(),
+            Value<int?> caloriesPerServing = const Value.absent(),
+            Value<double?> carbsPerServing = const Value.absent(),
+            Value<double?> proteinPerServing = const Value.absent(),
+            Value<double?> fatPerServing = const Value.absent(),
+            Value<int?> sodiumMg = const Value.absent(),
+            Value<double?> fluidMlPerServing = const Value.absent(),
+            Value<String?> productTypeId = const Value.absent(),
+            Value<bool> isElectrolyte = const Value.absent(),
+            Value<bool> toExcludeFromSolver = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> clientUpdatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              UserFoodsTableCompanion(
+            id: id,
+            deviceId: deviceId,
+            clientFoodId: clientFoodId,
+            barcode: barcode,
+            name: name,
+            displayName: displayName,
+            displayNamePlural: displayNamePlural,
+            description: description,
+            imageAddress: imageAddress,
+            servingAmount: servingAmount,
+            servingUnit: servingUnit,
+            caloriesPerServing: caloriesPerServing,
+            carbsPerServing: carbsPerServing,
+            proteinPerServing: proteinPerServing,
+            fatPerServing: fatPerServing,
+            sodiumMg: sodiumMg,
+            fluidMlPerServing: fluidMlPerServing,
+            productTypeId: productTypeId,
+            isElectrolyte: isElectrolyte,
+            toExcludeFromSolver: toExcludeFromSolver,
+            isDeleted: isDeleted,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            clientUpdatedAt: clientUpdatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String deviceId,
+            Value<String?> clientFoodId = const Value.absent(),
+            Value<String?> barcode = const Value.absent(),
+            required String name,
+            Value<String?> displayName = const Value.absent(),
+            Value<String?> displayNamePlural = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> imageAddress = const Value.absent(),
+            Value<double?> servingAmount = const Value.absent(),
+            Value<String?> servingUnit = const Value.absent(),
+            Value<int?> caloriesPerServing = const Value.absent(),
+            Value<double?> carbsPerServing = const Value.absent(),
+            Value<double?> proteinPerServing = const Value.absent(),
+            Value<double?> fatPerServing = const Value.absent(),
+            Value<int?> sodiumMg = const Value.absent(),
+            Value<double?> fluidMlPerServing = const Value.absent(),
+            Value<String?> productTypeId = const Value.absent(),
+            Value<bool> isElectrolyte = const Value.absent(),
+            Value<bool> toExcludeFromSolver = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> clientUpdatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              UserFoodsTableCompanion.insert(
+            id: id,
+            deviceId: deviceId,
+            clientFoodId: clientFoodId,
+            barcode: barcode,
+            name: name,
+            displayName: displayName,
+            displayNamePlural: displayNamePlural,
+            description: description,
+            imageAddress: imageAddress,
+            servingAmount: servingAmount,
+            servingUnit: servingUnit,
+            caloriesPerServing: caloriesPerServing,
+            carbsPerServing: carbsPerServing,
+            proteinPerServing: proteinPerServing,
+            fatPerServing: fatPerServing,
+            sodiumMg: sodiumMg,
+            fluidMlPerServing: fluidMlPerServing,
+            productTypeId: productTypeId,
+            isElectrolyte: isElectrolyte,
+            toExcludeFromSolver: toExcludeFromSolver,
+            isDeleted: isDeleted,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            clientUpdatedAt: clientUpdatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$UserFoodsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $UserFoodsTableTable,
+    UserFood,
+    $$UserFoodsTableTableFilterComposer,
+    $$UserFoodsTableTableOrderingComposer,
+    $$UserFoodsTableTableAnnotationComposer,
+    $$UserFoodsTableTableCreateCompanionBuilder,
+    $$UserFoodsTableTableUpdateCompanionBuilder,
+    (UserFood, BaseReferences<_$AppDatabase, $UserFoodsTableTable, UserFood>),
+    UserFood,
+    PrefetchHooks Function()>;
+typedef $$UserFoodCategoriesTableTableCreateCompanionBuilder
+    = UserFoodCategoriesTableCompanion Function({
+  required String userFoodId,
+  required int categoryId,
+  Value<int> rowid,
+});
+typedef $$UserFoodCategoriesTableTableUpdateCompanionBuilder
+    = UserFoodCategoriesTableCompanion Function({
+  Value<String> userFoodId,
+  Value<int> categoryId,
+  Value<int> rowid,
+});
+
+class $$UserFoodCategoriesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $UserFoodCategoriesTableTable> {
+  $$UserFoodCategoriesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userFoodId => $composableBuilder(
+      column: $table.userFoodId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get categoryId => $composableBuilder(
+      column: $table.categoryId, builder: (column) => ColumnFilters(column));
+}
+
+class $$UserFoodCategoriesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserFoodCategoriesTableTable> {
+  $$UserFoodCategoriesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userFoodId => $composableBuilder(
+      column: $table.userFoodId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get categoryId => $composableBuilder(
+      column: $table.categoryId, builder: (column) => ColumnOrderings(column));
+}
+
+class $$UserFoodCategoriesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserFoodCategoriesTableTable> {
+  $$UserFoodCategoriesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userFoodId => $composableBuilder(
+      column: $table.userFoodId, builder: (column) => column);
+
+  GeneratedColumn<int> get categoryId => $composableBuilder(
+      column: $table.categoryId, builder: (column) => column);
+}
+
+class $$UserFoodCategoriesTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $UserFoodCategoriesTableTable,
+    UserFoodCategory,
+    $$UserFoodCategoriesTableTableFilterComposer,
+    $$UserFoodCategoriesTableTableOrderingComposer,
+    $$UserFoodCategoriesTableTableAnnotationComposer,
+    $$UserFoodCategoriesTableTableCreateCompanionBuilder,
+    $$UserFoodCategoriesTableTableUpdateCompanionBuilder,
+    (
+      UserFoodCategory,
+      BaseReferences<_$AppDatabase, $UserFoodCategoriesTableTable,
+          UserFoodCategory>
+    ),
+    UserFoodCategory,
+    PrefetchHooks Function()> {
+  $$UserFoodCategoriesTableTableTableManager(
+      _$AppDatabase db, $UserFoodCategoriesTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserFoodCategoriesTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserFoodCategoriesTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserFoodCategoriesTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> userFoodId = const Value.absent(),
+            Value<int> categoryId = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              UserFoodCategoriesTableCompanion(
+            userFoodId: userFoodId,
+            categoryId: categoryId,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String userFoodId,
+            required int categoryId,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              UserFoodCategoriesTableCompanion.insert(
+            userFoodId: userFoodId,
+            categoryId: categoryId,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$UserFoodCategoriesTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $UserFoodCategoriesTableTable,
+        UserFoodCategory,
+        $$UserFoodCategoriesTableTableFilterComposer,
+        $$UserFoodCategoriesTableTableOrderingComposer,
+        $$UserFoodCategoriesTableTableAnnotationComposer,
+        $$UserFoodCategoriesTableTableCreateCompanionBuilder,
+        $$UserFoodCategoriesTableTableUpdateCompanionBuilder,
+        (
+          UserFoodCategory,
+          BaseReferences<_$AppDatabase, $UserFoodCategoriesTableTable,
+              UserFoodCategory>
+        ),
+        UserFoodCategory,
+        PrefetchHooks Function()>;
+typedef $$UserHiddenFoodsTableTableCreateCompanionBuilder
+    = UserHiddenFoodsTableCompanion Function({
+  required String deviceId,
+  required String foodId,
+  Value<int> rowid,
+});
+typedef $$UserHiddenFoodsTableTableUpdateCompanionBuilder
+    = UserHiddenFoodsTableCompanion Function({
+  Value<String> deviceId,
+  Value<String> foodId,
+  Value<int> rowid,
+});
+
+class $$UserHiddenFoodsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $UserHiddenFoodsTableTable> {
+  $$UserHiddenFoodsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get foodId => $composableBuilder(
+      column: $table.foodId, builder: (column) => ColumnFilters(column));
+}
+
+class $$UserHiddenFoodsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserHiddenFoodsTableTable> {
+  $$UserHiddenFoodsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get foodId => $composableBuilder(
+      column: $table.foodId, builder: (column) => ColumnOrderings(column));
+}
+
+class $$UserHiddenFoodsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserHiddenFoodsTableTable> {
+  $$UserHiddenFoodsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get foodId =>
+      $composableBuilder(column: $table.foodId, builder: (column) => column);
+}
+
+class $$UserHiddenFoodsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $UserHiddenFoodsTableTable,
+    UserHiddenFood,
+    $$UserHiddenFoodsTableTableFilterComposer,
+    $$UserHiddenFoodsTableTableOrderingComposer,
+    $$UserHiddenFoodsTableTableAnnotationComposer,
+    $$UserHiddenFoodsTableTableCreateCompanionBuilder,
+    $$UserHiddenFoodsTableTableUpdateCompanionBuilder,
+    (
+      UserHiddenFood,
+      BaseReferences<_$AppDatabase, $UserHiddenFoodsTableTable, UserHiddenFood>
+    ),
+    UserHiddenFood,
+    PrefetchHooks Function()> {
+  $$UserHiddenFoodsTableTableTableManager(
+      _$AppDatabase db, $UserHiddenFoodsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserHiddenFoodsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserHiddenFoodsTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserHiddenFoodsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> deviceId = const Value.absent(),
+            Value<String> foodId = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              UserHiddenFoodsTableCompanion(
+            deviceId: deviceId,
+            foodId: foodId,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String deviceId,
+            required String foodId,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              UserHiddenFoodsTableCompanion.insert(
+            deviceId: deviceId,
+            foodId: foodId,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$UserHiddenFoodsTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $UserHiddenFoodsTableTable,
+        UserHiddenFood,
+        $$UserHiddenFoodsTableTableFilterComposer,
+        $$UserHiddenFoodsTableTableOrderingComposer,
+        $$UserHiddenFoodsTableTableAnnotationComposer,
+        $$UserHiddenFoodsTableTableCreateCompanionBuilder,
+        $$UserHiddenFoodsTableTableUpdateCompanionBuilder,
+        (
+          UserHiddenFood,
+          BaseReferences<_$AppDatabase, $UserHiddenFoodsTableTable,
+              UserHiddenFood>
+        ),
+        UserHiddenFood,
+        PrefetchHooks Function()>;
 typedef $$AppContentTableTableCreateCompanionBuilder = AppContentTableCompanion
     Function({
   required String id,
@@ -15208,6 +17492,13 @@ class $AppDatabaseManager {
       $$BrandsTableTableTableManager(_db, _db.brandsTable);
   $$ProductTypesTableTableTableManager get productTypesTable =>
       $$ProductTypesTableTableTableManager(_db, _db.productTypesTable);
+  $$UserFoodsTableTableTableManager get userFoodsTable =>
+      $$UserFoodsTableTableTableManager(_db, _db.userFoodsTable);
+  $$UserFoodCategoriesTableTableTableManager get userFoodCategoriesTable =>
+      $$UserFoodCategoriesTableTableTableManager(
+          _db, _db.userFoodCategoriesTable);
+  $$UserHiddenFoodsTableTableTableManager get userHiddenFoodsTable =>
+      $$UserHiddenFoodsTableTableTableManager(_db, _db.userHiddenFoodsTable);
   $$AppContentTableTableTableManager get appContentTable =>
       $$AppContentTableTableTableManager(_db, _db.appContentTable);
   $$WorkoutNotesTableTableTableManager get workoutNotesTable =>

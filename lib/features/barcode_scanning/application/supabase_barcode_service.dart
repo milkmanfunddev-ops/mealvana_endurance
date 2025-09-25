@@ -1,90 +1,56 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/services/logging_service.dart';
 import '../domain/barcode_result.dart';
-import '../domain/api_food_product.dart';
+import 'product_detail_service.dart';
 
 part 'supabase_barcode_service.g.dart';
 
-/// Service for communicating with the Supabase barcode-lookup Edge Function
-/// Handles API integration with Open Food Facts and USDA fallback
+/// Service for communicating with the unified lookup-product Edge Function
+/// Handles API integration with Open Food Facts via the ProductDetailService
 class SupabaseBarcodeService {
-  final SupabaseClient _supabase;
+  final ProductDetailService _productDetailService;
   final LoggingService _logger;
 
   SupabaseBarcodeService({
-    required SupabaseClient supabase,
+    required ProductDetailService productDetailService,
     required LoggingService logger,
-  })  : _supabase = supabase,
+  })  : _productDetailService = productDetailService,
         _logger = logger;
 
-  /// Look up a barcode using the Edge Function
+  /// Look up a barcode using the unified ProductDetailService
   /// Returns null if the product is not found or if there's an error
   Future<BarcodeResult?> lookupBarcode(String barcode) async {
     try {
       _logger.info('Starting barcode lookup for: $barcode');
 
-      // Log the request details
-      _logger.info('Calling Edge Function: barcode-lookup with body: {"barcode": "$barcode"}');
-
-      // Call the Edge Function
-      final response = await _supabase.functions.invoke(
-        'barcode-lookup',
-        body: {'barcode': barcode},
+      // Use the unified ProductDetailService
+      final apiProduct = await _productDetailService.getProductDetails(
+        barcode: barcode,
       );
 
-      // Log the raw response
-      _logger.info('Edge Function response status: ${response.status}');
-      _logger.info('Edge Function response data: ${response.data}');
+      if (apiProduct != null) {
+        _logger.info('Successfully found product: ${apiProduct.productName}');
 
-      // Handle different response scenarios
-      if (response.status == 200) {
-        final data = response.data as Map<String, dynamic>;
-
-        if (data['success'] == true && data['data'] != null) {
-          // Successful lookup
-          final productData = data['data'] as Map<String, dynamic>;
-          final apiProduct = ApiFoodProduct.fromEdgeFunctionResponse(productData);
-
-          _logger.info('Successfully found product: ${apiProduct.productName}');
-
-          return BarcodeResult.success(
-            barcode: barcode,
-            product: apiProduct,
-          );
-        } else {
-          // Product not found but API call was successful
-          _logger.info('Product not found for barcode: $barcode');
-
-          return BarcodeResult.notFound(
-            barcode: barcode,
-            message: data['message'] as String? ?? 'Product not found in nutrition databases',
-          );
-        }
-      } else if (response.status == 404) {
-        // Product not found
-        final data = response.data as Map<String, dynamic>?;
+        return BarcodeResult.success(
+          barcode: barcode,
+          product: apiProduct,
+        );
+      } else {
+        _logger.info('Product not found for barcode: $barcode');
 
         return BarcodeResult.notFound(
           barcode: barcode,
-          message: data?['message'] as String? ?? 'Product not found',
-        );
-      } else {
-        // API error
-        _logger.error('Edge Function error: ${response.status}');
-
-        return BarcodeResult.error(
-          barcode: barcode,
-          message: 'Unable to connect to nutrition database. Please try again.',
+          message: 'Product not found in nutrition databases',
         );
       }
-    } on TimeoutException {
-      _logger.error('Barcode lookup timeout for: $barcode');
+    } on ProductDetailException catch (e) {
+      _logger.error('ProductDetailService error: ${e.message}');
 
       return BarcodeResult.error(
         barcode: barcode,
-        message: 'Request timed out. Please check your connection and try again.',
+        message: e.message,
       );
     } catch (e, stackTrace) {
       _logger.error('Barcode lookup error for $barcode: $e', error: e, stackTrace: stackTrace);
@@ -109,9 +75,9 @@ class SupabaseBarcodeService {
 }
 
 @riverpod
-SupabaseBarcodeService supabaseBarcodeService(SupabaseBarcodeServiceRef ref) {
+SupabaseBarcodeService supabaseBarcodeService(Ref ref) {
   return SupabaseBarcodeService(
-    supabase: Supabase.instance.client,
+    productDetailService: ref.read(productDetailServiceProvider),
     logger: LoggingService(),
   );
 }

@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../auth/application/auth_service.dart';
-import '../../../nutrition_plan/data/food_repository.dart';
-import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/food_preference_widget.dart';
+import '../../../../shared/widgets/food_preferences_content.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 
@@ -24,46 +20,41 @@ class FoodPreferencesEditScreen extends ConsumerStatefulWidget {
 
 class _FoodPreferencesEditScreenState extends ConsumerState<FoodPreferencesEditScreen> {
   final Map<String, FoodPreference> _selectedPreferences = {};
-  List<FoodItem> _foods = [];
   bool _isLoading = true;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _loadFoods();
+    _loadExistingPreferences();
   }
 
-  Future<void> _loadFoods() async {
+  Future<void> _loadExistingPreferences() async {
     try {
-      final foodRepository = ref.read(foodRepositoryProvider);
       final authService = ref.read(authServiceProvider);
 
-      // Load curated foods for preferences (same as onboarding)
-      final foods = await foodRepository.getFoodsForPreferences();
-
-      // Load existing preferences
+      // Load existing preferences using auth service
       final currentUser = await authService.getCurrentUser();
       if (currentUser != null) {
         final existingPreferences = await authService.getFoodPreferences(currentUser.id);
 
         setState(() {
-          _foods = foods;
-          _isLoading = false;
-
-          // Set existing preferences or default to willing_to_try (same as onboarding)
-          for (final food in foods) {
-            _selectedPreferences[food.name] = existingPreferences?[food.name] ?? FoodPreference.willingToTry;
+          // Use existing preferences if available
+          if (existingPreferences != null) {
+            _selectedPreferences.addAll(existingPreferences);
           }
+          _isLoading = false;
         });
       } else {
-        throw Exception('No user found');
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      debugPrint('Error loading foods: $e');
+      debugPrint('Error loading existing preferences: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -77,32 +68,31 @@ class _FoodPreferencesEditScreenState extends ConsumerState<FoodPreferencesEditS
 
   Future<void> _savePreferences() async {
     if (_isSaving) return;
-    
+
     setState(() {
       _isSaving = true;
     });
 
     try {
       final authService = ref.read(authServiceProvider);
+
+      // Save preferences via auth service
       final currentUser = await authService.getCurrentUser();
-      
       if (currentUser != null) {
         await authService.saveFoodPreferences(currentUser.id, _selectedPreferences);
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Food preferences saved!'),
-              backgroundColor: AppTheme.primary600,
-              duration: Duration(seconds: 2),
-            ),
-          );
-          
-          // Navigate back to settings
-          context.pop();
-        }
-      } else {
-        throw Exception('No user found');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Food preferences saved!'),
+            backgroundColor: AppTheme.primary600,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate back to settings
+        context.pop();
       }
     } catch (e) {
       debugPrint('Error saving preferences: $e');
@@ -128,14 +118,19 @@ class _FoodPreferencesEditScreenState extends ConsumerState<FoodPreferencesEditS
     if (_isLoading) {
       return Scaffold(
         backgroundColor: AppTheme.baseCream,
+        appBar: AppBar(
+          backgroundColor: AppTheme.baseCream,
+          foregroundColor: AppTheme.baseWhite,
+          leading: const CustomAppBarBackButton(),
+          title: const Text('Food Preferences'),
+          centerTitle: true,
+          iconTheme: IconThemeData(color: AppTheme.baseWhite),
+        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     final title = content.getValue(ContentKeys.foodPreferencesTitle, defaultValue: 'Food Preferences');
-    final likeLabel = content.getValue(ContentKeys.foodPreferencesOptionLike, defaultValue: 'Love');
-    final willingLabel = content.getValue(ContentKeys.foodPreferencesOptionWillingToTry, defaultValue: 'Willing to Try');
-    final dislikeLabel = content.getValue(ContentKeys.foodPreferencesOptionDislike, defaultValue: 'Avoid');
 
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
@@ -147,47 +142,18 @@ class _FoodPreferencesEditScreenState extends ConsumerState<FoodPreferencesEditS
         centerTitle: true,
         iconTheme: IconThemeData(color: AppTheme.baseWhite),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.separated(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              itemCount: _foods.length,
-              separatorBuilder: (context, index) => SizedBox(height: 8.h),
-              itemBuilder: (context, index) {
-                final food = _foods[index];
-                final preference = _selectedPreferences[food.name] ?? FoodPreference.willingToTry;
-                
-                return FoodPreferenceChipItem(
-                  food: food,
-                  selected: preference,
-                  likeLabel: likeLabel,
-                  willingLabel: willingLabel,
-                  dislikeLabel: dislikeLabel,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedPreferences[food.name] = value;
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-
-          // Save button - match onboarding style
-          _isSaving
-              ? CircularProgressIndicator()
-              : Padding(
-                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 34.h),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: PrimaryButton(
-                      onPressed: _isSaving ? null : _savePreferences,
-                      text: 'Save Changes',
-                    ),
-                  ),
-                ),
-        ],
+      body: FoodPreferencesContent(
+        selectedPreferences: _selectedPreferences,
+        onPreferenceChanged: (foodName, preference) {
+          setState(() {
+            _selectedPreferences[foodName] = preference;
+          });
+        },
+        onSave: _savePreferences,
+        saveButtonText: 'Save Changes',
+        isSaving: _isSaving,
+        showSaveButton: true,
+        layout: FoodPreferencesLayout.settings,
       ),
     );
   }

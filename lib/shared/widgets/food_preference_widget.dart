@@ -12,6 +12,8 @@ class FoodPreferenceChipItem extends StatelessWidget {
   final String willingLabel;
   final String dislikeLabel;
   final ValueChanged<FoodPreference> onChanged;
+  final bool showDeleteButton;
+  final VoidCallback? onDelete;
 
   const FoodPreferenceChipItem({
     super.key,
@@ -21,6 +23,8 @@ class FoodPreferenceChipItem extends StatelessWidget {
     required this.willingLabel,
     required this.dislikeLabel,
     required this.onChanged,
+    this.showDeleteButton = false,
+    this.onDelete,
   });
 
   @override
@@ -43,12 +47,31 @@ class FoodPreferenceChipItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            food.name,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
+          // Food name with optional delete button
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  food.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              if (showDeleteButton && onDelete != null)
+                GestureDetector(
+                  onTap: onDelete,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 8.w),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: Colors.red[600],
+                      size: 18.sp,
+                    ),
+                  ),
+                ),
+            ],
           ),
           SizedBox(height: 12.h),
           Row(

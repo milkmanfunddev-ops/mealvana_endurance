@@ -4,8 +4,8 @@ import 'package:drift/drift.dart';
 /// Stores nutrition plans with versioning and conflict resolution
 @DataClassName('NutritionPlanEntry')
 class NutritionPlans extends Table {
-  /// UUID primary key (matches Supabase nutrition_plans.id)
-  TextColumn get id => text().withLength(min: 36, max: 36)();
+  /// Primary key (matches Supabase nutrition_plans.id) - flexible length for various ID formats
+  TextColumn get id => text()();
 
   /// Device ID (foreign key reference to users.device_id)
   TextColumn get deviceId => text().named('device_id')();

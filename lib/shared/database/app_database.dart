@@ -22,12 +22,16 @@ import 'tables/workout_notes_table.dart';
 import 'tables/carb_loading_table.dart';
 import 'tables/carb_loading_simple_table.dart';
 import 'tables/edge_functions_table.dart';
+import 'tables/user_foods_table.dart';
+import 'tables/user_food_categories_table.dart';
+import 'tables/user_hidden_foods_table.dart';
 import '../services/logging_service.dart';
+import '../../features/nutrition_plan/domain/food_item.dart';
 
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
-/// V1 implementation with complete table set aligned with Supabase schema
+/// V3 implementation with user-specific food tables aligned with Supabase schema
 @DriftDatabase(tables: [
   // Core tables aligned with Supabase
   UserProfilesTable,
@@ -41,7 +45,12 @@ part 'app_database.g.dart';
   CategoriesTable,
   FoodCategoriesTable,
   BrandsTable,
-  ProductTypesTable, // New table for product categorization
+  ProductTypesTable,
+
+  // User-specific food tables (new in v3)
+  UserFoodsTable,
+  UserFoodCategoriesTable,
+  UserHiddenFoodsTable,
 
   // Content management
   AppContentTable,
@@ -59,7 +68,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 2; // v2: Updated foods table to match Supabase schema
+  int get schemaVersion => 1; // v1: Fresh start with all tables including imported product type
   
   LoggingService get _logger => AppLogger.instance;
 
@@ -75,6 +84,48 @@ class AppDatabase extends _$AppDatabase {
     final uuid = '${timestamp.substring(timestamp.length - 8)}-${random1}-${random2}-${random3.substring(0, 4)}-${random3}${timestamp.substring(timestamp.length - 7)}';
 
     return uuid;
+  }
+
+  /// Initialize default product types if they don't exist
+  Future<void> initializeDefaultProductTypes() async {
+    try {
+      // Check if product types already exist
+      final existingTypes = await select(productTypesTable).get();
+      if (existingTypes.isNotEmpty) {
+        return; // Already initialized
+      }
+
+      print('🏭 Initializing default product types...');
+      
+      // Insert default product types
+      final importedId = _generateUuid();
+      await into(productTypesTable).insert(
+        ProductTypesTableCompanion.insert(
+          id: importedId,
+          code: 'imported',
+          name: 'Imported',
+          namePlural: 'Imported',
+          sortOrder: const Value(1),
+        ),
+      );
+
+      print('✅ Default product types initialized successfully');
+    } catch (e) {
+      _logger.error('Failed to initialize default product types', error: e);
+      rethrow;
+    }
+  }
+
+  /// Get the ID for the 'Imported' product type
+  Future<String?> getImportedProductTypeId() async {
+    try {
+      final importedType = await (select(productTypesTable)
+        ..where((tbl) => tbl.code.equals('imported'))).getSingleOrNull();
+      return importedType?.id;
+    } catch (e) {
+      _logger.error('Failed to get imported product type ID', error: e);
+      return null;
+    }
   }
 
   /// Simple database setup for v1 - fresh start only
@@ -177,6 +228,7 @@ class AppDatabase extends _$AppDatabase {
           {'id': 'c7e2a1d4-5b6c-4f9d-8e2a-1a7c9b3e5d2f', 'code': 'hydration_with_carbs', 'name': 'Hydration with carbs', 'namePlural': 'Hydration with carbs', 'sortOrder': 40},
           {'id': 'a1e2c3d4-b5a6-4c7d-8e9f-0a1b2c3d4e5f', 'code': 'electrolytes_fluids', 'name': 'Electrolytes & fluids', 'namePlural': 'Electrolytes & fluids', 'sortOrder': 50},
           {'id': 'd4c3b2a1-6e5d-4c3b-8a9f-1e2d3c4b5a6f', 'code': 'protein_recovery', 'name': 'Protein & recovery', 'namePlural': 'Protein & recovery', 'sortOrder': 60},
+          {'id': 'cdd6a8f1-750c-4c78-93f7-ab706285ac7b', 'code': 'imported', 'name': 'Imported', 'namePlural': 'Imported', 'sortOrder': 70},
         ];
 
         for (final productType in productTypes) {
@@ -539,7 +591,6 @@ class AppDatabase extends _$AppDatabase {
       proteinPerServing: Value(foodData['protein_per_serving']?.toDouble()),
       caloriesPerServing: Value(foodData['calories_per_serving']),
       fluidMlPerServing: Value(foodData['fluid_ml_per_serving']?.toDouble()),
-      brandId: Value(foodData['brand_id']),
       productType: Value(foodData['product_type']),
       purchaseUrl: Value(foodData['purchase_url']),
       affiliateSource: Value(foodData['affiliate_source']),
@@ -643,6 +694,151 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: Value(DateTime.now()),
       ));
     }
+  }
+
+  // === User Foods Methods (Phase 3 implementation) ===
+
+  /// Save a scanned food with category associations
+  Future<void> saveUserFood({
+    required String deviceId,
+    required String id,
+    required String clientFoodId,
+    String? barcode,
+    required String name,
+    String? displayName,
+    String? displayNamePlural,
+    String? description,
+    String? imageAddress,
+    double? servingAmount,
+    String? servingUnit,
+    int? caloriesPerServing,
+    double? carbsPerServing,
+    double? proteinPerServing,
+    double? fatPerServing,
+    int? sodiumMg,
+    double? fluidMlPerServing,
+    String? productTypeId,
+    required List<int> categoryIds,
+  }) async {
+    await transaction(() async {
+      // Insert the user food
+      await into(userFoodsTable).insert(
+        UserFoodsTableCompanion.insert(
+          id: id,
+          deviceId: deviceId,
+          clientFoodId: Value(clientFoodId),
+          barcode: Value(barcode),
+          name: name,
+          displayName: Value(displayName),
+          displayNamePlural: Value(displayNamePlural),
+          description: Value(description),
+          imageAddress: Value(imageAddress),
+          servingAmount: Value(servingAmount),
+          servingUnit: Value(servingUnit),
+          caloriesPerServing: Value(caloriesPerServing),
+          carbsPerServing: Value(carbsPerServing),
+          proteinPerServing: Value(proteinPerServing),
+          fatPerServing: Value(fatPerServing),
+          sodiumMg: Value(sodiumMg),
+          fluidMlPerServing: Value(fluidMlPerServing),
+          productTypeId: Value(productTypeId),
+          createdAt: Value(DateTime.now()),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+
+      // Insert category associations
+      for (final categoryId in categoryIds) {
+        await into(userFoodCategoriesTable).insert(
+          UserFoodCategoriesTableCompanion.insert(
+            userFoodId: id,
+            categoryId: categoryId,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
+    });
+
+    _logger.database('Saved user food with categories',
+      operation: 'save_user_food',
+      data: {
+        'user_food_id': id,
+        'device_id': deviceId,
+        'name': name,
+        'category_count': categoryIds.length,
+      }
+    );
+  }
+
+  /// Get user foods for a device
+  Future<List<UserFood>> getUserFoods(String deviceId) async {
+    final query = select(userFoodsTable)
+      ..where((f) => f.deviceId.equals(deviceId) & f.isDeleted.equals(false))
+      ..orderBy([(f) => OrderingTerm.desc(f.createdAt)]);
+
+    return await query.get();
+  }
+
+  /// Check for duplicate barcode in user foods
+  Future<bool> hasUserFoodWithBarcode(String deviceId, String barcode) async {
+    final query = select(userFoodsTable)
+      ..where((f) => f.deviceId.equals(deviceId) &
+                     f.barcode.equals(barcode) &
+                     f.isDeleted.equals(false))
+      ..limit(1);
+
+    final results = await query.get();
+    return results.isNotEmpty;
+  }
+
+  /// Delete user food completely (not soft delete)
+  Future<bool> deleteUserFood(String userFoodId) async {
+    return await transaction(() async {
+      // Delete category associations first
+      await (delete(userFoodCategoriesTable)
+        ..where((c) => c.userFoodId.equals(userFoodId))).go();
+
+      // Delete the user food
+      final deletedRows = await (delete(userFoodsTable)
+        ..where((f) => f.id.equals(userFoodId))).go();
+
+      if (deletedRows > 0) {
+        _logger.database('Deleted user food completely',
+          operation: 'delete_user_food',
+          data: {'user_food_id': userFoodId}
+        );
+        return true;
+      }
+      return false;
+    });
+  }
+
+  /// Convert UserFood (Drift) to FoodItem (Domain) for display
+  FoodItem convertUserFoodToFoodItem(UserFood userFood) {
+    return FoodItem(
+      id: userFood.id,
+      name: userFood.name,
+      imageAddress: userFood.imageAddress,
+      description: userFood.description,
+      categories: [], // Categories loaded separately
+      servingAmount: userFood.servingAmount,
+      displayName: userFood.displayName,
+      displayNamePlural: userFood.displayNamePlural,
+      carbsPerServing: userFood.carbsPerServing,
+      proteinPerServing: userFood.proteinPerServing,
+      fatPerServing: userFood.fatPerServing,
+      caloriesPerServing: userFood.caloriesPerServing,
+      fluidMlPerServing: userFood.fluidMlPerServing,
+      sodiumMg: userFood.sodiumMg,
+      beforeRunSuitable: true, // Default for scanned foods
+      duringRunSuitable: true,
+      runPortable: true,
+      requiresPreparation: false,
+      aidStationAvailable: false,
+      maxServingsBefore: 2,
+      maxServingsDuring: 1,
+      toExcludeFromSolver: userFood.toExcludeFromSolver,
+    );
   }
 
   /// Convert Drift UserProfileEntry to Domain UserProfile

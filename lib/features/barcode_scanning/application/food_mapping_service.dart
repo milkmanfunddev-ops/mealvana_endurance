@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 import '../../nutrition_plan/domain/food.dart';
 import '../domain/api_food_product.dart';
 
@@ -43,7 +44,7 @@ class FoodMappingService {
     print('    Fat: ${nutritionalValues.fat}');
 
     return Food(
-      id: 'barcode_${apiProduct.barcode}',
+      id: const Uuid().v4(), // Generate proper UUID for database
       name: apiProduct.displayName,
       imageAddress: apiProduct.imageUrl,
       description: 'Scanned from barcode ${apiProduct.barcode}',
@@ -51,18 +52,18 @@ class FoodMappingService {
 
       // Serving information - simplified approach
       servingAmount: 1.0, // Always 1.0 in simplified approach
-      displayName: '${servingGrams.toStringAsFixed(servingGrams == servingGrams.toInt() ? 0 : 1)}g ${apiProduct.productName}',
-      displayNamePlural: '${servingGrams.toStringAsFixed(servingGrams == servingGrams.toInt() ? 0 : 1)}g ${apiProduct.productName}',
+      displayName: _generateDisplayName(apiProduct, servingGrams),
+      displayNamePlural: _generateDisplayNamePlural(apiProduct, servingGrams),
       // Legacy fields for compatibility
-      servingUnit: 'g',
-      servingUnitPlural: 'g',
+      servingUnit: 'servings',
+      servingUnitPlural: 'servings',
       servingQualifier: null,
       servingSize: apiProduct.servingSize ?? '${servingGrams.toStringAsFixed(servingGrams == servingGrams.toInt() ? 0 : 1)}g',
 
       // Nutritional information (per serving)
       carbsPerServing: nutritionalValues.carbohydrates,
       sodiumMg: nutritionalValues.sodiumMg,
-      fluidMlPerServing: null, // Most scanned products don't provide fluid content
+      fluidMlPerServing: _extractFluidMlForBeverage(apiProduct),
       caloriesPerServing: nutritionalValues.calories,
       proteinPerServing: nutritionalValues.protein,
       fatPerServing: nutritionalValues.fat,
@@ -70,6 +71,9 @@ class FoodMappingService {
       // Additional nutrients (not available from APIs)
       caffeineMg: null,
       potassiumMg: null,
+
+      // Product type for imported/scanned foods
+      productTypeId: 'cdd6a8f1-750c-4c78-93f7-ab706285ac7b', // "imported" product type
 
       // Conservative endurance suitability defaults
       // Users can manually adjust these after adding the food
@@ -178,6 +182,111 @@ class FoodMappingService {
            productNameLower.contains('chew') ||
            productNameLower.contains('tablet') ||
            productNameLower.contains('gummy');
+  }
+
+  /// Extract fluid content (ml) for beverages using roadmap strategy
+  /// Primary: serving_quantity + serving_quantity_unit
+  /// Fallback: product_quantity + product_quantity_unit
+  /// Detection: Check categories field for "beverage" (case-insensitive)
+  double? _extractFluidMlForBeverage(ApiFoodProduct apiProduct) {
+    // Check if this is a beverage based on categories
+    if (apiProduct.categories?.toLowerCase().contains('beverage') != true) {
+      return null; // Not a beverage
+    }
+
+    print('🍹 DEBUG - Beverage detected: ${apiProduct.productName}');
+    print('  Categories: ${apiProduct.categories}');
+
+    // Primary strategy: Use serving_quantity + serving_quantity_unit
+    if (apiProduct.servingQuantity != null &&
+        apiProduct.servingQuantityUnit?.toLowerCase() == 'ml') {
+      final fluidMl = apiProduct.servingQuantity!;
+      print('  Fluid from serving_quantity: ${fluidMl}ml');
+      return fluidMl;
+    }
+
+    // Fallback strategy: Use product_quantity + product_quantity_unit
+    if (apiProduct.productQuantity != null &&
+        apiProduct.productQuantityUnit?.toLowerCase() == 'ml') {
+      final fluidMl = apiProduct.productQuantity!;
+      print('  Fluid from product_quantity (fallback): ${fluidMl}ml');
+      return fluidMl;
+    }
+
+    print('  No valid ml quantity found for beverage');
+    return null;
+  }
+
+  /// Generate user-friendly display name
+  String _generateDisplayName(ApiFoodProduct apiProduct, double servingGrams) {
+    final productName = apiProduct.productName.trim();
+    final brandName = apiProduct.brandName?.trim() ?? '';
+
+    // Try to identify product type and reorder for better readability
+    final productNameLower = productName.toLowerCase();
+
+    // For gels: "Brand + Product" (e.g., "Maurten Gel 160")
+    if (productNameLower.contains('gel')) {
+      if (brandName.isNotEmpty && !productName.toLowerCase().startsWith(brandName.toLowerCase())) {
+        return '$brandName $productName';
+      }
+      return productName;
+    }
+
+    // For bars: "Brand + Product" (e.g., "PowerBar Energy")
+    if (productNameLower.contains('bar')) {
+      if (brandName.isNotEmpty && !productName.toLowerCase().startsWith(brandName.toLowerCase())) {
+        return '$brandName $productName';
+      }
+      return productName;
+    }
+
+    // For drinks/beverages: "Brand + Product" without serving size
+    if (productNameLower.contains('drink') ||
+        productNameLower.contains('beverage') ||
+        productNameLower.contains('sports')) {
+      if (brandName.isNotEmpty && !productName.toLowerCase().startsWith(brandName.toLowerCase())) {
+        return '$brandName $productName';
+      }
+      return productName;
+    }
+
+    // For other products: Use product name as-is, add brand if not included
+    if (brandName.isNotEmpty && !productName.toLowerCase().contains(brandName.toLowerCase())) {
+      return '$brandName $productName';
+    }
+
+    return productName;
+  }
+
+  /// Generate user-friendly plural display name
+  String _generateDisplayNamePlural(ApiFoodProduct apiProduct, double servingGrams) {
+    final displayName = _generateDisplayName(apiProduct, servingGrams);
+    final displayNameLower = displayName.toLowerCase();
+
+    // Smart pluralization for common product types
+    if (displayNameLower.contains('gel') && !displayNameLower.contains('gels')) {
+      return displayName.replaceFirst(RegExp(r'\bgel\b', caseSensitive: false), 'Gels');
+    }
+
+    if (displayNameLower.contains('bar') && !displayNameLower.contains('bars')) {
+      return displayName.replaceFirst(RegExp(r'\bbar\b', caseSensitive: false), 'Bars');
+    }
+
+    if (displayNameLower.contains('drink') && !displayNameLower.contains('drinks')) {
+      return displayName.replaceFirst(RegExp(r'\bdrink\b', caseSensitive: false), 'Drinks');
+    }
+
+    if (displayNameLower.contains('chew') && !displayNameLower.contains('chews')) {
+      return displayName.replaceFirst(RegExp(r'\bchew\b', caseSensitive: false), 'Chews');
+    }
+
+    // For products that don't match common patterns, just add 's' if doesn't end with 's'
+    if (!displayName.toLowerCase().endsWith('s')) {
+      return '${displayName}s';
+    }
+
+    return displayName;
   }
 }
 

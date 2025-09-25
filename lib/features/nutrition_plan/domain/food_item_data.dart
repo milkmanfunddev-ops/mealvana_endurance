@@ -13,6 +13,7 @@ class FoodItemData {
     this.displayName,
     this.displayNamePlural,
     this.displayOverride,
+    this.servingSize,
   });
 
   final String id;
@@ -26,6 +27,7 @@ class FoodItemData {
   final String? displayName; // Display name for singular quantities
   final String? displayNamePlural; // Display name for plural quantities
   final String? displayOverride; // Override display name
+  final String? servingSize; // Serving size information (e.g., "1 cup", "100g")
 
   /// Get the full image URL for this food item data
   /// Returns Open Food Facts URLs directly, or constructs S3 URL for other images
@@ -60,6 +62,7 @@ class FoodItemData {
       displayName: json['displayName'] as String?,
       displayNamePlural: json['displayNamePlural'] as String?,
       displayOverride: json['displayOverride'] as String?,
+      servingSize: json['servingSize'] as String? ?? json['serving_size'] as String?,
     );
   }
 
@@ -77,6 +80,7 @@ class FoodItemData {
       'displayName': displayName,
       'displayNamePlural': displayNamePlural,
       'displayOverride': displayOverride,
+      'servingSize': servingSize,
     };
   }
 

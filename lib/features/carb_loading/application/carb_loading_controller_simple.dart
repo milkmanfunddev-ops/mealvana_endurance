@@ -550,6 +550,42 @@ class CarbLoadingControllerSimple extends _$CarbLoadingControllerSimple {
     });
   }
 
+  /// Update carb target for current plan
+  Future<void> updateCarbTarget({
+    required double carbsPerKg,
+    required int dailyTargetG,
+  }) async {
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) return;
+
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      // Update plan with new carb targets
+      final updatedPlan = currentState!.plan!.copyWith(
+        dailyCarbTargetG: dailyTargetG,
+        dailyServingsTarget: (dailyTargetG / 50).round(),
+        carbsPerKgTarget: carbsPerKg,
+        updatedAt: DateTime.now(),
+      );
+
+      // Save to repository
+      final repository = await _repository;
+      await repository.savePlan(updatedPlan);
+
+      _logger.info('Updated carb target',
+        context: 'CARB_LOADING_CONTROLLER',
+        data: {
+          'plan_id': updatedPlan.id,
+          'carbs_per_kg': carbsPerKg,
+          'daily_target_g': dailyTargetG,
+        }
+      );
+
+      return currentState.copyWith(plan: updatedPlan);
+    });
+  }
+
   /// Refresh current plan
   Future<void> refresh() async {
     final currentState = state.valueOrNull;

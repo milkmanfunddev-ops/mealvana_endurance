@@ -1,417 +1,355 @@
--- Mealvana Endurance Supabase Database Schema
--- Complete schema for backend PostgreSQL database
--- This is the authoritative schema provided by the user
+-- Supabase Schema V3 - Mealvana Endurance
+-- Adds user-specific food management tables
 
-CREATE TABLE public.app_content
-(
-    id          uuid                     default gen_random_uuid()  not null,
-    version     integer                  default 1                  not null,
-    environment text                     default 'production'::text not null,
-    locale      text                     default 'en'::text         not null,
-    content     jsonb                                               not null,
-    is_active   boolean                  default true               not null,
-    created_at  timestamp with time zone default now(),
-    updated_at  timestamp with time zone default now(),
-    created_by  uuid,
-    updated_by  uuid,
-    primary key (id)
+-- =====================================================
+-- USERS TABLE (Updated with notification preferences)
+-- =====================================================
+CREATE TABLE public.users (
+    id UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    device_id TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    gender TEXT CHECK (gender IN ('male', 'female', 'other')),
+    birthday DATE,
+    height_feet INTEGER,
+    height_inches INTEGER,
+    weight_pounds NUMERIC(5,2),
+    runs_with_water_bottle BOOLEAN DEFAULT false,
+    food_preferences JSONB DEFAULT '{}'::jsonb,
+    preferred_distance_unit TEXT DEFAULT 'miles' CHECK (preferred_distance_unit IN ('miles', 'kilometers')),
+    preferred_pace_unit TEXT DEFAULT 'min_per_mile' CHECK (preferred_pace_unit IN ('min_per_mile', 'min_per_km')),
+    gut_training_level TEXT DEFAULT 'moderate' CHECK (gut_training_level IN ('low', 'moderate', 'high')),
+    onboarding_completed BOOLEAN DEFAULT false,
+    last_active_at TIMESTAMPTZ DEFAULT now(),
+    app_version TEXT,
+    notifications_enabled BOOLEAN DEFAULT false,
+    default_reminder_day INTEGER DEFAULT 4,
+    default_reminder_hour INTEGER DEFAULT 17,
+    default_reminder_minute INTEGER DEFAULT 0,
+    default_reminder_recurring BOOLEAN DEFAULT false
 );
 
-alter table public.app_content owner to postgres;
+-- Indexes
+CREATE INDEX idx_users_device_id ON public.users(device_id);
+CREATE INDEX idx_users_updated_at ON public.users(updated_at);
 
-create unique index app_content_pkey on public.app_content using btree (id);
-create index idx_app_content_active on public.app_content using btree (is_active);
-create index idx_app_content_env_locale on public.app_content using btree (environment, locale);
-create index idx_app_content_version on public.app_content using btree (version);
+-- Trigger for updated_at
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON public.users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-create trigger update_app_content_updated_at
-    before update on public.app_content
-    for each row
-execute procedure update_updated_at_column();
-
-create policy "Allow public read access to app_content" on public.app_content
-    as permissive for select using (true);
-
-create policy "Allow authenticated insert to app_content" on public.app_content
-    as permissive for insert
-    with check (auth.role() = 'authenticated'::text);
-
-create policy "Allow authenticated update to app_content" on public.app_content
-    as permissive for update
-    using (auth.role() = 'authenticated'::text);
-
-create policy "Dev: anon can modify app_content" on public.app_content
-    as permissive for all
-    to anon
-    using (true) with check (true);
-
-create policy "Anyone can read app_content" on public.app_content
-    as permissive for select using (true);
-
--- Users table (device-based authentication)
-CREATE TABLE public.users
-(
-    id                         uuid                     default gen_random_uuid() not null primary key,
-    device_id                  text                                               not null unique,
-    created_at                 timestamp with time zone default now(),
-    updated_at                 timestamp with time zone default now(),
-    gender                     text
-        constraint users_gender_check
-            check (gender = ANY (ARRAY ['male'::text, 'female'::text, 'other'::text])),
-    birthday                   date,
-    height_feet                integer,
-    height_inches              integer,
-    weight_pounds              numeric(5, 2),
-    runs_with_water_bottle     boolean                  default false,
-    food_preferences           jsonb                    default '{}'::jsonb,
-    preferred_distance_unit    text                     default 'miles'::text
-        constraint users_preferred_distance_unit_check
-            check (preferred_distance_unit = ANY (ARRAY ['miles'::text, 'kilometers'::text])),
-    preferred_pace_unit        text                     default 'min_per_mile'::text
-        constraint users_preferred_pace_unit_check
-            check (preferred_pace_unit = ANY (ARRAY ['min_per_mile'::text, 'min_per_km'::text])),
-    gut_training_level         text                     default 'moderate'::text
-        constraint users_gut_training_level_check
-            check (gut_training_level = ANY (ARRAY ['low'::text, 'moderate'::text, 'high'::text])),
-    onboarding_completed       boolean                  default false,
-    last_active_at             timestamp with time zone default now(),
-    app_version                text,
-    notifications_enabled      boolean                  default false,
-    default_reminder_day       integer                  default 4,
-    default_reminder_hour      integer                  default 17,
-    default_reminder_minute    integer                  default 0,
-    default_reminder_recurring boolean                  default false
+-- =====================================================
+-- USER FOODS TABLE (NEW IN V3)
+-- =====================================================
+-- Stores custom foods that users have added or scanned
+CREATE TABLE public.user_foods (
+    id UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    device_id TEXT NOT NULL REFERENCES public.users(device_id) ON DELETE CASCADE,
+    client_food_id TEXT,  -- Client-generated ID for offline sync
+    barcode TEXT,         -- Barcode if scanned
+    name TEXT NOT NULL,
+    display_name TEXT,
+    display_name_plural TEXT,
+    description TEXT,
+    image_address TEXT,
+    serving_amount NUMERIC,
+    serving_unit TEXT,
+    calories_per_serving INTEGER,
+    carbs_per_serving NUMERIC(10,2),
+    protein_per_serving NUMERIC(10,2),
+    fat_per_serving NUMERIC(10,2),
+    sodium_mg INTEGER,
+    fluid_ml_per_serving NUMERIC(10,1),
+    product_type_id UUID REFERENCES public.product_types(id),
+    is_electrolyte BOOLEAN DEFAULT false,
+    to_exclude_from_solver BOOLEAN DEFAULT false,
+    is_deleted BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    client_updated_at TIMESTAMPTZ,
+    UNIQUE(device_id, client_food_id)
 );
 
-alter table public.users owner to postgres;
+-- Indexes for user_foods
+CREATE INDEX idx_user_foods_device ON public.user_foods(device_id);
+CREATE INDEX idx_user_foods_barcode ON public.user_foods(barcode);
+CREATE UNIQUE INDEX uq_user_foods_device_clientid ON public.user_foods(device_id, client_food_id);
+CREATE INDEX idx_user_foods_device_not_deleted ON public.user_foods(device_id) WHERE is_deleted = false;
 
-create index idx_users_device_id on public.users using btree (device_id);
-create index idx_users_updated_at on public.users using btree (updated_at);
-
-create trigger update_users_updated_at
-    before update on public.users
-    for each row
-execute procedure update_updated_at_column();
-
-create policy "Users can read own data" on public.users
-    as permissive for select using (true);
-
-create policy "Users can insert own data" on public.users
-    as permissive for insert with check (true);
-
-create policy "Users can update own data" on public.users
-    as permissive for update using (true);
-
-grant delete, insert, references, select, trigger, truncate, update on public.users to anon;
-grant delete, insert, references, select, trigger, truncate, update on public.users to authenticated;
-grant delete, insert, references, select, trigger, truncate, update on public.users to service_role;
-
--- Nutrition plans with versioning and sync support
-CREATE TABLE public.nutrition_plans
-(
-    id                    uuid                     default gen_random_uuid() not null primary key,
-    device_id             text                                               not null
-        references public.users (device_id) on delete cascade,
-    plan_data             jsonb                                              not null,
-    distance_miles        numeric(5, 2),
-    pace_minutes_per_mile numeric(5, 2),
-    created_at            timestamp with time zone default now(),
-    updated_at            timestamp with time zone default now(),
-    plan_id               text                                               not null,
-    plan_name             text                                               not null,
-    total_calories        integer,
-    notes                 text,
-    version               integer                  default 1,
-    last_modified_by      text,
-    client_updated_at     timestamp with time zone,
-    is_deleted            boolean                  default false,
-    conflict_resolution   text,
-    unique (device_id, plan_id)
+-- =====================================================
+-- USER FOOD CATEGORIES TABLE (NEW IN V3)
+-- =====================================================
+-- Links user foods to timing categories
+CREATE TABLE public.user_food_categories (
+    user_food_id UUID NOT NULL REFERENCES public.user_foods(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES public.categories(id),
+    PRIMARY KEY (user_food_id, category_id)
 );
 
-alter table public.nutrition_plans owner to postgres;
+-- Indexes
+CREATE INDEX idx_user_food_categories_user_food ON public.user_food_categories(user_food_id);
+CREATE INDEX idx_user_food_categories_category ON public.user_food_categories(category_id);
 
-create index idx_nutrition_plans_device_id on public.nutrition_plans using btree (device_id);
-create index idx_nutrition_plans_created_at on public.nutrition_plans using btree (created_at desc);
-create index idx_nutrition_plans_plan_id on public.nutrition_plans using btree (plan_id);
-create index idx_nutrition_plans_updated_at on public.nutrition_plans using btree (updated_at desc);
-create index idx_nutrition_plans_device_updated on public.nutrition_plans using btree (device_id asc, updated_at desc);
-
-create trigger update_nutrition_plans_updated_at
-    before update on public.nutrition_plans
-    for each row
-execute procedure update_updated_at_column();
-
-create policy "Users can read own plans" on public.nutrition_plans
-    as permissive for select using (true);
-
-create policy "Users can insert own plans" on public.nutrition_plans
-    as permissive for insert with check (true);
-
-create policy "Users can update own plans" on public.nutrition_plans
-    as permissive for update using (true);
-
-create policy "Users can delete own plans" on public.nutrition_plans
-    as permissive for delete using (true);
-
-grant delete, insert, references, select, trigger, truncate, update on public.nutrition_plans to anon;
-grant delete, insert, references, select, trigger, truncate, update on public.nutrition_plans to authenticated;
-grant delete, insert, references, select, trigger, truncate, update on public.nutrition_plans to service_role;
-
--- Categories for food timing (before_run, during_run, after_run)
-CREATE TABLE public.categories
-(
-    name text    not null,
-    id   integer not null constraint categories_pk primary key
+-- =====================================================
+-- USER HIDDEN FOODS TABLE (NEW IN V3)
+-- =====================================================
+-- Tracks which generic foods a user has hidden
+CREATE TABLE public.user_hidden_foods (
+    device_id TEXT NOT NULL REFERENCES public.users(device_id) ON DELETE CASCADE,
+    food_id UUID NOT NULL REFERENCES public.foods(id) ON DELETE CASCADE,
+    PRIMARY KEY (device_id, food_id)
 );
 
-alter table public.categories owner to postgres;
-
-create policy "Anyone can read categories" on public.categories
-    as permissive for select using (true);
-
-grant delete, insert, references, select, trigger, truncate, update on public.categories to anon;
-grant delete, insert, references, select, trigger, truncate, update on public.categories to authenticated;
-grant delete, insert, references, select, trigger, truncate, update on public.categories to service_role;
-
--- Food preferences with device-based association
-CREATE TABLE public.food_preferences
-(
-    id         uuid                     default gen_random_uuid() not null primary key,
-    device_id  text                                               not null
-        references public.users (device_id) on delete cascade,
-    food_name  text                                               not null,
-    preference text                                               not null
-        constraint food_preferences_preference_check
-            check (preference = ANY (ARRAY ['like'::text, 'dislike'::text, 'willing_to_try'::text])),
-    created_at timestamp with time zone default now(),
-    updated_at timestamp with time zone default now()
+-- =====================================================
+-- NUTRITION PLANS TABLE (Existing)
+-- =====================================================
+CREATE TABLE public.nutrition_plans (
+    id UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    device_id TEXT NOT NULL REFERENCES public.users(device_id) ON DELETE CASCADE,
+    plan_data JSONB NOT NULL,
+    distance_miles NUMERIC(5,2),
+    pace_minutes_per_mile NUMERIC(5,2),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    plan_id TEXT NOT NULL,
+    plan_name TEXT NOT NULL,
+    total_calories INTEGER,
+    notes TEXT,
+    version INTEGER DEFAULT 1,
+    last_modified_by TEXT,
+    client_updated_at TIMESTAMPTZ,
+    is_deleted BOOLEAN DEFAULT false,
+    conflict_resolution TEXT,
+    UNIQUE(device_id, plan_id)
 );
 
-comment on table public.food_preferences is 'Stores user food preferences (like, dislike, willing_to_try) linked by device_id';
-comment on column public.food_preferences.device_id is 'References users.device_id - user who owns this preference';
-comment on column public.food_preferences.food_name is 'Name of the food item (should match foods.name)';
-comment on column public.food_preferences.preference is 'User preference: like, dislike, or willing_to_try';
+-- Indexes
+CREATE INDEX idx_nutrition_plans_device_id ON public.nutrition_plans(device_id);
+CREATE INDEX idx_nutrition_plans_created_at ON public.nutrition_plans(created_at DESC);
+CREATE INDEX idx_nutrition_plans_plan_id ON public.nutrition_plans(plan_id);
+CREATE INDEX idx_nutrition_plans_updated_at ON public.nutrition_plans(updated_at DESC);
+CREATE INDEX idx_nutrition_plans_device_updated ON public.nutrition_plans(device_id ASC, updated_at DESC);
 
-alter table public.food_preferences owner to postgres;
+-- Trigger for updated_at
+CREATE TRIGGER update_nutrition_plans_updated_at
+    BEFORE UPDATE ON public.nutrition_plans
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-create unique index idx_food_preferences_device_food on public.food_preferences using btree (device_id, food_name);
-create index idx_food_preferences_device_id on public.food_preferences using btree (device_id);
-create index idx_food_preferences_preference on public.food_preferences using btree (preference);
-
-create trigger update_food_preferences_updated_at
-    before update on public.food_preferences
-    for each row
-execute procedure public.update_food_preferences_updated_at();
-
-create policy "Allow all operations on food_preferences" on public.food_preferences
-    as permissive for all using (true) with check (true);
-
-grant delete, insert, references, select, trigger, truncate, update on public.food_preferences to anon;
-grant delete, insert, references, select, trigger, truncate, update on public.food_preferences to authenticated;
-grant delete, insert, references, select, trigger, truncate, update on public.food_preferences to service_role;
-
--- Edge functions for dynamic code deployment
-CREATE TABLE public.edge_functions
-(
-    id         uuid                     default gen_random_uuid() not null primary key,
-    name       text                                               not null unique,
-    code       text                                               not null,
-    created_at timestamp with time zone default now(),
-    updated_at timestamp with time zone default now()
+-- =====================================================
+-- CATEGORIES TABLE (Existing)
+-- =====================================================
+CREATE TABLE public.categories (
+    id INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL
 );
 
-alter table public.edge_functions owner to postgres;
-
-create policy "Anyone can read edge_functions" on public.edge_functions
-    as permissive for select using (true);
-
-create policy "Dev: anon can modify edge_functions" on public.edge_functions
-    as permissive for all to anon using (true) with check (true);
-
-grant delete, insert, references, select, trigger, truncate, update on public.edge_functions to anon;
-grant delete, insert, references, select, trigger, truncate, update on public.edge_functions to authenticated;
-grant delete, insert, references, select, trigger, truncate, update on public.edge_functions to service_role;
-
--- Brands for affiliate marketing features
-CREATE TABLE public.brands
-(
-    id                    uuid default gen_random_uuid() not null primary key,
-    name                  text                           not null unique,
-    website_url           text,
-    affiliate_program_url text,
-    affiliate_network     text,
-    default_affiliate_url text,
-    notes                 text
+-- =====================================================
+-- FOOD PREFERENCES TABLE (Existing)
+-- =====================================================
+CREATE TABLE public.food_preferences (
+    id UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    device_id TEXT NOT NULL REFERENCES public.users(device_id) ON DELETE CASCADE,
+    food_name TEXT NOT NULL,
+    preference TEXT NOT NULL CHECK (preference IN ('like', 'dislike', 'willing_to_try')),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-alter table public.brands owner to postgres;
+-- Indexes
+CREATE UNIQUE INDEX idx_food_preferences_device_food ON public.food_preferences(device_id, food_name);
+CREATE INDEX idx_food_preferences_device_id ON public.food_preferences(device_id);
+CREATE INDEX idx_food_preferences_preference ON public.food_preferences(preference);
 
--- Foods database with comprehensive nutrition and affiliate data
-CREATE TABLE public.foods
-(
-    id                    uuid                     default gen_random_uuid() not null primary key,
-    name                  text,
-    image_address         text,
-    description           text,
-    instructions          text,
-    nutritional_info      jsonb                    default '{}'::jsonb,
-    created_at            timestamp with time zone default now(),
-    serving_amount        numeric,
-    serving_unit          text,
-    serving_unit_plural   text,
-    serving_qualifier     text,
-    before_run_suitable   boolean                  default false,
-    during_run_suitable   boolean                  default false,
-    run_portable          boolean                  default false,
-    requires_preparation  boolean                  default false,
-    aid_station_available boolean                  default false,
-    max_servings_before   integer,
-    max_servings_during   integer,
-    serving_size          text,
-    sodium_mg             integer,
-    caffeine_mg           integer,
-    potassium_mg          integer,
-    fat_per_serving       numeric(10, 2),
-    carbs_per_serving     numeric(10, 2),
-    protein_per_serving   numeric(10, 2),
-    calories_per_serving  integer,
-    fluid_ml_per_serving  numeric(10, 1),
-    brand_id              uuid references public.brands,
-    product_type          text
-        constraint foods_product_type_check
-            check (product_type = ANY
-                   (ARRAY ['gel'::text, 'chew'::text, 'drink_mix'::text, 'electrolyte_only'::text, 'sports_drink'::text, 'bar'::text, 'waffle'::text, 'capsule'::text, 'real_food'::text, 'recovery_shake'::text])),
-    purchase_url          text,
-    affiliate_source      text,
-    show_in_preferences   boolean                  default false,
-    preference_priority   integer                  default 999,
-    display_name          varchar(100),
-    max_servings_after    integer,
-    after_run_suitable    boolean,
-    is_electrolyte        boolean                  default false
+-- Trigger for updated_at
+CREATE TRIGGER update_food_preferences_updated_at
+    BEFORE UPDATE ON public.food_preferences
+    FOR EACH ROW
+    EXECUTE FUNCTION update_food_preferences_updated_at();
+
+-- =====================================================
+-- PRODUCT TYPES TABLE (Existing)
+-- =====================================================
+CREATE TABLE public.product_types (
+    id UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    name_plural TEXT NOT NULL,
+    sort_order INTEGER,
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 
-comment on column public.foods.show_in_preferences is 'Whether this food should be shown in the onboarding food preferences screen';
-comment on column public.foods.preference_priority is 'Priority order for display in preferences screen (lower numbers first)';
-comment on column public.foods.display_name is 'User-friendly display name for UI (may differ from technical name)';
-comment on column public.foods.max_servings_after is 'Maximum recommended servings for after-run phase';
-comment on column public.foods.after_run_suitable is 'Whether this food is suitable for post-run recovery';
-comment on column public.foods.is_electrolyte is 'Whether this food is primarily an electrolyte/sodium source';
-
-alter table public.foods owner to postgres;
-
-create unique index uq_foods_lower_name on public.foods using btree (lower(name));
-
-create policy "Anyone can read foods" on public.foods
-    as permissive for select using (true);
-
-create policy "Dev: anon can modify foods" on public.foods
-    as permissive for all to anon using (true) with check (true);
-
-grant delete, insert, references, select, trigger, truncate, update on public.foods to anon;
-grant delete, insert, references, select, trigger, truncate, update on public.foods to authenticated;
-grant delete, insert, references, select, trigger, truncate, update on public.foods to service_role;
-
--- Many-to-many relationship between foods and categories
-CREATE TABLE public.food_categories
-(
-    food_id     uuid    not null references public.foods on delete cascade,
-    category_id integer not null references public.categories,
-    primary key (food_id, category_id)
+-- =====================================================
+-- FOODS TABLE (Existing)
+-- =====================================================
+CREATE TABLE public.foods (
+    id UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    name TEXT,
+    image_address TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    serving_amount NUMERIC,
+    max_servings_before INTEGER,
+    max_servings_during INTEGER,
+    max_servings_after INTEGER,
+    sodium_mg INTEGER,
+    caffeine_mg INTEGER,
+    potassium_mg INTEGER,
+    fat_per_serving NUMERIC(10,2),
+    carbs_per_serving NUMERIC(10,2),
+    protein_per_serving NUMERIC(10,2),
+    calories_per_serving INTEGER,
+    fluid_ml_per_serving NUMERIC(10,1),
+    show_in_preferences BOOLEAN DEFAULT false,
+    display_name VARCHAR(100),
+    display_name_plural VARCHAR(100),
+    is_electrolyte BOOLEAN DEFAULT false,
+    to_exclude_from_solver BOOLEAN DEFAULT false,
+    product_type_id UUID REFERENCES public.product_types(id),
+    description TEXT,
+    serving_description TEXT
 );
 
-alter table public.food_categories owner to postgres;
+-- Indexes
+CREATE UNIQUE INDEX uq_foods_lower_name ON public.foods(LOWER(name));
+CREATE INDEX idx_foods_product_type_id ON public.foods(product_type_id);
 
-create index idx_food_categories_food on public.food_categories using btree (food_id);
-create index idx_food_categories_category_id on public.food_categories using btree (category_id);
-
-create policy "Anyone can read food_categories" on public.food_categories
-    as permissive for select using (true);
-
-create policy "Dev: anon can modify food_categories" on public.food_categories
-    as permissive for all to anon using (true) with check (true);
-
-grant delete, insert, references, select, trigger, truncate, update on public.food_categories to anon;
-grant delete, insert, references, select, trigger, truncate, update on public.food_categories to authenticated;
-grant delete, insert, references, select, trigger, truncate, update on public.food_categories to service_role;
-
-grant delete, insert, references, select, trigger, truncate, update on public.brands to anon;
-grant delete, insert, references, select, trigger, truncate, update on public.brands to authenticated;
-grant delete, insert, references, select, trigger, truncate, update on public.brands to service_role;
-
--- Feedback collection with comprehensive tracking
-CREATE TABLE public.feedback
-(
-    id                   uuid                     default gen_random_uuid() not null primary key,
-    satisfaction_level   integer,
-    satisfaction_emoji   text,
-    satisfaction_label   text,
-    confidence_level     integer,
-    confidence_label     text,
-    reuse_intent         text,
-    reminder_requested   boolean                  default false,
-    missed_reasons       text,
-    missed_other         text,
-    reminder_day_of_week integer,
-    reminder_hour        integer                  default 17,
-    reminder_minute      integer                  default 0,
-    reminder_recurring   boolean                  default false,
-    plan_name            text,
-    user_name            text,
-    timestamp            timestamp with time zone,
-    created_at           timestamp with time zone default now()
+-- =====================================================
+-- FOOD CATEGORIES TABLE (Existing)
+-- =====================================================
+CREATE TABLE public.food_categories (
+    food_id UUID NOT NULL REFERENCES public.foods(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES public.categories(id),
+    PRIMARY KEY (food_id, category_id)
 );
 
-alter table public.feedback owner to postgres;
+-- Indexes
+CREATE INDEX idx_food_categories_food ON public.food_categories(food_id);
+CREATE INDEX idx_food_categories_category_id ON public.food_categories(category_id);
 
-create index idx_feedback_created_at on public.feedback using btree (created_at);
-create index idx_feedback_user_name on public.feedback using btree (user_name);
-create index idx_feedback_satisfaction_level on public.feedback using btree (satisfaction_level);
-create index idx_feedback_timestamp on public.feedback using btree (timestamp);
+-- =====================================================
+-- FEEDBACK TABLE (Existing)
+-- =====================================================
+CREATE TABLE public.feedback (
+    id UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    satisfaction_level INTEGER,
+    satisfaction_emoji TEXT,
+    satisfaction_label TEXT,
+    confidence_level INTEGER,
+    confidence_label TEXT,
+    reuse_intent TEXT,
+    reminder_requested BOOLEAN DEFAULT false,
+    missed_reasons TEXT,
+    missed_other TEXT,
+    reminder_day_of_week INTEGER,
+    reminder_hour INTEGER DEFAULT 17,
+    reminder_minute INTEGER DEFAULT 0,
+    reminder_recurring BOOLEAN DEFAULT false,
+    plan_name TEXT,
+    user_name TEXT,
+    timestamp TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
 
-create policy "Allow all operations on feedback" on public.feedback
-    as permissive for all using (true);
+-- Indexes
+CREATE INDEX idx_feedback_created_at ON public.feedback(created_at);
+CREATE INDEX idx_feedback_user_name ON public.feedback(user_name);
+CREATE INDEX idx_feedback_satisfaction_level ON public.feedback(satisfaction_level);
+CREATE INDEX idx_feedback_timestamp ON public.feedback(timestamp);
 
-grant delete, insert, references, select, trigger, truncate, update on public.feedback to anon;
-grant delete, insert, references, select, trigger, truncate, update on public.feedback to authenticated;
-grant delete, insert, references, select, trigger, truncate, update on public.feedback to service_role;
+-- =====================================================
+-- EDGE FUNCTIONS TABLE (Existing)
+-- =====================================================
+CREATE TABLE public.edge_functions (
+    id UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
 
--- Helper functions and triggers
+-- =====================================================
+-- ROW LEVEL SECURITY POLICIES
+-- =====================================================
 
--- Generic update_updated_at function for automatic timestamp updates
-CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+-- Users table policies
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read own data" ON public.users FOR SELECT USING (true);
+CREATE POLICY "Users can insert own data" ON public.users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update own data" ON public.users FOR UPDATE USING (true);
+
+-- User foods table policies
+ALTER TABLE public.user_foods ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own user foods" ON public.user_foods FOR ALL USING (true) WITH CHECK (true);
+
+-- User food categories table policies
+ALTER TABLE public.user_food_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own user food categories" ON public.user_food_categories FOR ALL USING (true) WITH CHECK (true);
+
+-- User hidden foods table policies
+ALTER TABLE public.user_hidden_foods ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own hidden foods" ON public.user_hidden_foods FOR ALL USING (true) WITH CHECK (true);
+
+-- Nutrition plans table policies
+ALTER TABLE public.nutrition_plans ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can read own plans" ON public.nutrition_plans FOR SELECT USING (true);
+CREATE POLICY "Users can insert own plans" ON public.nutrition_plans FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update own plans" ON public.nutrition_plans FOR UPDATE USING (true);
+CREATE POLICY "Users can delete own plans" ON public.nutrition_plans FOR DELETE USING (true);
+
+-- Categories table policies (public read)
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can read categories" ON public.categories FOR SELECT USING (true);
+
+-- Food preferences table policies
+ALTER TABLE public.food_preferences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on food_preferences" ON public.food_preferences FOR ALL USING (true) WITH CHECK (true);
+
+-- Foods table policies (public read)
+ALTER TABLE public.foods ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can read foods" ON public.foods FOR SELECT USING (true);
+CREATE POLICY "Dev: anon can modify foods" ON public.foods FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- Food categories table policies (public read)
+ALTER TABLE public.food_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can read food_categories" ON public.food_categories FOR SELECT USING (true);
+CREATE POLICY "Dev: anon can modify food_categories" ON public.food_categories FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- Feedback table policies
+ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on feedback" ON public.feedback FOR ALL USING (true);
+
+-- Edge functions table policies
+ALTER TABLE public.edge_functions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can read edge_functions" ON public.edge_functions FOR SELECT USING (true);
+CREATE POLICY "Dev: anon can modify edge_functions" ON public.edge_functions FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- =====================================================
+-- GRANTS
+-- =====================================================
+
+-- Grant permissions to all tables for all roles
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+
+-- =====================================================
+-- HELPER FUNCTIONS
+-- =====================================================
+
+-- Function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
+    NEW.updated_at = now();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Specific trigger function for food_preferences
-CREATE OR REPLACE FUNCTION public.update_food_preferences_updated_at()
+-- Function for food preferences update
+CREATE OR REPLACE FUNCTION update_food_preferences_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
+    NEW.updated_at = now();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
-
--- Insert default categories
-INSERT INTO public.categories (id, name) VALUES 
-(1, 'before_run'),
-(2, 'during_run'), 
-(3, 'after_run')
-ON CONFLICT (id) DO NOTHING;
-
--- Create indexes for performance optimization
-CREATE INDEX IF NOT EXISTS idx_users_onboarding ON public.users(onboarding_completed);
-CREATE INDEX IF NOT EXISTS idx_users_last_active ON public.users(last_active_at);
-CREATE INDEX IF NOT EXISTS idx_nutrition_plans_active ON public.nutrition_plans(device_id, is_deleted) WHERE is_deleted = false;
-CREATE INDEX IF NOT EXISTS idx_foods_suitability_before ON public.foods(before_run_suitable) WHERE before_run_suitable = true;
-CREATE INDEX IF NOT EXISTS idx_foods_suitability_during ON public.foods(during_run_suitable) WHERE during_run_suitable = true;
-CREATE INDEX IF NOT EXISTS idx_foods_suitability_after ON public.foods(after_run_suitable) WHERE after_run_suitable = true;
-CREATE INDEX IF NOT EXISTS idx_foods_brand ON public.foods(brand_id) WHERE brand_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_foods_electrolyte ON public.foods(is_electrolyte) WHERE is_electrolyte = true;
-CREATE INDEX IF NOT EXISTS idx_foods_preferences ON public.foods(show_in_preferences, preference_priority) WHERE show_in_preferences = true;
-CREATE INDEX IF NOT EXISTS idx_app_content_latest ON public.app_content(environment, locale, version DESC) WHERE is_active = true;
+$$ LANGUAGE plpgsql;
