@@ -812,7 +812,7 @@ class AnalyticsService {
     String? experimentVariant,
     required String section, // pre, during, post
     required String itemName,
-    required String itemSource, // generic, branded, etc.
+    required String itemSource, // generic, user_added, etc.
     required double carbsG,
     required double proteinG,
     required double fluidsMl,

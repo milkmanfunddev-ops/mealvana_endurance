@@ -22,7 +22,7 @@ class FoodRepository {
       // Call get-foods Edge Function without category to get all foods
       final response = await _supabase.functions.invoke('get-foods', body: {
         'category': null,  // No category filter - get all foods
-        'generic_only': false,  // Get all foods (brands removed from schema)
+        'generic_only': false,  // Get all foods
       });
 
       if (response.status != 200) {
@@ -36,7 +36,6 @@ class FoodRepository {
 
       final List<dynamic> foodsData = data['foods'] as List<dynamic>;
 
-      // Use all foods (no brand filtering since brands are removed)
       final genericFoodsData = foodsData;
 
       final foods = genericFoodsData.map((json) => _mapEdgeFunctionFoodToFoodItem(json)).toList();
@@ -44,7 +43,7 @@ class FoodRepository {
       // Sync foods to local database for offline access
       await _syncFoodsToLocalDatabase(genericFoodsData);
 
-      AppLogger.instance.debug('Synced ${foods.length} generic foods to local database via Edge Function');
+      AppLogger.instance.debug('Synced ${foods.length} foods to local database via Edge Function');
 
       return foods;
     } catch (e) {
@@ -151,57 +150,6 @@ class FoodRepository {
     return getPrimaryFoodsForPreferences();
   }
 
-  /// Get ALL foods from Supabase including both generic and branded
-  /// Use this for search functionality to include branded foods
-  /// Also syncs ALL foods to local database for offline access
-  Future<List<FoodItem>> getAllFoodsIncludingBranded() async {
-    try {
-      final response = await _supabase
-          .from('foods')
-          .select('''
-            id,
-            name,
-            display_name,
-            display_name_plural,
-            image_address,
-            serving_amount,
-            max_servings_before,
-            max_servings_during,
-            max_servings_after,
-            carbs_per_serving,
-            protein_per_serving,
-            fat_per_serving,
-            calories_per_serving,
-            fluid_ml_per_serving,
-            sodium_mg,
-            caffeine_mg,
-            potassium_mg,
-            product_type_id,
-            show_in_preferences,
-            is_electrolyte,
-            to_exclude_from_solver,
-            created_at
-          ''')
-          // No brand filtering needed since brands removed from schema
-          .order('name', ascending: true);
-
-      final List<dynamic> data = response as List<dynamic>;
-      final foods = data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
-
-      // Sync ALL foods to local database for offline access
-      await _syncFoodsToLocalDatabase(data);
-
-      AppLogger.instance.debug('Synced ${foods.length} foods (including branded) to local database');
-
-      return foods;
-    } catch (e) {
-      AppLogger.instance.error('Error fetching all foods including branded from Supabase',
-        context: 'FoodRepository',
-        error: e,
-      );
-      return [];
-    }
-  }
 
   /// Get foods by category (filtered by suitability flags)
   /// Since the Supabase schema doesn't have category join tables, we filter by suitability

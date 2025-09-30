@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../theme/app_theme.dart';
 
 /// Hero image component with blue border effect
-/// Displays the woman running image with branded styling
+/// Displays the woman running image with app styling
 class HeroImage extends StatelessWidget {
   const HeroImage({
     super.key,

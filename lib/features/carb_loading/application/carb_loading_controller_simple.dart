@@ -230,37 +230,57 @@ class CarbLoadingControllerSimple extends _$CarbLoadingControllerSimple {
     final currentState = state.valueOrNull;
     if (currentState?.plan == null) return;
 
-    state = AsyncValue.data(currentState!.copyWith(isLoading: true));
+    // Optimistic update: Update UI immediately
+    try {
+      final plan = currentState!.plan!;
+      final selectedDay = currentState.selectedDay;
+      final selectedMeal = currentState.selectedMeal;
 
-    state = await AsyncValue.guard(() async {
-      final repository = await _repository;
-      await repository.addFoodToMeal(
-        currentState.plan!.id,
-        currentState.selectedDay,
-        currentState.selectedMeal,
-        foodName,
-      );
+      final currentDaySelections = plan.daySelections[selectedDay] ?? DayFoodSelections.empty();
+      final currentMealFoods = currentDaySelections.meals[selectedMeal] ?? MealFoods.empty();
 
-      // Reload the plan to get updated data
-      final updatedPlan = await repository.getPlanById(currentState.plan!.id);
-      if (updatedPlan == null) {
-        throw Exception('Plan not found after update');
-      }
+      // Add food to meal
+      final updatedMealFoods = currentMealFoods.addFood(foodName);
 
-      _logger.info('Added food to meal',
+      // Update day selections
+      final updatedDaySelections = currentDaySelections.updateMeal(selectedMeal, updatedMealFoods);
+
+      // Update plan
+      final updatedDaySelectionsMap = Map<int, DayFoodSelections>.from(plan.daySelections);
+      updatedDaySelectionsMap[selectedDay] = updatedDaySelections;
+
+      final updatedPlan = plan.copyWith(daySelections: updatedDaySelectionsMap);
+
+      // Update state immediately
+      state = AsyncValue.data(currentState.copyWith(plan: updatedPlan));
+
+      _logger.info('Added food to meal (optimistic)',
         context: 'CARB_LOADING_CONTROLLER',
         data: {
           'food': foodName,
-          'day': currentState.selectedDay,
-          'meal': currentState.selectedMeal,
-        }
+          'day': selectedDay,
+          'meal': selectedMeal,
+        },
       );
 
-      return currentState.copyWith(
-        plan: updatedPlan,
-        isLoading: false,
+      // Persist to database in background
+      final repository = await _repository;
+      await repository.addFoodToMeal(
+        plan.id,
+        selectedDay,
+        selectedMeal,
+        foodName,
       );
-    });
+
+    } catch (error) {
+      // If optimistic update or database write fails, reload from database
+      _logger.error('Failed to add food, reloading from database',
+        error: error,
+        context: 'CARB_LOADING_CONTROLLER',
+      );
+
+      await _reloadPlan();
+    }
   }
 
   /// Remove food from current meal
@@ -306,39 +326,59 @@ class CarbLoadingControllerSimple extends _$CarbLoadingControllerSimple {
     final currentState = state.valueOrNull;
     if (currentState?.plan == null) return;
 
-    state = AsyncValue.data(currentState!.copyWith(isLoading: true));
+    // Optimistic update: Update UI immediately
+    try {
+      final plan = currentState!.plan!;
+      final selectedDay = currentState.selectedDay;
+      final selectedMeal = currentState.selectedMeal;
 
-    state = await AsyncValue.guard(() async {
-      final repository = await _repository;
-      await repository.updateFoodQuantity(
-        currentState.plan!.id,
-        currentState.selectedDay,
-        currentState.selectedMeal,
-        foodName,
-        quantity,
-      );
+      final currentDaySelections = plan.daySelections[selectedDay] ?? DayFoodSelections.empty();
+      final currentMealFoods = currentDaySelections.meals[selectedMeal] ?? MealFoods.empty();
 
-      // Reload the plan to get updated data
-      final updatedPlan = await repository.getPlanById(currentState.plan!.id);
-      if (updatedPlan == null) {
-        throw Exception('Plan not found after update');
-      }
+      // Update food quantity in meal
+      final updatedMealFoods = currentMealFoods.updateFoodQuantity(foodName, quantity);
 
-      _logger.info('Updated food quantity',
+      // Update day selections
+      final updatedDaySelections = currentDaySelections.updateMeal(selectedMeal, updatedMealFoods);
+
+      // Update plan
+      final updatedDaySelectionsMap = Map<int, DayFoodSelections>.from(plan.daySelections);
+      updatedDaySelectionsMap[selectedDay] = updatedDaySelections;
+
+      final updatedPlan = plan.copyWith(daySelections: updatedDaySelectionsMap);
+
+      // Update state immediately
+      state = AsyncValue.data(currentState.copyWith(plan: updatedPlan));
+
+      _logger.info('Updated food quantity (optimistic)',
         context: 'CARB_LOADING_CONTROLLER',
         data: {
           'food': foodName,
           'quantity': quantity,
-          'day': currentState.selectedDay,
-          'meal': currentState.selectedMeal,
-        }
+          'day': selectedDay,
+          'meal': selectedMeal,
+        },
       );
 
-      return currentState.copyWith(
-        plan: updatedPlan,
-        isLoading: false,
+      // Persist to database in background
+      final repository = await _repository;
+      await repository.updateFoodQuantity(
+        plan.id,
+        selectedDay,
+        selectedMeal,
+        foodName,
+        quantity,
       );
-    });
+
+    } catch (error) {
+      // If optimistic update or database write fails, reload from database
+      _logger.error('Failed to update food quantity, reloading from database',
+        error: error,
+        context: 'CARB_LOADING_CONTROLLER',
+      );
+
+      await _reloadPlan();
+    }
   }
 
   /// Get available foods for quick add
@@ -600,5 +640,24 @@ class CarbLoadingControllerSimple extends _$CarbLoadingControllerSimple {
 
       return currentState.copyWith(plan: updatedPlan);
     });
+  }
+
+  /// Helper method to reload plan from database
+  Future<void> _reloadPlan() async {
+    final currentState = state.valueOrNull;
+    if (currentState?.plan == null) return;
+
+    try {
+      final repository = await _repository;
+      final updatedPlan = await repository.getPlanById(currentState!.plan!.id);
+      if (updatedPlan != null) {
+        state = AsyncValue.data(currentState.copyWith(plan: updatedPlan));
+      }
+    } catch (error) {
+      _logger.error('Failed to reload plan',
+        error: error,
+        context: 'CARB_LOADING_CONTROLLER',
+      );
+    }
   }
 }

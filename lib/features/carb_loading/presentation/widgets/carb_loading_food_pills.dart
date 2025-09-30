@@ -94,16 +94,36 @@ class CarbLoadingFoodPill extends StatelessWidget {
             ),
           ),
 
-          // Food name and quantity
+          // Food name, quantity and description
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              '${food?.displayName ?? foodName} x $quantity',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Food name and quantity (top line)
+                Text(
+                  '${food?.displayName ?? foodName} x $quantity',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+
+                // Description (bottom line)
+                if (food?.description != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    food!.description,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withOpacity(0.8),
+                      fontWeight: FontWeight.w400,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
 

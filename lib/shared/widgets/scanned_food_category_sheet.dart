@@ -151,7 +151,7 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
               children: [
                 Expanded(
                   child: Text(
-                    'Add Food',
+                    widget.context == 'swap_food' ? 'Swap Food' : 'Add Food',
                     style: AppTheme.textStyle.copyWith(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w700,
@@ -347,7 +347,11 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
               width: double.infinity,
               child: PrimaryButton(
                 onPressed: _hasValidSelection ? _handleSave : null,
-                text: widget.context == 'onboarding' ? 'Add to My Foods' : 'Add Food',
+                text: widget.context == 'onboarding'
+                    ? 'Add to My Foods'
+                    : widget.context == 'swap_food'
+                        ? 'Swap Food'
+                        : 'Add Food',
               ),
             ),
           ),

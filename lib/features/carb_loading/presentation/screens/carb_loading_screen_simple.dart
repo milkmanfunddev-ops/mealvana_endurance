@@ -8,7 +8,7 @@ import '../widgets/carb_loading_header_card.dart';
 import '../widgets/carb_loading_day_tabs.dart';
 import '../widgets/carb_loading_meal_section.dart';
 import '../widgets/race_info_modal.dart';
-import '../widgets/daily_carb_progress_widget.dart';
+import '../widgets/daily_progress_widget.dart';
 import '../widgets/edit_carb_target_dialog.dart';
 
 /// Simplified carb loading screen matching screenshot design exactly
@@ -75,35 +75,53 @@ class CarbLoadingScreenSimple extends ConsumerWidget {
     final plan = state.plan!;
     final selectedDay = state.selectedDay;
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Blue header card with race info
-          CarbLoadingHeaderCard(plan: plan),
+    // Calculate total consumed for the selected day
+    final daySelections = plan.daySelections[selectedDay] ?? DayFoodSelections.empty();
+    final totalConsumed = daySelections.totalCarbs;
 
-          // Day selection tabs
-          CarbLoadingDayTabs(
+    return CustomScrollView(
+      slivers: [
+        // Header card as regular sliver
+        SliverToBoxAdapter(
+          child: CarbLoadingHeaderCard(plan: plan),
+        ),
+
+        // Day tabs as regular sliver
+        SliverToBoxAdapter(
+          child: CarbLoadingDayTabs(
             selectedDay: selectedDay,
             onDaySelected: (day) {
               ref.read(carbLoadingControllerSimpleProvider.notifier).selectDay(day);
             },
           ),
+        ),
 
-          const SizedBox(height: 16),
+        // Spacing
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 16),
+        ),
 
-          // Daily carb progress widget
-          DailyCarbProgressWidget(
+        // Sticky progress widget
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _StickyProgressDelegate(
             plan: plan,
             selectedDay: selectedDay,
+            totalConsumed: totalConsumed,
             onEditTarget: () => _showEditTargetDialog(context, ref, plan),
           ),
+        ),
 
-          const SizedBox(height: 16),
+        // Spacing after sticky header
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 16),
+        ),
 
-          // Meal sections
-          _buildMealSections(context, ref, state, plan),
-        ],
-      ),
+        // Meal sections
+        SliverToBoxAdapter(
+          child: _buildMealSections(context, ref, state, plan),
+        ),
+      ],
     );
   }
 
@@ -348,5 +366,46 @@ class CarbLoadingScreenSimple extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+/// Custom delegate for sticky progress widget
+class _StickyProgressDelegate extends SliverPersistentHeaderDelegate {
+  final CarbLoadingPlan plan;
+  final int selectedDay;
+  final int totalConsumed;
+  final VoidCallback onEditTarget;
+
+  const _StickyProgressDelegate({
+    required this.plan,
+    required this.selectedDay,
+    required this.totalConsumed,
+    required this.onEditTarget,
+  });
+
+  @override
+  double get minExtent => 120.0; // Minimum height when sticky
+
+  @override
+  double get maxExtent => 120.0; // Maximum height when expanded
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: AppTheme.baseCream, // Match background to prevent visual issues
+      child: DailyProgressWidget(
+        totalConsumed: totalConsumed,
+        targetAmount: plan.dailyCarbTargetG,
+        onEditTarget: onEditTarget,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    if (oldDelegate is! _StickyProgressDelegate) return true;
+    return oldDelegate.plan != plan ||
+           oldDelegate.selectedDay != selectedDay ||
+           oldDelegate.totalConsumed != totalConsumed;
   }
 }

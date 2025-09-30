@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../providers/settings_controller.dart';
@@ -594,7 +593,18 @@ class SettingsScreen extends ConsumerWidget {
           SizedBox(height: 24.h),
           PrimaryButton(
             text: 'Go Back',
-            onPressed: () => context.pop(),
+            onPressed: () {
+              try {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  context.go('/main');
+                }
+              } catch (e) {
+                // Fallback: navigate to main if pop fails
+                context.go('/main');
+              }
+            },
           ),
         ],
       ),
