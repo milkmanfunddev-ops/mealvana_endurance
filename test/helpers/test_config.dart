@@ -1,88 +1,88 @@
-/// Test configuration for Mealvana Endurance tests
-/// 
-/// Contains environment-specific configuration for testing,
-/// including Supabase credentials and test settings.
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mealvana_endurance/shared/services/app_config.dart';
+
+/// Test configuration utilities for Phase 1 Step 2
 class TestConfig {
-  /// Supabase configuration for integration tests
-  static const supabaseUrl = String.fromEnvironment(
-    'TEST_SUPABASE_URL',
-    defaultValue: 'https://your-test-project.supabase.co',
-  );
-  
-  static const supabaseAnonKey = String.fromEnvironment(
-    'TEST_SUPABASE_ANON_KEY',
-    defaultValue: 'your-test-anon-key',
-  );
-
-  /// Test timeouts
-  static const defaultTestTimeout = Duration(seconds: 30);
-  static const networkTestTimeout = Duration(seconds: 60);
-  static const databaseTestTimeout = Duration(seconds: 15);
-
-  /// Test database configuration
-  static const testDatabaseName = 'mealvana_test.db';
-  static const testDatabaseVersion = 2;
-
-  /// Test user preferences
-  static const testPreferencesKey = 'test_preferences';
-  
-  /// Tolerance levels for macro target validation
-  static const carbToleranceGrams = 10.0;
-  static const proteinToleranceGrams = 5.0;
-  static const sodiumToleranceMg = 50.0;
-  static const fluidToleranceMl = 100.0;
-
-  /// Test flags
-  static const enableNetworkTests = bool.fromEnvironment(
-    'ENABLE_NETWORK_TESTS',
-    defaultValue: false,
-  );
-  
-  static const enableSlowTests = bool.fromEnvironment(
-    'ENABLE_SLOW_TESTS',
-    defaultValue: false,
-  );
-
-  /// Validation settings
-  static const maxGenerationTimeSeconds = 10;
-  static const minFoodItemsPerPhase = 1;
-  static const maxFoodItemsPerPhase = 6;
-
-  /// Content management test settings
-  static const contentRefreshIntervalSeconds = 86400; // 24 hours
-  static const contentCacheKey = 'test_app_content';
-
-  /// Device authentication test settings  
-  static const testDeviceIdPrefix = 'test-device-';
-  static const deviceIdLength = 36;
-
-  /// Schema migration test settings
-  static const v1SchemaVersion = 1;
-  static const v2SchemaVersion = 2;
-  static const migrationTestDataSize = 100;
-
-  /// Test environment validation
-  static bool get isTestEnvironment {
-    return supabaseUrl.contains('test') || 
-           supabaseUrl.contains('localhost') ||
-           supabaseUrl.contains('127.0.0.1');
+  /// Create a test provider container with config overrides
+  ///
+  /// Usage:
+  /// ```dart
+  /// final container = TestConfig.createTestContainer(
+  ///   config: AppConfig.forTesting(
+  ///     supabaseUrl: 'http://localhost:54321',
+  ///   ),
+  /// );
+  /// ```
+  static ProviderContainer createTestContainer({
+    AppConfig? config,
+    List<dynamic> additionalOverrides = const [],
+  }) {
+    return ProviderContainer(
+      overrides: [
+        appConfigProvider.overrideWithValue(
+          config ?? AppConfig.forTesting(),
+        ),
+        ...additionalOverrides,
+      ],
+    );
   }
 
-  /// Validates test configuration is properly set up
-  static String? validateConfiguration() {
-    if (supabaseUrl == 'https://your-test-project.supabase.co') {
-      return 'TEST_SUPABASE_URL environment variable not set';
-    }
-    
-    if (supabaseAnonKey == 'your-test-anon-key') {
-      return 'TEST_SUPABASE_ANON_KEY environment variable not set';
-    }
+  /// Load configuration from .env.test_supabase for edge function testing
+  ///
+  /// Usage:
+  /// ```dart
+  /// await TestConfig.loadTestEnv();
+  /// final config = AppConfig.fromEnv();
+  /// ```
+  static Future<void> loadTestEnv() async {
+    await dotenv.load(fileName: '.env.test_supabase');
+  }
 
-    if (!isTestEnvironment) {
-      return 'Supabase URL does not appear to be a test environment';
-    }
+  /// Create config for edge function testing against dev cloud
+  /// This loads from .env.test_supabase
+  static Future<AppConfig> forEdgeTesting() async {
+    await loadTestEnv();
+    return AppConfig.fromEnv();
+  }
 
-    return null; // Configuration is valid
+  /// Create config for local Supabase testing
+  /// Uses localhost URLs for Supabase stack
+  static AppConfig forLocalTesting() {
+    return AppConfig.forTesting(
+      supabaseUrl: 'http://localhost:54321',
+      supabaseAnonKey: dotenv.get('SUPABASE_ANON_KEY', fallback: 'local-anon-key'),
+    );
+  }
+
+  /// Create a minimal test config with no-op services
+  /// Useful for unit tests that don't need external dependencies
+  static AppConfig minimal() {
+    return AppConfig.forTesting(
+      supabaseUrl: 'http://test-supabase',
+      supabaseAnonKey: 'test-key',
+      sentryDsn: 'https://test@test.ingest.sentry.io/test',
+      mixpanelToken: 'test-mixpanel',
+    );
+  }
+}
+
+/// Extension for testing with ProviderContainer
+extension ProviderContainerTest on ProviderContainer {
+  /// Dispose container after test completes
+  ///
+  /// Usage:
+  /// ```dart
+  /// test('my test', () {
+  ///   final container = TestConfig.createTestContainer()
+  ///     ..disposeAfterTest();
+  ///   // test code
+  /// });
+  /// ```
+  ProviderContainer disposeAfterTest() {
+    addTearDown(dispose);
+    return this;
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/nutrition_plan/domain/food.dart';
 import '../../../features/auth/domain/user_preferences.dart';
+import '../app_external_deps.dart';
 import '../logging_service.dart';
 import 'user_food_crud_service.dart';
 import '../../../features/nutrition_plan/data/food_repository.dart';
@@ -10,17 +11,23 @@ import '../../../features/nutrition_plan/data/food_repository.dart';
 final foodRecommendationServiceProvider = Provider<FoodRecommendationService>((ref) {
   final userFoodService = ref.read(userFoodCrudServiceProvider);
   final foodRepository = ref.read(foodRepositoryProvider);
-  return FoodRecommendationService(userFoodService, foodRepository);
+  final logger = ref.read(appExternalDepsProvider).logger;
+  return FoodRecommendationService(
+    userFoodService,
+    foodRepository,
+    logger,
+  );
 });
 
 /// Service for generating smart food recommendations
 /// Combines user foods and generic foods with preference-based sorting
 
 class FoodRecommendationService {
-  FoodRecommendationService(this._userFoodService, this._foodRepository);
+  FoodRecommendationService(this._userFoodService, this._foodRepository, this._logger);
 
   final UserFoodCrudService _userFoodService;
   final FoodRepository _foodRepository;
+  final AppLogger _logger;
 
   /// Get smart recommendations for food selection
   /// Combines user foods and generic foods based on context
@@ -32,7 +39,7 @@ class FoodRecommendationService {
     String? deviceId,
   }) async {
     try {
-      AppLogger.instance.debug('Getting recommendations',
+      _logger.debug('Getting recommendations',
         context: 'FoodRecommendationService',
         data: {
           'productTypeId': productTypeId,
@@ -61,12 +68,12 @@ class FoodRecommendationService {
           food.productTypeId == productTypeId
         ).toList();
 
-        AppLogger.instance.debug('Filtered by product type: ${filteredFoods.length} foods');
+        _logger.debug('Filtered by product type: ${filteredFoods.length} foods');
       } else if (category != null) {
         // Add scenario: match category/timing suitability
         filteredFoods = _filterByCategory(allFoods, category);
 
-        AppLogger.instance.debug('Filtered by category $category: ${filteredFoods.length} foods');
+        _logger.debug('Filtered by category $category: ${filteredFoods.length} foods');
       } else {
         // No specific filtering
         filteredFoods = allFoods;
@@ -79,11 +86,11 @@ class FoodRecommendationService {
         maxResults: maxResults,
       );
 
-      AppLogger.instance.debug('Generated ${recommendations.length} recommendations');
+      _logger.debug('Generated ${recommendations.length} recommendations');
       return recommendations;
 
     } catch (e) {
-      AppLogger.instance.error('Error getting recommendations',
+      _logger.error('Error getting recommendations',
         context: 'FoodRecommendationService',
         error: e,
       );

@@ -6,21 +6,50 @@ part of 'survey_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$surveyControllerHash() => r'cada1979bffe2d0df82559e912956ef4fa147316';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [SurveyController].
 @ProviderFor(SurveyController)
-final surveyControllerProvider =
-    AutoDisposeAsyncNotifierProvider<SurveyController, SurveyState>.internal(
-  SurveyController.new,
-  name: r'surveyControllerProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$surveyControllerHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const surveyControllerProvider = SurveyControllerProvider._();
 
-typedef _$SurveyController = AutoDisposeAsyncNotifier<SurveyState>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class SurveyControllerProvider
+    extends $AsyncNotifierProvider<SurveyController, SurveyState> {
+  const SurveyControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'surveyControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$surveyControllerHash();
+
+  @$internal
+  @override
+  SurveyController create() => SurveyController();
+}
+
+String _$surveyControllerHash() => r'8b44db19cd8b8bee6aec9f9fc4001933a7221399';
+
+abstract class _$SurveyController extends $AsyncNotifier<SurveyState> {
+  FutureOr<SurveyState> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<AsyncValue<SurveyState>, SurveyState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<SurveyState>, SurveyState>,
+              AsyncValue<SurveyState>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}

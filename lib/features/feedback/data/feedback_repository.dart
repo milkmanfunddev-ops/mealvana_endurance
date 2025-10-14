@@ -3,23 +3,29 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../domain/feedback_data.dart';
 
 /// Provider for feedback repository
 final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
   final database = ref.read(appDatabaseProvider);
-  return FeedbackRepository(database);
+  final deps = ref.read(appExternalDepsProvider);
+  return FeedbackRepository(
+    database,
+    deps.logger,
+    deps.supabaseClient,
+  );
 });
 
 /// Repository for handling feedback data persistence
 /// Manages survey responses and notification preferences in local database and Supabase
 class FeedbackRepository {
-  FeedbackRepository(this._database);
-  
+  FeedbackRepository(this._database, this._logger, this._supabase);
+
   final AppDatabase _database;
-  final SupabaseClient _supabase = Supabase.instance.client;
-  LoggingService get _logger => AppLogger.instance;
+  final AppLogger _logger;
+  final SupabaseClient _supabase;
 
   /// Save survey response to both local database and Supabase
   Future<void> saveSurveyResponse(SurveyResponse response) async {

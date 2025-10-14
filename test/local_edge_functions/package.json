@@ -1,28 +1,22 @@
 {
-  "name": "mealvana-edge-functions-local-test",
+  "name": "mealvana-edge-functions-tests",
   "version": "1.0.0",
-  "description": "Local testing environment for Mealvana edge functions",
+  "description": "Local testing for Mealvana Endurance Supabase edge functions",
   "type": "module",
   "scripts": {
-    "test": "node --test test/*.test.js",
-    "test:watch": "node --test --watch test/*.test.js",
-    "test:generate-ai": "node test/generate-ai-nutrition-plan.test.js",
-    "test:run-plan": "node test/run-plan.test.js",
-    "test:get-foods": "node test/get-foods.test.js",
-    "manual": "node test/manual-test.js",
-    "manual:scenarios": "node test/manual-test.js --scenarios",
-    "manual:all": "node test/manual-test.js --all",
-    "dev": "nodemon --exec 'node test/manual-test.js'"
-  },
-  "dependencies": {
-    "javascript-lp-solver": "^0.4.24"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "nodemon": "^3.0.0",
-    "typescript": "^5.0.0"
+    "@types/node": "^20.10.0",
+    "@vitest/ui": "^1.0.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
   },
-  "engines": {
-    "node": ">=18.0.0"
+  "dependencies": {
+    "@supabase/supabase-js": "^2.58.0",
+    "javascript-lp-solver": "^0.4.24"
   }
 }

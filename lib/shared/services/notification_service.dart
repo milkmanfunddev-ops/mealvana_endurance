@@ -1,119 +1,99 @@
 import 'dart:io';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'analytics_service.dart';
 
-/// Static notification service for managing local notifications
-/// Handles iOS-specific notification scheduling for survey reminders
-/// Also tracks North-Star metric events for reminder lifecycle
+import 'analytics/analytics_events.dart';
+import 'analytics/analytics_tracker.dart';
+
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
-  static String? _pendingNavigationPlanId; // Plan ID to navigate to when app becomes active
-  
-  
-  /// Initialize the notification service
-  /// Should be called during app startup
+  static String? _pendingNavigationPlanId;
+  static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
+
+  static void configure(AnalyticsTracker tracker) {
+    _analytics = tracker;
+  }
+
   static Future<void> initialize() async {
     if (_isInitialized) return;
-    
-    // Initialize timezone data
+
     tz.initializeTimeZones();
-    
-    // iOS-specific initialization settings
+
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false, // Will request when needed
+      requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
     );
-    
-    // Android settings (not used for now but keeping for future)
+
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    
+
     const initializationSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
-    
+
     await _plugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
-    
+
     _isInitialized = true;
   }
-  
-  /// Handle notification tap events
+
   static void _onNotificationTapped(NotificationResponse response) {
-    print('🔔 DEBUG: Notification tapped: ${response.payload}');
-    
-    // Extract planId from payload and track North-Star event
-    if (response.payload != null) {
-      try {
-        final planId = response.payload!;
-        AnalyticsService.trackPlanOpenedFromReminder(
-          planId: planId,
-          screen: 'Plan How Well', // Will navigate to the plan rating screen
-        );
-        print('📊 DEBUG: Tracked plan_opened_from_reminder for planId: $planId');
-        
-        // Store the planId for navigation handling
-        // The navigation will be handled by the router when the app becomes active
-        _pendingNavigationPlanId = planId;
-        
-      } catch (e) {
-        print('❌ DEBUG: Failed to track plan_opened_from_reminder: $e');
-      }
-    }
+    if (response.payload == null) return;
+
+    final planId = response.payload!;
+    // Track reminder clicked when user taps notification
+    _analytics.trackReminderClicked(
+      deviceId: 'unknown', // Will be set properly when app identifies user
+      planId: planId,
+    );
+    _pendingNavigationPlanId = planId;
   }
-  
-  /// Request notification permissions (iOS specific)
-  /// Returns true if permissions granted, false otherwise
+
   static Future<bool> requestPermissions() async {
     if (!_isInitialized) {
       await initialize();
     }
-    
+
     if (Platform.isIOS) {
-      final iosPlugin = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+      final iosPlugin = _plugin
+          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       if (iosPlugin != null) {
         return await iosPlugin.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        ) ?? false;
+              alert: true,
+              badge: true,
+              sound: true,
+            ) ??
+            false;
       }
     }
-    
-    // For Android or if iOS plugin not available
+
     return false;
   }
-  
-  /// Check if notifications are enabled
+
   static Future<bool> areNotificationsEnabled() async {
     if (!_isInitialized) {
       await initialize();
     }
-    
+
     if (Platform.isIOS) {
-      final iosPlugin = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+      final iosPlugin = _plugin
+          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       if (iosPlugin != null) {
         final result = await iosPlugin.checkPermissions();
         return result?.isEnabled ?? false;
       }
     }
-    
+
     return false;
   }
-  
-  /// Schedule a reminder notification for nutrition plan
-  /// - scheduledDate: When to show the notification
-  /// - recurring: Whether this should repeat weekly
-  /// - title: Notification title
-  /// - body: Notification message
-  /// - planId: UUID v4 for North-Star metric tracking
+
   static Future<void> scheduleReminder({
     required DateTime scheduledDate,
     required bool recurring,
@@ -124,14 +104,12 @@ class NotificationService {
     if (!_isInitialized) {
       await initialize();
     }
-    
-    // Check if we have permission first
+
     final hasPermission = await areNotificationsEnabled();
     if (!hasPermission) {
-      print('NotificationService: No permission to schedule notifications');
       return;
     }
-    
+
     const notificationDetails = NotificationDetails(
       iOS: DarwinNotificationDetails(
         presentAlert: true,
@@ -139,92 +117,74 @@ class NotificationService {
         presentSound: true,
       ),
     );
-    
-    // Convert DateTime to TZDateTime
+
     final scheduledTZ = tz.TZDateTime.from(scheduledDate, tz.local);
-    
-    // Track North-Star metric: reminder_set
+
     if (planId != null) {
-      try {
-        await AnalyticsService.trackReminderSet(
-          planId: planId,
-          remindAtIso: scheduledDate.toIso8601String(),
-        );
-        print('📊 DEBUG: Tracked reminder_set for planId: $planId');
-      } catch (e) {
-        print('❌ DEBUG: Failed to track reminder_set: $e');
-      }
+      // Track both reminder_set and reminder_scheduled
+      await _analytics.trackReminderSet(
+        deviceId: 'unknown', // Will be set properly when app identifies user
+        planId: planId,
+        reminderTime: scheduledDate,
+      );
+
+      // Also track as scheduled (proxy for delivery)
+      await _analytics.trackReminderScheduled(
+        deviceId: 'unknown', // Will be set properly when app identifies user
+        planId: planId,
+        reminderTime: scheduledDate,
+      );
     }
-    
+
     if (recurring) {
-      // Schedule weekly recurring notification
       await _plugin.zonedSchedule(
-        1, // Notification ID for recurring reminders
+        1,
         title,
         body,
         scheduledTZ,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-        payload: planId, // Include planId for tracking when tapped
+        payload: planId,
       );
     } else {
-      // Schedule one-time notification
       await _plugin.zonedSchedule(
-        2, // Notification ID for one-time reminders
+        2,
         title,
         body,
         scheduledTZ,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: planId, // Include planId for tracking when tapped
+        payload: planId,
       );
     }
-    
-    print('🔔 DEBUG: Scheduled ${recurring ? 'recurring' : 'one-time'} reminder for $scheduledDate with planId: $planId');
   }
-  
-  /// Cancel all scheduled reminders
+
   static Future<void> cancelAllReminders() async {
     if (!_isInitialized) {
       await initialize();
     }
-    
+
     await _plugin.cancelAll();
-    print('NotificationService: Cancelled all reminders');
   }
-  
-  /// Get list of pending notifications (for debugging)
+
   static Future<List<PendingNotificationRequest>> getPendingNotifications() async {
     if (!_isInitialized) {
       await initialize();
     }
-    
+
     return await _plugin.pendingNotificationRequests();
   }
 
-  /// Get and clear pending navigation plan ID
-  /// Called by app startup or navigation logic to handle notification taps
   static String? getPendingNavigationPlanId() {
     final planId = _pendingNavigationPlanId;
-    _pendingNavigationPlanId = null; // Clear after reading
+    _pendingNavigationPlanId = null;
     return planId;
   }
-  
-  /// Check if there's a pending navigation from notification tap
+
   static bool hasPendingNavigation() {
     return _pendingNavigationPlanId != null;
   }
-  
-  /// Track reminder_fired event for planId
-  /// Call this when a reminder notification is delivered
-  /// Since we can't detect actual delivery, this should be called when appropriate
-  static Future<void> trackReminderFired(String planId) async {
-    try {
-      await AnalyticsService.trackReminderFired(planId: planId);
-      print('📊 DEBUG: Tracked reminder_fired for planId: $planId');
-    } catch (e) {
-      print('❌ DEBUG: Failed to track reminder_fired: $e');
-    }
-  }
+
+  // Reminder fired tracking removed - using reminder_scheduled as proxy
 }

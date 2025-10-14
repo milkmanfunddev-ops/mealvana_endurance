@@ -2,305 +2,144 @@
 
 ## Overview
 
-Mealvana Endurance implements a sophisticated dual database architecture combining local-first storage with cloud synchronization. This design ensures the app works seamlessly offline while providing data backup, synchronization, and content management capabilities.
+Mealvana Endurance uses a unified database architecture with 100% schema parity:
+- **Drift (SQLite)**: Local offline-first storage with 26 tables (v1)
+- **Supabase (PostgreSQL)**: Cloud backend with 26 tables (v1) - complete parity
 
-## Architecture Summary
+## Architecture
 
-### Dual Database System
-- **[Drift (SQLite)](drift/)**: Local offline-first storage with type-safe migrations
-- **[Supabase (PostgreSQL)](supabase/)**: Cloud backend with real-time capabilities and content management
+### Local Database (Drift)
+- **Schema Version**: 1
+- **Tables**: 26 total (100% synced with Supabase)
+- **Location**: `/lib/shared/database/`
+- **Purpose**: Offline functionality, fast local access
 
-### Key Principles
-- **Offline-First**: App fully functional without internet connection
-- **Device-Based Authentication**: No traditional user accounts, privacy-focused
-- **Content-Driven**: UI text and algorithm parameters managed server-side
-- **Safe Migrations**: Backup and rollback strategies for schema changes
+### Cloud Database (Supabase)
+- **Tables**: 13 production tables
+- **Schema Dump**: `/supabase/schema_dump.sql`
+- **Purpose**: Data backup, cross-device sync, content management
 
-## Documentation Structure
+## Table Structure
 
-### 📁 [Architecture](architecture/)
-Foundational design principles and data flow patterns:
-- **[offline-first.md](architecture/offline-first.md)**: Local-first design principles and ownership patterns
-- **[data-flow.md](architecture/data-flow.md)**: Data synchronization flows between local and cloud storage
-- **[backup-strategy.md](architecture/backup-strategy.md)**: Migration safety and rollback procedures
+### Synced Tables (13)
+These tables exist in both Drift and Supabase and can sync data:
 
-### 📁 [Drift (Local Database)](drift/)
-SQLite implementation with Dart code generation:
-- **[schema.md](drift/schema.md)**: Complete v1 schema with updated tables and relationships
-- **[migration-strategy.md](drift/migration-strategy.md)**: Schema migration strategies and best practices
-- **[sync-service.md](drift/sync-service.md)**: 24-hour refresh cycle and sync coordination
-- **[repositories.md](drift/repositories.md)**: Repository pattern implementation with Riverpod
+| Table | Purpose | Primary Key |
+|-------|---------|-------------|
+| `users` | User profiles and settings | `id` (UUID) |
+| `nutrition_plans` | Generated nutrition plans | `id` (UUID) |
+| `food_preferences` | User food likes/dislikes | `id` (UUID) |
+| `feedback` | Plan feedback and ratings | `id` (UUID) |
+| `foods` | Food database with nutrition | `id` (UUID) |
+| `product_types` | Food categories (gel, bar) | `id` (UUID) |
+| `categories` | Timing (before/during/after) | `id` (int) |
+| `food_categories` | Food-to-category mappings | Composite |
+| `user_foods` | User-created/scanned foods | `id` (UUID) |
+| `user_food_categories` | User food timing | Composite |
+| `user_hidden_foods` | Hidden foods per user | Composite |
+| `app_content` | Dynamic UI text/parameters | `id` (UUID) |
+| `edge_functions` | Edge function code | `id` (UUID) |
 
-### 📁 [Supabase (Cloud Backend)](supabase/)  
-PostgreSQL backend with real-time and serverless capabilities:
-- **[schema.sql](supabase/schema.sql)**: Complete PostgreSQL schema with RLS policies
-- **[tables.md](supabase/tables.md)**: Detailed table documentation and usage patterns
-- **[edge-functions.md](supabase/edge-functions.md)**: AI nutrition plan generation and dynamic code deployment
-- **[rls-policies.md](supabase/rls-policies.md)**: Row Level Security implementation for privacy protection
+### Local-Only Tables (5)
+These tables exist only in Drift for local functionality:
 
-## Current Status: V1 Clean Schema Implementation
+| Table | Purpose |
+|-------|---------|
+| `macro_targets` | Nutritional target calculations |
+| `workout_notes` | User workout notes |
+| `carb_loading_plans` | Carb loading feature |
+| `carb_loading_simple` | Simple carb loading |
+| `brands` | Brand information |
 
-The app has been updated with a clean v1 schema implementation aligned with the new Supabase backend:
+### Local-Only Columns
+Some synced tables have extra Drift-only columns:
+- `users.temp_plan_data` - Persists unsaved plans
+- `users.swipe_hint_shown` - UI state tracking
 
-### V1 Current Implementation
-- ✅ Clean Drift schema matching Supabase structure
-- ✅ Product types table for standardized food categorization
-- ✅ Simplified foods table with display names and product type references
-- ✅ Enhanced nutrition plans with complete versioning and metadata
-- ✅ Device-based authentication (no traditional user accounts)
-- ✅ Local food caching with Supabase sync capability
+## Key Design Decisions
 
-### Key Schema Updates
-- **Product Types**: New standardized categorization system (16 types)
-- **Foods Table**: Simplified serving logic, added display names and product type references
-- **Nutrition Plans**: Complete overhaul with versioning, conflict resolution, and device-based tracking
-- **Database Methods**: Updated to work with new field names and structures
+1. **Device-Based Authentication**: No traditional user accounts, uses `device_id`
+2. **Offline-First**: Full functionality without internet
+3. **Selective Sync**: Only core tables sync to Supabase
+4. **Incremental Migration**: Drift's built-in migration system for v1→v2 and beyond
 
-### Fresh Start Approach
-**V1 Fresh Implementation**: Starting with a clean v1 schema that mirrors the updated Supabase backend structure, ensuring consistency between local and cloud storage from the beginning.
+## Critical Schema Notes
 
-## Quick Start
+### Foreign Key References
+- All user references use `device_id` (not `user_id`)
+- Foods reference `product_type_id` (UUID to product_types.id)
+- All foreign keys are enforced in both databases
 
-### For Developers
+### Check Constraints
+The following enum constraints are enforced:
+```sql
+-- Users table
+CHECK (gender IN ('male', 'female', 'other'))
+CHECK (gut_training_level IN ('low', 'moderate', 'high'))
 
-1. **Understanding the Architecture**:
-   ```bash
-   # Start with architectural principles
-   docs/database/architecture/offline-first.md
-   docs/database/architecture/data-flow.md
-   ```
+-- Food preferences
+CHECK (preference IN ('like', 'dislike', 'willing_to_try'))
+```
 
-2. **Working with Local Storage**:
-   ```bash
-   # Drift implementation details
-   docs/database/drift/schema.md
-   docs/database/drift/repositories.md
-   ```
+### Data Type Mappings
+| Supabase Type | Drift Type | Notes |
+|---------------|------------|--------|
+| UUID | TEXT(36) | 36-character string |
+| JSONB | TEXT | With JSON converter |
+| TIMESTAMPTZ | DateTime | Auto-converted |
+| BOOLEAN | Boolean | Native support |
+| NUMERIC(5,2) | REAL | Floating point |
 
-3. **Backend Integration**:
-   ```bash
-   # Supabase setup and policies
-   docs/database/supabase/tables.md
-   docs/database/supabase/rls-policies.md
-   ```
+## File Structure
 
-### For AI Assistants
+```
+/lib/shared/database/
+├── app_database.dart          # Main database class
+├── tables/                     # Table definitions
+│   ├── user_profiles.dart     # Maps to 'users' table
+│   ├── nutrition_plans.dart
+│   ├── food_preferences.dart
+│   └── ... (18 total)
+└── database_provider.dart     # Riverpod provider
 
-**When working with database code:**
-- Consult `drift/schema.md` for current v1 table structure
-- Check `drift/repositories.md` for repository patterns
-- Use `architecture/data-flow.md` for sync logic understanding
-- Reference `supabase/tables.md` for backend table relationships
+/supabase/
+├── schema_dump.sql            # Production schema
+└── migrations/                # Schema migrations
 
-**🚨 CRITICAL: Enum Format Requirements**
+/drift_schemas/v1/
+├── schema_v1_actual.sql       # Original 4-table schema
+├── production_schema_analysis.md
+└── CRITICAL_FIXES_REQUIRED.md
+```
 
-**When working with enum values in database operations:**
+## Common Operations
 
 ```dart
-// ✅ CORRECT - For LOCAL database operations, use .value
-await database.saveFoodPreferences(deviceId, preferences.map(
-  (key, value) => MapEntry(key, value.value), // Stores: willing_to_try
-));
+// Get database instance
+final db = ref.read(appDatabaseProvider);
 
-// ✅ CORRECT - For reading from LOCAL database, match against .value
-final preference = FoodPreference.values.firstWhere(
-  (p) => p.value == row.preference, // Expects: willing_to_try
-  orElse: () => FoodPreference.dislike,
-);
+// Get current user
+final user = await db.getCurrentUserProfile();
 
-// ❌ WRONG - Don't use .name for database operations
-await database.saveFoodPreferences(deviceId, preferences.map(
-  (key, value) => MapEntry(key, value.name), // Would store: willingToTry - FAILS!
-));
+// Save nutrition plan
+await db.saveNutritionPlan(plan);
+
+// Get foods by category
+final foods = await db.getFoodsByCategory('before_run');
 ```
 
-**Why this matters:**
-- Database CHECK constraints expect underscore format: `preference IN ('like', 'dislike', 'willing_to_try')`
-- Edge Functions expect underscore format for consistency
-- Local database mirrors cloud database format exactly
-- Using `.name` instead of `.value` causes CHECK constraint failures
+## Documentation Files
 
-**When making schema changes:**
-- Follow migration strategy in `drift/migration-strategy.md`
-- Implement backup procedures from `architecture/backup-strategy.md`
-- Update both Drift and Supabase documentation
-- Test enum format consistency across all database operations
+- [Drift Schema Details](drift/schema.md) - Complete table structures
+- [Supabase Tables](supabase/tables.md) - Cloud database details
+- [Migration Strategy](drift/migration-strategy.md) - Schema versioning
 
-## 🏗️ **Schema Highlights**
+## Recent Fixes Applied
 
-### **Device-Centric Architecture**
-- **No traditional user accounts** - Everything tied to device identifiers
-- **Privacy-first** - No email/phone collection required
-- **Offline-capable** - Local Drift SQLite database with Supabase sync
+✅ Fixed `foods.product_type` → `foods.product_type_id`
+✅ Re-enabled foreign key constraints in user tables
+✅ Added missing check constraints for enums
+✅ Documented local-only tables and columns
 
-### **Multi-Category Food System**
-```sql
--- Foods can belong to multiple timing categories
-SELECT f.name, array_agg(c.name) as categories
-FROM foods f
-JOIN food_categories fc ON f.id = fc.food_id  
-JOIN categories c ON fc.category_id = c.id
-GROUP BY f.id, f.name;
-```
-
-### **Simplified Serving Data & Product Types**
-```sql
--- Simplified serving structure with standardized product categories
-CREATE TABLE foods (
-  serving_amount NUMERIC,               -- e.g., 1, 0.5, 2
-  serving_description TEXT,             -- e.g., "1 medium", "1 cup cooked"
-  display_name VARCHAR(100),            -- e.g., "gel", "banana"
-  display_name_plural VARCHAR(100),     -- e.g., "gels", "bananas"
-  product_type_id UUID REFERENCES product_types(id)
-);
-
-CREATE TABLE product_types (
-  id UUID PRIMARY KEY,
-  code TEXT UNIQUE,                     -- e.g., "gel", "fruit_fresh"
-  name TEXT,                           -- e.g., "Gel", "Fresh Fruit"
-  name_plural TEXT                     -- e.g., "Gels", "Fresh Fruits"
-);
-```
-
-### **Food Preferences System**
-```sql
--- Three-level preference system
-CREATE TABLE food_preferences (
-  preference TEXT CHECK (preference IN ('like', 'dislike', 'willing_to_try'))
-);
-
--- Helper function for batch updates
-SELECT upsert_food_preferences(device_id, preferences_jsonb);
-```
-
-### **Versioning & Conflict Resolution**
-```sql
--- Device-based nutrition plans with optimistic concurrency control
-CREATE TABLE nutrition_plans (
-  id UUID PRIMARY KEY,
-  device_id TEXT NOT NULL,              -- Device-based authentication
-  plan_id TEXT NOT NULL,                -- User-defined plan identifier
-  plan_name TEXT NOT NULL,              -- Display name
-  plan_data TEXT NOT NULL,              -- JSON plan content
-  version INTEGER DEFAULT 1,
-  last_modified_by TEXT,
-  client_updated_at TIMESTAMPTZ,
-  is_deleted BOOLEAN DEFAULT FALSE,
-  conflict_resolution TEXT,
-  UNIQUE(device_id, plan_id)            -- One plan per device per plan_id
-);
-```
-
-## 🔧 **Database Functions**
-
-### **`upsert_food_preferences(device_id, preferences_jsonb)`**
-Replaces all food preferences for a user with new preferences.
-
-**Usage:**
-```sql
-SELECT upsert_food_preferences(
-  'device123',
-  '{"Oatmeal": "like", "Gels": "willing_to_try", "Coffee": "dislike"}'::jsonb
-);
-```
-
-### **`upsert_nutrition_plan_versioned(...)`**
-Inserts nutrition plan with conflict detection and versioning.
-
-### **`get_active_app_content(environment, locale)`**
-Retrieves active app content for localization.
-
-## 📊 **Performance Features**
-
-### **Strategic Indexes**
-- **Primary keys** - Automatic unique indexes
-- **Foreign keys** - Automatic relationship indexes
-- **Query optimization** - device_id, timestamps, active flags  
-- **Composite indexes** - Multi-column lookups
-
-### **Automatic Triggers**
-- **Updated timestamps** - Auto-update `updated_at` columns
-- **Data validation** - Constraint checks
-- **Referential integrity** - Foreign key enforcement
-
-### **Row Level Security (RLS)**
-- **User data isolation** - Users can only access their own data
-- **Edge function access** - Service role bypasses RLS
-- **Public data** - Foods and categories are publicly readable
-
-## 🔍 **Common Queries**
-
-### **Get User's Food Preferences**
-```sql
-SELECT food_name, preference 
-FROM food_preferences 
-WHERE device_id = 'device123';
-```
-
-### **Get Foods by Category**
-```sql
-SELECT f.* FROM foods f
-JOIN food_categories fc ON f.id = fc.food_id
-JOIN categories c ON fc.category_id = c.id  
-WHERE c.name = 'before_run';
-```
-
-### **Get User's Latest Nutrition Plan**
-```sql
-SELECT * FROM nutrition_plans
-WHERE device_id = 'device123' AND is_deleted = FALSE
-ORDER BY updated_at DESC
-LIMIT 1;
-```
-
-### **Get Multi-Category Foods**
-```sql
-SELECT f.name, count(*) as category_count
-FROM foods f
-JOIN food_categories fc ON f.id = fc.food_id
-GROUP BY f.id, f.name
-HAVING count(*) > 1;
-```
-
-## 🚨 **Migration Notes**
-
-### **Hive to Drift Migration**
-- **Hive Boxes** → **Drift Tables**: Structured SQL tables with relationships
-- **Type Adapters** → **Schema Classes**: Generated Dart classes with type safety
-- **Manual Migrations** → **Automated Migrations**: Built-in schema versioning
-
-### **Local Storage Migration Steps**
-1. **Export Hive Data**: Backup existing user data from Hive boxes
-2. **Initialize Drift Database**: Create SQLite database with schema version 1
-3. **Migrate Data**: Import user profiles, food preferences, and nutrition plans
-4. **Verify Integrity**: Run generated migration tests
-5. **Remove Hive Dependencies**: Clean up old Hive storage files
-
-### **Schema Migration Commands**
-```bash
-# Generate new schema version after changes
-dart run drift_dev make-migrations
-
-# Export schema for version control
-dart run drift_dev schema dump lib/database/database.dart drift_schemas/
-
-# Generate migration test code
-dart run drift_dev schema generate drift_schemas/ test/generated_migrations/
-```
-
-## 📚 **Further Reading**
-
-### **Core Documentation**
-- **[`DRIFT.md`](DRIFT.md)** - 📘 **COMPREHENSIVE DRIFT GUIDE** - Complete implementation guide with examples, patterns, and best practices
-- **`schema-overview.md`** - Detailed table structures and relationships
-- **`DEPLOYMENT-GUIDE.md`** - Complete deployment walkthrough
-
-### **Technical Implementation**  
-- **`/docs/technical/README.md`** - Architecture overview and patterns
-- **`/docs/technical/drift-migration-guide.md`** - Migration from Hive to Drift
-- **`/docs/technical/drift-implementation.md`** - Implementation details and examples
-- **`/lib/shared/database/`** - Drift database classes and migrations
-
-### **Business Logic**
-- **`/docs/business_logic/`** - Edge functions that use this schema
-- **`/supabase/functions/`** - Server-side functions and API endpoints
+---
+*Last updated: October 2024 - Schema Version 1*

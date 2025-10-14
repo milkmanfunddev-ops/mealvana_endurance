@@ -1,3 +1,33 @@
+## Updated Architecture (Flutter + Riverpod)
+
+Mealvana now uses a provider-backed Sentry wrapper instead of the old `SentryService`. Key pieces:
+
+- `lib/shared/services/sentry/sentry_reporter.dart` defines the `SentryReporter` interface, `SentrySdkReporter`, and `NoopSentryReporter`.
+- `appExternalDepsProvider` injects the reporter so features/controllers can call `ref.read(appExternalDepsProvider).sentry`.
+- Helper methods mirror the previous service (`reportEdgeFunctionError`, `reportDatabaseError`, `reportNetworkError`, `addBreadcrumb`, `setUserContext`, etc.).
+- `NotificationService.configure` is not required; Sentry is configured in `main.dart` and reporters can be overridden in tests.
+
+### Example usage
+
+```dart
+final sentry = ref.read(appExternalDepsProvider).sentry;
+
+try {
+  await repository.saveUserProfile(profile);
+} catch (error, stack) {
+  await sentry.reportDatabaseError(
+    error,
+    operation: 'saveUserProfile',
+    table: 'user_profiles',
+    stackTrace: stack,
+  );
+  rethrow;
+}
+```
+
+> The sections below document the legacy `SentryService`. Keep them around for historical reference, but prefer the `SentryReporter` pattern above for new code.
+
+
 # Sentry Integration for Mealvana Endurance
 
 ## Overview

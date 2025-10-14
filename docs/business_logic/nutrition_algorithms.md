@@ -188,7 +188,16 @@ Future<NutritionPlan> generateNutritionPlan() async {
 
     if (llmPlan != null) {
       // Track AI success and cache locally
-      await _analyticsService.trackNutritionPlanGenerated(planType: 'llm');
+      await _analytics.trackPlanGenerated(
+        distanceMiles: distanceMiles,
+        paceMinutesPerMile: paceMinutesPerMile,
+        totalCalories: llmPlan.totalCalories ?? 0,
+        totalCarbs: llmPlan.macroTargets?.carbs ?? 0,
+        beforeRunItems: _countItems(llmPlan.sections, 'Before Run'),
+        duringRunItems: _countItems(llmPlan.sections, 'During Run'),
+        afterRunItems: _countItems(llmPlan.sections, 'After Run'),
+        isFirstPlan: await _isFirstPlan(),
+      );
       return llmPlan;
     }
 
@@ -200,15 +209,30 @@ Future<NutritionPlan> generateNutritionPlan() async {
       gutTraining: gutTraining,
     );
     
-    await _analyticsService.trackNutritionPlanGenerated(planType: 'algorithmic');
+    await _analytics.trackPlanGenerated(
+      distanceMiles: distanceMiles,
+      paceMinutesPerMile: paceMinutesPerMile,
+      totalCalories: algorithmicPlan.plan?.totalCalories ?? 0,
+      totalCarbs: algorithmicPlan.plan?.macroTargets?.carbs ?? 0,
+      beforeRunItems: _countItems(algorithmicPlan.plan?.sections, 'Before Run'),
+      duringRunItems: _countItems(algorithmicPlan.plan?.sections, 'During Run'),
+      afterRunItems: _countItems(algorithmicPlan.plan?.sections, 'After Run'),
+      isFirstPlan: await _isFirstPlan(),
+    );
     return algorithmicPlan.plan!;
     
   } catch (e) {
-    await _analyticsService.trackNutritionPlanGenerationFailed();
+    await _analytics.trackPlanGenerationFailed(
+      errorMessage: e.toString(),
+      distanceMiles: distanceMiles,
+      paceMinutesPerMile: paceMinutesPerMile,
+    );
     rethrow;
   }
 }
 ```
+
+> Helper function `_countItems` is shorthand for counting plan sections (see `NutritionPlanService` for the real implementation).
 
 ### **AI System: Linear Programming (TypeScript)**
 ```typescript

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 import '../../../content/application/content_service.dart';
@@ -11,8 +10,11 @@ import '../../data/macro_repository.dart';
 import '../../domain/macro_targets.dart' as targets_model;
 import '../../../auth/application/auth_service.dart';
 import '../../../../shared/services/logging_service.dart';
-import '../../../../shared/services/analytics_service.dart';
+import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/database/database_provider.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'nutrition_plan_controller.g.dart';
 
@@ -58,6 +60,9 @@ class NutritionPlanState {
 class NutritionPlanController extends _$NutritionPlanController {
   NutritionPlanService get _nutritionPlanService => ref.read(nutritionPlanServiceProvider);
   ContentService get _contentService => ref.read(contentServiceProvider);
+  AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  AuthService get _authService => ref.read(authServiceProvider);
   
   /// Save an updated plan to both local and remote storage
   Future<void> _saveUpdatedPlan(NutritionPlan updatedPlan) async {
@@ -65,7 +70,7 @@ class NutritionPlanController extends _$NutritionPlanController {
     final authService = ref.read(authServiceProvider);
     final user = await authService.getCurrentUser();
     if (user == null) {
-      print('Warning: No user found, cannot save plan');
+      DebugLogger.warning('Warning: No user found, cannot save plan');
       return;
     }
     
@@ -74,7 +79,7 @@ class NutritionPlanController extends _$NutritionPlanController {
     // Cache locally with the correct device ID
     await planRepository.cachePlanLocally(user.id, updatedPlan);
     
-    print('✅ Plan saved locally for user: ${user.id}');
+    DebugLogger.info('✅ Plan saved locally for user: ${user.id}');
     // Note: For now, we're only saving locally since remote save would require 
     // regenerating the entire plan. The local cache is sufficient for plan modifications.
   }
@@ -113,23 +118,23 @@ class NutritionPlanController extends _$NutritionPlanController {
 
   @override
   FutureOr<NutritionPlanState> build() async {
-    print('🔍 DEBUG: NutritionPlanController.build() called');
+    DebugLogger.info('🔍 DEBUG: NutritionPlanController.build() called');
     
     // First try to get a temporarily saved plan (unsaved plan)
     final tempPlan = await _getTempPlan();
     if (tempPlan != null) {
-      print('🔍 DEBUG: Found temp plan: ${tempPlan.id}, returning as unsaved');
+      DebugLogger.info('🔍 DEBUG: Found temp plan: ${tempPlan.id}, returning as unsaved');
       return NutritionPlanState(plan: tempPlan, isSaved: false);
     }
     
-    print('🔍 DEBUG: No temp plan found, getting latest saved plan');
+    DebugLogger.info('🔍 DEBUG: No temp plan found, getting latest saved plan');
     // Otherwise get the latest saved nutrition plan  
     final savedPlan = await _nutritionPlanService.getLatestNutritionPlan();
     if (savedPlan != null) {
-      print('🔍 DEBUG: Found saved plan: ${savedPlan.id}, returning as saved');
+      DebugLogger.info('🔍 DEBUG: Found saved plan: ${savedPlan.id}, returning as saved');
       return NutritionPlanState(plan: savedPlan, isSaved: true);
     } else {
-      print('🔍 DEBUG: No plan found');
+      DebugLogger.info('🔍 DEBUG: No plan found');
       return const NutritionPlanState(plan: null, isSaved: true);
     }
   }
@@ -140,23 +145,23 @@ class NutritionPlanController extends _$NutritionPlanController {
       final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
       if (user == null) {
-        print('🔍 DEBUG: No user found for temp plan check');
+        DebugLogger.info('🔍 DEBUG: No user found for temp plan check');
         return null;
       }
 
-      print('🔍 DEBUG: Checking for temp plan for user: ${user.id}');
+      DebugLogger.info('🔍 DEBUG: Checking for temp plan for user: ${user.id}');
       final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
       final tempPlan = await planRepository.getTempPlan(user.id);
       
       if (tempPlan != null) {
-        print('🔍 DEBUG: Found temp plan: ${tempPlan.id}');
+        DebugLogger.info('🔍 DEBUG: Found temp plan: ${tempPlan.id}');
       } else {
-        print('🔍 DEBUG: No temp plan found');
+        DebugLogger.info('🔍 DEBUG: No temp plan found');
       }
       
       return tempPlan;
     } catch (error) {
-      print('Error getting temp plan: $error');
+      DebugLogger.error('Error getting temp plan: $error');
       return null;
     }
   }
@@ -167,16 +172,16 @@ class NutritionPlanController extends _$NutritionPlanController {
       final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
       if (user == null) {
-        print('🔍 DEBUG: Cannot save temp plan - no user');
+        DebugLogger.info('🔍 DEBUG: Cannot save temp plan - no user');
         return;
       }
 
-      print('🔍 DEBUG: Saving temp plan ${plan.id} for user: ${user.id}');
+      DebugLogger.info('🔍 DEBUG: Saving temp plan ${plan.id} for user: ${user.id}');
       final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
       await planRepository.saveTempPlan(user.id, plan);
-      print('🔍 DEBUG: Temp plan saved successfully');
+      DebugLogger.info('🔍 DEBUG: Temp plan saved successfully');
     } catch (error) {
-      print('Error saving temp plan: $error');
+      DebugLogger.error('Error saving temp plan: $error');
     }
   }
 
@@ -190,21 +195,21 @@ class NutritionPlanController extends _$NutritionPlanController {
       final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
       await planRepository.clearTempPlan(user.id);
     } catch (error) {
-      print('Error clearing temp plan: $error');
+      DebugLogger.error('Error clearing temp plan: $error');
     }
   }
 
 
   /// Set a new generated plan (marks as unsaved and saves temporarily)
   Future<void> setGeneratedPlan(NutritionPlan plan, {String? planId}) async {
-    print('🔍 DEBUG: setGeneratedPlan() called for plan: ${plan.id}');
-    print('🔍 DEBUG: planId for North-Star: $planId');
+    DebugLogger.info('🔍 DEBUG: setGeneratedPlan() called for plan: ${plan.id}');
+    DebugLogger.info('🔍 DEBUG: planId for North-Star: $planId');
     
     // Set state to show plan as unsaved with planId
     state = AsyncValue.data(NutritionPlanState(plan: plan, isSaved: false, planId: planId));
     
     // Save temporarily so it persists through app reload
-    print('🔍 DEBUG: Saving plan temporarily');
+    DebugLogger.info('🔍 DEBUG: Saving plan temporarily');
     await _saveTempPlan(plan);
     
     // Remove from permanent local storage if it was cached there
@@ -212,33 +217,33 @@ class NutritionPlanController extends _$NutritionPlanController {
       final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
       if (user != null) {
-        final database = await ref.read(appDatabaseProvider);
+        final database = ref.read(appDatabaseProvider);
         // Delete the plan from permanent local storage so it's only in temp storage
-        print('🔍 DEBUG: Removing plan from permanent local storage');
+        DebugLogger.info('🔍 DEBUG: Removing plan from permanent local storage');
         await database.deleteNutritionPlan(plan.id);
       }
     } catch (error) {
-      print('Note: Could not remove plan from permanent local storage: $error');
+      DebugLogger.error('Note: Could not remove plan from permanent local storage: $error');
     }
-    print('🔍 DEBUG: setGeneratedPlan() completed');
+    DebugLogger.info('🔍 DEBUG: setGeneratedPlan() completed');
   }
 
   /// Save the current plan permanently (move from temp to permanent storage)
   Future<bool> savePlan() async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState?.plan == null) {
-      print('🔍 DEBUG: savePlan() - No plan to save');
+      DebugLogger.info('🔍 DEBUG: savePlan() - No plan to save');
       return false;
     }
 
     try {
-      print('🔍 DEBUG: savePlan() called for plan: ${currentState!.plan!.id}');
+      DebugLogger.info('🔍 DEBUG: savePlan() called for plan: ${currentState!.plan!.id}');
       
       // Save to permanent storage
       final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
       if (user == null) {
-        print('🔍 DEBUG: savePlan() - No user found');
+        DebugLogger.info('🔍 DEBUG: savePlan() - No user found');
         return false;
       }
 
@@ -247,78 +252,31 @@ class NutritionPlanController extends _$NutritionPlanController {
       
       // Track North-Star metric: plan_saved
       if (currentState.planId != null) {
-        final plan = currentState.plan!;
-        
-        // Calculate totals from the plan
-        double carbsTotalG = 0;
-        double sodiumTotalMg = 0; 
-        double fluidsTotalMl = 0;
-        int itemsPreCount = 0;
-        int itemsDuringCount = 0;
-        int itemsPostCount = 0;
-        
-        // Calculate from plan sections
-        for (final section in plan.sections) {
-          if (section.title.toLowerCase().contains('before') || 
-              section.title.toLowerCase().contains('pre')) {
-            itemsPreCount = section.foodItems.length;
-            for (final food in section.foodItems) {
-              carbsTotalG += food.nutritionalInfo?.carbs ?? 0;
-              sodiumTotalMg += food.nutritionalInfo?.sodium ?? 0;
-              fluidsTotalMl += food.nutritionalInfo?.fluids ?? 0;
-            }
-          } else if (section.title.toLowerCase().contains('during')) {
-            itemsDuringCount = section.foodItems.length;
-            for (final food in section.foodItems) {
-              carbsTotalG += food.nutritionalInfo?.carbs ?? 0;
-              sodiumTotalMg += food.nutritionalInfo?.sodium ?? 0;
-              fluidsTotalMl += food.nutritionalInfo?.fluids ?? 0;
-            }
-          } else if (section.title.toLowerCase().contains('after') ||
-                     section.title.toLowerCase().contains('post')) {
-            itemsPostCount = section.foodItems.length;
-            for (final food in section.foodItems) {
-              carbsTotalG += food.nutritionalInfo?.carbs ?? 0;
-              sodiumTotalMg += food.nutritionalInfo?.sodium ?? 0;
-              fluidsTotalMl += food.nutritionalInfo?.fluids ?? 0;
-            }
-          }
-        }
-        
-        // Get macro targets for coverage calculation
-        final macroTargets = await getCachedMacroTargets();
-        double carbsCoveragePct = 0;
-        double sodiumCoveragePct = 0; 
-        double fluidsCoveragePct = 0;
-        
-        if (macroTargets != null) {
-          final totalTargetCarbs = macroTargets.preRun.carbsG + 
-                                  macroTargets.duringRun.carbTotalG + 
-                                  macroTargets.postRun.carbsG;
-          final totalTargetSodium = macroTargets.duringRun.sodiumTotalMg;
-          final totalTargetFluids = macroTargets.duringRun.fluidTotalMl;
-          
-          if (totalTargetCarbs > 0) carbsCoveragePct = (carbsTotalG / totalTargetCarbs) * 100;
-          if (totalTargetSodium > 0) sodiumCoveragePct = (sodiumTotalMg / totalTargetSodium) * 100;
-          if (totalTargetFluids > 0) fluidsCoveragePct = (fluidsTotalMl / totalTargetFluids) * 100;
-        }
-        
-        // Track the North-Star plan_saved event
-        await AnalyticsService.trackPlanSaved(
+        // TODO: Add macro coverage analytics tracking in future version
+        // This would calculate carbsCoveragePct, sodiumCoveragePct, fluidsCoveragePct
+        // by summing nutritional values from plan sections and comparing to macro targets
+
+        // Track plan_saved event with proper properties
+        final deviceId = user.id;
+
+        // Calculate time since generation (assuming it was just generated)
+        // In a real implementation, you'd store the generation start time
+        const timeSinceGeneration = 0; // Placeholder - should track actual time
+
+        // Check if this is the user's first plan
+        final userPlans = await planRepository.getNutritionPlans(user.id);
+        final totalPlansSaved = userPlans.length;
+        final isFirstPlan = totalPlansSaved <= 1; // Current plan is already saved
+
+        await _analytics.trackPlanSaved(
+          deviceId: deviceId,
           planId: currentState.planId!,
-          carbsTotalG: carbsTotalG,
-          sodiumTotalMg: sodiumTotalMg,
-          fluidsTotalMl: fluidsTotalMl,
-          carbsCoveragePct: carbsCoveragePct,
-          sodiumCoveragePct: sodiumCoveragePct,
-          fluidsCoveragePct: fluidsCoveragePct,
-          itemsPreCount: itemsPreCount,
-          itemsDuringCount: itemsDuringCount,
-          itemsPostCount: itemsPostCount,
-          secondsToSave: 0, // TODO: Calculate actual time from plan_flow_started
+          timeSinceGenerationStarted: timeSinceGeneration,
+          isFirstPlan: isFirstPlan,
+          totalPlansSaved: totalPlansSaved,
         );
         
-        print('📊 DEBUG: Tracked plan_saved event for planId: ${currentState.planId}');
+        DebugLogger.info('📊 DEBUG: Tracked plan_saved event for planId: ${currentState.planId}');
       }
       
       // Clear temp storage
@@ -327,10 +285,10 @@ class NutritionPlanController extends _$NutritionPlanController {
       // Update state to show as saved
       state = AsyncValue.data(currentState.copyWith(isSaved: true));
       
-      print('🔍 DEBUG: savePlan() completed successfully');
+      DebugLogger.info('🔍 DEBUG: savePlan() completed successfully');
       return true;
-    } catch (error, stackTrace) {
-      print('🔍 DEBUG: savePlan() failed: $error');
+    } catch (error) {
+      DebugLogger.info('🔍 DEBUG: savePlan() failed: $error');
       return false;
     }
   }
@@ -342,7 +300,7 @@ class NutritionPlanController extends _$NutritionPlanController {
       final targets = await macroRepository.getCachedMacroTargets();
       return targets;
     } catch (e) {
-      print('Error getting cached macro targets: $e');
+      DebugLogger.error('Error getting cached macro targets: $e');
       return null;
     }
   }
@@ -360,15 +318,10 @@ class NutritionPlanController extends _$NutritionPlanController {
         paceMinutesPerMile: paceMinutesPerMile,
       );
 
-      if (plan != null) {
-        // Use setGeneratedPlan to mark as unsaved
-        await setGeneratedPlan(plan);
-        return plan;
-      } else {
-        state = const AsyncValue.data(NutritionPlanState(plan: null, isSaved: true));
-        return null;
-      }
-    } catch (error, stackTrace) {
+      // Use setGeneratedPlan to mark as unsaved
+      await setGeneratedPlan(plan);
+      return plan;
+        } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
       return null;
     }
@@ -390,18 +343,16 @@ class NutritionPlanController extends _$NutritionPlanController {
         gutTrainingLevel: gutTrainingLevel,
       );
       
-      if (updatedPlan != null) {
-        // Mark updated plan as unsaved
-        await setGeneratedPlan(updatedPlan);
-      }
-    } catch (error, stackTrace) {
+      // Mark updated plan as unsaved
+      await setGeneratedPlan(updatedPlan);
+        } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
   /// Delete a plan
   Future<void> deletePlan(String planId) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     
     state = await AsyncValue.guard(() async {
       await _nutritionPlanService.deleteNutritionPlan(planId);
@@ -415,7 +366,7 @@ class NutritionPlanController extends _$NutritionPlanController {
 
   /// Get nutrition recommendations for current plan
   List<String> getRecommendations() {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState?.plan == null) return [];
     
     return _nutritionPlanService.getNutritionRecommendations(currentState!.plan!);
@@ -423,7 +374,7 @@ class NutritionPlanController extends _$NutritionPlanController {
 
   /// Validate current plan for safety
   bool validateCurrentPlan() {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState?.plan == null) return false;
     
     return _nutritionPlanService.validateNutritionPlan(currentState!.plan!);
@@ -442,7 +393,7 @@ class NutritionPlanController extends _$NutritionPlanController {
   /// Get content-driven error message
   /// Swap a food item in the current plan
   Future<void> swapFoodItem(String oldFoodId, dynamic newFood, String category, {double? customAmount}) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState?.plan == null) return;
     
     final currentPlan = currentState!.plan!;
@@ -502,17 +453,40 @@ class NutritionPlanController extends _$NutritionPlanController {
       
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
-      
+
+      // Track plan_item_swapped event
+      final user = await _authService.getCurrentUser();
+      final deviceId = user?.id ?? 'unknown';
+
+      // Find the old item name for tracking
+      String oldItemName = oldFoodId;
+      for (final section in currentPlan.sections) {
+        for (final item in section.foodItems) {
+          if (item.id == oldFoodId) {
+            oldItemName = item.name;
+            break;
+          }
+        }
+      }
+
+      await _analytics.trackPlanItemSwapped(
+        deviceId: deviceId,
+        planId: updatedPlan.id,
+        oldItemName: oldItemName,
+        newItemName: newFood.name,
+        phase: category, // before_run, during_run, or after_run
+      );
+
       return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
     });
   }
   
   /// Add a food item to the current plan
   Future<void> addFoodItem(dynamic food, String category, {double? customAmount}) async {
-    final currentState = state.valueOrNull;
-    if (currentState?.plan == null) return;
-    
-    final currentPlan = currentState!.plan!;
+    final currentState = state.value;
+    if (currentState == null || currentState.plan == null) return;
+
+    final currentPlan = currentState.plan!;
     
     state = const AsyncLoading();
     
@@ -568,18 +542,18 @@ class NutritionPlanController extends _$NutritionPlanController {
 
       // Track item_added event
       final multiplier = customAmount ?? food.servingAmount ?? 1.0;
-      AnalyticsService.trackItemAdded(
-        planId: updatedPlan.id ?? 'unknown',
-        screen: 'plan_screen',
-        experimentVariant: 'auto_items_v1',
-        section: _mapCategoryToSection(category),
-        itemName: food.name,
-        itemSource: 'generic', // Most foods are generic unless specified otherwise
-        carbsG: ((food.carbsPerServing ?? 0) * multiplier),
-        proteinG: ((food.proteinPerServing ?? 0) * multiplier),
-        fluidsMl: ((food.fluidMlPerServing ?? 0) * multiplier),
-        sodiumMg: ((food.sodiumMg ?? 0) * multiplier),
-      );
+      await _analytics.track('plan_item_added', properties: {
+        'plan_id': updatedPlan.id,
+        'screen': 'plan_screen',
+        'experiment_variant': 'auto_items_v1',
+        'section': _mapCategoryToSection(category),
+        'item_name': food.name,
+        'item_source': 'generic',
+        'carbs_g': (food.carbsPerServing ?? 0) * multiplier,
+        'protein_g': (food.proteinPerServing ?? 0) * multiplier,
+        'fluids_ml': (food.fluidMlPerServing ?? 0) * multiplier,
+        'sodium_mg': (food.sodiumMg ?? 0) * multiplier,
+      });
 
       return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
     });
@@ -587,10 +561,10 @@ class NutritionPlanController extends _$NutritionPlanController {
 
   /// Delete a food item from the current plan
   Future<void> deleteFoodItem(String foodId, String category) async {
-    final currentState = state.valueOrNull;
-    if (currentState?.plan == null) return;
-    
-    final currentPlan = currentState!.plan!;
+    final currentState = state.value;
+    if (currentState == null || currentState.plan == null) return;
+
+    final currentPlan = currentState.plan!;
     
     state = const AsyncLoading();
     
@@ -640,13 +614,13 @@ class NutritionPlanController extends _$NutritionPlanController {
 
       // Track item_removed event
       if (deletedItemName != null) {
-        AnalyticsService.trackItemRemoved(
-          planId: updatedPlan.id ?? 'unknown',
-          screen: 'plan_screen',
-          experimentVariant: 'auto_items_v1',
-          section: _mapCategoryToSection(category),
-          itemName: deletedItemName,
-        );
+        await _analytics.track('plan_item_removed', properties: {
+          'plan_id': updatedPlan.id,
+          'screen': 'plan_screen',
+          'experiment_variant': 'auto_items_v1',
+          'section': _mapCategoryToSection(category),
+          'item_name': deletedItemName,
+        });
       }
 
       return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
@@ -655,10 +629,10 @@ class NutritionPlanController extends _$NutritionPlanController {
 
   /// Update the quantity of an existing food item
   Future<void> updateFoodQuantity(String foodId, String category, double newQuantity) async {
-    final currentState = state.valueOrNull;
-    if (currentState?.plan == null) return;
+    final currentState = state.value;
+    if (currentState == null || currentState.plan == null) return;
 
-    final currentPlan = currentState!.plan!;
+    final currentPlan = currentState.plan!;
 
     // Capture old quantity and item name for analytics tracking
     String? itemName;
@@ -712,28 +686,28 @@ class NutritionPlanController extends _$NutritionPlanController {
                 final isPlural = newQuantity != 1.0;
 
                 // DEBUG: Let's see what display name data we have
-                print('🔍 DEBUG updateFoodQuantity for ${item.name}:');
-                print('  - displayName: "${item.displayName}"');
-                print('  - displayNamePlural: "${item.displayNamePlural}"');
-                print('  - newQuantity: $newQuantity, isPlural: $isPlural');
+                DebugLogger.info('🔍 DEBUG updateFoodQuantity for ${item.name}:');
+                DebugLogger.debug('  - displayName: "${item.displayName}"');
+                DebugLogger.debug('  - displayNamePlural: "${item.displayNamePlural}"');
+                DebugLogger.debug('  - newQuantity: $newQuantity, isPlural: $isPlural');
 
                 // Use appropriate display name based on NEW quantity (not old quantity)
                 String displayName;
                 if (isPlural && item.displayNamePlural?.isNotEmpty == true) {
                   displayName = item.displayNamePlural!;
-                  print('  - Using plural: "$displayName"');
+                  DebugLogger.debug('  - Using plural: "$displayName"');
                 } else if (item.displayName?.isNotEmpty == true) {
                   displayName = item.displayName!;
-                  print('  - Using singular: "$displayName"');
+                  DebugLogger.debug('  - Using singular: "$displayName"');
                 } else {
                   displayName = item.name;
-                  print('  - Using fallback name: "$displayName"');
+                  DebugLogger.debug('  - Using fallback name: "$displayName"');
                 }
 
                 // SIMPLE: Always use format "<quantity> <display_name>"
                 // Don't try to parse units - just use the display name based on quantity
                 final newQuantityDisplay = '$quantityStr $displayName';
-                print('  - Final display: "$newQuantityDisplay"');
+                DebugLogger.debug('  - Final display: "$newQuantityDisplay"');
                 
                 return FoodItemData(
                   id: item.id,
@@ -781,32 +755,32 @@ class NutritionPlanController extends _$NutritionPlanController {
 
       // Track item_quantity_changed event
       if (itemName != null && oldQuantity != null) {
-        AnalyticsService.trackItemQuantityChanged(
-          planId: updatedPlan.id ?? 'unknown',
-          screen: 'plan_screen',
-          experimentVariant: 'auto_items_v1',
-          section: _mapCategoryToSection(category),
-          itemName: itemName,
-          oldQty: oldQuantity,
-          newQty: newQuantity,
-          qtyUnit: 'servings', // Default unit since we're tracking quantity changes
-        );
+        await _analytics.track('plan_item_quantity_changed', properties: {
+          'plan_id': updatedPlan.id,
+          'screen': 'plan_screen',
+          'experiment_variant': 'auto_items_v1',
+          'section': _mapCategoryToSection(category),
+          'item_name': itemName,
+          'old_qty': oldQuantity,
+          'new_qty': newQuantity,
+          'qty_unit': 'servings',
+        });
       }
 
       // Update state without loading state to prevent UI rebuilds
       state = AsyncData(NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved));
     } catch (error, stackTrace) {
       // Handle errors without changing to error state to prevent rebuilds
-      AppLogger.instance.error('Failed to update food quantity', error: error, stackTrace: stackTrace);
+      _logger.error('Failed to update food quantity', error: error, stackTrace: stackTrace);
     }
   }
 
   /// Update the run date/time for the current plan
   Future<void> updateRunDateTime(String planId, DateTime runDateTime) async {
-    final currentState = state.valueOrNull;
-    if (currentState?.plan == null) return;
-    
-    final currentPlan = currentState!.plan!;
+    final currentState = state.value;
+    if (currentState == null || currentState.plan == null) return;
+
+    final currentPlan = currentState.plan!;
     
     // Don't set loading state for this minor update
     try {
@@ -822,9 +796,9 @@ class NutritionPlanController extends _$NutritionPlanController {
       // Update state to reflect the change
       state = AsyncData(NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved));
       
-      print('✅ Updated run date/time for plan ${planId}');
+      DebugLogger.info('✅ Updated run date/time for plan $planId');
     } catch (error, stackTrace) {
-      AppLogger.instance.error('Failed to update run date/time', error: error, stackTrace: stackTrace);
+      _logger.error('Failed to update run date/time', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -852,7 +826,7 @@ class NutritionPlanController extends _$NutritionPlanController {
 @riverpod
 NutritionPlan? currentNutritionPlan(Ref ref) {
   final controller = ref.watch(nutritionPlanControllerProvider);
-  return controller.valueOrNull?.plan;
+  return controller.value?.plan;
 }
 
 /// Provider for nutrition recommendations

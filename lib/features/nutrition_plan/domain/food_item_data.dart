@@ -66,6 +66,34 @@ class FoodItemData {
     );
   }
 
+  /// Create FoodItemData from Edge Function JSON format
+  factory FoodItemData.fromEdgeFunctionJson(Map<String, dynamic> json) {
+    // Edge function returns: food_id, quantity, carbs_grams, protein_grams, fat_grams,
+    // sodium_mg, fluids_ml, calories, timing, display_name, display_name_plural,
+    // description, image_address
+
+    final nutritionalInfo = NutritionalInfo(
+      calories: (json['calories'] as num?)?.toInt(),
+      carbs: (json['carbs_grams'] as num?)?.toInt(),
+      protein: (json['protein_grams'] as num?)?.toInt(),
+      fat: (json['fat_grams'] as num?)?.toInt(),
+      sodium: (json['sodium_mg'] as num?)?.toInt(),
+      fluids: (json['fluids_ml'] as num?)?.toDouble(),
+    );
+
+    return FoodItemData(
+      id: json['food_id'] as String,
+      name: json['display_name'] as String? ?? json['food_name'] as String? ?? 'Unknown Food',
+      quantity: json['quantity']?.toString() ?? '1',
+      imageAddress: json['image_address'] as String?,
+      description: json['description'] as String?,
+      timing: json['timing'] as String?,
+      nutritionalInfo: nutritionalInfo,
+      displayName: json['display_name'] as String?,
+      displayNamePlural: json['display_name_plural'] as String?,
+    );
+  }
+
   /// Convert to JSON
   Map<String, dynamic> toJson() {
     return {

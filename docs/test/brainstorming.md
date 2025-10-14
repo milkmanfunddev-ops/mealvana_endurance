@@ -88,6 +88,9 @@ void main() {
 1. get a good claude code testing agent setup
 2. Define a workflow that creates a roadmap and that explicitly calls the testing agent
 3. Add automatic testing for version releases
+4. get claude to create testing data.
+5. get claude to verify itself
+6. get claude to actually print information out onto the screen and summaries
 
 ### Leverage Flutter Web
 1. Get flutter web working
@@ -109,3 +112,11 @@ void main() {
 4. Create at least 1 unit test, widget test and integration test.  
 5. Get CI/CD process up and running and incorporate tests to that process.
 6. mocktail/http_mock_adapter
+7. update Haibin on how to run the tests
+8. create a testing readme master document
+
+Separate into two weeks and narrow down the scope.  
+Test the algorithm --> verify if it is ok or not for the main data flow.  
+Stabilize the database schema.  
+Think about some "smoke tests" --> use github actions?
+Create different branches

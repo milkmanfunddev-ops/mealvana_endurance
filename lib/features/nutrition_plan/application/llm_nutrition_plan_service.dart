@@ -6,7 +6,8 @@ import '../domain/macro_targets.dart' as targets;
 import 'food_data_transformation_service.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
-import '../../../shared/services/sentry_service.dart';
+import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/logging_service.dart';
 
 /// Service for generating nutrition plans using LLM (GPT-4o-mini)
@@ -15,9 +16,10 @@ class LLMNutritionPlanService {
   final Ref ref;
 
   AuthService get _authService => ref.read(authServiceProvider);
-  SentryService get _sentryService => ref.read(sentryServiceProvider);
+  SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   FoodDataTransformationService get _transformationService => ref.read(foodDataTransformationServiceProvider);
-  SupabaseClient get _supabase => Supabase.instance.client;
+  SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
   /// Generate a nutrition plan using the LLM edge function
   Future<NutritionPlan?> generateLLMNutritionPlan({
@@ -25,6 +27,7 @@ class LLMNutritionPlanService {
     required double paceMinutesPerMile,
     required double timeBeforeRunHours,
     String? sweatRate,
+    String? activityId,
   }) async {
     try {
       // Get current user
@@ -145,7 +148,7 @@ class LLMNutritionPlanService {
 
       // Parse the response
       final data = response.data as Map<String, dynamic>;
-      AppLogger.instance.api('Edge function response received',
+      _logger.api('Edge function response received',
         endpoint: '/generate-ai-nutrition-plan',
         statusCode: response.status,
         responseData: data,
@@ -158,14 +161,15 @@ class LLMNutritionPlanService {
         throw Exception(data['message'] ?? 'Failed to generate nutrition plan');
       }
 
-      AppLogger.instance.nutritionPlan('Converting LLM response to nutrition plan',
+      _logger.nutritionPlan(
+        'Converting LLM response to nutrition plan',
         planId: data['plan_id'] as String?,
       );
 
       // Convert the LLM response to our NutritionPlan format
-      final nutritionPlan = await _convertLLMResponseToPlan(data, user.id);
-      
-      AppLogger.instance.nutritionPlan('Nutrition plan conversion completed',
+      final nutritionPlan = await _convertLLMResponseToPlan(data, user.id, activityId: activityId);
+
+      _logger.nutritionPlan('Nutrition plan conversion completed',
         planId: nutritionPlan.id,
         data: {
           'sectionsCount': nutritionPlan.sections.length,
@@ -178,7 +182,7 @@ class LLMNutritionPlanService {
       );
 
       // Track success in Sentry
-      _sentryService.addBreadcrumb(
+      _sentry.addBreadcrumb(
         message: 'LLM nutrition plan generated successfully',
         category: 'llm_nutrition',
         data: {
@@ -190,7 +194,7 @@ class LLMNutritionPlanService {
       return nutritionPlan;
     } catch (e, stackTrace) {
       // Report to Sentry
-      await _sentryService.reportCriticalError(
+      await _sentry.reportCriticalError(
         e,
         stackTrace: stackTrace,
         context: 'llm_nutrition_plan_generation',
@@ -208,7 +212,7 @@ class LLMNutritionPlanService {
 
 
   /// Convert LLM response format to our NutritionPlan domain model
-  Future<NutritionPlan> _convertLLMResponseToPlan(Map<String, dynamic> data, String userId) async {
+  Future<NutritionPlan> _convertLLMResponseToPlan(Map<String, dynamic> data, String userId, {String? activityId}) async {
     final planData = data['plan'] as Map<String, dynamic>;
     final macroTargets = data['macro_targets'] as Map<String, dynamic>;
     final detailedMessage = data['detailed_message'] as String? ?? 'AI-generated nutrition plan';
@@ -296,7 +300,7 @@ class LLMNutritionPlanService {
                               afterItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0));
     
     // CRITICAL VALIDATION: Log the discrepancy between macro targets and food item totals
-    AppLogger.instance.error('LLM Response Validation: Food Items vs Macro Targets Comparison',
+    _logger.error('LLM Response Validation: Food Items vs Macro Targets Comparison',
       context: 'LLMNutritionPlanService',
       data: {
         'macro_targets': {
@@ -327,6 +331,7 @@ class LLMNutritionPlanService {
       id: planId,
       name: 'AI-Generated Nutrition Plan',
       totalCalories: totalCalories,
+      activityId: activityId, // Link to calendar activity
       sections: [
         PlanSection(
           id: 'before-run',
@@ -381,7 +386,7 @@ class LLMNutritionPlanService {
       createdAt: DateTime.now(),
     );
     
-    AppLogger.instance.nutritionPlan('Nutrition plan creation completed',
+    _logger.nutritionPlan('Nutrition plan creation completed',
       planId: plan.id,
       data: {
         'totalFoodItems': beforeItems.length + duringItems.length + afterItems.length,
@@ -397,6 +402,7 @@ class LLMNutritionPlanService {
   /// Generate nutrition plan from adjusted macro targets
   Future<NutritionPlan?> generateLLMNutritionPlanFromMacros({
     required targets.MacroTargets macroTargets,
+    String? activityId,
   }) async {
     try {
       // Get current user
@@ -437,7 +443,7 @@ class LLMNutritionPlanService {
       final weightKg = user.weightPounds * 0.453592;
       final heightCm = user.totalHeightInches * 2.54;
 
-      AppLogger.instance.nutritionPlan('Macro targets prepared for edge function',
+      _logger.nutritionPlan('Macro targets prepared for edge function',
         data: {
           'preRunCarbs': macroTargets.preRun.carbsG,
           'preRunProtein': macroTargets.preRun.proteinG,
@@ -504,10 +510,10 @@ class LLMNutritionPlanService {
       final data = response.data as Map<String, dynamic>;
 
       // Convert the LLM response to our NutritionPlan format
-      final nutritionPlan = await _convertLLMResponseToPlan(data, user.id);
+      final nutritionPlan = await _convertLLMResponseToPlan(data, user.id, activityId: activityId);
 
       // Track success in Sentry
-      _sentryService.addBreadcrumb(
+      _sentry.addBreadcrumb(
         message: 'LLM nutrition plan generated from adjusted macros successfully',
         category: 'llm_nutrition_adjusted',
         data: {
@@ -522,7 +528,7 @@ class LLMNutritionPlanService {
       return nutritionPlan;
     } catch (e, stackTrace) {
       // Report to Sentry
-      await _sentryService.reportCriticalError(
+      await _sentry.reportCriticalError(
         e,
         stackTrace: stackTrace,
         context: 'llm_nutrition_plan_from_macros_generation',

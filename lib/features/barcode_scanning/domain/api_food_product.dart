@@ -1,3 +1,5 @@
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+
 /// Represents a food product returned from API lookup
 /// This is the domain model for data returned from the Edge Function
 class ApiFoodProduct {
@@ -105,18 +107,18 @@ class ApiFoodProduct {
   /// Calculate nutritional values for a specific serving size in grams
   /// Prioritizes per-serving values when available
   NutritionalValues calculateForServing(double servingGrams) {
-    print('🧮 DEBUG - calculateForServing:');
-    print('  Requested serving: ${servingGrams}g');
-    print('  API serving grams: ${this.servingGrams}g');
-    print('  Nutrition data per: ${nutritionDataPer ?? "100g (default)"}');
+    DebugLogger.debug('🧮 DEBUG - calculateForServing:');
+    DebugLogger.debug('  Requested serving: ${servingGrams}g');
+    DebugLogger.debug('  API serving grams: ${this.servingGrams}g');
+    DebugLogger.debug('  Nutrition data per: ${nutritionDataPer ?? "100g (default)"}');
 
     // If we have per-serving data, prefer it
     if (caloriesPerServing != null) {
-      print('  Using direct per-serving values from API');
-      print('    Calories: ${caloriesPerServing}');
-      print('    Carbs: ${carbohydratesPerServing}');
-      print('    Protein: ${proteinPerServing}');
-      print('    Fat: ${fatPerServing}');
+      DebugLogger.debug('  Using direct per-serving values from API');
+      DebugLogger.debug('    Calories: $caloriesPerServing');
+      DebugLogger.debug('    Carbs: $carbohydratesPerServing');
+      DebugLogger.debug('    Protein: $proteinPerServing');
+      DebugLogger.debug('    Fat: $fatPerServing');
 
       // If the serving size matches exactly or we don't have serving_grams, use values directly
       if (this.servingGrams == null || (servingGrams - this.servingGrams!).abs() < 5.0) {
@@ -132,7 +134,7 @@ class ApiFoodProduct {
       // If serving sizes don't match, scale the per-serving values
       if (this.servingGrams != null && this.servingGrams! > 0) {
         final scaleFactor = servingGrams / this.servingGrams!;
-        print('  Scaling per-serving values by factor: $scaleFactor');
+        DebugLogger.debug('  Scaling per-serving values by factor: $scaleFactor');
 
         return NutritionalValues(
           calories: caloriesPerServing != null ? (caloriesPerServing! * scaleFactor).round() : null,
@@ -146,8 +148,8 @@ class ApiFoodProduct {
 
     // Fallback to per-100g calculation
     final factor = servingGrams / 100.0;
-    print('  Using per-100g calculation with factor: $factor');
-    print('  Calculation: ${caloriesPer100g} * $factor = ${caloriesPer100g != null ? (caloriesPer100g! * factor) : null}');
+    DebugLogger.debug('  Using per-100g calculation with factor: $factor');
+    DebugLogger.debug('  Calculation: $caloriesPer100g * $factor = ${caloriesPer100g != null ? (caloriesPer100g! * factor) : null}');
 
     return NutritionalValues(
       calories: caloriesPer100g != null ? (caloriesPer100g! * factor).round() : null,

@@ -169,7 +169,7 @@ class SettingsScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
                     border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withOpacity(0.3),
+                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8.r),
@@ -222,7 +222,7 @@ class SettingsScreen extends ConsumerWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
             decoration: BoxDecoration(
               color: AppTheme.baseWhite,
-              border: Border.all(color: AppTheme.baseGrey.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Text(
@@ -261,7 +261,7 @@ class SettingsScreen extends ConsumerWidget {
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   color: AppTheme.baseWhite,
-                  border: Border.all(color: AppTheme.baseGrey.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -291,7 +291,7 @@ class SettingsScreen extends ConsumerWidget {
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   color: AppTheme.baseWhite,
-                  border: Border.all(color: AppTheme.baseGrey.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -341,11 +341,11 @@ class SettingsScreen extends ConsumerWidget {
             suffixText: 'lbs',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withOpacity(0.3)),
+              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withOpacity(0.3)),
+              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
@@ -384,7 +384,18 @@ class SettingsScreen extends ConsumerWidget {
           onChanged: (value) {
             ref.read(settingsControllerProvider.notifier).updateWaterBottle(value);
           },
-          activeColor: AppTheme.primary600,
+          thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppTheme.baseWhite;
+            }
+            return AppTheme.baseWhite;
+          }),
+          trackColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppTheme.primary600;
+            }
+            return AppTheme.baseGrey.withValues(alpha: 0.3);
+          }),
         ),
       ],
     );
@@ -415,7 +426,7 @@ class SettingsScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
                     border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withOpacity(0.3),
+                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8.r),
@@ -463,7 +474,7 @@ class SettingsScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
                     border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withOpacity(0.3),
+                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8.r),
@@ -512,7 +523,7 @@ class SettingsScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
                     border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withOpacity(0.3),
+                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8.r),

@@ -14,7 +14,7 @@ class WelcomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.baseCream,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -23,11 +23,11 @@ class WelcomeScreen extends ConsumerWidget {
               SizedBox(height: 80.h),
 
               // App logo
-              Container(
+              SizedBox(
                 width: 120.w,
                 height: 120.h,
                 child: Image.asset(
-                  'assets/images/endurance_welcome_logo.png',
+                  'assets/images/endurance_welcome_logo_base_cream.png',
                   width: 120.w,
                   height: 120.h,
                   fit: BoxFit.contain,

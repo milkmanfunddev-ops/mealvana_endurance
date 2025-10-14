@@ -1,0 +1,126 @@
+name: Schema Drift Check
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # 9 AM UTC daily
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Check dev schema drift
+        id: dev-drift
+        continue-on-error: true
+        run: |
+          echo "🔍 Checking dev environment for schema drift..."
+          supabase link --project-ref ${{ secrets.DEV_PROJECT_ID }}
+          supabase db diff > dev-diff.txt
+
+          if [ -s dev-diff.txt ]; then
+            echo "⚠️  Drift detected in dev environment"
+            echo "has_drift=true" >> $GITHUB_OUTPUT
+            cat dev-diff.txt
+          else
+            echo "✅ No drift in dev environment"
+            echo "has_drift=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.DEV_DB_PASSWORD }}
+
+      - name: Check production schema drift
+        id: prod-drift
+        continue-on-error: true
+        run: |
+          echo "🔍 Checking production environment for schema drift..."
+          supabase link --project-ref ${{ secrets.PROD_PROJECT_ID }}
+          supabase db diff > prod-diff.txt
+
+          if [ -s prod-diff.txt ]; then
+            echo "⚠️  Drift detected in production environment"
+            echo "has_drift=true" >> $GITHUB_OUTPUT
+            cat prod-diff.txt
+          else
+            echo "✅ No drift in production environment"
+            echo "has_drift=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+
+      - name: Upload drift reports
+        if: steps.dev-drift.outputs.has_drift == 'true' || steps.prod-drift.outputs.has_drift == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-drift-reports
+          path: |
+            dev-diff.txt
+            prod-diff.txt
+
+      - name: Create issue if drift detected
+        if: steps.dev-drift.outputs.has_drift == 'true' || steps.prod-drift.outputs.has_drift == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const devDrift = '${{ steps.dev-drift.outputs.has_drift }}' === 'true';
+            const prodDrift = '${{ steps.prod-drift.outputs.has_drift }}' === 'true';
+
+            let body = '## Schema Drift Detected\n\n';
+
+            if (devDrift) {
+              body += '⚠️ **Dev environment** has schema drift\n\n';
+            }
+            if (prodDrift) {
+              body += '⚠️ **Production environment** has schema drift\n\n';
+            }
+
+            body += '### Action Required\n\n';
+            body += '1. Review the drift reports in the workflow artifacts\n';
+            body += '2. Create a migration to fix the drift:\n';
+            body += '   ```bash\n';
+            body += '   supabase migration new fix_schema_drift\n';
+            body += '   supabase db diff > supabase/migrations/<timestamp>_fix_schema_drift.sql\n';
+            body += '   ```\n';
+            body += '3. Deploy the fix:\n';
+            body += '   ```bash\n';
+            body += '   git add supabase/migrations/\n';
+            body += '   git commit -m "Fix schema drift"\n';
+            body += '   git push origin develop  # Auto-deploys to dev\n';
+            body += '   ```\n\n';
+            body += '### Workflow Run\n';
+            body += `[View drift check workflow](${context.payload.repository.html_url}/actions/runs/${context.runId})`;
+
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ Schema Drift Detected',
+              body: body,
+              labels: ['schema', 'drift', 'automated']
+            });
+
+      - name: Summary
+        run: |
+          echo "## Schema Drift Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.dev-drift.outputs.has_drift }}" == "true" ]; then
+            echo "❌ Dev: Drift detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Dev: No drift" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ steps.prod-drift.outputs.has_drift }}" == "true" ]; then
+            echo "❌ Production: Drift detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Production: No drift" >> $GITHUB_STEP_SUMMARY
+          fi

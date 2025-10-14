@@ -6,25 +6,53 @@ part of 'supabase_barcode_service.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$supabaseBarcodeServiceHash() =>
-    r'd2f4b55f925b420b0f6e8dc7dfacf67ebf630a1c';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [supabaseBarcodeService].
 @ProviderFor(supabaseBarcodeService)
-final supabaseBarcodeServiceProvider =
-    AutoDisposeProvider<SupabaseBarcodeService>.internal(
-  supabaseBarcodeService,
-  name: r'supabaseBarcodeServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$supabaseBarcodeServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const supabaseBarcodeServiceProvider = SupabaseBarcodeServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef SupabaseBarcodeServiceRef
-    = AutoDisposeProviderRef<SupabaseBarcodeService>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class SupabaseBarcodeServiceProvider
+    extends
+        $FunctionalProvider<
+          SupabaseBarcodeService,
+          SupabaseBarcodeService,
+          SupabaseBarcodeService
+        >
+    with $Provider<SupabaseBarcodeService> {
+  const SupabaseBarcodeServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'supabaseBarcodeServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$supabaseBarcodeServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<SupabaseBarcodeService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SupabaseBarcodeService create(Ref ref) {
+    return supabaseBarcodeService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SupabaseBarcodeService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SupabaseBarcodeService>(value),
+    );
+  }
+}
+
+String _$supabaseBarcodeServiceHash() =>
+    r'316ae595b009d895b09c827aaf768739acca005b';

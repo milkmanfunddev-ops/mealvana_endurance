@@ -44,6 +44,7 @@ class FoodsTable extends Table {
   // Food preferences and solver configuration (matches Supabase schema)
   BoolColumn get showInPreferences => boolean().withDefault(const Constant(false)).named('show_in_preferences')();
   BoolColumn get isElectrolyte => boolean().withDefault(const Constant(false)).named('is_electrolyte')();
+  BoolColumn get toExcludeFromSolver => boolean().withDefault(const Constant(false)).named('to_exclude_from_solver')();
 
   // Display name (matches Supabase schema)
   TextColumn get displayName => text().nullable().withLength(max: 100).named('display_name')(); // e.g., "gel", "banana"
@@ -68,8 +69,8 @@ class FoodsTable extends Table {
   // Phase suitability fields (matching Supabase schema)
   BoolColumn get afterRunSuitable => boolean().nullable().named('after_run_suitable')();
 
-  // Product type (TEXT field matching Supabase schema)
-  TextColumn get productType => text().nullable().named('product_type')();
+  // Product type ID - References product_types.id (matches Supabase foods.product_type_id)
+  TextColumn get productTypeId => text().nullable().named('product_type_id')();
 
   // Affiliate marketing fields (matching Supabase schema)
   TextColumn get purchaseUrl => text().nullable().named('purchase_url')();

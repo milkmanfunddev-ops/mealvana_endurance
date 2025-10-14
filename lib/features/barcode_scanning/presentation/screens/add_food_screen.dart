@@ -11,6 +11,7 @@ import '../../application/open_food_facts_search_service.dart';
 import '../../application/product_detail_service.dart';
 import '../../application/food_mapping_service.dart';
 import '../../../../shared/database/database_provider.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Full-screen modal for adding foods via search or barcode scan
 class AddFoodScreen extends ConsumerStatefulWidget {
@@ -73,9 +74,9 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
   }
 
   Future<void> _handleSearchResultTap(FoodSearchResult result) async {
-    print('🔄 Add Food Screen - Selected: ${result.displayName}');
-    print('🎯 Add Food Screen - Search result ID: ${result.id}');
-    print('🎯 Add Food Screen - Has valid ID: ${result.hasValidId}');
+    DebugLogger.info('🔄 Add Food Screen - Selected: ${result.displayName}');
+    DebugLogger.info('🎯 Add Food Screen - Search result ID: ${result.id}');
+    DebugLogger.info('🎯 Add Food Screen - Has valid ID: ${result.hasValidId}');
 
     if (!result.hasValidId) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -97,7 +98,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         ),
       );
 
-      print('🚀 Add Food Screen - About to call ProductDetailService with Open Food Facts ID: ${result.id}');
+      DebugLogger.info('🚀 Add Food Screen - About to call ProductDetailService with Open Food Facts ID: ${result.id}');
 
       // Get product details using the unified service
       final productDetailService = ref.read(productDetailServiceProvider);
@@ -105,7 +106,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         openFoodFactsId: result.id,
       );
 
-      print('✅ Add Food Screen - ProductDetailService returned: ${apiProduct != null ? 'SUCCESS' : 'NULL'}');
+      DebugLogger.info('✅ Add Food Screen - ProductDetailService returned: ${apiProduct != null ? 'SUCCESS' : 'NULL'}');
 
       // Close loading dialog
       if (mounted) Navigator.of(context).pop();
@@ -124,7 +125,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
 
       // Map to Food then convert to FoodItem
       final mappingService = ref.read(foodMappingServiceProvider);
-      final food = mappingService.mapToFood(apiProduct);
+      final food = await mappingService.mapToFood(apiProduct);
       final foodItem = _convertFoodToFoodItem(food);
 
       // Show category selection sheet
@@ -229,35 +230,35 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
     double? fatPerServing,
     double? sodiumMg,
   }) async {
-    print('🔄 _saveSearchedFood - Starting save process');
-    print('📊 _saveSearchedFood - Food: ${foodItem.name}');
-    print('📊 _saveSearchedFood - Category IDs: $categoryIds');
-    print('📊 _saveSearchedFood - Edited nutrition values:');
-    print('   - Carbs: $carbsPerServing (original: ${foodItem.carbsPerServing})');
-    print('   - Protein: $proteinPerServing (original: ${foodItem.proteinPerServing})');
-    print('   - Fat: $fatPerServing (original: ${foodItem.fatPerServing})');
-    print('   - Sodium: $sodiumMg (original: ${foodItem.sodiumMg})');
-    print('   - Fluid: $fluidMlPerServing (original: ${foodItem.fluidMlPerServing})');
+    DebugLogger.info('🔄 _saveSearchedFood - Starting save process');
+    DebugLogger.info('📊 _saveSearchedFood - Food: ${foodItem.name}');
+    DebugLogger.info('📊 _saveSearchedFood - Category IDs: $categoryIds');
+    DebugLogger.info('📊 _saveSearchedFood - Edited nutrition values:');
+    DebugLogger.debug('   - Carbs: $carbsPerServing (original: ${foodItem.carbsPerServing})');
+    DebugLogger.debug('   - Protein: $proteinPerServing (original: ${foodItem.proteinPerServing})');
+    DebugLogger.debug('   - Fat: $fatPerServing (original: ${foodItem.fatPerServing})');
+    DebugLogger.debug('   - Sodium: $sodiumMg (original: ${foodItem.sodiumMg})');
+    DebugLogger.debug('   - Fluid: $fluidMlPerServing (original: ${foodItem.fluidMlPerServing})');
 
     try {
-      print('🔄 _saveSearchedFood - Getting database connection...');
+      DebugLogger.info('🔄 _saveSearchedFood - Getting database connection...');
       final database = await ref.read(databaseProvider.future);
-      print('✅ _saveSearchedFood - Database connection obtained');
+      DebugLogger.info('✅ _saveSearchedFood - Database connection obtained');
 
-      print('🔄 _saveSearchedFood - Getting user profile...');
+      DebugLogger.info('🔄 _saveSearchedFood - Getting user profile...');
       final userProfile = await database.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
-      print('✅ _saveSearchedFood - Device ID: $deviceId');
+      DebugLogger.info('✅ _saveSearchedFood - Device ID: $deviceId');
 
       // Check for duplicates
-      print('🔄 _saveSearchedFood - Checking for duplicates...');
+      DebugLogger.info('🔄 _saveSearchedFood - Checking for duplicates...');
       final barcode = foodItem.description?.replaceAll('Scanned from barcode ', '') ?? '';
-      print('📊 _saveSearchedFood - Extracted barcode: "$barcode"');
+      DebugLogger.info('📊 _saveSearchedFood - Extracted barcode: "$barcode"');
       final hasDuplicate = await database.hasUserFoodWithBarcode(deviceId, barcode);
-      print('📊 _saveSearchedFood - Has duplicate: $hasDuplicate');
+      DebugLogger.info('📊 _saveSearchedFood - Has duplicate: $hasDuplicate');
 
       if (hasDuplicate) {
-        print('⚠️ _saveSearchedFood - Food already exists, showing duplicate message');
+        DebugLogger.warning('⚠️ _saveSearchedFood - Food already exists, showing duplicate message');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -270,17 +271,17 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       }
 
       // Save to database
-      print('🔄 _saveSearchedFood - Saving to database with parameters:');
-      print('   - deviceId: $deviceId');
-      print('   - id: ${foodItem.id}');
-      print('   - clientFoodId: ${foodItem.id}');
-      print('   - barcode: $barcode');
-      print('   - name: ${foodItem.name}');
-      print('   - carbsPerServing: ${carbsPerServing ?? foodItem.carbsPerServing}');
-      print('   - proteinPerServing: ${proteinPerServing ?? foodItem.proteinPerServing}');
-      print('   - fatPerServing: ${fatPerServing ?? foodItem.fatPerServing}');
-      print('   - sodiumMg: ${sodiumMg?.toInt() ?? foodItem.sodiumMg}');
-      print('   - categoryIds: $categoryIds');
+      DebugLogger.info('🔄 _saveSearchedFood - Saving to database with parameters:');
+      DebugLogger.debug('   - deviceId: $deviceId');
+      DebugLogger.debug('   - id: ${foodItem.id}');
+      DebugLogger.debug('   - clientFoodId: ${foodItem.id}');
+      DebugLogger.debug('   - barcode: $barcode');
+      DebugLogger.debug('   - name: ${foodItem.name}');
+      DebugLogger.debug('   - carbsPerServing: ${carbsPerServing ?? foodItem.carbsPerServing}');
+      DebugLogger.debug('   - proteinPerServing: ${proteinPerServing ?? foodItem.proteinPerServing}');
+      DebugLogger.debug('   - fatPerServing: ${fatPerServing ?? foodItem.fatPerServing}');
+      DebugLogger.debug('   - sodiumMg: ${sodiumMg?.toInt() ?? foodItem.sodiumMg}');
+      DebugLogger.debug('   - categoryIds: $categoryIds');
 
       await database.saveUserFood(
         deviceId: deviceId,
@@ -304,10 +305,10 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         categoryIds: categoryIds,
       );
 
-      print('✅ _saveSearchedFood - Successfully saved to database');
+      DebugLogger.info('✅ _saveSearchedFood - Successfully saved to database');
 
       if (mounted) {
-        print('✅ _saveSearchedFood - Showing success message and closing screen');
+        DebugLogger.info('✅ _saveSearchedFood - Showing success message and closing screen');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${foodItem.name} added to your foods'),
@@ -318,13 +319,13 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         // Close the screen
         Navigator.of(context).pop();
       } else {
-        print('⚠️ _saveSearchedFood - Widget not mounted, skipping UI updates');
+        DebugLogger.warning('⚠️ _saveSearchedFood - Widget not mounted, skipping UI updates');
       }
     } catch (e, stackTrace) {
-      print('❌ _saveSearchedFood - ERROR occurred:');
-      print('   Error: $e');
-      print('   Type: ${e.runtimeType}');
-      print('   Stack trace: $stackTrace');
+      DebugLogger.error('❌ _saveSearchedFood - ERROR occurred:');
+      DebugLogger.error('   Error: $e');
+      DebugLogger.debug('   Type: ${e.runtimeType}');
+      DebugLogger.debug('   Stack trace: $stackTrace');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -334,13 +335,13 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
           ),
         );
       } else {
-        print('⚠️ _saveSearchedFood - Widget not mounted, cannot show error message');
+        DebugLogger.warning('⚠️ _saveSearchedFood - Widget not mounted, cannot show error message');
       }
     }
   }
 
   Future<void> _handleBarcodeScan() async {
-    print('🔄 Add Food Screen - Barcode scan button pressed');
+    DebugLogger.info('🔄 Add Food Screen - Barcode scan button pressed');
 
     // Navigate to barcode scanner
     final result = await context.pushNamed(

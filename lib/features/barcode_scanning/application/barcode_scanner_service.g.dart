@@ -6,25 +6,53 @@ part of 'barcode_scanner_service.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$barcodeScannerServiceHash() =>
-    r'a2244b7f8453bddf30a640b5e3ea8fe3d4c3bda3';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [barcodeScannerService].
 @ProviderFor(barcodeScannerService)
-final barcodeScannerServiceProvider =
-    AutoDisposeProvider<BarcodeScannerService>.internal(
-  barcodeScannerService,
-  name: r'barcodeScannerServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$barcodeScannerServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const barcodeScannerServiceProvider = BarcodeScannerServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef BarcodeScannerServiceRef
-    = AutoDisposeProviderRef<BarcodeScannerService>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class BarcodeScannerServiceProvider
+    extends
+        $FunctionalProvider<
+          BarcodeScannerService,
+          BarcodeScannerService,
+          BarcodeScannerService
+        >
+    with $Provider<BarcodeScannerService> {
+  const BarcodeScannerServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'barcodeScannerServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$barcodeScannerServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<BarcodeScannerService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  BarcodeScannerService create(Ref ref) {
+    return barcodeScannerService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(BarcodeScannerService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<BarcodeScannerService>(value),
+    );
+  }
+}
+
+String _$barcodeScannerServiceHash() =>
+    r'c93694e0c2e3a10bd805aafe36b6ad8e094f0cea';

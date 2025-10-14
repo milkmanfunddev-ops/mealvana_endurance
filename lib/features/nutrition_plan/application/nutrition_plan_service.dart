@@ -1,14 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/nutrition_plan_repository.dart';
-import '../domain/nutrition_plan.dart';
-import '../domain/food_item.dart';
-import '../data/food_repository.dart';
-import 'llm_nutrition_plan_service.dart';
-// nutrition_calculator.dart - removed since logic moved to Edge Functions
+
+import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../auth/application/auth_service.dart';
-// content_service.dart - removed since algorithm logic moved to Edge Functions
-import '../../../shared/services/analytics_service.dart';
-import '../../../shared/services/sentry_service.dart';
+import '../data/food_repository.dart';
+import '../data/nutrition_plan_repository.dart';
+import '../domain/food_item.dart';
+import '../domain/nutrition_plan.dart';
+import 'llm_nutrition_plan_service.dart';
 
 /// Application service for managing nutrition plans and food data
 /// Coordinates between food database, nutrition calculations, and plan storage
@@ -22,7 +21,7 @@ class NutritionPlanService {
   // Content service removed since algorithm logic moved to Edge Functions
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
   LLMNutritionPlanService get _llmService => ref.read(llmNutritionPlanServiceProvider);
-  SentryService get _sentryService => ref.read(sentryServiceProvider);
+  SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   
   // Nutrition calculator removed - all logic moved to Edge Functions
 
@@ -44,13 +43,7 @@ class NutritionPlanService {
       throw Exception('No user found. Please complete onboarding first.');
     }
 
-    // Track plan generation started
-    await AnalyticsService.trackNutritionPlanGenerationStarted(
-      distanceMiles: distanceMiles,
-      paceMinutesPerMile: paceMinutesPerMile,
-      timeBeforeRunHours: timeBeforeRunHours,
-      gutTrainingLevel: gutTrainingLevel,
-    );
+    // Analytics tracking will be done at the controller level with proper plan_id threading
 
     final startTime = DateTime.now();
     
@@ -71,20 +64,10 @@ class NutritionPlanService {
         final planRepository = await _planRepository;
         await planRepository.cachePlanLocally(user.id, llmPlan);
         
-        // Track successful LLM plan generation
-        await AnalyticsService.trackNutritionPlanGenerated(
-          distanceMiles: distanceMiles,
-          paceMinutesPerMile: paceMinutesPerMile,
-          totalCalories: llmPlan.totalCalories ?? 0,
-          totalCarbs: llmPlan.macroTargets?.carbs ?? 0,
-          beforeRunItems: llmPlan.sections.where((s) => s.title.contains('Before')).firstOrNull?.foodItems.length ?? 0,
-          duringRunItems: llmPlan.sections.where((s) => s.title.contains('During')).firstOrNull?.foodItems.length ?? 0,
-          afterRunItems: llmPlan.sections.where((s) => s.title.contains('After')).firstOrNull?.foodItems.length ?? 0,
-          isFirstPlan: await _isFirstPlan(),
-        );
+        // Analytics tracking moved to controller level
         
         // Track LLM success
-        _sentryService.addBreadcrumb(
+        _sentry.addBreadcrumb(
           message: 'LLM nutrition plan used successfully',
           category: 'nutrition_plan',
           data: {
@@ -97,7 +80,7 @@ class NutritionPlanService {
       }
 
       // FALLBACK: Use algorithmic run-plan Edge Function if LLM fails
-      _sentryService.addBreadcrumb(
+      _sentry.addBreadcrumb(
         message: 'Falling back to algorithmic nutrition plan',
         category: 'nutrition_plan',
         data: {
@@ -131,81 +114,25 @@ class NutritionPlanService {
         debug: debug,
       );
 
-      final responseTime = DateTime.now().difference(startTime);
-
       if (result.success && result.plan != null) {
         final plan = result.plan!;
         
         // Track successful plan generation
-        await AnalyticsService.trackNutritionPlanGenerated(
-          distanceMiles: distanceMiles,
-          paceMinutesPerMile: paceMinutesPerMile,
-          totalCalories: plan.totalCalories ?? 0,
-          totalCarbs: plan.macroTargets?.carbs ?? 0,
-          beforeRunItems: plan.sections.where((s) => s.title.contains('Before')).firstOrNull?.foodItems.length ?? 0,
-          duringRunItems: plan.sections.where((s) => s.title.contains('During')).firstOrNull?.foodItems.length ?? 0,
-          afterRunItems: plan.sections.where((s) => s.title.contains('After')).firstOrNull?.foodItems.length ?? 0,
-          isFirstPlan: await _isFirstPlan(),
-        );
-        
-        // Track Edge Function performance
-        await AnalyticsService.trackEdgeFunctionPerformance(
-          functionName: 'run-plan',
-          responseTime: responseTime,
-          success: true,
-        );
-        
+        // Analytics tracking moved to controller level
+
         // Plan is already cached locally in the repository
         
         return plan;
       } else {
-        // Track failed generation
-        await AnalyticsService.trackNutritionPlanGenerationFailed(
-          errorMessage: result.message ?? 'Unknown error',
-          distanceMiles: distanceMiles,
-          paceMinutesPerMile: paceMinutesPerMile,
-        );
-        
-        // Track Edge Function performance
-        await AnalyticsService.trackEdgeFunctionPerformance(
-          functionName: 'run-plan',
-          responseTime: responseTime,
-          success: false,
-          errorMessage: result.message,
-        );
-        
+        // Analytics tracking moved to controller level
         throw Exception(result.message ?? 'Failed to generate nutrition plan');
       }
     } catch (e) {
-      final responseTime = DateTime.now().difference(startTime);
-      
-      // Track failed generation
-      await AnalyticsService.trackNutritionPlanGenerationFailed(
-        errorMessage: e.toString(),
-        distanceMiles: distanceMiles,
-        paceMinutesPerMile: paceMinutesPerMile,
-      );
-      
-      // Track Edge Function performance
-      await AnalyticsService.trackEdgeFunctionPerformance(
-        functionName: 'run-plan',
-        responseTime: responseTime,
-        success: false,
-        errorMessage: e.toString(),
-      );
-      
+      // Analytics tracking moved to controller level
       rethrow;
     }
   }
   
-  /// Check if this is the user's first nutrition plan
-  Future<bool> _isFirstPlan() async {
-    final user = await _authService.getCurrentUser();
-    if (user == null) return false;
-    
-    final plans = await getUserNutritionPlans();
-    return plans.isEmpty;
-  }
 
   /// Get nutrition plans for the current user
   Future<List<NutritionPlan>> getUserNutritionPlans() async {

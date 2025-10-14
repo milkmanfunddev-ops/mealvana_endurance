@@ -2,9 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import '../data/auth_repository_edge.dart';
 import '../domain/user_preferences.dart';
-import '../../../shared/services/sentry_service.dart';
+import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 
 /// Application service for managing user authentication and preferences
@@ -18,9 +19,9 @@ class AuthService {
   
   /// Get the Edge Function auth repository
   AuthRepositoryEdge get _authRepositoryEdge => ref.read(authRepositoryEdgeProvider);
-  
-  /// Get the Sentry service
-  SentryService get _sentryService => ref.read(sentryServiceProvider);
+
+  SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
   /// Create a new user profile during onboarding using Edge Function
   Future<UserProfile> createUser({
@@ -35,7 +36,11 @@ class AuthService {
   }) async {
     // Get device ID
     final deviceId = await _getDeviceId();
-    print('🔑 Creating user with device ID: $deviceId');
+    _logger.info(
+      'Creating user',
+      context: 'AUTH',
+      data: {'deviceId': deviceId},
+    );
     
     // Get app version (simplified for now)
     const appVersion = '1.0.0';
@@ -63,14 +68,14 @@ class AuthService {
       await userRepo.saveUserProfile(result.user!);
       
       // Update Sentry user context with new user details
-      await _sentryService.setUserContext(
+      await _sentry.setUserContext(
         deviceId: deviceId,
         appVersion: appVersion,
         onboardingCompleted: false, // User just created, onboarding in progress
         gutTrainingLevel: gutTrainingLevel.name,
       );
       
-      _sentryService.addBreadcrumb(
+      _sentry.addBreadcrumb(
         message: 'User created successfully',
         category: 'user_lifecycle',
         data: {
@@ -90,14 +95,14 @@ class AuthService {
         await userRepo.saveUserProfile(existingUser);
         
         // Update Sentry user context for existing user
-        await _sentryService.setUserContext(
+        await _sentry.setUserContext(
           deviceId: deviceId,
           appVersion: appVersion,
           onboardingCompleted: existingUser.onboardingCompleted,
           gutTrainingLevel: existingUser.gutTraining.name,
         );
         
-        _sentryService.addBreadcrumb(
+        _sentry.addBreadcrumb(
           message: 'Existing user restored',
           category: 'user_lifecycle',
           data: {
@@ -110,7 +115,7 @@ class AuthService {
       }
       // Critical: User exists but couldn't be retrieved
       final error = Exception('User already exists but could not retrieve existing user');
-      await _sentryService.reportCriticalError(
+      await _sentry.reportCriticalError(
         error,
         context: 'user_creation_conflict',
         tags: {
@@ -123,7 +128,7 @@ class AuthService {
     } else {
       // Critical: User creation failed completely
       final error = Exception(result.message ?? 'Failed to create user');
-      await _sentryService.reportCriticalError(
+      await _sentry.reportCriticalError(
         error,
         context: 'user_creation_failure',
         tags: {
@@ -171,7 +176,7 @@ class AuthService {
       return user;
     } catch (e, stackTrace) {
       // Critical: Can't get current user - this affects the entire app
-      await _sentryService.reportCriticalError(
+      await _sentry.reportCriticalError(
         e,
         stackTrace: stackTrace,
         context: 'get_current_user_failure',
@@ -257,7 +262,7 @@ class AuthService {
     if (!result.success) {
       // Critical: Food preferences save failure blocks onboarding completion
       final error = Exception(result.message ?? 'Failed to save food preferences to server');
-      await _sentryService.reportCriticalError(
+      await _sentry.reportCriticalError(
         error,
         context: 'food_preferences_save_failure',
         tags: {
@@ -285,14 +290,14 @@ class AuthService {
       await userRepo.updateUserProfile(updatedUser);
       
       // Update Sentry user context to reflect onboarding completion
-      await _sentryService.setUserContext(
+      await _sentry.setUserContext(
         deviceId: userId,
         appVersion: '1.0.0',
         onboardingCompleted: true,
         gutTrainingLevel: user.gutTraining.name,
       );
       
-      _sentryService.addBreadcrumb(
+      _sentry.addBreadcrumb(
         message: 'Onboarding completed - food preferences saved',
         category: 'user_lifecycle',
         data: {
@@ -379,6 +384,6 @@ final currentUserProvider = FutureProvider<UserProfile?>((ref) async {
 
 /// Provider for AuthRepositoryEdge
 final authRepositoryEdgeProvider = Provider<AuthRepositoryEdge>((ref) {
-  final supabase = Supabase.instance.client;
-  return AuthRepositoryEdge(supabase);
+  final externalDeps = ref.read(appExternalDepsProvider);
+  return AuthRepositoryEdge(externalDeps.supabaseClient, externalDeps.logger);
 });

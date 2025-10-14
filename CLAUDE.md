@@ -187,37 +187,46 @@ Dynamic content system with backend control:
 📚 **Full Documentation**: [/docs/technical/content-management.md](/docs/technical/content-management.md)
 
 ### Data Storage
-Dual database architecture combining offline-first local storage with cloud synchronization:
+Unified dual database architecture with 100% schema parity between local and cloud:
 
-**Local Storage (Drift SQLite v2)**:
-- `user_profiles`: User biometric data and preferences  
-- `food_preferences`: Like/dislike food selections with user associations
-- `nutrition_plans`: Generated nutrition plans with full history
-- `foods`: Cached food database with nutritional information (24-hour refresh)
-- `app_content`: Dynamic content management (replaces SharedPreferences)
-- `categories`: Food timing categories (before_run, during_run, after_run)
-- `food_categories`: Many-to-many food-category relationships
-- `brands`: Brand information for affiliate marketing
-- `feedback`: User feedback queue with sync status
-- `macro_targets`: Macro nutrient target tracking
+**Schema v1 (26 Tables - Living Baseline)**:
+- **All Tables Synced**: Complete parity between Drift SQLite and Supabase PostgreSQL
+- **Core Tables (5)**: `users`, `nutrition_plans`, `food_preferences_table`, `feedback`, `macro_targets_table`
+- **Food System (8)**: `foods_table`, `product_types_table`, `categories_table`, `food_categories_table`, `user_foods_table`, `user_food_categories_table`, `user_hidden_foods_table`, `edge_functions_table`
+- **Content (2)**: `app_content_table`, `workout_notes`
+- **Calendar Feature (5)**: `activities`, `events`, `activity_completions`, `carb_loading_plans`, `carb_loading_days`
+- **Carb Loading Foods (6)**: `meal_types`, `carb_loading_foods`, `carb_loading_user_foods`, `carb_loading_food_meal_types`, `carb_loading_user_food_meal_types`, `carb_loading_day_meals`
+
+**Local Storage (Drift SQLite)**:
+- Offline-first architecture with full schema v1 (26 tables)
+- Type-safe queries and compile-time validation
+- Automatic synchronization with Supabase
 
 **Cloud Storage (Supabase PostgreSQL)**:
-- Mirrors local schema for backup and synchronization
+- 100% schema parity with Drift (all 26 tables)
 - Content management system for dynamic UI text and algorithm parameters
 - Edge functions for AI-powered nutrition plan generation
-- Row Level Security for privacy protection
+- Row Level Security based on device_id and user_id
 
-**Migration System**:
-- **Database Version**: Schema v2 (upgraded from v1 using Big Bang migration)
-- **Migration Trigger**: Controlled by `schemaVersion` property in AppDatabase
-- **Big Bang Approach**: All 5 new tables added in single migration
-- **24-Hour Sync Cycles**: Automatic refresh for foods and content data
+**Schema Management**:
+- **Current Version**: v1 (clean baseline, no migrations)
+- **Schema Location**: `/database_schemas/v1/`
+- **Snapshot Command**: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v1/`
+- **Future Migrations**: Will use Drift's built-in migration system when moving to v2
 
-📚 **Full Documentation**: 
-- [Database Overview](/docs/database/README.md) - Complete dual database architecture
-- [Drift Schema](/docs/database/drift/schema.md) - Local SQLite implementation
-- [Supabase Tables](/docs/database/supabase/tables.md) - Cloud backend structure
-- [Migration Strategy](/docs/database/drift/migration-strategy.md) - V1→V2 upgrade approach
+**Development Environments**:
+- **Dev**: Automated deployment on `develop` branch push (tests run first)
+- **Production**: Manual approval required for `main` branch (tests run first)
+- **Automation**: GitHub Actions for CI/CD, testing, and daily drift detection
+- **Testing**: 160+ tests (150+ edge function, 11+ Flutter) run on every deployment
+
+📚 **Full Documentation**:
+- [Database Overview](/docs/database/README.md) - Complete unified architecture
+- [Drift Database](/docs/database/drift/README.md) - Local SQLite with v1 schema (26 tables)
+- [V1 Schema Files](/database_schemas/v1/) - Complete DDL and Drift snapshot
+- [Supabase Tables](/docs/database/supabase/README.md) - Cloud backend with 100% parity
+- [Dev/Prod Setup](/docs/features/dev_prod/README.md) - Environment configuration guide
+- [Implementation Roadmap](/docs/features/dev_prod/roadmap.md) - Step-by-step deployment plan
 
 ## Development Practices
 
@@ -356,12 +365,12 @@ anonKey: '[ANON_KEY]'
 - [Technical Implementation](/docs/technical/README.md) - Detailed development patterns
 - [Database Architecture](/docs/database/README.md) - Dual database implementation and migrations
 
-### Technical Documentation  
-- [Technical Overview](/docs/technical/README.md) - Complete technical architecture guide with current Drift SQLite v2 schema
+### Technical Documentation
+- [Technical Overview](/docs/technical/README.md) - Complete technical architecture guide with current Drift SQLite v1 schema
 - [Fat Backend Architecture](/docs/technical/fat-backend-architecture.md) - Content management strategy with Drift SQLite caching
-- [Content Management System](/docs/technical/content-management.md) - Dynamic content management with Drift SQLite storage  
-- [Drift Database Implementation](/docs/technical/drift-implementation.md) - Type-safe SQLite database with v2 schema
-- [Drift Migration Guide](/docs/technical/drift-migration-guide.md) - Database migration management and v1→v2 transition
+- [Content Management System](/docs/technical/content-management.md) - Dynamic content management with Drift SQLite storage
+- [Drift Database Implementation](/docs/technical/drift-implementation.md) - Type-safe SQLite database with v1 schema
+- [Drift Migration Guide](/docs/technical/drift-migration-guide.md) - Database migration management for future versions
 - [Logging Service](/docs/technical/logging-service.md) - Structured logging implementation
 - [Sentry Integration](/docs/technical/sentry-integration.md) - Error tracking and performance monitoring
 - [Shorebird Code Push](/docs/technical/shorebird-code-push.md) - Over-the-air updates
@@ -394,9 +403,10 @@ anonKey: '[ANON_KEY]'
 3. **Use Content Service**: Never hardcode UI text or algorithm parameters
 4. **Maintain Offline-First**: Always write to local storage first
 5. **Run Code Generation**: After adding `@riverpod` or `@DriftDatabase` annotations
-6. **Generate Schema Migrations**: After database schema changes using `dart run drift_dev make-migrations`
-6. **Follow ContentService Integration**: All controllers must access ContentService for UI text
-7. **Test on Both Platforms**: iOS and Android have different requirements
+6. **Generate Schema Snapshots**: After database changes: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v1/`
+7. **Follow ContentService Integration**: All controllers must access ContentService for UI text
+8. **Test on Both Platforms**: iOS and Android have different requirements
+9. **Environment Deployments**: Use GitHub Actions workflows for automated dev/staging deployment
 
 ### Key Design Decisions
 - **No Static Methods**: Use dependency injection via Riverpod
@@ -420,7 +430,7 @@ Mealvana Endurance implements a **focused, speed-optimized testing approach** de
 - **Risk-based coverage** - Test the 5% of functionality that causes 95% of user pain
 
 **Critical Test Categories**:
-1. **Schema Migration Tests** - Prevent app crashes during database updates (v1→v2 migration)
+1. **Schema Migration Tests** - Prevent app crashes during future database updates
 2. **Food Suitability Validation** - Ensure user safety (no oatmeal during runs)
 3. **Macro Target Validation** - Core value proposition accuracy within ±10g tolerance
 4. **Device Authentication Flow** - Privacy compliance and data integrity

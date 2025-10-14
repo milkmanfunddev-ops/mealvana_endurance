@@ -6,10 +6,9 @@ import '../providers/onboarding_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/labeled_text_field.dart';
-import '../../../../shared/mixins/analytics_mixin.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/data/user_repository.dart';
+import '../../../../shared/services/app_external_deps.dart';
 
 /// User profile creation screen
 /// Collects basic user information during onboarding
@@ -20,7 +19,7 @@ class UserProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends ConsumerState<UserProfileScreen> with AnalyticsMixin {
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   
   Gender? _selectedGender;
@@ -33,8 +32,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> with Anal
   @override
   void initState() {
     super.initState();
-    // Track screen view
-    trackScreenView('User Profile Onboarding');
+    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
+      'screen_name': 'User Profile Onboarding',
+    });
   }
 
   @override
@@ -73,12 +73,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> with Anal
     }
 
     // Track form submission attempt
-    await trackFormSubmission('User Profile', formData: {
-      'Gender': _selectedGender!.name,
-      'Runs With Water Bottle': _runsWithWaterBottle,
-      'Height Feet': _heightFeetController.text,
-      'Height Inches': _heightInchesController.text,
-      'Weight': _weightController.text,
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    await analytics.track('user_profile_submit_attempt', properties: {
+      'gender': _selectedGender!.name,
+      'runs_with_water_bottle': _runsWithWaterBottle,
+      'height_feet': _heightFeetController.text,
+      'height_inches': _heightInchesController.text,
+      'weight': _weightController.text,
     });
 
     final controller = ref.read(onboardingControllerProvider.notifier);
@@ -94,7 +95,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> with Anal
 
     if (success && mounted) {
       // Track successful navigation
-      await trackNavigation('Food Preferences Onboarding', source: 'User Profile Submit');
+      await analytics.track('navigation', properties: {
+        'destination': 'Food Preferences Onboarding',
+        'source': 'User Profile Submit',
+      });
       
       // Invalidate providers to refresh user state
       ref.invalidate(currentUserProvider);

@@ -3,6 +3,9 @@ import 'package:drift/drift.dart';
 /// Product types table - standardized food product type categorization (matches Supabase schema)
 @DataClassName('ProductTypeEntry')
 class ProductTypesTable extends Table {
+  @override
+  String get tableName => 'product_types';
+
   /// UUID primary key (matches Supabase product_types.id)
   TextColumn get id => text().withLength(min: 36, max: 36)();
 

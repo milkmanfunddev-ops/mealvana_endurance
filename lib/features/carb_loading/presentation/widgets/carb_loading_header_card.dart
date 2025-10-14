@@ -33,7 +33,7 @@ class CarbLoadingHeaderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -70,7 +70,7 @@ class CarbLoadingHeaderCard extends StatelessWidget {
                     Text(
                       'days',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -84,7 +84,7 @@ class CarbLoadingHeaderCard extends StatelessWidget {
             Text(
               DateFormat('MMM d, yyyy').format(plan.raceDate),
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
 
@@ -122,7 +122,7 @@ class CarbLoadingHeaderCard extends StatelessWidget {
             Text(
               _getStatusMessage(plan),
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
           ],

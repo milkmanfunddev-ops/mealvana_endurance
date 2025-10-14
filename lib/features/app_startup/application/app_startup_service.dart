@@ -1,15 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:io';
 import 'dart:convert';
-import '../../../shared/services/analytics_service.dart';
-import '../../../shared/services/sentry_service.dart';
+import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/analytics/analytics_events.dart';
+import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../auth/application/auth_service.dart';
 import '../../nutrition_plan/data/food_repository.dart';
+import '../../carb_loading/application/carb_loading_food_sync_service.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -18,15 +20,15 @@ class AppStartupService {
   AppStartupService(this.ref);
   final Ref ref;
   
-  SentryService get _sentryService => ref.read(sentryServiceProvider);
-  LoggingService get _logger => AppLogger.instance;
+  SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
   
   /// Initialize Drift database with v2 migration support
   Future<void> initializeDatabase() async {
     try {
-      // Get database instance (this will create it if needed and trigger migration)
-      final database = ref.read(appDatabaseProvider);
-      
+      // Touch the database provider so migrations run before the app boots.
+      await ref.read(databaseProvider.future);
     } catch (e, stackTrace) {
       _logger.error('Database initialization failed', 
         context: 'DATABASE',
@@ -39,17 +41,18 @@ class AppStartupService {
   
   /// Initialize analytics service with proper user identification
   Future<void> initializeAnalytics() async {
-    // Initialize Mixpanel
-    await AnalyticsService.initialize();
-
     // Get or create device ID for user identification
     final deviceId = await getOrCreateDeviceId();
+    await _analytics.initialize();
+    await _analytics.identifyUser(deviceId);
+    NotificationService.configure(_analytics);
 
-    // Identify user in Mixpanel (anonymous until they create profile)
-    await AnalyticsService.identifyUser(deviceId);
-
-    // Track app launch
-    await AnalyticsService.trackAppLaunched();
+    // Track app opened event with session ID
+    final sessionId = const Uuid().v4();
+    await _analytics.trackAppOpened(
+      deviceId: deviceId,
+      sessionId: sessionId,
+    );
   }
   
   /// Set Sentry user context during app startup
@@ -59,7 +62,7 @@ class AppStartupService {
       // Here we set user context with device ID
       final deviceId = await getOrCreateDeviceId();
       
-      await _sentryService.setUserContext(
+      await _sentry.setUserContext(
         deviceId: deviceId,
         appVersion: '1.1.0+8',
       );
@@ -79,8 +82,6 @@ class AppStartupService {
   /// Get or create a persistent device ID for analytics
   Future<String> getOrCreateDeviceId() async {
     try {
-      final database = ref.read(appDatabaseProvider);
-      
       // Try to get existing device ID from database
       // For now, we'll use a simple approach - store it with the user profile
       // or generate a new one each time during the transition
@@ -112,7 +113,6 @@ class AppStartupService {
   /// Check if user has existing session and restore it
   Future<void> checkUserSession() async {
     try {
-      final authService = ref.read(authServiceProvider);
       final database = ref.read(appDatabaseProvider);
       
       // Check if user exists in Drift database
@@ -120,17 +120,13 @@ class AppStartupService {
       
       if (user != null) {
         // User exists locally - identify them properly in analytics
-        await AnalyticsService.identifyUser(
+        await _analytics.identifyUser(
           user.id,
-          properties: {
-            'Gender': user.gender.name,
-            'Age': user.age,
-            'Weight (lbs)': user.weightPounds,
-            'Height (in)': user.heightFeet * 12 + user.heightInches,
-            'Runs With Water Bottle': user.runsWithWaterBottle,
-            'Gut Training': user.gutTraining.name,
-            'Has Completed Onboarding': user.onboardingCompleted,
-          },
+          gender: user.gender.name,
+          age: user.age,
+          weightPounds: user.weightPounds,
+          runsWithWaterBottle: user.runsWithWaterBottle,
+          gutTrainingLevel: user.gutTraining.name,
         );
       }
     } catch (e) {
@@ -146,14 +142,13 @@ class AppStartupService {
   Future<void> initializeNutritionPlans() async {
     try {
       final database = ref.read(appDatabaseProvider);
-      final authService = ref.read(authServiceProvider);
       
       // Check if we have a current user
       final user = await database.getCurrentUserProfile();
       
       if (user != null) {
         // Get latest nutrition plan from Drift
-        final latestPlanJson = await database.getLatestNutritionPlan(user.id);
+        await database.getLatestNutritionPlan(user.id);
       }
     } catch (e) {
       _logger.error('Plan initialization error', 
@@ -175,6 +170,10 @@ class AppStartupService {
       // This ensures food IDs returned by edge functions can be resolved locally
       await foodRepository.getAllFoods();
 
+      // Sync carb loading foods from Supabase
+      final carbLoadingFoodSyncService = ref.read(carbLoadingFoodSyncServiceProvider);
+      await carbLoadingFoodSyncService.syncCarbLoadingFoods();
+
     } catch (e) {
       _logger.error('Food data refresh error',
         context: 'FOOD_DATA',
@@ -191,7 +190,11 @@ class AppStartupService {
       // First check if user tapped a notification
       final notificationPlanId = NotificationService.getPendingNavigationPlanId();
       if (notificationPlanId != null) {
-        print('📱 DEBUG: Found pending notification navigation for plan: $notificationPlanId');
+        _logger.debug(
+          'Found pending notification navigation',
+          context: 'NOTIFICATION',
+          data: {'planId': notificationPlanId},
+        );
         return notificationPlanId;
       }
       

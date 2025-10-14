@@ -7,7 +7,7 @@ import '../../features/app_startup/presentation/widgets/app_startup_widget.dart'
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/food_preferences_screen.dart';
-import '../../features/nutrition_plan/presentation/screens/current_plan_screen.dart';
+import '../../features/nutrition_plan/presentation/screens/activity_detail_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart';
 import '../../features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart';
@@ -17,6 +17,9 @@ import '../../features/barcode_scanning/presentation/screens/add_food_screen.dar
 import '../../features/feedback/presentation/screens/survey_screen.dart';
 import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
 import '../../features/user_journal/presentation/screens/voice_notes_list_screen.dart';
+import '../../features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart';
+import '../../features/carb_loading/presentation/screens/create_custom_carb_loading_food_screen.dart';
+import '../../features/carb_loading/domain/meal_type.dart';
 import '../widgets/tabs_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
@@ -63,8 +66,33 @@ class AppRouter {
       ),
       GoRoute(
         path: '/distancepacegut',
-        name: 'distancepacegut', 
-        builder: (context, state) => const DistancePaceGutEntryScreen(),
+        name: 'distancepacegut',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return DistancePaceGutEntryScreen(
+            initialDate: extra?['initialDate'] as DateTime?,
+            initialDistance: extra?['distance'] as double?,
+            initialGoalPace: extra?['goalPace'] as double?,
+            activityId: extra?['activityId'] as String?,
+            eventId: extra?['eventId'] as String?,
+          );
+        },
+      ),
+
+      // Alias for distance-pace-gut-entry (for consistency)
+      GoRoute(
+        path: '/distance-pace-gut-entry',
+        name: 'distance-pace-gut-entry',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return DistancePaceGutEntryScreen(
+            initialDate: extra?['initialDate'] as DateTime?,
+            initialDistance: extra?['distance'] as double?,
+            initialGoalPace: extra?['goalPace'] as double?,
+            activityId: extra?['activityId'] as String?,
+            eventId: extra?['eventId'] as String?,
+          );
+        },
       ),
       // Main tabs screen (after onboarding)
       GoRoute(
@@ -103,18 +131,34 @@ class AppRouter {
         },
       ),
       
-      // Current Plan Screen - Shows generated nutrition plan or empty state
+      // Activity Detail Screen - Shows nutrition plan and activity details
       GoRoute(
         path: '/plan',
         name: 'plan',
-        builder: (context, state) => const CurrentPlanScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return ActivityDetailScreen(
+            mode: extra?['mode'] ?? 'view',
+            activityId: extra?['activityId'],
+            pendingActivityData: extra?['pendingActivityData'],
+            macroTargets: extra?['macroTargets'],
+          );
+        },
       ),
-      
-      // Current Plan Screen alias - for navigation from adjust macros
+
+      // Activity Detail Screen alias - for navigation from adjust macros
       GoRoute(
         path: '/current-plan',
         name: 'current-plan',
-        builder: (context, state) => const CurrentPlanScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return ActivityDetailScreen(
+            mode: extra?['mode'] ?? 'view',
+            activityId: extra?['activityId'],
+            pendingActivityData: extra?['pendingActivityData'],
+            macroTargets: extra?['macroTargets'],
+          );
+        },
       ),
       
       // Adjust Macros Screen - Fine-tune macro targets before generating plan
@@ -172,7 +216,33 @@ class AppRouter {
           );
         },
       ),
-      
+
+      // Carb Loading Food Selection Screen - Select foods for carb loading meals
+      GoRoute(
+        path: '/carb-loading-select-food',
+        name: 'carb-loading-select-food',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return CarbLoadingFoodSelectionScreen(
+            dayId: extra?['dayId'] as String,
+            mealType: extra?['mealType'] as MealType,
+          );
+        },
+      ),
+
+      // Create Custom Carb Loading Food Screen - Manual food entry
+      GoRoute(
+        path: '/create-custom-carb-loading-food',
+        name: 'create-custom-carb-loading-food',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return CreateCustomCarbLoadingFoodScreen(
+            dayId: extra?['dayId'] as String,
+            mealType: extra?['mealType'] as MealType,
+          );
+        },
+      ),
+
       // User Journal Routes
       
       // Plan Rating Screen - Rate how well a nutrition plan worked

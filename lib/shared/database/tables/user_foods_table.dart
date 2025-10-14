@@ -58,9 +58,8 @@ class UserFoodsTable extends Table {
 
   @override
   List<String> get customConstraints => [
-    // Temporarily removed all foreign keys to fix database creation:
-    // 'FOREIGN KEY (device_id) REFERENCES users(device_id) ON DELETE CASCADE',
-    // 'FOREIGN KEY (product_type_id) REFERENCES product_types(id)',
+    'FOREIGN KEY (device_id) REFERENCES users(device_id) ON DELETE CASCADE',
+    'FOREIGN KEY (product_type_id) REFERENCES product_types(id)',
     'UNIQUE (device_id, client_food_id)',
   ];
 }

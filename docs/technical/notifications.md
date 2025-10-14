@@ -148,30 +148,18 @@ Future<String?> checkForPendingFeedback() async {
 
 The notification system integrates with analytics to track the **North-Star metric funnel**:
 
-1. **`reminder_set`** - When notification is scheduled
-2. **`reminder_fired`** - When notification is delivered (manual tracking)
-3. **`plan_opened_from_reminder`** - When user taps notification and opens app
+1. **`reminder_set`** – emitted when a reminder is scheduled.
+2. **`reminder_fired`** – emitted when a reminder is delivered (manual trigger).
+3. **`plan_opened_from_reminder`** – emitted when the user taps the notification and opens the app.
 
-**Tracking Methods** (`lib/shared/services/analytics_service.dart`):
+Implementation details:
 
-```dart
-// Track when reminder is scheduled
-static Future<void> trackReminderSet({
-  required String planId,
-  required String remindAtIso,
-}) async { ... }
+- `NotificationService.configure(analytics)` is called during startup once the `AnalyticsTracker` is ready (see `AppStartupService.initializeAnalytics`).
+- `NotificationService.scheduleReminder` invokes `analytics.trackReminderSet` via the helper in `lib/shared/services/analytics/analytics_events.dart`.
+- `NotificationService.trackReminderFired(planId)` should be called when the app confirms delivery and uses the same helper extension.
+- `_onNotificationTapped` calls `analytics.trackPlanOpenedFromReminder` before storing the pending navigation plan ID.
 
-// Track when reminder notification fires
-static Future<void> trackReminderFired({
-  required String planId,
-}) async { ... }
-
-// Track when user opens app from notification
-static Future<void> trackPlanOpenedFromReminder({
-  required String planId,
-  required String screen,
-}) async { ... }
-```
+All helper methods live in `lib/shared/services/analytics/analytics_events.dart` and operate on the provider-injected tracker, so tests can swap in `RecordingAnalyticsTracker` without touching Mixpanel.
 
 ## User Flow
 

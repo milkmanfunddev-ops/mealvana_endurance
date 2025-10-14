@@ -15,23 +15,34 @@ import 'tables/feedback.dart';
 import 'tables/foods_table.dart';
 import 'tables/categories_table.dart';
 import 'tables/food_categories_table.dart';
-import 'tables/brands_table.dart';
 import 'tables/product_types_table.dart';
 import 'tables/app_content_table.dart';
 import 'tables/workout_notes_table.dart';
-import 'tables/carb_loading_table.dart';
-import 'tables/carb_loading_simple_table.dart';
 import 'tables/edge_functions_table.dart';
 import 'tables/user_foods_table.dart';
 import 'tables/user_food_categories_table.dart';
 import 'tables/user_hidden_foods_table.dart';
+// NEW: Calendar tables
+import 'tables/activities_table.dart';
+import 'tables/events_table.dart';
+import 'tables/activity_completions_table.dart';
+import 'tables/carb_loading_plans_table.dart';
+import 'tables/carb_loading_days_table.dart';
+// NEW: Carb Loading Food tables
+import 'tables/meal_types_table.dart';
+import 'tables/carb_loading_foods_table.dart';
+import 'tables/carb_loading_user_foods_table.dart';
+import 'tables/carb_loading_food_meal_types_table.dart';
+import 'tables/carb_loading_user_food_meal_types_table.dart';
+import 'tables/carb_loading_day_meals_table.dart';
 import '../services/logging_service.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
-/// V3 implementation with user-specific food tables aligned with Supabase schema
+/// V1 schema with 27 tables (100% parity with Supabase)
 @DriftDatabase(tables: [
   // Core tables aligned with Supabase
   UserProfilesTable,
@@ -44,7 +55,6 @@ part 'app_database.g.dart';
   FoodsTable,
   CategoriesTable,
   FoodCategoriesTable,
-  BrandsTable,
   ProductTypesTable,
 
   // User-specific food tables (new in v3)
@@ -57,20 +67,37 @@ part 'app_database.g.dart';
 
   // Additional features
   WorkoutNotesTable,
-  CarbLoadingTable,
-  CarbLoadingSimpleTable,
   EdgeFunctionsTable,
+
+  // Calendar feature tables
+  ActivitiesTable,
+  EventsTable,
+  ActivityCompletionsTable,
+  CarbLoadingPlansTable,
+  CarbLoadingDaysTable,
+
+  // Carb Loading Food tables
+  MealTypesTable,
+  CarbLoadingFoodsTable,
+  CarbLoadingUserFoodsTable,
+  CarbLoadingFoodMealTypesTable,
+  CarbLoadingUserFoodMealTypesTable,
+  CarbLoadingDayMealsTable,
 ])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
-  
+  AppDatabase({AppLogger? logger})
+      : _logger = logger ?? const NoopAppLogger(),
+        super(_openConnection());
+
   /// Constructor for testing with in-memory database
-  AppDatabase.memory() : super(NativeDatabase.memory());
+  AppDatabase.memory({AppLogger? logger})
+      : _logger = logger ?? const NoopAppLogger(),
+        super(NativeDatabase.memory());
+
+  final AppLogger _logger;
 
   @override
-  int get schemaVersion => 1; // v1: Fresh start with all tables including imported product type
-  
-  LoggingService get _logger => AppLogger.instance;
+  int get schemaVersion => 1; // v1: Baseline schema with 26 tables (fresh installs only)
 
   /// Generate a UUID for new records
   String _generateUuid() {
@@ -81,7 +108,7 @@ class AppDatabase extends _$AppDatabase {
     final random3 = ((DateTime.now().second * 1000 + DateTime.now().millisecond) % 100000).toString().padLeft(5, '0');
 
     // Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 characters total)
-    final uuid = '${timestamp.substring(timestamp.length - 8)}-${random1}-${random2}-${random3.substring(0, 4)}-${random3}${timestamp.substring(timestamp.length - 7)}';
+    final uuid = '${timestamp.substring(timestamp.length - 8)}-$random1-$random2-${random3.substring(0, 4)}-$random3${timestamp.substring(timestamp.length - 7)}';
 
     return uuid;
   }
@@ -95,7 +122,7 @@ class AppDatabase extends _$AppDatabase {
         return; // Already initialized
       }
 
-      print('🏭 Initializing default product types...');
+      DebugLogger.debug('🏭 Initializing default product types...');
       
       // Insert default product types
       final importedId = _generateUuid();
@@ -109,7 +136,7 @@ class AppDatabase extends _$AppDatabase {
         ),
       );
 
-      print('✅ Default product types initialized successfully');
+      DebugLogger.info('✅ Default product types initialized successfully');
     } catch (e) {
       _logger.error('Failed to initialize default product types', error: e);
       rethrow;
@@ -128,52 +155,18 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  /// Simple database setup for v1 - fresh start only
+  /// V1 database setup - fresh installs only (no migrations needed)
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
-        // Create all tables for fresh installs
-        _logger.database('Creating new v1 database schema');
+        // Create all v1 tables for fresh installs
+        _logger.database('Creating new v1 database schema (26 tables)');
         await m.createAll();
         await _populateDefaultData();
         _logger.database('Database v1 schema created successfully');
       },
-      onUpgrade: (Migrator m, int from, int to) async {
-        // Handle any existing database by dropping all tables and recreating
-        _logger.database('Migrating database from v$from to v$to - dropping all tables and recreating');
-
-        try {
-          // Drop all existing tables in correct order (respecting foreign keys)
-          // Use try-catch for each table in case it doesn't exist
-          try { await m.drop(feedbackTable); } catch (e) { _logger.debug('Table feedbackTable does not exist, skipping drop'); }
-          try { await m.drop(nutritionPlans); } catch (e) { _logger.debug('Table nutritionPlans does not exist, skipping drop'); }
-          try { await m.drop(foodPreferencesTable); } catch (e) { _logger.debug('Table foodPreferencesTable does not exist, skipping drop'); }
-          try { await m.drop(userProfilesTable); } catch (e) { _logger.debug('Table userProfilesTable does not exist, skipping drop'); }
-          try { await m.drop(macroTargetsTable); } catch (e) { _logger.debug('Table macroTargetsTable does not exist, skipping drop'); }
-          try { await m.drop(foodCategoriesTable); } catch (e) { _logger.debug('Table foodCategoriesTable does not exist, skipping drop'); }
-          try { await m.drop(foodsTable); } catch (e) { _logger.debug('Table foodsTable does not exist, skipping drop'); }
-          try { await m.drop(categoriesTable); } catch (e) { _logger.debug('Table categoriesTable does not exist, skipping drop'); }
-          try { await m.drop(brandsTable); } catch (e) { _logger.debug('Table brandsTable does not exist, skipping drop'); }
-          try { await m.drop(appContentTable); } catch (e) { _logger.debug('Table appContentTable does not exist, skipping drop'); }
-          try { await m.drop(edgeFunctionsTable); } catch (e) { _logger.debug('Table edgeFunctionsTable does not exist, skipping drop'); }
-          try { await m.drop(workoutNotesTable); } catch (e) { _logger.debug('Table workoutNotesTable does not exist, skipping drop'); }
-          try { await m.drop(carbLoadingTable); } catch (e) { _logger.debug('Table carbLoadingTable does not exist, skipping drop'); }
-          try { await m.drop(carbLoadingSimpleTable); } catch (e) { _logger.debug('Table carbLoadingSimpleTable does not exist, skipping drop'); }
-          try { await m.drop(productTypesTable); } catch (e) { _logger.debug('Table productTypesTable does not exist, skipping drop'); }
-
-          _logger.database('All existing tables dropped successfully');
-
-          // Recreate all tables with current v1 schema
-          await m.createAll();
-          await _populateDefaultData();
-
-          _logger.database('Database reset to v1 schema completed successfully');
-        } catch (e) {
-          _logger.error('Database migration failed: $e');
-          rethrow;
-        }
-      },
+      // No onUpgrade needed - v1 is the baseline, all users start fresh
       beforeOpen: (details) async {
         // Enable foreign key support
         await customStatement('PRAGMA foreign_keys = ON');
@@ -187,10 +180,10 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  /// Populate default data for new installations and migrations
+  /// Populate default data for fresh installations
   Future<void> _populateDefaultData() async {
     try {
-      // Step 1: Populate categories
+      // Step 1: Populate categories (nutrition plan timing)
       _logger.database('Populating categories', operation: 'populate_data');
       await batch((batch) {
         batch.insert(categoriesTable,
@@ -203,6 +196,43 @@ class AppDatabase extends _$AppDatabase {
         );
         batch.insert(categoriesTable,
           CategoriesTableCompanion.insert(id: const Value(3), name: 'after_run'),
+          mode: InsertMode.insertOrIgnore
+        );
+      });
+
+      // Step 1b: Populate meal types (carb loading meals)
+      _logger.database('Populating meal types', operation: 'populate_data');
+      await batch((batch) {
+        batch.insert(mealTypesTable,
+          MealTypesTableCompanion.insert(
+            id: const Value(1),
+            name: 'breakfast',
+            displayName: 'Breakfast'
+          ),
+          mode: InsertMode.insertOrIgnore
+        );
+        batch.insert(mealTypesTable,
+          MealTypesTableCompanion.insert(
+            id: const Value(2),
+            name: 'lunch',
+            displayName: 'Lunch'
+          ),
+          mode: InsertMode.insertOrIgnore
+        );
+        batch.insert(mealTypesTable,
+          MealTypesTableCompanion.insert(
+            id: const Value(3),
+            name: 'dinner',
+            displayName: 'Dinner'
+          ),
+          mode: InsertMode.insertOrIgnore
+        );
+        batch.insert(mealTypesTable,
+          MealTypesTableCompanion.insert(
+            id: const Value(4),
+            name: 'snacks',
+            displayName: 'Snacks'
+          ),
           mode: InsertMode.insertOrIgnore
         );
       });
@@ -377,6 +407,7 @@ class AppDatabase extends _$AppDatabase {
     double? paceMinutesPerMile,
     int? totalCalories,
     String? notes,
+    String? activityId, // Link to calendar activity
   }) async {
     await into(nutritionPlans).insertOnConflictUpdate(
       NutritionPlansCompanion.insert(
@@ -389,6 +420,7 @@ class AppDatabase extends _$AppDatabase {
         paceMinutesPerMile: Value(paceMinutesPerMile),
         totalCalories: Value(totalCalories),
         notes: Value(notes),
+        activityId: Value(activityId), // Save activity ID linkage
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
       ),
@@ -459,31 +491,27 @@ class AppDatabase extends _$AppDatabase {
     return userCount.read(userProfilesTable.id.count())! > 0;
   }
 
-  /// Get database statistics (v2 with new tables)
+  /// Get database statistics for logging/debugging
   Future<Map<String, int>> getDatabaseStats() async {
     final userCount = await (selectOnly(userProfilesTable)..addColumns([userProfilesTable.id.count()])).getSingle();
     final preferencesCount = await (selectOnly(foodPreferencesTable)..addColumns([foodPreferencesTable.deviceId.count()])).getSingle();
     final plansCount = await (selectOnly(nutritionPlans)..addColumns([nutritionPlans.id.count()])).getSingle();
-    
-    // New v2 table stats
     final foodsCount = await (selectOnly(foodsTable)..addColumns([foodsTable.id.count()])).getSingle();
     final categoriesCount = await (selectOnly(categoriesTable)..addColumns([categoriesTable.id.count()])).getSingle();
-    final brandsCount = await (selectOnly(brandsTable)..addColumns([brandsTable.id.count()])).getSingle();
     final contentCount = await (selectOnly(appContentTable)..addColumns([appContentTable.id.count()])).getSingle();
-    
+
     return {
       'users': userCount.read(userProfilesTable.id.count())!,
       'preferences': preferencesCount.read(foodPreferencesTable.deviceId.count())!,
       'plans': plansCount.read(nutritionPlans.id.count())!,
       'foods': foodsCount.read(foodsTable.id.count())!,
       'categories': categoriesCount.read(categoriesTable.id.count())!,
-      'brands': brandsCount.read(brandsTable.id.count())!,
       'content': contentCount.read(appContentTable.id.count())!,
     };
   }
-  
-  // === New v2 methods for food and content management ===
-  
+
+  // === Food and content management ===
+
   /// Get all cached foods
   Future<List<FoodEntry>> getAllCachedFoods() async {
     return await select(foodsTable).get();
@@ -591,7 +619,7 @@ class AppDatabase extends _$AppDatabase {
       proteinPerServing: Value(foodData['protein_per_serving']?.toDouble()),
       caloriesPerServing: Value(foodData['calories_per_serving']),
       fluidMlPerServing: Value(foodData['fluid_ml_per_serving']?.toDouble()),
-      productType: Value(foodData['product_type']),
+      productTypeId: Value(foodData['product_type_id']),
       purchaseUrl: Value(foodData['purchase_url']),
       affiliateSource: Value(foodData['affiliate_source']),
       showInPreferences: Value(foodData['show_in_preferences'] ?? false),
@@ -886,4 +914,3 @@ LazyDatabase _openConnection() {
     return NativeDatabase.createInBackground(file);
   });
 }
-

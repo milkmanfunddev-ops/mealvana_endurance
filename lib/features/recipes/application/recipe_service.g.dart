@@ -6,22 +6,46 @@ part of 'recipe_service.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$recipeServiceHash() => r'94226ca7e4448ceb3ae82fa4e1e23d032093525b';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [recipeService].
 @ProviderFor(recipeService)
-final recipeServiceProvider = AutoDisposeProvider<RecipeService>.internal(
-  recipeService,
-  name: r'recipeServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$recipeServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const recipeServiceProvider = RecipeServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef RecipeServiceRef = AutoDisposeProviderRef<RecipeService>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class RecipeServiceProvider
+    extends $FunctionalProvider<RecipeService, RecipeService, RecipeService>
+    with $Provider<RecipeService> {
+  const RecipeServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'recipeServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$recipeServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<RecipeService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  RecipeService create(Ref ref) {
+    return recipeService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RecipeService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RecipeService>(value),
+    );
+  }
+}
+
+String _$recipeServiceHash() => r'b5232f738676431855f31cc7813d814ed8812336';

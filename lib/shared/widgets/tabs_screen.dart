@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../features/nutrition_plan/presentation/screens/current_plan_screen.dart';
-import '../../features/user_journal/presentation/screens/voice_memo_screen.dart';
-import '../../features/carb_loading/presentation/screens/carb_loading_screen_simple.dart';
+import '../../features/calendar/presentation/screens/activities_list_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../theme/app_theme.dart';
 
@@ -25,53 +23,25 @@ class _TabsScreenState extends State<TabsScreen> {
     super.initState();
     _currentIndex = widget.initialTabIndex;
   }
-  
+
   List<Widget> get _screens => [
-    const CurrentPlanScreen(), // CurrentPlanScreen shows the plan or empty state
-    const VoiceMemoScreen(), // Workout notes/journal entries
-    const CarbLoadingScreenSimple(), // Simplified carb loading plans
+    const ActivitiesListScreen(), // PRIMARY TAB: Activities-first interface with calendar picker
     const SettingsScreen(),
   ];
 
   List<BottomNavigationBarItem> get _tabs => [
     BottomNavigationBarItem(
-      icon: Image.asset(
-        'assets/icons/plan.png',
-        width: 32,
-        height: 32,
-      ),
-      activeIcon: Image.asset(
-        'assets/icons/activePlan.png',
-        width: 32,
-        height: 32,
-      ),
-      label: 'Plan',
-    ),
-    BottomNavigationBarItem(
       icon: Icon(
-        Icons.notes,
+        Icons.list_alt,
         size: 24,
         color: Colors.grey,
       ),
       activeIcon: Icon(
-        Icons.notes,
-        size: 24,
-        color: AppTheme.primary900, // Use primary900 instead of primaryColor
-      ),
-      label: 'Workout Notes',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(
-        Icons.local_fire_department,
-        size: 24,
-        color: Colors.grey,
-      ),
-      activeIcon: Icon(
-        Icons.local_fire_department,
+        Icons.list_alt,
         size: 24,
         color: AppTheme.primary900,
       ),
-      label: 'Carb Loading',
+      label: 'Activities',
     ),
     BottomNavigationBarItem(
       icon: Image.asset(
@@ -91,6 +61,7 @@ class _TabsScreenState extends State<TabsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.baseCream,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,

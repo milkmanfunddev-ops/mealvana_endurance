@@ -6,24 +6,53 @@ part of 'product_detail_service.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$productDetailServiceHash() =>
-    r'43ae45f3f7bf5877c42271daa4d867d73190fbe6';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [productDetailService].
 @ProviderFor(productDetailService)
-final productDetailServiceProvider =
-    AutoDisposeProvider<ProductDetailService>.internal(
-  productDetailService,
-  name: r'productDetailServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$productDetailServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const productDetailServiceProvider = ProductDetailServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef ProductDetailServiceRef = AutoDisposeProviderRef<ProductDetailService>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class ProductDetailServiceProvider
+    extends
+        $FunctionalProvider<
+          ProductDetailService,
+          ProductDetailService,
+          ProductDetailService
+        >
+    with $Provider<ProductDetailService> {
+  const ProductDetailServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'productDetailServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$productDetailServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<ProductDetailService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ProductDetailService create(Ref ref) {
+    return productDetailService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ProductDetailService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ProductDetailService>(value),
+    );
+  }
+}
+
+String _$productDetailServiceHash() =>
+    r'9970f1ea038f9661234d2f7d869180bd291b2117';

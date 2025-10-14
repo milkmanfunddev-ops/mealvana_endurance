@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/feedback_service.dart';
 import '../../application/supabase_feedback_service.dart';
 import '../../domain/feedback_data.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 
 /// Provider for Google Forms feedback service instance
 final feedbackServiceProvider = Provider<FeedbackService>((ref) {
@@ -10,14 +11,14 @@ final feedbackServiceProvider = Provider<FeedbackService>((ref) {
 
 /// Provider for Supabase feedback service instance  
 final supabaseFeedbackServiceProvider = Provider<SupabaseFeedbackService>((ref) {
-  return SupabaseFeedbackService();
+  final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+  return SupabaseFeedbackService(supabase);
 });
 
 /// Provider for feedback submission state (using Supabase)
-final feedbackSubmissionProvider = StateNotifierProvider<FeedbackSubmissionNotifier, FeedbackSubmissionState>((ref) {
-  final supabaseService = ref.read(supabaseFeedbackServiceProvider);
-  return FeedbackSubmissionNotifier.withSupabase(supabaseService);
-});
+final feedbackSubmissionProvider = NotifierProvider<FeedbackSubmissionNotifier, FeedbackSubmissionState>(
+  FeedbackSubmissionNotifier.new,
+);
 
 /// Feedback submission state
 class FeedbackSubmissionState {
@@ -49,10 +50,13 @@ class FeedbackSubmissionState {
 }
 
 /// State notifier for managing feedback submission
-class FeedbackSubmissionNotifier extends StateNotifier<FeedbackSubmissionState> {
-  FeedbackSubmissionNotifier.withSupabase(this._supabaseFeedbackService) : super(const FeedbackSubmissionState());
+class FeedbackSubmissionNotifier extends Notifier<FeedbackSubmissionState> {
+  SupabaseFeedbackService get _supabaseFeedbackService => ref.read(supabaseFeedbackServiceProvider);
 
-  final SupabaseFeedbackService _supabaseFeedbackService;
+  @override
+  FeedbackSubmissionState build() {
+    return const FeedbackSubmissionState();
+  }
 
   /// Submit feedback through Supabase
   Future<bool> submitFeedback(FeedbackResponse feedback) async {

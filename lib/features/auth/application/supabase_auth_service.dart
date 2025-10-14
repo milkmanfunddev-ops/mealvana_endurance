@@ -1,18 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
-import '../../../services/supabase_service.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../domain/auth_user.dart';
 import '../domain/auth_exception.dart';
 
 /// Supabase authentication service
 class SupabaseAuthService {
-  final SupabaseService _supabaseService;
+  SupabaseAuthService(this._supabase);
 
-  SupabaseAuthService(this._supabaseService);
+  final SupabaseClient _supabase;
 
   /// Get current authenticated user
   AuthUser? get currentUser {
-    final user = _supabaseService.currentUser;
+    final user = _supabase.auth.currentUser;
     if (user == null) return null;
     
     return AuthUser(
@@ -27,10 +27,10 @@ class SupabaseAuthService {
   }
 
   /// Check if user is authenticated
-  bool get isAuthenticated => _supabaseService.isAuthenticated;
+  bool get isAuthenticated => _supabase.auth.currentUser != null;
 
   /// Get current session
-  Session? get currentSession => _supabaseService.currentSession;
+  Session? get currentSession => _supabase.auth.currentSession;
 
   /// Sign up with email and password
   Future<AuthUser> signUp({
@@ -45,7 +45,7 @@ class SupabaseAuthService {
         ...?additionalData,
       };
 
-      final response = await _supabaseService.signUp(
+      final response = await _supabase.auth.signUp(
         email: email,
         password: password,
         data: userData.isNotEmpty ? userData : null,
@@ -76,7 +76,7 @@ class SupabaseAuthService {
     required String password,
   }) async {
     try {
-      final response = await _supabaseService.signIn(
+      final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
@@ -104,7 +104,7 @@ class SupabaseAuthService {
   /// Sign out current user
   Future<void> signOut() async {
     try {
-      await _supabaseService.signOut();
+      await _supabase.auth.signOut();
     } catch (e) {
       throw AuthException('Sign out failed: ${e.toString()}');
     }
@@ -113,7 +113,7 @@ class SupabaseAuthService {
   /// Send password reset email
   Future<void> resetPassword({required String email}) async {
     try {
-      await _supabaseService.resetPassword(email: email);
+      await _supabase.auth.resetPasswordForEmail(email);
     } catch (e) {
       throw AuthException('Password reset failed: ${e.toString()}');
     }
@@ -136,7 +136,9 @@ class SupabaseAuthService {
         throw AuthException('No data provided for update');
       }
 
-      final response = await _supabaseService.updateUser(data: updateData);
+      final response = await _supabase.auth.updateUser(
+        UserAttributes(data: updateData),
+      );
 
       if (response.user == null) {
         throw AuthException('Failed to update user profile');
@@ -161,7 +163,7 @@ class SupabaseAuthService {
   /// Update user email
   Future<void> updateEmail({required String newEmail}) async {
     try {
-      await _supabaseService.updateUser(email: newEmail);
+      await _supabase.auth.updateUser(UserAttributes(email: newEmail));
     } catch (e) {
       throw AuthException('Email update failed: ${e.toString()}');
     }
@@ -170,7 +172,7 @@ class SupabaseAuthService {
   /// Update user password
   Future<void> updatePassword({required String newPassword}) async {
     try {
-      await _supabaseService.updateUser(password: newPassword);
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
     } catch (e) {
       throw AuthException('Password update failed: ${e.toString()}');
     }
@@ -178,7 +180,7 @@ class SupabaseAuthService {
 
   /// Listen to authentication state changes
   Stream<AuthUser?> get authStateChanges {
-    return _supabaseService.authStateChanges.map((authState) {
+    return _supabase.auth.onAuthStateChange.map((authState) {
       final user = authState.session?.user;
       if (user == null) return null;
 
@@ -197,7 +199,8 @@ class SupabaseAuthService {
 
 /// Provider for Supabase auth service
 final supabaseAuthServiceProvider = Provider<SupabaseAuthService>((ref) {
-  return SupabaseAuthService(SupabaseService.instance);
+  final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+  return SupabaseAuthService(supabase);
 });
 
 /// Provider for current auth user

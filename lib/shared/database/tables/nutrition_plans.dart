@@ -21,6 +21,11 @@ class NutritionPlans extends Table {
   IntColumn get totalCalories => integer().nullable().named('total_calories')();
   TextColumn get notes => text().nullable()();
 
+  // NEW: Calendar integration fields
+  TextColumn get activityId => text().nullable().named('activity_id')(); // FOREIGN KEY to activities.id
+  TextColumn get planType => text().withDefault(const Constant('standard')).named('plan_type')(); // 'standard', 'carb_loading', 'recovery'
+  TextColumn get sportType => text().withDefault(const Constant('running')).named('sport_type')(); // Placeholder for future multi-sport support
+
   /// Versioning and sync (matches Supabase schema)
   IntColumn get version => integer().withDefault(const Constant(1))();
   TextColumn get lastModifiedBy => text().nullable().named('last_modified_by')();
@@ -38,5 +43,6 @@ class NutritionPlans extends Table {
   @override
   List<String> get customConstraints => [
     'UNIQUE(device_id, plan_id)', // Match Supabase unique constraint
+    "CHECK (plan_type IN ('standard', 'carb_loading', 'recovery'))",
   ];
 }

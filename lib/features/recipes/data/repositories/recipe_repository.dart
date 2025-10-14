@@ -4,7 +4,7 @@ import '../../domain/recipe.dart';
 part 'recipe_repository.g.dart';
 
 @riverpod
-RecipeRepository recipeRepository(RecipeRepositoryRef ref) {
+RecipeRepository recipeRepository(Ref ref) {
   return RecipeRepository();
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/hero_image.dart';
@@ -15,10 +16,23 @@ import '../../../auth/domain/user_preferences.dart';
 
 /// Main Nutrition Plan Screen - Main input screen matching Alex's design
 /// Users enter run details and generate their nutrition plan
-/// 
+///
 /// FOA COMPLIANT: This screen contains ONLY UI logic, no business logic
 class DistancePaceGutEntryScreen extends ConsumerStatefulWidget {
-  const DistancePaceGutEntryScreen({super.key});
+  final DateTime? initialDate;
+  final double? initialDistance;
+  final double? initialGoalPace;
+  final String? activityId; // Link to calendar activity/event
+  final String? eventId; // Link to calendar event (for provider invalidation)
+
+  const DistancePaceGutEntryScreen({
+    super.key,
+    this.initialDate,
+    this.initialDistance,
+    this.initialGoalPace,
+    this.activityId,
+    this.eventId,
+  });
 
   @override
   ConsumerState<DistancePaceGutEntryScreen> createState() => _DistancePaceGutEntryScreenState();
@@ -26,20 +40,34 @@ class DistancePaceGutEntryScreen extends ConsumerStatefulWidget {
 
 class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntryScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Using numeric values for increment/decrement widgets
-  double _distance = 12.0; // Default 12 miles
-  double _paceMinutes = 9.0; // Default 9:00 pace (stored as decimal minutes)
+  late double _distance;
+  late double _paceMinutes;
   int _selectedPreRunMinutes = 120; // Default 2 hours
   GutTraining _selectedGutTraining = GutTraining.high;
   SweatRateCat _selectedSweatRate = SweatRateCat.medium;
   double _temperature = 20.0; // Default 20°C (68°F)
   double _humidity = 60.0; // Default 60% humidity
 
+  // Date and time for the activity
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
+
   @override
   void initState() {
     super.initState();
-    
+
+    // Initialize distance and pace from widget parameters or use defaults
+    _distance = widget.initialDistance ?? 12.0; // Default 12 miles
+    _paceMinutes = widget.initialGoalPace ?? 9.0; // Default 9:00 pace
+
+    // Initialize date and time
+    _selectedDate = widget.initialDate ?? DateTime.now();
+    _selectedTime = widget.initialDate != null
+        ? TimeOfDay.fromDateTime(widget.initialDate!)
+        : const TimeOfDay(hour: 7, minute: 0); // Default to 7:00 AM
+
     // Load user's gut training preference if available - CONTROLLER CALL ONLY
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(distancePageGutEntryControllerProvider.notifier).loadUserPreferences();
@@ -65,13 +93,17 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
       gutTraining: _selectedGutTraining,
       distanceUnit: DistanceUnit.miles, // Fixed to miles as per requirements
       paceUnit: PaceUnit.minPerMile, // Fixed to min/mile as per requirements
+      scheduledDate: _selectedDate,
+      scheduledTime: _selectedTime,
       sweatRateCat: _selectedSweatRate, // Add sweat rate category
       temperatureC: _temperature,
       humidityPct: _humidity,
+      activityId: widget.activityId, // Link to calendar activity/event
+      eventId: widget.eventId, // Link to calendar event
     );
     
     // Check if generation was successful by looking at the state
-    final currentState = ref.read(distancePageGutEntryControllerProvider).valueOrNull;
+    final currentState = ref.read(distancePageGutEntryControllerProvider).value;
     
     // If we have macro targets and no error, navigate
     if (currentState?.macroTargets != null && currentState?.errorMessage == null) {
@@ -114,9 +146,9 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        leading: CustomAppBarBackButton(),
         elevation: 0,
         scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: Stack(
         children: [
@@ -129,25 +161,17 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
               SizedBox(height: 20.h),
-              
+
               // Hero Image without blue background
               LargeHeroImage(),
-              
-              // SizedBox(height: 40.h),
-              
-              // Main instruction text
-              // Text(
-              //   'Enter the completed distance and average training pace.',
-              //   style: AppTheme.textStyle.copyWith(
-              //     fontSize: 18.sp,
-              //     fontWeight: FontWeight.w600,
-              //     color: AppTheme.primary900,
-              //   ),
-              //   textAlign: TextAlign.center,
-              // ),
-              
-              // SizedBox(height: 20.h),
-              
+
+              SizedBox(height: 20.h),
+
+              // Date and Time Picker
+              _buildDateTimePicker(context),
+
+              SizedBox(height: 20.h),
+
               // Distance Input with Increment/Decrement
               IncrementDecrementWidget(
                 label: 'Distance',
@@ -423,7 +447,114 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
       ),
     );
   }
-  
+
+  Widget _buildDateTimePicker(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppTheme.primary900, width: 1),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime.now().subtract(const Duration(days: 7)),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (picked != null) {
+                  setState(() {
+                    _selectedDate = picked;
+                  });
+                }
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Date',
+                    style: AppTheme.subtitleStyle.copyWith(
+                      fontSize: 14.sp,
+                      color: AppTheme.baseGrey,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 16, color: AppTheme.primary900),
+                      SizedBox(width: 8.w),
+                      Text(
+                        DateFormat('MMM d, yyyy').format(_selectedDate),
+                        style: AppTheme.textStyle.copyWith(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primary900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 40.h,
+            color: AppTheme.baseGrey.withValues(alpha: 0.3),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: InkWell(
+              onTap: () async {
+                final picked = await showTimePicker(
+                  context: context,
+                  initialTime: _selectedTime,
+                );
+                if (picked != null) {
+                  setState(() {
+                    _selectedTime = picked;
+                  });
+                }
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Time',
+                    style: AppTheme.subtitleStyle.copyWith(
+                      fontSize: 14.sp,
+                      color: AppTheme.baseGrey,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 16, color: AppTheme.primary900),
+                      SizedBox(width: 8.w),
+                      Text(
+                        _selectedTime.format(context),
+                        style: AppTheme.textStyle.copyWith(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primary900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Helper methods for formatting and increment/decrement
   String _formatDistance(double distance) {
     if (distance == distance.round()) {

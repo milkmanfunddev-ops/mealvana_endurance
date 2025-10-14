@@ -311,7 +311,18 @@ class SurveyPage2 extends ConsumerWidget {
           Switch(
             value: state.isRecurring,
             onChanged: controller.setIsRecurring,
-            activeColor: AppTheme.primary600,
+            thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+              if (states.contains(WidgetState.selected)) {
+                return AppTheme.baseWhite;
+              }
+              return AppTheme.baseWhite;
+            }),
+            trackColor: WidgetStateProperty.resolveWith<Color>((states) {
+              if (states.contains(WidgetState.selected)) {
+                return AppTheme.primary600;
+              }
+              return AppTheme.baseGrey.withValues(alpha: 0.3);
+            }),
           ),
         ],
       ),

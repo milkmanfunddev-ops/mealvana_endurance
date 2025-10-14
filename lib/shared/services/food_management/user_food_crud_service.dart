@@ -5,20 +5,28 @@ import 'package:uuid/uuid.dart';
 import '../../../features/nutrition_plan/domain/food.dart';
 import '../../database/database_provider.dart';
 import '../../database/app_database.dart';
+import '../app_external_deps.dart';
 import '../logging_service.dart';
 
 /// Provider for UserFoodCrudService
 final userFoodCrudServiceProvider = Provider<UserFoodCrudService>((ref) {
   final database = ref.read(appDatabaseProvider);
-  return UserFoodCrudService(database);
+  final deps = ref.read(appExternalDepsProvider);
+  return UserFoodCrudService(
+    database,
+    deps.logger,
+    deps.supabaseClient,
+  );
 });
 
 /// Service for managing user's custom foods
 /// Handles CRUD operations for user_foods table with local-first approach
 class UserFoodCrudService {
-  UserFoodCrudService(this._database);
+  UserFoodCrudService(this._database, this._logger, this._supabase);
 
   final AppDatabase _database;
+  final AppLogger _logger;
+  final SupabaseClient _supabase;
   static const _uuid = Uuid();
 
   /// Load user foods for a device
@@ -31,10 +39,10 @@ class UserFoodCrudService {
           .map((userFood) => _convertUserFoodToFood(userFood))
           .toList();
 
-      AppLogger.instance.debug('Loaded ${foods.length} user foods for device $deviceId');
+      _logger.debug('Loaded ${foods.length} user foods for device $deviceId');
       return foods;
     } catch (e) {
-      AppLogger.instance.error('Error loading user foods',
+      _logger.error('Error loading user foods',
         context: 'UserFoodCrudService',
         data: {'deviceId': deviceId},
         error: e,
@@ -53,8 +61,6 @@ class UserFoodCrudService {
       // Get current user's device ID
       final userProfile = await _database.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
-      final supabase = Supabase.instance.client;
-
       // Generate unique UUID for this food
       final foodId = _uuid.v4();
 
@@ -83,7 +89,7 @@ class UserFoodCrudService {
 
       // 2. Sync to Supabase via edge function (for backup and cross-device sync)
       try {
-        final response = await supabase.functions.invoke('save-user-food', body: {
+        final response = await _supabase.functions.invoke('save-user-food', body: {
           'device_id': deviceId,
           'id': foodId,
           'client_food_id': food.id,
@@ -106,23 +112,23 @@ class UserFoodCrudService {
         });
 
         if (response.status != 200) {
-          AppLogger.instance.warning('Supabase sync failed, but local save succeeded',
+          _logger.warning('Supabase sync failed, but local save succeeded',
             context: 'UserFoodCrudService',
             data: {'response': response.data},
           );
         } else {
-          AppLogger.instance.debug('Food saved to both local and Supabase: ${food.name}');
+          _logger.debug('Food saved to both local and Supabase: ${food.name}');
         }
       } catch (supabaseError) {
-        AppLogger.instance.warning('Supabase sync failed, but local save succeeded',
+        _logger.warning('Supabase sync failed, but local save succeeded',
           context: 'UserFoodCrudService',
           error: supabaseError,
         );
       }
 
-      AppLogger.instance.debug('User food saved successfully: ${food.name}');
+      _logger.debug('User food saved successfully: ${food.name}');
     } catch (e) {
-      AppLogger.instance.error('Error saving user food',
+      _logger.error('Error saving user food',
         context: 'UserFoodCrudService',
         data: {'foodName': food.name},
         error: e,
@@ -137,36 +143,34 @@ class UserFoodCrudService {
       // Get current user's device ID
       final userProfile = await _database.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
-      final supabase = Supabase.instance.client;
-
       // 1. Delete from local Drift database first
       await _database.deleteUserFood(foodId);
 
       // 2. Sync deletion to Supabase via edge function
       try {
-        final response = await supabase.functions.invoke('delete-user-food', body: {
+        final response = await _supabase.functions.invoke('delete-user-food', body: {
           'device_id': deviceId,
           'food_id': foodId,
         });
 
         if (response.status != 200) {
-          AppLogger.instance.warning('Supabase delete sync failed, but local delete succeeded',
+          _logger.warning('Supabase delete sync failed, but local delete succeeded',
             context: 'UserFoodCrudService',
             data: {'response': response.data},
           );
         } else {
-          AppLogger.instance.debug('Food deleted from both local and Supabase: $foodId');
+          _logger.debug('Food deleted from both local and Supabase: $foodId');
         }
       } catch (supabaseError) {
-        AppLogger.instance.warning('Supabase delete sync failed, but local delete succeeded',
+        _logger.warning('Supabase delete sync failed, but local delete succeeded',
           context: 'UserFoodCrudService',
           error: supabaseError,
         );
       }
 
-      AppLogger.instance.debug('User food deleted successfully: $foodId');
+      _logger.debug('User food deleted successfully: $foodId');
     } catch (e) {
-      AppLogger.instance.error('Error deleting user food',
+      _logger.error('Error deleting user food',
         context: 'UserFoodCrudService',
         data: {'foodId': foodId},
         error: e,
@@ -184,7 +188,7 @@ class UserFoodCrudService {
       final userFoods = await _database.getUserFoods(deviceId);
       return userFoods.any((userFood) => userFood.clientFoodId == foodId || userFood.id == foodId);
     } catch (e) {
-      AppLogger.instance.error('Error checking if food is user food',
+      _logger.error('Error checking if food is user food',
         context: 'UserFoodCrudService',
         data: {'foodId': foodId},
         error: e,

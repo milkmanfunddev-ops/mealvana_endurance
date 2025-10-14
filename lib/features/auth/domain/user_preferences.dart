@@ -1,6 +1,5 @@
 /// Domain models for user authentication and preferences
 /// Removed Hive dependencies as part of migration to Drift database
-
 class UserProfile {
   final String id;
   final Gender gender;

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../nutrition_plan/data/nutrition_plan_repository.dart';
-import '../../../content/application/content_service.dart';
 
 part 'plan_rating_controller.g.dart';
 
@@ -30,8 +29,6 @@ class PlanRatingState {
 /// Following Andrea Bizzotto's FOA AsyncNotifier pattern
 @riverpod
 class PlanRatingController extends _$PlanRatingController {
-  ContentService get _contentService => ref.read(contentServiceProvider);
-
   @override
   FutureOr<PlanRatingState> build() {
     return const PlanRatingState();

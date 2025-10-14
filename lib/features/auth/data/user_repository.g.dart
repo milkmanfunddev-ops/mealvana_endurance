@@ -6,25 +6,48 @@ part of 'user_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$userRepositoryHash() => r'1d61cd058fd2a4a6e0d69348f1d3d85b35076895';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// Repository provider following Andrea's pattern
+
+@ProviderFor(userRepository)
+const userRepositoryProvider = UserRepositoryProvider._();
 
 /// Repository provider following Andrea's pattern
-///
-/// Copied from [userRepository].
-@ProviderFor(userRepository)
-final userRepositoryProvider =
-    AutoDisposeFutureProvider<UserRepository>.internal(
-  userRepository,
-  name: r'userRepositoryProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$userRepositoryHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef UserRepositoryRef = AutoDisposeFutureProviderRef<UserRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class UserRepositoryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<UserRepository>,
+          UserRepository,
+          FutureOr<UserRepository>
+        >
+    with $FutureModifier<UserRepository>, $FutureProvider<UserRepository> {
+  /// Repository provider following Andrea's pattern
+  const UserRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userRepositoryHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<UserRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<UserRepository> create(Ref ref) {
+    return userRepository(ref);
+  }
+}
+
+String _$userRepositoryHash() => r'776eacbc6321ef483dbbef8af2f99f7e16ca3a3d';

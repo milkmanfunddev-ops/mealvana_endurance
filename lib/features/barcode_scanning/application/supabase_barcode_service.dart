@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../domain/barcode_result.dart';
 import 'product_detail_service.dart';
@@ -11,11 +11,11 @@ part 'supabase_barcode_service.g.dart';
 /// Handles API integration with Open Food Facts via the ProductDetailService
 class SupabaseBarcodeService {
   final ProductDetailService _productDetailService;
-  final LoggingService _logger;
+  final AppLogger _logger;
 
   SupabaseBarcodeService({
     required ProductDetailService productDetailService,
-    required LoggingService logger,
+    required AppLogger logger,
   })  : _productDetailService = productDetailService,
         _logger = logger;
 
@@ -76,8 +76,9 @@ class SupabaseBarcodeService {
 
 @riverpod
 SupabaseBarcodeService supabaseBarcodeService(Ref ref) {
+  final logger = ref.read(appExternalDepsProvider).logger;
   return SupabaseBarcodeService(
     productDetailService: ref.read(productDetailServiceProvider),
-    logger: LoggingService(),
+    logger: logger,
   );
 }

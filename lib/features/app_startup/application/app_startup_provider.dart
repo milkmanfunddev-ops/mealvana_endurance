@@ -1,9 +1,10 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'app_startup_service.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/sentry_service.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../features/auth/domain/user_preferences.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 part 'app_startup_provider.g.dart';
 
@@ -24,7 +25,7 @@ class AppStartupData {
 /// This coordinates the AppStartupService and provides async state management
 @riverpod
 class AppStartup extends _$AppStartup {
-  LoggingService get _logger => AppLogger.instance;
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   
   @override
   Future<AppStartupData> build() async {
@@ -53,8 +54,23 @@ class AppStartup extends _$AppStartup {
       final planIdNeedingFeedback = await startupService.checkForPendingFeedback();
       
       // 8. Track startup completion in Sentry
-      final sentryService = ref.read(sentryServiceProvider);
-      await sentryService.trackAppStartupCompleted();
+      final sentry = ref.read(appExternalDepsProvider).sentry;
+      sentry.addBreadcrumb(
+        message: 'App startup completed successfully',
+        category: 'app_lifecycle',
+        data: {
+          'startup_time': DateTime.now().toIso8601String(),
+          'sentry_enabled': sentry.isEnabled.toString(),
+        },
+      );
+      await sentry.captureMessage(
+        'App startup completed',
+        level: SentryLevel.info,
+        tags: {
+          'lifecycle': 'startup_complete',
+          'app_phase': 'ready',
+        },
+      );
       
       // 9. Get user state for navigation decisions
       final database = ref.read(appDatabaseProvider);

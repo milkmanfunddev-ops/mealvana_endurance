@@ -1,333 +1,120 @@
-# Logging Service Documentation
+# Logging Architecture
 
 ## Overview
 
-The Mealvana Endurance app uses a centralized logging service built on top of the `logger` package to provide structured, contextual logging throughout the application. This service replaces scattered `print()` statements with a consistent, configurable logging solution.
+Mealvana Endurance now exposes logging through the `AppLogger` abstraction, making it easy to swap implementations in tests while keeping production logs structured and consistent. `PrettyAppLogger` wraps `package:logger` for rich console output, and `NoopAppLogger` keeps unit/widget/integration tests quiet unless they explicitly record log activity.
 
-## Features
+Key pieces:
 
-- **Structured Logging**: Consistent log formatting with context and metadata
-- **Multiple Log Levels**: Debug, Info, Warning, Error, Fatal
-- **Contextual Logging**: Specialized methods for different contexts (API, Database, Navigation, etc.)
-- **Production Filtering**: Automatically reduces log verbosity in production
-- **Integration Ready**: Designed to work with Sentry and other monitoring tools
-- **Riverpod Integration**: Available as a provider for dependency injection
+- `AppLogger` – interface defining the logging surface (debug/info/warning/error/fatal plus domain helpers such as `api`, `database`, `userAction`, `nutritionPlan`, etc.).
+- `PrettyAppLogger` – default implementation. Applies `PrettyPrinter`, honors `kDebugMode` for log levels, and keeps the structured helpers from the legacy singleton.
+- `NoopAppLogger` – ignores all messages; useful when tests do not care about console output.
+- `appLoggerProvider` – Riverpod provider returning a `PrettyAppLogger` (or whatever override the caller supplies).
+- `AppExternalDeps` – bundles the logger alongside analytics, Supabase, and Sentry so call sites can read a single provider for external collaborators.
 
 ## Quick Start
 
-### 1. Initialize the Service
-
-Initialize the logging service early in your app startup (typically in `main.dart`):
+### Reading the logger
 
 ```dart
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 
-void main() {
-  // Initialize logging service
-  LoggingService().initialize(
-    logLevel: Level.debug,
-    enableFileOutput: false,
-  );
-  
-  runApp(MyApp());
-}
-```
-
-### 2. Use in Services and Controllers
-
-Access via Riverpod provider:
-
-```dart
-class MyService {
-  MyService(this.ref);
+class NutritionService {
+  NutritionService(this.ref);
   final Ref ref;
-  
-  LoggingService get _logger => ref.read(loggingServiceProvider);
-  
-  void someMethod() {
-    _logger.info('Method called successfully');
+
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+
+  Future<void> generatePlan() async {
+    _logger.info('Generating plan', context: 'NutritionService');
+    // ...
   }
 }
 ```
 
-### 3. Use in Static Contexts
-
-For static contexts where dependency injection isn't available:
+### Overriding in tests
 
 ```dart
+import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/test/helpers/fakes/recording_app_logger.dart';
 
-void someStaticMethod() {
-  appLogger.info('Static method called');
+void main() {
+  test('captures expected logs', () {
+    final recordingLogger = RecordingAppLogger();
+
+    final container = ProviderContainer(overrides: [
+      appLoggerProvider.overrideWithValue(recordingLogger),
+    ]);
+
+    container.read(appExternalDepsProvider).logger.info('hello');
+    expect(recordingLogger.records.single.message, 'hello');
+  });
 }
 ```
 
-## Log Levels
+### CLI / entrypoint
 
-### Debug
-Use for detailed diagnostic information, only visible in debug builds:
+The app bootstrap no longer calls `LoggingService().initialize(...)`. Simply ensure `PrettyAppLogger` is the default provider (already true in `logging_service.dart`). If you need different defaults (e.g., adjust base level), override `appLoggerProvider` in a custom `ProviderScope` at the root.
+
 ```dart
-logger.debug('Processing nutrition plan calculation', 
-  context: 'NutritionCalculator',
-  data: {'distanceMiles': 12.0, 'pace': 9.0}
+runApp(
+  ProviderScope(
+    overrides: [
+      // Example: quiet logs during golden tests
+      if (enableQuietMode) appLoggerProvider.overrideWithValue(const NoopAppLogger()),
+    ],
+    child: const RootAppWidget(),
+  ),
 );
 ```
 
-### Info
-Use for general application flow information:
-```dart
-logger.info('User completed onboarding');
-```
+## API Surface
 
-### Warning
-Use for potentially harmful situations that don't stop execution:
-```dart
-logger.warning('Food preference not found, using default', 
-  context: 'FoodRepository'
-);
-```
+`AppLogger` keeps the same methods the old singleton exposed. The structured helpers remain unchanged so existing call sites continue to work after switching to dependency injection.
 
-### Error
-Use for error events that don't stop execution:
-```dart
-logger.error('Failed to save nutrition plan', 
-  context: 'PlanRepository',
-  error: exception,
-  stackTrace: stackTrace
-);
-```
+| Method | Purpose |
+| ------ | ------- |
+| `debug/info/warning/error/fatal` | General-purpose logging with optional `context`, `data`, `error`, `stackTrace`. |
+| `api` | Logs HTTP/Edge function calls (endpoint, status code, payloads, durations). |
+| `database` | Tracks Drift/SQL operations. |
+| `navigation` | Records route changes. |
+| `userAction` | Human-facing interactions (button taps, flows). |
+| `nutritionPlan` | Domain helper for nutrition workflows. |
+| `analytics` | Instrumentation chatter for Mixpanel hooks. |
 
-### Fatal
-Use for very severe errors that might cause termination:
-```dart
-logger.fatal('Database corruption detected', 
-  error: exception,
-  stackTrace: stackTrace
-);
-```
+`PrettyAppLogger` honors `kDebugMode` by default (debug builds log at `Level.debug`, release builds clamp to `Level.info`). It still supports structured payloads and the production filter that mutes verbose logs in release.
 
-## Contextual Logging Methods
+## Working With AppExternalDeps
 
-The service provides specialized methods for common contexts:
-
-### API Logging
-```dart
-// Success
-logger.api('Generated nutrition plan successfully',
-  endpoint: '/generate-ai-nutrition-plan',
-  statusCode: 200,
-  duration: Duration(seconds: 2),
-);
-
-// Error
-logger.api('API call failed',
-  endpoint: '/generate-ai-nutrition-plan',
-  statusCode: 500,
-  error: exception,
-);
-```
-
-### Database Logging
-```dart
-logger.database('User profile updated',
-  operation: 'UPDATE',
-  table: 'users',
-  data: {'weight': 150.0},
-  duration: Duration(milliseconds: 50),
-);
-```
-
-### Navigation Logging
-```dart
-logger.navigation('User navigated to plan screen',
-  from: '/onboarding',
-  to: '/nutrition-plan',
-  parameters: {'planId': 'abc123'},
-);
-```
-
-### User Action Logging
-```dart
-logger.userAction('User tapped generate plan button',
-  action: 'tap',
-  screen: 'distance_entry',
-  data: {'distance': 12.0, 'pace': 9.0},
-);
-```
-
-### Nutrition Plan Logging
-```dart
-logger.nutritionPlan('Plan section converted',
-  planId: 'ai-plan-123',
-  phase: 'before_run',
-  data: {'itemCount': 3, 'totalCarbs': 97},
-);
-```
-
-### Analytics Logging
-```dart
-logger.analytics('Nutrition plan generated',
-  event: 'plan_generated',
-  properties: {'distance': 12.0, 'duration': 108},
-);
-```
-
-## Configuration
-
-### Log Levels
-Control what gets logged based on build type:
-- **Debug builds**: All levels (Debug, Info, Warning, Error, Fatal)
-- **Release builds**: Info and above (Info, Warning, Error, Fatal)
-
-### Custom Configuration
-```dart
-LoggingService().initialize(
-  logLevel: kDebugMode ? Level.debug : Level.info,
-  enableFileOutput: false, // Future: save logs to file
-);
-```
-
-## Integration with Existing Services
-
-### Replacing Print Statements
-
-**Before:**
-```dart
-print('🔍 DEBUG: User weight: $weight');
-print('Error saving plan: $error');
-```
-
-**After:**
-```dart
-logger.debug('User weight loaded', 
-  context: 'UserService',
-  data: {'weight': weight}
-);
-logger.error('Failed to save plan', 
-  context: 'PlanRepository',
-  error: error
-);
-```
-
-### Integration with Sentry
-The logging service is designed to work with Sentry. Error-level logs can be automatically reported:
+Most services/controllers already depend on `AppExternalDeps`. After the migration, update or create getters that pull the logger from there:
 
 ```dart
-logger.error('Critical nutrition calculation failed',
-  context: 'NutritionCalculator',
-  data: {'distance': distance, 'weight': weight},
-  error: exception,
-  stackTrace: stackTrace,
-);
-// This can automatically trigger Sentry.captureException()
+AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 ```
 
-## Best Practices
+This keeps construction uniform and means tests can override a single provider instead of patching dozens of classes.
 
-### 1. Use Appropriate Log Levels
-- **Debug**: Detailed diagnostic info (calculations, data transformations)
-- **Info**: Important business events (plan generated, user actions)
-- **Warning**: Recoverable issues (fallbacks, missing optional data)
-- **Error**: Failures that don't crash the app (API failures, data corruption)
-- **Fatal**: Critical failures that might crash the app
+## Test Utilities
 
-### 2. Provide Context
-Always include relevant context and data:
-```dart
-// Good
-logger.debug('Food items converted',
-  context: 'LLMService',
-  data: {'beforeItems': 3, 'duringItems': 2, 'afterItems': 2}
-);
+A new `RecordingAppLogger` lives under `test/helpers/fakes/recording_app_logger.dart`. It captures every log invocation (level, message, optional context/data/error). Use it when you want to assert on logging side effects without printing to stdout.
 
-// Less helpful
-logger.debug('Conversion complete');
-```
+For suites that do not care about logging, override with `const NoopAppLogger()` to silence noise.
 
-### 3. Use Structured Data
-Pass data as maps rather than interpolating into strings:
-```dart
-// Good
-logger.info('Plan generated',
-  data: {'planId': planId, 'itemCount': items.length}
-);
+## Migration Notes
 
-// Less structured
-logger.info('Plan $planId generated with ${items.length} items');
-```
+1. Delete references to `LoggingService()`/`AppLogger.instance` and replace with provider-backed access (`AppLogger` injected). The singleton was removed.
+2. Update providers/repositories to accept an `AppLogger` in the constructor or via `AppExternalDeps`.
+3. Remove the `LoggingService().initialize(...)` call from `main.dart`; the provider handles configuration.
+4. Update documentation and tests to reference the new abstractions (this file plus the new fake logger).
 
-### 4. Include Error Context
-When logging errors, include both the error and relevant context:
-```dart
-logger.error('Database operation failed',
-  context: 'NutritionPlanRepository',
-  data: {'operation': 'INSERT', 'planId': planId},
-  error: exception,
-  stackTrace: stackTrace,
-);
-```
+## Future Improvements
 
-### 5. Avoid Logging Sensitive Information
-Never log passwords, API keys, personal data, or other sensitive information:
-```dart
-// Bad - logs sensitive data
-logger.debug('User login', data: {'password': password});
+- Wire `PrettyAppLogger` into Sentry breadcrumbs automatically.
+- Expose configuration via `AppConfig` so log levels can be tuned per build flavor.
+- Consider adding structured JSON output for long-running CLI tasks.
+- Build higher-level domain helpers (e.g., `logger.nutritionPlan.startRun(...)`) once coverage stabilizes.
 
-// Good - logs only non-sensitive data
-logger.info('User login attempt', data: {'email': email});
-```
-
-## Migration Guide
-
-### Step 1: Replace Print Statements
-Find all `print()` statements and replace with appropriate logging calls:
-
-```bash
-# Find all print statements
-grep -r "print(" lib/
-```
-
-### Step 2: Add Context
-Group related logs by adding appropriate context:
-- API calls: Use `logger.api()`
-- Database operations: Use `logger.database()`
-- User interactions: Use `logger.userAction()`
-- Navigation: Use `logger.navigation()`
-
-### Step 3: Add Structured Data
-Convert string interpolations to structured data:
-```dart
-// Before
-print('Processing ${foods.length} foods for user $userId');
-
-// After
-logger.debug('Processing foods for user',
-  context: 'FoodProcessor',
-  data: {'foodCount': foods.length, 'userId': userId}
-);
-```
-
-## File Structure
-
-```
-lib/shared/services/logging_service.dart  # Main logging service
-docs/technical/logging-service.md         # This documentation
-```
-
-## Dependencies
-
-- `logger: ^2.4.0` - Core logging functionality
-- `flutter/foundation.dart` - For `kDebugMode` and `kReleaseMode`
-
-## Future Enhancements
-
-1. **File Output**: Save logs to local files for offline debugging
-2. **Remote Logging**: Send logs to remote monitoring services
-3. **Log Rotation**: Manage log file sizes
-4. **Custom Filters**: More sophisticated filtering options
-5. **Performance Metrics**: Automatic performance logging
-6. **Crash Reporting Integration**: Automatic Sentry integration
-
-## Examples
-
-See `lib/features/nutrition_plan/application/llm_nutrition_plan_service.dart` for examples of the logging service in action, replacing the previous `print()` statements with structured logging calls.
+With the dependency injection pattern in place, the repo can now swap log behavior per test, feature, or environment without touching global state.

@@ -338,7 +338,7 @@ class ScreenController extends _$ScreenController {
 class ScreenWidget extends ConsumerStatefulWidget {
   Future<void> _generateData() async {
     // ❌ This is business logic in UI!
-    final supabase = Supabase.instance.client;
+    final supabase = ref.read(appExternalDepsProvider).supabaseClient;
     final response = await supabase.functions.invoke('generate-data');
     // ... processing logic
   }
@@ -384,7 +384,7 @@ class ScreenController extends _$ScreenController {
     final parsedValue = double.tryParse(inputValue) ?? 0.0;
     
     // ✅ Call external services
-    final supabase = Supabase.instance.client;
+    final supabase = ref.read(appExternalDepsProvider).supabaseClient;
     final response = await supabase.functions.invoke('generate-data', 
       body: {'input': parsedValue});
     

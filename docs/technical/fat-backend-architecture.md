@@ -215,19 +215,19 @@ final title = await contentService.getValue(
 
 ### Content Usage Tracking
 ```dart
-// Track which content keys are accessed
-analyticsService.track('content_accessed', {
+final analytics = ref.read(appExternalDepsProvider).analytics;
+analytics.track('content_accessed', {
   'key': contentKey,
-  'source': 'backend' | 'cache' | 'default'
+  'source': source,
 });
 ```
 
 ### Algorithm Performance
 ```dart
-// Track algorithm parameter impact
-analyticsService.track('nutrition_calculated', {
+final analytics = ref.read(appExternalDepsProvider).analytics;
+analytics.track('nutrition_calculated', {
   'gut_training_multiplier': multiplier,
-  'carbs_per_hour': result
+  'carbs_per_hour': result,
 });
 ```
 

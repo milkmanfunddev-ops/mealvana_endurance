@@ -120,7 +120,7 @@ class MacroTargetBadgesWidget extends StatelessWidget {
   /// Build individual macro badge
   Widget _buildMacroBadge(MacroType macroType, int current, int target) {
     final unit = _getMacroUnit(macroType);
-    final ratioWithUnit = '$current/${target}$unit';
+    final ratioWithUnit = '$current/$target$unit';
     final label = _getMacroLabel(macroType);
     final color = _getMacroColor(macroType);
 

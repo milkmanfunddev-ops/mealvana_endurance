@@ -6,24 +6,53 @@ part of 'food_mapping_service.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$foodMappingServiceHash() =>
-    r'd2a030a688a00f76778382bfd8b48aa6cffbc203';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [foodMappingService].
 @ProviderFor(foodMappingService)
-final foodMappingServiceProvider =
-    AutoDisposeProvider<FoodMappingService>.internal(
-  foodMappingService,
-  name: r'foodMappingServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$foodMappingServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const foodMappingServiceProvider = FoodMappingServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef FoodMappingServiceRef = AutoDisposeProviderRef<FoodMappingService>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class FoodMappingServiceProvider
+    extends
+        $FunctionalProvider<
+          FoodMappingService,
+          FoodMappingService,
+          FoodMappingService
+        >
+    with $Provider<FoodMappingService> {
+  const FoodMappingServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'foodMappingServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$foodMappingServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<FoodMappingService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  FoodMappingService create(Ref ref) {
+    return foodMappingService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FoodMappingService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FoodMappingService>(value),
+    );
+  }
+}
+
+String _$foodMappingServiceHash() =>
+    r'3c929e4024023919c59ffe8774f0aa26319422b3';

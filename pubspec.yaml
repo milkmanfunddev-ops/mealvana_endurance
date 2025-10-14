@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.6.1+24
+version: 1.7.1+26
 
 environment:
   sdk: ^3.8.1
@@ -40,7 +40,7 @@ dependencies:
   simple_gradient_text: ^1.3.0
 
   # Logging
-  logger: ^2.4.0
+  logger: ^2.6.2
 
   # Form & Input
   flutter_rating_bar: ^4.0.1
@@ -62,13 +62,15 @@ dependencies:
   
   # Backend & Auth
   supabase_flutter: ^2.8.5
-  
+
+  # Environment Variables
+  flutter_dotenv: ^5.1.0
+
   # Error Tracking & Performance Monitoring
   sentry_flutter: ^9.6.0
   sentry_drift: ^9.6.0
 
   # JSON & Data Classes
-  freezed_annotation: ^2.4.1
   json_annotation: ^4.9.0
 
   # Local Notifications
@@ -96,8 +98,7 @@ dev_dependencies:
   # riverpod_generator: ^2.4.3
   riverpod_generator: ^3.0.0
   drift_dev: ^2.20.3
-  freezed: ^2.5.7
-  analyzer: ^6.11.0
+  analyzer: ^7.6.0
   
   # App Icons & Splash Screen
   flutter_launcher_icons: ^0.14.3
@@ -114,6 +115,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
+    - .env
     - shorebird.yaml
     - assets/images/
     - assets/config/
@@ -192,14 +194,14 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/endurance_launcher_icon_1024.png"
+  image_path: "assets/images/endurance_launcher_icon_basecream_1024.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/images/endurance_launcher_icon_1024.png"
+  adaptive_icon_background: "#FFF9F0"
+  adaptive_icon_foreground: "assets/images/endurance_launcher_icon_basecream_1024.png"
   remove_alpha_ios: true
   web:
     generate: true
-    image_path: "assets/images/endurance_launcher_icon_1024.png"
+    image_path: "assets/images/endurance_launcher_icon_basecream_1024.png"
 
 
 

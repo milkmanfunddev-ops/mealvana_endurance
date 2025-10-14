@@ -11,7 +11,7 @@ class FeedbackTable extends Table {
   TextColumn get deviceId => text().nullable()();
   
   /// Original feedback fields (existing)
-  IntColumn get satisfactionLevel => integer().check(satisfactionLevel.isBetweenValues(1, 3))();
+  IntColumn get satisfactionLevel => integer()();
   TextColumn get satisfactionEmoji => text()();
   TextColumn get satisfactionLabel => text()();
   TextColumn get appFeedback => text().nullable()();
@@ -19,11 +19,11 @@ class FeedbackTable extends Table {
   TextColumn get planName => text().nullable()();
   TextColumn get userName => text().nullable()();
   DateTimeColumn get timestamp => dateTime().nullable()();
-  
+
   /// New survey fields
-  IntColumn get confidenceLevel => integer().check(confidenceLevel.isBetweenValues(1, 5)).nullable()();
+  IntColumn get confidenceLevel => integer().nullable()();
   TextColumn get confidenceLabel => text().nullable()();
-  TextColumn get reuseIntent => text().check(reuseIntent.isIn(['yes', 'maybe', 'no'])).nullable()();
+  TextColumn get reuseIntent => text().nullable()();
   BoolColumn get reminderRequested => boolean().withDefault(const Constant(false))();
   
   /// Missed reasons stored as JSON array (for single selection + other text)

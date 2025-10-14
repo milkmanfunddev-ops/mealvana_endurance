@@ -1,13 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
+import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/logging_service.dart';
 
 /// Repository for auth operations using Supabase Edge Functions
 /// Replaces direct database access with Edge Function calls
 class AuthRepositoryEdge {
-  AuthRepositoryEdge(this._supabase);
-  
+  AuthRepositoryEdge(this._supabase, this._logger);
+
   final SupabaseClient _supabase;
+  final AppLogger _logger;
 
   /// Create a new user via Edge Function
   Future<CreateUserResult> createUser({
@@ -69,11 +72,19 @@ class AuthRepositoryEdge {
         );
       }
     } catch (e) {
-      print('Error calling create-user Edge Function: $e');
+      _logger.error(
+        'Error invoking create-user edge function',
+        context: 'AUTH_EDGE',
+        error: e,
+      );
 
       // Handle 409 Conflict (user already exists) as success
       if (e is FunctionException && e.status == 409) {
-        print('User already exists - treating as success and fetching existing user');
+        _logger.info(
+          'User already exists when creating user',
+          context: 'AUTH_EDGE',
+          data: {'deviceId': deviceId},
+        );
 
         // Try to fetch the existing user
         final existingUser = await getUserByDeviceId(deviceId);
@@ -107,7 +118,12 @@ class AuthRepositoryEdge {
       }
       return null;
     } catch (e) {
-      print('Error fetching user by device ID: $e');
+      _logger.error(
+        'Error fetching user by device ID',
+        context: 'AUTH_EDGE',
+        error: e,
+        data: {'deviceId': deviceId},
+      );
       return null;
     }
   }
@@ -131,7 +147,12 @@ class AuthRepositoryEdge {
 
       return preferences;
     } catch (e) {
-      print('Error fetching food preferences: $e');
+      _logger.error(
+        'Error fetching food preferences',
+        context: 'AUTH_EDGE',
+        error: e,
+        data: {'deviceId': deviceId},
+      );
       return {};
     }
   }
@@ -156,7 +177,12 @@ class AuthRepositoryEdge {
 
       return true;
     } catch (e) {
-      print('Error updating user: $e');
+      _logger.error(
+        'Error updating user',
+        context: 'AUTH_EDGE',
+        error: e,
+        data: {'deviceId': user.id},
+      );
       return false;
     }
   }
@@ -172,9 +198,14 @@ class AuthRepositoryEdge {
         ),
       };
 
-      print('🍎 Saving food preferences for device: $deviceId');
-      print('🍎 Preferences count: ${preferences.length}');
-      print('🍎 Request body: $requestBody');
+      _logger.debug(
+        'Saving food preferences',
+        context: 'AUTH_EDGE',
+        data: {
+          'deviceId': deviceId,
+          'preferencesCount': preferences.length,
+        },
+      );
 
       // Call Edge Function
       final response = await _supabase.functions.invoke(
@@ -206,7 +237,12 @@ class AuthRepositoryEdge {
         );
       }
     } catch (e) {
-      print('Error calling save-food-preferences Edge Function: $e');
+      _logger.error(
+        'Error invoking save-food-preferences edge function',
+        context: 'AUTH_EDGE',
+        error: e,
+        data: {'deviceId': deviceId},
+      );
       return SaveFoodPreferencesResult(
         success: false,
         message: 'Failed to save food preferences: $e',
@@ -228,7 +264,12 @@ class AuthRepositoryEdge {
 
       return true;
     } catch (e) {
-      print('Error updating food preferences: $e');
+      _logger.error(
+        'Error updating food preferences',
+        context: 'AUTH_EDGE',
+        error: e,
+        data: {'deviceId': deviceId},
+      );
       return false;
     }
   }
@@ -244,7 +285,12 @@ class AuthRepositoryEdge {
 
       return true;
     } catch (e) {
-      print('Error deleting user: $e');
+      _logger.error(
+        'Error deleting user',
+        context: 'AUTH_EDGE',
+        error: e,
+        data: {'deviceId': deviceId},
+      );
       return false;
     }
   }
@@ -280,5 +326,6 @@ class SaveFoodPreferencesResult {
 
 /// Riverpod provider for AuthRepositoryEdge
 final authRepositoryEdgeProvider = Provider<AuthRepositoryEdge>((ref) {
-  return AuthRepositoryEdge(Supabase.instance.client);
+  final externalDeps = ref.read(appExternalDepsProvider);
+  return AuthRepositoryEdge(externalDeps.supabaseClient, externalDeps.logger);
 });

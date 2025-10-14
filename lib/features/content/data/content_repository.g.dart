@@ -6,25 +6,56 @@ part of 'content_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$contentRepositoryHash() => r'55ff9b330215470c0bb441502e5fa7f5c4fb7c44';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// Content repository provider
+
+@ProviderFor(contentRepository)
+const contentRepositoryProvider = ContentRepositoryProvider._();
 
 /// Content repository provider
-///
-/// Copied from [contentRepository].
-@ProviderFor(contentRepository)
-final contentRepositoryProvider =
-    AutoDisposeProvider<ContentRepository>.internal(
-  contentRepository,
-  name: r'contentRepositoryProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$contentRepositoryHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef ContentRepositoryRef = AutoDisposeProviderRef<ContentRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class ContentRepositoryProvider
+    extends
+        $FunctionalProvider<
+          ContentRepository,
+          ContentRepository,
+          ContentRepository
+        >
+    with $Provider<ContentRepository> {
+  /// Content repository provider
+  const ContentRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'contentRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$contentRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<ContentRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ContentRepository create(Ref ref) {
+    return contentRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ContentRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ContentRepository>(value),
+    );
+  }
+}
+
+String _$contentRepositoryHash() => r'260152da5382e39cea86a043833282930b6585a2';

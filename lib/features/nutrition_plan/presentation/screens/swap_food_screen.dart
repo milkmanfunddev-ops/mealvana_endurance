@@ -125,7 +125,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
   Future<void> _handleAction() async {
     final controllerState = ref.read(swapFoodControllerProvider(_params));
-    final selectedFood = controllerState.valueOrNull?.selectedFood;
+    final selectedFood = controllerState.value?.selectedFood;
 
     if (selectedFood == null) return;
 

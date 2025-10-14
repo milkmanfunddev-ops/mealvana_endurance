@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/food_item_data.dart';
 import 'editable_expandable_food_item.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Swipeable food item with dismiss actions
 /// Left-to-right swipe: Swap action (blue/primary button)
@@ -100,16 +101,16 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
       final prefs = await SharedPreferences.getInstance();
       final hasShown = prefs.getBool('swipe_hint_shown') ?? false;
       
-      print('🎯 SharedPreferences check: hasShown = $hasShown');
+      DebugLogger.info('🎯 SharedPreferences check: hasShown = $hasShown');
       
       if (!hasShown && mounted && !_hasInteracted) {
-        print('🚀 Starting animation');
+        DebugLogger.info('🚀 Starting animation');
         _startHintAnimation();
       } else {
-        print('⏭️ Skipping animation: hasShown=$hasShown, mounted=$mounted, hasInteracted=$_hasInteracted');
+        DebugLogger.debug('⏭️ Skipping animation: hasShown=$hasShown, mounted=$mounted, hasInteracted=$_hasInteracted');
       }
     } catch (e) {
-      print('❌ SharedPreferences error: $e');
+      DebugLogger.error('❌ SharedPreferences error: $e');
       // If there's an error, don't show the animation to be safe
     }
   }
@@ -199,7 +200,7 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
 
   void _onInteraction() {
     if (!_hasInteracted) {
-      print('👆 User interaction detected - stopping animation');
+      DebugLogger.debug('👆 User interaction detected - stopping animation');
       setState(() {
         _hasInteracted = true;
         _showHintBackground = false;
@@ -210,18 +211,18 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
       
       // Mark hint as shown in SharedPreferences (fire and forget)
       if (widget.isFirstInBeforeRun) {
-        print('💾 Attempting to mark swipe hint as shown');
+        DebugLogger.info('💾 Attempting to mark swipe hint as shown');
         SharedPreferences.getInstance().then((prefs) {
           return prefs.setBool('swipe_hint_shown', true);
         }).then((success) {
-          print('✅ Successfully marked swipe hint as shown: $success');
+          DebugLogger.info('✅ Successfully marked swipe hint as shown: $success');
           // Verify it was saved
           return SharedPreferences.getInstance();
         }).then((prefs) {
           final hasShown = prefs.getBool('swipe_hint_shown') ?? false;
-          print('🔍 Verification: hasShown = $hasShown');
+          DebugLogger.info('🔍 Verification: hasShown = $hasShown');
         }).catchError((e) {
-          print('❌ Failed to mark swipe hint as shown: $e');
+          DebugLogger.error('❌ Failed to mark swipe hint as shown: $e');
         });
       }
     }
@@ -326,7 +327,7 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: _showHintBackground ? [
           BoxShadow(
-            color: AppTheme.primary900.withOpacity(0.3),
+            color: AppTheme.primary900.withValues(alpha: 0.3),
             blurRadius: 8,
             spreadRadius: 2,
           ),
@@ -360,7 +361,7 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: _showHintBackground ? [
           BoxShadow(
-            color: AppTheme.highlight600.withOpacity(0.3),
+            color: AppTheme.highlight600.withValues(alpha: 0.3),
             blurRadius: 8,
             spreadRadius: 2,
           ),

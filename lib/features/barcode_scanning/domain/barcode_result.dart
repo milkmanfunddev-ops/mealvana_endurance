@@ -7,6 +7,12 @@ sealed class BarcodeResult {
 
   const BarcodeResult({required this.barcode});
 
+  /// Override in subclasses that carry a product
+  ApiFoodProduct? get product => null;
+
+  /// Override in subclasses that carry human-readable messages
+  String? get message => null;
+
   /// Successful lookup with product data
   const factory BarcodeResult.success({
     required String barcode,
@@ -34,53 +40,43 @@ sealed class BarcodeResult {
   /// Check if the result is an error
   bool get isError => this is BarcodeResultError;
 
-  /// Get the product if successful, null otherwise
-  ApiFoodProduct? get product {
-    if (this is BarcodeResultSuccess) {
-      return (this as BarcodeResultSuccess).product;
-    }
-    return null;
-  }
-
-  /// Get the error/not found message
-  String? get message {
-    switch (this) {
-      case BarcodeResultNotFound(:final message):
-        return message;
-      case BarcodeResultError(:final message):
-        return message;
-      case BarcodeResultSuccess():
-        return null;
-    }
-  }
 }
 
 /// Successful barcode lookup result
 final class BarcodeResultSuccess extends BarcodeResult {
-  final ApiFoodProduct product;
+  final ApiFoodProduct _product;
 
   const BarcodeResultSuccess({
     required super.barcode,
-    required this.product,
-  });
+    required ApiFoodProduct product,
+  }) : _product = product;
+
+  @override
+  ApiFoodProduct get product => _product;
 }
 
 /// Product not found result
 final class BarcodeResultNotFound extends BarcodeResult {
-  final String message;
+  final String _message;
 
   const BarcodeResultNotFound({
     required super.barcode,
-    required this.message,
-  });
+    required String message,
+  }) : _message = message;
+
+  @override
+  String get message => _message;
 }
 
 /// Error during lookup result
 final class BarcodeResultError extends BarcodeResult {
-  final String message;
+  final String _message;
 
   const BarcodeResultError({
     required super.barcode,
-    required this.message,
-  });
+    required String message,
+  }) : _message = message;
+
+  @override
+  String get message => _message;
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../features/auth/domain/user_preferences.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
@@ -18,6 +17,7 @@ import '../../features/barcode_scanning/application/open_food_facts_search_servi
 import '../../features/barcode_scanning/application/product_detail_service.dart';
 import '../../features/barcode_scanning/application/food_mapping_service.dart';
 import '../widgets/scanned_food_category_sheet.dart';
+import '../services/app_external_deps.dart';
 
 /// Configuration for different food preferences layouts
 enum FoodPreferencesLayout {
@@ -155,7 +155,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
       final database = await ref.read(databaseProvider.future);
       final userProfile = await database.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
-      final supabase = Supabase.instance.client;
+      final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
       // 1. Delete from local Drift database first
       await database.deleteUserFood(food.id);
@@ -317,7 +317,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
 
       // Map to Food then convert to FoodItem
       final mappingService = ref.read(foodMappingServiceProvider);
-      final food = mappingService.mapToFood(apiProduct);
+      final food = await mappingService.mapToFood(apiProduct);
       final foodItem = _convertFoodToFoodItem(food);
 
       // Show category selection sheet
@@ -408,7 +408,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
       final database = await ref.read(databaseProvider.future);
       final userProfile = await database.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
-      final supabase = Supabase.instance.client;
+      final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
       // Generate unique UUID for this food
       final foodId = _uuid.v4();

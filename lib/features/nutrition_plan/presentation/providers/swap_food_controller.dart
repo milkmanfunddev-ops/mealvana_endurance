@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/food.dart';
 import '../../domain/food_item.dart';
 import '../../data/food_repository.dart';
 import '../providers/nutrition_plan_controller.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
@@ -83,12 +82,19 @@ class SwapFoodState {
 @riverpod
 FoodRepository foodRepository(Ref ref) {
   final database = ref.read(appDatabaseProvider);
-  return FoodRepository(Supabase.instance.client, database);
+  final deps = ref.read(appExternalDepsProvider);
+  return FoodRepository(
+    deps.supabaseClient,
+    database,
+    logger: deps.logger,
+  );
 }
 
 /// Controller for swap food functionality - takes swap parameters
 @riverpod
 class SwapFoodController extends _$SwapFoodController {
+
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
   @override
   FutureOr<SwapFoodState> build(SwapFoodParams params) async {
@@ -98,7 +104,7 @@ class SwapFoodController extends _$SwapFoodController {
 
   Future<SwapFoodState> _loadFoodsForSwapping(SwapFoodParams params) async {
     try {
-      AppLogger.instance.debug('Loading foods for swapping',
+      _logger.debug('Loading foods for swapping',
         context: 'SwapFoodController',
         data: {'category': params.category, 'originalFoodId': params.originalFoodId},
       );
@@ -122,7 +128,7 @@ class SwapFoodController extends _$SwapFoodController {
         deviceId: deviceId,
       );
 
-      AppLogger.instance.debug('Generated ${recommendations.length} recommendations');
+      _logger.debug('Generated ${recommendations.length} recommendations');
 
       // Load all foods for search (generic + user foods)
       final allFoods = await _loadAllFoodsForSearch(deviceId);
@@ -135,7 +141,7 @@ class SwapFoodController extends _$SwapFoodController {
       );
 
     } catch (e) {
-      AppLogger.instance.error('Error loading foods for swapping',
+      _logger.error('Error loading foods for swapping',
         context: 'SwapFoodController',
         error: e,
       );
@@ -176,10 +182,10 @@ class SwapFoodController extends _$SwapFoodController {
         }
       }
 
-      AppLogger.instance.warning('Product type not found for food ID: $foodId');
+      _logger.warning('Product type not found for food ID: $foodId');
       return null;
     } catch (e) {
-      AppLogger.instance.error('Error getting product type ID',
+      _logger.error('Error getting product type ID',
         context: 'SwapFoodController',
         data: {'foodId': foodId},
         error: e,
@@ -203,10 +209,10 @@ class SwapFoodController extends _$SwapFoodController {
       // Combine all foods
       final allFoods = [...genericFoods, ...userFoods];
 
-      AppLogger.instance.debug('Loaded ${allFoods.length} total foods for search (${genericFoods.length} generic + ${userFoods.length} user)');
+      _logger.debug('Loaded ${allFoods.length} total foods for search (${genericFoods.length} generic + ${userFoods.length} user)');
       return allFoods;
     } catch (e) {
-      AppLogger.instance.error('Error loading all foods for search',
+      _logger.error('Error loading all foods for search',
         context: 'SwapFoodController',
         error: e,
       );
@@ -242,7 +248,7 @@ class SwapFoodController extends _$SwapFoodController {
   
   /// Update search query and filter foods
   void updateSearch(String query) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     if (query.isEmpty) {
@@ -281,7 +287,7 @@ class SwapFoodController extends _$SwapFoodController {
   
   /// Select a food
   void selectFood(Food food) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
     
     state = AsyncValue.data(currentState.copyWith(selectedFood: food));
@@ -289,7 +295,7 @@ class SwapFoodController extends _$SwapFoodController {
   
   /// Clear selection
   void clearSelection() {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncValue.data(currentState.copyWith(clearSelectedFood: true));
@@ -309,7 +315,7 @@ class SwapFoodController extends _$SwapFoodController {
 
   /// Search Open Food Facts and update state
   Future<void> searchOpenFoodFacts(String query) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null || query.isEmpty) return;
 
     try {
@@ -318,7 +324,7 @@ class SwapFoodController extends _$SwapFoodController {
         isSearchingOpenFoodFacts: true,
       ));
 
-      AppLogger.instance.debug('Searching Open Food Facts',
+      _logger.debug('Searching Open Food Facts',
         context: 'SwapFoodController',
         data: {'query': query},
       );
@@ -327,7 +333,7 @@ class SwapFoodController extends _$SwapFoodController {
       final searchService = ref.read(sharedFoodSearchServiceProvider);
       final results = await searchService.searchProducts(query);
 
-      AppLogger.instance.debug('Open Food Facts search completed',
+      _logger.debug('Open Food Facts search completed',
         context: 'SwapFoodController',
         data: {'query': query, 'resultCount': results.length},
       );
@@ -339,7 +345,7 @@ class SwapFoodController extends _$SwapFoodController {
       ));
 
     } catch (e) {
-      AppLogger.instance.error('Open Food Facts search failed',
+      _logger.error('Open Food Facts search failed',
         context: 'SwapFoodController',
         data: {'query': query},
         error: e,
@@ -354,11 +360,11 @@ class SwapFoodController extends _$SwapFoodController {
 
   /// Add Open Food Facts result to user foods and select it
   Future<void> addOpenFoodFactsResult(dynamic result) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     try {
-      AppLogger.instance.debug('Adding Open Food Facts result to user foods',
+      _logger.debug('Adding Open Food Facts result to user foods',
         context: 'SwapFoodController',
         data: {'productId': result.id},
       );
@@ -379,16 +385,16 @@ class SwapFoodController extends _$SwapFoodController {
           openFoodFactsResults: [], // Clear search results
         ));
 
-        AppLogger.instance.debug('Successfully added and selected Open Food Facts result',
+        _logger.debug('Successfully added and selected Open Food Facts result',
           context: 'SwapFoodController',
           data: {'foodId': food.id, 'name': food.name},
         );
       } else {
-        AppLogger.instance.warning('Failed to add Open Food Facts result');
+        _logger.warning('Failed to add Open Food Facts result');
       }
 
     } catch (e) {
-      AppLogger.instance.error('Error adding Open Food Facts result',
+      _logger.error('Error adding Open Food Facts result',
         context: 'SwapFoodController',
         data: {'productId': result.id},
         error: e,
@@ -398,7 +404,7 @@ class SwapFoodController extends _$SwapFoodController {
 
   /// Clear Open Food Facts search results
   void clearOpenFoodFactsResults() {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncValue.data(currentState.copyWith(

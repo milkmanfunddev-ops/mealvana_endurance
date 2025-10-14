@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'food_item_data.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Data model for nutrition plans with before/during/after run sections
 class NutritionPlan {
@@ -13,6 +14,7 @@ class NutritionPlan {
     this.runDateTime,
     this.planRating,
     this.journalNotes,
+    this.activityId, // Link to calendar activity
     this.version = 1,
     this.lastModifiedBy,
     this.clientUpdatedAt,
@@ -31,6 +33,7 @@ class NutritionPlan {
   final DateTime? runDateTime; // Scheduled run date and time
   final int? planRating; // 1=Could be better, 2=Neutral, 3=Satisfied
   final String? journalNotes; // User's feedback notes about the plan
+  final String? activityId; // Foreign key to activities table (calendar integration)
   
   // Versioning fields
   final int version;
@@ -52,6 +55,7 @@ class NutritionPlan {
     DateTime? runDateTime,
     int? planRating,
     String? journalNotes,
+    String? activityId,
     int? version,
     String? lastModifiedBy,
     DateTime? clientUpdatedAt,
@@ -70,6 +74,7 @@ class NutritionPlan {
       runDateTime: runDateTime ?? this.runDateTime,
       planRating: planRating ?? this.planRating,
       journalNotes: journalNotes ?? this.journalNotes,
+      activityId: activityId ?? this.activityId,
       version: version ?? this.version,
       lastModifiedBy: lastModifiedBy ?? this.lastModifiedBy,
       clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
@@ -100,25 +105,26 @@ class NutritionPlan {
       sections: (json['sections'] as List<dynamic>)
           .map((section) => PlanSection.fromJson(section))
           .toList(),
-      macroTargets: json['macroTargets'] != null 
+      macroTargets: json['macroTargets'] != null
           ? MacroTargets.fromJson(json['macroTargets'])
           : null,
       totalCalories: json['totalCalories'] as int?,
       notes: json['notes'] as String?,
-      runDateTime: json['runDateTime'] != null 
+      runDateTime: json['runDateTime'] != null
           ? DateTime.parse(json['runDateTime'])
           : null,
       planRating: json['planRating'] as int?,
       journalNotes: json['journalNotes'] as String?,
+      activityId: json['activityId'] as String?,
       version: json['version'] as int? ?? 1,
       lastModifiedBy: json['lastModifiedBy'] as String?,
-      clientUpdatedAt: json['clientUpdatedAt'] != null 
+      clientUpdatedAt: json['clientUpdatedAt'] != null
           ? DateTime.parse(json['clientUpdatedAt'])
           : null,
-      createdAt: json['createdAt'] != null 
+      createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : null,
-      updatedAt: json['updatedAt'] != null 
+      updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : null,
       isDeleted: json['isDeleted'] as bool? ?? false,
@@ -135,7 +141,7 @@ class NutritionPlan {
         final parsedData = jsonDecode(json['plan_data']);
         planData = parsedData is Map<String, dynamic> ? parsedData : null;
       } catch (e) {
-        print('Error parsing plan_data string: $e');
+        DebugLogger.error('Error parsing plan_data string: $e');
         planData = null;
       }
     } else if (json['plan_data'] is Map<String, dynamic>) {
@@ -146,14 +152,45 @@ class NutritionPlan {
 
     // Parse sections with error handling
     List<PlanSection> sections = [];
-    if (planData != null && planData['sections'] is List) {
-      try {
-        sections = (planData['sections'] as List<dynamic>)
-            .map((section) => PlanSection.fromJson(section as Map<String, dynamic>))
-            .toList();
-      } catch (e) {
-        print('Error parsing sections: $e');
-        sections = [];
+    if (planData != null) {
+      // Handle new format: sections array
+      if (planData['sections'] is List) {
+        try {
+          sections = (planData['sections'] as List<dynamic>)
+              .map((section) => PlanSection.fromJson(section as Map<String, dynamic>))
+              .toList();
+        } catch (e) {
+          DebugLogger.error('Error parsing sections from sections array: $e');
+          sections = [];
+        }
+      }
+      // Handle legacy format from Edge Function: plan.before/during/after
+      else if (planData['plan'] is Map) {
+        try {
+          final plan = planData['plan'] as Map<String, dynamic>;
+          final List<PlanSection> parsedSections = [];
+
+          // Parse "before" section
+          if (plan['before'] is List) {
+            parsedSections.add(PlanSection.fromEdgeFunctionJson('before_run', plan['before'] as List<dynamic>));
+          }
+
+          // Parse "during" section
+          if (plan['during'] is List) {
+            parsedSections.add(PlanSection.fromEdgeFunctionJson('during_run', plan['during'] as List<dynamic>));
+          }
+
+          // Parse "after" section
+          if (plan['after'] is List) {
+            parsedSections.add(PlanSection.fromEdgeFunctionJson('after_run', plan['after'] as List<dynamic>));
+          }
+
+          sections = parsedSections;
+          DebugLogger.info('✅ Parsed ${sections.length} sections from Edge Function legacy format');
+        } catch (e) {
+          DebugLogger.error('Error parsing sections from Edge Function format: $e');
+          sections = [];
+        }
       }
     }
 
@@ -163,7 +200,7 @@ class NutritionPlan {
       try {
         macroTargets = MacroTargets.fromJson(planData['macroTargets'] as Map<String, dynamic>);
       } catch (e) {
-        print('Error parsing macroTargets: $e');
+        DebugLogger.error('Error parsing macroTargets: $e');
         macroTargets = null;
       }
     }
@@ -175,20 +212,21 @@ class NutritionPlan {
       macroTargets: macroTargets,
       totalCalories: json['total_calories'] is num ? (json['total_calories'] as num).toInt() : null,
       notes: json['notes'] as String?,
-      runDateTime: json['run_date_time'] is String 
+      runDateTime: json['run_date_time'] is String
           ? DateTime.tryParse(json['run_date_time'])
           : null,
       planRating: json['plan_rating'] is num ? (json['plan_rating'] as num).toInt() : null,
       journalNotes: json['journal_notes'] as String?,
+      activityId: json['activity_id'] as String?,
       version: json['version'] is num ? (json['version'] as num).toInt() : 1,
       lastModifiedBy: json['last_modified_by'] as String?,
-      clientUpdatedAt: json['client_updated_at'] is String 
+      clientUpdatedAt: json['client_updated_at'] is String
           ? DateTime.tryParse(json['client_updated_at'])
           : null,
-      createdAt: json['created_at'] is String 
+      createdAt: json['created_at'] is String
           ? DateTime.tryParse(json['created_at'])
           : null,
-      updatedAt: json['updated_at'] is String 
+      updatedAt: json['updated_at'] is String
           ? DateTime.tryParse(json['updated_at'])
           : null,
       isDeleted: json['is_deleted'] is bool ? json['is_deleted'] as bool : false,
@@ -208,6 +246,7 @@ class NutritionPlan {
       'runDateTime': runDateTime?.toIso8601String(),
       'planRating': planRating,
       'journalNotes': journalNotes,
+      'activityId': activityId,
       'version': version,
       'lastModifiedBy': lastModifiedBy,
       'clientUpdatedAt': clientUpdatedAt?.toIso8601String(),
@@ -265,6 +304,31 @@ class PlanSection {
       carbsTarget: json['carbsTarget'] as double?,
       sodiumTarget: json['sodiumTarget'] as double?,
       fluidsTarget: json['fluidsTarget'] as double?,
+    );
+  }
+
+  /// Create PlanSection from Edge Function format (before/during/after arrays)
+  factory PlanSection.fromEdgeFunctionJson(String sectionId, List<dynamic> items) {
+    final Map<String, String> sectionTitles = {
+      'before_run': 'Before Run',
+      'during_run': 'During Run',
+      'after_run': 'After Run',
+    };
+
+    final Map<String, String> sectionSubtitles = {
+      'before_run': '30-60 min pre-run',
+      'during_run': 'Every 45-60 minutes',
+      'after_run': 'Within 30 minutes',
+    };
+
+    return PlanSection(
+      id: sectionId,
+      title: sectionTitles[sectionId] ?? sectionId,
+      subtitle: sectionSubtitles[sectionId],
+      timing: null,
+      foodItems: items
+          .map((item) => FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>))
+          .toList(),
     );
   }
 

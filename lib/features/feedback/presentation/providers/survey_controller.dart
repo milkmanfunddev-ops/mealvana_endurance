@@ -8,6 +8,7 @@ import '../../application/feedback_service.dart';
 import '../../../content/application/content_service.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../../shared/services/notification_service.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'survey_controller.g.dart';
 
@@ -240,8 +241,8 @@ class SurveyController extends _$SurveyController {
       return success;
     } catch (error, stackTrace) {
       if (kDebugMode) {
-        print('Error submitting survey: $error');
-        print('Stack trace: $stackTrace');
+        DebugLogger.error('Error submitting survey: $error');
+        DebugLogger.debug('Stack trace: $stackTrace');
       }
       state = AsyncValue.data(currentState.copyWith(isSubmitting: false));
       return false;
@@ -260,7 +261,7 @@ class SurveyController extends _$SurveyController {
       final hasPermission = await NotificationService.requestPermissions();
       if (!hasPermission) {
         if (kDebugMode) {
-          print('Test notification failed: No permissions');
+          DebugLogger.debug('Test notification failed: No permissions');
         }
         return false;
       }
@@ -276,13 +277,13 @@ class SurveyController extends _$SurveyController {
       );
 
       if (kDebugMode) {
-        print('Test notification scheduled for: $testTime');
+        DebugLogger.debug('Test notification scheduled for: $testTime');
       }
       return true;
     } catch (error, stackTrace) {
       if (kDebugMode) {
-        print('Error sending test notification: $error');
-        print('Stack trace: $stackTrace');
+        DebugLogger.error('Error sending test notification: $error');
+        DebugLogger.debug('Stack trace: $stackTrace');
       }
       return false;
     }

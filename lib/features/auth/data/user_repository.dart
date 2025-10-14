@@ -1,10 +1,10 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/sentry_service.dart';
+import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
 
 part 'user_repository.g.dart';
 
@@ -13,24 +13,24 @@ class UserRepository {
   UserRepository({
     required this.database,
     required this.supabase,
-    required this.sentryService,
+    required this.sentry,
   });
   
   final AppDatabase database;
   final SupabaseClient supabase;
-  final SentryService sentryService;
+  final SentryReporter sentry;
 
   /// Save user profile
   Future<void> saveUserProfile(UserProfile profile) async {
     try {
       await database.saveUserProfile(profile);
-      sentryService.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'User profile saved successfully',
         category: 'database',
         data: {'user_id': profile.id},
       );
     } catch (e, stackTrace) {
-      await sentryService.reportDatabaseError(
+      await sentry.reportDatabaseError(
         e,
         operation: 'saveUserProfile',
         table: 'user_profiles',
@@ -46,7 +46,7 @@ class UserRepository {
       // For device-based approach, we just get the current user
       return await getCurrentUser();
     } catch (e, stackTrace) {
-      await sentryService.reportDatabaseError(
+      await sentry.reportDatabaseError(
         e,
         operation: 'getUserProfile',
         table: 'user_profiles',
@@ -61,7 +61,7 @@ class UserRepository {
     try {
       return await database.getCurrentUserProfile();
     } catch (e, stackTrace) {
-      await sentryService.reportDatabaseError(
+      await sentry.reportDatabaseError(
         e,
         operation: 'getCurrentUser',
         table: 'user_profiles',
@@ -76,13 +76,13 @@ class UserRepository {
     try {
       final updatedProfile = profile.copyWith(updatedAt: DateTime.now());
       await database.updateUserProfile(updatedProfile);
-      sentryService.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'User profile updated successfully',
         category: 'database',
         data: {'user_id': profile.id},
       );
     } catch (e, stackTrace) {
-      await sentryService.reportDatabaseError(
+      await sentry.reportDatabaseError(
         e,
         operation: 'updateUserProfile',
         table: 'user_profiles',
@@ -173,7 +173,7 @@ class UserRepository {
       }
     } catch (e, stackTrace) {
       // Log error but don't throw - continue with local data
-      await sentryService.reportNetworkError(
+      await sentry.reportNetworkError(
         e,
         url: 'supabase:upsert_user_by_device_id',
         method: 'RPC',
@@ -196,7 +196,7 @@ class UserRepository {
         return null;
       }
     } catch (e, stackTrace) {
-      await sentryService.reportNetworkError(
+      await sentry.reportNetworkError(
         e,
         url: 'supabase:get_user_by_device_id',
         method: 'RPC',
@@ -237,7 +237,7 @@ class UserRepository {
         return userProfile;
       }
     } catch (e, stackTrace) {
-      await sentryService.reportNetworkError(
+      await sentry.reportNetworkError(
         e,
         url: 'supabase:upsert_user_by_device_id',
         method: 'RPC',
@@ -282,11 +282,12 @@ class UserRepository {
 Future<UserRepository> userRepository(Ref ref) async {
   // Get the database instance
   final database = ref.watch(appDatabaseProvider);
-  final sentryService = ref.watch(sentryServiceProvider);
+  final sentry = ref.watch(sentryReporterProvider);
+  final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
   
   return UserRepository(
     database: database,
-    supabase: Supabase.instance.client,
-    sentryService: sentryService,
+    supabase: supabase,
+    sentry: sentry,
   );
 }

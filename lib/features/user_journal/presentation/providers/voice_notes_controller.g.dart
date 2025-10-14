@@ -6,25 +6,62 @@ part of 'voice_notes_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// Controller for managing voice notes/journal entries list
+/// Following Andrea Bizzotto's FOA AsyncNotifier pattern
+
+@ProviderFor(VoiceNotesController)
+const voiceNotesControllerProvider = VoiceNotesControllerProvider._();
+
+/// Controller for managing voice notes/journal entries list
+/// Following Andrea Bizzotto's FOA AsyncNotifier pattern
+final class VoiceNotesControllerProvider
+    extends $AsyncNotifierProvider<VoiceNotesController, List<NutritionPlan>> {
+  /// Controller for managing voice notes/journal entries list
+  /// Following Andrea Bizzotto's FOA AsyncNotifier pattern
+  const VoiceNotesControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'voiceNotesControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$voiceNotesControllerHash();
+
+  @$internal
+  @override
+  VoiceNotesController create() => VoiceNotesController();
+}
+
 String _$voiceNotesControllerHash() =>
     r'4755ce0a3f76f35bad0cc3dd568ebb1fb0a7970a';
 
 /// Controller for managing voice notes/journal entries list
 /// Following Andrea Bizzotto's FOA AsyncNotifier pattern
-///
-/// Copied from [VoiceNotesController].
-@ProviderFor(VoiceNotesController)
-final voiceNotesControllerProvider = AutoDisposeAsyncNotifierProvider<
-    VoiceNotesController, List<NutritionPlan>>.internal(
-  VoiceNotesController.new,
-  name: r'voiceNotesControllerProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$voiceNotesControllerHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
 
-typedef _$VoiceNotesController = AutoDisposeAsyncNotifier<List<NutritionPlan>>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+abstract class _$VoiceNotesController
+    extends $AsyncNotifier<List<NutritionPlan>> {
+  FutureOr<List<NutritionPlan>> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref =
+        this.ref as $Ref<AsyncValue<List<NutritionPlan>>, List<NutritionPlan>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<NutritionPlan>>, List<NutritionPlan>>,
+              AsyncValue<List<NutritionPlan>>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}

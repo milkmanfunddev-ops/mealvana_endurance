@@ -8,6 +8,7 @@ import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_preferences_content.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Food preferences screen - final step of onboarding
 /// Users select their food preferences using radio options
@@ -23,20 +24,20 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   final Map<String, FoodPreference> _selectedPreferences = {};
 
   Future<void> _completeOnboarding() async {
-    print('🔄 Food preferences screen - Complete onboarding button pressed');
-    print('📊 Food preferences screen - Selected preferences count: ${_selectedPreferences.length}');
+    DebugLogger.info('🔄 Food preferences screen - Complete onboarding button pressed');
+    DebugLogger.info('📊 Food preferences screen - Selected preferences count: ${_selectedPreferences.length}');
 
     final controller = ref.read(onboardingControllerProvider.notifier);
-    print('🎮 Food preferences screen - Calling controller.saveFoodPreferences');
+    DebugLogger.info('🎮 Food preferences screen - Calling controller.saveFoodPreferences');
 
     final success = await controller.saveFoodPreferences(_selectedPreferences);
-    print('📋 Food preferences screen - Save result: $success');
+    DebugLogger.debug('📋 Food preferences screen - Save result: $success');
 
     if (success && mounted) {
-      print('🎯 Food preferences screen - Success! Navigating to /main');
+      DebugLogger.info('🎯 Food preferences screen - Success! Navigating to /main');
       context.go('/main');
     } else {
-      print('❌ Food preferences screen - Failed to save or not mounted. Success: $success, Mounted: $mounted');
+      DebugLogger.error('❌ Food preferences screen - Failed to save or not mounted. Success: $success, Mounted: $mounted');
       if (!success) {
         // Show error message to user
         ScaffoldMessenger.of(context).showSnackBar(

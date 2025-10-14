@@ -6,22 +6,51 @@ part of 'recipe_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$recipeRepositoryHash() => r'515e9380b34b10bc6fb5979b2308da2130f8266b';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [recipeRepository].
 @ProviderFor(recipeRepository)
-final recipeRepositoryProvider = AutoDisposeProvider<RecipeRepository>.internal(
-  recipeRepository,
-  name: r'recipeRepositoryProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$recipeRepositoryHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const recipeRepositoryProvider = RecipeRepositoryProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef RecipeRepositoryRef = AutoDisposeProviderRef<RecipeRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class RecipeRepositoryProvider
+    extends
+        $FunctionalProvider<
+          RecipeRepository,
+          RecipeRepository,
+          RecipeRepository
+        >
+    with $Provider<RecipeRepository> {
+  const RecipeRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'recipeRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$recipeRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<RecipeRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  RecipeRepository create(Ref ref) {
+    return recipeRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RecipeRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RecipeRepository>(value),
+    );
+  }
+}
+
+String _$recipeRepositoryHash() => r'2400543009bb2a2a0493a3719a9183d76e01aaf7';

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:drift/drift.dart';
 import '../domain/food_item.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
@@ -9,10 +10,12 @@ import '../../../shared/database/database_provider.dart';
 /// Repository for accessing food data from Supabase
 /// Replaces the hardcoded FoodDatabase with dynamic data
 class FoodRepository {
-  FoodRepository(this._supabase, this._database);
+  FoodRepository(this._supabase, this._database, {AppLogger? logger})
+      : _logger = logger ?? const NoopAppLogger();
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
+  final AppLogger _logger;
 
   /// Get all foods using get-foods Edge Function
   /// Use this for "Recommended Alternatives"
@@ -43,11 +46,11 @@ class FoodRepository {
       // Sync foods to local database for offline access
       await _syncFoodsToLocalDatabase(genericFoodsData);
 
-      AppLogger.instance.debug('Synced ${foods.length} foods to local database via Edge Function');
+      _logger.debug('Synced ${foods.length} foods to local database via Edge Function');
 
       return foods;
     } catch (e) {
-      AppLogger.instance.error('Error fetching generic foods from get-foods Edge Function',
+      _logger.error('Error fetching generic foods from get-foods Edge Function',
         context: 'FoodRepository',
         error: e,
       );
@@ -91,7 +94,7 @@ class FoodRepository {
       final List<dynamic> data = response as List<dynamic>;
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
-      AppLogger.instance.error('Error fetching primary preference foods from Supabase',
+      _logger.error('Error fetching primary preference foods from Supabase',
         context: 'FoodRepository',
         error: e,
       );
@@ -135,7 +138,7 @@ class FoodRepository {
       final List<dynamic> data = response as List<dynamic>;
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
-      AppLogger.instance.error('Error fetching additional preference foods from Supabase',
+      _logger.error('Error fetching additional preference foods from Supabase',
         context: 'FoodRepository',
         error: e,
       );
@@ -170,10 +173,10 @@ class FoodRepository {
         }
       }).toList();
 
-      AppLogger.instance.debug('Found ${filteredFoods.length} foods for category ${category.name}');
+      _logger.debug('Found ${filteredFoods.length} foods for category ${category.name}');
       return filteredFoods;
     } catch (e) {
-      AppLogger.instance.error('Error fetching foods by category',
+      _logger.error('Error fetching foods by category',
         context: 'FoodRepository',
         data: {'category': category.name},
         error: e,
@@ -194,7 +197,7 @@ class FoodRepository {
       if (foodEntry != null) {
         // Log sports drink data from local Drift database
         if (foodEntry.name?.toLowerCase().contains('sports drink') == true) {
-          AppLogger.instance.debug('Retrieved sports drink from Drift database',
+          _logger.debug('Retrieved sports drink from Drift database',
             data: {
               'id': foodEntry.id,
               'name': foodEntry.name,
@@ -219,13 +222,13 @@ class FoodRepository {
         return _mapUserFoodToFoodItem(userFoodEntry);
       }
 
-      AppLogger.instance.warning('Food not found in either foods or user_foods tables',
+      _logger.warning('Food not found in either foods or user_foods tables',
         context: 'FoodRepository',
         data: {'foodId': id},
       );
       return null;
     } catch (e) {
-      AppLogger.instance.error('Error fetching food by ID from local database',
+      _logger.error('Error fetching food by ID from local database',
         context: 'FoodRepository',
         data: {'foodId': id},
         error: e,
@@ -246,13 +249,13 @@ class FoodRepository {
         return _mapLocalFoodToFoodItem(foodEntry);
       }
 
-      AppLogger.instance.warning('Food not found in local database',
+      _logger.warning('Food not found in local database',
         context: 'FoodRepository',
         data: {'foodName': name},
       );
       return null;
     } catch (e) {
-      AppLogger.instance.error('Error fetching food by name from local database',
+      _logger.error('Error fetching food by name from local database',
         context: 'FoodRepository',
         data: {'foodName': name},
         error: e,
@@ -274,10 +277,10 @@ class FoodRepository {
                willingToTryNames.contains(food.name);
       }).toList();
 
-      AppLogger.instance.debug('Found ${preferredFoods.length} preferred foods for category ${category.name}');
+      _logger.debug('Found ${preferredFoods.length} preferred foods for category ${category.name}');
       return preferredFoods;
     } catch (e) {
-      AppLogger.instance.error('Error fetching preferred foods',
+      _logger.error('Error fetching preferred foods',
         context: 'FoodRepository',
         data: {'category': category.name},
         error: e,
@@ -300,10 +303,10 @@ class FoodRepository {
 
       final foods = foodEntries.map((entry) => _mapLocalFoodToFoodItem(entry)).toList();
 
-      AppLogger.instance.debug('Found ${foods.length} foods matching query: $query');
+      _logger.debug('Found ${foods.length} foods matching query: $query');
       return foods;
     } catch (e) {
-      AppLogger.instance.error('Error searching foods',
+      _logger.error('Error searching foods',
         context: 'FoodRepository',
         data: {'searchQuery': query},
         error: e,
@@ -572,6 +575,117 @@ class FoodRepository {
     );
   }
 
+  /// Get food by barcode - checks user_foods table
+  Future<FoodItem?> getFoodByBarcode(String barcode) async {
+    try {
+      final userFoodEntry = await (_database.select(_database.userFoodsTable)
+        ..where((f) => f.barcode.equals(barcode)))
+        .getSingleOrNull();
+
+      if (userFoodEntry != null) {
+        // Get categories for this user food
+        final categories = await getUserFoodCategories(userFoodEntry.id);
+
+        // Map to FoodItem with updated suitability based on categories
+        final carbs = userFoodEntry.carbsPerServing;
+        final protein = userFoodEntry.proteinPerServing;
+        final fat = userFoodEntry.fatPerServing;
+        final calories = userFoodEntry.caloriesPerServing;
+        final sodium = userFoodEntry.sodiumMg?.toDouble();
+        final fluids = userFoodEntry.fluidMlPerServing;
+
+        return FoodItem(
+          id: userFoodEntry.clientFoodId ?? '',
+          name: userFoodEntry.name,
+          imageAddress: userFoodEntry.imageAddress,
+          description: userFoodEntry.description ?? '',
+          instructions: null,
+          servingAmount: userFoodEntry.servingAmount ?? 1.0,
+          servingUnit: userFoodEntry.servingUnit,
+          servingUnitPlural: null,
+          servingQualifier: null,
+          // Use categories to determine suitability
+          beforeRunSuitable: categories.contains(1), // category_id = 1
+          duringRunSuitable: categories.contains(2), // category_id = 2
+          runPortable: true,
+          requiresPreparation: false,
+          aidStationAvailable: false,
+          maxServingsBefore: null,
+          maxServingsDuring: null,
+          carbsPerServing: carbs,
+          proteinPerServing: protein,
+          fatPerServing: fat,
+          caloriesPerServing: calories,
+          fluidMlPerServing: fluids,
+          sodiumMg: userFoodEntry.sodiumMg,
+          caffeineMg: null,
+          potassiumMg: null,
+          productTypeId: userFoodEntry.productTypeId,
+          nutrition: NutritionInfo(
+            calories: (calories?.round() ?? 0).toDouble(),
+            carbs: (carbs?.round() ?? 0).toDouble(),
+            protein: (protein?.round() ?? 0).toDouble(),
+            fat: (fat?.round() ?? 0).toDouble(),
+            sodium: (sodium?.round() ?? 0).toDouble(),
+            fiber: 0.0,
+            sugar: 0.0,
+            fluids: (fluids?.round() ?? 0).toDouble(),
+          ),
+          tags: _generateTagsFromNutrition(carbs ?? 0, protein ?? 0, fat ?? 0),
+          displayName: userFoodEntry.displayName,
+          displayNamePlural: userFoodEntry.displayNamePlural,
+          displayOverride: null,
+          categories: [],
+          toExcludeFromSolver: userFoodEntry.toExcludeFromSolver == true,
+        );
+      }
+      return null;
+    } catch (e) {
+      _logger.error('Error fetching food by barcode',
+        context: 'FoodRepository',
+        data: {'barcode': barcode},
+        error: e,
+      );
+      return null;
+    }
+  }
+
+  /// Get categories for a regular food
+  Future<List<int>> getFoodCategories(String foodId) async {
+    try {
+      final categories = await (_database.select(_database.foodCategoriesTable)
+        ..where((fc) => fc.foodId.equals(foodId)))
+        .get();
+
+      return categories.map((c) => c.categoryId).toList();
+    } catch (e) {
+      _logger.error('Error fetching food categories',
+        context: 'FoodRepository',
+        data: {'foodId': foodId},
+        error: e,
+      );
+      return [];
+    }
+  }
+
+  /// Get categories for a user food
+  Future<List<int>> getUserFoodCategories(String userFoodId) async {
+    try {
+      final categories = await (_database.select(_database.userFoodCategoriesTable)
+        ..where((ufc) => ufc.userFoodId.equals(userFoodId)))
+        .get();
+
+      return categories.map((c) => c.categoryId).toList();
+    } catch (e) {
+      _logger.error('Error fetching user food categories',
+        context: 'FoodRepository',
+        data: {'userFoodId': userFoodId},
+        error: e,
+      );
+      return [];
+    }
+  }
+
   /// Generate tags based on nutritional profile
   List<String> _generateTagsFromNutrition(double carbs, double protein, double fat) {
     final tags = <String>[];
@@ -595,7 +709,7 @@ class FoodRepository {
       // Log each food being synced for debugging
       for (final json in supabaseFoodsData) {
         if ((json['name'] as String).toLowerCase().contains('sports drink')) {
-          AppLogger.instance.debug('Syncing sports drink data from edge function',
+          _logger.debug('Syncing sports drink data from edge function',
             data: {
               'id': json['id'],
               'name': json['name'],
@@ -652,10 +766,10 @@ class FoodRepository {
         }
       });
 
-      AppLogger.instance.debug('Successfully synced ${foodsToInsert.length} foods to local database');
+      _logger.debug('Successfully synced ${foodsToInsert.length} foods to local database');
 
     } catch (e) {
-      AppLogger.instance.error('Error syncing foods to local database',
+      _logger.error('Error syncing foods to local database',
         context: 'FoodRepository',
         error: e,
       );
@@ -667,7 +781,9 @@ class FoodRepository {
 /// Riverpod provider for FoodRepository
 final foodRepositoryProvider = Provider<FoodRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);
-  return FoodRepository(Supabase.instance.client, database);
+  final logger = ref.watch(appLoggerProvider);
+  final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
+  return FoodRepository(supabase, database, logger: logger);
 });
 
 /// Provider for all foods (cached)

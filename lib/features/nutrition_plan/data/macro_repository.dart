@@ -1,11 +1,11 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../domain/macro_targets.dart';
 import 'offline_macro_calculator.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'macro_repository.g.dart';
 
@@ -252,24 +252,24 @@ class MacroRepositoryImpl implements MacroRepository {
 
     final result = await query.getSingleOrNull();
     if (result == null) {
-      print('DEBUG: No cached macro targets found');
+      DebugLogger.debug('DEBUG: No cached macro targets found');
       return null;
     }
 
-    print('DEBUG: Found cached macro targets:');
-    print('  Pre-run carbs: ${result.preRunCarbsG}g');
-    print('  During-run carbs: ${result.duringCarbTotalG}g');  
-    print('  Post-run carbs: ${result.postRunCarbsG}g');
-    print('  Total carbs should be: ${result.preRunCarbsG + result.duringCarbTotalG + result.postRunCarbsG}g');
-    print('  Pre-run sodium: ${result.preRunSodiumMg}mg');
-    print('  During-run sodium: ${result.duringSodiumTotalMg}mg');
-    print('  Post-run sodium: ${result.postRunSodiumMg}mg');
-    print('  Total sodium should be: ${result.preRunSodiumMg + result.duringSodiumTotalMg + result.postRunSodiumMg}mg');
-    print('  Pre-run fluids: ${result.preRunFluidsMl}ml');
-    print('  During-run fluids: ${result.duringFluidTotalMl}ml');
-    print('  Post-run fluids: ${result.postRunFluidsMl}ml');
-    print('  Total fluids should be: ${result.preRunFluidsMl + result.duringFluidTotalMl + result.postRunFluidsMl}ml');
-    print('  isUserModified: ${result.isUserModified}');
+    DebugLogger.debug('DEBUG: Found cached macro targets:');
+    DebugLogger.debug('  Pre-run carbs: ${result.preRunCarbsG}g');
+    DebugLogger.debug('  During-run carbs: ${result.duringCarbTotalG}g');
+    DebugLogger.debug('  Post-run carbs: ${result.postRunCarbsG}g');
+    DebugLogger.debug('  Total carbs should be: ${result.preRunCarbsG + result.duringCarbTotalG + result.postRunCarbsG}g');
+    DebugLogger.debug('  Pre-run sodium: ${result.preRunSodiumMg}mg');
+    DebugLogger.debug('  During-run sodium: ${result.duringSodiumTotalMg}mg');
+    DebugLogger.debug('  Post-run sodium: ${result.postRunSodiumMg}mg');
+    DebugLogger.debug('  Total sodium should be: ${result.preRunSodiumMg + result.duringSodiumTotalMg + result.postRunSodiumMg}mg');
+    DebugLogger.debug('  Pre-run fluids: ${result.preRunFluidsMl}ml');
+    DebugLogger.debug('  During-run fluids: ${result.duringFluidTotalMl}ml');
+    DebugLogger.debug('  Post-run fluids: ${result.postRunFluidsMl}ml');
+    DebugLogger.debug('  Total fluids should be: ${result.preRunFluidsMl + result.duringFluidTotalMl + result.postRunFluidsMl}ml');
+    DebugLogger.debug('  isUserModified: ${result.isUserModified}');
 
     return _mapDatabaseRowToMacroTargets(result);
   }
@@ -451,12 +451,12 @@ class MacroRepositoryImpl implements MacroRepository {
 
     final result = await query.getSingleOrNull();
     if (result == null) {
-      print('DEBUG: No original macro targets found');
+      DebugLogger.debug('DEBUG: No original macro targets found');
       return null;
     }
 
-    print('DEBUG: Found original macro targets with ID: ${result.id}');
-    print('  Original pre-run carbs: ${result.preRunCarbsG}g');
+    DebugLogger.debug('DEBUG: Found original macro targets with ID: ${result.id}');
+    DebugLogger.debug('  Original pre-run carbs: ${result.preRunCarbsG}g');
     
     return _mapDatabaseRowToMacroTargets(result);
   }

@@ -1,11 +1,12 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../nutrition_plan/domain/food.dart';
 import '../domain/barcode_result.dart';
 import 'supabase_barcode_service.dart';
 import 'food_mapping_service.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/logging_service.dart';
 
 part 'barcode_scanner_service.g.dart';
 
@@ -15,23 +16,34 @@ class BarcodeScannerService {
   final SupabaseBarcodeService _barcodeService;
   final FoodMappingService _mappingService;
   final AppDatabase _database;
+  final AppLogger _logger;
 
   BarcodeScannerService({
     required SupabaseBarcodeService barcodeService,
     required FoodMappingService mappingService,
     required AppDatabase database,
+    required AppLogger logger,
   })  : _barcodeService = barcodeService,
         _mappingService = mappingService,
-        _database = database;
+        _database = database,
+        _logger = logger;
 
   /// Scan a barcode and return a Food model if successful
   /// Returns null if the product is not found or there's an error
   Future<BarcodeScanResult> scanBarcode(String barcode) async {
-    print('BarcodeScannerService.scanBarcode called with: $barcode');
+    _logger.debug(
+      'Scanning barcode',
+      context: 'BARCODE_SCAN',
+      data: {'rawBarcode': barcode},
+    );
 
     // Validate barcode format
     if (!_barcodeService.isValidBarcodeFormat(barcode)) {
-      print('Invalid barcode format: $barcode');
+      _logger.warning(
+        'Invalid barcode format',
+        context: 'BARCODE_SCAN',
+        data: {'rawBarcode': barcode},
+      );
       return BarcodeScanResult.invalidFormat(
         barcode: barcode,
         message: 'Invalid barcode format. Please try scanning again.',
@@ -40,14 +52,27 @@ class BarcodeScannerService {
 
     // Clean the barcode
     final cleanBarcode = _barcodeService.cleanBarcode(barcode);
-    print('Cleaned barcode: $cleanBarcode');
+    _logger.debug(
+      'Cleaned barcode',
+      context: 'BARCODE_SCAN',
+      data: {'cleanBarcode': cleanBarcode},
+    );
 
     // Lookup the barcode
-    print('About to call _barcodeService.lookupBarcode');
+    _logger.debug('Looking up barcode', context: 'BARCODE_SCAN');
     final result = await _barcodeService.lookupBarcode(cleanBarcode);
-    print('lookupBarcode returned: $result');
+    _logger.debug(
+      'Barcode lookup completed',
+      context: 'BARCODE_SCAN',
+      data: {'resultType': result?.runtimeType.toString()},
+    );
 
     if (result == null) {
+      _logger.error(
+        'Barcode lookup returned null',
+        context: 'BARCODE_SCAN',
+        data: {'cleanBarcode': cleanBarcode},
+      );
       return BarcodeScanResult.error(
         barcode: cleanBarcode,
         message: 'Unable to connect to nutrition database.',
@@ -58,7 +83,7 @@ class BarcodeScannerService {
     switch (result) {
       case BarcodeResultSuccess():
         // Map to Food domain model
-        final food = _mappingService.mapToFood(result.product);
+        final food = await _mappingService.mapToFood(result.product);
 
         // Cache the food to the database so it becomes searchable
         await cacheScannedFood(food);
@@ -69,16 +94,16 @@ class BarcodeScannerService {
           apiProduct: result.product,
         );
 
-      case BarcodeResultNotFound():
+      case BarcodeResultNotFound(:final message):
         return BarcodeScanResult.notFound(
           barcode: cleanBarcode,
-          message: result.message ?? 'Product not found in nutrition databases.',
+          message: message,
         );
 
-      case BarcodeResultError():
+      case BarcodeResultError(:final message):
         return BarcodeScanResult.error(
           barcode: cleanBarcode,
-          message: result.message ?? 'An error occurred during lookup.',
+          message: message,
         );
     }
   }
@@ -91,7 +116,11 @@ class BarcodeScannerService {
   /// Cache a scanned food to the local database so it becomes searchable
   Future<void> cacheScannedFood(Food food) async {
     try {
-      print('Caching scanned food to database: ${food.name}');
+      _logger.debug(
+        'Caching scanned food',
+        context: 'BARCODE_SCAN',
+        data: {'foodId': food.id, 'foodName': food.name},
+      );
 
       // Convert Food domain model to database format
       final foodData = _convertFoodToDatabaseFormat(food);
@@ -99,9 +128,18 @@ class BarcodeScannerService {
       // Cache to database
       await _database.cacheFoods([foodData]);
 
-      print('Successfully cached food: ${food.id}');
+      _logger.info(
+        'Cached scanned food',
+        context: 'BARCODE_SCAN',
+        data: {'foodId': food.id},
+      );
     } catch (e) {
-      print('Error caching scanned food: $e');
+      _logger.error(
+        'Error caching scanned food',
+        context: 'BARCODE_SCAN',
+        error: e,
+        data: {'foodId': food.id},
+      );
       // Don't throw - caching failure shouldn't break the scanning flow
     }
   }
@@ -216,6 +254,7 @@ sealed class BarcodeScanResult {
 
 /// Successful barcode scan result
 final class BarcodeScanResultSuccess extends BarcodeScanResult {
+  @override
   final Food food;
   final dynamic apiProduct; // ApiFoodProduct
 
@@ -228,6 +267,7 @@ final class BarcodeScanResultSuccess extends BarcodeScanResult {
 
 /// Product not found result
 final class BarcodeScanResultNotFound extends BarcodeScanResult {
+  @override
   final String message;
 
   const BarcodeScanResultNotFound({
@@ -238,6 +278,7 @@ final class BarcodeScanResultNotFound extends BarcodeScanResult {
 
 /// Error during scan result
 final class BarcodeScanResultError extends BarcodeScanResult {
+  @override
   final String message;
 
   const BarcodeScanResultError({
@@ -248,6 +289,7 @@ final class BarcodeScanResultError extends BarcodeScanResult {
 
 /// Invalid barcode format result
 final class BarcodeScanResultInvalidFormat extends BarcodeScanResult {
+  @override
   final String message;
 
   const BarcodeScanResultInvalidFormat({
@@ -258,9 +300,11 @@ final class BarcodeScanResultInvalidFormat extends BarcodeScanResult {
 
 @riverpod
 BarcodeScannerService barcodeScannerService(Ref ref) {
+  final externalDeps = ref.read(appExternalDepsProvider);
   return BarcodeScannerService(
     barcodeService: ref.watch(supabaseBarcodeServiceProvider),
     mappingService: ref.watch(foodMappingServiceProvider),
     database: ref.read(databaseProvider).requireValue,
+    logger: externalDeps.logger,
   );
 }

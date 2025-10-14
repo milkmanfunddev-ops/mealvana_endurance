@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../theme/app_theme.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Food icon component for displaying food images from online URLs
 /// Used in plan items and food selection
@@ -26,7 +27,7 @@ class FoodIcon extends StatelessWidget {
     
     // Debug logging
     if (imageUrl == null || imageUrl!.isEmpty) {
-      print('   ⚠️  No image URL provided, showing fallback icon');
+      DebugLogger.warning('   ⚠️  No image URL provided, showing fallback icon');
     }
     
     return Container(
@@ -75,9 +76,9 @@ class FoodIcon extends StatelessWidget {
                   );
                 },
                 errorBuilder: (context, error, stackTrace) {
-                  print('❌ FoodIcon: Failed to load image: $imageUrl');
-                  print('   Error: $error');
-                  print('   StackTrace: $stackTrace');
+                  DebugLogger.error('❌ FoodIcon: Failed to load image: $imageUrl');
+                  DebugLogger.error('   Error: $error');
+                  DebugLogger.debug('   StackTrace: $stackTrace');
                   // Fallback icon if image fails to load
                   return Icon(
                     Icons.restaurant,

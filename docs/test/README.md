@@ -1,729 +1,341 @@
-# Mealvana Endurance Testing Strategy
+# Mealvana Endurance Testing Handbook
 
-## Overview
+This guide explains how we structure, write, and run tests across the Mealvana Endurance codebase. It reflects the decoupling strategy, Riverpod 3 upgrade, Supabase edge-function priorities, and the roadmap outlined in `docs/test/roadmap.md`.
 
-Mealvana Endurance implements a **focused, speed-optimized testing strategy** designed for rapid development cycles with aggressive implementation timelines. Our approach prioritizes **critical business logic validation** over comprehensive test coverage, using **Andrea Bizzotto's AsyncNotifier testing patterns** for fast integration-style tests.
+---
 
-## Testing Philosophy
+## 1. Philosophy & Priorities
 
-### 🎯 **Development Speed Priority**
-- **Integration tests over unit tests** - Focus on end-to-end critical paths
-- **Fast execution** - No slow widget pumping or app loading
-- **Real dependencies** - In-memory databases and live API calls for authentic testing
-- **Minimal maintenance overhead** - Avoid brittle UI tests that break with design changes
+We pursue risk-based, high-impact coverage:
 
-### 🚨 **Critical-Path Focus**
-We test the **5% of functionality that causes 95% of user pain** when broken:
-1. **Schema Migration Safety** - Prevent app-breaking database changes
-2. **Food Suitability Rules** - Ensure user safety (no oatmeal during runs)
-3. **Macro Target Validation** - Core value proposition accuracy
-4. **Device Authentication Flow** - Privacy compliance and data integrity
-5. **Edge Function Integration** - Revenue-critical AI nutrition generation
+1. **Edge functions** – ensure Supabase functions (plan generation, etc.) stay correct; cloud dev project is the primary target, with local parity via Supabase CLI.
+2. **Drift schema migrations** – guarantee v1 → v2 (and future) migrations preserve data.
+3. **Nutrition safety & macro accuracy** – controllers/services must enforce food suitability, macro tolerances, hydration requirements.
+4. **Authentication & onboarding** – device ID, profile flows, and startup logic.
+5. **Content delivery** – CMS data should gracefully fall back to defaults when offline.
+6. **Critical UI flows** – widget tests only for screens that tie directly to the above.
 
-### ⚡ **Andrea Bizzotto's Patterns**
-Based on `/docs/test/async_notifier_test_andrea.md`, we use:
-- **ProviderContainer** with overrides for dependency injection
-- **Listener<AsyncValue<T>>** pattern for state verification
-- **AsyncValue.guard()** testing for error handling
-- **Real dependencies** over heavy mocking
+Every test must be fast, deterministic, and emit a structured console log (we’ll reassess once coverage stabilizes).
 
-## Core Testing Categories
+---
 
-### 1. Schema Migration Tests 🛡️
-**Purpose**: Prevent app crashes during database schema updates
-
-**Pattern**:
-```dart
-testWidgets('v1 to v2 migration preserves user data', (tester) async {
-  // Arrange: Set up v1 database with user data
-  final v1Database = await AppDatabase.testInstance(version: 1);
-  await v1Database.userProfiles.insertOne(testUserProfile);
-  
-  // Act: Trigger migration to v2
-  final v2Database = await AppDatabase.migrateFrom(v1Database);
-  
-  // Assert: Verify data preservation and schema correctness
-  final migratedUser = await v2Database.userProfiles.getByDeviceId('test-device');
-  expect(migratedUser, isNotNull);
-  expect(migratedUser?.age, equals(testUserProfile.age));
-  
-  // Verify new v2 features work
-  await v2Database.foodPreferences.insert(testPreference);
-  expect(await v2Database.foodPreferences.count(), equals(1));
-});
-```
-
-**Test Cases**:
-- v1→v2 migration with existing user data
-- New table creation (food_preferences, macro_targets)
-- Foreign key relationships work correctly
-- Migration rollback on failure
-
-### 2. Food Suitability Validation Tests 🏃‍♂️
-**Purpose**: Ensure algorithm respects phase-specific food constraints for user safety
-
-**Pattern**:
-```dart
-testWidgets('food phase constraints are enforced', (tester) async {
-  final mockRepository = MockNutritionRepository();
-  final container = ProviderContainer(
-    overrides: [
-      nutritionRepositoryProvider.overrideWithValue(mockRepository),
-    ],
-  );
-  
-  final controller = container.read(nutritionPlanControllerProvider.notifier);
-  
-  // Test: Oatmeal should NEVER appear during runs
-  final planRequest = NutritionPlanRequest(
-    likedFoods: ['oatmeal', 'gels', 'sports_drink'],
-    distance: 10.0, // Long run requiring during-run fueling
-    pace: 8.0,
-  );
-  
-  await controller.generatePlan(planRequest);
-  
-  final state = container.read(nutritionPlanControllerProvider);
-  final plan = state.requireValue;
-  
-  // Critical assertion: No inappropriate foods during run
-  final duringRunFoods = plan.duringRun.map((item) => item.foodName);
-  expect(duringRunFoods, isNot(contains('oatmeal')));
-  expect(duringRunFoods, isNot(contains('banana')));
-  expect(duringRunFoods, contains('gels')); // But portable foods should be there
-});
-```
-
-**Test Cases**:
-- Pre-run only foods (oatmeal, banana) never appear during-run
-- During-run foods are portable (gels, chews, sports drinks)
-- Post-run foods include recovery options
-- Multi-category foods appear in appropriate phases
-
-### 3. Macro Target Validation Tests 🎯
-**Purpose**: Verify nutrition plans meet user requirements within acceptable tolerance
-
-**Pattern**:
-```dart
-testWidgets('adjusted macros are preserved and recommendations align', (tester) async {
-  final container = ProviderContainer();
-  final controller = container.read(nutritionPlanControllerProvider.notifier);
-  
-  // Test with user-adjusted macro targets
-  final adjustedTargets = MacroTargets(
-    preRunCarbs: 75.0,     // User adjusted from 65.0
-    duringRunCarbs: 45.0,  // User adjusted from 35.0
-    postRunCarbs: 80.0,    // User adjusted from 70.0
-  );
-  
-  final planRequest = NutritionPlanRequest(
-    macroTargets: adjustedTargets,
-    likedFoods: ['oatmeal', 'gels', 'sports_drink'],
-  );
-  
-  await controller.generatePlan(planRequest);
-  
-  final plan = container.read(nutritionPlanControllerProvider).requireValue;
-  
-  // Verify macro targets are preserved in response
-  expect(plan.macroTargets.preRunCarbs, equals(75.0));
-  expect(plan.macroTargets.duringRunCarbs, equals(45.0));
-  expect(plan.macroTargets.postRunCarbs, equals(80.0));
-  
-  // Calculate actual macros from food recommendations
-  final actualPreRunCarbs = plan.beforeRun.fold(0.0, 
-    (sum, item) => sum + (item.servings * item.carbsPerServing));
-  
-  // Allow ±10g tolerance for practical food combinations
-  expect(actualPreRunCarbs, closeTo(75.0, 10.0));
-});
-```
-
-**Test Cases**:
-- User-adjusted macros are preserved in responses
-- Food recommendations align with macro targets (±10g tolerance)
-- Carbohydrate, sodium, and fluid targets are met
-- Duration-based macro adjustments work correctly
-
-### 4. Device Authentication Flow Tests 🔐
-**Purpose**: Ensure privacy compliance and data integrity
-
-**Pattern**:
-```dart
-testWidgets('device ID persistence and user data association', (tester) async {
-  final container = ProviderContainer();
-  final authService = container.read(authServiceProvider);
-  
-  // Test device ID consistency
-  final deviceId1 = await authService.getDeviceId();
-  final deviceId2 = await authService.getDeviceId();
-  expect(deviceId1, equals(deviceId2));
-  expect(deviceId1, isNotEmpty);
-  
-  // Test user data association
-  final userId = await authService.getCurrentUserId();
-  expect(userId, equals(deviceId1));
-  
-  // Test data isolation
-  final userRepository = container.read(userRepositoryProvider);
-  await userRepository.createProfile(testProfile.copyWith(deviceId: deviceId1));
-  
-  final retrievedProfile = await userRepository.getCurrentProfile();
-  expect(retrievedProfile?.deviceId, equals(deviceId1));
-});
-```
-
-**Test Cases**:
-- Device ID generation and persistence
-- User data association with device ID
-- Data isolation between devices
-- Profile creation and retrieval
-
-### 5. Edge Function Integration Tests 🌐
-**Purpose**: Validate AI nutrition plan generation and error handling
-
-**Pattern**:
-```dart
-testWidgets('Supabase edge function integration', (tester) async {
-  late SupabaseClient supabase;
-  
-  setUpAll(() {
-    supabase = SupabaseClient(testSupabaseUrl, testSupabaseKey);
-  });
-  
-  testWidgets('generate-ai-nutrition-plan edge function', (tester) async {
-    final requestData = {
-      'device_id': 'test-device-123',
-      'age': 30,
-      'weight_kg': 75.0,
-      'macro_targets': {
-        'pre_run': {'carbs_g': 75.0, 'protein_g': 25.0},
-        'during_run': {'carbs_total_g': 45.0},
-        'post_run': {'carbs_g': 80.0, 'protein_g': 30.0},
-      },
-      'liked_foods': ['oatmeal', 'gels', 'sports_drink'],
-    };
-    
-    final response = await supabase.functions.invoke(
-      'generate-ai-nutrition-plan',
-      body: requestData,
-    );
-    
-    expect(response.status, lessThan(400));
-    
-    final responseData = response.data as Map<String, dynamic>;
-    expect(responseData, containsPair('success', true));
-    expect(responseData, contains('plan'));
-    expect(responseData, contains('macro_targets'));
-    
-    // Verify adjusted macros are preserved
-    final returnedMacros = responseData['macro_targets'];
-    expect(returnedMacros['pre_run']['carbs_g'], equals(75.0));
-  });
-  
-  testWidgets('edge function error handling and fallback', (tester) async {
-    // Test with invalid data to trigger fallback
-    final invalidRequest = {'invalid': 'data'};
-    
-    final response = await supabase.functions.invoke(
-      'generate-ai-nutrition-plan',
-      body: invalidRequest,
-    );
-    
-    if (response.status >= 400) {
-      final responseData = response.data as Map<String, dynamic>?;
-      expect(responseData?['fallback_to_algorithm'], equals(true));
-    }
-  });
-});
-```
-
-**Test Cases**:
-- Successful AI nutrition plan generation
-- Macro target preservation in requests/responses
-- Error handling and graceful degradation
-- Backwards compatibility with old request formats
-
-### 6. Content Management System Tests 🎛️
-**Purpose**: Validate backend-controlled content and algorithm parameters
-
-**Pattern**:
-```dart
-testWidgets('content management fallback and updates', (tester) async {
-  final container = ProviderContainer();
-  final contentService = container.read(contentServiceProvider);
-  
-  // Test offline fallback to local defaults
-  await contentService.clearCache();
-  final offlineText = contentService.getValue(
-    ContentKeys.welcomeTitle,
-    defaultValue: 'Default Welcome',
-  );
-  expect(offlineText, equals('Default Welcome'));
-  
-  // Test backend content loading
-  await contentService.refreshFromBackend();
-  final backendText = contentService.getValue(ContentKeys.welcomeTitle);
-  expect(backendText, isNotEmpty);
-  
-  // Test algorithm parameter updates
-  await contentService.updateAlgorithmParameter('carb_multiplier', 1.2);
-  final calculator = container.read(nutritionCalculatorProvider);
-  
-  // Verify updated parameter is used in calculations
-  final carbNeeds = calculator.calculateCarbNeeds(75.0, 1.0);
-  expect(carbNeeds, greaterThan(75.0)); // Should be adjusted by multiplier
-});
-```
-
-## Testing Implementation Patterns
-
-### AsyncNotifier Controller Testing
-Following Andrea Bizzotto's patterns from `/docs/test/async_notifier_test_andrea.md`:
-
-```dart
-import 'package:mocktail/mocktail.dart';
-
-class MockRepository extends Mock implements Repository {}
-
-class Listener<T> extends Mock {
-  void call(T? previous, T next);
-}
-
-void main() {
-  setUpAll(() {
-    registerFallbackValue(const AsyncLoading<MyState>());
-  });
-  
-  ProviderContainer makeContainer(MockRepository repository) {
-    final container = ProviderContainer(
-      overrides: [
-        repositoryProvider.overrideWithValue(repository),
-      ],
-    );
-    addTearDown(container.dispose);
-    return container;
-  }
-  
-  testWidgets('controller initial state', (tester) async {
-    final repository = MockRepository();
-    final container = makeContainer(repository);
-    final listener = Listener<AsyncValue<MyState>>();
-    
-    container.listen(
-      myControllerProvider,
-      listener,
-      fireImmediately: true,
-    );
-    
-    verify(() => listener(null, const AsyncData<MyState>(MyState.initial)));
-    verifyNoMoreInteractions(listener);
-  });
-  
-  testWidgets('controller async action success', (tester) async {
-    final repository = MockRepository();
-    when(() => repository.performAction()).thenAnswer((_) => Future.value());
-    
-    final container = makeContainer(repository);
-    final listener = Listener<AsyncValue<MyState>>();
-    
-    container.listen(myControllerProvider, listener, fireImmediately: true);
-    
-    final controller = container.read(myControllerProvider.notifier);
-    await controller.performAction();
-    
-    verifyInOrder([
-      () => listener(null, const AsyncData(MyState.initial)),
-      () => listener(any(that: isA<AsyncData>()), any(that: isA<AsyncLoading>())),
-      () => listener(any(that: isA<AsyncLoading>()), any(that: isA<AsyncData>())),
-    ]);
-  });
-}
-```
-
-### Database Testing with Drift
-```dart
-testWidgets('database operations', (tester) async {
-  final database = AppDatabase.testInstance(); // In-memory database
-  addTearDown(() => database.close());
-  
-  // Test data insertion
-  await database.userProfiles.insertOne(testProfile);
-  
-  // Test data retrieval
-  final profiles = await database.userProfiles.select().get();
-  expect(profiles, hasLength(1));
-  expect(profiles.first.age, equals(testProfile.age));
-  
-  // Test relationships
-  await database.foodPreferences.insertOne(
-    testPreference.copyWith(userId: profiles.first.id),
-  );
-  
-  final preferences = await database.foodPreferences
-      .select()
-      .where((p) => p.userId.equals(profiles.first.id))
-      .get();
-  expect(preferences, hasLength(1));
-});
-```
-
-## Test Organization Structure
+## 2. Directory Layout
 
 ```
 test/
-├── integration/                    # End-to-end critical path tests
-│   ├── schema_migration_test.dart  # Database migration safety
-│   ├── food_suitability_test.dart  # Algorithm phase constraints
-│   ├── macro_validation_test.dart  # Nutrition plan accuracy
-│   └── edge_function_test.dart     # Supabase function integration
-├── unit/                          # Focused business logic tests
-│   ├── auth/                      # Device authentication tests
-│   ├── content/                   # Content management tests
-│   └── nutrition_plan/            # Core algorithm tests
-├── helpers/                       # Test utilities and mocks
-│   ├── test_data.dart            # Reusable test fixtures
-│   ├── mock_providers.dart       # ProviderContainer overrides
-│   └── test_database.dart        # Database testing utilities
-└── generated_migrations/          # Auto-generated migration tests
-    └── schema_v*.dart             # Drift-generated schema tests
+  features/
+    <feature>/
+      presentation/   # Controllers + widget tests
+      application/    # Services/AsyncNotifiers
+      domain/         # Pure models/value objects
+      data/           # Repositories/DAOs
+  integration/
+    drift/            # Schema migration tests
+    edge/             # Supabase edge integration tests (tagged)
+    flows/            # Cross-feature journeys (startup, onboarding → plan)
+  helpers/
+    fakes/            # Reusable test doubles (FakeSupabaseClient, RecordingAuthService, etc.)
+    fixtures/         # JSON/Map fixtures for plans, profiles, schema data
+    utils/            # Console logging helpers, provider utilities
+  local_edge_functions/
+    functions/        # Node/Vitest mirror of Supabase edge functions
+    tests/            # Vitest suites + fixtures for edge logic
 ```
 
-## Test Execution Strategy
-
-### Local Development
-```bash
-# Run focused integration tests (fastest feedback)
-flutter test test/integration/
-
-# Run specific critical test
-flutter test test/integration/schema_migration_test.dart
-
-# Generate migration tests after schema changes
-dart run drift_dev schema generate drift_schemas/ test/generated_migrations/
-
-# Full test suite (use sparingly)
-flutter test
-```
-
-### CI/CD Pipeline
-```yaml
-# Codemagic configuration
-test_script:
-  - flutter test test/integration/ # Critical path only
-  - flutter test test/unit/auth/   # Authentication
-  - flutter test test/unit/content/ # Content management
-```
-
-## Test Data Management
-
-### Fixtures and Test Data
-```dart
-// test/helpers/test_data.dart
-class TestData {
-  static const testUserProfile = UserProfile(
-    deviceId: 'test-device-123',
-    age: 30,
-    gender: Gender.male,
-    weightKg: 75.0,
-    heightCm: 180.0,
-  );
-  
-  static const testMacroTargets = MacroTargets(
-    preRunCarbs: 75.0,
-    duringRunCarbs: 45.0,
-    postRunCarbs: 80.0,
-    preRunWater: 600.0,
-    duringRunWater: 750.0,
-    postRunWater: 700.0,
-  );
-  
-  static final testFoodPreferences = [
-    FoodPreference(foodName: 'oatmeal', preference: 'like'),
-    FoodPreference(foodName: 'gels', preference: 'like'),
-    FoodPreference(foodName: 'coffee', preference: 'dislike'),
-  ];
-}
-```
-
-### Environment Configuration
-```dart
-// test/helpers/test_config.dart
-class TestConfig {
-  static const supabaseUrl = String.fromEnvironment('TEST_SUPABASE_URL',
-    defaultValue: 'https://test-project.supabase.co');
-  static const supabaseKey = String.fromEnvironment('TEST_SUPABASE_ANON_KEY',
-    defaultValue: 'test-anon-key');
-}
-```
-
-## Testing Anti-Patterns to Avoid
-
-### ❌ **Don't Do This**
-```dart
-// Slow widget tests with pumping
-testWidgets('nutrition plan screen shows loading', (tester) async {
-  await tester.pumpWidget(MyApp());
-  await tester.pumpAndSettle();
-  expect(find.byType(CircularProgressIndicator), findsOneWidget);
-});
-
-// Over-mocking with complex setups
-class MockEverything extends Mock implements Repository {}
-class MockEverythingElse extends Mock implements Service {}
-class MockEvenMore extends Mock implements Provider {}
-```
-
-### ✅ **Do This Instead**
-```dart
-// Fast controller tests with real dependencies
-testWidgets('nutrition plan controller generates plan', (tester) async {
-  final container = ProviderContainer(
-    overrides: [
-      databaseProvider.overrideWithValue(AppDatabase.testInstance()),
-    ],
-  );
-  
-  final controller = container.read(nutritionPlanControllerProvider.notifier);
-  await controller.generatePlan(testRequest);
-  
-  final state = container.read(nutritionPlanControllerProvider);
-  expect(state.hasValue, isTrue);
-});
-```
-
-## Success Metrics
-
-### Test Quality Indicators
-- **Fast execution**: Full critical test suite runs in <30 seconds
-- **High signal-to-noise**: Tests catch real bugs, not implementation changes
-- **Maintainable**: Tests survive UI redesigns and refactors
-- **Developer confidence**: Team deploys without manual testing
-
-### Coverage Philosophy
-We measure **risk coverage**, not code coverage:
-- ✅ **Schema migration safety**: 100% coverage (app-breaking)
-- ✅ **Food safety rules**: 100% coverage (user safety)
-- ✅ **Macro accuracy**: 95% coverage (core value prop)
-- ✅ **Authentication flow**: 90% coverage (privacy compliance)
-- ⚠️ **UI components**: 20% coverage (low risk, high maintenance)
-
-## Migration from Current State
-
-### Existing Test Analysis
-Based on current test files:
-
-**✅ Well-Tested Areas:**
-- Sentry error tracking (`test/sentry/`)
-- Basic database operations (`test/database/app_database_test.dart`)
-- Edge function integration (`test/nutrition_plan/generate_ai_nutrition_plan_integration_test.dart`)
-
-**🔄 Needs Enhancement:**
-- Algorithm testing (documented algorithm changed significantly)
-- Riverpod controller testing (no AsyncNotifier tests found)
-- Schema migration testing (critical for v1→v2 migration)
-
-**⚡ Quick Wins:**
-1. Add schema migration tests for v1→v2 transition
-2. Implement food suitability validation tests
-3. Enhance macro target validation tests
-4. Add controller tests using Andrea's patterns
-
-## Resources
-
-### Documentation References
-- **[Andrea's AsyncNotifier Testing Guide](async_notifier_test_andrea.md)** - Complete AsyncNotifier testing patterns
-- **[Current Algorithm Report](../nutrition_plan/algorithm_report.md)** - TypeScript vs Python algorithm validation
-- **[Database Schema Documentation](../database/README.md)** - Complete database structure
-- **[FOA Architecture Guide](../technical/foa-architecture.md)** - Mandatory controller patterns
-
-### External Resources
-- [Riverpod Testing Documentation](https://riverpod.dev/docs/essentials/testing)
-- [Drift Testing Guide](https://drift.simonbinder.eu/docs/testing/)
-- [Mocktail Package Documentation](https://pub.dev/packages/mocktail)
-- [Flutter Testing Documentation](https://docs.flutter.dev/testing)
-
-### Test Development Workflow
-1. **Identify critical path** - What functionality breaks the app/business?
-2. **Write integration test first** - Test the complete user journey
-3. **Use real dependencies** - In-memory database, live API calls
-4. **Follow Andrea's patterns** - ProviderContainer with AsyncNotifier
-5. **Maintain speed** - Keep test execution under 30 seconds
-6. **Focus on risk** - Test what matters for users and business
+Create directories on demand. Keep helpers DRY so new suites only wire overrides and assertions.
 
 ---
 
-## 🚀 Current Implementation Status
+## 3. Prerequisites & Environment Setup
 
-### ✅ **Phase 1: Test Infrastructure - COMPLETE**
-*Completed: January 2024*
+### 3.1 Supabase CLI & Docker
 
-All test infrastructure has been successfully implemented and is ready for use:
+Edge tests (especially local parity) require Docker + Supabase CLI:
 
-#### ✅ **Test Framework Setup**
-- **Test directory structure**: Fully implemented with proper organization
-- **Helper utilities**: Complete test data fixtures, mock providers, and database utilities  
-- **Test runner**: Validates all infrastructure works correctly
-- **Documentation**: Comprehensive strategy and implementation guide
+1. Install Docker Desktop and ensure the daemon is running.
+2. Install Supabase CLI: `npm install -g supabase`, `brew install supabase/tap/supabase`, or similar.
+3. In repo root:
+   ```bash
+   supabase init
+   supabase link --project-ref wvmvsodrvbkxfydabqed
+   supabase functions pull
+   ```
+4. For local stack: `supabase start` (Docker spins up Postgres/auth/edge runtime).
+5. Serve individual functions locally: `supabase functions serve run-plan` (or other function name).
 
-#### ✅ **Critical Test Categories (Framework Ready)**
-All 6 critical test categories have been implemented as complete test frameworks:
+> **Note:** `.supabase/` and `.env` files must stay out of version control.
 
-1. **✅ Schema Migration Tests** (`test/integration/schema_migration_test.dart`)
-   - v1→v2 migration validation framework
-   - Data preservation testing structure
-   - Migration rollback testing support
-   - *Status: Framework complete, ready for actual migration testing*
+### 3.2 Dev Cloud Credentials
 
-2. **✅ Food Suitability Validation** (`test/integration/food_suitability_test.dart`)
-   - Phase-specific food constraint validation
-   - Safety-critical food filtering tests
-   - Multi-phase food categorization testing
-   - *Status: Framework complete, ready for algorithm integration*
+Create `.env.test_supabase` in repo root (ignored by git) with:
 
-3. **✅ Macro Target Validation** (`test/integration/macro_validation_test.dart`)
-   - User-adjusted macro preservation testing
-   - Tolerance-based validation (±10g carbs, ±5g protein)
-   - Duration-based macro adjustment validation
-   - *Status: Framework complete, ready for nutrition plan integration*
-
-4. **✅ Edge Function Integration** (`test/integration/edge_function_test.dart`)
-   - Live Supabase edge function testing
-   - AI generation validation and fallback testing
-   - Request/response format validation
-   - *Status: Framework complete, ready for live API testing*
-
-5. **✅ Device Authentication Tests** (`test/unit/auth/device_auth_test.dart`)
-   - Device ID persistence and generation testing
-   - Privacy compliance validation
-   - Data isolation testing between devices
-   - *Status: Framework complete, ready for auth controller integration*
-
-6. **✅ Content Management Tests** (`test/unit/content/content_management_test.dart`)
-   - Backend content loading and fallback testing
-   - Algorithm parameter update validation
-   - Offline-first content management testing
-   - *Status: Framework complete, ready for content service integration*
-
-#### ✅ **Test Data and Configuration**
-- **Real database schema**: Uses actual `UserProfileEntry` and `FoodPreferenceEntry` from Drift
-- **Comprehensive test fixtures**: Realistic user profiles, macro targets, and food preferences
-- **Environment configuration**: Supports both development and CI environments
-- **Performance validation**: Test runner executes in milliseconds
-
-#### ✅ **Andrea Bizzotto Pattern Implementation**
-- **ProviderContainer**: Proper dependency injection setup
-- **AsyncNotifier patterns**: State verification with Listener<T> mocks
-- **Real dependencies**: In-memory databases and live API integration
-- **Error handling**: AsyncValue.guard() testing patterns
-
-### 🔄 **Phase 2: Main Codebase Integration - PENDING**
-*Next implementation phase*
-
-The test framework is ready, but requires main codebase components to be implemented:
-
-#### 🔄 **Missing Providers/Controllers**
-Current flutter analyze shows 546 issues, primarily missing:
-- `authControllerProvider` - Device authentication controller
-- `nutritionPlanControllerProvider` - Nutrition plan generation controller  
-- `contentControllerProvider` - Content management controller
-- Various service providers and repositories
-
-#### 🔄 **Required Implementation Tasks**
-To make tests functional, implement these main codebase components:
-
-1. **Auth System** (`lib/features/auth/`)
-   - `AuthController` (AsyncNotifier)
-   - `AuthService` and `AuthRepository`
-   - Device ID generation and persistence
-
-2. **Nutrition Plan System** (`lib/features/nutrition_plan/`)
-   - `NutritionPlanController` (AsyncNotifier)  
-   - `NutritionPlanService` with algorithm integration
-   - `NutritionRepository` for plan persistence
-
-3. **Content Management** (`lib/features/content/`)
-   - `ContentController` (AsyncNotifier)
-   - `ContentService` with backend integration
-   - `ContentRepository` for content caching
-
-4. **Database Layer** 
-   - Complete all Drift table implementations
-   - Ensure proper relationships and foreign keys
-   - Implement migration system for v1→v2 schema
-
-#### 🎯 **Priority Implementation Order**
-Based on our focused testing strategy:
-
-1. **CRITICAL** - Schema migration system (prevents app crashes)
-2. **CRITICAL** - Food suitability validation in algorithm
-3. **HIGH** - Macro target preservation in nutrition plans
-4. **HIGH** - Device authentication flow
-5. **MEDIUM** - Edge function integration
-6. **MEDIUM** - Content management system
-
-### 🧪 **Test Execution Status**
-
-#### ✅ **Current Status**
-```bash
-flutter test test/test_runner.dart
-# ✅ All infrastructure tests pass
-# ✅ Test data matches database schema  
-# ✅ Helper utilities work correctly
-# ✅ Configuration is valid
+```
+SUPABASE_URL=https://wvmvsodrvbkxfydabqed.supabase.co
+SUPABASE_ANON_KEY=<anon key from Supabase dashboard>
 ```
 
-#### 🔄 **Blocked Until Main Code**
-```bash
-flutter test test/integration/
-# ❌ Missing providers and controllers
-# ❌ Need actual business logic implementation
-```
+Load it when running tests: `flutter test --dart-define-from-file=.env.test_supabase`.
 
-#### ⚡ **Ready for Integration Testing**
-Once main codebase components are implemented:
-```bash
-flutter test                    # Full test suite
-flutter test test/integration/  # Critical path only
-flutter test test/unit/auth/    # Authentication tests
-```
+### 3.3 Drift Schema Snapshots
 
-### 📋 **Next Steps Checklist**
-
-#### **For Immediate Implementation**
-- [ ] Implement `AuthController` with AsyncNotifier pattern
-- [ ] Implement `AuthService` with device ID generation
-- [ ] Create basic `AuthRepository` with Drift integration
-- [ ] Test auth system with `test/unit/auth/device_auth_test.dart`
-
-#### **For MVP Completion**
-- [ ] Implement `NutritionPlanController` and service layer
-- [ ] Add food suitability validation to algorithm
-- [ ] Implement macro target preservation
-- [ ] Test nutrition system with `test/integration/macro_validation_test.dart`
-
-#### **For Production Readiness**
-- [ ] Complete all 6 controller implementations
-- [ ] Run full integration test suite
-- [ ] Implement schema migration system
-- [ ] Test with live Supabase edge functions
-
-### 🎯 **Success Metrics Tracking**
-
-#### **Current Achievement**  
-- ✅ **Test Infrastructure**: 100% complete
-- ✅ **Framework Documentation**: 100% complete
-- ✅ **Helper Utilities**: 100% complete
-- ✅ **Test Data Fixtures**: 100% complete
-
-#### **Next Milestone Targets**
-- 🎯 **Auth System**: 0% → 100% (implement controllers/services)
-- 🎯 **Nutrition System**: 0% → 100% (implement business logic)
-- 🎯 **Test Coverage**: 0% → 80% (run actual tests)
-- 🎯 **Integration Ready**: 0% → 100% (all components working)
+We maintain historical schemas under `drift_schemas/` (e.g., `drift_schemas/v1/schema.sql`). Use these snapshots to seed migration tests.
 
 ---
 
-*This testing strategy prioritizes development velocity while ensuring critical functionality remains stable. It's designed for an aggressive implementation timeline with minimal maintenance overhead.*
+## 4. Test Utilities & Conventions
 
-**📊 Current Status: Test Framework Complete ✅ | Main Code Integration Pending 🔄**
+### 4.1 Riverpod 3 Testing
+
+- Use `ProviderContainer.test()` for scoped containers (auto-disposed).
+- Override dependencies via `container.overrideWith`, `overrideWithBuild`, `Future/StreamProvider.overrideWithValue`.
+- In widget tests, call `tester.container()` to access the scope.
+- Assert AsyncNotifier transitions (`AsyncLoading → AsyncData/Error`).
+- Reference `docs/test/riverpod_3_testing.md` for detailed patterns.
+
+### 4.2 Console Logging Utilities ✅ Phase 2 Complete
+
+All tests must log inputs/results using `test/helpers/utils/console_logging.dart`. This provides colored, structured console output that makes debugging easy.
+
+**Basic Example:**
+```dart
+test('Marathon nutrition plan generation', () {
+  logTestHeading('Edge Function – Marathon Plan Generation');
+
+  logTestInput({
+    'distance_miles': 26.2,
+    'pace_min_per_mile': 7.5,
+    'gut_training': 'high',
+  });
+
+  final plan = await service.generatePlan(...);
+
+  logTestResult('carbs_total_g', plan.totalCarbsG, expectedRange: '360-480');
+  logAssertion('No dairy during run', passed: !hasDairy);
+  logTestPass();
+});
+```
+
+**Available Functions:**
+- `logTestHeading(String)` - Test title with colored divider
+- `logTestSetup(Map)` - Configuration details
+- `logTestInput(Map)` - Input parameters
+- `logTestResult(label, actual, {expected, expectedRange, unit})` - Single result
+- `logTestResults(Map<String, ResultData>)` - Multiple results at once
+- `logAssertion(String, {passed, reason})` - Validation checks
+- `logTestPass([message])` / `logTestFail(reason)` - Final status
+- `logSection(String)`, `logApiCall(...)`, `logDatabaseOp(...)`, `logAnalyticsEvent(...)`
+
+### 4.3 Test Fixtures ✅ Phase 2 Complete
+
+Canonical test data in `test/helpers/fixtures/` for consistency across all tests.
+
+#### Users Table (`users.dart`)
+```dart
+import 'package:mealvana_endurance/test/helpers/fixtures/users.dart';
+
+// Map-based user data for edge function testing
+final beginner = UserFixtures.beginner; // 30yo, 140lbs, low gut training
+final advanced = UserFixtures.advanced; // 35yo, 155lbs, high gut training
+
+// Helper functions
+final weightKg = UserHelpers.getWeightKg(beginner); // Convert lbs to kg
+final age = UserHelpers.getAge(beginner); // Calculate age
+```
+
+Available: `beginner`, `intermediate`, `advanced`, `heavyAthlete`, `lightAthlete`, `ultraRunner`, `newUser`
+Note: Map-based format for edge function testing. Full Drift entities in Phase 4.
+
+#### Nutrition Plan Requests (`nutrition_plan_requests.dart`)
+```dart
+import 'package:mealvana_endurance/test/helpers/fixtures/nutrition_plan_requests.dart';
+
+final marathonReq = NutritionPlanRequestFixtures.marathon;
+final hotWeatherReq = NutritionPlanRequestFixtures.hotWeatherMarathon;
+final expectedTargets = ExpectedMacroTargets.marathon; // {'carbs_total_g': '360-480', ...}
+```
+
+Available: `fiveK`, `tenK`, `halfMarathon`, `marathon`, `ultraMarathon`, `hotWeatherMarathon`, `coldWeatherMarathon`, `beginnerMarathon`, `shortPreRunWindow`, `heavyAthleteMarathon`, `fastPaceMarathon`
+
+#### Food Preferences (`food_preferences.dart`)
+```dart
+import 'package:mealvana_endurance/test/helpers/fixtures/food_preferences.dart';
+
+final standardPrefs = FoodPreferenceFixtures.standard;
+final pickyEater = FoodPreferenceFixtures.picky;
+final shouldInclude = ExpectedFoodSelections.standardPreRun; // ['Oatmeal', 'Banana', ...]
+```
+
+Available: `standard`, `picky`, `adventurous`, `wholeFood`, `gelOnly`, `dairyFree`, `glutenFree`, `vegan`, `empty`
+
+#### Drift Migration Data (`drift_v1_seed.dart`)
+```dart
+import 'package:mealvana_endurance/test/helpers/fixtures/drift_v1_seed.dart';
+
+final seedData = DriftV1SeedData.all; // Complete v1 database state
+final isValid = DriftV2ExpectedData.validateUserProfilesMigrated(profiles);
+```
+
+### 4.4 Reusable Fakes ✅ Phase 2 Complete
+
+Test doubles in `test/helpers/fakes/` for dependency injection:
+
+```dart
+// Analytics
+final analytics = RecordingAnalyticsTracker();
+// Check: analytics.events, analytics.lastIdentifiedUser
+
+// Error reporting
+final sentry = RecordingSentryReporter();
+// Check: sentry.capturedExceptions, sentry.breadcrumbs
+
+// Logging
+final logger = RecordingAppLogger();
+// Check: logger.records
+
+// Supabase
+final supabase = FakeSupabaseClient(); // From Phase 1
+```
+
+**Using in Tests:**
+```dart
+test('Plan generation tracks analytics', () {
+  final analytics = RecordingAnalyticsTracker();
+  final container = ProviderContainer.test(
+    overrides: [analyticsTrackerProvider.overrideWithValue(analytics)],
+  );
+
+  await container.read(nutritionPlanServiceProvider).generatePlan(...);
+
+  expect(analytics.events.first.name, 'plan_generated');
+});
+```
+
+### 4.5 Tagging
+
+- Tag Supabase edge integration tests with `@Tags(['edge'])` so they run only when requested.
+- Optionally add `@Tags(['slow'])` for other heavy suites.
+
+---
+
+## 5. Running Tests
+
+### 5.1 Fast Suites
+
+- Run all standard tests: `flutter test` (auto-skips tagged `edge`).
+- Per feature: `flutter test test/features/nutrition_plan/...`.
+- Service/Notifier tests should complete quickly (<100 ms each).
+
+### 5.2 Edge Function Suites
+
+- Vitest (Node harness):
+  ```bash
+  cd test/local_edge_functions
+  npm install
+  npm test  # or npx vitest run
+  ```
+- Dart integration (dev cloud):
+  ```bash
+  flutter test --tags edge --dart-define-from-file=.env.test_supabase
+  ```
+- Optional local parity:
+  ```bash
+  supabase start
+  flutter test --tags edge --dart-define SUPABASE_URL=http://localhost:54321 ...
+  ```
+
+### 5.3 Migration Tests
+
+- After reconstructing v1 schema, run: `flutter test test/integration/drift/`.
+- These tests spin up in-memory databases, apply migrations, and assert data integrity/performance.
+
+---
+
+## 6. Test Creation Workflow
+
+1. **Identify scope** – feature/layer, risk category, dependencies.
+2. **Set up container** – use `ProviderContainer.test()` with overrides; choose fakes/fixtures.
+3. **Implement test** – follow naming conventions (`<Class> should <behavior>`), include console logs.
+4. **Run targeted command** – execute smallest suite possible.
+5. **Document** – update roadmap/README when you add new patterns or require new tooling.
+
+Our default expectation: each new feature/bugfix comes with tests in the relevant layer. Use the `.claude/agents/test-engineer.md` instructions when delegating to the testing agent.
+
+---
+
+## 7. Edge Function Testing Strategy (Three-Tier Approach)
+
+We implement a comprehensive three-tier testing strategy for edge functions, balancing speed, realism, and coverage:
+
+### **Tier 1: Local Unit Tests (Vitest)**
+- **Purpose**: Fast, deterministic testing of pure function logic
+- **Location**: `test/local_edge_functions/tests/`
+- **Dependencies**: JSON fixtures, no database
+- **Execution**: `cd test/local_edge_functions && npm test`
+- **Use for**: Formula validation, algorithm logic, edge cases
+
+### **Tier 2: Local Integration Tests (Dart + Local Supabase)**
+- **Purpose**: Realistic testing with isolated database
+- **Location**: `test/integration/edge/local/`
+- **Dependencies**: Local Supabase via Docker
+- **Execution**: `supabase start && flutter test test/integration/edge/local/`
+- **Use for**: Database interactions, full request/response cycles
+
+### **Tier 3: Dev Cloud E2E Tests (Dart + Dev Supabase)**
+- **Purpose**: Production validation with real network conditions
+- **Location**: `test/integration/edge/cloud/`
+- **Dependencies**: Dev Supabase project credentials
+- **Execution**: `flutter test --tags edge,cloud --dart-define-from-file=.env.test_supabase`
+- **Use for**: Cross-function integration, performance benchmarks
+
+### **Test Data Management**
+- **JSON Fixtures**: `test/helpers/fixtures/` for portable test data
+- **Local Seed Data**: `supabase/seed.sql` with test products and users
+- **Golden Dataset**: Known correct calculations for formula validation
+- **LP Solver Logs**: Expected logs for AI fallback detection
+
+### **Priority Order for Implementation**
+1. **generate-macros**: Deterministic formulas, easiest to validate
+2. **generate-ai-nutrition-plan**: Complex logic, critical path
+3. **barcode-lookup**: Database-dependent, requires seed data
+4. **save-food-preferences**: Simple CRUD operation
+
+### **Validation Tolerances**
+- **Exact Match**: MET values, calorie calculations (formulas)
+- **±10g**: Carbohydrate targets
+- **±5g**: Protein targets
+- **±50mg**: Sodium targets
+- **±100ml**: Fluid targets
+
+---
+
+## 8. CI Recommendations
+
+We currently lack automation. The roadmap (Phase 6) adds a GitHub Actions workflow:
+
+- Run `flutter test` (excluding tagged suites) on every pull request.
+- Run edge tests on a schedule or via manual dispatch with `.env.test_supabase` secrets.
+- Cache Flutter/Dart artifacts for speed.
+- Surface test logs (console output) as build artifacts for debugging.
+
+---
+
+## 9. Reference Documents
+
+- [`docs/test/roadmap.md`](./roadmap.md) – master plan for decoupling/testing milestones.
+- [`docs/test/riverpod_3_testing.md`](./riverpod_3_testing.md) – detailed Riverpod testing patterns.
+- [`.claude/agents/test-engineer.md`](../../.claude/agents/test-engineer.md) – agent instructions.
+- Supabase CLI docs: <https://supabase.com/docs/guides/cli>.
+- Docker Desktop: <https://docs.docker.com/desktop/>.
+
+---
+
+## 10. Maintenance Checklist
+
+- Keep fixtures/fakes updated as features evolve.
+- Snapshot new Drift schemas under `drift_schemas/` whenever migrations ship.
+- Review console logging policy once test stability improves.
+- Update this README when patterns shift (e.g., new providers, new edge functions, CI changes).
+
+---
+
+With this structure in place, the team and the `test-engineer` agent can confidently expand coverage while keeping the codebase fast, testable, and aligned with Mealvana’s risk-focused goals.

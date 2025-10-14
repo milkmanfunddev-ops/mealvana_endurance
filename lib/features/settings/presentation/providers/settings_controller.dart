@@ -64,7 +64,7 @@ class SettingsController extends _$SettingsController {
 
   /// Update gender
   Future<void> updateGender(Gender gender) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(
@@ -77,7 +77,7 @@ class SettingsController extends _$SettingsController {
 
   /// Update birthday
   Future<void> updateBirthday(DateTime birthday) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(
@@ -90,7 +90,7 @@ class SettingsController extends _$SettingsController {
 
   /// Update height
   Future<void> updateHeight(int feet, int inches) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(
@@ -104,7 +104,7 @@ class SettingsController extends _$SettingsController {
 
   /// Update weight
   Future<void> updateWeight(double pounds) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(
@@ -117,7 +117,7 @@ class SettingsController extends _$SettingsController {
 
   /// Update water bottle preference
   Future<void> updateWaterBottle(bool runsWithWaterBottle) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(
@@ -130,7 +130,7 @@ class SettingsController extends _$SettingsController {
 
   /// Update distance unit preference
   Future<void> updateDistanceUnit(DistanceUnit unit) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(
@@ -143,7 +143,7 @@ class SettingsController extends _$SettingsController {
 
   /// Update pace unit preference
   Future<void> updatePaceUnit(PaceUnit unit) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(
@@ -156,7 +156,7 @@ class SettingsController extends _$SettingsController {
 
   /// Update gut training level
   Future<void> updateGutTraining(GutTraining level) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(
@@ -169,7 +169,7 @@ class SettingsController extends _$SettingsController {
 
   /// Save profile changes (both local and Supabase)
   Future<void> _saveProfile() async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = await AsyncValue.guard(() async {

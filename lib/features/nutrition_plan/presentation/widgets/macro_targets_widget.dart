@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/macro_targets.dart' as targets_model;
 import '../../domain/nutrition_plan.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Macro targets display widget with progress bars matching original design
 /// Fixed to properly use detailed MacroTargets and correct unit conversions
@@ -34,7 +35,7 @@ class MacroTargetsWidget extends StatelessWidget {
 
     if (plan != null) {
       for (final section in plan.sections) {
-        print('🔍 MacroTargetsWidget: Processing ${section.title} section with ${section.foodItems.length} food items');
+        DebugLogger.info('🔍 MacroTargetsWidget: Processing ${section.title} section with ${section.foodItems.length} food items');
         for (final foodItem in section.foodItems) {
           final nutrition = foodItem.nutritionalInfo;
           if (nutrition != null) {
@@ -42,7 +43,7 @@ class MacroTargetsWidget extends StatelessWidget {
             final itemSodium = nutrition.sodium ?? 0;
             final itemFluids = nutrition.fluids ?? 0.0;
 
-            print('  📊 ${foodItem.name} (${foodItem.quantity}): ${itemSodium}mg sodium, ${itemFluids}ml fluids, ${itemCarbs}g carbs');
+            DebugLogger.info('  📊 ${foodItem.name} (${foodItem.quantity}): ${itemSodium}mg sodium, ${itemFluids}ml fluids, ${itemCarbs}g carbs');
 
             currentCarbs += itemCarbs;
             currentSodium += itemSodium;
@@ -50,7 +51,7 @@ class MacroTargetsWidget extends StatelessWidget {
           }
         }
       }
-      print('🎯 MacroTargetsWidget TOTALS: ${currentSodium}mg sodium, ${currentFluids.round()}ml fluids, ${currentCarbs}g carbs');
+      DebugLogger.info('🎯 MacroTargetsWidget TOTALS: ${currentSodium}mg sodium, ${currentFluids.round()}ml fluids, ${currentCarbs}g carbs');
     }
 
     // Target values from detailed targets (DENOMINATOR - what should be consumed)

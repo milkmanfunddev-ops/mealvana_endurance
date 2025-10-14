@@ -5,8 +5,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../data/workout_notes_repository.dart';
 import '../../domain/workout_note.dart';
-import '../../../content/application/content_service.dart';
 import '../../../auth/data/user_repository.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'voice_memo_controller.g.dart';
 
@@ -48,7 +48,6 @@ class VoiceMemoState {
 @riverpod
 class VoiceMemoController extends _$VoiceMemoController {
   late stt.SpeechToText _speech;
-  ContentService get _contentService => ref.read(contentServiceProvider);
   Future<WorkoutNotesRepository> get _notesRepository => ref.read(workoutNotesRepositoryProvider.future);
   
   /// Cache for notes list
@@ -63,19 +62,19 @@ class VoiceMemoController extends _$VoiceMemoController {
       final available = await _speech.initialize(
         onError: (error) {
           if (kDebugMode) {
-            print('Speech recognition error: $error');
+            DebugLogger.debug('Speech recognition error: $error');
           }
-          state = AsyncData(state.valueOrNull?.copyWith(
+          state = AsyncData(state.value?.copyWith(
             error: error.errorMsg,
             isListening: false,
           ) ?? VoiceMemoState(error: error.errorMsg));
         },
         onStatus: (status) {
           if (kDebugMode) {
-            print('Speech recognition status: $status');
+            DebugLogger.debug('Speech recognition status: $status');
           }
           final isListening = status == stt.SpeechToText.listeningStatus;
-          state = AsyncData(state.valueOrNull?.copyWith(
+          state = AsyncData(state.value?.copyWith(
             isListening: isListening,
           ) ?? VoiceMemoState(isListening: isListening));
         },
@@ -97,7 +96,7 @@ class VoiceMemoController extends _$VoiceMemoController {
       );
     } catch (error) {
       if (kDebugMode) {
-        print('Failed to initialize speech recognition: $error');
+        DebugLogger.error('Failed to initialize speech recognition: $error');
       }
       return VoiceMemoState(
         error: 'Failed to initialize speech recognition: $error',
@@ -108,7 +107,7 @@ class VoiceMemoController extends _$VoiceMemoController {
 
   /// Start listening for speech input
   Future<void> startListening(Function(String) onResult) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null || !currentState.isInitialized || currentState.isListening) {
       return;
     }
@@ -145,7 +144,7 @@ class VoiceMemoController extends _$VoiceMemoController {
       ));
     } catch (error) {
       if (kDebugMode) {
-        print('Failed to start listening: $error');
+        DebugLogger.error('Failed to start listening: $error');
       }
       state = AsyncData(currentState.copyWith(
         error: 'Failed to start speech recognition: $error',
@@ -156,7 +155,7 @@ class VoiceMemoController extends _$VoiceMemoController {
 
   /// Stop listening for speech input
   Future<void> stopListening() async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null || !currentState.isListening) {
       return;
     }
@@ -166,7 +165,7 @@ class VoiceMemoController extends _$VoiceMemoController {
       state = AsyncData(currentState.copyWith(isListening: false));
     } catch (error) {
       if (kDebugMode) {
-        print('Failed to stop listening: $error');
+        DebugLogger.error('Failed to stop listening: $error');
       }
       state = AsyncData(currentState.copyWith(
         error: 'Failed to stop speech recognition: $error',
@@ -177,7 +176,7 @@ class VoiceMemoController extends _$VoiceMemoController {
 
   /// Save notes using the proper workout notes repository
   Future<void> saveNotes(String? planId, String notes) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(isSaving: true));
@@ -205,7 +204,7 @@ class VoiceMemoController extends _$VoiceMemoController {
       ));
     } catch (error) {
       if (kDebugMode) {
-        print('Failed to save notes: $error');
+        DebugLogger.error('Failed to save notes: $error');
       }
       state = AsyncData(currentState.copyWith(
         isSaving: false,
@@ -230,7 +229,7 @@ class VoiceMemoController extends _$VoiceMemoController {
       return notes;
     } catch (error) {
       if (kDebugMode) {
-        print('Failed to load notes: $error');
+        DebugLogger.error('Failed to load notes: $error');
       }
       return [];
     }

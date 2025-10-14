@@ -1,47 +1,40 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../../nutrition_plan/domain/food.dart';
+import '../../nutrition_plan/domain/food_item.dart';
+import '../../nutrition_plan/data/food_repository.dart';
 import '../domain/api_food_product.dart';
 
 part 'food_mapping_service.g.dart';
 
 /// Service for mapping API food products to the app's Food domain model
+/// Uses FoodRepository to check for existing foods and get proper metadata
 class FoodMappingService {
+  FoodMappingService(this._foodRepository);
+
+  final FoodRepository _foodRepository;
 
   /// Convert an ApiFoodProduct from barcode scanning to the app's Food model
-  /// Uses per-serving data when available
-  Food mapToFood(ApiFoodProduct apiProduct, {double? assumedServingGrams}) {
-    // Prefer the API's serving size if available, otherwise estimate
-    final servingGrams = apiProduct.servingGrams ?? assumedServingGrams ?? _estimateServingSize(apiProduct);
-
-    print('🔍 DEBUG - Food Mapping for ${apiProduct.productName}:');
-    print('  API serving size string: "${apiProduct.servingSize}"');
-    print('  API serving grams: ${apiProduct.servingGrams}g');
-    print('  Using serving grams: ${servingGrams}g');
-
-    // Log what data we have
-    if (apiProduct.caloriesPerServing != null) {
-      print('  Raw API values (per serving):');
-      print('    Calories: ${apiProduct.caloriesPerServing}');
-      print('    Carbs: ${apiProduct.carbohydratesPerServing}');
-      print('    Protein: ${apiProduct.proteinPerServing}');
-      print('    Fat: ${apiProduct.fatPerServing}');
-    } else {
-      print('  Raw API values (per 100g):');
-      print('    Calories: ${apiProduct.caloriesPer100g}');
-      print('    Carbs: ${apiProduct.carbohydratesPer100g}');
-      print('    Protein: ${apiProduct.proteinPer100g}');
-      print('    Fat: ${apiProduct.fatPer100g}');
+  /// Checks database for existing food data and uses proper categories
+  Future<Food> mapToFood(ApiFoodProduct apiProduct, {double? assumedServingGrams}) async {
+    // First check if we already have this food by barcode
+    final barcode = apiProduct.barcode;
+    if (barcode.isNotEmpty) {
+      final existingFood = await _foodRepository.getFoodByBarcode(barcode);
+      if (existingFood != null) {
+        // We already have this food with proper display names and categories
+        return _convertFoodItemToFood(existingFood, apiProduct);
+      }
     }
+
+    // Check if we have it by name in the database
+    final existingByName = await _foodRepository.getFoodByName(apiProduct.productName);
+
+    // Use API's serving size if available, otherwise use default
+    final servingGrams = apiProduct.servingGrams ?? assumedServingGrams ?? 100.0;
 
     // Calculate nutritional values for the serving
     final nutritionalValues = apiProduct.calculateForServing(servingGrams);
-
-    print('  Calculated values (per ${servingGrams}g serving):');
-    print('    Calories: ${nutritionalValues.calories}');
-    print('    Carbs: ${nutritionalValues.carbohydrates}');
-    print('    Protein: ${nutritionalValues.protein}');
-    print('    Fat: ${nutritionalValues.fat}');
 
     return Food(
       id: const Uuid().v4(), // Generate proper UUID for database
@@ -50,10 +43,10 @@ class FoodMappingService {
       description: 'Scanned from barcode ${apiProduct.barcode}',
       instructions: null,
 
-      // Serving information - simplified approach
+      // Serving information - use database values if available
       servingAmount: 1.0, // Always 1.0 in simplified approach
-      displayName: _generateDisplayName(apiProduct, servingGrams),
-      displayNamePlural: _generateDisplayNamePlural(apiProduct, servingGrams),
+      displayName: existingByName?.displayName ?? apiProduct.displayName,
+      displayNamePlural: existingByName?.displayNamePlural ?? '${apiProduct.displayName}s',
       // Legacy fields for compatibility
       servingUnit: 'servings',
       servingUnitPlural: 'servings',
@@ -72,116 +65,85 @@ class FoodMappingService {
       caffeineMg: null,
       potassiumMg: null,
 
-      // Product type for imported/scanned foods
-      productTypeId: 'cdd6a8f1-750c-4c78-93f7-ab706285ac7b', // "imported" product type
+      // Product type - use from existing food or default to "imported"
+      productTypeId: existingByName?.productTypeId ?? 'cdd6a8f1-750c-4c78-93f7-ab706285ac7b',
 
-      // Conservative endurance suitability defaults
-      // Users can manually adjust these after adding the food
-      beforeRunSuitable: _isLikelyBeforeRunSuitable(apiProduct, nutritionalValues),
-      duringRunSuitable: _isLikelyDuringRunSuitable(apiProduct, nutritionalValues),
-      runPortable: _isLikelyRunPortable(apiProduct),
+      // Suitability based on database categories if we found the food
+      beforeRunSuitable: await _getBeforeRunSuitability(existingByName),
+      duringRunSuitable: await _getDuringRunSuitability(existingByName),
+      runPortable: false, // Not in our schema - always false
       requiresPreparation: false, // Most packaged foods don't require preparation
       aidStationAvailable: false, // Conservative default
 
-      // Conservative serving limits
-      maxServingsBefore: 2,
-      maxServingsDuring: 1,
+      // Use existing serving limits if available
+      maxServingsBefore: existingByName?.maxServingsBefore ?? 2,
+      maxServingsDuring: existingByName?.maxServingsDuring ?? 1,
     );
   }
 
-  /// Estimate serving size based on product type and available information
-  double _estimateServingSize(ApiFoodProduct apiProduct) {
-    // Try to extract serving size from product data
-    if (apiProduct.servingSize != null) {
-      final gramMatch = RegExp(r'(\d+)\s*g', caseSensitive: false)
-          .firstMatch(apiProduct.servingSize!);
-      if (gramMatch != null) {
-        return double.tryParse(gramMatch.group(1)!) ?? 100.0;
-      }
-    }
+  /// Get before run suitability from database categories
+  Future<bool> _getBeforeRunSuitability(FoodItem? existingFood) async {
+    if (existingFood == null) return false;
 
-    // Use heuristics based on product name/brand for common sports nutrition products
-    final productNameLower = apiProduct.productName.toLowerCase();
-    final brandLower = apiProduct.brandName?.toLowerCase() ?? '';
-
-    // Energy gels - typically 32-45g
-    if (productNameLower.contains('gel') ||
-        brandLower.contains('gu') ||
-        brandLower.contains('maurten')) {
-      return 35.0;
-    }
-
-    // Energy bars - typically 40-80g
-    if (productNameLower.contains('bar') ||
-        productNameLower.contains('energy')) {
-      return 60.0;
-    }
-
-    // Sports drinks - assume per 100ml serving
-    if (productNameLower.contains('drink') ||
-        productNameLower.contains('beverage') ||
-        productNameLower.contains('sports')) {
-      return 100.0;
-    }
-
-    // Energy chews - typically 50-60g package
-    if (productNameLower.contains('chew') ||
-        productNameLower.contains('gummy')) {
-      return 50.0;
-    }
-
-    // Default to 100g for most products
-    return 100.0;
+    final categories = await _foodRepository.getFoodCategories(existingFood.id);
+    return categories.contains(1); // category_id = 1 for before_run
   }
 
-  /// Determine if a product is likely suitable before runs
-  bool _isLikelyBeforeRunSuitable(ApiFoodProduct apiProduct, NutritionalValues nutrition) {
-    // High carb, low fat foods are generally good before runs
-    if (nutrition.carbohydrates != null && nutrition.fat != null) {
-      final carbPercent = (nutrition.carbohydrates! * 4) / (nutrition.calories ?? 1) * 100;
-      final fatPercent = (nutrition.fat! * 9) / (nutrition.calories ?? 1) * 100;
+  /// Get during run suitability from database categories
+  Future<bool> _getDuringRunSuitability(FoodItem? existingFood) async {
+    if (existingFood == null) return false;
 
-      return carbPercent > 60 && fatPercent < 20;
-    }
-
-    // If no nutritional data, be conservative
-    return false;
+    final categories = await _foodRepository.getFoodCategories(existingFood.id);
+    return categories.contains(2); // category_id = 2 for during_run
   }
 
-  /// Determine if a product is likely suitable during runs
-  bool _isLikelyDuringRunSuitable(ApiFoodProduct apiProduct, NutritionalValues nutrition) {
-    final productNameLower = apiProduct.productName.toLowerCase();
+  /// Convert FoodItem from repository to Food domain model
+  /// Merges existing database data with fresh nutritional data from API
+  Food _convertFoodItemToFood(FoodItem existingFood, ApiFoodProduct apiProduct) {
+    // Use fresh nutritional data from API if available
+    final servingGrams = apiProduct.servingGrams ?? 100.0;
+    final nutritionalValues = apiProduct.calculateForServing(servingGrams);
 
-    // Sports nutrition products are likely suitable
-    if (productNameLower.contains('gel') ||
-        productNameLower.contains('sports') ||
-        productNameLower.contains('energy') ||
-        productNameLower.contains('electrolyte')) {
-      return true;
-    }
+    return Food(
+      id: const Uuid().v4(),
+      name: existingFood.name,
+      imageAddress: existingFood.imageAddress,
+      description: 'Updated from barcode ${apiProduct.barcode}',
+      instructions: null,
 
-    // High carb, low fat, easily digestible
-    if (nutrition.carbohydrates != null && nutrition.fat != null) {
-      final carbPercent = (nutrition.carbohydrates! * 4) / (nutrition.calories ?? 1) * 100;
-      final fatPercent = (nutrition.fat! * 9) / (nutrition.calories ?? 1) * 100;
+      // Use database display names
+      displayName: existingFood.displayName ?? apiProduct.displayName,
+      displayNamePlural: existingFood.displayNamePlural ?? '${apiProduct.displayName}s',
 
-      return carbPercent > 70 && fatPercent < 10;
-    }
+      // Serving information
+      servingAmount: 1.0,
+      servingUnit: 'servings',
+      servingUnitPlural: 'servings',
+      servingQualifier: null,
+      servingSize: apiProduct.servingSize ?? '${servingGrams.toStringAsFixed(0)}g',
 
-    // Conservative default
-    return false;
-  }
+      // Use fresh nutritional data from API
+      carbsPerServing: nutritionalValues.carbohydrates,
+      sodiumMg: nutritionalValues.sodiumMg,
+      fluidMlPerServing: _extractFluidMlForBeverage(apiProduct),
+      caloriesPerServing: nutritionalValues.calories,
+      proteinPerServing: nutritionalValues.protein,
+      fatPerServing: nutritionalValues.fat,
+      caffeineMg: existingFood.caffeineMg,
+      potassiumMg: existingFood.potassiumMg,
 
-  /// Determine if a product is likely portable for runs
-  bool _isLikelyRunPortable(ApiFoodProduct apiProduct) {
-    final productNameLower = apiProduct.productName.toLowerCase();
+      // Use existing product type and suitability from database
+      productTypeId: existingFood.productTypeId ?? 'cdd6a8f1-750c-4c78-93f7-ab706285ac7b',
+      beforeRunSuitable: existingFood.beforeRunSuitable,
+      duringRunSuitable: existingFood.duringRunSuitable,
+      runPortable: false, // Not in our schema
+      requiresPreparation: existingFood.requiresPreparation,
+      aidStationAvailable: existingFood.aidStationAvailable,
 
-    // Common portable formats
-    return productNameLower.contains('gel') ||
-           productNameLower.contains('bar') ||
-           productNameLower.contains('chew') ||
-           productNameLower.contains('tablet') ||
-           productNameLower.contains('gummy');
+      // Use existing serving limits
+      maxServingsBefore: existingFood.maxServingsBefore ?? 2,
+      maxServingsDuring: existingFood.maxServingsDuring ?? 1,
+    );
   }
 
   /// Extract fluid content (ml) for beverages using roadmap strategy
@@ -194,103 +156,25 @@ class FoodMappingService {
       return null; // Not a beverage
     }
 
-    print('🍹 DEBUG - Beverage detected: ${apiProduct.productName}');
-    print('  Categories: ${apiProduct.categories}');
-
     // Primary strategy: Use serving_quantity + serving_quantity_unit
     if (apiProduct.servingQuantity != null &&
         apiProduct.servingQuantityUnit?.toLowerCase() == 'ml') {
-      final fluidMl = apiProduct.servingQuantity!;
-      print('  Fluid from serving_quantity: ${fluidMl}ml');
-      return fluidMl;
+      return apiProduct.servingQuantity!;
     }
 
     // Fallback strategy: Use product_quantity + product_quantity_unit
     if (apiProduct.productQuantity != null &&
         apiProduct.productQuantityUnit?.toLowerCase() == 'ml') {
-      final fluidMl = apiProduct.productQuantity!;
-      print('  Fluid from product_quantity (fallback): ${fluidMl}ml');
-      return fluidMl;
+      return apiProduct.productQuantity!;
     }
 
-    print('  No valid ml quantity found for beverage');
     return null;
   }
 
-  /// Generate user-friendly display name
-  String _generateDisplayName(ApiFoodProduct apiProduct, double servingGrams) {
-    final productName = apiProduct.productName.trim();
-    final brandName = apiProduct.brandName?.trim() ?? '';
-
-    // Try to identify product type and reorder for better readability
-    final productNameLower = productName.toLowerCase();
-
-    // For gels: "Brand + Product" (e.g., "Maurten Gel 160")
-    if (productNameLower.contains('gel')) {
-      if (brandName.isNotEmpty && !productName.toLowerCase().startsWith(brandName.toLowerCase())) {
-        return '$brandName $productName';
-      }
-      return productName;
-    }
-
-    // For bars: "Brand + Product" (e.g., "PowerBar Energy")
-    if (productNameLower.contains('bar')) {
-      if (brandName.isNotEmpty && !productName.toLowerCase().startsWith(brandName.toLowerCase())) {
-        return '$brandName $productName';
-      }
-      return productName;
-    }
-
-    // For drinks/beverages: "Brand + Product" without serving size
-    if (productNameLower.contains('drink') ||
-        productNameLower.contains('beverage') ||
-        productNameLower.contains('sports')) {
-      if (brandName.isNotEmpty && !productName.toLowerCase().startsWith(brandName.toLowerCase())) {
-        return '$brandName $productName';
-      }
-      return productName;
-    }
-
-    // For other products: Use product name as-is, add brand if not included
-    if (brandName.isNotEmpty && !productName.toLowerCase().contains(brandName.toLowerCase())) {
-      return '$brandName $productName';
-    }
-
-    return productName;
-  }
-
-  /// Generate user-friendly plural display name
-  String _generateDisplayNamePlural(ApiFoodProduct apiProduct, double servingGrams) {
-    final displayName = _generateDisplayName(apiProduct, servingGrams);
-    final displayNameLower = displayName.toLowerCase();
-
-    // Smart pluralization for common product types
-    if (displayNameLower.contains('gel') && !displayNameLower.contains('gels')) {
-      return displayName.replaceFirst(RegExp(r'\bgel\b', caseSensitive: false), 'Gels');
-    }
-
-    if (displayNameLower.contains('bar') && !displayNameLower.contains('bars')) {
-      return displayName.replaceFirst(RegExp(r'\bbar\b', caseSensitive: false), 'Bars');
-    }
-
-    if (displayNameLower.contains('drink') && !displayNameLower.contains('drinks')) {
-      return displayName.replaceFirst(RegExp(r'\bdrink\b', caseSensitive: false), 'Drinks');
-    }
-
-    if (displayNameLower.contains('chew') && !displayNameLower.contains('chews')) {
-      return displayName.replaceFirst(RegExp(r'\bchew\b', caseSensitive: false), 'Chews');
-    }
-
-    // For products that don't match common patterns, just add 's' if doesn't end with 's'
-    if (!displayName.toLowerCase().endsWith('s')) {
-      return '${displayName}s';
-    }
-
-    return displayName;
-  }
 }
 
 @riverpod
-FoodMappingService foodMappingService(FoodMappingServiceRef ref) {
-  return FoodMappingService();
+FoodMappingService foodMappingService(Ref ref) {
+  final foodRepository = ref.watch(foodRepositoryProvider);
+  return FoodMappingService(foodRepository);
 }

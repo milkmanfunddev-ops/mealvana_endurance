@@ -108,23 +108,46 @@ Future<NutritionPlan> generateNutritionPlan() async {
     final llmPlan = await _llmService.generateLLMNutritionPlan();
     
     if (llmPlan != null) {
-      // Success - use AI-generated plan
-      await _analyticsService.trackNutritionPlanGenerated(planType: 'llm');
+      await _analytics.trackPlanGenerated(
+        distanceMiles: distanceMiles,
+        paceMinutesPerMile: paceMinutesPerMile,
+        totalCalories: llmPlan.totalCalories ?? 0,
+        totalCarbs: llmPlan.macroTargets?.carbs ?? 0,
+        beforeRunItems: _countItems(llmPlan.sections, 'Before Run'),
+        duringRunItems: _countItems(llmPlan.sections, 'During Run'),
+        afterRunItems: _countItems(llmPlan.sections, 'After Run'),
+        isFirstPlan: await _isFirstPlan(),
+      );
       return llmPlan;
     }
 
     // FALLBACK: Use algorithmic run-plan Edge Function
     final algorithmicPlan = await _repository.createNutritionPlanV2();
-    await _analyticsService.trackNutritionPlanGenerated(planType: 'algorithmic');
+    await _analytics.trackPlanGenerated(
+      distanceMiles: distanceMiles,
+      paceMinutesPerMile: paceMinutesPerMile,
+      totalCalories: algorithmicPlan.totalCalories ?? 0,
+      totalCarbs: algorithmicPlan.macroTargets?.carbs ?? 0,
+      beforeRunItems: _countItems(algorithmicPlan.sections, 'Before Run'),
+      duringRunItems: _countItems(algorithmicPlan.sections, 'During Run'),
+      afterRunItems: _countItems(algorithmicPlan.sections, 'After Run'),
+      isFirstPlan: await _isFirstPlan(),
+    );
     return algorithmicPlan;
     
   } catch (e) {
     // Error handling and analytics
-    await _analyticsService.trackNutritionPlanGenerationFailed();
+    await _analytics.trackPlanGenerationFailed(
+      errorMessage: e.toString(),
+      distanceMiles: distanceMiles,
+      paceMinutesPerMile: paceMinutesPerMile,
+    );
     rethrow;
   }
 }
 ```
+
+> As above, `_countItems` refers to a helper in `NutritionPlanService` that counts foods per plan section.
 
 ## 📊 **Performance & Analytics**
 

@@ -4,6 +4,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/app_content.dart';
+import '../../../shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'content_repository.g.dart';
 
@@ -57,7 +59,7 @@ class ContentRepository {
         return AppContent.fromJson(contentMap);
       }
     } catch (e) {
-      print('Error reading cached content: $e');
+      DebugLogger.error('Error reading cached content: $e');
     }
     return null;
   }
@@ -69,7 +71,7 @@ class ContentRepository {
       final contentJson = json.encode(content.toJson());
       await prefs.setString(_contentKey, contentJson);
     } catch (e) {
-      print('Error caching content: $e');
+      DebugLogger.error('Error caching content: $e');
     }
   }
 
@@ -90,7 +92,7 @@ class ContentRepository {
         return AppContent.fromJson(response);
       }
     } catch (e) {
-      print('Error fetching content from Supabase: $e');
+      DebugLogger.error('Error fetching content from Supabase: $e');
     }
     return null;
   }
@@ -111,7 +113,7 @@ class ContentRepository {
         isActive: true,
       );
     } catch (e) {
-      print('Error loading default content: $e');
+      DebugLogger.error('Error loading default content: $e');
       // Return empty content as absolute fallback
       return AppContent(
         version: 1,
@@ -162,8 +164,9 @@ class ContentRepository {
 
 /// Content repository provider
 @riverpod
-ContentRepository contentRepository(ContentRepositoryRef ref) {
+ContentRepository contentRepository(Ref ref) {
+  final supabase = ref.read(appExternalDepsProvider).supabaseClient;
   return ContentRepository(
-    supabase: Supabase.instance.client,
+    supabase: supabase,
   );
 }

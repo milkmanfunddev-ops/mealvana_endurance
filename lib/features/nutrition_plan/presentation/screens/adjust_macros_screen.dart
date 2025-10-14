@@ -6,7 +6,7 @@ import 'package:mealvana_endurance/shared/widgets/generating_plan_overlay.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/services/analytics_service.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../providers/distance_page_gut_entry_controller.dart';
 import '../../domain/macro_targets.dart';
 
@@ -30,7 +30,7 @@ class AdjustMacrosScreen extends ConsumerWidget {
             error: (error, stackTrace) => _buildErrorState(context, ref, error),
           ),
           // Show loading overlay when creating plan
-          if (asyncState.valueOrNull?.isCreatingPlan == true)
+          if (asyncState.value?.isCreatingPlan == true)
             const GeneratingPlanOverlay(),
         ],
       ),
@@ -365,8 +365,8 @@ class AdjustMacrosScreen extends ConsumerWidget {
         // Help icon positioned at the left, above the Carbs icon
         GestureDetector(
           onTap: () {
-            AnalyticsService.track('Help Button Tapped', properties: {
-              'Screen': 'Adjust Macros',
+            ref.read(appExternalDepsProvider).analytics.track('help_button_tapped', properties: {
+              'screen': 'adjust_macros',
             });
             _showHelpBottomSheet(context, ref);
           },
@@ -560,10 +560,14 @@ class AdjustMacrosScreen extends ConsumerWidget {
           onPressed: state.isCreatingPlan ? null : () async {
             await ref.read(distancePageGutEntryControllerProvider.notifier)
                 .createNutritionPlan();
-            
+
             if (context.mounted) {
-              // Navigate to current plan screen (with back button)
-              context.push('/current-plan');
+              // Navigate to activity detail screen in create mode
+              context.push('/current-plan', extra: {
+                'mode': 'create',
+                'pendingActivityData': state.pendingActivityData,
+                'macroTargets': state.macroTargets,
+              });
             }
           },
           width: double.infinity,
@@ -645,12 +649,12 @@ class AdjustMacrosScreen extends ConsumerWidget {
   }
 
   void _showEditAllMacrosDialog(BuildContext context, WidgetRef ref, MacroTargets macros) {
-    // Track edit_all_macros_opened event
-    AnalyticsService.trackEditAllMacrosOpened(
-      planId: 'pre_generation', // No actual plan exists yet - this is pre-generation editing
-      screen: 'adjust_macros_screen',
-      experimentVariant: 'auto_items_v1', // Default variant
-    );
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    analytics.track('edit_all_macros_opened', properties: {
+      'plan_id': 'pre_generation',
+      'screen': 'adjust_macros_screen',
+      'experiment_variant': 'auto_items_v1',
+    });
 
     showDialog(
       context: context,
@@ -661,13 +665,13 @@ class AdjustMacrosScreen extends ConsumerWidget {
   }
 
   void _showHelpBottomSheet(BuildContext context, WidgetRef ref) {
-    // Track guidelines_opened event
-    AnalyticsService.trackGuidelinesOpened(
-      planId: 'pre_generation',
-      screen: 'adjust_macros_screen',
-      experimentVariant: 'auto_items_v1',
-      topic: 'macro_calculation',
-    );
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    analytics.track('guidelines_opened', properties: {
+      'plan_id': 'pre_generation',
+      'screen': 'adjust_macros_screen',
+      'experiment_variant': 'auto_items_v1',
+      'topic': 'macro_calculation',
+    });
 
     showModalBottomSheet(
       context: context,
@@ -683,7 +687,6 @@ class _EditAllMacrosDialog extends ConsumerStatefulWidget {
 
   const _EditAllMacrosDialog({
     required this.macros,
-    super.key,
   });
 
   @override
@@ -991,7 +994,7 @@ class _EditAllMacrosDialogState extends ConsumerState<_EditAllMacrosDialog> {
 }
 
 class _HelpBottomSheet extends StatefulWidget {
-  const _HelpBottomSheet({super.key});
+  const _HelpBottomSheet();
 
   @override
   State<_HelpBottomSheet> createState() => _HelpBottomSheetState();
@@ -1276,4 +1279,3 @@ Prioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.'
         .trim();
   }
 }
-

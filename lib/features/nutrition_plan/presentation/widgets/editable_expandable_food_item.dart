@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/food_item_data.dart';
 import '../../../../shared/widgets/food_icon.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/app_external_deps.dart';
 
 /// Expandable food item with quantity editing capabilities
 /// Shows food icon, name, quantity with collapsible details and quantity controls
@@ -129,7 +130,10 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
   void _updateQuantity() {
     if (!_hasLocalChanges) return;
     
-    AppLogger.instance.userAction('User updated food quantity',
+    final container = ProviderScope.containerOf(context);
+    final logger = container.read(appExternalDepsProvider).logger;
+    logger.userAction(
+      'User updated food quantity',
       action: 'quantity_change',
       screen: 'current_plan',
       data: {

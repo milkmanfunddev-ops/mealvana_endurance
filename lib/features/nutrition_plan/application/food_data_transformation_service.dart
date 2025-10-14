@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/food_item_data.dart';
 import '../data/food_repository.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 
 /// Service for transforming edge function responses into FoodItemData objects
@@ -10,6 +11,7 @@ class FoodDataTransformationService {
   final Ref ref;
 
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
   /// Transform edge function item response to FoodItemData
   /// Takes raw response with food_id and quantity, looks up details from database
@@ -19,7 +21,7 @@ class FoodDataTransformationService {
     final foodId = item['food_id'] as String;
     final quantity = item['quantity'] as num;
 
-    AppLogger.instance.debug('Transforming edge function item',
+    _logger.debug('Transforming edge function item',
       data: {
         'food_id': foodId,
         'quantity': quantity,
@@ -30,7 +32,7 @@ class FoodDataTransformationService {
     final foodDetails = await _foodRepository.getFoodById(foodId);
 
     if (foodDetails == null) {
-      AppLogger.instance.error('Food not found in local database',
+      _logger.error('Food not found in local database',
         context: 'FOOD_TRANSFORMATION',
         data: {
           'food_id': foodId,
@@ -88,7 +90,7 @@ class FoodDataTransformationService {
     // Generate display name using database fields
     final displayName = _generateDisplayName(quantity, foodDetails);
 
-    AppLogger.instance.debug('Generated display name',
+    _logger.debug('Generated display name',
       data: {
         'food_id': foodId,
         'quantity': quantity,
@@ -98,7 +100,7 @@ class FoodDataTransformationService {
     );
 
     // Log raw database values first
-    AppLogger.instance.debug('Raw database values for transformation',
+    _logger.debug('Raw database values for transformation',
       data: {
         'food_id': foodId,
         'food_name': foodDetails.name,
@@ -120,7 +122,7 @@ class FoodDataTransformationService {
     final calculatedSodium = foodDetails.effectiveSodiumMg * quantity;
     final calculatedFluids = (foodDetails.fluidMlPerServing ?? 0.0) * quantity;
 
-    AppLogger.instance.debug('Calculated nutritional values',
+    _logger.debug('Calculated nutritional values',
       data: {
         'food_id': foodId,
         'quantity': quantity,

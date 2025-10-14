@@ -69,6 +69,13 @@ class UserProfilesTable extends Table {
   /// Whether the swipe hint animation has been shown to this user - Drift-only field
   BoolColumn get swipeHintShown => boolean().withDefault(const Constant(false)).named('swipe_hint_shown')();
 
+  // NEW: Calendar preferences
+  TextColumn get calendarWeekStart => text().withDefault(const Constant('monday')).named('calendar_week_start')(); // 'sunday', 'monday'
+  TextColumn get defaultActivityTime => text().withDefault(const Constant('07:00:00')).named('default_activity_time')();
+  TextColumn get defaultActivityDay => text().withDefault(const Constant('saturday')).named('default_activity_day')(); // Day of week
+  BoolColumn get autoGenerateNutrition => boolean().withDefault(const Constant(true)).named('auto_generate_nutrition')();
+  BoolColumn get completionReminders => boolean().withDefault(const Constant(true)).named('completion_reminders')();
+
   @override
   Set<Column> get primaryKey => {id};
 
@@ -78,6 +85,12 @@ class UserProfilesTable extends Table {
   @override
   List<String> get customConstraints => [
     'UNIQUE(device_id)', // Ensure device_id is unique
+    "CHECK (gender IN ('male', 'female', 'other') OR gender IS NULL)",
+    "CHECK (gut_training_level IN ('low', 'moderate', 'high'))",
+    "CHECK (preferred_distance_unit IN ('miles', 'kilometers'))",
+    "CHECK (preferred_pace_unit IN ('min_per_mile', 'min_per_km'))",
+    "CHECK (calendar_week_start IN ('sunday', 'monday'))",
+    "CHECK (default_activity_day IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'))",
   ];
 }
 

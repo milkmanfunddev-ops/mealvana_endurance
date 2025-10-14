@@ -1,0 +1,105 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run edge function tests
+        working-directory: test/local_edge_functions
+        run: |
+          npm install
+          npm test
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: test
+    environment: production # Requires manual approval in GitHub settings
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to production project
+        run: |
+          supabase link --project-ref ${{ secrets.PROD_PROJECT_ID }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+
+      - name: Safety check - Review schema diff
+        run: |
+          echo "⚠️  PRODUCTION DEPLOYMENT - Reviewing changes..."
+          echo "📋 Schema differences:"
+          supabase db diff
+
+          echo ""
+          echo "⏸️  Proceeding with deployment (manual approval required)"
+
+      - name: Deploy database migrations
+        run: |
+          echo "🚀 Deploying migrations to PRODUCTION..."
+          supabase db push
+
+          echo "✅ Production migrations deployed successfully"
+
+      - name: Deploy Edge Functions
+        run: |
+          echo "🚀 Deploying Edge Functions to PRODUCTION..."
+          supabase functions deploy
+
+          echo "✅ Production Edge Functions deployed successfully"
+
+      - name: Verify deployment
+        run: |
+          echo "🔍 Verifying production deployment..."
+          supabase db diff
+
+          echo "✅ Production deployment verified"
+
+      - name: Notify deployment
+        if: success()
+        run: |
+          echo "🎉 PRODUCTION DEPLOYMENT COMPLETED SUCCESSFULLY!"
+          echo "Environment: Production"
+          echo "Project: ${{ secrets.PROD_PROJECT_ID }}"
+          echo ""
+          echo "⚠️  Next steps:"
+          echo "1. Monitor Sentry for errors"
+          echo "2. Check Mixpanel events"
+          echo "3. Verify app functionality"

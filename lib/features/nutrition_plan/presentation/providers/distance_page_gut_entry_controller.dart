@@ -1,20 +1,43 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../../calendar/domain/activity.dart';
+import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/macro_targets.dart';
 import '../../data/macro_repository.dart';
-import '../../data/nutrition_plan_repository.dart';
 import '../../application/llm_nutrition_plan_service.dart';
 import '../../../auth/domain/user_preferences.dart';
-import '../../../../shared/services/analytics_service.dart';
+import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../auth/application/auth_service.dart';
 import 'nutrition_plan_controller.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'distance_page_gut_entry_controller.g.dart';
+
+/// Pending activity data (not yet created in database)
+class PendingActivityData {
+  const PendingActivityData({
+    required this.title,
+    required this.scheduledDateTime,
+    required this.distanceMiles,
+    required this.paceMinutesPerMile,
+    this.intensityLevel = IntensityLevel.moderate,
+    this.notes,
+  });
+
+  final String title;
+  final DateTime scheduledDateTime;
+  final double distanceMiles;
+  final double paceMinutesPerMile;
+  final IntensityLevel intensityLevel;
+  final String? notes;
+}
 
 /// State for both distance page and adjust macros screens
 class DistancePageGutEntryState {
@@ -57,6 +80,9 @@ class DistancePageGutEntryState {
   // Shared fields
   final String? errorMessage;
   final String? planId; // UUID v4 for threading North-Star metric events
+  final String? activityId; // Calendar activity ID (links nutrition plan to activity)
+  final String? eventId; // Calendar event ID (for provider invalidation after plan creation)
+  final PendingActivityData? pendingActivityData; // Activity data (not yet created)
 
   const DistancePageGutEntryState({
     // Distance page fields
@@ -98,6 +124,9 @@ class DistancePageGutEntryState {
     // Shared fields
     this.errorMessage,
     this.planId,
+    this.activityId,
+    this.eventId,
+    this.pendingActivityData,
   });
 
   DistancePageGutEntryState copyWith({
@@ -140,6 +169,9 @@ class DistancePageGutEntryState {
     // Shared fields
     String? errorMessage,
     String? planId,
+    String? activityId,
+    String? eventId,
+    PendingActivityData? pendingActivityData,
   }) {
     return DistancePageGutEntryState(
       title: title ?? this.title,
@@ -180,6 +212,9 @@ class DistancePageGutEntryState {
       // Shared fields
       errorMessage: errorMessage ?? this.errorMessage,
       planId: planId ?? this.planId,
+      activityId: activityId ?? this.activityId,
+      eventId: eventId ?? this.eventId,
+      pendingActivityData: pendingActivityData ?? this.pendingActivityData,
     );
   }
 }
@@ -189,11 +224,12 @@ class DistancePageGutEntryState {
 @riverpod
 class DistancePageGutEntryController extends _$DistancePageGutEntryController {
   ContentService get _contentService => ref.read(contentServiceProvider);
+  AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
+  AuthService get _authService => ref.read(authServiceProvider);
 
   @override
   FutureOr<DistancePageGutEntryState> build() async {
-    // Track screen view
-    AnalyticsService.trackScreenViewed('Main Nutrition Plan Screen');
+    // Screen views not tracked per README spec
     
     // Load content synchronously from in-memory cache
     final title = _contentService.getValue(ContentKeys.mainScreenTitle, defaultValue: 'Mealvana Endurance');
@@ -272,10 +308,11 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
   Future<void> loadUserPreferences() async {
     // TODO: Load user profile when auth service method is available
     // For now, use default gut training level
-    print('🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)');
+    DebugLogger.info('🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)');
   }
 
   /// Generate macro targets by calling the generate-macros edge function
+  /// Also creates the activity in the calendar database
   Future<void> generateMacros({
     required String distanceText,
     required String paceText,
@@ -283,21 +320,25 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     required GutTraining gutTraining,
     required DistanceUnit distanceUnit,
     required PaceUnit paceUnit,
+    required DateTime scheduledDate,
+    required TimeOfDay scheduledTime,
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
+    String? activityId, // Link to calendar activity/event
+    String? eventId, // Link to calendar event (for provider invalidation)
   }) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
-    print('🚀 DEBUG: Starting macro generation...');
-    print('🔍 DEBUG: Distance: $distanceText ${distanceUnit.name}');
-    print('🔍 DEBUG: Pace: $paceText ${paceUnit.name}');
-    print('🔍 DEBUG: Time before run: ${timeBeforeRunMinutes}min');
-    print('🔍 DEBUG: Gut training: ${gutTraining.name}');
-    print('🔍 DEBUG: Temperature: ${temperatureC}°C');
-    print('🔍 DEBUG: Humidity: ${humidityPct}%');
-    print('🔍 DEBUG: Sweat rate: ${sweatRateCat?.name}');
+    DebugLogger.info('🚀 DEBUG: Starting macro generation...');
+    DebugLogger.info('🔍 DEBUG: Distance: $distanceText ${distanceUnit.name}');
+    DebugLogger.info('🔍 DEBUG: Pace: $paceText ${paceUnit.name}');
+    DebugLogger.info('🔍 DEBUG: Time before run: ${timeBeforeRunMinutes}min');
+    DebugLogger.info('🔍 DEBUG: Gut training: ${gutTraining.name}');
+    DebugLogger.info('🔍 DEBUG: Temperature: $temperatureC°C');
+    DebugLogger.info('🔍 DEBUG: Humidity: $humidityPct%');
+    DebugLogger.info('🔍 DEBUG: Sweat rate: ${sweatRateCat?.name}');
 
     // Set loading state
     state = AsyncData(currentState.copyWith(
@@ -306,6 +347,8 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     ));
 
     state = await AsyncValue.guard(() async {
+      String planId = '';
+      String deviceId = 'unknown';
       try {
         // Parse and validate input
         final distance = double.tryParse(distanceText) ?? 5.0;
@@ -318,33 +361,56 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
               ((double.tryParse(paceParts[1]) ?? 30.0) / 60.0)
             : double.tryParse(paceString) ?? 8.5;
 
-        print('📊 DEBUG: Parsed distance: ${distance}mi');
-        print('📊 DEBUG: Parsed pace: ${paceMinutes}min/mi');
+        DebugLogger.info('📊 DEBUG: Parsed distance: ${distance}mi');
+        DebugLogger.info('📊 DEBUG: Parsed pace: ${paceMinutes}min/mi');
         
         // Generate plan_id for North-Star metric threading
         const uuid = Uuid();
-        final planId = uuid.v4();
-        
-        print('🆔 DEBUG: Generated plan_id: $planId');
+        planId = uuid.v4();
 
-        // Track plan flow started - North-Star metric entry point
-        await AnalyticsService.trackPlanFlowStarted(
+        DebugLogger.debug('🆔 DEBUG: Generated plan_id: $planId');
+
+        // Track plan generation started - entry point for North-Star metrics
+        final user = await _authService.getCurrentUser();
+        deviceId = user?.id ?? 'unknown';
+
+        await _analytics.trackPlanGenerationStarted(
+          deviceId: deviceId,
           planId: planId,
-          screen: 'Adjust Your Macros',
-          activityType: 'running', // Could be parameterized later
-          distanceMi: distance,
-          durationMin: distance * paceMinutes, // Calculate duration
-          timeBeforeRunMin: timeBeforeRunMinutes.toDouble(),
+          distanceMiles: distance,
+          paceMinutesPerMile: paceMinutes,
           gutTrainingLevel: gutTraining.name,
-          sweatRateLevel: sweatRateCat?.name ?? 'medium',
-          temperatureC: temperatureC ?? 20.0, // Default temp
-          humidityPct: humidityPct ?? 50.0, // Default humidity
         );
 
-        print('🎯 DEBUG: Calling generateMacroTargets directly...');
+        // 🆕 STORE PENDING ACTIVITY DATA (don't create yet)
+        DebugLogger.info('📅 DEBUG: Storing pending activity data...');
+        final scheduledDateTime = DateTime(
+          scheduledDate.year,
+          scheduledDate.month,
+          scheduledDate.day,
+          scheduledTime.hour,
+          scheduledTime.minute,
+        );
+
+        final activityTitle = '${distance.toStringAsFixed(1)} mi Run';
+
+        final pendingActivityData = PendingActivityData(
+          title: activityTitle,
+          scheduledDateTime: scheduledDateTime,
+          distanceMiles: distance,
+          paceMinutesPerMile: paceMinutes,
+          intensityLevel: IntensityLevel.moderate,
+          notes: 'Created from nutrition plan generation',
+        );
+
+        DebugLogger.info('✅ DEBUG: Activity data stored (not created yet)');
+
+        DebugLogger.info('🎯 DEBUG: Calling generateMacroTargets directly...');
 
         // Call generate-macros edge function directly
         await _generateMacroTargets(
+          planId: planId,
+          deviceId: deviceId,
           distanceMiles: distance,
           paceMinutesPerMile: paceMinutes,
           timeBeforeRunMinutes: timeBeforeRunMinutes,
@@ -354,41 +420,44 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
           humidityPct: humidityPct,
         );
 
-        print('💾 DEBUG: MacroTargets generated successfully');
+        DebugLogger.info('💾 DEBUG: MacroTargets generated successfully');
 
         // Get the generated macro targets from cache to track analytics
         final repository = await ref.read(macroRepositoryProvider.future);
         final macroTargets = await repository.getCachedMacroTargets();
         
-        print('✅ DEBUG: Macro targets generated successfully!');
+        DebugLogger.info('✅ DEBUG: Macro targets generated successfully!');
 
-        // Update state to not generating and include macro targets with planId
+        // Update state to not generating and include macro targets with planId, eventId, and pendingActivityData
         return currentState.copyWith(
           isGeneratingMacros: false,
           errorMessage: null,
           macroTargets: macroTargets,
           planId: planId, // Thread plan_id for North-Star metric
+          activityId: activityId, // Store activity ID if provided
+          eventId: eventId, // Store event ID for provider invalidation
+          pendingActivityData: pendingActivityData, // Store activity data (not created yet)
         );
 
-      } catch (error, stackTrace) {
-        print('❌ DEBUG: Error generating macro targets: $error');
+      } catch (error) {
+        DebugLogger.error('❌ DEBUG: Error generating macro targets: $error');
         
         // Track the error
-        AnalyticsService.trackError(
-          errorType: 'Macro Targets Generation Error',
-          errorMessage: error.toString(),
-          screenName: 'Distance Page Gut Entry',
-          additionalContext: {
-            'Distance': distanceText,
-            'Pace': paceText,
-          },
-        );
+        await _analytics.track('app_error', properties: {
+          'error_type': 'Macro Targets Generation Error',
+          'error_message': error.toString(),
+          'screen_name': 'Distance Page Gut Entry',
+          'distance': distanceText,
+          'pace': paceText,
+        });
         
         // Track macro generation failed
-        AnalyticsService.trackNutritionPlanGenerationFailed(
-          errorMessage: error.toString(),
+        await _analytics.trackPlanGenerationFailed(
+          deviceId: deviceId,
+          planId: planId,
           distanceMiles: double.tryParse(distanceText) ?? 5.0,
           paceMinutesPerMile: double.tryParse(paceText) ?? 8.5,
+          errorMessage: error.toString(),
         );
         
         rethrow; // Re-throw so the screen can handle it
@@ -398,6 +467,8 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
 
   /// Generate macro targets by calling the generate-macros edge function
   Future<void> _generateMacroTargets({
+    required String planId,
+    required String deviceId,
     required double distanceMiles,
     required double paceMinutesPerMile,
     required int timeBeforeRunMinutes,
@@ -406,17 +477,8 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     double? temperatureC,
     double? humidityPct,
   }) async {
-    // Track macro generation started
-    AnalyticsService.trackNutritionPlanGenerationStarted(
-      distanceMiles: distanceMiles,
-      paceMinutesPerMile: paceMinutesPerMile,
-      timeBeforeRunHours: timeBeforeRunMinutes / 60.0,
-      gutTrainingLevel: gutTraining.name,
-    );
-
     // Get user profile data
-    final authService = ref.read(authServiceProvider);
-    final userProfile = await authService.getCurrentUser();
+    final userProfile = await _authService.getCurrentUser();
     
     // Calculate user metrics with fallbacks to reasonable defaults
     final age = userProfile?.age ?? 30;
@@ -428,7 +490,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         ? userProfile.totalHeightInches * 2.54  // Convert inches to cm  
         : 170.0; // Default 170cm if no profile
         
-    print('🔍 DEBUG: User profile - Age: $age, Gender: $gender, Weight: ${weightKg.toStringAsFixed(1)}kg, Height: ${heightCm.toStringAsFixed(0)}cm');
+    DebugLogger.info('🔍 DEBUG: User profile - Age: $age, Gender: $gender, Weight: ${weightKg.toStringAsFixed(1)}kg, Height: ${heightCm.toStringAsFixed(0)}cm');
     
     final requestData = {
       'age': age,
@@ -453,7 +515,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     };
 
     // Call the generate-macros edge function
-    final supabase = Supabase.instance.client;
+    final supabase = ref.read(appExternalDepsProvider).supabaseClient;
     final response = await supabase.functions.invoke(
       'generate-macros',
       body: requestData,
@@ -474,12 +536,12 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     final macrosData = data['macros'] as Map<String, dynamic>;
     
     // Debug: Log the raw response data to help identify type issues
-    print('🔍 DEBUG: Edge function response keys: ${macrosData.keys.toList()}');
-    print('🔍 DEBUG: Sample values and types:');
+    DebugLogger.info('🔍 DEBUG: Edge function response keys: ${macrosData.keys.toList()}');
+    DebugLogger.info('🔍 DEBUG: Sample values and types:');
     final sampleKeys = ['pre_run_carbs_g', 'during_rate_g_per_h', 'duration_h', 'MET'];
     for (final key in sampleKeys) {
       if (macrosData.containsKey(key)) {
-        print('  $key: ${macrosData[key]} (${macrosData[key].runtimeType})');
+        DebugLogger.debug('  $key: ${macrosData[key]} (${macrosData[key].runtimeType})');
       }
     }
     
@@ -492,7 +554,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         if (value is String) return double.tryParse(value) ?? 0.0;
         return (value as num).toDouble();
       } catch (e) {
-        print('❌ DEBUG: Error converting field "$fieldName" with value "$value" (${value.runtimeType}) to double: $e');
+        DebugLogger.error('❌ DEBUG: Error converting field "$fieldName" with value "$value" (${value.runtimeType}) to double: $e');
         return 0.0;
       }
     }
@@ -552,16 +614,20 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     final repository = await ref.read(macroRepositoryProvider.future);
     await repository.saveMacroTargets(macroTargets);
 
-    // Track successful macro generation
-    AnalyticsService.trackNutritionPlanGenerated(
+    await _analytics.trackPlanGenerated(
+      deviceId: deviceId,
+      planId: planId,
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
       totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
-      totalCarbs: (macroTargets.preRun.carbsG + macroTargets.duringRun.carbTotalG + macroTargets.postRun.carbsG).round(),
-      beforeRunItems: 1, // Simplified for now
+      totalCarbs: (macroTargets.preRun.carbsG +
+              macroTargets.duringRun.carbTotalG +
+              macroTargets.postRun.carbsG)
+          .round(),
+      beforeRunItems: 1,
       duringRunItems: 1,
       afterRunItems: 1,
-      isFirstPlan: true, // Could be enhanced to check if this is actually first plan
+      isFirstPlan: true,
     );
   }
 
@@ -578,14 +644,14 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     
     // Track macro adjustment using documented macros_changed event
     final oldValue = _getFieldCurrentValue(cachedTargets, field);
-    AnalyticsService.trackMacrosChanged(
-      planId: 'pre_generation', // No actual plan exists yet - this is pre-generation editing
-      screen: 'adjust_macros_screen',
-      experimentVariant: 'auto_items_v1', // Default variant
-      macro: '${section.name}_${field.name}', // e.g., "preRun_carbsG"
-      oldValue: oldValue ?? 0.0,
-      newValue: newValue,
-    );
+    await _analytics.track('macros_changed', properties: {
+      'plan_id': 'pre_generation',
+      'screen': 'adjust_macros_screen',
+      'experiment_variant': 'auto_items_v1',
+      'macro': '${section.name}_${field.name}',
+      'old_value': oldValue ?? 0.0,
+      'new_value': newValue,
+    });
 
     try {
       final updatedTargets = await repository.updateMacroTargets(
@@ -596,30 +662,30 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
       );
 
       // Track successful update
-      AnalyticsService.track('Macro Value Updated Successfully', properties: {
-        'Section': section.name,
-        'Field': field.name,
-        'Final Value': newValue,
+      await _analytics.track('macro_value_updated_successfully', properties: {
+        'section': section.name,
+        'field': field.name,
+        'final_value': newValue,
       });
 
       // Refresh state with updated targets
-      final currentState = state.valueOrNull;
+      final currentState = state.value;
       if (currentState != null) {
-        state = AsyncData(currentState.copyWith(macroTargets: updatedTargets));
+        state = AsyncData(currentState.copyWith(
+          macroTargets: updatedTargets,
+        ));
       }
 
-    } catch (error, stackTrace) {
+    } catch (error) {
       // Track error
-      AnalyticsService.trackError(
-        errorType: 'Macro Update Error',
-        errorMessage: error.toString(),
-        screenName: 'Adjust Macros',
-        additionalContext: {
-          'Section': section.name,
-          'Field': field.name,
-          'Attempted Value': newValue,
-        },
-      );
+      await _analytics.track('app_error', properties: {
+        'error_type': 'Macro Update Error',
+        'error_message': error.toString(),
+        'screen_name': 'Adjust Macros',
+        'section': section.name,
+        'field': field.name,
+        'attempted_value': newValue,
+      });
       
       rethrow;
     }
@@ -633,8 +699,8 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     if (cachedTargets == null) return;
 
     // Track reset action
-    AnalyticsService.track('Macro Values Reset', properties: {
-      'Previous Modifications Count': _countModifiedFields(cachedTargets),
+    await _analytics.track('macro_values_reset', properties: {
+      'previous_modifications_count': _countModifiedFields(cachedTargets),
     });
 
     try {
@@ -654,16 +720,16 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         await repository.saveMacroTargets(restoredTargets);
         
         // Track successful reset
-        AnalyticsService.track('Macro Values Reset Successfully');
+        await _analytics.track('macro_values_reset_successfully');
         
         // Update state with the restored targets
-        final currentState = state.valueOrNull;
+        final currentState = state.value;
         if (currentState != null) {
           state = AsyncData(currentState.copyWith(macroTargets: restoredTargets));
         }
       } else {
         // Fallback: if no original targets found, just clear modification flags
-        print('DEBUG: No original targets found, falling back to clearing modification flags');
+        DebugLogger.debug('DEBUG: No original targets found, falling back to clearing modification flags');
         final fallbackTargets = cachedTargets.copyWith(
           isUserModified: false,
           modifiedFields: [],
@@ -671,19 +737,19 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
         
         await repository.saveMacroTargets(fallbackTargets);
         
-        final currentState = state.valueOrNull;
+        final currentState = state.value;
         if (currentState != null) {
           state = AsyncData(currentState.copyWith(macroTargets: fallbackTargets));
         }
       }
       
-    } catch (error, stackTrace) {
+    } catch (error) {
       // Track error
-      AnalyticsService.trackError(
-        errorType: 'Macro Reset Error',
-        errorMessage: error.toString(),
-        screenName: 'Adjust Macros',
-      );
+      await _analytics.track('app_error', properties: {
+        'error_type': 'Macro Reset Error',
+        'error_message': error.toString(),
+        'screen_name': 'Adjust Macros',
+      });
       
       rethrow;
     }
@@ -769,15 +835,15 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
       );
       
       // Track successful save
-      AnalyticsService.track('All Macro Changes Saved Successfully');
+      await _analytics.track('all_macro_changes_saved_successfully');
       
-    } catch (error, stackTrace) {
+    } catch (error) {
       // Track error
-      AnalyticsService.trackError(
-        errorType: 'Save All Macros Error',
-        errorMessage: error.toString(),
-        screenName: 'Adjust Macros',
-      );
+      await _analytics.track('app_error', properties: {
+        'error_type': 'Save All Macros Error',
+        'error_message': error.toString(),
+        'screen_name': 'Adjust Macros',
+      });
       
       rethrow;
     }
@@ -790,7 +856,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     
     if (macroTargets == null) return;
 
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     // Set creating plan state
@@ -799,57 +865,63 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     final modifiedFieldsCount = _countModifiedFields(macroTargets);
     
     // Track plan creation start
-    AnalyticsService.timeEvent('Nutrition Plan Created from Adjusted Macros');
-    AnalyticsService.track('Nutrition Plan Creation Started from Adjusted Macros', properties: {
-      'Distance (miles)': macroTargets.metrics.distanceMi,
-      'Duration (hours)': macroTargets.metrics.durationH,
-      'Modified Fields Count': modifiedFieldsCount,
+    await _analytics.timeEvent('nutrition_plan_created_from_adjusted_macros');
+    await _analytics.track('nutrition_plan_creation_started_from_adjusted_macros', properties: {
+      'distance_miles': macroTargets.metrics.distanceMi,
+      'duration_hours': macroTargets.metrics.durationH,
+      'modified_fields_count': modifiedFieldsCount,
     });
 
     state = await AsyncValue.guard(() async {
       try {
         // Call the LLM service with adjusted macro targets
         final llmService = ref.read(llmNutritionPlanServiceProvider);
+        final currentStateValue = state.value;
         final nutritionPlan = await llmService.generateLLMNutritionPlanFromMacros(
           macroTargets: macroTargets,
+          activityId: currentStateValue?.activityId, // Link to calendar activity/event if provided
         );
 
         if (nutritionPlan != null) {
           // Track successful plan creation
-          AnalyticsService.track('Nutrition Plan Created from Adjusted Macros', properties: {
-            'Distance (miles)': macroTargets.metrics.distanceMi,
-            'Duration (hours)': macroTargets.metrics.durationH,
-            'Total Calories': macroTargets.metrics.caloriesNetKcal.round(),
-            'Pre Run Carbs (g)': macroTargets.preRun.carbsG,
-            'During Run Carbs (g)': macroTargets.duringRun.carbTotalG,
-            'Post Run Carbs (g)': macroTargets.postRun.carbsG,
-            'Modified Fields Count': modifiedFieldsCount,
-            'Plan Type': 'LLM Generated',
+          await _analytics.track('nutrition_plan_created_from_adjusted_macros', properties: {
+            'distance_miles': macroTargets.metrics.distanceMi,
+            'duration_hours': macroTargets.metrics.durationH,
+            'total_calories': macroTargets.metrics.caloriesNetKcal.round(),
+            'pre_run_carbs_g': macroTargets.preRun.carbsG,
+            'during_run_carbs_g': macroTargets.duringRun.carbTotalG,
+            'post_run_carbs_g': macroTargets.postRun.carbsG,
+            'modified_fields_count': modifiedFieldsCount,
+            'plan_type': 'llm_generated',
           });
 
           // Use setGeneratedPlan to mark as unsaved and save temporarily with planId
           await ref.read(nutritionPlanControllerProvider.notifier).setGeneratedPlan(
-            nutritionPlan, 
+            nutritionPlan,
             planId: currentState.planId, // Get planId from state
           );
-          
+
+          // Invalidate eventDetailProvider if eventId exists (to refresh "Create Nutrition Plan" button)
+          if (currentStateValue?.eventId != null) {
+            DebugLogger.info('🔄 DEBUG: Invalidating eventDetailProvider for eventId: ${currentStateValue!.eventId}');
+            ref.invalidate(eventDetailProvider(currentStateValue.eventId!));
+          }
+
           return currentState.copyWith(isCreatingPlan: false);
         } else {
           // LLM service returned null, indicating fallback needed
           throw Exception('LLM service failed, fallback to algorithm needed');
         }
         
-      } catch (error, stackTrace) {
+      } catch (error) {
         // Track error
-        AnalyticsService.trackError(
-          errorType: 'Plan Creation Error',
-          errorMessage: error.toString(),
-          screenName: 'Adjust Macros',
-          additionalContext: {
-            'Distance (miles)': macroTargets.metrics.distanceMi,
-            'Modified Fields Count': modifiedFieldsCount,
-          },
-        );
+        await _analytics.track('app_error', properties: {
+          'error_type': 'Plan Creation Error',
+          'error_message': error.toString(),
+          'screen_name': 'Adjust Macros',
+          'distance_miles': macroTargets.metrics.distanceMi,
+          'modified_fields_count': modifiedFieldsCount,
+        });
         
         rethrow;
       }

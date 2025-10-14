@@ -1,16 +1,20 @@
 import 'package:flutter/foundation.dart';
-import '../../../services/supabase_service.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../domain/feedback_data.dart';
 
 /// Supabase-based feedback service for reliable data storage
 class SupabaseFeedbackService {
-  final SupabaseService _supabaseService = SupabaseService.instance;
+  SupabaseFeedbackService(this._supabase);
+
+  final SupabaseClient _supabase;
   
   /// Submit feedback to Supabase database
   Future<bool> submitFeedback(FeedbackResponse feedback) async {
     if (kDebugMode) {
-      print('🚀 SupabaseFeedbackService: Starting submission...');
-      print('📝 Feedback data: ${feedback.toString()}');
+      DebugLogger.info('🚀 SupabaseFeedbackService: Starting submission...');
+      DebugLogger.info('📝 Feedback data: ${feedback.toString()}');
     }
 
     try {
@@ -28,29 +32,26 @@ class SupabaseFeedbackService {
       };
 
       if (kDebugMode) {
-        print('🗂️ Database data prepared:');
+        DebugLogger.info('🗂️ Database data prepared:');
         feedbackData.forEach((key, value) {
-          print('  $key: "$value"');
+          DebugLogger.debug('  $key: "$value"');
         });
       }
 
       // Insert into feedback table
-      final result = await _supabaseService.insert(
-        table: 'feedback',
-        data: feedbackData,
-      );
+      final result = await _supabase.from('feedback').insert(feedbackData).select();
 
       if (kDebugMode) {
-        print('📡 Supabase response: ${result.length} rows inserted');
-        print('✅ Submission successful!');
+        DebugLogger.info('📡 Supabase response: ${result.length} rows inserted');
+        DebugLogger.info('✅ Submission successful!');
       }
 
       return result.isNotEmpty;
     } catch (error, stackTrace) {
       if (kDebugMode) {
-        print('💥 Error submitting to Supabase:');
-        print('  Error: $error');
-        print('  Stack trace: $stackTrace');
+        DebugLogger.error('💥 Error submitting to Supabase:');
+        DebugLogger.error('  Error: $error');
+        DebugLogger.debug('  Stack trace: $stackTrace');
       }
       return false;
     }
@@ -59,7 +60,7 @@ class SupabaseFeedbackService {
   /// Get all feedback submissions (for analytics/admin)
   Future<List<Map<String, dynamic>>> getAllFeedback() async {
     try {
-      final response = await _supabaseService
+      final response = await _supabase
           .from('feedback')
           .select()
           .order('created_at', ascending: false);
@@ -67,7 +68,7 @@ class SupabaseFeedbackService {
       return List<Map<String, dynamic>>.from(response);
     } catch (error) {
       if (kDebugMode) {
-        print('Error fetching feedback: $error');
+        DebugLogger.error('Error fetching feedback: $error');
       }
       return [];
     }
@@ -77,12 +78,12 @@ class SupabaseFeedbackService {
   Future<Map<String, dynamic>> getFeedbackStats() async {
     try {
       // Get satisfaction level distribution
-      final satisfactionStats = await _supabaseService
+      final satisfactionStats = await _supabase
           .from('feedback')
           .select('satisfaction_level');
 
       // Get app feedback distribution  
-      final appFeedbackStats = await _supabaseService
+      final appFeedbackStats = await _supabase
           .from('feedback')
           .select('app_feedback');
 
@@ -109,7 +110,7 @@ class SupabaseFeedbackService {
       };
     } catch (error) {
       if (kDebugMode) {
-        print('Error fetching feedback stats: $error');
+        DebugLogger.error('Error fetching feedback stats: $error');
       }
       return {};
     }
@@ -130,19 +131,16 @@ class SupabaseFeedbackService {
         'created_at': DateTime.now().toIso8601String(),
       };
 
-      final result = await _supabaseService.insert(
-        table: 'feedback',
-        data: testData,
-      );
+      final result = await _supabase.from('feedback').insert(testData).select();
 
       if (kDebugMode) {
-        print('🧪 Test connection: ${result.isNotEmpty ? 'SUCCESS' : 'FAILED'}');
+        DebugLogger.info('🧪 Test connection: ${result.isNotEmpty ? 'SUCCESS' : 'FAILED'}');
       }
 
       return result.isNotEmpty;
     } catch (error) {
       if (kDebugMode) {
-        print('🧪 Test connection failed: $error');
+        DebugLogger.info('🧪 Test connection failed: $error');
       }
       return false;
     }

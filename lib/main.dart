@@ -1,40 +1,40 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'shared/services/logging_service.dart';
+import 'shared/services/app_config.dart';
 import 'shared/widgets/root_app_widget.dart';
 
 Future<void> main() async {
   runZonedGuarded(() async {
-    // Initialize Sentry with our configuration
+    // Load environment variables from .env file
+    await dotenv.load(fileName: '.env');
+
+    // Create app configuration from .env
+    final config = AppConfig.fromEnv();
+
+    // Initialize Sentry with configuration from .env
     await SentryFlutter.init(
       (options) {
-        // DSN configuration
-        options.dsn = const String.fromEnvironment(
-          'SENTRY_DSN',
-          defaultValue: 'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
-        );
+        // DSN configuration from AppConfig
+        options.dsn = config.sentryDsn;
+
+        // Environment configuration from AppConfig
+        options.environment = config.sentryEnvironment;
         
-        // Environment-based configuration
-        options.environment = const String.fromEnvironment(
-          'SENTRY_ENVIRONMENT',
-          defaultValue: kDebugMode ? 'development' : 'production',
-        );
-        
-        // Performance monitoring (environment-based)
+        // Performance monitoring (config-based)
         // NOTE: Profiling disabled in debug mode due to iOS crash
-        if (kDebugMode) {
+        if (config.enableDebugLogging) {
           options.tracesSampleRate = 1.0; // 100% in development
           options.profilesSampleRate = 0.0; // Disable profiling in debug mode due to crash
           options.debug = true;
         } else {
           options.tracesSampleRate = 0.1; // 10% in production
-          options.profilesSampleRate = 0.1; // 10% profiling in production  
+          options.profilesSampleRate = config.enableSentryProfiling ? 0.1 : 0.0;
           options.debug = false;
         }
         
@@ -82,7 +82,7 @@ Future<void> main() async {
       },
     );
 
-    await _runMealvanaApp();
+    await _runMealvanaApp(config);
   }, (exception, stackTrace) async {
     // Capture any uncaught exceptions
     await Sentry.captureException(exception, stackTrace: stackTrace);
@@ -90,26 +90,24 @@ Future<void> main() async {
 }
 
 /// App runner function called after Sentry initialization
-Future<void> _runMealvanaApp() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize logging service
-  LoggingService().initialize(
-    logLevel: kDebugMode ? Level.debug : Level.info,
-    enableFileOutput: false,
-  );
-  
-  // Initialize Supabase (non-recoverable initialization)
+Future<void> _runMealvanaApp(AppConfig config) async {
+  // Use SentryWidgetsFlutterBinding for Sentry frame tracking integration
+  SentryWidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase (non-recoverable initialization) using config
   await Supabase.initialize(
-    url: 'https://wvmvsodrvbkxfydabqed.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2bXZzb2RydmJreGZ5ZGFicWVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTMxMDcsImV4cCI6MjA3MDg2OTEwN30.pG2IYdEIIFS8_zPxzr6pZplzWQqvD13dvslrpFMAPCk',
+    url: config.supabaseUrl,
+    anonKey: config.supabaseAnonKey,
   );
-  
+
   // Entry point following Andrea Bizzotto's pattern with runZonedGuarded pattern
   runApp(
     ProviderScope(
+      overrides: [
+        // Override appConfigProvider with loaded config
+        appConfigProvider.overrideWithValue(config),
+      ],
       child: RootAppWidget(),
     ),
   );
 }
-

@@ -5,7 +5,7 @@ import '../data/repositories/recipe_repository.dart';
 part 'recipe_service.g.dart';
 
 @riverpod
-RecipeService recipeService(RecipeServiceRef ref) {
+RecipeService recipeService(Ref ref) {
   final repository = ref.read(recipeRepositoryProvider);
   return RecipeService(repository);
 }

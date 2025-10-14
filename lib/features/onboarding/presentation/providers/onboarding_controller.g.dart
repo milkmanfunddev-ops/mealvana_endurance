@@ -6,46 +6,103 @@ part of 'onboarding_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$onboardingProgressHash() =>
-    r'811d98cd3bd2ef13b44db9780bb4ef67e2e0b3b7';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// Controller for managing onboarding flow state
 
-/// Provider for onboarding progress
-///
-/// Copied from [onboardingProgress].
-@ProviderFor(onboardingProgress)
-final onboardingProgressProvider =
-    AutoDisposeFutureProvider<OnboardingProgress>.internal(
-  onboardingProgress,
-  name: r'onboardingProgressProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$onboardingProgressHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef OnboardingProgressRef
-    = AutoDisposeFutureProviderRef<OnboardingProgress>;
-String _$onboardingControllerHash() =>
-    r'fe6998537c7d0df010cf2fc4129a189fd61c328c';
+@ProviderFor(OnboardingController)
+const onboardingControllerProvider = OnboardingControllerProvider._();
 
 /// Controller for managing onboarding flow state
-///
-/// Copied from [OnboardingController].
-@ProviderFor(OnboardingController)
-final onboardingControllerProvider =
-    AutoDisposeAsyncNotifierProvider<OnboardingController, void>.internal(
-  OnboardingController.new,
-  name: r'onboardingControllerProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$onboardingControllerHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final class OnboardingControllerProvider
+    extends $AsyncNotifierProvider<OnboardingController, void> {
+  /// Controller for managing onboarding flow state
+  const OnboardingControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'onboardingControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
-typedef _$OnboardingController = AutoDisposeAsyncNotifier<void>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+  @override
+  String debugGetCreateSourceHash() => _$onboardingControllerHash();
+
+  @$internal
+  @override
+  OnboardingController create() => OnboardingController();
+}
+
+String _$onboardingControllerHash() =>
+    r'b1c184bb37a4c0f05584837081e3b109b03901b2';
+
+/// Controller for managing onboarding flow state
+
+abstract class _$OnboardingController extends $AsyncNotifier<void> {
+  FutureOr<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    build();
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, null);
+  }
+}
+
+/// Provider for onboarding progress
+
+@ProviderFor(onboardingProgress)
+const onboardingProgressProvider = OnboardingProgressProvider._();
+
+/// Provider for onboarding progress
+
+final class OnboardingProgressProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<OnboardingProgress>,
+          OnboardingProgress,
+          FutureOr<OnboardingProgress>
+        >
+    with
+        $FutureModifier<OnboardingProgress>,
+        $FutureProvider<OnboardingProgress> {
+  /// Provider for onboarding progress
+  const OnboardingProgressProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'onboardingProgressProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$onboardingProgressHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<OnboardingProgress> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<OnboardingProgress> create(Ref ref) {
+    return onboardingProgress(ref);
+  }
+}
+
+String _$onboardingProgressHash() =>
+    r'811d98cd3bd2ef13b44db9780bb4ef67e2e0b3b7';

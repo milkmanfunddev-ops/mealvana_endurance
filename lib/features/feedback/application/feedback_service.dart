@@ -3,10 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/feedback_data.dart';
-import '../../../shared/services/analytics_service.dart';
+import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/analytics/analytics_events.dart';
+import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/notification_service.dart';
 import '../data/feedback_repository.dart';
 import '../../../shared/database/database_provider.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Service for submitting feedback to Google Forms and handling survey responses
 class FeedbackService {
@@ -16,6 +19,7 @@ class FeedbackService {
   
   /// Get feedback repository
   FeedbackRepository get _repository => ref.read(feedbackRepositoryProvider);
+  AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
   // Google Form URL - your actual form
   static const String _formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfKkSEUYd_vdDKv4iMVT3jPr2v2VWTg5bVkWRxbvFN1HaAFKQ/formResponse';
   
@@ -50,7 +54,7 @@ class FeedbackService {
       await _repository.saveSurveyResponse(fullResponse);
 
       // Track survey completion
-      await AnalyticsService.trackSurveyCompleted(
+      await _analytics.trackSurveyCompleted(
         confidenceLevel: response.confidenceLevel.value,
         reuseIntent: response.reuseIntent.value,
         reminderRequested: response.reminderPreference != null,
@@ -65,8 +69,8 @@ class FeedbackService {
       return true;
     } catch (error, stackTrace) {
       if (kDebugMode) {
-        print('💥 Error submitting survey response: $error');
-        print('Stack trace: $stackTrace');
+        DebugLogger.error('💥 Error submitting survey response: $error');
+        DebugLogger.debug('Stack trace: $stackTrace');
       }
       return false;
     }
@@ -79,7 +83,7 @@ class FeedbackService {
       final hasPermission = await NotificationService.requestPermissions();
       if (!hasPermission) {
         if (kDebugMode) {
-          print('⚠️ Notification permission denied, cannot schedule reminder');
+          DebugLogger.warning('⚠️ Notification permission denied, cannot schedule reminder');
         }
         return;
       }
@@ -100,7 +104,7 @@ class FeedbackService {
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ Could not get plan ID for notification: $e');
+          DebugLogger.error('⚠️ Could not get plan ID for notification: $e');
         }
       }
 
@@ -114,12 +118,12 @@ class FeedbackService {
       );
 
       if (kDebugMode) {
-        print('✅ Reminder scheduled for $reminderDate');
+        DebugLogger.info('✅ Reminder scheduled for $reminderDate');
       }
     } catch (error, stackTrace) {
       if (kDebugMode) {
-        print('💥 Error scheduling reminder: $error');
-        print('Stack trace: $stackTrace');
+        DebugLogger.error('💥 Error scheduling reminder: $error');
+        DebugLogger.debug('Stack trace: $stackTrace');
       }
     }
   }
@@ -131,7 +135,7 @@ class FeedbackService {
       return !(await _repository.hasRecentSurveyResponse(deviceId));
     } catch (error) {
       if (kDebugMode) {
-        print('Error checking survey eligibility: $error');
+        DebugLogger.error('Error checking survey eligibility: $error');
       }
       return true; // Default to showing survey if check fails
     }
@@ -144,7 +148,7 @@ class FeedbackService {
       return _repository.convertToSurveyResponse(entry);
     } catch (error) {
       if (kDebugMode) {
-        print('Error getting latest survey response: $error');
+        DebugLogger.error('Error getting latest survey response: $error');
       }
       return null;
     }
@@ -155,11 +159,11 @@ class FeedbackService {
     try {
       await NotificationService.cancelAllReminders();
       if (kDebugMode) {
-        print('✅ All reminders cancelled');
+        DebugLogger.info('✅ All reminders cancelled');
       }
     } catch (error) {
       if (kDebugMode) {
-        print('Error cancelling reminders: $error');
+        DebugLogger.error('Error cancelling reminders: $error');
       }
     }
   }
@@ -167,7 +171,7 @@ class FeedbackService {
   /// Test simple submission with minimal data
   Future<bool> testSimpleSubmission() async {
     if (kDebugMode) {
-      print('🧪 Testing simple submission...');
+      DebugLogger.info('🧪 Testing simple submission...');
     }
 
     try {
@@ -185,16 +189,16 @@ class FeedbackService {
       );
 
       if (kDebugMode) {
-        print('📡 Simple test result: ${response.statusCode}');
+        DebugLogger.info('📡 Simple test result: ${response.statusCode}');
         if (response.statusCode != 200 && response.statusCode != 302) {
-          print('Body preview: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
+          DebugLogger.debug('Body preview: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
         }
       }
 
       return response.statusCode == 200 || response.statusCode == 302;
     } catch (error) {
       if (kDebugMode) {
-        print('💥 Simple test error: $error');
+        DebugLogger.error('💥 Simple test error: $error');
       }
       return false;
     }
@@ -203,8 +207,8 @@ class FeedbackService {
   /// Submit feedback response to Google Forms using GET method
   Future<bool> submitFeedbackGET(FeedbackResponse feedback) async {
     if (kDebugMode) {
-      print('🚀 FeedbackService: Starting GET submission...');
-      print('📝 Feedback data: ${feedback.toString()}');
+      DebugLogger.info('🚀 FeedbackService: Starting GET submission...');
+      DebugLogger.info('📝 Feedback data: ${feedback.toString()}');
     }
 
     try {
@@ -222,22 +226,22 @@ class FeedbackService {
       final uri = Uri.parse(_formUrl).replace(queryParameters: queryParams);
       
       if (kDebugMode) {
-        print('🔗 GET URL: $uri');
+        DebugLogger.debug('🔗 GET URL: $uri');
       }
 
       final response = await http.get(uri);
 
       if (kDebugMode) {
-        print('📡 GET Response:');
-        print('  Status Code: ${response.statusCode}');
-        print('  Success: ${response.statusCode == 200}');
+        DebugLogger.info('📡 GET Response:');
+        DebugLogger.debug('  Status Code: ${response.statusCode}');
+        DebugLogger.debug('  Success: ${response.statusCode == 200}');
       }
 
       return response.statusCode == 200;
     } catch (error, stackTrace) {
       if (kDebugMode) {
-        print('💥 GET Error: $error');
-        print('  Stack: $stackTrace');
+        DebugLogger.error('💥 GET Error: $error');
+        DebugLogger.debug('  Stack: $stackTrace');
       }
       return false;
     }
@@ -246,15 +250,17 @@ class FeedbackService {
   /// Submit feedback response to Google Forms using POST method
   Future<bool> submitFeedback(FeedbackResponse feedback) async {
     if (kDebugMode) {
-      print('🚀 FeedbackService: Starting submission...');
-      print('📝 Feedback data: ${feedback.toString()}');
+      DebugLogger.info('🚀 FeedbackService: Starting submission...');
+      DebugLogger.info('📝 Feedback data: ${feedback.toString()}');
     }
 
     // Track feedback submission attempt
-    await AnalyticsService.trackFeedbackSubmitted(
-      type: 'Plan Feedback',
-      message: feedback.suggestions ?? '',
-      rating: _satisfactionToRating(feedback.satisfactionLevel),
+    await _analytics.trackFeedbackSubmitted(
+      planId: feedback.planName ?? 'unknown',
+      confidenceLevel: _satisfactionToRating(feedback.satisfactionLevel),
+      reuseIntent: 'n/a', // FeedbackResponse doesn't have reuseIntent (that's in SurveyResponse)
+      reminderRequested: false, // FeedbackResponse doesn't have reminderPreference (that's in SurveyResponse)
+      message: feedback.suggestions,
     );
 
     try {
@@ -270,11 +276,11 @@ class FeedbackService {
       };
 
       if (kDebugMode) {
-        print('🗂️ Form data prepared:');
+        DebugLogger.info('🗂️ Form data prepared:');
         formData.forEach((key, value) {
-          print('  $key: "$value"');
+          DebugLogger.debug('  $key: "$value"');
         });
-        print('🌐 Submitting to URL: $_formUrl');
+        DebugLogger.info('🌐 Submitting to URL: $_formUrl');
       }
 
       // Create properly encoded form data
@@ -283,7 +289,7 @@ class FeedbackService {
           .join('&');
       
       if (kDebugMode) {
-        print('🔗 Encoded form data: $encodedData');
+        DebugLogger.debug('🔗 Encoded form data: $encodedData');
       }
       
       // Submit to Google Forms
@@ -297,14 +303,14 @@ class FeedbackService {
       );
 
       if (kDebugMode) {
-        print('📡 Response received:');
-        print('  Status Code: ${response.statusCode}');
-        print('  Headers: ${response.headers}');
-        print('  Body length: ${response.body.length}');
+        DebugLogger.info('📡 Response received:');
+        DebugLogger.debug('  Status Code: ${response.statusCode}');
+        DebugLogger.debug('  Headers: ${response.headers}');
+        DebugLogger.debug('  Body length: ${response.body.length}');
         if (response.body.length < 1000) {
-          print('  Body: ${response.body}');
+          DebugLogger.debug('  Body: ${response.body}');
         } else {
-          print('  Body: ${response.body.substring(0, 500)}...[truncated]');
+          DebugLogger.debug('  Body: ${response.body.substring(0, 500)}...[truncated]');
         }
       }
 
@@ -313,15 +319,19 @@ class FeedbackService {
       final success = response.statusCode == 200 || response.statusCode == 302;
       
       if (kDebugMode) {
-        print(success ? '✅ Submission successful!' : '❌ Submission failed!');
+        if (success) {
+          DebugLogger.info('✅ Submission successful!');
+        } else {
+          DebugLogger.error('❌ Submission failed!');
+        }
       }
       
       return success;
     } catch (error, stackTrace) {
       if (kDebugMode) {
-        print('💥 Error submitting feedback:');
-        print('  Error: $error');
-        print('  Stack trace: $stackTrace');
+        DebugLogger.error('💥 Error submitting feedback:');
+        DebugLogger.error('  Error: $error');
+        DebugLogger.debug('  Stack trace: $stackTrace');
       }
       return false;
     }
@@ -343,7 +353,7 @@ class FeedbackService {
 
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (error) {
-      print('Error submitting feedback to API: $error');
+      DebugLogger.error('Error submitting feedback to API: $error');
       return false;
     }
   }
@@ -372,25 +382,25 @@ class FeedbackService {
     );
 
     if (kDebugMode) {
-      print('🧪 Testing both POST and GET methods...');
+      DebugLogger.info('🧪 Testing both POST and GET methods...');
     }
 
     // Try POST first
     final postSuccess = await submitFeedback(testFeedback);
     if (postSuccess) {
-      if (kDebugMode) print('✅ POST method worked!');
+      if (kDebugMode) DebugLogger.info('✅ POST method worked!');
       return true;
     }
 
     // If POST fails, try GET
-    if (kDebugMode) print('⚠️ POST failed, trying GET...');
+    if (kDebugMode) DebugLogger.warning('⚠️ POST failed, trying GET...');
     final getSuccess = await submitFeedbackGET(testFeedback);
     if (getSuccess) {
-      if (kDebugMode) print('✅ GET method worked!');
+      if (kDebugMode) DebugLogger.info('✅ GET method worked!');
       return true;
     }
 
-    if (kDebugMode) print('❌ Both methods failed');
+    if (kDebugMode) DebugLogger.error('❌ Both methods failed');
     return false;
   }
 }

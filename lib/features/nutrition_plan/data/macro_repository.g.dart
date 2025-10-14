@@ -6,23 +6,44 @@ part of 'macro_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$macroRepositoryHash() => r'5c5c34ddca47ab4be53852055020e39ed82332ae';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [macroRepository].
 @ProviderFor(macroRepository)
-final macroRepositoryProvider =
-    AutoDisposeFutureProvider<MacroRepository>.internal(
-  macroRepository,
-  name: r'macroRepositoryProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$macroRepositoryHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const macroRepositoryProvider = MacroRepositoryProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef MacroRepositoryRef = AutoDisposeFutureProviderRef<MacroRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class MacroRepositoryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<MacroRepository>,
+          MacroRepository,
+          FutureOr<MacroRepository>
+        >
+    with $FutureModifier<MacroRepository>, $FutureProvider<MacroRepository> {
+  const MacroRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'macroRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$macroRepositoryHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<MacroRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<MacroRepository> create(Ref ref) {
+    return macroRepository(ref);
+  }
+}
+
+String _$macroRepositoryHash() => r'5c5c34ddca47ab4be53852055020e39ed82332ae';
