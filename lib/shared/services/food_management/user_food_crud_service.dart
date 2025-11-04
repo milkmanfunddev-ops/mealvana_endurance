@@ -37,10 +37,7 @@ class UserFoodCrudService {
       // Convert to Food domain objects
       final foods = userFoodsData
           .map((userFood) => _convertUserFoodToFood(userFood))
-          .toList();
-
-      _logger.debug('Loaded ${foods.length} user foods for device $deviceId');
-      return foods;
+          .toList();      return foods;
     } catch (e) {
       _logger.error('Error loading user foods',
         context: 'UserFoodCrudService',
@@ -116,18 +113,13 @@ class UserFoodCrudService {
             context: 'UserFoodCrudService',
             data: {'response': response.data},
           );
-        } else {
-          _logger.debug('Food saved to both local and Supabase: ${food.name}');
-        }
+        } else {        }
       } catch (supabaseError) {
         _logger.warning('Supabase sync failed, but local save succeeded',
           context: 'UserFoodCrudService',
           error: supabaseError,
         );
-      }
-
-      _logger.debug('User food saved successfully: ${food.name}');
-    } catch (e) {
+      }    } catch (e) {
       _logger.error('Error saving user food',
         context: 'UserFoodCrudService',
         data: {'foodName': food.name},
@@ -158,18 +150,13 @@ class UserFoodCrudService {
             context: 'UserFoodCrudService',
             data: {'response': response.data},
           );
-        } else {
-          _logger.debug('Food deleted from both local and Supabase: $foodId');
-        }
+        } else {        }
       } catch (supabaseError) {
         _logger.warning('Supabase delete sync failed, but local delete succeeded',
           context: 'UserFoodCrudService',
           error: supabaseError,
         );
-      }
-
-      _logger.debug('User food deleted successfully: $foodId');
-    } catch (e) {
+      }    } catch (e) {
       _logger.error('Error deleting user food',
         context: 'UserFoodCrudService',
         data: {'foodId': foodId},

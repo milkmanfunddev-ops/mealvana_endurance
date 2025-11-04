@@ -5,7 +5,8 @@ import 'package:drift/drift.dart';
 class EventsTable extends Table {
   TextColumn get id => text()(); // PRIMARY KEY
   TextColumn get activityId => text().nullable().named('activity_id')(); // OPTIONAL FOREIGN KEY to activities.id (events may exist without an activity)
-  
+  TextColumn get userId => text().named('user_id')(); // FOREIGN KEY to user_profiles.id
+
   // Event classification
   TextColumn get eventType => text().named('event_type')(); // 'marathon', 'half_marathon', '10k', '5k', 'ultra_50k', 'ultra_50m', 'ultra_100k', 'ultra_100m', 'custom'
   TextColumn get eventSubtype => text().nullable().named('event_subtype')(); // For custom categorization
@@ -42,7 +43,11 @@ class EventsTable extends Table {
   // Metadata
   DateTimeColumn get createdAt => dateTime().named('created_at')();
   DateTimeColumn get updatedAt => dateTime().named('updated_at')();
-  
+
+  // Sync tracking (offline-first architecture)
+  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
+  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+
   @override
   Set<Column> get primaryKey => {id};
   

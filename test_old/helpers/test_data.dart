@@ -2,6 +2,7 @@
 /// 
 /// This file contains reusable test data that follows the actual app data models
 /// and represents realistic user scenarios for integration testing.
+library;
 
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 
@@ -13,7 +14,7 @@ class TestData {
   static const testDeviceIdPrefix = 'test-device-';
 
   /// Standard test user profile for a 30-year-old male runner
-  static final testUserProfile = UserProfileEntry(
+  static final testUserProfile = UserEntry(
     id: deviceId1,
     gender: 'male',
     birthday: DateTime(1994, 1, 1), // 30 years old
@@ -36,7 +37,7 @@ class TestData {
   );
 
   /// Lightweight female runner profile
-  static final testUserProfileFemale = UserProfileEntry(
+  static final testUserProfileFemale = UserEntry(
     id: deviceId2,
     gender: 'female',
     birthday: DateTime(1999, 1, 1), // 25 years old

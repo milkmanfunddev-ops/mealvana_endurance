@@ -20,7 +20,7 @@ The app organizes data into structured SQLite tables with proper relationships:
 // lib/shared/database/app_database.dart
 @DriftDatabase(tables: [
   // Core v1 tables
-  UserProfilesTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
+  UsersTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
   // New v2 tables
   FoodsTable, CategoriesTable, FoodCategoriesTable, BrandsTable, AppContentTable,
 ])
@@ -70,7 +70,7 @@ The database maintains strongly-typed tables for endurance nutrition planning:
 ```dart
 // lib/shared/database/tables/user_profiles_table.dart
 @DataClassName('UserProfile')
-class UserProfilesTable extends Table {
+class UsersTable extends Table {
   TextColumn get deviceId => text()();
   IntColumn get gender => intEnum<Gender>()();
   DateTimeColumn get birthday => dateTime()();
@@ -95,7 +95,7 @@ class UserProfilesTable extends Table {
 @DataClassName('FoodPreference')
 class FoodPreferencesTable extends Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
-  TextColumn get deviceId => text().references(UserProfilesTable, #deviceId, onDelete: KeyAction.cascade)();
+  TextColumn get deviceId => text().references(UsersTable, #deviceId, onDelete: KeyAction.cascade)();
   TextColumn get foodName => text()();
   IntColumn get preference => intEnum<PreferenceType>()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentTimestamp)();

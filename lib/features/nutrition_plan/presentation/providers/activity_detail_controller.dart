@@ -158,8 +158,6 @@ class ActivityDetailController extends _$ActivityDetailController {
           // TODO: Link nutrition plan to activity when method is implemented
           // For now, the nutrition plan is already saved with the correct planId
 
-          _logger.info('Created new activity: $activityId');
-
           return currentState.copyWith(isSaving: false);
         } else {
           // VIEW MODE: Update existing activity
@@ -173,8 +171,6 @@ class ActivityDetailController extends _$ActivityDetailController {
           );
 
           await calendarController.updateActivity(updatedActivity);
-
-          _logger.info('Updated activity: ${activity.id}');
 
           return currentState.copyWith(
             isSaving: false,
@@ -211,8 +207,6 @@ class ActivityDetailController extends _$ActivityDetailController {
           textNotes: textNotes,
         );
 
-        _logger.info('Completed activity: ${currentState.activity!.id}');
-
         // Reload activity to get updated completion data
         ref.invalidateSelf();
 
@@ -237,8 +231,6 @@ class ActivityDetailController extends _$ActivityDetailController {
           activityId: currentState.activity!.id,
           textNotes: notes,
         );
-
-        _logger.info('Updated workout notes for activity: ${currentState.activity!.id}');
 
         // Reload activity to get updated completion data
         ref.invalidateSelf();

@@ -1,3 +1,5 @@
+Initialising login role...
+Dumping schemas from remote database...
 
 
 
@@ -126,11 +128,16 @@ CREATE TABLE IF NOT EXISTS "public"."nutrition_plans" (
     "last_modified_by" "text",
     "client_updated_at" timestamp with time zone,
     "is_deleted" boolean DEFAULT false,
-    "conflict_resolution" "text"
+    "conflict_resolution" "text",
+    "activity_id" "text"
 );
 
 
 ALTER TABLE "public"."nutrition_plans" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."nutrition_plans"."activity_id" IS 'Links nutrition plan to a calendar activity/event. Nullable to support standalone plans.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."get_latest_nutrition_plan"("p_device_id" "text") RETURNS "public"."nutrition_plans"
@@ -211,6 +218,10 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     "default_reminder_hour" integer DEFAULT 17,
     "default_reminder_minute" integer DEFAULT 0,
     "default_reminder_recurring" boolean DEFAULT false,
+    "cycling_ftp_watts" integer,
+    "prefers_cycling_power" boolean DEFAULT false,
+    "swimming_css_seconds_per_100m" integer,
+    "prefers_swimming_pace" boolean DEFAULT false,
     CONSTRAINT "users_gender_check" CHECK (("gender" = ANY (ARRAY['male'::"text", 'female'::"text", 'other'::"text"]))),
     CONSTRAINT "users_gut_training_level_check" CHECK (("gut_training_level" = ANY (ARRAY['low'::"text", 'moderate'::"text", 'high'::"text"]))),
     CONSTRAINT "users_preferred_distance_unit_check" CHECK (("preferred_distance_unit" = ANY (ARRAY['miles'::"text", 'kilometers'::"text"]))),
@@ -219,6 +230,22 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
 
 
 ALTER TABLE "public"."users" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."users"."cycling_ftp_watts" IS 'User default FTP (Functional Threshold Power) in watts';
+
+
+
+COMMENT ON COLUMN "public"."users"."prefers_cycling_power" IS 'Whether user prefers to input power vs speed for cycling';
+
+
+
+COMMENT ON COLUMN "public"."users"."swimming_css_seconds_per_100m" IS 'User default CSS (Critical Swim Speed) in seconds per 100m';
+
+
+
+COMMENT ON COLUMN "public"."users"."prefers_swimming_pace" IS 'Whether user prefers to input pace vs speed for swimming';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."get_user_by_device_id"("p_device_id" "text") RETURNS "public"."users"
@@ -550,6 +577,14 @@ CREATE TABLE IF NOT EXISTS "public"."activities" (
     "created_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     "updated_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" timestamp without time zone,
+    "sport_type" "text" DEFAULT 'running'::"text",
+    "cycling_power_watts" integer,
+    "cycling_ftp_watts" integer,
+    "swimming_speed_per_100m" integer,
+    "swimming_css_seconds_per_100m" integer,
+    CONSTRAINT "activities_cycling_columns_check" CHECK (((("sport_type" = 'cycling'::"text") AND ("cycling_power_watts" IS NOT NULL)) OR (("sport_type" <> 'cycling'::"text") AND ("cycling_power_watts" IS NULL) AND ("cycling_ftp_watts" IS NULL)))),
+    CONSTRAINT "activities_sport_type_check" CHECK (("sport_type" = ANY (ARRAY['running'::"text", 'cycling'::"text", 'swimming'::"text"]))),
+    CONSTRAINT "activities_swimming_columns_check" CHECK (((("sport_type" = 'swimming'::"text") AND ("swimming_speed_per_100m" IS NOT NULL)) OR (("sport_type" <> 'swimming'::"text") AND ("swimming_speed_per_100m" IS NULL) AND ("swimming_css_seconds_per_100m" IS NULL)))),
     CONSTRAINT "activity_type_check" CHECK (("activity_type" = ANY (ARRAY['running'::"text", 'event'::"text"]))),
     CONSTRAINT "intensity_check" CHECK ((("intensity_level" IS NULL) OR ("intensity_level" = ANY (ARRAY['easy'::"text", 'moderate'::"text", 'hard'::"text", 'race'::"text"])))),
     CONSTRAINT "rating_check" CHECK ((("completion_rating" IS NULL) OR (("completion_rating" >= 1) AND ("completion_rating" <= 5)))),
@@ -569,6 +604,26 @@ COMMENT ON COLUMN "public"."activities"."activity_type" IS 'Type: running (worko
 
 
 COMMENT ON COLUMN "public"."activities"."status" IS 'Current status: planned, in_progress, completed, skipped';
+
+
+
+COMMENT ON COLUMN "public"."activities"."sport_type" IS 'Type of endurance sport: running, cycling, or swimming';
+
+
+
+COMMENT ON COLUMN "public"."activities"."cycling_power_watts" IS 'Average power output in watts for cycling activities';
+
+
+
+COMMENT ON COLUMN "public"."activities"."cycling_ftp_watts" IS 'Functional Threshold Power in watts (if known)';
+
+
+
+COMMENT ON COLUMN "public"."activities"."swimming_speed_per_100m" IS 'Average pace in seconds per 100 meters for swimming';
+
+
+
+COMMENT ON COLUMN "public"."activities"."swimming_css_seconds_per_100m" IS 'Critical Swim Speed in seconds per 100m (if known)';
 
 
 
@@ -898,7 +953,6 @@ CREATE TABLE IF NOT EXISTS "public"."events" (
     "has_carb_loading" boolean DEFAULT false,
     "carb_loading_days" integer,
     "carb_loading_start_date" timestamp without time zone,
-    "has_nutrition_plan" boolean DEFAULT false,
     "bib_number" "text",
     "wave_start_time" "text",
     "packet_pickup_info" "text",
@@ -907,6 +961,7 @@ CREATE TABLE IF NOT EXISTS "public"."events" (
     "age_group_placement" integer,
     "created_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     "updated_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    "has_nutrition_plan" boolean DEFAULT false,
     CONSTRAINT "carb_days_check" CHECK ((("carb_loading_days" IS NULL) OR ("carb_loading_days" = ANY (ARRAY[1, 2, 3, 7])))),
     CONSTRAINT "event_type_check" CHECK (("event_type" = ANY (ARRAY['marathon'::"text", 'half_marathon'::"text", '10k'::"text", '5k'::"text", 'ultra_50k'::"text", 'ultra_50m'::"text", 'ultra_100k'::"text", 'ultra_100m'::"text", 'custom'::"text"])))
 );
@@ -1022,7 +1077,8 @@ CREATE TABLE IF NOT EXISTS "public"."foods" (
     "serving_description" "text",
     "serving_size" character varying(50),
     "is_essential" boolean DEFAULT false,
-    "is_other_food" boolean
+    "is_other_food" boolean,
+    "suitable_for_activities" "jsonb"
 );
 
 
@@ -1034,6 +1090,10 @@ COMMENT ON COLUMN "public"."foods"."show_in_preferences" IS 'Whether this food s
 
 
 COMMENT ON COLUMN "public"."foods"."is_essential" IS 'No need to present to user to set preferences';
+
+
+
+COMMENT ON COLUMN "public"."foods"."suitable_for_activities" IS 'JSONB map of sport types to boolean suitability. Example: {"running": true, "cycling": true, "swimming": false}. Null means suitable for all activities (backward compatibility).';
 
 
 
@@ -1121,11 +1181,11 @@ CREATE TABLE IF NOT EXISTS "public"."meal_types" (
 ALTER TABLE "public"."meal_types" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."meal_types" IS 'Meal categories for carb loading feature (breakfast, lunch, dinner, snacks)';
+COMMENT ON TABLE "public"."meal_types" IS 'Meal categories for carb loading feature (breakfast, morning_snack, lunch, afternoon_snack, dinner, evening_snack)';
 
 
 
-COMMENT ON COLUMN "public"."meal_types"."id" IS 'Primary key (1=breakfast, 2=lunch, 3=dinner, 4=snacks)';
+COMMENT ON COLUMN "public"."meal_types"."id" IS 'Primary key (1=breakfast, 2=lunch, 3=dinner, 4=snacks [deprecated], 5=morning_snack, 6=afternoon_snack, 7=evening_snack)';
 
 
 
@@ -1183,11 +1243,16 @@ CREATE TABLE IF NOT EXISTS "public"."user_foods" (
     "is_deleted" boolean DEFAULT false,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
-    "client_updated_at" timestamp with time zone
+    "client_updated_at" timestamp with time zone,
+    "suitable_for_activities" "jsonb"
 );
 
 
 ALTER TABLE "public"."user_foods" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."user_foods"."suitable_for_activities" IS 'JSONB map of sport types to boolean suitability. Example: {"running": true, "cycling": true, "swimming": false}. Null means suitable for all activities (backward compatibility).';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."user_hidden_foods" (
@@ -1564,11 +1629,19 @@ CREATE INDEX "idx_foods_product_type_id" ON "public"."foods" USING "btree" ("pro
 
 
 
+CREATE INDEX "idx_foods_suitable_for_activities" ON "public"."foods" USING "gin" ("suitable_for_activities");
+
+
+
 CREATE INDEX "idx_macro_targets_distance" ON "public"."macro_targets_table" USING "btree" ("distance_mi");
 
 
 
 CREATE INDEX "idx_macro_targets_timestamp" ON "public"."macro_targets_table" USING "btree" ("timestamp");
+
+
+
+CREATE INDEX "idx_nutrition_plans_activity_id" ON "public"."nutrition_plans" USING "btree" ("activity_id");
 
 
 
@@ -1609,6 +1682,10 @@ CREATE INDEX "idx_user_foods_device" ON "public"."user_foods" USING "btree" ("de
 
 
 CREATE INDEX "idx_user_foods_device_not_deleted" ON "public"."user_foods" USING "btree" ("device_id") WHERE ("is_deleted" = false);
+
+
+
+CREATE INDEX "idx_user_foods_suitable_for_activities" ON "public"."user_foods" USING "gin" ("suitable_for_activities");
 
 
 
@@ -1723,6 +1800,11 @@ ALTER TABLE ONLY "public"."carb_loading_user_foods"
 
 ALTER TABLE ONLY "public"."events"
     ADD CONSTRAINT "events_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "public"."activities"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."nutrition_plans"
+    ADD CONSTRAINT "fk_nutrition_plans_activity_id" FOREIGN KEY ("activity_id") REFERENCES "public"."activities"("id") ON DELETE SET NULL;
 
 
 
@@ -2412,3 +2494,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 RESET ALL;
+A new version of Supabase CLI is available: v2.51.0 (currently installed v2.47.2)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

@@ -3,6 +3,7 @@
 /// Tests the backend-controlled content system that allows dynamic updates
 /// of UI text and algorithm parameters without code deployments.
 /// Critical for business agility and A/B testing capabilities.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,7 +40,7 @@ void main() {
         
         container.listen(
           contentControllerProvider,
-          listener,
+          listener.call,
           fireImmediately: true,
         );
 

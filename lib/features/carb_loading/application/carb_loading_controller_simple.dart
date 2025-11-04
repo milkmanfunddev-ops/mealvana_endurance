@@ -103,16 +103,7 @@
 //       final existingPlan = await repository.getCurrentPlan(user.id);
 
 //       if (existingPlan != null) {
-//         _logger.info('Loaded existing carb loading plan',
-//           context: 'CARB_LOADING_CONTROLLER',
-//           data: {
-//             'plan_id': existingPlan.id,
-//             'race_date': existingPlan.raceDate.toIso8601String(),
-//             'daily_target': existingPlan.dailyCarbTargetG,
-//           }
-//         );
-
-//         return CarbLoadingState(plan: existingPlan);
+////         return CarbLoadingState(plan: existingPlan);
 //       }
 
 //       // No existing plan - will need to create one
@@ -155,15 +146,7 @@
 //           userId: user.id,
 //         );
 
-//         _logger.info('Enhanced carb targets received from edge function',
-//           context: 'CARB_LOADING_CONTROLLER',
-//           data: {
-//             'target_carbs_per_kg': enhancedData['targetCarbsGPerKg'],
-//             'day_minus_two_carbs': enhancedData['dayMinusTwo']?['totalCarbsG'],
-//             'day_minus_one_carbs': enhancedData['dayMinusOne']?['totalCarbsG'],
-//           }
-//         );
-//       } catch (e) {
+////       } catch (e) {
 //         _logger.warning('Edge function failed, using local calculations',
 //           context: 'CARB_LOADING_CONTROLLER',
 //           error: e
@@ -184,18 +167,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(plan);
 
-//       _logger.info('Created new carb loading plan',
-//         context: 'CARB_LOADING_CONTROLLER',
-//         data: {
-//           'plan_id': plan.id,
-//           'race_date': raceDate.toIso8601String(),
-//           'race_distance': raceDistance.value,
-//           'daily_target': plan.dailyCarbTargetG,
-//           'body_weight_kg': bodyWeightKg,
-//         }
-//       );
-
-//       return CarbLoadingState(plan: plan);
+////       return CarbLoadingState(plan: plan);
 //     });
 //   }
 
@@ -206,11 +178,7 @@
 
 //     state = AsyncValue.data(currentState.copyWith(selectedDay: day));
 
-//     _logger.debug('Selected carb loading day',
-//       context: 'CARB_LOADING_CONTROLLER',
-//       data: {'day': day}
-//     );
-//   }
+////   }
 
 //   /// Select a meal (breakfast, lunch, etc.)
 //   Future<void> selectMeal(String meal) async {
@@ -219,11 +187,7 @@
 
 //     state = AsyncValue.data(currentState.copyWith(selectedMeal: meal));
 
-//     _logger.debug('Selected meal',
-//       context: 'CARB_LOADING_CONTROLLER',
-//       data: {'meal': meal}
-//     );
-//   }
+////   }
 
 //   /// Add food to current meal
 //   Future<void> addFood(String foodName) async {
@@ -254,16 +218,7 @@
 //       // Update state immediately
 //       state = AsyncValue.data(currentState.copyWith(plan: updatedPlan));
 
-//       _logger.info('Added food to meal (optimistic)',
-//         context: 'CARB_LOADING_CONTROLLER',
-//         data: {
-//           'food': foodName,
-//           'day': selectedDay,
-//           'meal': selectedMeal,
-//         },
-//       );
-
-//       // Persist to database in background
+////       // Persist to database in background
 //       final repository = await _repository;
 //       await repository.addFoodToMeal(
 //         plan.id,
@@ -305,16 +260,7 @@
 //         throw Exception('Plan not found after update');
 //       }
 
-//       _logger.info('Removed food from meal',
-//         context: 'CARB_LOADING_CONTROLLER',
-//         data: {
-//           'food': foodName,
-//           'day': currentState.selectedDay,
-//           'meal': currentState.selectedMeal,
-//         }
-//       );
-
-//       return currentState.copyWith(
+////       return currentState.copyWith(
 //         plan: updatedPlan,
 //         isLoading: false,
 //       );
@@ -350,17 +296,7 @@
 //       // Update state immediately
 //       state = AsyncValue.data(currentState.copyWith(plan: updatedPlan));
 
-//       _logger.info('Updated food quantity (optimistic)',
-//         context: 'CARB_LOADING_CONTROLLER',
-//         data: {
-//           'food': foodName,
-//           'quantity': quantity,
-//           'day': selectedDay,
-//           'meal': selectedMeal,
-//         },
-//       );
-
-//       // Persist to database in background
+////       // Persist to database in background
 //       final repository = await _repository;
 //       await repository.updateFoodQuantity(
 //         plan.id,
@@ -443,11 +379,7 @@
 //           userId: user.id,
 //         );
 
-//         _logger.info('Enhanced carb targets received from edge function during update',
-//           context: 'CARB_LOADING_CONTROLLER',
-//           data: enhancedData,
-//         );
-//       } catch (e) {
+////       } catch (e) {
 //         _logger.warning('Edge function failed during update, using fallback calculation',
 //           context: 'CARB_LOADING_CONTROLLER',
 //           error: e.toString(),
@@ -486,17 +418,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(updatedPlan);
 
-//       _logger.info('Updated carb loading plan',
-//         context: 'CARB_LOADING_CONTROLLER',
-//         data: {
-//           'plan_id': updatedPlan.id,
-//           'race_date': raceDate.toIso8601String(),
-//           'race_distance': raceDistance.value,
-//           'daily_target': updatedPlan.dailyCarbTargetG,
-//         }
-//       );
-
-//       return currentState.copyWith(plan: updatedPlan);
+////       return currentState.copyWith(plan: updatedPlan);
 //     });
 //   }
 
@@ -527,15 +449,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(newPlan);
 
-//       _logger.info('Duplicated carb loading plan',
-//         context: 'CARB_LOADING_CONTROLLER',
-//         data: {
-//           'original_plan_id': currentState.plan!.id,
-//           'new_plan_id': newPlan.id,
-//         }
-//       );
-
-//       return currentState.copyWith(plan: newPlan);
+////       return currentState.copyWith(plan: newPlan);
 //     });
 //   }
 
@@ -561,12 +475,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(resetPlan);
 
-//       _logger.info('Reset carb loading plan progress',
-//         context: 'CARB_LOADING_CONTROLLER',
-//         data: {'plan_id': resetPlan.id}
-//       );
-
-//       return currentState.copyWith(plan: resetPlan);
+////       return currentState.copyWith(plan: resetPlan);
 //     });
 //   }
 
@@ -581,12 +490,7 @@
 //       final repository = await _repository;
 //       await repository.deletePlan(currentState!.plan!.id);
 
-//       _logger.info('Deleted carb loading plan',
-//         context: 'CARB_LOADING_CONTROLLER',
-//         data: {'plan_id': currentState.plan!.id}
-//       );
-
-//       return const CarbLoadingState();
+////       return const CarbLoadingState();
 //     });
 //   }
 
@@ -613,16 +517,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(updatedPlan);
 
-//       _logger.info('Updated carb target',
-//         context: 'CARB_LOADING_CONTROLLER',
-//         data: {
-//           'plan_id': updatedPlan.id,
-//           'carbs_per_kg': carbsPerKg,
-//           'daily_target_g': dailyTargetG,
-//         }
-//       );
-
-//       return currentState.copyWith(plan: updatedPlan);
+////       return currentState.copyWith(plan: updatedPlan);
 //     });
 //   }
 

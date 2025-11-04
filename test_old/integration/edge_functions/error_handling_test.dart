@@ -2,6 +2,7 @@
 /// 
 /// These tests validate error handling, graceful degradation,
 /// and fallback mechanisms in edge functions.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

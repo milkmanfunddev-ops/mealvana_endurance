@@ -10,9 +10,9 @@
   },
   "plan_screen": {
     "title": "Plan",
-    "before_run": "Before Run",
-    "during_run": "During Run", 
-    "after_run": "After Run",
+    "before_run": "Before Activity",
+    "during_run": "During Activity",
+    "after_run": "After Activity",
     "save_button": "Save",
     "saved_button": "Saved",
     "macro_targets": "Macro targets"
@@ -24,9 +24,9 @@
       "long_run": "Target at least {amount}g carbs during your run"
     },
     "sections": {
-      "pre_run": "Pre-Run",
-      "during_run": "During Run", 
-      "post_run": "Post-Run (within 30 min)"
+      "pre_run": "Before Activity",
+      "during_run": "During Activity",
+      "post_run": "After Activity (within 30 min)"
     },
     "actions": {
       "create_plan": "Create Plan",
@@ -34,10 +34,10 @@
     },
     "help_content": {
       "title": "Nutrition Science & Guidance",
-      "overview": "These targets are based on ISSN guidelines and sports nutrition research tailored to your run parameters. Values are calculated using validated formulas for endurance performance and recovery.",
-      "pre_run": "Pre-run fueling optimizes energy stores while preventing GI distress. Emphasize easily digestible carbohydrates (1-4g/kg body weight), limit fat and fiber, and maintain hydration. Timing: 1-4 hours before exercise for optimal absorption.",
-      "during_run": "During-run nutrition maintains blood glucose and delays fatigue during longer efforts. Target 30-90g carbs/hour based on intensity and gut tolerance. Multiple transportable carbs (glucose + fructose) optimize absorption for runs >2.5 hours.",
-      "post_run": "Post-run nutrition accelerates glycogen replenishment and muscle protein synthesis. The 'anabolic window' emphasizes rapid carb intake (1.0-1.2g/kg) with high-quality protein (20-25g) within 30 minutes of completion.",
+      "overview": "These targets are based on ISSN guidelines and sports nutrition research tailored to your activity parameters. Values are calculated using validated formulas for endurance performance and recovery.",
+      "pre_run": "Pre-activity fueling optimizes energy stores while preventing GI distress. Emphasize easily digestible carbohydrates (1-4g/kg body weight), limit fat and fiber, and maintain hydration. Timing: 1-4 hours before exercise for optimal absorption.",
+      "during_run": "During-activity nutrition maintains blood glucose and delays fatigue during longer efforts. Target 30-90g carbs/hour based on intensity and gut tolerance. Multiple transportable carbs (glucose + fructose) optimize absorption for activities >2.5 hours.",
+      "post_run": "Post-activity nutrition accelerates glycogen replenishment and muscle protein synthesis. The 'anabolic window' emphasizes rapid carb intake (1.0-1.2g/kg) with high-quality protein (20-25g) within 30 minutes of completion.",
       "validation": "Warning indicators show values outside research-backed ranges but won't prevent plan creation. Individual tolerance varies - use these as starting points and adjust based on training responses."
     },
     "field_labels": {
@@ -148,5 +148,79 @@
     "no_plan_description": "Create a carb loading plan to start tracking your race preparation.",
     "create_plan_button": "Create Plan",
     "error_loading": "Error Loading Plan"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile_section_title": "Your Profile",
+    "preferences_section_title": "Preferences",
+    "sport_settings_section_title": "Sport Settings",
+    "gender_label": "Gender",
+    "birthday_label": "Birthday",
+    "height_label": "Height",
+    "weight_label": "Weight",
+    "water_bottle_label": "Do you run with a water bottle?",
+    "distance_unit_label": "Distance Unit",
+    "pace_unit_label": "Pace Unit",
+    "gut_training_label": "Gut Training Level",
+    "save_button_text": "Save Changes",
+    "cycling_section_title": "Cycling Settings",
+    "swimming_section_title": "Swimming Settings",
+    "running_section_title": "Running Settings",
+    "gi_sensitivity_label": "GI Sensitivity",
+    "gi_sensitivity_subtitle": "Do you have a sensitive stomach during exercise?",
+    "gi_sensitivity_help": "This helps us recommend foods that are easier to digest across all sports"
+  },
+  "cycling_preferences": {
+    "ftp_label": "FTP (Functional Threshold Power)",
+    "ftp_hint": "e.g., 250",
+    "ftp_help": "Your FTP is the maximum power you can sustain for about 1 hour. If you don't know your FTP, you can enter 0 and we'll estimate based on your rides.",
+    "bike_bottles_label": "Water Bottles",
+    "bike_bottles_hint": "How many bottles can you carry?",
+    "bike_bottles_help": "This helps us plan your hydration strategy for longer rides",
+    "aero_bottle_label": "Aero Bottle",
+    "aero_bottle_subtitle": "Do you have an aero bottle?",
+    "aero_bottle_help": "Aero bottles provide additional hydration capacity between aerobars",
+    "bento_box_label": "Bento Box",
+    "bento_box_subtitle": "Do you have a bento box for food?",
+    "bento_box_help": "Bento boxes make it easier to access solid foods during rides"
+  },
+  "swimming_preferences": {
+    "css_label": "CSS (Critical Swim Speed)",
+    "css_hint": "e.g., 1:45 per 100m",
+    "css_help": "Your CSS is the fastest pace you can sustain for 30 minutes of continuous swimming. Format: MM:SS per 100 meters. Example: 2:00 means 2 minutes per 100 meters.",
+    "css_placeholder": "2:00",
+    "wetsuit_label": "Wetsuit",
+    "wetsuit_subtitle": "Do you typically wear a wetsuit?",
+    "wetsuit_help": "Wetsuits affect thermoregulation and energy expenditure during swims",
+    "swim_cap_label": "Swim Cap Type",
+    "swim_cap_hint": "What type of cap do you usually wear?",
+    "swim_cap_help": "Different cap types affect heat retention and drag",
+    "swim_cap_none": "None",
+    "swim_cap_latex": "Latex",
+    "swim_cap_silicone": "Silicone",
+    "swim_cap_neoprene": "Neoprene"
+  },
+  "sharing": {
+    "screen_title": "Share Nutrition Plan",
+    "recipient_email_label": "Recipient Email",
+    "recipient_email_hint": "coach@example.com",
+    "recipient_email_required": "Email address is required",
+    "recipient_email_invalid": "Please enter a valid email address",
+    "sender_name_label": "Your Name",
+    "sender_name_hint": "Optional",
+    "subject_label": "Subject",
+    "subject_default": "Nutrition Plan on {date}",
+    "comments_label": "Additional Comments",
+    "comments_hint": "Optional message to include with your plan",
+    "comments_default": "Here's my nutrition plan from Mealvana Endurance",
+    "send_button": "Send",
+    "sending_button": "Sending...",
+    "success_message": "Nutrition plan sent successfully!",
+    "error_message": "Failed to send nutrition plan. Please try again.",
+    "share_button_label": "Share",
+    "pdf_title": "Nutrition Plan",
+    "pdf_activity_label": "Activity Date",
+    "pdf_sent_label": "Sent",
+    "pdf_from_label": "From"
   }
 }

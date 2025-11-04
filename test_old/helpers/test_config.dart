@@ -2,6 +2,7 @@
 /// 
 /// Contains environment-specific configuration for testing,
 /// including Supabase credentials and test settings.
+library;
 
 class TestConfig {
   /// Supabase configuration for integration tests

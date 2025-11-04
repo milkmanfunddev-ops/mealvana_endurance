@@ -2,6 +2,7 @@
 /// 
 /// Provides helpers for setting up in-memory databases, populating test data,
 /// and validating database operations for schema migration and data integrity tests.
+library;
 
 import 'dart:io';
 

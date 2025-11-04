@@ -64,12 +64,7 @@
 //         if (userId != null) 'userId': userId,
 //       };
 
-//       logger.info('Calling carb loading edge function',
-//         context: 'CARB_LOADING_EDGE_FUNCTION',
-//         data: requestData
-//       );
-
-//       // Make HTTP request to edge function
+////       // Make HTTP request to edge function
 //       final response = await http.post(
 //         Uri.parse('https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/carb-loading'),
 //         headers: {
@@ -82,15 +77,7 @@
 //       if (response.statusCode == 200) {
 //         final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
-//         logger.info('Edge function call successful',
-//           context: 'CARB_LOADING_EDGE_FUNCTION',
-//           data: {
-//             'success': responseData['success'],
-//             'has_plan': responseData['plan'] != null,
-//           }
-//         );
-
-//         return CarbLoadingEdgeResponse.fromJson(responseData);
+////         return CarbLoadingEdgeResponse.fromJson(responseData);
 //       } else {
 //         logger.error('Edge function HTTP error',
 //           context: 'CARB_LOADING_EDGE_FUNCTION',

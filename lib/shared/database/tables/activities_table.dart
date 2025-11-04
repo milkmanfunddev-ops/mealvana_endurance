@@ -17,7 +17,33 @@ class ActivitiesTable extends Table {
   IntColumn get durationMinutes => integer().nullable().named('duration_minutes')();
   RealColumn get paceTargetMinutesPerMile => real().nullable().named('pace_target_minutes_per_mile')();
   TextColumn get intensityLevel => text().nullable().named('intensity_level')(); // 'easy', 'moderate', 'hard', 'race'
-  
+
+  // Cycling-specific parameters
+  RealColumn get cyclingSpeedMph => real().nullable().named('cycling_speed_mph')();
+  TextColumn get cyclingTerrain => text().nullable().named('cycling_terrain')(); // 'flat', 'rolling', 'hilly'
+  TextColumn get cyclingIndoorOutdoor => text().nullable().named('cycling_indoor_outdoor')(); // 'indoor', 'outdoor'
+  IntColumn get cyclingElevationGainFt => integer().nullable().named('cycling_elevation_gain_ft')();
+  TextColumn get cyclingSessionGoal => text().nullable().named('cycling_session_goal')(); // 'endurance', 'tempo', 'intervals'
+
+  // Swimming-specific parameters
+  IntColumn get swimmingPacePer100mSeconds => integer().nullable().named('swimming_pace_per_100m_seconds')();
+  TextColumn get swimmingPoolOrOpenWater => text().nullable().named('swimming_pool_or_open_water')(); // 'pool', 'open_water'
+  RealColumn get swimmingWaterTempC => real().nullable().named('swimming_water_temp_c')();
+
+  // Shared intensity and timing
+  TextColumn get intensityTarget => text().nullable().named('intensity_target')(); // 'zone_1', 'zone_2', 'rpe_3', etc.
+  IntColumn get timeBeforeMinutes => integer().nullable().named('time_before_minutes')();
+
+  // Reminder settings
+  BoolColumn get reminderEnabled => boolean().withDefault(const Constant(false)).named('reminder_enabled')();
+  IntColumn get reminderDaysBefore => integer().nullable().named('reminder_days_before')(); // 1-7 days before activity
+  TextColumn get reminderTimeOfDay => text().nullable().named('reminder_time_of_day')(); // Format: "HH:mm"
+  BoolColumn get reminderRecurring => boolean().withDefault(const Constant(false)).named('reminder_recurring')();
+
+  // Sync tracking (offline-first architecture)
+  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
+  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+
   // Completion data (nullable)
   DateTimeColumn get completedAt => dateTime().nullable().named('completed_at')();
   IntColumn get completionRating => integer().nullable().named('completion_rating')(); // 1-5

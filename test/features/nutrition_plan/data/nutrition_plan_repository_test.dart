@@ -6,7 +6,6 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan
 import 'package:mealvana_endurance/features/nutrition_plan/application/food_data_transformation_service.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
-import 'package:drift/drift.dart' as drift;
 import '../../../helpers/utils/console_logging.dart';
 
 // Mock classes

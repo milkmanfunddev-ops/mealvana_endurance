@@ -5,6 +5,7 @@ import '../../domain/activity.dart';
 import '../../domain/event.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/database/app_database.dart' as db;
+import '../../../auth/application/auth_service.dart';
 
 part 'calendar_controller.g.dart';
 
@@ -53,6 +54,7 @@ class CalendarState {
 class CalendarController extends _$CalendarController {
   CalendarService get _service => ref.read(calendarServiceProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
+  AuthService get _authService => ref.read(authServiceProvider);
 
   @override
   FutureOr<CalendarState> build() async {
@@ -71,8 +73,9 @@ class CalendarController extends _$CalendarController {
 
   Future<CalendarState> _loadWeekActivities(DateTime weekStart) async {
     try {
-      // TODO: Get current user ID from auth service
-      const userId = 'current-user'; // Will be replaced with actual user ID
+      // Get current user's device ID
+      final user = await _authService.getCurrentUser();
+      final userId = user?.id ?? 'unknown';
 
       final activities = await _service.getActivitiesForWeek(userId, weekStart);
 
@@ -86,7 +89,6 @@ class CalendarController extends _$CalendarController {
         endDate: DateTime.now().add(const Duration(days: 730)), // 2 years in future
       );
 
-      _logger.info('Loaded ${activities.length} activities and ${carbLoadingDays.length} carb loading days for week');
       return CalendarState.data(
         activities: activities,
         events: events,
@@ -110,8 +112,9 @@ class CalendarController extends _$CalendarController {
     String? notes,
   }) async {
     try {
-      // TODO: Get current user ID
-      const userId = 'current-user'; // Will be replaced with actual user ID
+      // Get current user's device ID
+      final user = await _authService.getCurrentUser();
+      final userId = user?.id ?? 'unknown';
 
       final createdActivity = await _service.createActivity(
         userId: userId,
@@ -128,8 +131,6 @@ class CalendarController extends _$CalendarController {
       // Refresh activities
       ref.invalidateSelf();
 
-      _logger.info('Created new activity: $title');
-
       return createdActivity.id;
     } catch (e) {
       _logger.error('Error creating activity', error: e);
@@ -145,7 +146,6 @@ class CalendarController extends _$CalendarController {
       // Refresh activities
       ref.invalidateSelf();
 
-      _logger.info('Updated activity: ${activity.title}');
     } catch (e) {
       _logger.error('Error updating activity', error: e);
       rethrow;
@@ -162,7 +162,6 @@ class CalendarController extends _$CalendarController {
       ref.invalidate(allEventsControllerProvider);
       ref.invalidate(nextUpcomingEventProvider);
 
-      _logger.info('Updated event: ${event.eventName ?? event.eventType.name}');
     } catch (e) {
       _logger.error('Error updating event', error: e);
       rethrow;
@@ -179,7 +178,6 @@ class CalendarController extends _$CalendarController {
       ref.invalidate(allEventsControllerProvider);
       ref.invalidate(nextUpcomingEventProvider);
 
-      _logger.info('Deleted activity: $activityId');
     } catch (e) {
       _logger.error('Error deleting activity', error: e);
     }
@@ -193,7 +191,6 @@ class CalendarController extends _$CalendarController {
       // Refresh activities to update the list
       ref.invalidateSelf();
 
-      _logger.info('Deleted carb loading day: $carbLoadingDayId');
     } catch (e) {
       _logger.error('Error deleting carb loading day', error: e);
     }
@@ -213,8 +210,11 @@ class CalendarController extends _$CalendarController {
     int? humidityPercent,
   }) async {
     try {
-      // TODO: Get actual activity data
-      final activity = await _service.getActivityById('current-user', activityId);
+      // Get current user's device ID
+      final user = await _authService.getCurrentUser();
+      final userId = user?.id ?? 'unknown';
+
+      final activity = await _service.getActivityById(userId, activityId);
       if (activity == null) {
         _logger.error('Activity not found: $activityId', error: null);
         return;
@@ -237,7 +237,6 @@ class CalendarController extends _$CalendarController {
       // Refresh activities
       ref.invalidateSelf();
 
-      _logger.info('Completed activity: $activityId');
     } catch (e) {
       _logger.error('Error completing activity', error: e);
     }
@@ -257,7 +256,6 @@ class CalendarController extends _$CalendarController {
       // Refresh activities
       ref.invalidateSelf();
 
-      _logger.info('Updated activity completion notes: $activityId');
     } catch (e) {
       _logger.error('Error updating activity completion', error: e);
       rethrow;
@@ -278,7 +276,12 @@ class CalendarController extends _$CalendarController {
     int? carbLoadingDays,
   }) async {
     try {
+      // Get current user's device ID
+      final user = await _authService.getCurrentUser();
+      final userId = user?.id ?? 'unknown';
+
       await _service.createEvent(
+        userId: userId,
         activityId: activityId,
         eventType: eventType,
         eventName: eventName,
@@ -296,7 +299,6 @@ class CalendarController extends _$CalendarController {
       ref.invalidate(allEventsControllerProvider);
       ref.invalidate(nextUpcomingEventProvider);
 
-      _logger.info('Created new event: ${eventName ?? eventType.name}');
     } catch (e) {
       _logger.error('Error creating event', error: e);
     }
@@ -350,8 +352,9 @@ class CalendarController extends _$CalendarController {
     required double bodyWeightPounds,
   }) async {
     try {
-      // TODO: Get current user ID from auth service
-      const userId = 'current-user'; // Will be replaced with actual user ID
+      // Get current user's device ID
+      final user = await _authService.getCurrentUser();
+      final userId = user?.id ?? 'unknown';
 
       await _service.createCarbLoadingPlan(
         userId: userId,
@@ -364,7 +367,6 @@ class CalendarController extends _$CalendarController {
       // Refresh activities to show new carb loading days
       ref.invalidateSelf();
 
-      _logger.info('Created $protocolDays-day carb loading plan for event: $eventId');
     } catch (e) {
       _logger.error('Error creating carb loading plan', error: e);
       rethrow;
@@ -379,8 +381,9 @@ class CalendarController extends _$CalendarController {
     required double bodyWeightPounds,
   }) async {
     try {
-      // TODO: Get current user ID from auth service
-      const userId = 'current-user'; // Will be replaced with actual user ID
+      // Get current user's device ID
+      final user = await _authService.getCurrentUser();
+      final userId = user?.id ?? 'unknown';
 
       await _service.updateCarbLoadingProtocol(
         userId: userId,
@@ -393,7 +396,6 @@ class CalendarController extends _$CalendarController {
       // Refresh activities to show updated carb loading days
       ref.invalidateSelf();
 
-      _logger.info('Updated carb loading protocol to $newProtocolDays days for event: $eventId');
     } catch (e) {
       _logger.error('Error updating carb loading protocol', error: e);
       rethrow;
@@ -407,6 +409,7 @@ class CalendarController extends _$CalendarController {
 class AllEventsController extends _$AllEventsController {
   CalendarService get _service => ref.read(calendarServiceProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
+  AuthService get _authService => ref.read(authServiceProvider);
 
   @override
   FutureOr<CalendarState> build() async {
@@ -416,15 +419,15 @@ class AllEventsController extends _$AllEventsController {
 
   Future<CalendarState> _loadAllActivities() async {
     try {
-      // TODO: Get current user ID from auth service
-      const userId = 'current-user'; // Will be replaced with actual user ID
+      // Get current user's device ID
+      final user = await _authService.getCurrentUser();
+      final userId = user?.id ?? 'unknown';
 
       final activities = await _service.getAllActivities(userId);
 
       // Get all events (events are now separate from activities)
       final events = await _service.getAllEvents(userId);
 
-      _logger.info('Loaded ${activities.length} total activities and ${events.length} total events');
       return CalendarState.data(
         activities: activities,
         events: events,
@@ -450,10 +453,15 @@ Future<({Activity? activity, Event event})> eventDetail(
 ) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);
+  final authService = ref.read(authServiceProvider);
 
   try {
+    // Get current user's device ID
+    final user = await authService.getCurrentUser();
+    final userId = user?.id ?? 'unknown';
+
     // Get the event
-    final event = await service.getEventById('current-user', eventId);
+    final event = await service.getEventById(userId, eventId);
     if (event == null) {
       throw Exception('Event not found: $eventId');
     }
@@ -461,10 +469,9 @@ Future<({Activity? activity, Event event})> eventDetail(
     // Get the activity for this event (if one exists)
     Activity? activity;
     if (event.activityId != null) {
-      activity = await service.getActivityById('current-user', event.activityId!);
+      activity = await service.getActivityById(userId, event.activityId!);
     }
 
-    logger.info('Loaded event detail for event: $eventId');
     return (activity: activity, event: event);
   } catch (e) {
     logger.error('Error loading event detail', error: e);
@@ -481,10 +488,15 @@ Future<({Activity activity, Event? event})> activityDetail(
 ) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);
+  final authService = ref.read(authServiceProvider);
 
   try {
+    // Get current user's device ID
+    final user = await authService.getCurrentUser();
+    final userId = user?.id ?? 'unknown';
+
     // Get the activity
-    final activity = await service.getActivityById('current-user', activityId);
+    final activity = await service.getActivityById(userId, activityId);
     if (activity == null) {
       throw Exception('Activity not found: $activityId');
     }
@@ -492,7 +504,6 @@ Future<({Activity activity, Event? event})> activityDetail(
     // Check if there's an event associated with this activity
     final event = await service.getEventForActivity(activityId);
 
-    logger.info('Loaded activity detail for activity: $activityId');
     return (activity: activity, event: event);
   } catch (e) {
     logger.error('Error loading activity detail', error: e);
@@ -506,21 +517,20 @@ Future<({Activity activity, Event? event})> activityDetail(
 Future<Event?> nextUpcomingEvent(Ref ref) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);
+  final authService = ref.read(authServiceProvider);
 
   try {
-    // TODO: Get current user ID from auth service
-    const userId = 'current-user';
+    // Get current user's device ID
+    final user = await authService.getCurrentUser();
+    final userId = user?.id ?? 'unknown';
 
     // Get all events
     final events = await service.getAllEvents(userId);
-    logger.info('nextUpcomingEvent: Found ${events.length} total events');
 
     // Get event dates from either activity or event.startTime
     final eventsWithDates = <({Event event, DateTime eventDate})>[];
 
     for (final event in events) {
-      logger.info('nextUpcomingEvent: Processing event ${event.id}, activityId: ${event.activityId}, startTime: ${event.startTime}');
-
       DateTime? eventDate;
 
       // Try to get date from linked activity first
@@ -528,7 +538,6 @@ Future<Event?> nextUpcomingEvent(Ref ref) async {
         final activity = await service.getActivityById(userId, event.activityId!);
         if (activity != null) {
           eventDate = activity.scheduledDateTime;
-          logger.info('nextUpcomingEvent: Found activity for event ${event.id}, scheduled: ${activity.scheduledDateTime}');
         }
       }
 
@@ -536,7 +545,6 @@ Future<Event?> nextUpcomingEvent(Ref ref) async {
       if (eventDate == null && event.startTime != null) {
         try {
           eventDate = DateTime.parse(event.startTime!);
-          logger.info('nextUpcomingEvent: Using event.startTime for event ${event.id}: $eventDate');
         } catch (e) {
           logger.warning('nextUpcomingEvent: Could not parse startTime for event ${event.id}: ${event.startTime}');
         }
@@ -549,31 +557,24 @@ Future<Event?> nextUpcomingEvent(Ref ref) async {
       }
     }
 
-    logger.info('nextUpcomingEvent: Found ${eventsWithDates.length} events with dates');
-
     // Filter for events on or after today
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    logger.info('nextUpcomingEvent: Today is $today');
 
     final upcomingEvents = eventsWithDates
         .where((e) {
           // Compare dates only (ignore time)
           final eventDate = DateTime(e.eventDate.year, e.eventDate.month, e.eventDate.day);
           final isUpcoming = eventDate.isAfter(today) || eventDate.isAtSameMomentAs(today);
-          logger.info('nextUpcomingEvent: Event ${e.event.id} date $eventDate, isUpcoming: $isUpcoming');
           return isUpcoming;
         })
         .toList();
-
-    logger.info('nextUpcomingEvent: Found ${upcomingEvents.length} upcoming events');
 
     // Sort by event date (ascending - earliest first)
     upcomingEvents.sort((a, b) => a.eventDate.compareTo(b.eventDate));
 
     // Return the next upcoming event (first in sorted list)
     final result = upcomingEvents.isEmpty ? null : upcomingEvents.first.event;
-    logger.info('nextUpcomingEvent: Returning ${result?.id ?? "null"}');
     return result;
   } catch (e, stackTrace) {
     logger.error('Error loading next upcoming event', error: e, stackTrace: stackTrace);

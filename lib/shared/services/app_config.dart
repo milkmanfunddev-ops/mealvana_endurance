@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Centralized application configuration loaded from .env files
 class AppConfig {
@@ -13,6 +14,8 @@ class AppConfig {
     required this.sentryEnvironment,
     required this.mixpanelProjectToken,
     required this.usdaApiKey,
+    required this.devModeEnabled,
+    required this.appEnvironment,
     this.enableDebugLogging = false,
     this.enableSentryProfiling = false,
   });
@@ -33,23 +36,68 @@ class AppConfig {
   // External API keys
   final String usdaApiKey;
 
+  // Environment configuration
+  final bool devModeEnabled;
+  final String appEnvironment; // 'dev' or 'prod'
+
   // Feature flags / debug settings
   final bool enableDebugLogging;
   final bool enableSentryProfiling;
 
+  // Environment control - CHANGE THIS TO false FOR PRODUCTION BUILDS
+  // ignore: constant_identifier_names
+  static const bool _DEFAULT_DEV_MODE = false;
+
+  // Runtime override (persisted in SharedPreferences)
+  static bool? _runtimeOverride;
+
+  /// Get the effective dev mode setting (runtime override takes precedence)
+  static bool get effectiveDevMode {
+    return _runtimeOverride ?? _DEFAULT_DEV_MODE;
+  }
+
+  /// Override dev mode at runtime (requires app restart to take effect)
+  static Future<void> setDevModeOverride(bool value) async {
+    _runtimeOverride = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dev_mode_override', value);
+  }
+
+  /// Clear runtime override (revert to default)
+  static Future<void> clearDevModeOverride() async {
+    _runtimeOverride = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('dev_mode_override');
+  }
+
+  /// Initialize runtime override from SharedPreferences
+  static Future<void> loadDevModeOverride() async {
+    final prefs = await SharedPreferences.getInstance();
+    _runtimeOverride = prefs.getBool('dev_mode_override');
+  }
+
+  /// Helper methods
+  bool get isProduction => appEnvironment == 'prod' && !devModeEnabled;
+  bool get isDevelopment => appEnvironment == 'dev' || devModeEnabled;
+
   /// Factory for loading configuration from .env file
   /// Must call dotenv.load() before using this factory
   factory AppConfig.fromEnv() {
+    final isDevMode = effectiveDevMode;
+    final appEnv = isDevMode ? 'dev' : 'prod';
+
     return AppConfig(
-      // Supabase configuration
-      supabaseUrl: dotenv.get(
-        'SUPABASE_URL',
-        fallback: 'https://wvmvsodrvbkxfydabqed.supabase.co',
-      ),
-      supabaseAnonKey: dotenv.get(
-        'SUPABASE_ANON_KEY',
-        fallback: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2bXZzb2RydmJreGZ5ZGFicWVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTMxMDcsImV4cCI6MjA3MDg2OTEwN30.pG2IYdEIIFS8_zPxzr6pZplzWQqvD13dvslrpFMAPCk',
-      ),
+      // Environment configuration
+      devModeEnabled: isDevMode,
+      appEnvironment: appEnv,
+
+      // Supabase configuration (conditional based on dev mode)
+      supabaseUrl: isDevMode
+          ? 'https://vlmtsdzpnjnavdgytcmi.supabase.co' // Dev
+          : 'https://wvmvsodrvbkxfydabqed.supabase.co', // Prod
+      supabaseAnonKey: isDevMode
+          ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbXRzZHpwbmpuYXZkZ3l0Y21pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4NTI3OTAsImV4cCI6MjA3NTQyODc5MH0._7t1pjG_1zk4xkfseu2ACqYXdwEJKcRUWyvY4ZXs35o' // Dev
+          : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2bXZzb2RydmJreGZ5ZGFicWVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTMxMDcsImV4cCI6MjA3MDg2OTEwN30.pG2IYdEIIFS8_zPxzr6pZplzWQqvD13dvslrpFMAPCk', // Prod
       supabasePublishableKey: dotenv.get(
         'SUPABASE_PUBLISHABLE_KEY',
         fallback: '',
@@ -59,21 +107,14 @@ class AppConfig {
         fallback: '',
       ),
 
-      // Sentry configuration
-      sentryDsn: dotenv.get(
-        'SENTRY_DSN',
-        fallback: 'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
-      ),
-      sentryEnvironment: dotenv.get(
-        'SENTRY_ENVIRONMENT',
-        fallback: kDebugMode ? 'development' : 'production',
-      ),
+      // Sentry configuration (conditional based on dev mode)
+      sentryDsn: 'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
+      sentryEnvironment: isDevMode ? 'development' : 'production',
 
-      // Analytics configuration
-      mixpanelProjectToken: dotenv.get(
-        'MIXPANEL_PROJECT_TOKEN',
-        fallback: 'bd8fe50bb67b1dd0860351e6297347db',
-      ),
+      // Analytics configuration (conditional based on dev mode)
+      mixpanelProjectToken: isDevMode
+          ? 'df6e8dd4f3dc1363fa194a156298b16c' // Dev token
+          : 'bd8fe50bb67b1dd0860351e6297347db', // Prod token
 
       // External API keys
       usdaApiKey: dotenv.get(
@@ -98,6 +139,8 @@ class AppConfig {
     String? sentryEnvironment,
     String? mixpanelToken,
     String? usdaApiKey,
+    bool devModeEnabled = true,
+    String appEnvironment = 'dev',
     bool enableDebugLogging = true,
     bool enableSentryProfiling = false,
   }) {
@@ -110,6 +153,8 @@ class AppConfig {
       sentryEnvironment: sentryEnvironment ?? 'test',
       mixpanelProjectToken: mixpanelToken ?? 'test-mixpanel-token',
       usdaApiKey: usdaApiKey ?? 'test-usda-api-key',
+      devModeEnabled: devModeEnabled,
+      appEnvironment: appEnvironment,
       enableDebugLogging: enableDebugLogging,
       enableSentryProfiling: enableSentryProfiling,
     );

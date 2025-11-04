@@ -1,0 +1,123 @@
+-- Migration: Add Cycling and Swimming Support
+-- Date: 2025-10-15
+-- Description: Adds cycling/swimming parameters to activities, user preferences, and sport-specific food suitability
+
+-- ============================================================================
+-- 1. Add cycling/swimming columns to activities table
+-- ============================================================================
+
+-- Add sport type enum (running is default for backward compatibility)
+ALTER TABLE activities
+ADD COLUMN sport_type TEXT DEFAULT 'running' CHECK (sport_type IN ('running', 'cycling', 'swimming'));
+
+-- Add cycling-specific columns
+ALTER TABLE activities
+ADD COLUMN cycling_power_watts INTEGER,
+ADD COLUMN cycling_ftp_watts INTEGER;
+
+-- Add swimming-specific columns
+ALTER TABLE activities
+ADD COLUMN swimming_speed_per_100m INTEGER, -- in seconds per 100m
+ADD COLUMN swimming_css_seconds_per_100m INTEGER; -- Critical Swim Speed in seconds per 100m
+
+-- Add comments for clarity
+COMMENT ON COLUMN activities.sport_type IS 'Type of endurance sport: running, cycling, or swimming';
+COMMENT ON COLUMN activities.cycling_power_watts IS 'Average power output in watts for cycling activities';
+COMMENT ON COLUMN activities.cycling_ftp_watts IS 'Functional Threshold Power in watts (if known)';
+COMMENT ON COLUMN activities.swimming_speed_per_100m IS 'Average pace in seconds per 100 meters for swimming';
+COMMENT ON COLUMN activities.swimming_css_seconds_per_100m IS 'Critical Swim Speed in seconds per 100m (if known)';
+
+-- ============================================================================
+-- 2. Add sport-specific preferences to users table
+-- ============================================================================
+
+-- Add cycling preferences
+ALTER TABLE users
+ADD COLUMN cycling_ftp_watts INTEGER,
+ADD COLUMN prefers_cycling_power BOOLEAN DEFAULT false;
+
+-- Add swimming preferences
+ALTER TABLE users
+ADD COLUMN swimming_css_seconds_per_100m INTEGER,
+ADD COLUMN prefers_swimming_pace BOOLEAN DEFAULT false;
+
+-- Add comments
+COMMENT ON COLUMN users.cycling_ftp_watts IS 'User default FTP (Functional Threshold Power) in watts';
+COMMENT ON COLUMN users.prefers_cycling_power IS 'Whether user prefers to input power vs speed for cycling';
+COMMENT ON COLUMN users.swimming_css_seconds_per_100m IS 'User default CSS (Critical Swim Speed) in seconds per 100m';
+COMMENT ON COLUMN users.prefers_swimming_pace IS 'Whether user prefers to input pace vs speed for swimming';
+
+-- ============================================================================
+-- 3. Add sport-specific food suitability to foods table
+-- ============================================================================
+
+-- Add JSONB column for sport suitability
+ALTER TABLE foods
+ADD COLUMN suitable_for_activities JSONB;
+
+-- Add comment
+COMMENT ON COLUMN foods.suitable_for_activities IS 'JSONB map of sport types to boolean suitability. Example: {"running": true, "cycling": true, "swimming": false}. Null means suitable for all activities (backward compatibility).';
+
+-- Add index for performance
+CREATE INDEX idx_foods_suitable_for_activities ON foods USING GIN (suitable_for_activities);
+
+-- ============================================================================
+-- 4. Add sport-specific food suitability to user_foods table
+-- ============================================================================
+
+-- Add JSONB column for sport suitability
+ALTER TABLE user_foods
+ADD COLUMN suitable_for_activities JSONB;
+
+-- Add comment
+COMMENT ON COLUMN user_foods.suitable_for_activities IS 'JSONB map of sport types to boolean suitability. Example: {"running": true, "cycling": true, "swimming": false}. Null means suitable for all activities (backward compatibility).';
+
+-- Add index for performance
+CREATE INDEX idx_user_foods_suitable_for_activities ON user_foods USING GIN (suitable_for_activities);
+
+-- ============================================================================
+-- 5. Seed default food suitability data
+-- ============================================================================
+
+-- Mark foods that are NOT suitable for swimming (everything else is suitable for all sports by default)
+-- Swimming restriction: No solid foods or gels during swimming (only liquids/electrolytes)
+
+UPDATE foods
+SET suitable_for_activities = '{"running": true, "cycling": true, "swimming": false}'::jsonb
+WHERE product_type_id IN (
+  SELECT id FROM product_types
+  WHERE name IN ('Gel', 'Chew', 'Bar', 'Solid Food')
+);
+
+-- Mark electrolyte drinks as suitable for all sports
+UPDATE foods
+SET suitable_for_activities = '{"running": true, "cycling": true, "swimming": true}'::jsonb
+WHERE is_electrolyte = true
+  AND product_type_id IN (
+    SELECT id FROM product_types
+    WHERE name IN ('Drink', 'Mix')
+  );
+
+-- ============================================================================
+-- 6. Add validation constraints
+-- ============================================================================
+
+-- Ensure cycling columns are only set when sport_type is cycling
+ALTER TABLE activities
+ADD CONSTRAINT activities_cycling_columns_check
+CHECK (
+  (sport_type = 'cycling' AND cycling_power_watts IS NOT NULL) OR
+  (sport_type != 'cycling' AND cycling_power_watts IS NULL AND cycling_ftp_watts IS NULL)
+);
+
+-- Ensure swimming columns are only set when sport_type is swimming
+ALTER TABLE activities
+ADD CONSTRAINT activities_swimming_columns_check
+CHECK (
+  (sport_type = 'swimming' AND swimming_speed_per_100m IS NOT NULL) OR
+  (sport_type != 'swimming' AND swimming_speed_per_100m IS NULL AND swimming_css_seconds_per_100m IS NULL)
+);
+
+-- ============================================================================
+-- Migration complete
+-- ============================================================================

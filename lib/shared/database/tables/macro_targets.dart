@@ -31,7 +31,7 @@ class MacroTargetsTable extends Table {
   // Run metrics
   RealColumn get distanceMi => real().named('distance_mi')();
   RealColumn get durationH => real().named('duration_h')();
-  RealColumn get paceMinPerMile => real().named('pace_min_per_mile')();
+  RealColumn get paceMinPerMile => real().named('pace_min_per_mile').nullable()();
   RealColumn get caloriesGrossKcal => real().named('calories_gross_kcal')();
   RealColumn get met => real().named('met')();
   
@@ -64,7 +64,7 @@ class MacroTargetsTable extends Table {
     'CHECK (post_run_sodium_mg >= 0)',
     'CHECK (distance_mi > 0)',
     'CHECK (duration_h > 0)',
-    'CHECK (pace_min_per_mile > 0)',
+    'CHECK (pace_min_per_mile IS NULL OR pace_min_per_mile > 0)',
     'CHECK (calories_gross_kcal >= 0)',
     'CHECK (met > 0)',
   ];

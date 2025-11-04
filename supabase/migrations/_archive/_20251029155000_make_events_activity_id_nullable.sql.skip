@@ -1,0 +1,9 @@
+-- Make activity_id nullable in events table
+-- Events can exist independently without being linked to an activity
+-- This aligns with the app code which supports standalone events
+
+ALTER TABLE events
+ALTER COLUMN activity_id DROP NOT NULL;
+
+-- Update comment to reflect the nullable nature
+COMMENT ON COLUMN events.activity_id IS 'Optional link to an activity. Events can exist independently without activities.';

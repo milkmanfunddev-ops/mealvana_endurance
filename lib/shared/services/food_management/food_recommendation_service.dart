@@ -38,17 +38,7 @@ class FoodRecommendationService {
     int maxResults = 10,
     String? deviceId,
   }) async {
-    try {
-      _logger.debug('Getting recommendations',
-        context: 'FoodRecommendationService',
-        data: {
-          'productTypeId': productTypeId,
-          'category': category,
-          'maxResults': maxResults,
-        },
-      );
-
-      // Load both user foods and generic foods
+    try {      // Load both user foods and generic foods
       final userFoods = deviceId != null
           ? await _userFoodService.getUserFoods(deviceId)
           : <Food>[];
@@ -66,15 +56,9 @@ class FoodRecommendationService {
         // Swap scenario: match product type
         filteredFoods = allFoods.where((food) =>
           food.productTypeId == productTypeId
-        ).toList();
-
-        _logger.debug('Filtered by product type: ${filteredFoods.length} foods');
-      } else if (category != null) {
+        ).toList();      } else if (category != null) {
         // Add scenario: match category/timing suitability
-        filteredFoods = _filterByCategory(allFoods, category);
-
-        _logger.debug('Filtered by category $category: ${filteredFoods.length} foods');
-      } else {
+        filteredFoods = _filterByCategory(allFoods, category);      } else {
         // No specific filtering
         filteredFoods = allFoods;
       }
@@ -84,10 +68,7 @@ class FoodRecommendationService {
         filteredFoods,
         preferences,
         maxResults: maxResults,
-      );
-
-      _logger.debug('Generated ${recommendations.length} recommendations');
-      return recommendations;
+      );      return recommendations;
 
     } catch (e) {
       _logger.error('Error getting recommendations',

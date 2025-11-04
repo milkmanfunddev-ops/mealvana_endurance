@@ -1,7 +1,10 @@
+import '../../../shared/domain/activity_type.dart';
+
 /// Complete macro targets for a running session
 class MacroTargets {
   const MacroTargets({
     required this.id,
+    required this.activityType,
     required this.preRun,
     required this.duringRun,
     required this.postRun,
@@ -13,6 +16,7 @@ class MacroTargets {
   });
 
   final String id;
+  final ActivityType activityType;
   final PreRunMacros preRun;
   final DuringRunMacros duringRun;
   final PostRunMacros postRun;
@@ -24,6 +28,7 @@ class MacroTargets {
 
   MacroTargets copyWith({
     String? id,
+    ActivityType? activityType,
     PreRunMacros? preRun,
     DuringRunMacros? duringRun,
     PostRunMacros? postRun,
@@ -35,6 +40,7 @@ class MacroTargets {
   }) {
     return MacroTargets(
       id: id ?? this.id,
+      activityType: activityType ?? this.activityType,
       preRun: preRun ?? this.preRun,
       duringRun: duringRun ?? this.duringRun,
       postRun: postRun ?? this.postRun,
@@ -49,6 +55,7 @@ class MacroTargets {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'activityType': activityType.name,
       'preRun': preRun.toJson(),
       'duringRun': duringRun.toJson(),
       'postRun': postRun.toJson(),
@@ -63,6 +70,7 @@ class MacroTargets {
   factory MacroTargets.fromJson(Map<String, dynamic> json) {
     return MacroTargets(
       id: json['id'] as String,
+      activityType: ActivityType.values.byName(json['activityType'] as String? ?? 'running'),
       preRun: PreRunMacros.fromJson(json['preRun'] as Map<String, dynamic>),
       duringRun: DuringRunMacros.fromJson(json['duringRun'] as Map<String, dynamic>),
       postRun: PostRunMacros.fromJson(json['postRun'] as Map<String, dynamic>),
@@ -79,6 +87,7 @@ class MacroTargets {
     if (identical(this, other)) return true;
     return other is MacroTargets &&
         other.id == id &&
+        other.activityType == activityType &&
         other.preRun == preRun &&
         other.duringRun == duringRun &&
         other.postRun == postRun &&
@@ -93,6 +102,7 @@ class MacroTargets {
   int get hashCode {
     return Object.hash(
       id,
+      activityType,
       preRun,
       duringRun,
       postRun,
@@ -106,7 +116,7 @@ class MacroTargets {
 
   @override
   String toString() {
-    return 'MacroTargets(id: $id, preRun: $preRun, duringRun: $duringRun, postRun: $postRun, metrics: $metrics, calculationRule: $calculationRule, timestamp: $timestamp, isUserModified: $isUserModified, modifiedFields: $modifiedFields)';
+    return 'MacroTargets(id: $id, activityType: $activityType, preRun: $preRun, duringRun: $duringRun, postRun: $postRun, metrics: $metrics, calculationRule: $calculationRule, timestamp: $timestamp, isUserModified: $isUserModified, modifiedFields: $modifiedFields)';
   }
 }
 
@@ -408,7 +418,7 @@ class RunMetrics {
     required this.distanceKm,
     required this.durationH,
     required this.durationMin,
-    required this.paceMinPerMile,
+    this.paceMinPerMile,
     required this.speedMph,
     required this.caloriesGrossKcal,
     required this.caloriesNetKcal,
@@ -419,7 +429,7 @@ class RunMetrics {
   final double distanceKm;
   final double durationH;
   final double durationMin;
-  final double paceMinPerMile;
+  final double? paceMinPerMile;
   final double speedMph;
   final double caloriesGrossKcal;
   final double caloriesNetKcal;
@@ -434,8 +444,9 @@ class RunMetrics {
 
   /// Format pace as MM:SS per mile
   String get formattedPace {
-    final minutes = paceMinPerMile.floor();
-    final seconds = ((paceMinPerMile - minutes) * 60).round();
+    if (paceMinPerMile == null) return 'N/A';
+    final minutes = paceMinPerMile!.floor();
+    final seconds = ((paceMinPerMile! - minutes) * 60).round();
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
@@ -483,7 +494,7 @@ class RunMetrics {
       distanceKm: (json['distanceKm'] as num).toDouble(),
       durationH: (json['durationH'] as num).toDouble(),
       durationMin: (json['durationMin'] as num).toDouble(),
-      paceMinPerMile: (json['paceMinPerMile'] as num).toDouble(),
+      paceMinPerMile: json['paceMinPerMile'] != null ? (json['paceMinPerMile'] as num).toDouble() : null,
       speedMph: (json['speedMph'] as num).toDouble(),
       caloriesGrossKcal: (json['caloriesGrossKcal'] as num).toDouble(),
       caloriesNetKcal: (json['caloriesNetKcal'] as num).toDouble(),

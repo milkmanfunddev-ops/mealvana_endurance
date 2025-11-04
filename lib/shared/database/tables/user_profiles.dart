@@ -76,6 +76,9 @@ class UserProfilesTable extends Table {
   BoolColumn get autoGenerateNutrition => boolean().withDefault(const Constant(true)).named('auto_generate_nutrition')();
   BoolColumn get completionReminders => boolean().withDefault(const Constant(true)).named('completion_reminders')();
 
+  // Sharing preferences
+  TextColumn get senderName => text().nullable().named('sender_name')(); // Name used when sharing plans
+
   @override
   Set<Column> get primaryKey => {id};
 

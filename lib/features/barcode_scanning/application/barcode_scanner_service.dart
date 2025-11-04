@@ -31,12 +31,6 @@ class BarcodeScannerService {
   /// Scan a barcode and return a Food model if successful
   /// Returns null if the product is not found or there's an error
   Future<BarcodeScanResult> scanBarcode(String barcode) async {
-    _logger.debug(
-      'Scanning barcode',
-      context: 'BARCODE_SCAN',
-      data: {'rawBarcode': barcode},
-    );
-
     // Validate barcode format
     if (!_barcodeService.isValidBarcodeFormat(barcode)) {
       _logger.warning(
@@ -52,20 +46,9 @@ class BarcodeScannerService {
 
     // Clean the barcode
     final cleanBarcode = _barcodeService.cleanBarcode(barcode);
-    _logger.debug(
-      'Cleaned barcode',
-      context: 'BARCODE_SCAN',
-      data: {'cleanBarcode': cleanBarcode},
-    );
 
     // Lookup the barcode
-    _logger.debug('Looking up barcode', context: 'BARCODE_SCAN');
     final result = await _barcodeService.lookupBarcode(cleanBarcode);
-    _logger.debug(
-      'Barcode lookup completed',
-      context: 'BARCODE_SCAN',
-      data: {'resultType': result?.runtimeType.toString()},
-    );
 
     if (result == null) {
       _logger.error(
@@ -116,23 +99,12 @@ class BarcodeScannerService {
   /// Cache a scanned food to the local database so it becomes searchable
   Future<void> cacheScannedFood(Food food) async {
     try {
-      _logger.debug(
-        'Caching scanned food',
-        context: 'BARCODE_SCAN',
-        data: {'foodId': food.id, 'foodName': food.name},
-      );
-
       // Convert Food domain model to database format
       final foodData = _convertFoodToDatabaseFormat(food);
 
       // Cache to database
       await _database.cacheFoods([foodData]);
 
-      _logger.info(
-        'Cached scanned food',
-        context: 'BARCODE_SCAN',
-        data: {'foodId': food.id},
-      );
     } catch (e) {
       _logger.error(
         'Error caching scanned food',

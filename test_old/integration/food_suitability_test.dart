@@ -4,6 +4,7 @@
 /// food constraints for user safety. Critical for preventing GI distress
 /// during runs by ensuring inappropriate foods (like oatmeal) never appear
 /// during-run phases.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

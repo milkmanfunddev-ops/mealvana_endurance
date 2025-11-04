@@ -3,6 +3,7 @@
 /// This file contains ProviderContainer overrides and mock implementations
 /// following Andrea Bizzotto's testing patterns with real dependencies
 /// where possible and strategic mocking for external services.
+library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
@@ -198,9 +199,13 @@ class TestMockSetup {
   /// Sets up analytics service mock (no-op for most tests)
   static void setupAnalyticsServiceMock(MockAnalyticsService mock) {
     when(() => mock.track(any(), properties: any(named: 'properties')))
-        .thenAnswer((_) async {});
+        .thenAnswer((_) async {
+          return null;
+        });
     when(() => mock.identify(any(), traits: any(named: 'traits')))
-        .thenAnswer((_) async {});
+        .thenAnswer((_) async {
+          return null;
+        });
   }
 }
 

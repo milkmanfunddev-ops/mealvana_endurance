@@ -54,7 +54,7 @@ Preference sets for food selection testing:
 **Status**: Created but have type compatibility issues with Drift-generated classes
 
 **Resolution Plan**:
-- These fixtures use Drift-generated types (`UserProfileEntry`, etc.)
+- These fixtures use Drift-generated types (`UserEntry`, etc.)
 - Will be finalized in **Phase 4: Drift Migration Coverage** when we set up in-memory databases
 - For now, edge function tests can use Map-based data from `nutrition_plan_requests.dart`
 

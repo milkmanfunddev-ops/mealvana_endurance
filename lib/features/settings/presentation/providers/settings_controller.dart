@@ -34,7 +34,7 @@ class SettingsController extends _$SettingsController {
     // Load current user profile
     final userRepository = await _userRepository;
     final userProfile = await userRepository.getCurrentUser();
-    
+
     return SettingsState(
       title: title,
       profileSectionTitle: profileSectionTitle,
@@ -59,6 +59,15 @@ class SettingsController extends _$SettingsController {
       preferredDistanceUnit: DistanceUnit.miles,
       preferredPaceUnit: PaceUnit.minPerMile,
       gutTrainingLevel: userProfile?.gutTraining ?? GutTraining.moderate,
+      // Sport preferences
+      giSensitivity: userProfile?.giSensitivity,
+      ftpWatts: userProfile?.ftpWatts,
+      typicalBikeBottles: userProfile?.typicalBikeBottles,
+      hasAeroBottle: userProfile?.hasAeroBottle,
+      hasBentoBox: userProfile?.hasBentoBox,
+      cssPacePer100mSeconds: userProfile?.cssPacePer100mSeconds,
+      typicalWetsuit: userProfile?.typicalWetsuit,
+      typicalSwimCapType: userProfile?.typicalSwimCapType,
     );
   }
 
@@ -167,6 +176,59 @@ class SettingsController extends _$SettingsController {
     await _saveProfile();
   }
 
+  /// Update GI sensitivity
+  Future<void> updateGISensitivity(bool giSensitivity) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(currentState.copyWith(
+      giSensitivity: giSensitivity,
+      isSaving: true,
+    ));
+
+    await _saveProfile();
+  }
+
+  /// Update cycling preferences
+  Future<void> updateCyclingPreferences({
+    int? ftpWatts,
+    int? typicalBikeBottles,
+    bool? hasAeroBottle,
+    bool? hasBentoBox,
+  }) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(currentState.copyWith(
+      ftpWatts: ftpWatts,
+      typicalBikeBottles: typicalBikeBottles,
+      hasAeroBottle: hasAeroBottle,
+      hasBentoBox: hasBentoBox,
+      isSaving: true,
+    ));
+
+    await _saveProfile();
+  }
+
+  /// Update swimming preferences
+  Future<void> updateSwimmingPreferences({
+    int? cssPacePer100mSeconds,
+    bool? typicalWetsuit,
+    String? typicalSwimCapType,
+  }) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(currentState.copyWith(
+      cssPacePer100mSeconds: cssPacePer100mSeconds,
+      typicalWetsuit: typicalWetsuit,
+      typicalSwimCapType: typicalSwimCapType,
+      isSaving: true,
+    ));
+
+    await _saveProfile();
+  }
+
   /// Save profile changes (both local and Supabase)
   Future<void> _saveProfile() async {
     final currentState = state.value;
@@ -185,12 +247,21 @@ class SettingsController extends _$SettingsController {
         updatedAt: DateTime.now(),
         gutTraining: currentState.gutTrainingLevel,
         appVersion: '1.0.0', // Default app version
+        // Sport preferences
+        giSensitivity: currentState.giSensitivity,
+        ftpWatts: currentState.ftpWatts,
+        typicalBikeBottles: currentState.typicalBikeBottles,
+        hasAeroBottle: currentState.hasAeroBottle,
+        hasBentoBox: currentState.hasBentoBox,
+        cssPacePer100mSeconds: currentState.cssPacePer100mSeconds,
+        typicalWetsuit: currentState.typicalWetsuit,
+        typicalSwimCapType: currentState.typicalSwimCapType,
       );
 
       // Save locally first, then sync to Supabase
       final userRepository = await _userRepository;
       await userRepository.saveUserProfile(updatedProfile);
-      
+
       // TODO: Add Supabase sync once implemented
       // await _userRepository.syncToSupabase();
 

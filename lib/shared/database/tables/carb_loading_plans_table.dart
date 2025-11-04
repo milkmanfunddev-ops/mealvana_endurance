@@ -23,7 +23,11 @@ class CarbLoadingPlansTable extends Table {
   // Completion tracking
   RealColumn get adherenceScore => real().nullable().named('adherence_score')(); // 0.0 to 1.0 based on logged meals
   DateTimeColumn get completedAt => dateTime().nullable().named('completed_at')();
-  
+
+  // Sync tracking (offline-first architecture)
+  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
+  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+
   @override
   Set<Column> get primaryKey => {id};
   

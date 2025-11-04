@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/nutrition_plan_repository.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/application/food_data_transformation_service.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';

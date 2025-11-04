@@ -23,23 +23,17 @@ class SupabaseBarcodeService {
   /// Returns null if the product is not found or if there's an error
   Future<BarcodeResult?> lookupBarcode(String barcode) async {
     try {
-      _logger.info('Starting barcode lookup for: $barcode');
-
       // Use the unified ProductDetailService
       final apiProduct = await _productDetailService.getProductDetails(
         barcode: barcode,
       );
 
       if (apiProduct != null) {
-        _logger.info('Successfully found product: ${apiProduct.productName}');
-
         return BarcodeResult.success(
           barcode: barcode,
           product: apiProduct,
         );
       } else {
-        _logger.info('Product not found for barcode: $barcode');
-
         return BarcodeResult.notFound(
           barcode: barcode,
           message: 'Product not found in nutrition databases',

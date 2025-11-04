@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/domain/activity_type.dart';
 import '../domain/macro_targets.dart';
 import 'offline_macro_calculator.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
@@ -125,6 +126,7 @@ class MacroRepositoryImpl implements MacroRepository {
   MacroTargets _mapApiResponseToMacroTargets(Map<String, dynamic> macros) {
     return MacroTargets(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
+      activityType: ActivityType.running,
       preRun: PreRunMacros(
         carbsG: (macros['pre_run_carbs_g'] as num).toDouble(),
         proteinG: (macros['pre_run_protein_g_optional'] as num).toDouble(),
@@ -191,7 +193,7 @@ class MacroRepositoryImpl implements MacroRepository {
       postRunSodiumMg: targets.postRun.sodiumMg,
       distanceMi: targets.metrics.distanceMi,
       durationH: targets.metrics.durationH,
-      paceMinPerMile: targets.metrics.paceMinPerMile,
+      paceMinPerMile: Value(targets.metrics.paceMinPerMile),
       caloriesGrossKcal: targets.metrics.caloriesGrossKcal,
       met: targets.metrics.met,
       calculationRule: targets.calculationRule,
@@ -232,7 +234,7 @@ class MacroRepositoryImpl implements MacroRepository {
       postRunSodiumMg: targets.postRun.sodiumMg,
       distanceMi: targets.metrics.distanceMi,
       durationH: targets.metrics.durationH,
-      paceMinPerMile: targets.metrics.paceMinPerMile,
+      paceMinPerMile: Value(targets.metrics.paceMinPerMile),
       caloriesGrossKcal: targets.metrics.caloriesGrossKcal,
       met: targets.metrics.met,
       calculationRule: '${targets.calculationRule} (Original)',
@@ -277,6 +279,7 @@ class MacroRepositoryImpl implements MacroRepository {
   MacroTargets _mapDatabaseRowToMacroTargets(MacroTargetsTableData row) {
     return MacroTargets(
       id: row.id,
+      activityType: ActivityType.running,
       preRun: PreRunMacros(
         carbsG: row.preRunCarbsG,
         proteinG: row.preRunProteinG,
@@ -306,7 +309,7 @@ class MacroRepositoryImpl implements MacroRepository {
         durationH: row.durationH,
         durationMin: row.durationH * 60,
         paceMinPerMile: row.paceMinPerMile,
-        speedMph: 60.0 / row.paceMinPerMile,
+        speedMph: row.paceMinPerMile != null ? 60.0 / row.paceMinPerMile! : row.distanceMi / row.durationH,
         caloriesGrossKcal: row.caloriesGrossKcal,
         caloriesNetKcal: row.caloriesGrossKcal * 0.8, // Estimate
         met: row.met,

@@ -366,6 +366,17 @@ class $UserProfilesTableTable extends UserProfilesTable
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _senderNameMeta = const VerificationMeta(
+    'senderName',
+  );
+  @override
+  late final GeneratedColumn<String> senderName = GeneratedColumn<String>(
+    'sender_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -397,6 +408,7 @@ class $UserProfilesTableTable extends UserProfilesTable
     defaultActivityDay,
     autoGenerateNutrition,
     completionReminders,
+    senderName,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -639,6 +651,12 @@ class $UserProfilesTableTable extends UserProfilesTable
         ),
       );
     }
+    if (data.containsKey('sender_name')) {
+      context.handle(
+        _senderNameMeta,
+        senderName.isAcceptableOrUnknown(data['sender_name']!, _senderNameMeta),
+      );
+    }
     return context;
   }
 
@@ -767,6 +785,10 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.bool,
         data['${effectivePrefix}completion_reminders'],
       )!,
+      senderName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sender_name'],
+      ),
     );
   }
 
@@ -849,6 +871,7 @@ class UserProfileEntry extends DataClass
   final String defaultActivityDay;
   final bool autoGenerateNutrition;
   final bool completionReminders;
+  final String? senderName;
   const UserProfileEntry({
     required this.id,
     required this.deviceId,
@@ -879,6 +902,7 @@ class UserProfileEntry extends DataClass
     required this.defaultActivityDay,
     required this.autoGenerateNutrition,
     required this.completionReminders,
+    this.senderName,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -934,6 +958,9 @@ class UserProfileEntry extends DataClass
     map['default_activity_day'] = Variable<String>(defaultActivityDay);
     map['auto_generate_nutrition'] = Variable<bool>(autoGenerateNutrition);
     map['completion_reminders'] = Variable<bool>(completionReminders);
+    if (!nullToAbsent || senderName != null) {
+      map['sender_name'] = Variable<String>(senderName);
+    }
     return map;
   }
 
@@ -982,6 +1009,9 @@ class UserProfileEntry extends DataClass
       defaultActivityDay: Value(defaultActivityDay),
       autoGenerateNutrition: Value(autoGenerateNutrition),
       completionReminders: Value(completionReminders),
+      senderName: senderName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(senderName),
     );
   }
 
@@ -1044,6 +1074,7 @@ class UserProfileEntry extends DataClass
       completionReminders: serializer.fromJson<bool>(
         json['completionReminders'],
       ),
+      senderName: serializer.fromJson<String?>(json['senderName']),
     );
   }
   @override
@@ -1083,6 +1114,7 @@ class UserProfileEntry extends DataClass
       'defaultActivityDay': serializer.toJson<String>(defaultActivityDay),
       'autoGenerateNutrition': serializer.toJson<bool>(autoGenerateNutrition),
       'completionReminders': serializer.toJson<bool>(completionReminders),
+      'senderName': serializer.toJson<String?>(senderName),
     };
   }
 
@@ -1116,6 +1148,7 @@ class UserProfileEntry extends DataClass
     String? defaultActivityDay,
     bool? autoGenerateNutrition,
     bool? completionReminders,
+    Value<String?> senderName = const Value.absent(),
   }) => UserProfileEntry(
     id: id ?? this.id,
     deviceId: deviceId ?? this.deviceId,
@@ -1147,6 +1180,7 @@ class UserProfileEntry extends DataClass
     defaultActivityDay: defaultActivityDay ?? this.defaultActivityDay,
     autoGenerateNutrition: autoGenerateNutrition ?? this.autoGenerateNutrition,
     completionReminders: completionReminders ?? this.completionReminders,
+    senderName: senderName.present ? senderName.value : this.senderName,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
     return UserProfileEntry(
@@ -1225,6 +1259,9 @@ class UserProfileEntry extends DataClass
       completionReminders: data.completionReminders.present
           ? data.completionReminders.value
           : this.completionReminders,
+      senderName: data.senderName.present
+          ? data.senderName.value
+          : this.senderName,
     );
   }
 
@@ -1259,7 +1296,8 @@ class UserProfileEntry extends DataClass
           ..write('defaultActivityTime: $defaultActivityTime, ')
           ..write('defaultActivityDay: $defaultActivityDay, ')
           ..write('autoGenerateNutrition: $autoGenerateNutrition, ')
-          ..write('completionReminders: $completionReminders')
+          ..write('completionReminders: $completionReminders, ')
+          ..write('senderName: $senderName')
           ..write(')'))
         .toString();
   }
@@ -1295,6 +1333,7 @@ class UserProfileEntry extends DataClass
     defaultActivityDay,
     autoGenerateNutrition,
     completionReminders,
+    senderName,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1328,7 +1367,8 @@ class UserProfileEntry extends DataClass
           other.defaultActivityTime == this.defaultActivityTime &&
           other.defaultActivityDay == this.defaultActivityDay &&
           other.autoGenerateNutrition == this.autoGenerateNutrition &&
-          other.completionReminders == this.completionReminders);
+          other.completionReminders == this.completionReminders &&
+          other.senderName == this.senderName);
 }
 
 class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
@@ -1361,6 +1401,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<String> defaultActivityDay;
   final Value<bool> autoGenerateNutrition;
   final Value<bool> completionReminders;
+  final Value<String?> senderName;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
     this.id = const Value.absent(),
@@ -1392,6 +1433,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.defaultActivityDay = const Value.absent(),
     this.autoGenerateNutrition = const Value.absent(),
     this.completionReminders = const Value.absent(),
+    this.senderName = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UserProfilesTableCompanion.insert({
@@ -1424,6 +1466,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.defaultActivityDay = const Value.absent(),
     this.autoGenerateNutrition = const Value.absent(),
     this.completionReminders = const Value.absent(),
+    this.senderName = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        deviceId = Value(deviceId);
@@ -1457,6 +1500,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<String>? defaultActivityDay,
     Expression<bool>? autoGenerateNutrition,
     Expression<bool>? completionReminders,
+    Expression<String>? senderName,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1501,6 +1545,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
         'auto_generate_nutrition': autoGenerateNutrition,
       if (completionReminders != null)
         'completion_reminders': completionReminders,
+      if (senderName != null) 'sender_name': senderName,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1535,6 +1580,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<String>? defaultActivityDay,
     Value<bool>? autoGenerateNutrition,
     Value<bool>? completionReminders,
+    Value<String?>? senderName,
     Value<int>? rowid,
   }) {
     return UserProfilesTableCompanion(
@@ -1571,6 +1617,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       autoGenerateNutrition:
           autoGenerateNutrition ?? this.autoGenerateNutrition,
       completionReminders: completionReminders ?? this.completionReminders,
+      senderName: senderName ?? this.senderName,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1679,6 +1726,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (completionReminders.present) {
       map['completion_reminders'] = Variable<bool>(completionReminders.value);
     }
+    if (senderName.present) {
+      map['sender_name'] = Variable<String>(senderName.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1717,6 +1767,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('defaultActivityDay: $defaultActivityDay, ')
           ..write('autoGenerateNutrition: $autoGenerateNutrition, ')
           ..write('completionReminders: $completionReminders, ')
+          ..write('senderName: $senderName, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3469,9 +3520,9 @@ class $MacroTargetsTableTable extends MacroTargetsTable
   late final GeneratedColumn<double> paceMinPerMile = GeneratedColumn<double>(
     'pace_min_per_mile',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _caloriesGrossKcalMeta = const VerificationMeta(
     'caloriesGrossKcal',
@@ -3787,8 +3838,6 @@ class $MacroTargetsTableTable extends MacroTargetsTable
           _paceMinPerMileMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_paceMinPerMileMeta);
     }
     if (data.containsKey('calories_gross_kcal')) {
       context.handle(
@@ -3934,7 +3983,7 @@ class $MacroTargetsTableTable extends MacroTargetsTable
       paceMinPerMile: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}pace_min_per_mile'],
-      )!,
+      ),
       caloriesGrossKcal: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}calories_gross_kcal'],
@@ -3990,7 +4039,7 @@ class MacroTargetsTableData extends DataClass
   final double postRunSodiumMg;
   final double distanceMi;
   final double durationH;
-  final double paceMinPerMile;
+  final double? paceMinPerMile;
   final double caloriesGrossKcal;
   final double met;
   final String calculationRule;
@@ -4017,7 +4066,7 @@ class MacroTargetsTableData extends DataClass
     required this.postRunSodiumMg,
     required this.distanceMi,
     required this.durationH,
-    required this.paceMinPerMile,
+    this.paceMinPerMile,
     required this.caloriesGrossKcal,
     required this.met,
     required this.calculationRule,
@@ -4053,7 +4102,9 @@ class MacroTargetsTableData extends DataClass
     map['post_run_sodium_mg'] = Variable<double>(postRunSodiumMg);
     map['distance_mi'] = Variable<double>(distanceMi);
     map['duration_h'] = Variable<double>(durationH);
-    map['pace_min_per_mile'] = Variable<double>(paceMinPerMile);
+    if (!nullToAbsent || paceMinPerMile != null) {
+      map['pace_min_per_mile'] = Variable<double>(paceMinPerMile);
+    }
     map['calories_gross_kcal'] = Variable<double>(caloriesGrossKcal);
     map['met'] = Variable<double>(met);
     map['calculation_rule'] = Variable<String>(calculationRule);
@@ -4086,7 +4137,9 @@ class MacroTargetsTableData extends DataClass
       postRunSodiumMg: Value(postRunSodiumMg),
       distanceMi: Value(distanceMi),
       durationH: Value(durationH),
-      paceMinPerMile: Value(paceMinPerMile),
+      paceMinPerMile: paceMinPerMile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paceMinPerMile),
       caloriesGrossKcal: Value(caloriesGrossKcal),
       met: Value(met),
       calculationRule: Value(calculationRule),
@@ -4133,7 +4186,7 @@ class MacroTargetsTableData extends DataClass
       postRunSodiumMg: serializer.fromJson<double>(json['postRunSodiumMg']),
       distanceMi: serializer.fromJson<double>(json['distanceMi']),
       durationH: serializer.fromJson<double>(json['durationH']),
-      paceMinPerMile: serializer.fromJson<double>(json['paceMinPerMile']),
+      paceMinPerMile: serializer.fromJson<double?>(json['paceMinPerMile']),
       caloriesGrossKcal: serializer.fromJson<double>(json['caloriesGrossKcal']),
       met: serializer.fromJson<double>(json['met']),
       calculationRule: serializer.fromJson<String>(json['calculationRule']),
@@ -4169,7 +4222,7 @@ class MacroTargetsTableData extends DataClass
       'postRunSodiumMg': serializer.toJson<double>(postRunSodiumMg),
       'distanceMi': serializer.toJson<double>(distanceMi),
       'durationH': serializer.toJson<double>(durationH),
-      'paceMinPerMile': serializer.toJson<double>(paceMinPerMile),
+      'paceMinPerMile': serializer.toJson<double?>(paceMinPerMile),
       'caloriesGrossKcal': serializer.toJson<double>(caloriesGrossKcal),
       'met': serializer.toJson<double>(met),
       'calculationRule': serializer.toJson<String>(calculationRule),
@@ -4199,7 +4252,7 @@ class MacroTargetsTableData extends DataClass
     double? postRunSodiumMg,
     double? distanceMi,
     double? durationH,
-    double? paceMinPerMile,
+    Value<double?> paceMinPerMile = const Value.absent(),
     double? caloriesGrossKcal,
     double? met,
     String? calculationRule,
@@ -4229,7 +4282,9 @@ class MacroTargetsTableData extends DataClass
     postRunSodiumMg: postRunSodiumMg ?? this.postRunSodiumMg,
     distanceMi: distanceMi ?? this.distanceMi,
     durationH: durationH ?? this.durationH,
-    paceMinPerMile: paceMinPerMile ?? this.paceMinPerMile,
+    paceMinPerMile: paceMinPerMile.present
+        ? paceMinPerMile.value
+        : this.paceMinPerMile,
     caloriesGrossKcal: caloriesGrossKcal ?? this.caloriesGrossKcal,
     met: met ?? this.met,
     calculationRule: calculationRule ?? this.calculationRule,
@@ -4427,7 +4482,7 @@ class MacroTargetsTableCompanion
   final Value<double> postRunSodiumMg;
   final Value<double> distanceMi;
   final Value<double> durationH;
-  final Value<double> paceMinPerMile;
+  final Value<double?> paceMinPerMile;
   final Value<double> caloriesGrossKcal;
   final Value<double> met;
   final Value<String> calculationRule;
@@ -4484,7 +4539,7 @@ class MacroTargetsTableCompanion
     required double postRunSodiumMg,
     required double distanceMi,
     required double durationH,
-    required double paceMinPerMile,
+    this.paceMinPerMile = const Value.absent(),
     required double caloriesGrossKcal,
     required double met,
     required String calculationRule,
@@ -4510,7 +4565,6 @@ class MacroTargetsTableCompanion
        postRunSodiumMg = Value(postRunSodiumMg),
        distanceMi = Value(distanceMi),
        durationH = Value(durationH),
-       paceMinPerMile = Value(paceMinPerMile),
        caloriesGrossKcal = Value(caloriesGrossKcal),
        met = Value(met),
        calculationRule = Value(calculationRule),
@@ -4601,7 +4655,7 @@ class MacroTargetsTableCompanion
     Value<double>? postRunSodiumMg,
     Value<double>? distanceMi,
     Value<double>? durationH,
-    Value<double>? paceMinPerMile,
+    Value<double?>? paceMinPerMile,
     Value<double>? caloriesGrossKcal,
     Value<double>? met,
     Value<String>? calculationRule,
@@ -12668,6 +12722,193 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _cyclingSpeedMphMeta = const VerificationMeta(
+    'cyclingSpeedMph',
+  );
+  @override
+  late final GeneratedColumn<double> cyclingSpeedMph = GeneratedColumn<double>(
+    'cycling_speed_mph',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cyclingTerrainMeta = const VerificationMeta(
+    'cyclingTerrain',
+  );
+  @override
+  late final GeneratedColumn<String> cyclingTerrain = GeneratedColumn<String>(
+    'cycling_terrain',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cyclingIndoorOutdoorMeta =
+      const VerificationMeta('cyclingIndoorOutdoor');
+  @override
+  late final GeneratedColumn<String> cyclingIndoorOutdoor =
+      GeneratedColumn<String>(
+        'cycling_indoor_outdoor',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _cyclingElevationGainFtMeta =
+      const VerificationMeta('cyclingElevationGainFt');
+  @override
+  late final GeneratedColumn<int> cyclingElevationGainFt = GeneratedColumn<int>(
+    'cycling_elevation_gain_ft',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cyclingSessionGoalMeta =
+      const VerificationMeta('cyclingSessionGoal');
+  @override
+  late final GeneratedColumn<String> cyclingSessionGoal =
+      GeneratedColumn<String>(
+        'cycling_session_goal',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _swimmingPacePer100mSecondsMeta =
+      const VerificationMeta('swimmingPacePer100mSeconds');
+  @override
+  late final GeneratedColumn<int> swimmingPacePer100mSeconds =
+      GeneratedColumn<int>(
+        'swimming_pace_per_100m_seconds',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _swimmingPoolOrOpenWaterMeta =
+      const VerificationMeta('swimmingPoolOrOpenWater');
+  @override
+  late final GeneratedColumn<String> swimmingPoolOrOpenWater =
+      GeneratedColumn<String>(
+        'swimming_pool_or_open_water',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _swimmingWaterTempCMeta =
+      const VerificationMeta('swimmingWaterTempC');
+  @override
+  late final GeneratedColumn<double> swimmingWaterTempC =
+      GeneratedColumn<double>(
+        'swimming_water_temp_c',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _intensityTargetMeta = const VerificationMeta(
+    'intensityTarget',
+  );
+  @override
+  late final GeneratedColumn<String> intensityTarget = GeneratedColumn<String>(
+    'intensity_target',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _timeBeforeMinutesMeta = const VerificationMeta(
+    'timeBeforeMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> timeBeforeMinutes = GeneratedColumn<int>(
+    'time_before_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reminderEnabledMeta = const VerificationMeta(
+    'reminderEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> reminderEnabled = GeneratedColumn<bool>(
+    'reminder_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("reminder_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _reminderDaysBeforeMeta =
+      const VerificationMeta('reminderDaysBefore');
+  @override
+  late final GeneratedColumn<int> reminderDaysBefore = GeneratedColumn<int>(
+    'reminder_days_before',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reminderTimeOfDayMeta = const VerificationMeta(
+    'reminderTimeOfDay',
+  );
+  @override
+  late final GeneratedColumn<String> reminderTimeOfDay =
+      GeneratedColumn<String>(
+        'reminder_time_of_day',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _reminderRecurringMeta = const VerificationMeta(
+    'reminderRecurring',
+  );
+  @override
+  late final GeneratedColumn<bool> reminderRecurring = GeneratedColumn<bool>(
+    'reminder_recurring',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("reminder_recurring" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _completedAtMeta = const VerificationMeta(
     'completedAt',
   );
@@ -12776,6 +13017,22 @@ class $ActivitiesTableTable extends ActivitiesTable
     durationMinutes,
     paceTargetMinutesPerMile,
     intensityLevel,
+    cyclingSpeedMph,
+    cyclingTerrain,
+    cyclingIndoorOutdoor,
+    cyclingElevationGainFt,
+    cyclingSessionGoal,
+    swimmingPacePer100mSeconds,
+    swimmingPoolOrOpenWater,
+    swimmingWaterTempC,
+    intensityTarget,
+    timeBeforeMinutes,
+    reminderEnabled,
+    reminderDaysBefore,
+    reminderTimeOfDay,
+    reminderRecurring,
+    needsUpload,
+    localUpdatedAt,
     completedAt,
     completionRating,
     completionNotes,
@@ -12880,6 +13137,150 @@ class $ActivitiesTableTable extends ActivitiesTable
         intensityLevel.isAcceptableOrUnknown(
           data['intensity_level']!,
           _intensityLevelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cycling_speed_mph')) {
+      context.handle(
+        _cyclingSpeedMphMeta,
+        cyclingSpeedMph.isAcceptableOrUnknown(
+          data['cycling_speed_mph']!,
+          _cyclingSpeedMphMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cycling_terrain')) {
+      context.handle(
+        _cyclingTerrainMeta,
+        cyclingTerrain.isAcceptableOrUnknown(
+          data['cycling_terrain']!,
+          _cyclingTerrainMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cycling_indoor_outdoor')) {
+      context.handle(
+        _cyclingIndoorOutdoorMeta,
+        cyclingIndoorOutdoor.isAcceptableOrUnknown(
+          data['cycling_indoor_outdoor']!,
+          _cyclingIndoorOutdoorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cycling_elevation_gain_ft')) {
+      context.handle(
+        _cyclingElevationGainFtMeta,
+        cyclingElevationGainFt.isAcceptableOrUnknown(
+          data['cycling_elevation_gain_ft']!,
+          _cyclingElevationGainFtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cycling_session_goal')) {
+      context.handle(
+        _cyclingSessionGoalMeta,
+        cyclingSessionGoal.isAcceptableOrUnknown(
+          data['cycling_session_goal']!,
+          _cyclingSessionGoalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('swimming_pace_per_100m_seconds')) {
+      context.handle(
+        _swimmingPacePer100mSecondsMeta,
+        swimmingPacePer100mSeconds.isAcceptableOrUnknown(
+          data['swimming_pace_per_100m_seconds']!,
+          _swimmingPacePer100mSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('swimming_pool_or_open_water')) {
+      context.handle(
+        _swimmingPoolOrOpenWaterMeta,
+        swimmingPoolOrOpenWater.isAcceptableOrUnknown(
+          data['swimming_pool_or_open_water']!,
+          _swimmingPoolOrOpenWaterMeta,
+        ),
+      );
+    }
+    if (data.containsKey('swimming_water_temp_c')) {
+      context.handle(
+        _swimmingWaterTempCMeta,
+        swimmingWaterTempC.isAcceptableOrUnknown(
+          data['swimming_water_temp_c']!,
+          _swimmingWaterTempCMeta,
+        ),
+      );
+    }
+    if (data.containsKey('intensity_target')) {
+      context.handle(
+        _intensityTargetMeta,
+        intensityTarget.isAcceptableOrUnknown(
+          data['intensity_target']!,
+          _intensityTargetMeta,
+        ),
+      );
+    }
+    if (data.containsKey('time_before_minutes')) {
+      context.handle(
+        _timeBeforeMinutesMeta,
+        timeBeforeMinutes.isAcceptableOrUnknown(
+          data['time_before_minutes']!,
+          _timeBeforeMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_enabled')) {
+      context.handle(
+        _reminderEnabledMeta,
+        reminderEnabled.isAcceptableOrUnknown(
+          data['reminder_enabled']!,
+          _reminderEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_days_before')) {
+      context.handle(
+        _reminderDaysBeforeMeta,
+        reminderDaysBefore.isAcceptableOrUnknown(
+          data['reminder_days_before']!,
+          _reminderDaysBeforeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_time_of_day')) {
+      context.handle(
+        _reminderTimeOfDayMeta,
+        reminderTimeOfDay.isAcceptableOrUnknown(
+          data['reminder_time_of_day']!,
+          _reminderTimeOfDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_recurring')) {
+      context.handle(
+        _reminderRecurringMeta,
+        reminderRecurring.isAcceptableOrUnknown(
+          data['reminder_recurring']!,
+          _reminderRecurringMeta,
+        ),
+      );
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
         ),
       );
     }
@@ -13005,6 +13406,70 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.string,
         data['${effectivePrefix}intensity_level'],
       ),
+      cyclingSpeedMph: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cycling_speed_mph'],
+      ),
+      cyclingTerrain: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cycling_terrain'],
+      ),
+      cyclingIndoorOutdoor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cycling_indoor_outdoor'],
+      ),
+      cyclingElevationGainFt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cycling_elevation_gain_ft'],
+      ),
+      cyclingSessionGoal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cycling_session_goal'],
+      ),
+      swimmingPacePer100mSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}swimming_pace_per_100m_seconds'],
+      ),
+      swimmingPoolOrOpenWater: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}swimming_pool_or_open_water'],
+      ),
+      swimmingWaterTempC: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}swimming_water_temp_c'],
+      ),
+      intensityTarget: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}intensity_target'],
+      ),
+      timeBeforeMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}time_before_minutes'],
+      ),
+      reminderEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}reminder_enabled'],
+      )!,
+      reminderDaysBefore: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_days_before'],
+      ),
+      reminderTimeOfDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reminder_time_of_day'],
+      ),
+      reminderRecurring: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}reminder_recurring'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
       completedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}completed_at'],
@@ -13061,6 +13526,22 @@ class Activity extends DataClass implements Insertable<Activity> {
   final int? durationMinutes;
   final double? paceTargetMinutesPerMile;
   final String? intensityLevel;
+  final double? cyclingSpeedMph;
+  final String? cyclingTerrain;
+  final String? cyclingIndoorOutdoor;
+  final int? cyclingElevationGainFt;
+  final String? cyclingSessionGoal;
+  final int? swimmingPacePer100mSeconds;
+  final String? swimmingPoolOrOpenWater;
+  final double? swimmingWaterTempC;
+  final String? intensityTarget;
+  final int? timeBeforeMinutes;
+  final bool reminderEnabled;
+  final int? reminderDaysBefore;
+  final String? reminderTimeOfDay;
+  final bool reminderRecurring;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
   final DateTime? completedAt;
   final int? completionRating;
   final String? completionNotes;
@@ -13081,6 +13562,22 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.durationMinutes,
     this.paceTargetMinutesPerMile,
     this.intensityLevel,
+    this.cyclingSpeedMph,
+    this.cyclingTerrain,
+    this.cyclingIndoorOutdoor,
+    this.cyclingElevationGainFt,
+    this.cyclingSessionGoal,
+    this.swimmingPacePer100mSeconds,
+    this.swimmingPoolOrOpenWater,
+    this.swimmingWaterTempC,
+    this.intensityTarget,
+    this.timeBeforeMinutes,
+    required this.reminderEnabled,
+    this.reminderDaysBefore,
+    this.reminderTimeOfDay,
+    required this.reminderRecurring,
+    this.needsUpload,
+    this.localUpdatedAt,
     this.completedAt,
     this.completionRating,
     this.completionNotes,
@@ -13113,6 +13610,54 @@ class Activity extends DataClass implements Insertable<Activity> {
     }
     if (!nullToAbsent || intensityLevel != null) {
       map['intensity_level'] = Variable<String>(intensityLevel);
+    }
+    if (!nullToAbsent || cyclingSpeedMph != null) {
+      map['cycling_speed_mph'] = Variable<double>(cyclingSpeedMph);
+    }
+    if (!nullToAbsent || cyclingTerrain != null) {
+      map['cycling_terrain'] = Variable<String>(cyclingTerrain);
+    }
+    if (!nullToAbsent || cyclingIndoorOutdoor != null) {
+      map['cycling_indoor_outdoor'] = Variable<String>(cyclingIndoorOutdoor);
+    }
+    if (!nullToAbsent || cyclingElevationGainFt != null) {
+      map['cycling_elevation_gain_ft'] = Variable<int>(cyclingElevationGainFt);
+    }
+    if (!nullToAbsent || cyclingSessionGoal != null) {
+      map['cycling_session_goal'] = Variable<String>(cyclingSessionGoal);
+    }
+    if (!nullToAbsent || swimmingPacePer100mSeconds != null) {
+      map['swimming_pace_per_100m_seconds'] = Variable<int>(
+        swimmingPacePer100mSeconds,
+      );
+    }
+    if (!nullToAbsent || swimmingPoolOrOpenWater != null) {
+      map['swimming_pool_or_open_water'] = Variable<String>(
+        swimmingPoolOrOpenWater,
+      );
+    }
+    if (!nullToAbsent || swimmingWaterTempC != null) {
+      map['swimming_water_temp_c'] = Variable<double>(swimmingWaterTempC);
+    }
+    if (!nullToAbsent || intensityTarget != null) {
+      map['intensity_target'] = Variable<String>(intensityTarget);
+    }
+    if (!nullToAbsent || timeBeforeMinutes != null) {
+      map['time_before_minutes'] = Variable<int>(timeBeforeMinutes);
+    }
+    map['reminder_enabled'] = Variable<bool>(reminderEnabled);
+    if (!nullToAbsent || reminderDaysBefore != null) {
+      map['reminder_days_before'] = Variable<int>(reminderDaysBefore);
+    }
+    if (!nullToAbsent || reminderTimeOfDay != null) {
+      map['reminder_time_of_day'] = Variable<String>(reminderTimeOfDay);
+    }
+    map['reminder_recurring'] = Variable<bool>(reminderRecurring);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
     }
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
@@ -13160,6 +13705,51 @@ class Activity extends DataClass implements Insertable<Activity> {
       intensityLevel: intensityLevel == null && nullToAbsent
           ? const Value.absent()
           : Value(intensityLevel),
+      cyclingSpeedMph: cyclingSpeedMph == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cyclingSpeedMph),
+      cyclingTerrain: cyclingTerrain == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cyclingTerrain),
+      cyclingIndoorOutdoor: cyclingIndoorOutdoor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cyclingIndoorOutdoor),
+      cyclingElevationGainFt: cyclingElevationGainFt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cyclingElevationGainFt),
+      cyclingSessionGoal: cyclingSessionGoal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cyclingSessionGoal),
+      swimmingPacePer100mSeconds:
+          swimmingPacePer100mSeconds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(swimmingPacePer100mSeconds),
+      swimmingPoolOrOpenWater: swimmingPoolOrOpenWater == null && nullToAbsent
+          ? const Value.absent()
+          : Value(swimmingPoolOrOpenWater),
+      swimmingWaterTempC: swimmingWaterTempC == null && nullToAbsent
+          ? const Value.absent()
+          : Value(swimmingWaterTempC),
+      intensityTarget: intensityTarget == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intensityTarget),
+      timeBeforeMinutes: timeBeforeMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(timeBeforeMinutes),
+      reminderEnabled: Value(reminderEnabled),
+      reminderDaysBefore: reminderDaysBefore == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderDaysBefore),
+      reminderTimeOfDay: reminderTimeOfDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderTimeOfDay),
+      reminderRecurring: Value(reminderRecurring),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
@@ -13206,6 +13796,36 @@ class Activity extends DataClass implements Insertable<Activity> {
         json['paceTargetMinutesPerMile'],
       ),
       intensityLevel: serializer.fromJson<String?>(json['intensityLevel']),
+      cyclingSpeedMph: serializer.fromJson<double?>(json['cyclingSpeedMph']),
+      cyclingTerrain: serializer.fromJson<String?>(json['cyclingTerrain']),
+      cyclingIndoorOutdoor: serializer.fromJson<String?>(
+        json['cyclingIndoorOutdoor'],
+      ),
+      cyclingElevationGainFt: serializer.fromJson<int?>(
+        json['cyclingElevationGainFt'],
+      ),
+      cyclingSessionGoal: serializer.fromJson<String?>(
+        json['cyclingSessionGoal'],
+      ),
+      swimmingPacePer100mSeconds: serializer.fromJson<int?>(
+        json['swimmingPacePer100mSeconds'],
+      ),
+      swimmingPoolOrOpenWater: serializer.fromJson<String?>(
+        json['swimmingPoolOrOpenWater'],
+      ),
+      swimmingWaterTempC: serializer.fromJson<double?>(
+        json['swimmingWaterTempC'],
+      ),
+      intensityTarget: serializer.fromJson<String?>(json['intensityTarget']),
+      timeBeforeMinutes: serializer.fromJson<int?>(json['timeBeforeMinutes']),
+      reminderEnabled: serializer.fromJson<bool>(json['reminderEnabled']),
+      reminderDaysBefore: serializer.fromJson<int?>(json['reminderDaysBefore']),
+      reminderTimeOfDay: serializer.fromJson<String?>(
+        json['reminderTimeOfDay'],
+      ),
+      reminderRecurring: serializer.fromJson<bool>(json['reminderRecurring']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
       completionRating: serializer.fromJson<int?>(json['completionRating']),
       completionNotes: serializer.fromJson<String?>(json['completionNotes']),
@@ -13237,6 +13857,26 @@ class Activity extends DataClass implements Insertable<Activity> {
         paceTargetMinutesPerMile,
       ),
       'intensityLevel': serializer.toJson<String?>(intensityLevel),
+      'cyclingSpeedMph': serializer.toJson<double?>(cyclingSpeedMph),
+      'cyclingTerrain': serializer.toJson<String?>(cyclingTerrain),
+      'cyclingIndoorOutdoor': serializer.toJson<String?>(cyclingIndoorOutdoor),
+      'cyclingElevationGainFt': serializer.toJson<int?>(cyclingElevationGainFt),
+      'cyclingSessionGoal': serializer.toJson<String?>(cyclingSessionGoal),
+      'swimmingPacePer100mSeconds': serializer.toJson<int?>(
+        swimmingPacePer100mSeconds,
+      ),
+      'swimmingPoolOrOpenWater': serializer.toJson<String?>(
+        swimmingPoolOrOpenWater,
+      ),
+      'swimmingWaterTempC': serializer.toJson<double?>(swimmingWaterTempC),
+      'intensityTarget': serializer.toJson<String?>(intensityTarget),
+      'timeBeforeMinutes': serializer.toJson<int?>(timeBeforeMinutes),
+      'reminderEnabled': serializer.toJson<bool>(reminderEnabled),
+      'reminderDaysBefore': serializer.toJson<int?>(reminderDaysBefore),
+      'reminderTimeOfDay': serializer.toJson<String?>(reminderTimeOfDay),
+      'reminderRecurring': serializer.toJson<bool>(reminderRecurring),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
       'completionRating': serializer.toJson<int?>(completionRating),
       'completionNotes': serializer.toJson<String?>(completionNotes),
@@ -13260,6 +13900,22 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<int?> durationMinutes = const Value.absent(),
     Value<double?> paceTargetMinutesPerMile = const Value.absent(),
     Value<String?> intensityLevel = const Value.absent(),
+    Value<double?> cyclingSpeedMph = const Value.absent(),
+    Value<String?> cyclingTerrain = const Value.absent(),
+    Value<String?> cyclingIndoorOutdoor = const Value.absent(),
+    Value<int?> cyclingElevationGainFt = const Value.absent(),
+    Value<String?> cyclingSessionGoal = const Value.absent(),
+    Value<int?> swimmingPacePer100mSeconds = const Value.absent(),
+    Value<String?> swimmingPoolOrOpenWater = const Value.absent(),
+    Value<double?> swimmingWaterTempC = const Value.absent(),
+    Value<String?> intensityTarget = const Value.absent(),
+    Value<int?> timeBeforeMinutes = const Value.absent(),
+    bool? reminderEnabled,
+    Value<int?> reminderDaysBefore = const Value.absent(),
+    Value<String?> reminderTimeOfDay = const Value.absent(),
+    bool? reminderRecurring,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
     Value<DateTime?> completedAt = const Value.absent(),
     Value<int?> completionRating = const Value.absent(),
     Value<String?> completionNotes = const Value.absent(),
@@ -13288,6 +13944,48 @@ class Activity extends DataClass implements Insertable<Activity> {
     intensityLevel: intensityLevel.present
         ? intensityLevel.value
         : this.intensityLevel,
+    cyclingSpeedMph: cyclingSpeedMph.present
+        ? cyclingSpeedMph.value
+        : this.cyclingSpeedMph,
+    cyclingTerrain: cyclingTerrain.present
+        ? cyclingTerrain.value
+        : this.cyclingTerrain,
+    cyclingIndoorOutdoor: cyclingIndoorOutdoor.present
+        ? cyclingIndoorOutdoor.value
+        : this.cyclingIndoorOutdoor,
+    cyclingElevationGainFt: cyclingElevationGainFt.present
+        ? cyclingElevationGainFt.value
+        : this.cyclingElevationGainFt,
+    cyclingSessionGoal: cyclingSessionGoal.present
+        ? cyclingSessionGoal.value
+        : this.cyclingSessionGoal,
+    swimmingPacePer100mSeconds: swimmingPacePer100mSeconds.present
+        ? swimmingPacePer100mSeconds.value
+        : this.swimmingPacePer100mSeconds,
+    swimmingPoolOrOpenWater: swimmingPoolOrOpenWater.present
+        ? swimmingPoolOrOpenWater.value
+        : this.swimmingPoolOrOpenWater,
+    swimmingWaterTempC: swimmingWaterTempC.present
+        ? swimmingWaterTempC.value
+        : this.swimmingWaterTempC,
+    intensityTarget: intensityTarget.present
+        ? intensityTarget.value
+        : this.intensityTarget,
+    timeBeforeMinutes: timeBeforeMinutes.present
+        ? timeBeforeMinutes.value
+        : this.timeBeforeMinutes,
+    reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+    reminderDaysBefore: reminderDaysBefore.present
+        ? reminderDaysBefore.value
+        : this.reminderDaysBefore,
+    reminderTimeOfDay: reminderTimeOfDay.present
+        ? reminderTimeOfDay.value
+        : this.reminderTimeOfDay,
+    reminderRecurring: reminderRecurring ?? this.reminderRecurring,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
     completionRating: completionRating.present
         ? completionRating.value
@@ -13330,6 +14028,54 @@ class Activity extends DataClass implements Insertable<Activity> {
       intensityLevel: data.intensityLevel.present
           ? data.intensityLevel.value
           : this.intensityLevel,
+      cyclingSpeedMph: data.cyclingSpeedMph.present
+          ? data.cyclingSpeedMph.value
+          : this.cyclingSpeedMph,
+      cyclingTerrain: data.cyclingTerrain.present
+          ? data.cyclingTerrain.value
+          : this.cyclingTerrain,
+      cyclingIndoorOutdoor: data.cyclingIndoorOutdoor.present
+          ? data.cyclingIndoorOutdoor.value
+          : this.cyclingIndoorOutdoor,
+      cyclingElevationGainFt: data.cyclingElevationGainFt.present
+          ? data.cyclingElevationGainFt.value
+          : this.cyclingElevationGainFt,
+      cyclingSessionGoal: data.cyclingSessionGoal.present
+          ? data.cyclingSessionGoal.value
+          : this.cyclingSessionGoal,
+      swimmingPacePer100mSeconds: data.swimmingPacePer100mSeconds.present
+          ? data.swimmingPacePer100mSeconds.value
+          : this.swimmingPacePer100mSeconds,
+      swimmingPoolOrOpenWater: data.swimmingPoolOrOpenWater.present
+          ? data.swimmingPoolOrOpenWater.value
+          : this.swimmingPoolOrOpenWater,
+      swimmingWaterTempC: data.swimmingWaterTempC.present
+          ? data.swimmingWaterTempC.value
+          : this.swimmingWaterTempC,
+      intensityTarget: data.intensityTarget.present
+          ? data.intensityTarget.value
+          : this.intensityTarget,
+      timeBeforeMinutes: data.timeBeforeMinutes.present
+          ? data.timeBeforeMinutes.value
+          : this.timeBeforeMinutes,
+      reminderEnabled: data.reminderEnabled.present
+          ? data.reminderEnabled.value
+          : this.reminderEnabled,
+      reminderDaysBefore: data.reminderDaysBefore.present
+          ? data.reminderDaysBefore.value
+          : this.reminderDaysBefore,
+      reminderTimeOfDay: data.reminderTimeOfDay.present
+          ? data.reminderTimeOfDay.value
+          : this.reminderTimeOfDay,
+      reminderRecurring: data.reminderRecurring.present
+          ? data.reminderRecurring.value
+          : this.reminderRecurring,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
       completedAt: data.completedAt.present
           ? data.completedAt.value
           : this.completedAt,
@@ -13365,6 +14111,22 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('durationMinutes: $durationMinutes, ')
           ..write('paceTargetMinutesPerMile: $paceTargetMinutesPerMile, ')
           ..write('intensityLevel: $intensityLevel, ')
+          ..write('cyclingSpeedMph: $cyclingSpeedMph, ')
+          ..write('cyclingTerrain: $cyclingTerrain, ')
+          ..write('cyclingIndoorOutdoor: $cyclingIndoorOutdoor, ')
+          ..write('cyclingElevationGainFt: $cyclingElevationGainFt, ')
+          ..write('cyclingSessionGoal: $cyclingSessionGoal, ')
+          ..write('swimmingPacePer100mSeconds: $swimmingPacePer100mSeconds, ')
+          ..write('swimmingPoolOrOpenWater: $swimmingPoolOrOpenWater, ')
+          ..write('swimmingWaterTempC: $swimmingWaterTempC, ')
+          ..write('intensityTarget: $intensityTarget, ')
+          ..write('timeBeforeMinutes: $timeBeforeMinutes, ')
+          ..write('reminderEnabled: $reminderEnabled, ')
+          ..write('reminderDaysBefore: $reminderDaysBefore, ')
+          ..write('reminderTimeOfDay: $reminderTimeOfDay, ')
+          ..write('reminderRecurring: $reminderRecurring, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('completedAt: $completedAt, ')
           ..write('completionRating: $completionRating, ')
           ..write('completionNotes: $completionNotes, ')
@@ -13379,7 +14141,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     userId,
     activityType,
@@ -13390,6 +14152,22 @@ class Activity extends DataClass implements Insertable<Activity> {
     durationMinutes,
     paceTargetMinutesPerMile,
     intensityLevel,
+    cyclingSpeedMph,
+    cyclingTerrain,
+    cyclingIndoorOutdoor,
+    cyclingElevationGainFt,
+    cyclingSessionGoal,
+    swimmingPacePer100mSeconds,
+    swimmingPoolOrOpenWater,
+    swimmingWaterTempC,
+    intensityTarget,
+    timeBeforeMinutes,
+    reminderEnabled,
+    reminderDaysBefore,
+    reminderTimeOfDay,
+    reminderRecurring,
+    needsUpload,
+    localUpdatedAt,
     completedAt,
     completionRating,
     completionNotes,
@@ -13399,7 +14177,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     createdAt,
     updatedAt,
     deletedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -13414,6 +14192,22 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.durationMinutes == this.durationMinutes &&
           other.paceTargetMinutesPerMile == this.paceTargetMinutesPerMile &&
           other.intensityLevel == this.intensityLevel &&
+          other.cyclingSpeedMph == this.cyclingSpeedMph &&
+          other.cyclingTerrain == this.cyclingTerrain &&
+          other.cyclingIndoorOutdoor == this.cyclingIndoorOutdoor &&
+          other.cyclingElevationGainFt == this.cyclingElevationGainFt &&
+          other.cyclingSessionGoal == this.cyclingSessionGoal &&
+          other.swimmingPacePer100mSeconds == this.swimmingPacePer100mSeconds &&
+          other.swimmingPoolOrOpenWater == this.swimmingPoolOrOpenWater &&
+          other.swimmingWaterTempC == this.swimmingWaterTempC &&
+          other.intensityTarget == this.intensityTarget &&
+          other.timeBeforeMinutes == this.timeBeforeMinutes &&
+          other.reminderEnabled == this.reminderEnabled &&
+          other.reminderDaysBefore == this.reminderDaysBefore &&
+          other.reminderTimeOfDay == this.reminderTimeOfDay &&
+          other.reminderRecurring == this.reminderRecurring &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt &&
           other.completedAt == this.completedAt &&
           other.completionRating == this.completionRating &&
           other.completionNotes == this.completionNotes &&
@@ -13436,6 +14230,22 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<int?> durationMinutes;
   final Value<double?> paceTargetMinutesPerMile;
   final Value<String?> intensityLevel;
+  final Value<double?> cyclingSpeedMph;
+  final Value<String?> cyclingTerrain;
+  final Value<String?> cyclingIndoorOutdoor;
+  final Value<int?> cyclingElevationGainFt;
+  final Value<String?> cyclingSessionGoal;
+  final Value<int?> swimmingPacePer100mSeconds;
+  final Value<String?> swimmingPoolOrOpenWater;
+  final Value<double?> swimmingWaterTempC;
+  final Value<String?> intensityTarget;
+  final Value<int?> timeBeforeMinutes;
+  final Value<bool> reminderEnabled;
+  final Value<int?> reminderDaysBefore;
+  final Value<String?> reminderTimeOfDay;
+  final Value<bool> reminderRecurring;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
   final Value<DateTime?> completedAt;
   final Value<int?> completionRating;
   final Value<String?> completionNotes;
@@ -13457,6 +14267,22 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.durationMinutes = const Value.absent(),
     this.paceTargetMinutesPerMile = const Value.absent(),
     this.intensityLevel = const Value.absent(),
+    this.cyclingSpeedMph = const Value.absent(),
+    this.cyclingTerrain = const Value.absent(),
+    this.cyclingIndoorOutdoor = const Value.absent(),
+    this.cyclingElevationGainFt = const Value.absent(),
+    this.cyclingSessionGoal = const Value.absent(),
+    this.swimmingPacePer100mSeconds = const Value.absent(),
+    this.swimmingPoolOrOpenWater = const Value.absent(),
+    this.swimmingWaterTempC = const Value.absent(),
+    this.intensityTarget = const Value.absent(),
+    this.timeBeforeMinutes = const Value.absent(),
+    this.reminderEnabled = const Value.absent(),
+    this.reminderDaysBefore = const Value.absent(),
+    this.reminderTimeOfDay = const Value.absent(),
+    this.reminderRecurring = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.completionRating = const Value.absent(),
     this.completionNotes = const Value.absent(),
@@ -13479,6 +14305,22 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.durationMinutes = const Value.absent(),
     this.paceTargetMinutesPerMile = const Value.absent(),
     this.intensityLevel = const Value.absent(),
+    this.cyclingSpeedMph = const Value.absent(),
+    this.cyclingTerrain = const Value.absent(),
+    this.cyclingIndoorOutdoor = const Value.absent(),
+    this.cyclingElevationGainFt = const Value.absent(),
+    this.cyclingSessionGoal = const Value.absent(),
+    this.swimmingPacePer100mSeconds = const Value.absent(),
+    this.swimmingPoolOrOpenWater = const Value.absent(),
+    this.swimmingWaterTempC = const Value.absent(),
+    this.intensityTarget = const Value.absent(),
+    this.timeBeforeMinutes = const Value.absent(),
+    this.reminderEnabled = const Value.absent(),
+    this.reminderDaysBefore = const Value.absent(),
+    this.reminderTimeOfDay = const Value.absent(),
+    this.reminderRecurring = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.completionRating = const Value.absent(),
     this.completionNotes = const Value.absent(),
@@ -13507,6 +14349,22 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<int>? durationMinutes,
     Expression<double>? paceTargetMinutesPerMile,
     Expression<String>? intensityLevel,
+    Expression<double>? cyclingSpeedMph,
+    Expression<String>? cyclingTerrain,
+    Expression<String>? cyclingIndoorOutdoor,
+    Expression<int>? cyclingElevationGainFt,
+    Expression<String>? cyclingSessionGoal,
+    Expression<int>? swimmingPacePer100mSeconds,
+    Expression<String>? swimmingPoolOrOpenWater,
+    Expression<double>? swimmingWaterTempC,
+    Expression<String>? intensityTarget,
+    Expression<int>? timeBeforeMinutes,
+    Expression<bool>? reminderEnabled,
+    Expression<int>? reminderDaysBefore,
+    Expression<String>? reminderTimeOfDay,
+    Expression<bool>? reminderRecurring,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
     Expression<DateTime>? completedAt,
     Expression<int>? completionRating,
     Expression<String>? completionNotes,
@@ -13530,6 +14388,29 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (paceTargetMinutesPerMile != null)
         'pace_target_minutes_per_mile': paceTargetMinutesPerMile,
       if (intensityLevel != null) 'intensity_level': intensityLevel,
+      if (cyclingSpeedMph != null) 'cycling_speed_mph': cyclingSpeedMph,
+      if (cyclingTerrain != null) 'cycling_terrain': cyclingTerrain,
+      if (cyclingIndoorOutdoor != null)
+        'cycling_indoor_outdoor': cyclingIndoorOutdoor,
+      if (cyclingElevationGainFt != null)
+        'cycling_elevation_gain_ft': cyclingElevationGainFt,
+      if (cyclingSessionGoal != null)
+        'cycling_session_goal': cyclingSessionGoal,
+      if (swimmingPacePer100mSeconds != null)
+        'swimming_pace_per_100m_seconds': swimmingPacePer100mSeconds,
+      if (swimmingPoolOrOpenWater != null)
+        'swimming_pool_or_open_water': swimmingPoolOrOpenWater,
+      if (swimmingWaterTempC != null)
+        'swimming_water_temp_c': swimmingWaterTempC,
+      if (intensityTarget != null) 'intensity_target': intensityTarget,
+      if (timeBeforeMinutes != null) 'time_before_minutes': timeBeforeMinutes,
+      if (reminderEnabled != null) 'reminder_enabled': reminderEnabled,
+      if (reminderDaysBefore != null)
+        'reminder_days_before': reminderDaysBefore,
+      if (reminderTimeOfDay != null) 'reminder_time_of_day': reminderTimeOfDay,
+      if (reminderRecurring != null) 'reminder_recurring': reminderRecurring,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (completedAt != null) 'completed_at': completedAt,
       if (completionRating != null) 'completion_rating': completionRating,
       if (completionNotes != null) 'completion_notes': completionNotes,
@@ -13556,6 +14437,22 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<int?>? durationMinutes,
     Value<double?>? paceTargetMinutesPerMile,
     Value<String?>? intensityLevel,
+    Value<double?>? cyclingSpeedMph,
+    Value<String?>? cyclingTerrain,
+    Value<String?>? cyclingIndoorOutdoor,
+    Value<int?>? cyclingElevationGainFt,
+    Value<String?>? cyclingSessionGoal,
+    Value<int?>? swimmingPacePer100mSeconds,
+    Value<String?>? swimmingPoolOrOpenWater,
+    Value<double?>? swimmingWaterTempC,
+    Value<String?>? intensityTarget,
+    Value<int?>? timeBeforeMinutes,
+    Value<bool>? reminderEnabled,
+    Value<int?>? reminderDaysBefore,
+    Value<String?>? reminderTimeOfDay,
+    Value<bool>? reminderRecurring,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
     Value<DateTime?>? completedAt,
     Value<int?>? completionRating,
     Value<String?>? completionNotes,
@@ -13579,6 +14476,25 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       paceTargetMinutesPerMile:
           paceTargetMinutesPerMile ?? this.paceTargetMinutesPerMile,
       intensityLevel: intensityLevel ?? this.intensityLevel,
+      cyclingSpeedMph: cyclingSpeedMph ?? this.cyclingSpeedMph,
+      cyclingTerrain: cyclingTerrain ?? this.cyclingTerrain,
+      cyclingIndoorOutdoor: cyclingIndoorOutdoor ?? this.cyclingIndoorOutdoor,
+      cyclingElevationGainFt:
+          cyclingElevationGainFt ?? this.cyclingElevationGainFt,
+      cyclingSessionGoal: cyclingSessionGoal ?? this.cyclingSessionGoal,
+      swimmingPacePer100mSeconds:
+          swimmingPacePer100mSeconds ?? this.swimmingPacePer100mSeconds,
+      swimmingPoolOrOpenWater:
+          swimmingPoolOrOpenWater ?? this.swimmingPoolOrOpenWater,
+      swimmingWaterTempC: swimmingWaterTempC ?? this.swimmingWaterTempC,
+      intensityTarget: intensityTarget ?? this.intensityTarget,
+      timeBeforeMinutes: timeBeforeMinutes ?? this.timeBeforeMinutes,
+      reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+      reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
+      reminderTimeOfDay: reminderTimeOfDay ?? this.reminderTimeOfDay,
+      reminderRecurring: reminderRecurring ?? this.reminderRecurring,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       completedAt: completedAt ?? this.completedAt,
       completionRating: completionRating ?? this.completionRating,
       completionNotes: completionNotes ?? this.completionNotes,
@@ -13627,6 +14543,62 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     }
     if (intensityLevel.present) {
       map['intensity_level'] = Variable<String>(intensityLevel.value);
+    }
+    if (cyclingSpeedMph.present) {
+      map['cycling_speed_mph'] = Variable<double>(cyclingSpeedMph.value);
+    }
+    if (cyclingTerrain.present) {
+      map['cycling_terrain'] = Variable<String>(cyclingTerrain.value);
+    }
+    if (cyclingIndoorOutdoor.present) {
+      map['cycling_indoor_outdoor'] = Variable<String>(
+        cyclingIndoorOutdoor.value,
+      );
+    }
+    if (cyclingElevationGainFt.present) {
+      map['cycling_elevation_gain_ft'] = Variable<int>(
+        cyclingElevationGainFt.value,
+      );
+    }
+    if (cyclingSessionGoal.present) {
+      map['cycling_session_goal'] = Variable<String>(cyclingSessionGoal.value);
+    }
+    if (swimmingPacePer100mSeconds.present) {
+      map['swimming_pace_per_100m_seconds'] = Variable<int>(
+        swimmingPacePer100mSeconds.value,
+      );
+    }
+    if (swimmingPoolOrOpenWater.present) {
+      map['swimming_pool_or_open_water'] = Variable<String>(
+        swimmingPoolOrOpenWater.value,
+      );
+    }
+    if (swimmingWaterTempC.present) {
+      map['swimming_water_temp_c'] = Variable<double>(swimmingWaterTempC.value);
+    }
+    if (intensityTarget.present) {
+      map['intensity_target'] = Variable<String>(intensityTarget.value);
+    }
+    if (timeBeforeMinutes.present) {
+      map['time_before_minutes'] = Variable<int>(timeBeforeMinutes.value);
+    }
+    if (reminderEnabled.present) {
+      map['reminder_enabled'] = Variable<bool>(reminderEnabled.value);
+    }
+    if (reminderDaysBefore.present) {
+      map['reminder_days_before'] = Variable<int>(reminderDaysBefore.value);
+    }
+    if (reminderTimeOfDay.present) {
+      map['reminder_time_of_day'] = Variable<String>(reminderTimeOfDay.value);
+    }
+    if (reminderRecurring.present) {
+      map['reminder_recurring'] = Variable<bool>(reminderRecurring.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
     }
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
@@ -13678,6 +14650,22 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('durationMinutes: $durationMinutes, ')
           ..write('paceTargetMinutesPerMile: $paceTargetMinutesPerMile, ')
           ..write('intensityLevel: $intensityLevel, ')
+          ..write('cyclingSpeedMph: $cyclingSpeedMph, ')
+          ..write('cyclingTerrain: $cyclingTerrain, ')
+          ..write('cyclingIndoorOutdoor: $cyclingIndoorOutdoor, ')
+          ..write('cyclingElevationGainFt: $cyclingElevationGainFt, ')
+          ..write('cyclingSessionGoal: $cyclingSessionGoal, ')
+          ..write('swimmingPacePer100mSeconds: $swimmingPacePer100mSeconds, ')
+          ..write('swimmingPoolOrOpenWater: $swimmingPoolOrOpenWater, ')
+          ..write('swimmingWaterTempC: $swimmingWaterTempC, ')
+          ..write('intensityTarget: $intensityTarget, ')
+          ..write('timeBeforeMinutes: $timeBeforeMinutes, ')
+          ..write('reminderEnabled: $reminderEnabled, ')
+          ..write('reminderDaysBefore: $reminderDaysBefore, ')
+          ..write('reminderTimeOfDay: $reminderTimeOfDay, ')
+          ..write('reminderRecurring: $reminderRecurring, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('completedAt: $completedAt, ')
           ..write('completionRating: $completionRating, ')
           ..write('completionNotes: $completionNotes, ')
@@ -13718,6 +14706,15 @@ class $EventsTableTable extends EventsTable
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _eventTypeMeta = const VerificationMeta(
     'eventType',
@@ -13958,10 +14955,37 @@ class $EventsTableTable extends EventsTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     activityId,
+    userId,
     eventType,
     eventSubtype,
     eventName,
@@ -13983,6 +15007,8 @@ class $EventsTableTable extends EventsTable
     ageGroupPlacement,
     createdAt,
     updatedAt,
+    needsUpload,
+    localUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -14006,6 +15032,14 @@ class $EventsTableTable extends EventsTable
         _activityIdMeta,
         activityId.isAcceptableOrUnknown(data['activity_id']!, _activityIdMeta),
       );
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
     }
     if (data.containsKey('event_type')) {
       context.handle(
@@ -14181,6 +15215,24 @@ class $EventsTableTable extends EventsTable
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -14198,6 +15250,10 @@ class $EventsTableTable extends EventsTable
         DriftSqlType.string,
         data['${effectivePrefix}activity_id'],
       ),
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
       eventType: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}event_type'],
@@ -14282,6 +15338,14 @@ class $EventsTableTable extends EventsTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
     );
   }
 
@@ -14294,6 +15358,7 @@ class $EventsTableTable extends EventsTable
 class Event extends DataClass implements Insertable<Event> {
   final String id;
   final String? activityId;
+  final String userId;
   final String eventType;
   final String? eventSubtype;
   final String? eventName;
@@ -14315,9 +15380,12 @@ class Event extends DataClass implements Insertable<Event> {
   final int? ageGroupPlacement;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
   const Event({
     required this.id,
     this.activityId,
+    required this.userId,
     required this.eventType,
     this.eventSubtype,
     this.eventName,
@@ -14339,6 +15407,8 @@ class Event extends DataClass implements Insertable<Event> {
     this.ageGroupPlacement,
     required this.createdAt,
     required this.updatedAt,
+    this.needsUpload,
+    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -14347,6 +15417,7 @@ class Event extends DataClass implements Insertable<Event> {
     if (!nullToAbsent || activityId != null) {
       map['activity_id'] = Variable<String>(activityId);
     }
+    map['user_id'] = Variable<String>(userId);
     map['event_type'] = Variable<String>(eventType);
     if (!nullToAbsent || eventSubtype != null) {
       map['event_subtype'] = Variable<String>(eventSubtype);
@@ -14406,6 +15477,12 @@ class Event extends DataClass implements Insertable<Event> {
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
     return map;
   }
 
@@ -14415,6 +15492,7 @@ class Event extends DataClass implements Insertable<Event> {
       activityId: activityId == null && nullToAbsent
           ? const Value.absent()
           : Value(activityId),
+      userId: Value(userId),
       eventType: Value(eventType),
       eventSubtype: eventSubtype == null && nullToAbsent
           ? const Value.absent()
@@ -14469,6 +15547,12 @@ class Event extends DataClass implements Insertable<Event> {
           : Value(ageGroupPlacement),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
     );
   }
 
@@ -14480,6 +15564,7 @@ class Event extends DataClass implements Insertable<Event> {
     return Event(
       id: serializer.fromJson<String>(json['id']),
       activityId: serializer.fromJson<String?>(json['activityId']),
+      userId: serializer.fromJson<String>(json['userId']),
       eventType: serializer.fromJson<String>(json['eventType']),
       eventSubtype: serializer.fromJson<String?>(json['eventSubtype']),
       eventName: serializer.fromJson<String?>(json['eventName']),
@@ -14509,6 +15594,8 @@ class Event extends DataClass implements Insertable<Event> {
       ageGroupPlacement: serializer.fromJson<int?>(json['ageGroupPlacement']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -14517,6 +15604,7 @@ class Event extends DataClass implements Insertable<Event> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'activityId': serializer.toJson<String?>(activityId),
+      'userId': serializer.toJson<String>(userId),
       'eventType': serializer.toJson<String>(eventType),
       'eventSubtype': serializer.toJson<String?>(eventSubtype),
       'eventName': serializer.toJson<String?>(eventName),
@@ -14546,12 +15634,15 @@ class Event extends DataClass implements Insertable<Event> {
       'ageGroupPlacement': serializer.toJson<int?>(ageGroupPlacement),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
   Event copyWith({
     String? id,
     Value<String?> activityId = const Value.absent(),
+    String? userId,
     String? eventType,
     Value<String?> eventSubtype = const Value.absent(),
     Value<String?> eventName = const Value.absent(),
@@ -14573,9 +15664,12 @@ class Event extends DataClass implements Insertable<Event> {
     Value<int?> ageGroupPlacement = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => Event(
     id: id ?? this.id,
     activityId: activityId.present ? activityId.value : this.activityId,
+    userId: userId ?? this.userId,
     eventType: eventType ?? this.eventType,
     eventSubtype: eventSubtype.present ? eventSubtype.value : this.eventSubtype,
     eventName: eventName.present ? eventName.value : this.eventName,
@@ -14619,6 +15713,10 @@ class Event extends DataClass implements Insertable<Event> {
         : this.ageGroupPlacement,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
   );
   Event copyWithCompanion(EventsTableCompanion data) {
     return Event(
@@ -14626,6 +15724,7 @@ class Event extends DataClass implements Insertable<Event> {
       activityId: data.activityId.present
           ? data.activityId.value
           : this.activityId,
+      userId: data.userId.present ? data.userId.value : this.userId,
       eventType: data.eventType.present ? data.eventType.value : this.eventType,
       eventSubtype: data.eventSubtype.present
           ? data.eventSubtype.value
@@ -14675,6 +15774,12 @@ class Event extends DataClass implements Insertable<Event> {
           : this.ageGroupPlacement,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
     );
   }
 
@@ -14683,6 +15788,7 @@ class Event extends DataClass implements Insertable<Event> {
     return (StringBuffer('Event(')
           ..write('id: $id, ')
           ..write('activityId: $activityId, ')
+          ..write('userId: $userId, ')
           ..write('eventType: $eventType, ')
           ..write('eventSubtype: $eventSubtype, ')
           ..write('eventName: $eventName, ')
@@ -14703,7 +15809,9 @@ class Event extends DataClass implements Insertable<Event> {
           ..write('finalPlacement: $finalPlacement, ')
           ..write('ageGroupPlacement: $ageGroupPlacement, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -14712,6 +15820,7 @@ class Event extends DataClass implements Insertable<Event> {
   int get hashCode => Object.hashAll([
     id,
     activityId,
+    userId,
     eventType,
     eventSubtype,
     eventName,
@@ -14733,6 +15842,8 @@ class Event extends DataClass implements Insertable<Event> {
     ageGroupPlacement,
     createdAt,
     updatedAt,
+    needsUpload,
+    localUpdatedAt,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -14740,6 +15851,7 @@ class Event extends DataClass implements Insertable<Event> {
       (other is Event &&
           other.id == this.id &&
           other.activityId == this.activityId &&
+          other.userId == this.userId &&
           other.eventType == this.eventType &&
           other.eventSubtype == this.eventSubtype &&
           other.eventName == this.eventName &&
@@ -14760,12 +15872,15 @@ class Event extends DataClass implements Insertable<Event> {
           other.finalPlacement == this.finalPlacement &&
           other.ageGroupPlacement == this.ageGroupPlacement &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
 }
 
 class EventsTableCompanion extends UpdateCompanion<Event> {
   final Value<String> id;
   final Value<String?> activityId;
+  final Value<String> userId;
   final Value<String> eventType;
   final Value<String?> eventSubtype;
   final Value<String?> eventName;
@@ -14787,10 +15902,13 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
   final Value<int?> ageGroupPlacement;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
   final Value<int> rowid;
   const EventsTableCompanion({
     this.id = const Value.absent(),
     this.activityId = const Value.absent(),
+    this.userId = const Value.absent(),
     this.eventType = const Value.absent(),
     this.eventSubtype = const Value.absent(),
     this.eventName = const Value.absent(),
@@ -14812,11 +15930,14 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     this.ageGroupPlacement = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   EventsTableCompanion.insert({
     required String id,
     this.activityId = const Value.absent(),
+    required String userId,
     required String eventType,
     this.eventSubtype = const Value.absent(),
     this.eventName = const Value.absent(),
@@ -14838,14 +15959,18 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     this.ageGroupPlacement = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
+       userId = Value(userId),
        eventType = Value(eventType),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
   static Insertable<Event> custom({
     Expression<String>? id,
     Expression<String>? activityId,
+    Expression<String>? userId,
     Expression<String>? eventType,
     Expression<String>? eventSubtype,
     Expression<String>? eventName,
@@ -14867,11 +15992,14 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     Expression<int>? ageGroupPlacement,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (activityId != null) 'activity_id': activityId,
+      if (userId != null) 'user_id': userId,
       if (eventType != null) 'event_type': eventType,
       if (eventSubtype != null) 'event_subtype': eventSubtype,
       if (eventName != null) 'event_name': eventName,
@@ -14897,6 +16025,8 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
       if (ageGroupPlacement != null) 'age_group_placement': ageGroupPlacement,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -14904,6 +16034,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
   EventsTableCompanion copyWith({
     Value<String>? id,
     Value<String?>? activityId,
+    Value<String>? userId,
     Value<String>? eventType,
     Value<String?>? eventSubtype,
     Value<String?>? eventName,
@@ -14925,11 +16056,14 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     Value<int?>? ageGroupPlacement,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return EventsTableCompanion(
       id: id ?? this.id,
       activityId: activityId ?? this.activityId,
+      userId: userId ?? this.userId,
       eventType: eventType ?? this.eventType,
       eventSubtype: eventSubtype ?? this.eventSubtype,
       eventName: eventName ?? this.eventName,
@@ -14954,6 +16088,8 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
       ageGroupPlacement: ageGroupPlacement ?? this.ageGroupPlacement,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -14966,6 +16102,9 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     }
     if (activityId.present) {
       map['activity_id'] = Variable<String>(activityId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
     }
     if (eventType.present) {
       map['event_type'] = Variable<String>(eventType.value);
@@ -15038,6 +16177,12 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -15049,6 +16194,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     return (StringBuffer('EventsTableCompanion(')
           ..write('id: $id, ')
           ..write('activityId: $activityId, ')
+          ..write('userId: $userId, ')
           ..write('eventType: $eventType, ')
           ..write('eventSubtype: $eventSubtype, ')
           ..write('eventName: $eventName, ')
@@ -15070,6 +16216,8 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
           ..write('ageGroupPlacement: $ageGroupPlacement, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15324,6 +16472,32 @@ class $ActivityCompletionsTableTable extends ActivityCompletionsTable
         type: DriftSqlType.double,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -15348,6 +16522,8 @@ class $ActivityCompletionsTableTable extends ActivityCompletionsTable
     humidityPercent,
     nutritionAdherenceScore,
     performanceVsTarget,
+    needsUpload,
+    localUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -15552,6 +16728,24 @@ class $ActivityCompletionsTableTable extends ActivityCompletionsTable
         ),
       );
     }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -15649,6 +16843,14 @@ class $ActivityCompletionsTableTable extends ActivityCompletionsTable
         DriftSqlType.double,
         data['${effectivePrefix}performance_vs_target'],
       ),
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
     );
   }
 
@@ -15682,6 +16884,8 @@ class ActivityCompletion extends DataClass
   final int? humidityPercent;
   final double? nutritionAdherenceScore;
   final double? performanceVsTarget;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
   const ActivityCompletion({
     required this.id,
     required this.activityId,
@@ -15705,6 +16909,8 @@ class ActivityCompletion extends DataClass
     this.humidityPercent,
     this.nutritionAdherenceScore,
     this.performanceVsTarget,
+    this.needsUpload,
+    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -15767,6 +16973,12 @@ class ActivityCompletion extends DataClass
     if (!nullToAbsent || performanceVsTarget != null) {
       map['performance_vs_target'] = Variable<double>(performanceVsTarget);
     }
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
     return map;
   }
 
@@ -15827,6 +17039,12 @@ class ActivityCompletion extends DataClass
       performanceVsTarget: performanceVsTarget == null && nullToAbsent
           ? const Value.absent()
           : Value(performanceVsTarget),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
     );
   }
 
@@ -15874,6 +17092,8 @@ class ActivityCompletion extends DataClass
       performanceVsTarget: serializer.fromJson<double?>(
         json['performanceVsTarget'],
       ),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -15906,6 +17126,8 @@ class ActivityCompletion extends DataClass
         nutritionAdherenceScore,
       ),
       'performanceVsTarget': serializer.toJson<double?>(performanceVsTarget),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
@@ -15932,6 +17154,8 @@ class ActivityCompletion extends DataClass
     Value<int?> humidityPercent = const Value.absent(),
     Value<double?> nutritionAdherenceScore = const Value.absent(),
     Value<double?> performanceVsTarget = const Value.absent(),
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => ActivityCompletion(
     id: id ?? this.id,
     activityId: activityId ?? this.activityId,
@@ -15979,6 +17203,10 @@ class ActivityCompletion extends DataClass
     performanceVsTarget: performanceVsTarget.present
         ? performanceVsTarget.value
         : this.performanceVsTarget,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
   );
   ActivityCompletion copyWithCompanion(ActivityCompletionsTableCompanion data) {
     return ActivityCompletion(
@@ -16042,6 +17270,12 @@ class ActivityCompletion extends DataClass
       performanceVsTarget: data.performanceVsTarget.present
           ? data.performanceVsTarget.value
           : this.performanceVsTarget,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
     );
   }
 
@@ -16069,7 +17303,9 @@ class ActivityCompletion extends DataClass
           ..write('temperatureFahrenheit: $temperatureFahrenheit, ')
           ..write('humidityPercent: $humidityPercent, ')
           ..write('nutritionAdherenceScore: $nutritionAdherenceScore, ')
-          ..write('performanceVsTarget: $performanceVsTarget')
+          ..write('performanceVsTarget: $performanceVsTarget, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -16098,6 +17334,8 @@ class ActivityCompletion extends DataClass
     humidityPercent,
     nutritionAdherenceScore,
     performanceVsTarget,
+    needsUpload,
+    localUpdatedAt,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -16124,7 +17362,9 @@ class ActivityCompletion extends DataClass
           other.temperatureFahrenheit == this.temperatureFahrenheit &&
           other.humidityPercent == this.humidityPercent &&
           other.nutritionAdherenceScore == this.nutritionAdherenceScore &&
-          other.performanceVsTarget == this.performanceVsTarget);
+          other.performanceVsTarget == this.performanceVsTarget &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
 }
 
 class ActivityCompletionsTableCompanion
@@ -16151,6 +17391,8 @@ class ActivityCompletionsTableCompanion
   final Value<int?> humidityPercent;
   final Value<double?> nutritionAdherenceScore;
   final Value<double?> performanceVsTarget;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
   final Value<int> rowid;
   const ActivityCompletionsTableCompanion({
     this.id = const Value.absent(),
@@ -16175,6 +17417,8 @@ class ActivityCompletionsTableCompanion
     this.humidityPercent = const Value.absent(),
     this.nutritionAdherenceScore = const Value.absent(),
     this.performanceVsTarget = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ActivityCompletionsTableCompanion.insert({
@@ -16200,6 +17444,8 @@ class ActivityCompletionsTableCompanion
     this.humidityPercent = const Value.absent(),
     this.nutritionAdherenceScore = const Value.absent(),
     this.performanceVsTarget = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        activityId = Value(activityId),
@@ -16228,6 +17474,8 @@ class ActivityCompletionsTableCompanion
     Expression<int>? humidityPercent,
     Expression<double>? nutritionAdherenceScore,
     Expression<double>? performanceVsTarget,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -16260,6 +17508,8 @@ class ActivityCompletionsTableCompanion
         'nutrition_adherence_score': nutritionAdherenceScore,
       if (performanceVsTarget != null)
         'performance_vs_target': performanceVsTarget,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -16287,6 +17537,8 @@ class ActivityCompletionsTableCompanion
     Value<int?>? humidityPercent,
     Value<double?>? nutritionAdherenceScore,
     Value<double?>? performanceVsTarget,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return ActivityCompletionsTableCompanion(
@@ -16316,6 +17568,8 @@ class ActivityCompletionsTableCompanion
       nutritionAdherenceScore:
           nutritionAdherenceScore ?? this.nutritionAdherenceScore,
       performanceVsTarget: performanceVsTarget ?? this.performanceVsTarget,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -16401,6 +17655,12 @@ class ActivityCompletionsTableCompanion
         performanceVsTarget.value,
       );
     }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -16432,6 +17692,8 @@ class ActivityCompletionsTableCompanion
           ..write('humidityPercent: $humidityPercent, ')
           ..write('nutritionAdherenceScore: $nutritionAdherenceScore, ')
           ..write('performanceVsTarget: $performanceVsTarget, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -16571,6 +17833,32 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -16585,6 +17873,8 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
     algorithmVersion,
     adherenceScore,
     completedAt,
+    needsUpload,
+    localUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -16699,6 +17989,24 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
         ),
       );
     }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -16756,6 +18064,14 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}completed_at'],
       ),
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
     );
   }
 
@@ -16778,6 +18094,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
   final String algorithmVersion;
   final double? adherenceScore;
   final DateTime? completedAt;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
   const CarbLoadingPlan({
     required this.id,
     this.eventId,
@@ -16791,6 +18109,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
     required this.algorithmVersion,
     this.adherenceScore,
     this.completedAt,
+    this.needsUpload,
+    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -16814,6 +18134,12 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
     }
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
     }
     return map;
   }
@@ -16840,6 +18166,12 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
     );
   }
 
@@ -16863,6 +18195,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
       algorithmVersion: serializer.fromJson<String>(json['algorithmVersion']),
       adherenceScore: serializer.fromJson<double?>(json['adherenceScore']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -16881,6 +18215,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
       'algorithmVersion': serializer.toJson<String>(algorithmVersion),
       'adherenceScore': serializer.toJson<double?>(adherenceScore),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
@@ -16897,6 +18233,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
     String? algorithmVersion,
     Value<double?> adherenceScore = const Value.absent(),
     Value<DateTime?> completedAt = const Value.absent(),
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => CarbLoadingPlan(
     id: id ?? this.id,
     eventId: eventId.present ? eventId.value : this.eventId,
@@ -16914,6 +18252,10 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
         ? adherenceScore.value
         : this.adherenceScore,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
   );
   CarbLoadingPlan copyWithCompanion(CarbLoadingPlansTableCompanion data) {
     return CarbLoadingPlan(
@@ -16941,6 +18283,12 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
       completedAt: data.completedAt.present
           ? data.completedAt.value
           : this.completedAt,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
     );
   }
 
@@ -16958,7 +18306,9 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
           ..write('generatedAt: $generatedAt, ')
           ..write('algorithmVersion: $algorithmVersion, ')
           ..write('adherenceScore: $adherenceScore, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -16977,6 +18327,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
     algorithmVersion,
     adherenceScore,
     completedAt,
+    needsUpload,
+    localUpdatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -16993,7 +18345,9 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
           other.generatedAt == this.generatedAt &&
           other.algorithmVersion == this.algorithmVersion &&
           other.adherenceScore == this.adherenceScore &&
-          other.completedAt == this.completedAt);
+          other.completedAt == this.completedAt &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
 }
 
 class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
@@ -17009,6 +18363,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
   final Value<String> algorithmVersion;
   final Value<double?> adherenceScore;
   final Value<DateTime?> completedAt;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
   final Value<int> rowid;
   const CarbLoadingPlansTableCompanion({
     this.id = const Value.absent(),
@@ -17023,6 +18379,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     this.algorithmVersion = const Value.absent(),
     this.adherenceScore = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CarbLoadingPlansTableCompanion.insert({
@@ -17038,6 +18396,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     this.algorithmVersion = const Value.absent(),
     this.adherenceScore = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        userId = Value(userId),
@@ -17059,6 +18419,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     Expression<String>? algorithmVersion,
     Expression<double>? adherenceScore,
     Expression<DateTime>? completedAt,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -17076,6 +18438,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
       if (algorithmVersion != null) 'algorithm_version': algorithmVersion,
       if (adherenceScore != null) 'adherence_score': adherenceScore,
       if (completedAt != null) 'completed_at': completedAt,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -17093,6 +18457,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     Value<String>? algorithmVersion,
     Value<double?>? adherenceScore,
     Value<DateTime?>? completedAt,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return CarbLoadingPlansTableCompanion(
@@ -17108,6 +18474,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
       algorithmVersion: algorithmVersion ?? this.algorithmVersion,
       adherenceScore: adherenceScore ?? this.adherenceScore,
       completedAt: completedAt ?? this.completedAt,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -17153,6 +18521,12 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
     }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -17174,6 +18548,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
           ..write('algorithmVersion: $algorithmVersion, ')
           ..write('adherenceScore: $adherenceScore, ')
           ..write('completedAt: $completedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -17385,6 +18761,32 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -17404,6 +18806,8 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
     loggedCarbsGrams,
     loggedCalories,
     completed,
+    needsUpload,
+    localUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -17564,6 +18968,24 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
         completed.isAcceptableOrUnknown(data['completed']!, _completedMeta),
       );
     }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -17645,6 +19067,14 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
         DriftSqlType.bool,
         data['${effectivePrefix}completed'],
       )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
     );
   }
 
@@ -17672,6 +19102,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
   final int loggedCarbsGrams;
   final int loggedCalories;
   final bool completed;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
   const CarbLoadingDay({
     required this.id,
     required this.carbLoadingPlanId,
@@ -17690,6 +19122,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
     required this.loggedCarbsGrams,
     required this.loggedCalories,
     required this.completed,
+    this.needsUpload,
+    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -17713,6 +19147,12 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
     map['logged_carbs_grams'] = Variable<int>(loggedCarbsGrams);
     map['logged_calories'] = Variable<int>(loggedCalories);
     map['completed'] = Variable<bool>(completed);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
     return map;
   }
 
@@ -17737,6 +19177,12 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
       loggedCarbsGrams: Value(loggedCarbsGrams),
       loggedCalories: Value(loggedCalories),
       completed: Value(completed),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
     );
   }
 
@@ -17771,6 +19217,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
       loggedCarbsGrams: serializer.fromJson<int>(json['loggedCarbsGrams']),
       loggedCalories: serializer.fromJson<int>(json['loggedCalories']),
       completed: serializer.fromJson<bool>(json['completed']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -17794,6 +19242,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
       'loggedCarbsGrams': serializer.toJson<int>(loggedCarbsGrams),
       'loggedCalories': serializer.toJson<int>(loggedCalories),
       'completed': serializer.toJson<bool>(completed),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
@@ -17815,6 +19265,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
     int? loggedCarbsGrams,
     int? loggedCalories,
     bool? completed,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => CarbLoadingDay(
     id: id ?? this.id,
     carbLoadingPlanId: carbLoadingPlanId ?? this.carbLoadingPlanId,
@@ -17835,6 +19287,10 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
     loggedCarbsGrams: loggedCarbsGrams ?? this.loggedCarbsGrams,
     loggedCalories: loggedCalories ?? this.loggedCalories,
     completed: completed ?? this.completed,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
   );
   CarbLoadingDay copyWithCompanion(CarbLoadingDaysTableCompanion data) {
     return CarbLoadingDay(
@@ -17879,6 +19335,12 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
           ? data.loggedCalories.value
           : this.loggedCalories,
       completed: data.completed.present ? data.completed.value : this.completed,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
     );
   }
 
@@ -17901,7 +19363,9 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
           ..write('eveningSnackPercent: $eveningSnackPercent, ')
           ..write('loggedCarbsGrams: $loggedCarbsGrams, ')
           ..write('loggedCalories: $loggedCalories, ')
-          ..write('completed: $completed')
+          ..write('completed: $completed, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -17925,6 +19389,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
     loggedCarbsGrams,
     loggedCalories,
     completed,
+    needsUpload,
+    localUpdatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -17946,7 +19412,9 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
           other.eveningSnackPercent == this.eveningSnackPercent &&
           other.loggedCarbsGrams == this.loggedCarbsGrams &&
           other.loggedCalories == this.loggedCalories &&
-          other.completed == this.completed);
+          other.completed == this.completed &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
 }
 
 class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
@@ -17967,6 +19435,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
   final Value<int> loggedCarbsGrams;
   final Value<int> loggedCalories;
   final Value<bool> completed;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
   final Value<int> rowid;
   const CarbLoadingDaysTableCompanion({
     this.id = const Value.absent(),
@@ -17986,6 +19456,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     this.loggedCarbsGrams = const Value.absent(),
     this.loggedCalories = const Value.absent(),
     this.completed = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CarbLoadingDaysTableCompanion.insert({
@@ -18006,6 +19478,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     this.loggedCarbsGrams = const Value.absent(),
     this.loggedCalories = const Value.absent(),
     this.completed = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        carbLoadingPlanId = Value(carbLoadingPlanId),
@@ -18031,6 +19505,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     Expression<int>? loggedCarbsGrams,
     Expression<int>? loggedCalories,
     Expression<bool>? completed,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -18055,6 +19531,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
       if (loggedCarbsGrams != null) 'logged_carbs_grams': loggedCarbsGrams,
       if (loggedCalories != null) 'logged_calories': loggedCalories,
       if (completed != null) 'completed': completed,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -18077,6 +19555,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     Value<int>? loggedCarbsGrams,
     Value<int>? loggedCalories,
     Value<bool>? completed,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return CarbLoadingDaysTableCompanion(
@@ -18098,6 +19578,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
       loggedCarbsGrams: loggedCarbsGrams ?? this.loggedCarbsGrams,
       loggedCalories: loggedCalories ?? this.loggedCalories,
       completed: completed ?? this.completed,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -18164,6 +19646,12 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     if (completed.present) {
       map['completed'] = Variable<bool>(completed.value);
     }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -18190,6 +19678,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
           ..write('loggedCarbsGrams: $loggedCarbsGrams, ')
           ..write('loggedCalories: $loggedCalories, ')
           ..write('completed: $completed, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -20988,6 +22478,784 @@ class CarbLoadingDayMealsTableCompanion
   }
 }
 
+class $WeatherForecastsTableTable extends WeatherForecastsTable
+    with TableInfo<$WeatherForecastsTableTable, WeatherForecastData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WeatherForecastsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _latitudeMeta = const VerificationMeta(
+    'latitude',
+  );
+  @override
+  late final GeneratedColumn<double> latitude = GeneratedColumn<double>(
+    'latitude',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _longitudeMeta = const VerificationMeta(
+    'longitude',
+  );
+  @override
+  late final GeneratedColumn<double> longitude = GeneratedColumn<double>(
+    'longitude',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _forecastDateMeta = const VerificationMeta(
+    'forecastDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> forecastDate = GeneratedColumn<DateTime>(
+    'forecast_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _temperatureCMeta = const VerificationMeta(
+    'temperatureC',
+  );
+  @override
+  late final GeneratedColumn<double> temperatureC = GeneratedColumn<double>(
+    'temperature_c',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _humidityPctMeta = const VerificationMeta(
+    'humidityPct',
+  );
+  @override
+  late final GeneratedColumn<int> humidityPct = GeneratedColumn<int>(
+    'humidity_pct',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _forecastAvailableMeta = const VerificationMeta(
+    'forecastAvailable',
+  );
+  @override
+  late final GeneratedColumn<bool> forecastAvailable = GeneratedColumn<bool>(
+    'forecast_available',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("forecast_available" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _conditionsMeta = const VerificationMeta(
+    'conditions',
+  );
+  @override
+  late final GeneratedColumn<String> conditions = GeneratedColumn<String>(
+    'conditions',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _windSpeedKmhMeta = const VerificationMeta(
+    'windSpeedKmh',
+  );
+  @override
+  late final GeneratedColumn<int> windSpeedKmh = GeneratedColumn<int>(
+    'wind_speed_kmh',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _precipitationMmMeta = const VerificationMeta(
+    'precipitationMm',
+  );
+  @override
+  late final GeneratedColumn<double> precipitationMm = GeneratedColumn<double>(
+    'precipitation_mm',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    latitude,
+    longitude,
+    forecastDate,
+    temperatureC,
+    humidityPct,
+    forecastAvailable,
+    source,
+    conditions,
+    windSpeedKmh,
+    precipitationMm,
+    fetchedAt,
+    expiresAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'weather_forecasts_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WeatherForecastData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('latitude')) {
+      context.handle(
+        _latitudeMeta,
+        latitude.isAcceptableOrUnknown(data['latitude']!, _latitudeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_latitudeMeta);
+    }
+    if (data.containsKey('longitude')) {
+      context.handle(
+        _longitudeMeta,
+        longitude.isAcceptableOrUnknown(data['longitude']!, _longitudeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_longitudeMeta);
+    }
+    if (data.containsKey('forecast_date')) {
+      context.handle(
+        _forecastDateMeta,
+        forecastDate.isAcceptableOrUnknown(
+          data['forecast_date']!,
+          _forecastDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_forecastDateMeta);
+    }
+    if (data.containsKey('temperature_c')) {
+      context.handle(
+        _temperatureCMeta,
+        temperatureC.isAcceptableOrUnknown(
+          data['temperature_c']!,
+          _temperatureCMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_temperatureCMeta);
+    }
+    if (data.containsKey('humidity_pct')) {
+      context.handle(
+        _humidityPctMeta,
+        humidityPct.isAcceptableOrUnknown(
+          data['humidity_pct']!,
+          _humidityPctMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_humidityPctMeta);
+    }
+    if (data.containsKey('forecast_available')) {
+      context.handle(
+        _forecastAvailableMeta,
+        forecastAvailable.isAcceptableOrUnknown(
+          data['forecast_available']!,
+          _forecastAvailableMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('conditions')) {
+      context.handle(
+        _conditionsMeta,
+        conditions.isAcceptableOrUnknown(data['conditions']!, _conditionsMeta),
+      );
+    }
+    if (data.containsKey('wind_speed_kmh')) {
+      context.handle(
+        _windSpeedKmhMeta,
+        windSpeedKmh.isAcceptableOrUnknown(
+          data['wind_speed_kmh']!,
+          _windSpeedKmhMeta,
+        ),
+      );
+    }
+    if (data.containsKey('precipitation_mm')) {
+      context.handle(
+        _precipitationMmMeta,
+        precipitationMm.isAcceptableOrUnknown(
+          data['precipitation_mm']!,
+          _precipitationMmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expiresAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WeatherForecastData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WeatherForecastData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      latitude: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}latitude'],
+      )!,
+      longitude: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}longitude'],
+      )!,
+      forecastDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}forecast_date'],
+      )!,
+      temperatureC: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}temperature_c'],
+      )!,
+      humidityPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}humidity_pct'],
+      )!,
+      forecastAvailable: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}forecast_available'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      conditions: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conditions'],
+      ),
+      windSpeedKmh: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}wind_speed_kmh'],
+      ),
+      precipitationMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}precipitation_mm'],
+      ),
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WeatherForecastsTableTable createAlias(String alias) {
+    return $WeatherForecastsTableTable(attachedDatabase, alias);
+  }
+}
+
+class WeatherForecastData extends DataClass
+    implements Insertable<WeatherForecastData> {
+  final int id;
+  final double latitude;
+  final double longitude;
+  final DateTime forecastDate;
+  final double temperatureC;
+  final int humidityPct;
+  final bool forecastAvailable;
+  final String source;
+  final String? conditions;
+  final int? windSpeedKmh;
+  final double? precipitationMm;
+  final DateTime fetchedAt;
+  final DateTime expiresAt;
+  const WeatherForecastData({
+    required this.id,
+    required this.latitude,
+    required this.longitude,
+    required this.forecastDate,
+    required this.temperatureC,
+    required this.humidityPct,
+    required this.forecastAvailable,
+    required this.source,
+    this.conditions,
+    this.windSpeedKmh,
+    this.precipitationMm,
+    required this.fetchedAt,
+    required this.expiresAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['latitude'] = Variable<double>(latitude);
+    map['longitude'] = Variable<double>(longitude);
+    map['forecast_date'] = Variable<DateTime>(forecastDate);
+    map['temperature_c'] = Variable<double>(temperatureC);
+    map['humidity_pct'] = Variable<int>(humidityPct);
+    map['forecast_available'] = Variable<bool>(forecastAvailable);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || conditions != null) {
+      map['conditions'] = Variable<String>(conditions);
+    }
+    if (!nullToAbsent || windSpeedKmh != null) {
+      map['wind_speed_kmh'] = Variable<int>(windSpeedKmh);
+    }
+    if (!nullToAbsent || precipitationMm != null) {
+      map['precipitation_mm'] = Variable<double>(precipitationMm);
+    }
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    map['expires_at'] = Variable<DateTime>(expiresAt);
+    return map;
+  }
+
+  WeatherForecastsTableCompanion toCompanion(bool nullToAbsent) {
+    return WeatherForecastsTableCompanion(
+      id: Value(id),
+      latitude: Value(latitude),
+      longitude: Value(longitude),
+      forecastDate: Value(forecastDate),
+      temperatureC: Value(temperatureC),
+      humidityPct: Value(humidityPct),
+      forecastAvailable: Value(forecastAvailable),
+      source: Value(source),
+      conditions: conditions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(conditions),
+      windSpeedKmh: windSpeedKmh == null && nullToAbsent
+          ? const Value.absent()
+          : Value(windSpeedKmh),
+      precipitationMm: precipitationMm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(precipitationMm),
+      fetchedAt: Value(fetchedAt),
+      expiresAt: Value(expiresAt),
+    );
+  }
+
+  factory WeatherForecastData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WeatherForecastData(
+      id: serializer.fromJson<int>(json['id']),
+      latitude: serializer.fromJson<double>(json['latitude']),
+      longitude: serializer.fromJson<double>(json['longitude']),
+      forecastDate: serializer.fromJson<DateTime>(json['forecastDate']),
+      temperatureC: serializer.fromJson<double>(json['temperatureC']),
+      humidityPct: serializer.fromJson<int>(json['humidityPct']),
+      forecastAvailable: serializer.fromJson<bool>(json['forecastAvailable']),
+      source: serializer.fromJson<String>(json['source']),
+      conditions: serializer.fromJson<String?>(json['conditions']),
+      windSpeedKmh: serializer.fromJson<int?>(json['windSpeedKmh']),
+      precipitationMm: serializer.fromJson<double?>(json['precipitationMm']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+      expiresAt: serializer.fromJson<DateTime>(json['expiresAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'latitude': serializer.toJson<double>(latitude),
+      'longitude': serializer.toJson<double>(longitude),
+      'forecastDate': serializer.toJson<DateTime>(forecastDate),
+      'temperatureC': serializer.toJson<double>(temperatureC),
+      'humidityPct': serializer.toJson<int>(humidityPct),
+      'forecastAvailable': serializer.toJson<bool>(forecastAvailable),
+      'source': serializer.toJson<String>(source),
+      'conditions': serializer.toJson<String?>(conditions),
+      'windSpeedKmh': serializer.toJson<int?>(windSpeedKmh),
+      'precipitationMm': serializer.toJson<double?>(precipitationMm),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+      'expiresAt': serializer.toJson<DateTime>(expiresAt),
+    };
+  }
+
+  WeatherForecastData copyWith({
+    int? id,
+    double? latitude,
+    double? longitude,
+    DateTime? forecastDate,
+    double? temperatureC,
+    int? humidityPct,
+    bool? forecastAvailable,
+    String? source,
+    Value<String?> conditions = const Value.absent(),
+    Value<int?> windSpeedKmh = const Value.absent(),
+    Value<double?> precipitationMm = const Value.absent(),
+    DateTime? fetchedAt,
+    DateTime? expiresAt,
+  }) => WeatherForecastData(
+    id: id ?? this.id,
+    latitude: latitude ?? this.latitude,
+    longitude: longitude ?? this.longitude,
+    forecastDate: forecastDate ?? this.forecastDate,
+    temperatureC: temperatureC ?? this.temperatureC,
+    humidityPct: humidityPct ?? this.humidityPct,
+    forecastAvailable: forecastAvailable ?? this.forecastAvailable,
+    source: source ?? this.source,
+    conditions: conditions.present ? conditions.value : this.conditions,
+    windSpeedKmh: windSpeedKmh.present ? windSpeedKmh.value : this.windSpeedKmh,
+    precipitationMm: precipitationMm.present
+        ? precipitationMm.value
+        : this.precipitationMm,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+    expiresAt: expiresAt ?? this.expiresAt,
+  );
+  WeatherForecastData copyWithCompanion(WeatherForecastsTableCompanion data) {
+    return WeatherForecastData(
+      id: data.id.present ? data.id.value : this.id,
+      latitude: data.latitude.present ? data.latitude.value : this.latitude,
+      longitude: data.longitude.present ? data.longitude.value : this.longitude,
+      forecastDate: data.forecastDate.present
+          ? data.forecastDate.value
+          : this.forecastDate,
+      temperatureC: data.temperatureC.present
+          ? data.temperatureC.value
+          : this.temperatureC,
+      humidityPct: data.humidityPct.present
+          ? data.humidityPct.value
+          : this.humidityPct,
+      forecastAvailable: data.forecastAvailable.present
+          ? data.forecastAvailable.value
+          : this.forecastAvailable,
+      source: data.source.present ? data.source.value : this.source,
+      conditions: data.conditions.present
+          ? data.conditions.value
+          : this.conditions,
+      windSpeedKmh: data.windSpeedKmh.present
+          ? data.windSpeedKmh.value
+          : this.windSpeedKmh,
+      precipitationMm: data.precipitationMm.present
+          ? data.precipitationMm.value
+          : this.precipitationMm,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeatherForecastData(')
+          ..write('id: $id, ')
+          ..write('latitude: $latitude, ')
+          ..write('longitude: $longitude, ')
+          ..write('forecastDate: $forecastDate, ')
+          ..write('temperatureC: $temperatureC, ')
+          ..write('humidityPct: $humidityPct, ')
+          ..write('forecastAvailable: $forecastAvailable, ')
+          ..write('source: $source, ')
+          ..write('conditions: $conditions, ')
+          ..write('windSpeedKmh: $windSpeedKmh, ')
+          ..write('precipitationMm: $precipitationMm, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('expiresAt: $expiresAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    latitude,
+    longitude,
+    forecastDate,
+    temperatureC,
+    humidityPct,
+    forecastAvailable,
+    source,
+    conditions,
+    windSpeedKmh,
+    precipitationMm,
+    fetchedAt,
+    expiresAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WeatherForecastData &&
+          other.id == this.id &&
+          other.latitude == this.latitude &&
+          other.longitude == this.longitude &&
+          other.forecastDate == this.forecastDate &&
+          other.temperatureC == this.temperatureC &&
+          other.humidityPct == this.humidityPct &&
+          other.forecastAvailable == this.forecastAvailable &&
+          other.source == this.source &&
+          other.conditions == this.conditions &&
+          other.windSpeedKmh == this.windSpeedKmh &&
+          other.precipitationMm == this.precipitationMm &&
+          other.fetchedAt == this.fetchedAt &&
+          other.expiresAt == this.expiresAt);
+}
+
+class WeatherForecastsTableCompanion
+    extends UpdateCompanion<WeatherForecastData> {
+  final Value<int> id;
+  final Value<double> latitude;
+  final Value<double> longitude;
+  final Value<DateTime> forecastDate;
+  final Value<double> temperatureC;
+  final Value<int> humidityPct;
+  final Value<bool> forecastAvailable;
+  final Value<String> source;
+  final Value<String?> conditions;
+  final Value<int?> windSpeedKmh;
+  final Value<double?> precipitationMm;
+  final Value<DateTime> fetchedAt;
+  final Value<DateTime> expiresAt;
+  const WeatherForecastsTableCompanion({
+    this.id = const Value.absent(),
+    this.latitude = const Value.absent(),
+    this.longitude = const Value.absent(),
+    this.forecastDate = const Value.absent(),
+    this.temperatureC = const Value.absent(),
+    this.humidityPct = const Value.absent(),
+    this.forecastAvailable = const Value.absent(),
+    this.source = const Value.absent(),
+    this.conditions = const Value.absent(),
+    this.windSpeedKmh = const Value.absent(),
+    this.precipitationMm = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+  });
+  WeatherForecastsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required double latitude,
+    required double longitude,
+    required DateTime forecastDate,
+    required double temperatureC,
+    required int humidityPct,
+    this.forecastAvailable = const Value.absent(),
+    required String source,
+    this.conditions = const Value.absent(),
+    this.windSpeedKmh = const Value.absent(),
+    this.precipitationMm = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    required DateTime expiresAt,
+  }) : latitude = Value(latitude),
+       longitude = Value(longitude),
+       forecastDate = Value(forecastDate),
+       temperatureC = Value(temperatureC),
+       humidityPct = Value(humidityPct),
+       source = Value(source),
+       expiresAt = Value(expiresAt);
+  static Insertable<WeatherForecastData> custom({
+    Expression<int>? id,
+    Expression<double>? latitude,
+    Expression<double>? longitude,
+    Expression<DateTime>? forecastDate,
+    Expression<double>? temperatureC,
+    Expression<int>? humidityPct,
+    Expression<bool>? forecastAvailable,
+    Expression<String>? source,
+    Expression<String>? conditions,
+    Expression<int>? windSpeedKmh,
+    Expression<double>? precipitationMm,
+    Expression<DateTime>? fetchedAt,
+    Expression<DateTime>? expiresAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (forecastDate != null) 'forecast_date': forecastDate,
+      if (temperatureC != null) 'temperature_c': temperatureC,
+      if (humidityPct != null) 'humidity_pct': humidityPct,
+      if (forecastAvailable != null) 'forecast_available': forecastAvailable,
+      if (source != null) 'source': source,
+      if (conditions != null) 'conditions': conditions,
+      if (windSpeedKmh != null) 'wind_speed_kmh': windSpeedKmh,
+      if (precipitationMm != null) 'precipitation_mm': precipitationMm,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (expiresAt != null) 'expires_at': expiresAt,
+    });
+  }
+
+  WeatherForecastsTableCompanion copyWith({
+    Value<int>? id,
+    Value<double>? latitude,
+    Value<double>? longitude,
+    Value<DateTime>? forecastDate,
+    Value<double>? temperatureC,
+    Value<int>? humidityPct,
+    Value<bool>? forecastAvailable,
+    Value<String>? source,
+    Value<String?>? conditions,
+    Value<int?>? windSpeedKmh,
+    Value<double?>? precipitationMm,
+    Value<DateTime>? fetchedAt,
+    Value<DateTime>? expiresAt,
+  }) {
+    return WeatherForecastsTableCompanion(
+      id: id ?? this.id,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      forecastDate: forecastDate ?? this.forecastDate,
+      temperatureC: temperatureC ?? this.temperatureC,
+      humidityPct: humidityPct ?? this.humidityPct,
+      forecastAvailable: forecastAvailable ?? this.forecastAvailable,
+      source: source ?? this.source,
+      conditions: conditions ?? this.conditions,
+      windSpeedKmh: windSpeedKmh ?? this.windSpeedKmh,
+      precipitationMm: precipitationMm ?? this.precipitationMm,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (latitude.present) {
+      map['latitude'] = Variable<double>(latitude.value);
+    }
+    if (longitude.present) {
+      map['longitude'] = Variable<double>(longitude.value);
+    }
+    if (forecastDate.present) {
+      map['forecast_date'] = Variable<DateTime>(forecastDate.value);
+    }
+    if (temperatureC.present) {
+      map['temperature_c'] = Variable<double>(temperatureC.value);
+    }
+    if (humidityPct.present) {
+      map['humidity_pct'] = Variable<int>(humidityPct.value);
+    }
+    if (forecastAvailable.present) {
+      map['forecast_available'] = Variable<bool>(forecastAvailable.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (conditions.present) {
+      map['conditions'] = Variable<String>(conditions.value);
+    }
+    if (windSpeedKmh.present) {
+      map['wind_speed_kmh'] = Variable<int>(windSpeedKmh.value);
+    }
+    if (precipitationMm.present) {
+      map['precipitation_mm'] = Variable<double>(precipitationMm.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeatherForecastsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('latitude: $latitude, ')
+          ..write('longitude: $longitude, ')
+          ..write('forecastDate: $forecastDate, ')
+          ..write('temperatureC: $temperatureC, ')
+          ..write('humidityPct: $humidityPct, ')
+          ..write('forecastAvailable: $forecastAvailable, ')
+          ..write('source: $source, ')
+          ..write('conditions: $conditions, ')
+          ..write('windSpeedKmh: $windSpeedKmh, ')
+          ..write('precipitationMm: $precipitationMm, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('expiresAt: $expiresAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -21042,6 +23310,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $CarbLoadingDayMealsTableTable carbLoadingDayMealsTable =
       $CarbLoadingDayMealsTableTable(this);
+  late final $WeatherForecastsTableTable weatherForecastsTable =
+      $WeatherForecastsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -21073,6 +23343,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     carbLoadingFoodMealTypesTable,
     carbLoadingUserFoodMealTypesTable,
     carbLoadingDayMealsTable,
+    weatherForecastsTable,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -21117,6 +23388,7 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<String> defaultActivityDay,
       Value<bool> autoGenerateNutrition,
       Value<bool> completionReminders,
+      Value<String?> senderName,
       Value<int> rowid,
     });
 typedef $$UserProfilesTableTableUpdateCompanionBuilder =
@@ -21150,6 +23422,7 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<String> defaultActivityDay,
       Value<bool> autoGenerateNutrition,
       Value<bool> completionReminders,
+      Value<String?> senderName,
       Value<int> rowid,
     });
 
@@ -21311,6 +23584,11 @@ class $$UserProfilesTableTableFilterComposer
     column: $table.completionReminders,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get senderName => $composableBuilder(
+    column: $table.senderName,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$UserProfilesTableTableOrderingComposer
@@ -21466,6 +23744,11 @@ class $$UserProfilesTableTableOrderingComposer
     column: $table.completionReminders,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get senderName => $composableBuilder(
+    column: $table.senderName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserProfilesTableTableAnnotationComposer
@@ -21610,6 +23893,11 @@ class $$UserProfilesTableTableAnnotationComposer
     column: $table.completionReminders,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get senderName => $composableBuilder(
+    column: $table.senderName,
+    builder: (column) => column,
+  );
 }
 
 class $$UserProfilesTableTableTableManager
@@ -21682,6 +23970,7 @@ class $$UserProfilesTableTableTableManager
                 Value<String> defaultActivityDay = const Value.absent(),
                 Value<bool> autoGenerateNutrition = const Value.absent(),
                 Value<bool> completionReminders = const Value.absent(),
+                Value<String?> senderName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
                 id: id,
@@ -21713,6 +24002,7 @@ class $$UserProfilesTableTableTableManager
                 defaultActivityDay: defaultActivityDay,
                 autoGenerateNutrition: autoGenerateNutrition,
                 completionReminders: completionReminders,
+                senderName: senderName,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -21747,6 +24037,7 @@ class $$UserProfilesTableTableTableManager
                 Value<String> defaultActivityDay = const Value.absent(),
                 Value<bool> autoGenerateNutrition = const Value.absent(),
                 Value<bool> completionReminders = const Value.absent(),
+                Value<String?> senderName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
                 id: id,
@@ -21778,6 +24069,7 @@ class $$UserProfilesTableTableTableManager
                 defaultActivityDay: defaultActivityDay,
                 autoGenerateNutrition: autoGenerateNutrition,
                 completionReminders: completionReminders,
+                senderName: senderName,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -22553,7 +24845,7 @@ typedef $$MacroTargetsTableTableCreateCompanionBuilder =
       required double postRunSodiumMg,
       required double distanceMi,
       required double durationH,
-      required double paceMinPerMile,
+      Value<double?> paceMinPerMile,
       required double caloriesGrossKcal,
       required double met,
       required String calculationRule,
@@ -22583,7 +24875,7 @@ typedef $$MacroTargetsTableTableUpdateCompanionBuilder =
       Value<double> postRunSodiumMg,
       Value<double> distanceMi,
       Value<double> durationH,
-      Value<double> paceMinPerMile,
+      Value<double?> paceMinPerMile,
       Value<double> caloriesGrossKcal,
       Value<double> met,
       Value<String> calculationRule,
@@ -23064,7 +25356,7 @@ class $$MacroTargetsTableTableTableManager
                 Value<double> postRunSodiumMg = const Value.absent(),
                 Value<double> distanceMi = const Value.absent(),
                 Value<double> durationH = const Value.absent(),
-                Value<double> paceMinPerMile = const Value.absent(),
+                Value<double?> paceMinPerMile = const Value.absent(),
                 Value<double> caloriesGrossKcal = const Value.absent(),
                 Value<double> met = const Value.absent(),
                 Value<String> calculationRule = const Value.absent(),
@@ -23122,7 +25414,7 @@ class $$MacroTargetsTableTableTableManager
                 required double postRunSodiumMg,
                 required double distanceMi,
                 required double durationH,
-                required double paceMinPerMile,
+                Value<double?> paceMinPerMile = const Value.absent(),
                 required double caloriesGrossKcal,
                 required double met,
                 required String calculationRule,
@@ -27332,6 +29624,22 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<int?> durationMinutes,
       Value<double?> paceTargetMinutesPerMile,
       Value<String?> intensityLevel,
+      Value<double?> cyclingSpeedMph,
+      Value<String?> cyclingTerrain,
+      Value<String?> cyclingIndoorOutdoor,
+      Value<int?> cyclingElevationGainFt,
+      Value<String?> cyclingSessionGoal,
+      Value<int?> swimmingPacePer100mSeconds,
+      Value<String?> swimmingPoolOrOpenWater,
+      Value<double?> swimmingWaterTempC,
+      Value<String?> intensityTarget,
+      Value<int?> timeBeforeMinutes,
+      Value<bool> reminderEnabled,
+      Value<int?> reminderDaysBefore,
+      Value<String?> reminderTimeOfDay,
+      Value<bool> reminderRecurring,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<DateTime?> completedAt,
       Value<int?> completionRating,
       Value<String?> completionNotes,
@@ -27355,6 +29663,22 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<int?> durationMinutes,
       Value<double?> paceTargetMinutesPerMile,
       Value<String?> intensityLevel,
+      Value<double?> cyclingSpeedMph,
+      Value<String?> cyclingTerrain,
+      Value<String?> cyclingIndoorOutdoor,
+      Value<int?> cyclingElevationGainFt,
+      Value<String?> cyclingSessionGoal,
+      Value<int?> swimmingPacePer100mSeconds,
+      Value<String?> swimmingPoolOrOpenWater,
+      Value<double?> swimmingWaterTempC,
+      Value<String?> intensityTarget,
+      Value<int?> timeBeforeMinutes,
+      Value<bool> reminderEnabled,
+      Value<int?> reminderDaysBefore,
+      Value<String?> reminderTimeOfDay,
+      Value<bool> reminderRecurring,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<DateTime?> completedAt,
       Value<int?> completionRating,
       Value<String?> completionNotes,
@@ -27423,6 +29747,86 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<String> get intensityLevel => $composableBuilder(
     column: $table.intensityLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cyclingSpeedMph => $composableBuilder(
+    column: $table.cyclingSpeedMph,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cyclingTerrain => $composableBuilder(
+    column: $table.cyclingTerrain,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cyclingIndoorOutdoor => $composableBuilder(
+    column: $table.cyclingIndoorOutdoor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cyclingElevationGainFt => $composableBuilder(
+    column: $table.cyclingElevationGainFt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cyclingSessionGoal => $composableBuilder(
+    column: $table.cyclingSessionGoal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get swimmingPacePer100mSeconds => $composableBuilder(
+    column: $table.swimmingPacePer100mSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get swimmingPoolOrOpenWater => $composableBuilder(
+    column: $table.swimmingPoolOrOpenWater,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get swimmingWaterTempC => $composableBuilder(
+    column: $table.swimmingWaterTempC,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get intensityTarget => $composableBuilder(
+    column: $table.intensityTarget,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timeBeforeMinutes => $composableBuilder(
+    column: $table.timeBeforeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get reminderEnabled => $composableBuilder(
+    column: $table.reminderEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderDaysBefore => $composableBuilder(
+    column: $table.reminderDaysBefore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reminderTimeOfDay => $composableBuilder(
+    column: $table.reminderTimeOfDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get reminderRecurring => $composableBuilder(
+    column: $table.reminderRecurring,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -27531,6 +29935,86 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get cyclingSpeedMph => $composableBuilder(
+    column: $table.cyclingSpeedMph,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cyclingTerrain => $composableBuilder(
+    column: $table.cyclingTerrain,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cyclingIndoorOutdoor => $composableBuilder(
+    column: $table.cyclingIndoorOutdoor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cyclingElevationGainFt => $composableBuilder(
+    column: $table.cyclingElevationGainFt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cyclingSessionGoal => $composableBuilder(
+    column: $table.cyclingSessionGoal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get swimmingPacePer100mSeconds => $composableBuilder(
+    column: $table.swimmingPacePer100mSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get swimmingPoolOrOpenWater => $composableBuilder(
+    column: $table.swimmingPoolOrOpenWater,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get swimmingWaterTempC => $composableBuilder(
+    column: $table.swimmingWaterTempC,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get intensityTarget => $composableBuilder(
+    column: $table.intensityTarget,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timeBeforeMinutes => $composableBuilder(
+    column: $table.timeBeforeMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get reminderEnabled => $composableBuilder(
+    column: $table.reminderEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reminderDaysBefore => $composableBuilder(
+    column: $table.reminderDaysBefore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reminderTimeOfDay => $composableBuilder(
+    column: $table.reminderTimeOfDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get reminderRecurring => $composableBuilder(
+    column: $table.reminderRecurring,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
     builder: (column) => ColumnOrderings(column),
@@ -27628,6 +30112,86 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get cyclingSpeedMph => $composableBuilder(
+    column: $table.cyclingSpeedMph,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cyclingTerrain => $composableBuilder(
+    column: $table.cyclingTerrain,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cyclingIndoorOutdoor => $composableBuilder(
+    column: $table.cyclingIndoorOutdoor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cyclingElevationGainFt => $composableBuilder(
+    column: $table.cyclingElevationGainFt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cyclingSessionGoal => $composableBuilder(
+    column: $table.cyclingSessionGoal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get swimmingPacePer100mSeconds => $composableBuilder(
+    column: $table.swimmingPacePer100mSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get swimmingPoolOrOpenWater => $composableBuilder(
+    column: $table.swimmingPoolOrOpenWater,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get swimmingWaterTempC => $composableBuilder(
+    column: $table.swimmingWaterTempC,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get intensityTarget => $composableBuilder(
+    column: $table.intensityTarget,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timeBeforeMinutes => $composableBuilder(
+    column: $table.timeBeforeMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get reminderEnabled => $composableBuilder(
+    column: $table.reminderEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reminderDaysBefore => $composableBuilder(
+    column: $table.reminderDaysBefore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reminderTimeOfDay => $composableBuilder(
+    column: $table.reminderTimeOfDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get reminderRecurring => $composableBuilder(
+    column: $table.reminderRecurring,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
     builder: (column) => column,
@@ -27709,6 +30273,22 @@ class $$ActivitiesTableTableTableManager
                 Value<int?> durationMinutes = const Value.absent(),
                 Value<double?> paceTargetMinutesPerMile = const Value.absent(),
                 Value<String?> intensityLevel = const Value.absent(),
+                Value<double?> cyclingSpeedMph = const Value.absent(),
+                Value<String?> cyclingTerrain = const Value.absent(),
+                Value<String?> cyclingIndoorOutdoor = const Value.absent(),
+                Value<int?> cyclingElevationGainFt = const Value.absent(),
+                Value<String?> cyclingSessionGoal = const Value.absent(),
+                Value<int?> swimmingPacePer100mSeconds = const Value.absent(),
+                Value<String?> swimmingPoolOrOpenWater = const Value.absent(),
+                Value<double?> swimmingWaterTempC = const Value.absent(),
+                Value<String?> intensityTarget = const Value.absent(),
+                Value<int?> timeBeforeMinutes = const Value.absent(),
+                Value<bool> reminderEnabled = const Value.absent(),
+                Value<int?> reminderDaysBefore = const Value.absent(),
+                Value<String?> reminderTimeOfDay = const Value.absent(),
+                Value<bool> reminderRecurring = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int?> completionRating = const Value.absent(),
                 Value<String?> completionNotes = const Value.absent(),
@@ -27730,6 +30310,22 @@ class $$ActivitiesTableTableTableManager
                 durationMinutes: durationMinutes,
                 paceTargetMinutesPerMile: paceTargetMinutesPerMile,
                 intensityLevel: intensityLevel,
+                cyclingSpeedMph: cyclingSpeedMph,
+                cyclingTerrain: cyclingTerrain,
+                cyclingIndoorOutdoor: cyclingIndoorOutdoor,
+                cyclingElevationGainFt: cyclingElevationGainFt,
+                cyclingSessionGoal: cyclingSessionGoal,
+                swimmingPacePer100mSeconds: swimmingPacePer100mSeconds,
+                swimmingPoolOrOpenWater: swimmingPoolOrOpenWater,
+                swimmingWaterTempC: swimmingWaterTempC,
+                intensityTarget: intensityTarget,
+                timeBeforeMinutes: timeBeforeMinutes,
+                reminderEnabled: reminderEnabled,
+                reminderDaysBefore: reminderDaysBefore,
+                reminderTimeOfDay: reminderTimeOfDay,
+                reminderRecurring: reminderRecurring,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 completedAt: completedAt,
                 completionRating: completionRating,
                 completionNotes: completionNotes,
@@ -27753,6 +30349,22 @@ class $$ActivitiesTableTableTableManager
                 Value<int?> durationMinutes = const Value.absent(),
                 Value<double?> paceTargetMinutesPerMile = const Value.absent(),
                 Value<String?> intensityLevel = const Value.absent(),
+                Value<double?> cyclingSpeedMph = const Value.absent(),
+                Value<String?> cyclingTerrain = const Value.absent(),
+                Value<String?> cyclingIndoorOutdoor = const Value.absent(),
+                Value<int?> cyclingElevationGainFt = const Value.absent(),
+                Value<String?> cyclingSessionGoal = const Value.absent(),
+                Value<int?> swimmingPacePer100mSeconds = const Value.absent(),
+                Value<String?> swimmingPoolOrOpenWater = const Value.absent(),
+                Value<double?> swimmingWaterTempC = const Value.absent(),
+                Value<String?> intensityTarget = const Value.absent(),
+                Value<int?> timeBeforeMinutes = const Value.absent(),
+                Value<bool> reminderEnabled = const Value.absent(),
+                Value<int?> reminderDaysBefore = const Value.absent(),
+                Value<String?> reminderTimeOfDay = const Value.absent(),
+                Value<bool> reminderRecurring = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int?> completionRating = const Value.absent(),
                 Value<String?> completionNotes = const Value.absent(),
@@ -27774,6 +30386,22 @@ class $$ActivitiesTableTableTableManager
                 durationMinutes: durationMinutes,
                 paceTargetMinutesPerMile: paceTargetMinutesPerMile,
                 intensityLevel: intensityLevel,
+                cyclingSpeedMph: cyclingSpeedMph,
+                cyclingTerrain: cyclingTerrain,
+                cyclingIndoorOutdoor: cyclingIndoorOutdoor,
+                cyclingElevationGainFt: cyclingElevationGainFt,
+                cyclingSessionGoal: cyclingSessionGoal,
+                swimmingPacePer100mSeconds: swimmingPacePer100mSeconds,
+                swimmingPoolOrOpenWater: swimmingPoolOrOpenWater,
+                swimmingWaterTempC: swimmingWaterTempC,
+                intensityTarget: intensityTarget,
+                timeBeforeMinutes: timeBeforeMinutes,
+                reminderEnabled: reminderEnabled,
+                reminderDaysBefore: reminderDaysBefore,
+                reminderTimeOfDay: reminderTimeOfDay,
+                reminderRecurring: reminderRecurring,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 completedAt: completedAt,
                 completionRating: completionRating,
                 completionNotes: completionNotes,
@@ -27814,6 +30442,7 @@ typedef $$EventsTableTableCreateCompanionBuilder =
     EventsTableCompanion Function({
       required String id,
       Value<String?> activityId,
+      required String userId,
       required String eventType,
       Value<String?> eventSubtype,
       Value<String?> eventName,
@@ -27835,12 +30464,15 @@ typedef $$EventsTableTableCreateCompanionBuilder =
       Value<int?> ageGroupPlacement,
       required DateTime createdAt,
       required DateTime updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$EventsTableTableUpdateCompanionBuilder =
     EventsTableCompanion Function({
       Value<String> id,
       Value<String?> activityId,
+      Value<String> userId,
       Value<String> eventType,
       Value<String?> eventSubtype,
       Value<String?> eventName,
@@ -27862,6 +30494,8 @@ typedef $$EventsTableTableUpdateCompanionBuilder =
       Value<int?> ageGroupPlacement,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -27881,6 +30515,11 @@ class $$EventsTableTableFilterComposer
 
   ColumnFilters<String> get activityId => $composableBuilder(
     column: $table.activityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -27988,6 +30627,16 @@ class $$EventsTableTableFilterComposer
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$EventsTableTableOrderingComposer
@@ -28006,6 +30655,11 @@ class $$EventsTableTableOrderingComposer
 
   ColumnOrderings<String> get activityId => $composableBuilder(
     column: $table.activityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -28113,6 +30767,16 @@ class $$EventsTableTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$EventsTableTableAnnotationComposer
@@ -28131,6 +30795,9 @@ class $$EventsTableTableAnnotationComposer
     column: $table.activityId,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
 
   GeneratedColumn<String> get eventType =>
       $composableBuilder(column: $table.eventType, builder: (column) => column);
@@ -28222,6 +30889,16 @@ class $$EventsTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$EventsTableTableTableManager
@@ -28254,6 +30931,7 @@ class $$EventsTableTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String?> activityId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
                 Value<String> eventType = const Value.absent(),
                 Value<String?> eventSubtype = const Value.absent(),
                 Value<String?> eventName = const Value.absent(),
@@ -28275,10 +30953,13 @@ class $$EventsTableTableTableManager
                 Value<int?> ageGroupPlacement = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EventsTableCompanion(
                 id: id,
                 activityId: activityId,
+                userId: userId,
                 eventType: eventType,
                 eventSubtype: eventSubtype,
                 eventName: eventName,
@@ -28300,12 +30981,15 @@ class $$EventsTableTableTableManager
                 ageGroupPlacement: ageGroupPlacement,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String id,
                 Value<String?> activityId = const Value.absent(),
+                required String userId,
                 required String eventType,
                 Value<String?> eventSubtype = const Value.absent(),
                 Value<String?> eventName = const Value.absent(),
@@ -28327,10 +31011,13 @@ class $$EventsTableTableTableManager
                 Value<int?> ageGroupPlacement = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EventsTableCompanion.insert(
                 id: id,
                 activityId: activityId,
+                userId: userId,
                 eventType: eventType,
                 eventSubtype: eventSubtype,
                 eventName: eventName,
@@ -28352,6 +31039,8 @@ class $$EventsTableTableTableManager
                 ageGroupPlacement: ageGroupPlacement,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -28400,6 +31089,8 @@ typedef $$ActivityCompletionsTableTableCreateCompanionBuilder =
       Value<int?> humidityPercent,
       Value<double?> nutritionAdherenceScore,
       Value<double?> performanceVsTarget,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$ActivityCompletionsTableTableUpdateCompanionBuilder =
@@ -28426,6 +31117,8 @@ typedef $$ActivityCompletionsTableTableUpdateCompanionBuilder =
       Value<int?> humidityPercent,
       Value<double?> nutritionAdherenceScore,
       Value<double?> performanceVsTarget,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -28545,6 +31238,16 @@ class $$ActivityCompletionsTableTableFilterComposer
 
   ColumnFilters<double> get performanceVsTarget => $composableBuilder(
     column: $table.performanceVsTarget,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -28667,6 +31370,16 @@ class $$ActivityCompletionsTableTableOrderingComposer
     column: $table.performanceVsTarget,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ActivityCompletionsTableTableAnnotationComposer
@@ -28781,6 +31494,16 @@ class $$ActivityCompletionsTableTableAnnotationComposer
     column: $table.performanceVsTarget,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$ActivityCompletionsTableTableTableManager
@@ -28851,6 +31574,8 @@ class $$ActivityCompletionsTableTableTableManager
                 Value<int?> humidityPercent = const Value.absent(),
                 Value<double?> nutritionAdherenceScore = const Value.absent(),
                 Value<double?> performanceVsTarget = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ActivityCompletionsTableCompanion(
                 id: id,
@@ -28875,6 +31600,8 @@ class $$ActivityCompletionsTableTableTableManager
                 humidityPercent: humidityPercent,
                 nutritionAdherenceScore: nutritionAdherenceScore,
                 performanceVsTarget: performanceVsTarget,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -28901,6 +31628,8 @@ class $$ActivityCompletionsTableTableTableManager
                 Value<int?> humidityPercent = const Value.absent(),
                 Value<double?> nutritionAdherenceScore = const Value.absent(),
                 Value<double?> performanceVsTarget = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ActivityCompletionsTableCompanion.insert(
                 id: id,
@@ -28925,6 +31654,8 @@ class $$ActivityCompletionsTableTableTableManager
                 humidityPercent: humidityPercent,
                 nutritionAdherenceScore: nutritionAdherenceScore,
                 performanceVsTarget: performanceVsTarget,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -28970,6 +31701,8 @@ typedef $$CarbLoadingPlansTableTableCreateCompanionBuilder =
       Value<String> algorithmVersion,
       Value<double?> adherenceScore,
       Value<DateTime?> completedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$CarbLoadingPlansTableTableUpdateCompanionBuilder =
@@ -28986,6 +31719,8 @@ typedef $$CarbLoadingPlansTableTableUpdateCompanionBuilder =
       Value<String> algorithmVersion,
       Value<double?> adherenceScore,
       Value<DateTime?> completedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -29055,6 +31790,16 @@ class $$CarbLoadingPlansTableTableFilterComposer
 
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -29127,6 +31872,16 @@ class $$CarbLoadingPlansTableTableOrderingComposer
     column: $table.completedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CarbLoadingPlansTableTableAnnotationComposer
@@ -29183,6 +31938,16 @@ class $$CarbLoadingPlansTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
     builder: (column) => column,
   );
 }
@@ -29245,6 +32010,8 @@ class $$CarbLoadingPlansTableTableTableManager
                 Value<String> algorithmVersion = const Value.absent(),
                 Value<double?> adherenceScore = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CarbLoadingPlansTableCompanion(
                 id: id,
@@ -29259,6 +32026,8 @@ class $$CarbLoadingPlansTableTableTableManager
                 algorithmVersion: algorithmVersion,
                 adherenceScore: adherenceScore,
                 completedAt: completedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -29275,6 +32044,8 @@ class $$CarbLoadingPlansTableTableTableManager
                 Value<String> algorithmVersion = const Value.absent(),
                 Value<double?> adherenceScore = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CarbLoadingPlansTableCompanion.insert(
                 id: id,
@@ -29289,6 +32060,8 @@ class $$CarbLoadingPlansTableTableTableManager
                 algorithmVersion: algorithmVersion,
                 adherenceScore: adherenceScore,
                 completedAt: completedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -29339,6 +32112,8 @@ typedef $$CarbLoadingDaysTableTableCreateCompanionBuilder =
       Value<int> loggedCarbsGrams,
       Value<int> loggedCalories,
       Value<bool> completed,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$CarbLoadingDaysTableTableUpdateCompanionBuilder =
@@ -29360,6 +32135,8 @@ typedef $$CarbLoadingDaysTableTableUpdateCompanionBuilder =
       Value<int> loggedCarbsGrams,
       Value<int> loggedCalories,
       Value<bool> completed,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -29454,6 +32231,16 @@ class $$CarbLoadingDaysTableTableFilterComposer
 
   ColumnFilters<bool> get completed => $composableBuilder(
     column: $table.completed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -29551,6 +32338,16 @@ class $$CarbLoadingDaysTableTableOrderingComposer
     column: $table.completed,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CarbLoadingDaysTableTableAnnotationComposer
@@ -29636,6 +32433,16 @@ class $$CarbLoadingDaysTableTableAnnotationComposer
 
   GeneratedColumn<bool> get completed =>
       $composableBuilder(column: $table.completed, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$CarbLoadingDaysTableTableTableManager
@@ -29698,6 +32505,8 @@ class $$CarbLoadingDaysTableTableTableManager
                 Value<int> loggedCarbsGrams = const Value.absent(),
                 Value<int> loggedCalories = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CarbLoadingDaysTableCompanion(
                 id: id,
@@ -29717,6 +32526,8 @@ class $$CarbLoadingDaysTableTableTableManager
                 loggedCarbsGrams: loggedCarbsGrams,
                 loggedCalories: loggedCalories,
                 completed: completed,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -29738,6 +32549,8 @@ class $$CarbLoadingDaysTableTableTableManager
                 Value<int> loggedCarbsGrams = const Value.absent(),
                 Value<int> loggedCalories = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CarbLoadingDaysTableCompanion.insert(
                 id: id,
@@ -29757,6 +32570,8 @@ class $$CarbLoadingDaysTableTableTableManager
                 loggedCarbsGrams: loggedCarbsGrams,
                 loggedCalories: loggedCalories,
                 completed: completed,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -31291,6 +34106,385 @@ typedef $$CarbLoadingDayMealsTableTableProcessedTableManager =
       CarbLoadingDayMeal,
       PrefetchHooks Function()
     >;
+typedef $$WeatherForecastsTableTableCreateCompanionBuilder =
+    WeatherForecastsTableCompanion Function({
+      Value<int> id,
+      required double latitude,
+      required double longitude,
+      required DateTime forecastDate,
+      required double temperatureC,
+      required int humidityPct,
+      Value<bool> forecastAvailable,
+      required String source,
+      Value<String?> conditions,
+      Value<int?> windSpeedKmh,
+      Value<double?> precipitationMm,
+      Value<DateTime> fetchedAt,
+      required DateTime expiresAt,
+    });
+typedef $$WeatherForecastsTableTableUpdateCompanionBuilder =
+    WeatherForecastsTableCompanion Function({
+      Value<int> id,
+      Value<double> latitude,
+      Value<double> longitude,
+      Value<DateTime> forecastDate,
+      Value<double> temperatureC,
+      Value<int> humidityPct,
+      Value<bool> forecastAvailable,
+      Value<String> source,
+      Value<String?> conditions,
+      Value<int?> windSpeedKmh,
+      Value<double?> precipitationMm,
+      Value<DateTime> fetchedAt,
+      Value<DateTime> expiresAt,
+    });
+
+class $$WeatherForecastsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $WeatherForecastsTableTable> {
+  $$WeatherForecastsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get latitude => $composableBuilder(
+    column: $table.latitude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get longitude => $composableBuilder(
+    column: $table.longitude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get forecastDate => $composableBuilder(
+    column: $table.forecastDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get temperatureC => $composableBuilder(
+    column: $table.temperatureC,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get forecastAvailable => $composableBuilder(
+    column: $table.forecastAvailable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get conditions => $composableBuilder(
+    column: $table.conditions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get windSpeedKmh => $composableBuilder(
+    column: $table.windSpeedKmh,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get precipitationMm => $composableBuilder(
+    column: $table.precipitationMm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WeatherForecastsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $WeatherForecastsTableTable> {
+  $$WeatherForecastsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get latitude => $composableBuilder(
+    column: $table.latitude,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get longitude => $composableBuilder(
+    column: $table.longitude,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get forecastDate => $composableBuilder(
+    column: $table.forecastDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get temperatureC => $composableBuilder(
+    column: $table.temperatureC,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get forecastAvailable => $composableBuilder(
+    column: $table.forecastAvailable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get conditions => $composableBuilder(
+    column: $table.conditions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get windSpeedKmh => $composableBuilder(
+    column: $table.windSpeedKmh,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get precipitationMm => $composableBuilder(
+    column: $table.precipitationMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WeatherForecastsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WeatherForecastsTableTable> {
+  $$WeatherForecastsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<double> get latitude =>
+      $composableBuilder(column: $table.latitude, builder: (column) => column);
+
+  GeneratedColumn<double> get longitude =>
+      $composableBuilder(column: $table.longitude, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get forecastDate => $composableBuilder(
+    column: $table.forecastDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get temperatureC => $composableBuilder(
+    column: $table.temperatureC,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get forecastAvailable => $composableBuilder(
+    column: $table.forecastAvailable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get conditions => $composableBuilder(
+    column: $table.conditions,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get windSpeedKmh => $composableBuilder(
+    column: $table.windSpeedKmh,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get precipitationMm => $composableBuilder(
+    column: $table.precipitationMm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+}
+
+class $$WeatherForecastsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WeatherForecastsTableTable,
+          WeatherForecastData,
+          $$WeatherForecastsTableTableFilterComposer,
+          $$WeatherForecastsTableTableOrderingComposer,
+          $$WeatherForecastsTableTableAnnotationComposer,
+          $$WeatherForecastsTableTableCreateCompanionBuilder,
+          $$WeatherForecastsTableTableUpdateCompanionBuilder,
+          (
+            WeatherForecastData,
+            BaseReferences<
+              _$AppDatabase,
+              $WeatherForecastsTableTable,
+              WeatherForecastData
+            >,
+          ),
+          WeatherForecastData,
+          PrefetchHooks Function()
+        > {
+  $$WeatherForecastsTableTableTableManager(
+    _$AppDatabase db,
+    $WeatherForecastsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WeatherForecastsTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WeatherForecastsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WeatherForecastsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<double> latitude = const Value.absent(),
+                Value<double> longitude = const Value.absent(),
+                Value<DateTime> forecastDate = const Value.absent(),
+                Value<double> temperatureC = const Value.absent(),
+                Value<int> humidityPct = const Value.absent(),
+                Value<bool> forecastAvailable = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> conditions = const Value.absent(),
+                Value<int?> windSpeedKmh = const Value.absent(),
+                Value<double?> precipitationMm = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+                Value<DateTime> expiresAt = const Value.absent(),
+              }) => WeatherForecastsTableCompanion(
+                id: id,
+                latitude: latitude,
+                longitude: longitude,
+                forecastDate: forecastDate,
+                temperatureC: temperatureC,
+                humidityPct: humidityPct,
+                forecastAvailable: forecastAvailable,
+                source: source,
+                conditions: conditions,
+                windSpeedKmh: windSpeedKmh,
+                precipitationMm: precipitationMm,
+                fetchedAt: fetchedAt,
+                expiresAt: expiresAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required double latitude,
+                required double longitude,
+                required DateTime forecastDate,
+                required double temperatureC,
+                required int humidityPct,
+                Value<bool> forecastAvailable = const Value.absent(),
+                required String source,
+                Value<String?> conditions = const Value.absent(),
+                Value<int?> windSpeedKmh = const Value.absent(),
+                Value<double?> precipitationMm = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+                required DateTime expiresAt,
+              }) => WeatherForecastsTableCompanion.insert(
+                id: id,
+                latitude: latitude,
+                longitude: longitude,
+                forecastDate: forecastDate,
+                temperatureC: temperatureC,
+                humidityPct: humidityPct,
+                forecastAvailable: forecastAvailable,
+                source: source,
+                conditions: conditions,
+                windSpeedKmh: windSpeedKmh,
+                precipitationMm: precipitationMm,
+                fetchedAt: fetchedAt,
+                expiresAt: expiresAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WeatherForecastsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WeatherForecastsTableTable,
+      WeatherForecastData,
+      $$WeatherForecastsTableTableFilterComposer,
+      $$WeatherForecastsTableTableOrderingComposer,
+      $$WeatherForecastsTableTableAnnotationComposer,
+      $$WeatherForecastsTableTableCreateCompanionBuilder,
+      $$WeatherForecastsTableTableUpdateCompanionBuilder,
+      (
+        WeatherForecastData,
+        BaseReferences<
+          _$AppDatabase,
+          $WeatherForecastsTableTable,
+          WeatherForecastData
+        >,
+      ),
+      WeatherForecastData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -31367,4 +34561,6 @@ class $AppDatabaseManager {
         _db,
         _db.carbLoadingDayMealsTable,
       );
+  $$WeatherForecastsTableTableTableManager get weatherForecastsTable =>
+      $$WeatherForecastsTableTableTableManager(_db, _db.weatherForecastsTable);
 }

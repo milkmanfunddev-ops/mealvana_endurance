@@ -1,0 +1,35 @@
+-- Add cycling and swimming specific columns to activities table
+-- This migration ensures 100% schema parity between Drift and Supabase
+
+-- Cycling-specific columns
+ALTER TABLE activities
+ADD COLUMN IF NOT EXISTS cycling_speed_mph REAL,
+ADD COLUMN IF NOT EXISTS cycling_terrain TEXT CHECK (cycling_terrain IS NULL OR cycling_terrain IN ('flat', 'rolling', 'hilly')),
+ADD COLUMN IF NOT EXISTS cycling_indoor_outdoor TEXT CHECK (cycling_indoor_outdoor IS NULL OR cycling_indoor_outdoor IN ('indoor', 'outdoor')),
+ADD COLUMN IF NOT EXISTS cycling_elevation_gain_ft INTEGER,
+ADD COLUMN IF NOT EXISTS cycling_session_goal TEXT CHECK (cycling_session_goal IS NULL OR cycling_session_goal IN ('endurance', 'tempo', 'intervals'));
+
+-- Swimming-specific columns
+ALTER TABLE activities
+ADD COLUMN IF NOT EXISTS swimming_pace_per_100m_seconds INTEGER,
+ADD COLUMN IF NOT EXISTS swimming_pool_or_open_water TEXT CHECK (swimming_pool_or_open_water IS NULL OR swimming_pool_or_open_water IN ('pool', 'open_water')),
+ADD COLUMN IF NOT EXISTS swimming_water_temp_c REAL;
+
+-- Shared columns (work across all sports)
+ALTER TABLE activities
+ADD COLUMN IF NOT EXISTS intensity_target TEXT,
+ADD COLUMN IF NOT EXISTS time_before_minutes INTEGER;
+
+-- Add comments for documentation
+COMMENT ON COLUMN activities.cycling_speed_mph IS 'Average cycling speed in miles per hour';
+COMMENT ON COLUMN activities.cycling_terrain IS 'Terrain type: flat, rolling, or hilly';
+COMMENT ON COLUMN activities.cycling_indoor_outdoor IS 'Indoor (trainer) or outdoor cycling';
+COMMENT ON COLUMN activities.cycling_elevation_gain_ft IS 'Total elevation gain in feet';
+COMMENT ON COLUMN activities.cycling_session_goal IS 'Session type: endurance, tempo, or intervals';
+
+COMMENT ON COLUMN activities.swimming_pace_per_100m_seconds IS 'Swimming pace in seconds per 100 meters';
+COMMENT ON COLUMN activities.swimming_pool_or_open_water IS 'Pool or open water swimming';
+COMMENT ON COLUMN activities.swimming_water_temp_c IS 'Water temperature in Celsius';
+
+COMMENT ON COLUMN activities.intensity_target IS 'Intensity target (zone_1, zone_2, rpe_3, etc.) - works across all sports';
+COMMENT ON COLUMN activities.time_before_minutes IS 'Pre-activity timing window in minutes (replaces run-specific pre_run_timing)';

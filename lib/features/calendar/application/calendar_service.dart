@@ -108,14 +108,13 @@ class CalendarService {
       );
 
       await _database.into(_database.activitiesTable).insert(companion);
-      
+
       // Get the created activity
       final createdActivity = await getActivityById(userId, id);
       if (createdActivity == null) {
         throw Exception('Failed to retrieve created activity');
       }
 
-      _logger.info('Created activity: ${createdActivity.id}');
       return createdActivity;
     } catch (e) {
       _logger.error('Error creating activity', error: e);
@@ -140,7 +139,6 @@ class CalendarService {
       await (_database.update(_database.activitiesTable)..where((tbl) => tbl.id.equals(activity.id)))
           .write(companion);
 
-      _logger.info('Updated activity: ${activity.id}');
       return activity;
     } catch (e) {
       _logger.error('Error updating activity: ${activity.id}', error: e);
@@ -181,16 +179,12 @@ class CalendarService {
           await (_database.delete(_database.carbLoadingPlansTable)
             ..where((tbl) => tbl.id.equals(carbLoadingPlan.id)))
               .go();
-
-          _logger.info('Deleted carb loading plan, days, and meals for event: ${event.id}');
         }
 
         // Delete the event
         await (_database.delete(_database.eventsTable)
           ..where((tbl) => tbl.id.equals(event.id)))
             .go();
-
-        _logger.info('Deleted event: ${event.id}');
       }
 
       // Finally, soft delete the activity
@@ -200,7 +194,6 @@ class CalendarService {
             updatedAt: Value(DateTime.now()),
           ));
 
-      _logger.info('Deleted activity: $activityId');
     } catch (e) {
       _logger.error('Error deleting activity: $activityId', error: e);
       rethrow;
@@ -289,6 +282,7 @@ class CalendarService {
 
   /// Create an event (optionally linked to an activity)
   Future<domain.Event> createEvent({
+    required String userId,
     String? activityId, // Now nullable - events can exist without activities
     required domain.EventType eventType,
     String? eventSubtype,
@@ -309,6 +303,7 @@ class CalendarService {
     try {
       final id = _generateId();
       final companion = EventsTableCompanion.insert(
+        userId: userId,
         id: id,
         activityId: Value(activityId), // Now nullable
         eventType: eventType.dbValue,
@@ -338,7 +333,6 @@ class CalendarService {
         throw Exception('Failed to retrieve created event');
       }
 
-      _logger.info('Created event: ${createdEvent.id}');
       return createdEvent;
     } catch (e) {
       _logger.error('Error creating event', error: e);
@@ -374,7 +368,6 @@ class CalendarService {
             ..where((tbl) => tbl.id.equals(event.id)))
           .write(companion);
 
-      _logger.info('Updated event: ${event.id}');
     } catch (e) {
       _logger.error('Error updating event', error: e);
       rethrow;
@@ -391,7 +384,6 @@ class CalendarService {
       final event = await getEventForActivity(activityId);
 
       if (event == null) {
-        _logger.debug('No event found for activity $activityId, skipping nutrition plan flag update');
         return;
       }
 
@@ -406,7 +398,6 @@ class CalendarService {
             ..where((tbl) => tbl.id.equals(event.id)))
           .write(companion);
 
-      _logger.info('Updated event $activityId nutrition plan flag to: $hasNutritionPlan');
     } catch (e) {
       _logger.error('Error updating event nutrition plan flag for activity $activityId', error: e);
       rethrow;
@@ -480,7 +471,6 @@ class CalendarService {
         throw Exception('Failed to retrieve created completion');
       }
 
-      _logger.info('Completed activity: $activityId');
       return completion;
     } catch (e) {
       _logger.error('Error completing activity: $activityId', error: e);
@@ -517,7 +507,6 @@ class CalendarService {
             ..where((tbl) => tbl.activityId.equals(activityId)))
           .write(companion);
 
-      _logger.info('Updated activity completion notes: $activityId');
     } catch (e) {
       _logger.error('Error updating activity completion: $activityId', error: e);
       rethrow;
@@ -607,9 +596,6 @@ class CalendarService {
               carbLoadingStartDate: Value(startDate),
               updatedAt: Value(DateTime.now()),
             ));
-        _logger.info('Created $protocolDays-day carb loading plan for event: $eventId');
-      } else {
-        _logger.info('Created $protocolDays-day standalone carb loading plan');
       }
     } catch (e) {
       _logger.error('Error creating carb loading plan', error: e);
@@ -691,7 +677,6 @@ class CalendarService {
             carbLoadingStartDate: Value.absent(),
           ));
 
-      _logger.info('Deleted carb loading plan for event: $eventId');
     } catch (e) {
       _logger.error('Error deleting carb loading plan', error: e);
       rethrow;
@@ -711,7 +696,6 @@ class CalendarService {
             ..where((tbl) => tbl.id.equals(carbLoadingDayId)))
           .go();
 
-      _logger.info('Deleted carb loading day: $carbLoadingDayId');
     } catch (e) {
       _logger.error('Error deleting carb loading day: $carbLoadingDayId', error: e);
       rethrow;
@@ -739,7 +723,6 @@ class CalendarService {
         bodyWeightPounds: bodyWeightPounds,
       );
 
-      _logger.info('Updated carb loading protocol to $newProtocolDays days for event: $eventId');
     } catch (e) {
       _logger.error('Error updating carb loading protocol', error: e);
       rethrow;

@@ -31,22 +31,49 @@ serve(async (req)=>{
       categoryId = 3 // Assuming 3 is after_run category
       ;
     }
-    // Build the query - get all foods (both generic and branded)
-    let query = supabaseClient.from('foods').select(`
+    // Build the query - get foods from two sources:
+    // 1. Foods with category relationships (for before/during/after suitability)
+    // 2. Essential foods (available globally, like Water and Salt)
+
+    let categorizedFoods = [];
+    let essentialFoods = [];
+
+    if (categoryId) {
+      // Get foods assigned to this specific category
+      const { data, error } = await supabaseClient.from('foods').select(`
+        *,
+        food_categories!inner(category_id),
+        categories!inner(*)
+      `).eq('food_categories.category_id', categoryId);
+
+      if (error) throw error;
+      categorizedFoods = data || [];
+    } else {
+      // Get ALL categorized foods (no category filter)
+      const { data, error } = await supabaseClient.from('foods').select(`
         *,
         food_categories!inner(category_id),
         categories!inner(*)
       `);
-    // Filter by category if provided
-    if (categoryId) {
-      query = query.eq('food_categories.category_id', categoryId);
+
+      if (error) throw error;
+      categorizedFoods = data || [];
     }
-    // Note: generic_only filter removed since brand_id column was removed from schema
-    // Execute query
-    const { data: foods, error } = await query;
-    if (error) {
-      throw error;
+
+    // Always get essential foods (Water, Salt, etc.) - these are available in all phases
+    const { data: essentialData, error: essentialError } = await supabaseClient.from('foods').select('*').eq('is_essential', true);
+    if (!essentialError && essentialData) {
+      essentialFoods = essentialData;
     }
+
+    // Combine and deduplicate foods
+    const foodsMap = new Map();
+    for (const food of [...categorizedFoods, ...essentialFoods]) {
+      if (!foodsMap.has(food.id)) {
+        foodsMap.set(food.id, food);
+      }
+    }
+    const foods = Array.from(foodsMap.values());
     // Format the response
     const formattedFoods = foods?.map((food)=>({
         id: food.id,

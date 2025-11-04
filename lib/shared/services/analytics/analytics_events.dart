@@ -70,6 +70,7 @@ extension AnalyticsEvents on AnalyticsTracker {
   Future<void> trackPlanGenerated({
     required String deviceId,
     required String planId,
+    required String activityType,
     required double distanceMiles,
     required double paceMinutesPerMile,
     required int totalCalories,
@@ -82,6 +83,7 @@ extension AnalyticsEvents on AnalyticsTracker {
     return track('plan_generated', properties: {
       'device_id': deviceId,
       'plan_id': planId,
+      'activity_type': activityType,
       'timestamp': DateTime.now().toIso8601String(),
       'distance_miles': distanceMiles,
       'pace_minutes_per_mile': paceMinutesPerMile,

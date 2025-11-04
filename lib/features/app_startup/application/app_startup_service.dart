@@ -190,11 +190,6 @@ class AppStartupService {
       // First check if user tapped a notification
       final notificationPlanId = NotificationService.getPendingNavigationPlanId();
       if (notificationPlanId != null) {
-        _logger.debug(
-          'Found pending notification navigation',
-          context: 'NOTIFICATION',
-          data: {'planId': notificationPlanId},
-        );
         return notificationPlanId;
       }
       

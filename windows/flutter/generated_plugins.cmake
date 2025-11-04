@@ -4,6 +4,8 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  geolocator_windows
+  printing
   sentry_flutter
   sqlite3_flutter_libs
   url_launcher_windows

@@ -43,20 +43,7 @@ class SharedFoodSearchService {
 
   /// Search Open Food Facts for products
   Future<List<FoodSearchResult>> searchProducts(String query) async {
-    try {
-      _logger.debug('Searching Open Food Facts',
-        context: 'SharedFoodSearchService',
-        data: {'query': query},
-      );
-
-      final results = await _openFoodFactsService.searchProducts(query);
-
-      _logger.debug('Search completed',
-        context: 'SharedFoodSearchService',
-        data: {'query': query, 'resultCount': results.length},
-      );
-
-      return results;
+    try {      final results = await _openFoodFactsService.searchProducts(query);      return results;
     } on SearchException catch (e) {
       _logger.error('Search failed with SearchException',
         context: 'SharedFoodSearchService',
@@ -88,14 +75,7 @@ class SharedFoodSearchService {
           data: {'result': result.toString()},
         );
         return null;
-      }
-
-      _logger.debug('Adding search result to user foods',
-        context: 'SharedFoodSearchService',
-        data: {'productId': result.id, 'deviceId': deviceId},
-      );
-
-      // Get product details from Open Food Facts
+      }      // Get product details from Open Food Facts
       final apiProduct = await _productDetailService.getProductDetails(
         openFoodFactsId: result.id,
       );
@@ -115,14 +95,7 @@ class SharedFoodSearchService {
       final categoryIds = <int>[];
 
       // Save to user foods
-      await _userFoodService.saveUserFood(food, categoryIds);
-
-      _logger.debug('Successfully added search result to user foods',
-        context: 'SharedFoodSearchService',
-        data: {'foodId': food.id, 'name': food.name},
-      );
-
-      return food;
+      await _userFoodService.saveUserFood(food, categoryIds);      return food;
     } catch (e) {
       _logger.error('Error adding search result to user foods',
         context: 'SharedFoodSearchService',

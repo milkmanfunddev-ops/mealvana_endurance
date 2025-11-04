@@ -45,7 +45,7 @@ part 'app_database.g.dart';
 
 @DriftDatabase(tables: [
   // Core v1 tables
-  UserProfilesTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
+  UsersTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
   // New v2 tables
   FoodsTable, CategoriesTable, FoodCategoriesTable, BrandsTable, AppContentTable,
 ])
@@ -91,7 +91,7 @@ class AppDatabase extends _$AppDatabase {
 import 'package:drift/drift.dart';
 
 @DataClassName('UserProfile')
-class UserProfilesTable extends Table {
+class UsersTable extends Table {
   TextColumn get deviceId => text()();
   IntColumn get gender => intEnum<Gender>()();
   DateTimeColumn get birthday => dateTime()();
@@ -116,7 +116,7 @@ class UserProfilesTable extends Table {
 @DataClassName('FoodPreference')
 class FoodPreferencesTable extends Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
-  TextColumn get deviceId => text().references(UserProfilesTable, #deviceId, onDelete: KeyAction.cascade)();
+  TextColumn get deviceId => text().references(UsersTable, #deviceId, onDelete: KeyAction.cascade)();
   TextColumn get foodName => text()();
   IntColumn get preference => intEnum<PreferenceType>()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentTimestamp)();

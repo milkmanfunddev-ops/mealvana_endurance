@@ -3,6 +3,7 @@
 /// Tests the device-based authentication system that provides privacy-focused
 /// user identification without traditional accounts. Critical for data integrity
 /// and privacy compliance.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -256,7 +257,7 @@ void main() {
         // Listen to auth state changes
         container.listen(
           authControllerProvider,
-          listener,
+          listener.call,
           fireImmediately: true,
         );
 

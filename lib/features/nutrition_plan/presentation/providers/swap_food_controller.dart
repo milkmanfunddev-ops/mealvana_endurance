@@ -103,13 +103,7 @@ class SwapFoodController extends _$SwapFoodController {
   }
 
   Future<SwapFoodState> _loadFoodsForSwapping(SwapFoodParams params) async {
-    try {
-      _logger.debug('Loading foods for swapping',
-        context: 'SwapFoodController',
-        data: {'category': params.category, 'originalFoodId': params.originalFoodId},
-      );
-
-      // Get current user's device ID and preferences
+    try {      // Get current user's device ID and preferences
       final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
       final deviceId = currentUser?.id ?? 'unknown';
@@ -126,11 +120,7 @@ class SwapFoodController extends _$SwapFoodController {
         preferences: preferences,
         maxResults: 10,
         deviceId: deviceId,
-      );
-
-      _logger.debug('Generated ${recommendations.length} recommendations');
-
-      // Load all foods for search (generic + user foods)
+      );      // Load all foods for search (generic + user foods)
       final allFoods = await _loadAllFoodsForSearch(deviceId);
 
       return SwapFoodState(
@@ -207,10 +197,7 @@ class SwapFoodController extends _$SwapFoodController {
       final userFoods = await userFoodService.getUserFoods(deviceId);
 
       // Combine all foods
-      final allFoods = [...genericFoods, ...userFoods];
-
-      _logger.debug('Loaded ${allFoods.length} total foods for search (${genericFoods.length} generic + ${userFoods.length} user)');
-      return allFoods;
+      final allFoods = [...genericFoods, ...userFoods];      return allFoods;
     } catch (e) {
       _logger.error('Error loading all foods for search',
         context: 'SwapFoodController',
@@ -322,23 +309,9 @@ class SwapFoodController extends _$SwapFoodController {
       // Set searching state
       state = AsyncValue.data(currentState.copyWith(
         isSearchingOpenFoodFacts: true,
-      ));
-
-      _logger.debug('Searching Open Food Facts',
-        context: 'SwapFoodController',
-        data: {'query': query},
-      );
-
-      // Search Open Food Facts
+      ));      // Search Open Food Facts
       final searchService = ref.read(sharedFoodSearchServiceProvider);
-      final results = await searchService.searchProducts(query);
-
-      _logger.debug('Open Food Facts search completed',
-        context: 'SwapFoodController',
-        data: {'query': query, 'resultCount': results.length},
-      );
-
-      // Update state with results
+      final results = await searchService.searchProducts(query);      // Update state with results
       state = AsyncValue.data(currentState.copyWith(
         openFoodFactsResults: results,
         isSearchingOpenFoodFacts: false,
@@ -363,13 +336,7 @@ class SwapFoodController extends _$SwapFoodController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    try {
-      _logger.debug('Adding Open Food Facts result to user foods',
-        context: 'SwapFoodController',
-        data: {'productId': result.id},
-      );
-
-      // Get current user's device ID
+    try {      // Get current user's device ID
       final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
       final deviceId = currentUser?.id ?? 'unknown';
@@ -383,13 +350,7 @@ class SwapFoodController extends _$SwapFoodController {
         state = AsyncValue.data(currentState.copyWith(
           selectedFood: food,
           openFoodFactsResults: [], // Clear search results
-        ));
-
-        _logger.debug('Successfully added and selected Open Food Facts result',
-          context: 'SwapFoodController',
-          data: {'foodId': food.id, 'name': food.name},
-        );
-      } else {
+        ));      } else {
         _logger.warning('Failed to add Open Food Facts result');
       }
 

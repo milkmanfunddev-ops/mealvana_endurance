@@ -92,21 +92,13 @@ Fired when user adds a new item to plan.
 
 ### 4. Reminder Events
 
-#### `reminder_set`
-Fired when user schedules a reminder.
-- **Properties:**
-  - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Plan identifier
-  - `timestamp` (ISO-8601): When reminder was set
-  - `reminder_time` (ISO-8601): Scheduled reminder time
-
 #### `reminder_scheduled`
-Fired when a reminder notification is scheduled to fire (proxy for delivery).
+Fired when user schedules a reminder notification (proxy for delivery).
 - **Properties:**
   - `device_id` (string): Unique device identifier
   - `plan_id` (UUID): Plan identifier
-  - `timestamp` (ISO-8601): When the reminder is scheduled to fire
-  - `scheduled_at` (ISO-8601): When the scheduling action occurred
+  - `reminder_time` (ISO-8601): When the reminder is scheduled to fire
+  - `scheduled_at` (ISO-8601): When the scheduling action occurred (event timestamp)
 
 #### `reminder_clicked`
 Fired when user taps on a reminder notification.
@@ -114,6 +106,18 @@ Fired when user taps on a reminder notification.
   - `device_id` (string): Unique device identifier
   - `plan_id` (UUID): Plan identifier
   - `timestamp` (ISO-8601): Click timestamp
+
+### 5. Barcode Scanning Events
+
+#### `barcode_scanned`
+Fired whenever a barcode is scanned, regardless of the result (success, not found, error, or invalid format).
+- **Properties:**
+  - `device_id` (string): Unique device identifier
+  - `barcode` (string): The scanned barcode value
+  - `result_type` (string): "success" | "not_found" | "error" | "invalid_format"
+  - `product_name` (string, optional): Product name if successfully found
+  - `error_message` (string, optional): Error message if scan failed
+  - `timestamp` (ISO-8601): Scan timestamp
 
 ## How This Fulfills the Metrics Requirements
 
@@ -220,6 +224,7 @@ All events listed above have been implemented in the codebase as of October 2024
 - `macros_edited`: `/lib/features/nutrition_plan/presentation/providers/distance_page_gut_entry_controller.dart`
 - `macro_info_viewed`: `/lib/features/nutrition_plan/presentation/screens/adjust_macros_screen.dart`
 - `reminder_set`, `reminder_scheduled`, `reminder_clicked`: `/lib/shared/services/notification_service.dart`
+- `barcode_scanned`: `/lib/features/barcode_scanning/application/barcode_scanner_service.dart`
 
 ### 🔧 Technical Notes
 

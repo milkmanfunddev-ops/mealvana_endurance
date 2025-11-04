@@ -3,6 +3,7 @@
 /// These tests validate the AI nutrition plan generation edge functions
 /// and error handling. Critical for ensuring the revenue-generating 
 /// AI functionality works correctly and degrades gracefully.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -141,15 +142,15 @@ void main() {
 
           // Validate carb targets (within tolerance)
           final expectedCarbs = phaseKey == 'during_run' 
-              ? expectedMacros[phaseKey]!['carbs_total_g']! as double
-              : expectedMacros[phaseKey]!['carbs_g']! as double;
+              ? expectedMacros[phaseKey]!['carbs_total_g']!
+              : expectedMacros[phaseKey]!['carbs_g']!;
               
           expect(totalCarbs, closeTo(expectedCarbs, TestConfig.carbToleranceGrams),
               reason: '$phaseName carbs (${totalCarbs.toStringAsFixed(1)}g) should be close to target ($expectedCarbs g)');
 
           // Validate protein targets for phases that have protein targets
           if (phaseKey != 'during_run') {
-            final expectedProtein = expectedMacros[phaseKey]!['protein_g']! as double;
+            final expectedProtein = expectedMacros[phaseKey]!['protein_g']!;
             expect(totalProtein, closeTo(expectedProtein, TestConfig.proteinToleranceGrams),
                 reason: '$phaseName protein (${totalProtein.toStringAsFixed(1)}g) should be close to target ($expectedProtein g)');
           }
@@ -206,14 +207,14 @@ void main() {
 
           // Get expected targets
           final expectedCarbs = phaseKey == 'during_run' 
-              ? expectedMacros[phaseKey]!['carbs_total_g']! as double
-              : expectedMacros[phaseKey]!['carbs_g']! as double;
+              ? expectedMacros[phaseKey]!['carbs_total_g']!
+              : expectedMacros[phaseKey]!['carbs_g']!;
           final expectedSodium = phaseKey == 'during_run'
-              ? expectedMacros[phaseKey]!['sodium_total_mg']! as double
-              : expectedMacros[phaseKey]!['sodium_mg']! as double;
+              ? expectedMacros[phaseKey]!['sodium_total_mg']!
+              : expectedMacros[phaseKey]!['sodium_mg']!;
           final expectedFluids = phaseKey == 'during_run'
-              ? expectedMacros[phaseKey]!['water_total_ml']! as double
-              : expectedMacros[phaseKey]!['water_ml']! as double;
+              ? expectedMacros[phaseKey]!['water_total_ml']!
+              : expectedMacros[phaseKey]!['water_ml']!;
 
           // CRITICAL: Verify tightened tolerances
           expect(totalCarbs, closeTo(expectedCarbs, 10.0),

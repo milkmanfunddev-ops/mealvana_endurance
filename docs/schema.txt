@@ -1,0 +1,214 @@
+create table public.categories
+(
+    name text    not null,
+    id   integer not null
+        constraint categories_pk
+            primary key
+);
+
+alter table public.categories
+    owner to postgres;
+
+create policy "Anyone can read categories" on public.categories
+    as permissive
+    for select
+    using true;
+
+grant delete, insert, references, select, trigger, truncate, update on public.categories to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.categories to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.categories to service_role;
+
+create table public.product_types
+(
+    id          uuid                     default gen_random_uuid() not null
+        primary key,
+    code        text                                               not null
+        unique,
+    name        text                                               not null,
+    name_plural text                                               not null,
+    sort_order  integer,
+    created_at  timestamp with time zone default now()
+);
+
+alter table public.product_types
+    owner to postgres;
+
+create table public.foods
+(
+    id                      uuid                     default gen_random_uuid() not null
+        primary key,
+    name                    text,
+    image_address           text,
+    created_at              timestamp with time zone default now(),
+    serving_amount          numeric,
+    max_servings_before     integer,
+    max_servings_during     integer,
+    sodium_mg               integer,
+    caffeine_mg             integer,
+    potassium_mg            integer,
+    fat_per_serving         numeric(10, 2),
+    carbs_per_serving       numeric(10, 2),
+    protein_per_serving     numeric(10, 2),
+    calories_per_serving    integer,
+    fluid_ml_per_serving    numeric(10, 1),
+    show_in_preferences     boolean                  default false,
+    display_name            varchar(100),
+    max_servings_after      integer,
+    is_electrolyte          boolean                  default false,
+    display_name_plural     varchar(100),
+    to_exclude_from_solver  boolean                  default false,
+    product_type_id         uuid
+        references public.product_types,
+    description             text,
+    serving_description     text,
+    serving_size            varchar(50),
+    is_essential            boolean                  default false,
+    is_other_food           boolean,
+    cycling_suitable        boolean                  default true,
+    swimming_suitable       boolean                  default true,
+    suitable_for_activities jsonb
+);
+
+comment on column public.foods.show_in_preferences is 'Whether this food should be shown in the onboarding food preferences screen';
+
+comment on column public.foods.is_essential is 'No need to present to user to set preferences';
+
+alter table public.foods
+    owner to postgres;
+
+create unique index uq_foods_lower_name
+    on public.foods (lower(name));
+
+create index idx_foods_product_type_id
+    on public.foods (product_type_id);
+
+create policy "Anyone can read foods" on public.foods
+    as permissive
+    for select
+    using true;
+
+create policy "Dev: anon can modify foods" on public.foods
+    as permissive
+    for all
+    to anon
+    using true
+with check true;
+
+grant delete, insert, references, select, trigger, truncate, update on public.foods to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.foods to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.foods to service_role;
+
+create table public.food_categories
+(
+    food_id     uuid    not null
+        references public.foods
+            on delete cascade,
+    category_id integer not null
+        references public.categories,
+    primary key (food_id, category_id)
+);
+
+alter table public.food_categories
+    owner to postgres;
+
+create index idx_food_categories_food
+    on public.food_categories (food_id);
+
+create index idx_food_categories_category_id
+    on public.food_categories (category_id);
+
+create policy "Anyone can read food_categories" on public.food_categories
+    as permissive
+    for select
+    using true;
+
+create policy "Dev: anon can modify food_categories" on public.food_categories
+    as permissive
+    for all
+    to anon
+    using true
+with check true;
+
+grant delete, insert, references, select, trigger, truncate, update on public.food_categories to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.food_categories to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.food_categories to service_role;
+
+grant delete, insert, references, select, trigger, truncate, update on public.product_types to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.product_types to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.product_types to service_role;
+
+create table public.meal_types
+(
+    id           text not null
+        primary key,
+    name         text not null
+        unique,
+    display_name text not null,
+    sort_order   integer default 0
+);
+
+alter table public.meal_types
+    owner to postgres;
+
+create policy "All users can read meal types" on public.meal_types
+    as permissive
+    for select
+    using true;
+
+grant delete, insert, references, select, trigger, truncate, update on public.meal_types to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.meal_types to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.meal_types to service_role;
+
+create table public.carb_loading_foods
+(
+    id                text not null
+        primary key,
+    name              text not null,
+    display_name      text,
+    carbs_per_serving numeric(6, 2),
+    serving_size      text,
+    serving_unit      text,
+    is_default        boolean                  default true,
+    created_at        timestamp with time zone default now()
+);
+
+alter table public.carb_loading_foods
+    owner to postgres;
+
+create policy "All users can read default carb foods" on public.carb_loading_foods
+    as permissive
+    for select
+    using true;
+
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_foods to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_foods to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_foods to service_role;
+
+create table public.carb_loading_food_meal_types
+(
+    food_id      text not null,
+    meal_type_id text not null,
+    primary key (food_id, meal_type_id)
+);
+
+alter table public.carb_loading_food_meal_types
+    owner to postgres;
+
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_food_meal_types to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_food_meal_types to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_food_meal_types to service_role;
+

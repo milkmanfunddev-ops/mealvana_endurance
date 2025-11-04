@@ -160,9 +160,11 @@ class HeroImage extends StatelessWidget {
 class LargeHeroImage extends StatelessWidget {
   const LargeHeroImage({
     super.key,
+    this.imagePath = 'assets/images/woman.png',
     this.onTap,
   });
 
+  final String imagePath;
   final VoidCallback? onTap;
 
   @override
@@ -173,7 +175,7 @@ class LargeHeroImage extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20.r),
         child: Image.asset(
-          'assets/images/woman.png',
+          imagePath,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
             return Container(

@@ -10,8 +10,9 @@ Mealvana Endurance uses Drift (formerly Moor) as its local SQLite database solut
 - **Current Version**: 1
 - **Total Tables**: 27
 - **Synced Tables**: 13 (sync with Supabase)
-- **Local-Only Tables**: 6 (exist only in Drift)
+- **Local-Only Tables**: 7 (exist only in Drift, includes weather cache)
 - **Calendar Feature Tables**: 8 (activities, events, carb_loading_plans, carb_loading_days, activity_completions, plus food system tables)
+- **Weather Table**: 1 (weather_forecasts for API response caching)
 
 ### Database Location
 - **Database Class**: `/lib/shared/database/app_database.dart`
@@ -40,7 +41,7 @@ These tables synchronize with Supabase PostgreSQL for backup and cross-device fu
 | `app_content` | Dynamic UI text/parameters | `id` (UUID) | - |
 | `edge_functions` | Edge function code | `id` (UUID) | - |
 
-### 2. Local-Only Tables (6)
+### 2. Local-Only Tables (7)
 These tables exist only in Drift for local functionality:
 
 | Table | Purpose | Primary Key | Foreign Keys |
@@ -48,6 +49,7 @@ These tables exist only in Drift for local functionality:
 | `macro_targets` | Nutrition target calculations | `id` (text) | - |
 | `workout_notes` | User workout journal | `id` (UUID) | `userId` → `user_profiles.id` |
 | `carb_loading_plans` | Carb loading planning | `id` (UUID) | `userId` → `user_profiles.id` |
+| `weather_forecasts` | Weather API response cache | `id` (int, auto) | - |
 | `carb_loading_simple_plans` | Simplified carb loading | `id` (UUID) | `userId` → `user_profiles.id` |
 | `carb_loading_days` | Individual carb loading day entries | `id` (UUID) | `carb_loading_plan_id` → `carb_loading_plans.id` |
 | `brands` | Brand affiliate information | `id` (text) | - |
@@ -65,6 +67,13 @@ These tables power the calendar and event management features:
 - Events are races (marathons, 5Ks, etc.)
 - Events MAY have an associated activity, but NOT all activities have events
 - An event can exist without an activity (e.g., a future race you haven't trained for yet)
+
+**Multi-Sport Support (Added 2025-10-15)**:
+The `activities` table now supports three sports:
+- **Running** (original): distance_miles, pace_target_minutes_per_mile
+- **Cycling** (new): cycling_power_watts, cycling_ftp_watts
+- **Swimming** (new): swimming_speed_per_100m, swimming_css_seconds_per_100m
+- **Sport Type**: `sport_type` column determines which sport-specific fields are populated
 
 ## Key Design Patterns
 
@@ -93,6 +102,8 @@ Several tables store complex data as JSON:
 - `app_content.content_data` - Dynamic content
 - `carb_loading_plans.planData` - Carb loading details
 - `carb_loading_simple_plans.daySelectionsJson` - Food selections
+- `foods.suitable_for_activities` - Sport-specific food suitability (JSONB)
+- `user_foods.suitable_for_activities` - Sport-specific food suitability (JSONB)
 
 ## Table Details
 
@@ -283,7 +294,7 @@ ls drift_schemas/v1/drift_schema_v1.json
 #### Step 2: Modify Your Tables
 ```dart
 // Example: Add new column to existing table
-class UserProfilesTable extends Table {
+class UsersTable extends Table {
   // ... existing columns ...
   TextColumn get newField => text().nullable()(); // New column
 }

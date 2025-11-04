@@ -3,6 +3,7 @@
 /// These tests ensure that database schema migrations preserve user data
 /// and maintain app stability during version upgrades. This is critical
 /// for preventing app crashes when users update the app.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/shared/database/database.dart';

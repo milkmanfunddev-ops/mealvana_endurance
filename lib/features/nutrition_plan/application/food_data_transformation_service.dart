@@ -21,13 +21,6 @@ class FoodDataTransformationService {
     final foodId = item['food_id'] as String;
     final quantity = item['quantity'] as num;
 
-    _logger.debug('Transforming edge function item',
-      data: {
-        'food_id': foodId,
-        'quantity': quantity,
-      },
-    );
-
     // Look up food details from database (checks both foods and user_foods tables)
     final foodDetails = await _foodRepository.getFoodById(foodId);
 
@@ -90,30 +83,6 @@ class FoodDataTransformationService {
     // Generate display name using database fields
     final displayName = _generateDisplayName(quantity, foodDetails);
 
-    _logger.debug('Generated display name',
-      data: {
-        'food_id': foodId,
-        'quantity': quantity,
-        'display_name': displayName,
-        'display_override': foodDetails.displayOverride,
-      },
-    );
-
-    // Log raw database values first
-    _logger.debug('Raw database values for transformation',
-      data: {
-        'food_id': foodId,
-        'food_name': foodDetails.name,
-        'effectiveCaloriesPerServing': foodDetails.effectiveCaloriesPerServing,
-        'effectiveCarbsPerServing': foodDetails.effectiveCarbsPerServing,
-        'effectiveProteinPerServing': foodDetails.effectiveProteinPerServing,
-        'effectiveFatPerServing': foodDetails.effectiveFatPerServing,
-        'effectiveSodiumMg': foodDetails.effectiveSodiumMg,
-        'fluidMlPerServing': foodDetails.fluidMlPerServing,
-        'quantity': quantity,
-      },
-    );
-
     // Calculate nutritional values based on quantity and food details from database
     final calculatedCalories = foodDetails.effectiveCaloriesPerServing * quantity;
     final calculatedCarbs = foodDetails.effectiveCarbsPerServing * quantity;
@@ -121,19 +90,6 @@ class FoodDataTransformationService {
     final calculatedFat = foodDetails.effectiveFatPerServing * quantity;
     final calculatedSodium = foodDetails.effectiveSodiumMg * quantity;
     final calculatedFluids = (foodDetails.fluidMlPerServing ?? 0.0) * quantity;
-
-    _logger.debug('Calculated nutritional values',
-      data: {
-        'food_id': foodId,
-        'quantity': quantity,
-        'calories': calculatedCalories.round(),
-        'carbs': calculatedCarbs.round(),
-        'protein': calculatedProtein.round(),
-        'fat': calculatedFat.round(),
-        'sodium': calculatedSodium.round(),
-        'fluids': calculatedFluids.round(),
-      },
-    );
 
     return FoodItemData(
       id: foodId,

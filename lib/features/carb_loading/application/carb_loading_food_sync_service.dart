@@ -27,8 +27,6 @@ class CarbLoadingFoodSyncService {
   /// This should be called during app startup to ensure data is available offline
   Future<void> syncCarbLoadingFoods() async {
     try {
-      _logger.info('Starting carb loading foods sync from Supabase');
-
       // Call the get-carb-loading-foods edge function
       final response = await _supabase.functions.invoke(
         'get-carb-loading-foods',
@@ -57,9 +55,6 @@ class CarbLoadingFoodSyncService {
       // Sync foods and their meal type associations
       await _syncFoodsToLocalDatabase(foodsData);
 
-      _logger.info(
-        'Successfully synced ${foodsData.length} carb loading foods and ${mealTypesData.length} meal types',
-      );
     } catch (e) {
       _logger.error(
         'Error syncing carb loading foods from Supabase',
@@ -93,8 +88,6 @@ class CarbLoadingFoodSyncService {
         );
       }
     });
-
-    _logger.debug('Synced ${mealTypesData.length} meal types to local database');
   }
 
   /// Sync foods and their meal type associations to local database
@@ -144,8 +137,6 @@ class CarbLoadingFoodSyncService {
         }
       }
     });
-
-    _logger.debug('Synced ${foodsData.length} carb loading foods to local database');
   }
 }
 

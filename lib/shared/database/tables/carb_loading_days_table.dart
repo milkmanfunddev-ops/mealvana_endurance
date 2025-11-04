@@ -28,7 +28,11 @@ class CarbLoadingDaysTable extends Table {
   IntColumn get loggedCarbsGrams => integer().withDefault(const Constant(0)).named('logged_carbs_grams')();
   IntColumn get loggedCalories => integer().withDefault(const Constant(0)).named('logged_calories')();
   BoolColumn get completed => boolean().withDefault(const Constant(false)).named('completed')();
-  
+
+  // Sync tracking (offline-first architecture)
+  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
+  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+
   @override
   Set<Column> get primaryKey => {id};
   

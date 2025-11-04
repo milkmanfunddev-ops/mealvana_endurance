@@ -44,11 +44,7 @@ class FoodRepository {
       final foods = genericFoodsData.map((json) => _mapEdgeFunctionFoodToFoodItem(json)).toList();
 
       // Sync foods to local database for offline access
-      await _syncFoodsToLocalDatabase(genericFoodsData);
-
-      _logger.debug('Synced ${foods.length} foods to local database via Edge Function');
-
-      return foods;
+      await _syncFoodsToLocalDatabase(genericFoodsData);      return foods;
     } catch (e) {
       _logger.error('Error fetching generic foods from get-foods Edge Function',
         context: 'FoodRepository',
@@ -171,10 +167,7 @@ class FoodRepository {
           case FoodCategory.afterRun:
             return true; // All foods are suitable after run
         }
-      }).toList();
-
-      _logger.debug('Found ${filteredFoods.length} foods for category ${category.name}');
-      return filteredFoods;
+      }).toList();      return filteredFoods;
     } catch (e) {
       _logger.error('Error fetching foods by category',
         context: 'FoodRepository',
@@ -196,20 +189,7 @@ class FoodRepository {
 
       if (foodEntry != null) {
         // Log sports drink data from local Drift database
-        if (foodEntry.name?.toLowerCase().contains('sports drink') == true) {
-          _logger.debug('Retrieved sports drink from Drift database',
-            data: {
-              'id': foodEntry.id,
-              'name': foodEntry.name,
-              'carbsPerServing': foodEntry.carbsPerServing,
-              'caloriesPerServing': foodEntry.caloriesPerServing,
-              'proteinPerServing': foodEntry.proteinPerServing,
-              'fatPerServing': foodEntry.fatPerServing,
-              'sodiumMg': foodEntry.sodiumMg,
-              'fluidMlPerServing': foodEntry.fluidMlPerServing,
-            },
-          );
-        }
+        if (foodEntry.name?.toLowerCase().contains('sports drink') == true) {        }
         return _mapLocalFoodToFoodItem(foodEntry);
       }
 
@@ -275,10 +255,7 @@ class FoodRepository {
       final preferredFoods = categoryFoods.where((food) {
         return likedFoodNames.contains(food.name) ||
                willingToTryNames.contains(food.name);
-      }).toList();
-
-      _logger.debug('Found ${preferredFoods.length} preferred foods for category ${category.name}');
-      return preferredFoods;
+      }).toList();      return preferredFoods;
     } catch (e) {
       _logger.error('Error fetching preferred foods',
         context: 'FoodRepository',
@@ -301,10 +278,7 @@ class FoodRepository {
         ..where((f) => f.name.like('%$lowerQuery%')))
         .get();
 
-      final foods = foodEntries.map((entry) => _mapLocalFoodToFoodItem(entry)).toList();
-
-      _logger.debug('Found ${foods.length} foods matching query: $query');
-      return foods;
+      final foods = foodEntries.map((entry) => _mapLocalFoodToFoodItem(entry)).toList();      return foods;
     } catch (e) {
       _logger.error('Error searching foods',
         context: 'FoodRepository',
@@ -708,20 +682,7 @@ class FoodRepository {
 
       // Log each food being synced for debugging
       for (final json in supabaseFoodsData) {
-        if ((json['name'] as String).toLowerCase().contains('sports drink')) {
-          _logger.debug('Syncing sports drink data from edge function',
-            data: {
-              'id': json['id'],
-              'name': json['name'],
-              'carbs_per_serving': json['carbs_per_serving'],
-              'calories_per_serving': json['calories_per_serving'],
-              'protein_per_serving': json['protein_per_serving'],
-              'fat_per_serving': json['fat_per_serving'],
-              'sodium_mg': json['sodium_mg'],
-              'fluid_ml_per_serving': json['fluid_ml_per_serving'],
-            },
-          );
-        }
+        if ((json['name'] as String).toLowerCase().contains('sports drink')) {        }
       }
 
       // Convert Supabase data to FoodsTableCompanion objects for insertion
@@ -764,11 +725,7 @@ class FoodRepository {
         for (final food in foodsToInsert) {
           batch.insert(_database.foodsTable, food);
         }
-      });
-
-      _logger.debug('Successfully synced ${foodsToInsert.length} foods to local database');
-
-    } catch (e) {
+      });    } catch (e) {
       _logger.error('Error syncing foods to local database',
         context: 'FoodRepository',
         error: e,

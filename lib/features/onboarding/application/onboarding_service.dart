@@ -51,6 +51,38 @@ class OnboardingService {
     return user;
   }
 
+  /// Complete sport preferences step
+  Future<void> saveSportPreferences(
+    String userId, {
+    bool? giSensitivity,
+    int? ftpWatts,
+    int? typicalBikeBottles,
+    bool? hasAeroBottle,
+    bool? hasBentoBox,
+    int? cssPacePer100mSeconds,
+    bool? typicalWetsuit,
+    String? typicalSwimCapType,
+  }) async {
+    await _authService.updateSportPreferences(
+      userId,
+      giSensitivity: giSensitivity,
+      ftpWatts: ftpWatts,
+      typicalBikeBottles: typicalBikeBottles,
+      hasAeroBottle: hasAeroBottle,
+      hasBentoBox: hasBentoBox,
+      cssPacePer100mSeconds: cssPacePer100mSeconds,
+      typicalWetsuit: typicalWetsuit,
+      typicalSwimCapType: typicalSwimCapType,
+    );
+
+    // Track sport preferences saved
+    await _analytics.track('sport_preferences_saved', properties: {
+      'gi_sensitivity': giSensitivity,
+      'has_cycling': ftpWatts != null,
+      'has_swimming': cssPacePer100mSeconds != null,
+    });
+  }
+
   /// Complete food preferences step
   Future<void> saveFoodPreferences(
     String userId,

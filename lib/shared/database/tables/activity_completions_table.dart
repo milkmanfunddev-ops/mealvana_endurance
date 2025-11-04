@@ -37,7 +37,11 @@ class ActivityCompletionsTable extends Table {
   // Analysis (populated by background processing)
   RealColumn get nutritionAdherenceScore => real().nullable().named('nutrition_adherence_score')(); // 0.0 to 1.0 based on plan execution
   RealColumn get performanceVsTarget => real().nullable().named('performance_vs_target')(); // Actual performance vs. planned
-  
+
+  // Sync tracking (offline-first architecture)
+  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
+  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+
   @override
   Set<Column> get primaryKey => {id};
   

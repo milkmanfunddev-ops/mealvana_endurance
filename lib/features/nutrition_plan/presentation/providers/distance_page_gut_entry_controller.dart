@@ -4,13 +4,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
-import '../../../calendar/domain/activity.dart';
+import '../../../calendar/domain/activity.dart' as calendar;
 import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/macro_targets.dart';
 import '../../data/macro_repository.dart';
 import '../../application/llm_nutrition_plan_service.dart';
+import '../../application/macro_generation_service.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
@@ -27,7 +29,7 @@ class PendingActivityData {
     required this.scheduledDateTime,
     required this.distanceMiles,
     required this.paceMinutesPerMile,
-    this.intensityLevel = IntensityLevel.moderate,
+    this.intensityLevel = calendar.IntensityLevel.moderate,
     this.notes,
   });
 
@@ -35,7 +37,7 @@ class PendingActivityData {
   final DateTime scheduledDateTime;
   final double distanceMiles;
   final double paceMinutesPerMile;
-  final IntensityLevel intensityLevel;
+  final calendar.IntensityLevel intensityLevel;
   final String? notes;
 }
 
@@ -399,7 +401,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
           scheduledDateTime: scheduledDateTime,
           distanceMiles: distance,
           paceMinutesPerMile: paceMinutes,
-          intensityLevel: IntensityLevel.moderate,
+          intensityLevel: calendar.IntensityLevel.moderate,
           notes: 'Created from nutrition plan generation',
         );
 
@@ -460,6 +462,147 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
           errorMessage: error.toString(),
         );
         
+        rethrow; // Re-throw so the screen can handle it
+      }
+    });
+  }
+
+  /// Generate cycling macro targets - delegates to MacroGenerationService
+  Future<void> generateCyclingMacros({
+    required double distanceMiles,
+    required double speedMph,
+    required String terrain,
+    required String indoorOutdoor,
+    required int elevationGainFt,
+    required String sessionGoal,
+    required String intensityTarget,
+    required int timeBeforeMinutes,
+    required DateTime scheduledDate,
+    required TimeOfDay scheduledTime,
+    required double temperatureC,
+    required double humidityPct,
+    String? activityId,
+    String? eventId,
+  }) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    DebugLogger.info('🚀 DEBUG: Starting cycling macro generation...');
+    DebugLogger.info('🔍 DEBUG: Distance: $distanceMiles mi');
+    DebugLogger.info('🔍 DEBUG: Speed: $speedMph mph');
+    DebugLogger.info('🔍 DEBUG: Terrain: $terrain');
+    DebugLogger.info('🔍 DEBUG: Indoor/Outdoor: $indoorOutdoor');
+
+    // Set loading state
+    state = AsyncData(currentState.copyWith(
+      isGeneratingMacros: true,
+      errorMessage: null,
+    ));
+
+    state = await AsyncValue.guard(() async {
+      String planId = '';
+      String deviceId = 'unknown';
+
+      try {
+        // Generate plan_id for North-Star metric threading
+        const uuid = Uuid();
+        planId = uuid.v4();
+
+        DebugLogger.debug('🆔 DEBUG: Generated plan_id: $planId');
+
+        // Track plan generation started
+        final user = await _authService.getCurrentUser();
+        deviceId = user?.id ?? 'unknown';
+
+        await _analytics.trackPlanGenerationStarted(
+          deviceId: deviceId,
+          planId: planId,
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: 60.0 / speedMph, // Convert speed to pace equivalent
+          gutTrainingLevel: user?.gutTraining.name ?? 'medium',
+        );
+
+        // Store pending activity data (don't create yet)
+        DebugLogger.info('📅 DEBUG: Storing pending cycling activity data...');
+        final scheduledDateTime = DateTime(
+          scheduledDate.year,
+          scheduledDate.month,
+          scheduledDate.day,
+          scheduledTime.hour,
+          scheduledTime.minute,
+        );
+
+        final activityTitle = '${distanceMiles.toStringAsFixed(1)} mi Ride';
+
+        final pendingActivityData = PendingActivityData(
+          title: activityTitle,
+          scheduledDateTime: scheduledDateTime,
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: (60.0 / speedMph), // Convert speed to pace equivalent
+          intensityLevel: calendar.IntensityLevel.moderate,
+          notes: 'Created from cycling nutrition plan generation',
+        );
+
+        DebugLogger.info('✅ DEBUG: Activity data stored (not created yet)');
+
+        // Create the service instance
+        final macroService = MacroGenerationService(
+          supabaseClient: ref.read(appExternalDepsProvider).supabaseClient,
+          macroRepository: ref.read(macroRepositoryProvider.future),
+          authService: _authService,
+          analytics: _analytics,
+        );
+
+        DebugLogger.info('🎯 DEBUG: Calling MacroGenerationService...');
+
+        // Call the service
+        final macroTargets = await macroService.generateCyclingMacros(
+          planId: planId,
+          deviceId: deviceId,
+          distanceMiles: distanceMiles,
+          speedMph: speedMph,
+          terrain: terrain,
+          indoorOutdoor: indoorOutdoor,
+          timeBeforeMinutes: timeBeforeMinutes,
+          elevationGainFt: elevationGainFt,
+          intensityTarget: intensityTarget,
+          sessionGoal: sessionGoal,
+          temperatureC: temperatureC,
+          humidityPct: humidityPct,
+        );
+
+        DebugLogger.info('✅ DEBUG: Successfully generated cycling macro targets');
+
+        return currentState.copyWith(
+          isGeneratingMacros: false,
+          macroTargets: macroTargets,
+          planId: planId,
+          activityId: activityId,
+          eventId: eventId,
+          pendingActivityData: pendingActivityData,
+        );
+
+      } catch (error) {
+        DebugLogger.error('❌ DEBUG: Error generating cycling macro targets: $error');
+
+        // Track the error
+        await _analytics.track('app_error', properties: {
+          'error_type': 'Cycling Macro Targets Generation Error',
+          'error_message': error.toString(),
+          'screen_name': 'Cycling Input',
+          'distance': distanceMiles,
+          'speed': speedMph,
+        });
+
+        // Track macro generation failed
+        await _analytics.trackPlanGenerationFailed(
+          deviceId: deviceId,
+          planId: planId,
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: 60.0 / speedMph,
+          errorMessage: error.toString(),
+        );
+
         rethrow; // Re-throw so the screen can handle it
       }
     });
@@ -571,6 +714,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     // Convert edge function response to MacroTargets with correct field names
     final macroTargets = MacroTargets(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
+      activityType: ActivityType.running,
       preRun: PreRunMacros(
         carbsG: toDouble(macrosData['pre_run_carbs_g'], 'pre_run_carbs_g'),
         proteinG: toDouble(macrosData['pre_run_protein_g_optional'], 'pre_run_protein_g_optional'),
@@ -617,6 +761,7 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
     await _analytics.trackPlanGenerated(
       deviceId: deviceId,
       planId: planId,
+      activityType: 'running',
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
       totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
@@ -629,6 +774,179 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
       afterRunItems: 1,
       isFirstPlan: true,
     );
+  }
+
+  /// Generate macros for running (wrapper around main generateMacros)
+  Future<void> generateRunningMacros({
+    required String distanceText,
+    required String paceText,
+    required int timeBeforeRunMinutes,
+    required GutTraining gutTraining,
+    required DistanceUnit distanceUnit,
+    required PaceUnit paceUnit,
+    required DateTime scheduledDate,
+    required TimeOfDay scheduledTime,
+    SweatRateCat? sweatRateCat,
+    double? temperatureC,
+    double? humidityPct,
+    String? activityId,
+    String? eventId,
+  }) async {
+    // Delegate to the main generateMacros method
+    await generateMacros(
+      distanceText: distanceText,
+      paceText: paceText,
+      timeBeforeRunMinutes: timeBeforeRunMinutes,
+      gutTraining: gutTraining,
+      distanceUnit: distanceUnit,
+      paceUnit: paceUnit,
+      scheduledDate: scheduledDate,
+      scheduledTime: scheduledTime,
+      sweatRateCat: sweatRateCat,
+      temperatureC: temperatureC,
+      humidityPct: humidityPct,
+      activityId: activityId,
+      eventId: eventId,
+    );
+  }
+
+  /// Generate macros for swimming
+  Future<void> generateSwimmingMacros({
+    required int distanceMeters,
+    required int paceSecondsper100m,
+    required String poolOrOpenWater,
+    required double waterTempC,
+    required String intensityTarget,
+    required String sessionGoal,
+    required int timeBeforeMinutes,
+    required DateTime scheduledDate,
+    required TimeOfDay scheduledTime,
+    String? activityId,
+    String? eventId,
+  }) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    DebugLogger.info('🚀 DEBUG: Starting swimming macro generation...');
+    DebugLogger.info('🔍 DEBUG: Distance: $distanceMeters meters');
+    DebugLogger.info('🔍 DEBUG: Pace: $paceSecondsper100m sec/100m');
+    DebugLogger.info('🔍 DEBUG: Environment: $poolOrOpenWater');
+
+    // Set loading state
+    state = AsyncData(currentState.copyWith(
+      isGeneratingMacros: true,
+      errorMessage: null,
+    ));
+
+    state = await AsyncValue.guard(() async {
+      String planId = '';
+      String deviceId = 'unknown';
+
+      try {
+        // Generate plan_id for North-Star metric threading
+        const uuid = Uuid();
+        planId = uuid.v4();
+
+        DebugLogger.debug('🆔 DEBUG: Generated plan_id: $planId');
+
+        // Track plan generation started
+        final user = await _authService.getCurrentUser();
+        deviceId = user?.id ?? 'unknown';
+
+        // Calculate approximate pace in min/mile for analytics
+        final distanceMiles = distanceMeters / 1609.34;
+        final durationMinutes = (distanceMeters / 100.0) * (paceSecondsper100m / 60.0);
+        final approximatePaceMinPerMile = durationMinutes / distanceMiles;
+
+        await _analytics.trackPlanGenerationStarted(
+          deviceId: deviceId,
+          planId: planId,
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: approximatePaceMinPerMile,
+          gutTrainingLevel: user?.gutTraining.name ?? 'medium',
+        );
+
+        // Store pending activity data (don't create yet)
+        DebugLogger.info('📅 DEBUG: Storing pending swimming activity data...');
+        final scheduledDateTime = DateTime(
+          scheduledDate.year,
+          scheduledDate.month,
+          scheduledDate.day,
+          scheduledTime.hour,
+          scheduledTime.minute,
+        );
+
+        final activityTitle = '${distanceMeters}m Swim';
+
+        final pendingActivityData = PendingActivityData(
+          title: activityTitle,
+          scheduledDateTime: scheduledDateTime,
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: approximatePaceMinPerMile,
+          intensityLevel: calendar.IntensityLevel.moderate,
+          notes: 'Created from swimming nutrition plan generation',
+        );
+
+        DebugLogger.info('✅ DEBUG: Activity data stored (not created yet)');
+
+        // Create the service instance
+        final macroService = MacroGenerationService(
+          supabaseClient: ref.read(appExternalDepsProvider).supabaseClient,
+          macroRepository: ref.read(macroRepositoryProvider.future),
+          authService: _authService,
+          analytics: _analytics,
+        );
+
+        DebugLogger.info('🎯 DEBUG: Calling MacroGenerationService...');
+
+        // Call the service
+        final macroTargets = await macroService.generateSwimmingMacros(
+          planId: planId,
+          deviceId: deviceId,
+          distanceMeters: distanceMeters,
+          paceSecondsper100m: paceSecondsper100m,
+          poolOrOpenWater: poolOrOpenWater,
+          timeBeforeMinutes: timeBeforeMinutes,
+          intensityTarget: intensityTarget,
+          sessionGoal: sessionGoal,
+          waterTempC: waterTempC,
+        );
+
+        DebugLogger.info('✅ DEBUG: Successfully generated swimming macro targets');
+
+        return currentState.copyWith(
+          isGeneratingMacros: false,
+          macroTargets: macroTargets,
+          planId: planId,
+          activityId: activityId,
+          eventId: eventId,
+          pendingActivityData: pendingActivityData,
+        );
+
+      } catch (error) {
+        DebugLogger.error('❌ DEBUG: Error generating swimming macro targets: $error');
+
+        // Track the error
+        await _analytics.track('app_error', properties: {
+          'error_type': 'Swimming Macro Targets Generation Error',
+          'error_message': error.toString(),
+          'screen_name': 'Swimming Input',
+          'distance': distanceMeters,
+          'pace': paceSecondsper100m,
+        });
+
+        // Track macro generation failed
+        await _analytics.trackPlanGenerationFailed(
+          deviceId: deviceId,
+          planId: planId,
+          distanceMiles: distanceMeters / 1609.34,
+          paceMinutesPerMile: (distanceMeters / 100.0) * (paceSecondsper100m / 60.0) / (distanceMeters / 1609.34),
+          errorMessage: error.toString(),
+        );
+
+        rethrow; // Re-throw so the screen can handle it
+      }
+    });
   }
 
   /// Update a specific macro value and recalculate linked values

@@ -80,12 +80,6 @@ class AuthRepositoryEdge {
 
       // Handle 409 Conflict (user already exists) as success
       if (e is FunctionException && e.status == 409) {
-        _logger.info(
-          'User already exists when creating user',
-          context: 'AUTH_EDGE',
-          data: {'deviceId': deviceId},
-        );
-
         // Try to fetch the existing user
         final existingUser = await getUserByDeviceId(deviceId);
         if (existingUser != null) {
@@ -197,15 +191,6 @@ class AuthRepositoryEdge {
           (key, value) => MapEntry(key, value.value),
         ),
       };
-
-      _logger.debug(
-        'Saving food preferences',
-        context: 'AUTH_EDGE',
-        data: {
-          'deviceId': deviceId,
-          'preferencesCount': preferences.length,
-        },
-      );
 
       // Call Edge Function
       final response = await _supabase.functions.invoke(

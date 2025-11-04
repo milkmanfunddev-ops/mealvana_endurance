@@ -35,6 +35,8 @@ import 'tables/carb_loading_user_foods_table.dart';
 import 'tables/carb_loading_food_meal_types_table.dart';
 import 'tables/carb_loading_user_food_meal_types_table.dart';
 import 'tables/carb_loading_day_meals_table.dart';
+// NEW: Weather feature table
+import 'tables/weather_forecasts_table.dart';
 import '../services/logging_service.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
@@ -83,6 +85,9 @@ part 'app_database.g.dart';
   CarbLoadingFoodMealTypesTable,
   CarbLoadingUserFoodMealTypesTable,
   CarbLoadingDayMealsTable,
+
+  // Weather feature tables
+  WeatherForecastsTable,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase({AppLogger? logger})
@@ -161,10 +166,8 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         // Create all v1 tables for fresh installs
-        _logger.database('Creating new v1 database schema (26 tables)');
         await m.createAll();
         await _populateDefaultData();
-        _logger.database('Database v1 schema created successfully');
       },
       // No onUpgrade needed - v1 is the baseline, all users start fresh
       beforeOpen: (details) async {
@@ -184,7 +187,6 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _populateDefaultData() async {
     try {
       // Step 1: Populate categories (nutrition plan timing)
-      _logger.database('Populating categories', operation: 'populate_data');
       await batch((batch) {
         batch.insert(categoriesTable,
           CategoriesTableCompanion.insert(id: const Value(1), name: 'before_run'),
@@ -201,7 +203,6 @@ class AppDatabase extends _$AppDatabase {
       });
 
       // Step 1b: Populate meal types (carb loading meals)
-      _logger.database('Populating meal types', operation: 'populate_data');
       await batch((batch) {
         batch.insert(mealTypesTable,
           MealTypesTableCompanion.insert(
@@ -238,7 +239,6 @@ class AppDatabase extends _$AppDatabase {
       });
 
       // Step 2: Populate product types with seed data
-      _logger.database('Populating product types', operation: 'populate_data');
       await batch((batch) {
         // Product types data provided by user
         final productTypes = [
@@ -274,8 +274,6 @@ class AppDatabase extends _$AppDatabase {
           );
         }
       });
-
-      _logger.database('Default data populated successfully');
     } catch (e) {
       _logger.error('Failed to populate default data',
         context: 'DATABASE',
@@ -524,11 +522,6 @@ class AppDatabase extends _$AppDatabase {
         batch.insert(foodsTable, _mapToFoodEntry(food), mode: InsertMode.insertOrReplace);
       }
     });
-    
-    _logger.database('Cached foods from Supabase', 
-      operation: 'cache_foods',
-      data: {'food_count': foodsData.length}
-    );
   }
   
   /// Get foods by category
@@ -574,15 +567,6 @@ class AppDatabase extends _$AppDatabase {
     );
     
     await into(appContentTable).insertOnConflictUpdate(entry);
-    
-    _logger.database('Cached app content', 
-      operation: 'cache_content',
-      data: {
-        'environment': contentData['environment'],
-        'locale': contentData['locale'],
-        'version': contentData['version']
-      }
-    );
   }
   
   /// Helper method to map Supabase food data to FoodEntry (updated for new simplified schema)
@@ -786,16 +770,6 @@ class AppDatabase extends _$AppDatabase {
         );
       }
     });
-
-    _logger.database('Saved user food with categories',
-      operation: 'save_user_food',
-      data: {
-        'user_food_id': id,
-        'device_id': deviceId,
-        'name': name,
-        'category_count': categoryIds.length,
-      }
-    );
   }
 
   /// Get user foods for a device
@@ -831,10 +805,6 @@ class AppDatabase extends _$AppDatabase {
         ..where((f) => f.id.equals(userFoodId))).go();
 
       if (deletedRows > 0) {
-        _logger.database('Deleted user food completely',
-          operation: 'delete_user_food',
-          data: {'user_food_id': userFoodId}
-        );
         return true;
       }
       return false;

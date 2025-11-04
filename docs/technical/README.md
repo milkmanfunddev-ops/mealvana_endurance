@@ -447,7 +447,7 @@ part 'app_database.g.dart';
 
 @DriftDatabase(tables: [
   // Core v1 tables
-  UserProfilesTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
+  UsersTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
   // New v2 tables
   FoodsTable, CategoriesTable, FoodCategoriesTable, BrandsTable, AppContentTable,
 ])

@@ -2,6 +2,7 @@
 /// 
 /// This file demonstrates our focused testing strategy and validates
 /// the test infrastructure works correctly with the actual codebase.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 

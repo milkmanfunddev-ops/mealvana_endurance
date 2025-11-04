@@ -3,6 +3,7 @@
 /// These tests ensure that nutrition plans meet user macro targets within
 /// acceptable tolerance levels. This validates the core value proposition
 /// of the app - accurate, personalized nutrition recommendations.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -200,8 +201,8 @@ void main() {
           actualDuringSodium += servings * sodiumPerServing;
         }
 
-        final targetDuringCarbs = macroTargets['during_run']!['carbs_total_g']! as double;
-        final targetDuringSodium = macroTargets['during_run']!['sodium_total_mg']! as double;
+        final targetDuringCarbs = macroTargets['during_run']!['carbs_total_g']!;
+        final targetDuringSodium = macroTargets['during_run']!['sodium_total_mg']!;
 
         expect(actualDuringCarbs, closeTo(targetDuringCarbs, TestConfig.carbToleranceGrams),
             reason: 'During-run food carbs (${actualDuringCarbs.toStringAsFixed(1)}g) should be close to target ($targetDuringCarbs g)');
@@ -296,8 +297,8 @@ void main() {
             
             // Also count fluid foods (sports drinks, coconut water, etc.)
             final foodName = itemMap['food_name'] as String;
-            if (_isFluidFood(foodName)) {
-              final fluidVolume = _estimateFluidVolume(foodName, servings);
+            if (isFluidFood(foodName)) {
+              final fluidVolume = estimateFluidVolume(foodName, servings);
               actualWater += fluidVolume;
             }
           }
@@ -442,7 +443,7 @@ void main() {
             final foodName = itemMap['food_name'] as String;
             
             totalDuringCarbs += servings * carbsPerServing;
-            if (_isFluidFood(foodName)) {
+            if (isFluidFood(foodName)) {
               hasHydration = true;
             }
           }
@@ -546,14 +547,14 @@ void main() {
   });
 
   // Helper functions
-  bool _isFluidFood(String foodName) {
+  bool isFluidFood(String foodName) {
     return foodName.contains('drink') || 
            foodName.contains('water') || 
            foodName.contains('juice') || 
            foodName.toLowerCase().contains('coconut');
   }
 
-  double _estimateFluidVolume(String foodName, double servings) {
+  double estimateFluidVolume(String foodName, double servings) {
     // Rough estimates for common fluid foods
     if (foodName.contains('sports_drink')) {
       return servings * 240; // ~8 fl oz per serving

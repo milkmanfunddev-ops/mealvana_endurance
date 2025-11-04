@@ -1,0 +1,18 @@
+-- Update activity_type constraint to allow cycling and swimming
+-- The code uses activity_type column (not sport_type) to store the sport type
+-- This migration fixes the constraint to match the code's expectations
+
+-- Drop the old constraint
+ALTER TABLE activities
+DROP CONSTRAINT IF EXISTS activity_type_check;
+
+-- Add new constraint that includes cycling and swimming
+ALTER TABLE activities
+ADD CONSTRAINT activity_type_check CHECK (activity_type IN ('running', 'cycling', 'swimming'));
+
+-- Update comment to reflect the new usage
+COMMENT ON COLUMN activities.activity_type IS 'Type of endurance sport: running, cycling, or swimming';
+
+-- Note: The sport_type column exists but is not used by the app code
+-- The sport_type column was added by a previous migration but the code continued using activity_type
+-- We keep sport_type for backwards compatibility but it's effectively unused

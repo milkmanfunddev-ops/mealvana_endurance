@@ -55,9 +55,7 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
 
       await _setupSuperProperties();
 
-      _isInitialized = true;
-      _logger.info('Analytics initialized', context: 'ANALYTICS');
-    } catch (error, stackTrace) {
+      _isInitialized = true;    } catch (error, stackTrace) {
       _logger.error(
         'Failed to initialize Mixpanel',
         context: 'ANALYTICS',

@@ -15,6 +15,16 @@ class UserProfile {
   final String appVersion;
   final bool swipeHintShown;
 
+  // Sport-specific preferences
+  final bool? giSensitivity;
+  final int? ftpWatts;
+  final int? typicalBikeBottles;
+  final bool? hasAeroBottle;
+  final bool? hasBentoBox;
+  final int? cssPacePer100mSeconds;
+  final bool? typicalWetsuit;
+  final String? typicalSwimCapType;
+
   UserProfile({
     required this.id,
     required this.gender,
@@ -29,6 +39,15 @@ class UserProfile {
     this.onboardingCompleted = false,
     required this.appVersion,
     this.swipeHintShown = false,
+    // Sport preferences
+    this.giSensitivity,
+    this.ftpWatts,
+    this.typicalBikeBottles,
+    this.hasAeroBottle,
+    this.hasBentoBox,
+    this.cssPacePer100mSeconds,
+    this.typicalWetsuit,
+    this.typicalSwimCapType,
   });
 
   /// Calculate age from birthday
@@ -79,6 +98,15 @@ class UserProfile {
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       appVersion: json['app_version'] as String? ?? '1.0.0',
       swipeHintShown: json['swipe_hint_shown'] as bool? ?? false,
+      // Sport preferences
+      giSensitivity: json['gi_sensitivity'] as bool?,
+      ftpWatts: json['ftp_watts'] as int?,
+      typicalBikeBottles: json['typical_bike_bottles'] as int?,
+      hasAeroBottle: json['has_aero_bottle'] as bool?,
+      hasBentoBox: json['has_bento_box'] as bool?,
+      cssPacePer100mSeconds: json['css_pace_per_100m_seconds'] as int?,
+      typicalWetsuit: json['typical_wetsuit'] as bool?,
+      typicalSwimCapType: json['typical_swim_cap_type'] as String?,
     );
   }
 
@@ -98,6 +126,15 @@ class UserProfile {
       'swipe_hint_shown': swipeHintShown,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      // Sport preferences
+      'gi_sensitivity': giSensitivity,
+      'ftp_watts': ftpWatts,
+      'typical_bike_bottles': typicalBikeBottles,
+      'has_aero_bottle': hasAeroBottle,
+      'has_bento_box': hasBentoBox,
+      'css_pace_per_100m_seconds': cssPacePer100mSeconds,
+      'typical_wetsuit': typicalWetsuit,
+      'typical_swim_cap_type': typicalSwimCapType,
     };
   }
 
@@ -115,6 +152,14 @@ class UserProfile {
     bool? onboardingCompleted,
     String? appVersion,
     bool? swipeHintShown,
+    bool? giSensitivity,
+    int? ftpWatts,
+    int? typicalBikeBottles,
+    bool? hasAeroBottle,
+    bool? hasBentoBox,
+    int? cssPacePer100mSeconds,
+    bool? typicalWetsuit,
+    String? typicalSwimCapType,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -130,6 +175,15 @@ class UserProfile {
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       appVersion: appVersion ?? this.appVersion,
       swipeHintShown: swipeHintShown ?? this.swipeHintShown,
+      // Sport preferences
+      giSensitivity: giSensitivity ?? this.giSensitivity,
+      ftpWatts: ftpWatts ?? this.ftpWatts,
+      typicalBikeBottles: typicalBikeBottles ?? this.typicalBikeBottles,
+      hasAeroBottle: hasAeroBottle ?? this.hasAeroBottle,
+      hasBentoBox: hasBentoBox ?? this.hasBentoBox,
+      cssPacePer100mSeconds: cssPacePer100mSeconds ?? this.cssPacePer100mSeconds,
+      typicalWetsuit: typicalWetsuit ?? this.typicalWetsuit,
+      typicalSwimCapType: typicalSwimCapType ?? this.typicalSwimCapType,
     );
   }
 }

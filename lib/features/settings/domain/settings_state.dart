@@ -17,7 +17,13 @@ class SettingsState {
   final String saveButtonText;
   final bool isSaving;
   final String? errorMessage;
-  
+
+  // Sport settings section labels
+  final String sportSettingsSectionTitle;
+  final String giSensitivityLabel;
+  final String cyclingSectionTitle;
+  final String swimmingSectionTitle;
+
   // User data
   final Gender? gender;
   final DateTime? birthday;
@@ -28,6 +34,16 @@ class SettingsState {
   final DistanceUnit preferredDistanceUnit;
   final PaceUnit preferredPaceUnit;
   final GutTraining gutTrainingLevel;
+
+  // Sport preferences
+  final bool? giSensitivity;
+  final int? ftpWatts;
+  final int? typicalBikeBottles;
+  final bool? hasAeroBottle;
+  final bool? hasBentoBox;
+  final int? cssPacePer100mSeconds;
+  final bool? typicalWetsuit;
+  final String? typicalSwimCapType;
 
   const SettingsState({
     required this.title,
@@ -42,6 +58,10 @@ class SettingsState {
     required this.paceUnitLabel,
     required this.gutTrainingLabel,
     required this.saveButtonText,
+    this.sportSettingsSectionTitle = 'Sport Settings',
+    this.giSensitivityLabel = 'GI Sensitivity',
+    this.cyclingSectionTitle = 'Cycling',
+    this.swimmingSectionTitle = 'Swimming',
     this.isSaving = false,
     this.errorMessage,
     this.gender,
@@ -53,6 +73,14 @@ class SettingsState {
     this.preferredDistanceUnit = DistanceUnit.miles,
     this.preferredPaceUnit = PaceUnit.minPerMile,
     this.gutTrainingLevel = GutTraining.moderate,
+    this.giSensitivity,
+    this.ftpWatts,
+    this.typicalBikeBottles,
+    this.hasAeroBottle,
+    this.hasBentoBox,
+    this.cssPacePer100mSeconds,
+    this.typicalWetsuit,
+    this.typicalSwimCapType,
   });
 
   SettingsState copyWith({
@@ -68,6 +96,10 @@ class SettingsState {
     String? paceUnitLabel,
     String? gutTrainingLabel,
     String? saveButtonText,
+    String? sportSettingsSectionTitle,
+    String? giSensitivityLabel,
+    String? cyclingSectionTitle,
+    String? swimmingSectionTitle,
     bool? isSaving,
     String? errorMessage,
     Gender? gender,
@@ -79,6 +111,14 @@ class SettingsState {
     DistanceUnit? preferredDistanceUnit,
     PaceUnit? preferredPaceUnit,
     GutTraining? gutTrainingLevel,
+    bool? giSensitivity,
+    int? ftpWatts,
+    int? typicalBikeBottles,
+    bool? hasAeroBottle,
+    bool? hasBentoBox,
+    int? cssPacePer100mSeconds,
+    bool? typicalWetsuit,
+    String? typicalSwimCapType,
   }) {
     return SettingsState(
       title: title ?? this.title,
@@ -93,6 +133,10 @@ class SettingsState {
       paceUnitLabel: paceUnitLabel ?? this.paceUnitLabel,
       gutTrainingLabel: gutTrainingLabel ?? this.gutTrainingLabel,
       saveButtonText: saveButtonText ?? this.saveButtonText,
+      sportSettingsSectionTitle: sportSettingsSectionTitle ?? this.sportSettingsSectionTitle,
+      giSensitivityLabel: giSensitivityLabel ?? this.giSensitivityLabel,
+      cyclingSectionTitle: cyclingSectionTitle ?? this.cyclingSectionTitle,
+      swimmingSectionTitle: swimmingSectionTitle ?? this.swimmingSectionTitle,
       isSaving: isSaving ?? this.isSaving,
       errorMessage: errorMessage,
       gender: gender ?? this.gender,
@@ -104,6 +148,14 @@ class SettingsState {
       preferredDistanceUnit: preferredDistanceUnit ?? this.preferredDistanceUnit,
       preferredPaceUnit: preferredPaceUnit ?? this.preferredPaceUnit,
       gutTrainingLevel: gutTrainingLevel ?? this.gutTrainingLevel,
+      giSensitivity: giSensitivity ?? this.giSensitivity,
+      ftpWatts: ftpWatts ?? this.ftpWatts,
+      typicalBikeBottles: typicalBikeBottles ?? this.typicalBikeBottles,
+      hasAeroBottle: hasAeroBottle ?? this.hasAeroBottle,
+      hasBentoBox: hasBentoBox ?? this.hasBentoBox,
+      cssPacePer100mSeconds: cssPacePer100mSeconds ?? this.cssPacePer100mSeconds,
+      typicalWetsuit: typicalWetsuit ?? this.typicalWetsuit,
+      typicalSwimCapType: typicalSwimCapType ?? this.typicalSwimCapType,
     );
   }
 }

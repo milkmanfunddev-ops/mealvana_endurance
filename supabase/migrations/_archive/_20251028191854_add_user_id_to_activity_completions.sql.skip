@@ -1,0 +1,26 @@
+-- Add user_id column to activity_completions table for efficient querying
+-- This ensures schema parity between Supabase and local Drift database
+
+-- Step 1: Add user_id column as nullable (to allow backfill)
+-- Note: Using TEXT type to match activities.user_id column type
+-- Note: No foreign key constraint due to type mismatch (users.id is UUID, user_id is TEXT)
+ALTER TABLE activity_completions
+ADD COLUMN user_id TEXT;
+
+-- Step 2: Backfill existing records by joining with activities table
+UPDATE activity_completions ac
+SET user_id = a.user_id
+FROM activities a
+WHERE ac.activity_id = a.id
+  AND ac.user_id IS NULL;
+
+-- Step 3: Make user_id NOT NULL (after backfill completes)
+ALTER TABLE activity_completions
+ALTER COLUMN user_id SET NOT NULL;
+
+-- Step 4: Create index for efficient user-based queries
+CREATE INDEX IF NOT EXISTS idx_activity_completions_user_id
+ON activity_completions(user_id);
+
+-- Step 5: Add comment for documentation
+COMMENT ON COLUMN activity_completions.user_id IS 'User who completed the activity (denormalized from activities table for query efficiency)';

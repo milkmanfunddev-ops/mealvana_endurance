@@ -2,6 +2,7 @@
 /// 
 /// These tests validate supporting edge functions like
 /// save-food-preferences and get-foods.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -2,6 +2,7 @@
 /// 
 /// These tests validate performance characteristics, concurrent access,
 /// and reliability of edge functions.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

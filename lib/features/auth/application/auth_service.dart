@@ -36,12 +36,7 @@ class AuthService {
   }) async {
     // Get device ID
     final deviceId = await _getDeviceId();
-    _logger.info(
-      'Creating user',
-      context: 'AUTH',
-      data: {'deviceId': deviceId},
-    );
-    
+
     // Get app version (simplified for now)
     const appVersion = '1.0.0';
     
@@ -240,6 +235,44 @@ class AuthService {
   Future<void> updateUserProfile(UserProfile profile) async {
     final userRepo = await _userRepository;
     await userRepo.updateUserProfile(profile);
+  }
+
+  /// Update sport preferences for a user
+  Future<void> updateSportPreferences(
+    String userId, {
+    bool? giSensitivity,
+    int? ftpWatts,
+    int? typicalBikeBottles,
+    bool? hasAeroBottle,
+    bool? hasBentoBox,
+    int? cssPacePer100mSeconds,
+    bool? typicalWetsuit,
+    String? typicalSwimCapType,
+  }) async {
+    // Get current user profile
+    final currentUser = await getCurrentUser();
+    if (currentUser == null) {
+      throw Exception('No user found to update sport preferences');
+    }
+
+    // Update the user profile with sport preferences
+    final updatedProfile = currentUser.copyWith(
+      giSensitivity: giSensitivity,
+      ftpWatts: ftpWatts,
+      typicalBikeBottles: typicalBikeBottles,
+      hasAeroBottle: hasAeroBottle,
+      hasBentoBox: hasBentoBox,
+      cssPacePer100mSeconds: cssPacePer100mSeconds,
+      typicalWetsuit: typicalWetsuit,
+      typicalSwimCapType: typicalSwimCapType,
+      updatedAt: DateTime.now(),
+    );
+
+    // Save to local database
+    final userRepo = await _userRepository;
+    await userRepo.updateUserProfile(updatedProfile);
+
+    // TODO: Sync to Supabase when edge function is ready
   }
 
   /// Check if user has completed onboarding
