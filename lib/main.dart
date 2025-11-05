@@ -11,6 +11,9 @@ import 'shared/widgets/root_app_widget.dart';
 
 Future<void> main() async {
   runZonedGuarded(() async {
+    // Initialize widgets binding for Sentry frame tracking BEFORE Sentry init
+    SentryWidgetsFlutterBinding.ensureInitialized();
+
     // Load environment variables from .env file
     await dotenv.load(fileName: '.env');
 
@@ -91,9 +94,6 @@ Future<void> main() async {
 
 /// App runner function called after Sentry initialization
 Future<void> _runMealvanaApp(AppConfig config) async {
-  // Use SentryWidgetsFlutterBinding for Sentry frame tracking integration
-  SentryWidgetsFlutterBinding.ensureInitialized();
-
   // Initialize Supabase (non-recoverable initialization) using config
   await Supabase.initialize(
     url: config.supabaseUrl,

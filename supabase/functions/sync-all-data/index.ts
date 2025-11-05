@@ -45,13 +45,14 @@ serve(async (req) => {
       carbLoadingDaysResult,
       activityCompletionsResult,
     ] = await Promise.allSettled([
-      // 1. Nutrition Plan Foods (all foods with categories)
+      // 1. Nutrition Plan Foods (all foods, with or without categories)
+      // Using left join (no !inner) to include uncategorized foods
       supabaseClient
         .from('foods')
         .select(`
           *,
-          food_categories!inner(category_id),
-          categories!inner(*)
+          food_categories(category_id),
+          categories(*)
         `),
 
       // 2. Carb Loading Foods
@@ -137,6 +138,24 @@ serve(async (req) => {
     extractData(carbLoadingPlansResult, 'carb_loading_plans');
     extractData(carbLoadingDaysResult, 'carb_loading_days');
     extractData(activityCompletionsResult, 'activity_completions');
+
+    // Transform carb loading foods to include meal_type_ids array
+    // The query returns nested carb_loading_food_meal_types objects,
+    // but the Flutter app expects a flat meal_type_ids array
+    if (response.data.carb_loading_foods && Array.isArray(response.data.carb_loading_foods)) {
+      response.data.carb_loading_foods = response.data.carb_loading_foods.map((food: any) => {
+        const mealTypeIds = food.carb_loading_food_meal_types?.map((mt: any) => mt.meal_type_id) || [];
+
+        // Return food without the nested junction table data
+        const { carb_loading_food_meal_types, ...foodData } = food;
+
+        return {
+          ...foodData,
+          meal_type_ids: mealTypeIds
+        };
+      });
+      console.log(`✓ Transformed ${response.data.carb_loading_foods.length} carb loading foods with meal_type_ids`);
+    }
 
     // Also get essential foods (Water, Salt, etc.)
     const { data: essentialFoods, error: essentialError } = await supabaseClient

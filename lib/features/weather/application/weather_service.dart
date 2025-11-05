@@ -137,7 +137,7 @@ class WeatherService {
         body: {
           'latitude': latitude,
           'longitude': longitude,
-          'date': activityDate.toIso8601String(),
+          'activity_date': activityDate.toIso8601String(),
         },
       );
 

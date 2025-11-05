@@ -1,658 +1,122 @@
-Launching lib/main.dart on iphone 15 pro max in debug mode...
-Xcode build done.                                           11.9s
-Connecting to VM Service at ws://127.0.0.1:52865/iUxSlpftdNM=/ws
-Connected to the VM Service.
-[sentry] [warning] FramesTrackingIntegration disabled: incompatible binding, SentryWidgetsFlutterBinding has not been instantiated. Please, use SentryWidgetsFlutterBinding.ensureInitialized() instead of WidgetsFlutterBinding.ensureInitialized()
+Restarted application in 1,145ms.
 flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:08.738 (+0:00:00.631509)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [DATABASE] Creating new v2 database schema (26 tables with cycling/swimming + reminders)
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:08.819 (+0:00:00.711758)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [DATABASE] Populating categories
-flutter: │ 🐛 Data: {operation: populate_data}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:08.829 (+0:00:00.722507)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [DATABASE] Populating meal types
-flutter: │ 🐛 Data: {operation: populate_data}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:08.832 (+0:00:00.725411)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [DATABASE] Populating product types
-flutter: │ 🐛 Data: {operation: populate_data}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:08.837 (+0:00:00.730212)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [DATABASE] Default data populated successfully
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:08.838 (+0:00:00.730914)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [DATABASE] Database v2 schema created successfully
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: 📂 Database file already exists at: /Users/leemartin/Library/Developer/CoreSimulator/Devices/336CB945-DD5C-4AE3-AFA6-82F66F9D48E1/data/Containers/Data/Application/DCB7BFDC-AB0F-418E-B0DC-1C953ACD45D1/Documents/mealvana_endurance_db.sqlite
+flutter: 💡 This is NOT a fresh install - using existing database
+flutter: 📂 Existing database opened (v2 → v2)
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:39:08.874 (+0:00:00.767416)\^[[0m
+flutter: \^[[38;5;12m│ 19:49:34.833 (+0:00:00.688929)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ANALYTICS] Analytics initialized\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:39:19.105 (+0:00:10.998234)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Creating user\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {deviceId: 91286A91-EF09-474A-91A6-EA73DFE28E6A}\^[[0m
+flutter: \^[[38;5;12m│ 💡 [APP_STARTUP] Starting unified data sync\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 9A7B36C0-9D0D-4CF6-9E21-D164F5741681}\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
 flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:22.183 (+0:00:14.076008)
+flutter: │ 19:49:36.214 (+0:00:02.070468)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [AUTH_EDGE] Saving food preferences
-flutter: │ 🐛 Data: {deviceId: 91286A91-EF09-474A-91A6-EA73DFE28E6A, preferencesCount: 29}
+flutter: │ 🐛 [DATA_SYNC] Merging downloaded data into Drift
 flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:39:33.923 (+0:00:25.816387)\^[[0m
+flutter: \^[[38;5;12m│ 19:49:36.221 (+0:00:02.076725)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [EVENTS_REPOSITORY] Created event locally (will upload in background)\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {eventId: event_1761853173913}\^[[0m
+flutter: \^[[38;5;12m│ 💡 [FOOD_REPOSITORY] Syncing nutrition foods from downloaded data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {count: 31}\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:39:33.926 (+0:00:25.818773)\^[[0m
+flutter: \^[[38;5;12m│ 19:49:36.226 (+0:00:02.081704)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 Created new event: test123\^[[0m
+flutter: \^[[38;5;12m│ 💡 [CARB_LOADING_SYNC] Syncing carb loading foods from downloaded data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {carb_foods: 27, meal_types: 7}\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m│ FunctionException(status: 500, details: {error: Could not find the 'device_id' column of 'events' in the schema cache, code: SAVE_EVENT_ERROR, timestamp: 2025-10-30T19:39:34.329Z}, reasonPhrase: Internal Server Error)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:166:5)\^[[0m
-flutter: \^[[38;5;208m│ #2   EventsRepository._uploadEventToSupabase (package:mealvana_endurance/features/events/data/events_repository.dart:306:15)\^[[0m
-flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ 14:39:34.460 (+0:00:26.353480)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ [EVENTS_REPOSITORY] Failed to upload event (will retry on next sync)\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ Data: {eventId: event_1761853173913}\^[[0m
-flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:39:37.967 (+0:00:29.860182)\^[[0m
+flutter: \^[[38;5;12m│ 19:49:36.338 (+0:00:02.193768)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [CARB_LOADING_SERVICE] Created 3-day carb loading plan for event: event_1761853173913\^[[0m
+flutter: \^[[38;5;12m│ 💡 [FOOD_REPOSITORY] Nutrition foods sync completed\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {count: 31}\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 19:49:36.352 (+0:00:02.207836)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [CARB_LOADING_SYNC] Carb loading foods sync completed\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
+flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 19:49:36.358 (+0:00:02.214414)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 🐛 [DATA_SYNC] Successfully merged all data
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 19:49:36.413 (+0:00:02.269304)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [APP_STARTUP] Unified data sync completed successfully\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: 🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)
+flutter: DEBUG: Found cached macro targets:
+flutter:   Pre-run carbs: 152.0g
+flutter:   During-run carbs: 81.0g
+flutter:   Post-run carbs: 76.0g
+flutter:   Total carbs should be: 309.0g
+flutter:   Pre-run sodium: 450.0mg
+flutter:   During-run sodium: 1170.0mg
+flutter:   Post-run sodium: 625.0mg
+flutter:   Total sodium should be: 2245.0mg
+flutter:   Pre-run fluids: 555.0ml
+flutter:   During-run fluids: 1080.0ml
+flutter:   Post-run fluids: 1250.0ml
+flutter:   Total fluids should be: 2885.0ml
+flutter:   isUserModified: false
 flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ FunctionException(status: 400, details: {error: Invalid event_id}, reasonPhrase: Bad Request)\^[[0m
+flutter: \^[[38;5;196m│ FunctionException(status: 400, details: {success: false, message: Missing required fields: latitude, longitude, and activity_date are required}, reasonPhrase: Bad Request)\^[[0m
 flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;196m│ #0   FunctionsClient.invoke (package:functions_client/src/functions_client.dart:167:7)\^[[0m
 flutter: \^[[38;5;196m│ #1   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #2   CarbLoadingRepository._uploadCarbLoadingPlanToSupabase (package:mealvana_endurance/features/carb_loading/data/carb_loading_repository.dart:380:24)\^[[0m
+flutter: \^[[38;5;196m│ #2   WeatherService._fetchWeatherFromAPI (package:mealvana_endurance/features/weather/application/weather_service.dart:135:24)\^[[0m
 flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m│ #4   WeatherService.getWeatherForecast (package:mealvana_endurance/features/weather/application/weather_service.dart:102:24)\^[[0m
+flutter: \^[[38;5;196m│ #5   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m│ #6   CyclingInputController.fetchWeatherForecast (package:mealvana_endurance/features/nutrition_plan/presentation/providers/cycling_input_controller.dart:236:24)\^[[0m
+flutter: \^[[38;5;196m│ #7   <asynchronous suspension>\^[[0m
 flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 14:39:38.285 (+0:00:30.178364)\^[[0m
+flutter: \^[[38;5;196m│ 19:49:47.845 (+0:00:13.701374)\^[[0m
 flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [CARB_LOADING_REPOSITORY] Error uploading carb loading plan, will retry on next sync\^[[0m
+flutter: \^[[38;5;196m│ ⛔ Error fetching weather from API\^[[0m
 flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:39:50.231 (+0:00:42.123855)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 Created new activity: test123\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:39:50.238 (+0:00:42.131120)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [EVENTS_REPOSITORY] Updated event locally (will upload in background)\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {eventId: event_1761853173913}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:39:50.239 (+0:00:42.132550)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 Updated event: event_1761853173913\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:39:50.240 (+0:00:42.133405)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 Updated event: test123\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m│ FunctionException(status: 500, details: {error: Could not find the 'device_id' column of 'activities' in the schema cache, code: SAVE_ACTIVITY_ERROR, timestamp: 2025-10-30T19:39:50.709Z}, reasonPhrase: Internal Server Error)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:166:5)\^[[0m
-flutter: \^[[38;5;208m│ #2   ActivitiesRepository._uploadActivityToSupabase (package:mealvana_endurance/features/activities/data/activities_repository.dart:262:15)\^[[0m
-flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ 14:39:50.738 (+0:00:42.631026)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ [ACTIVITIES_REPOSITORY] Failed to upload activity (will retry on next sync)\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ Data: {activityId: activity_1761853190219}\^[[0m
-flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m│ FunctionException(status: 400, details: {error: Invalid activity_id or activity does not belong to user}, reasonPhrase: Bad Request)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:166:5)\^[[0m
-flutter: \^[[38;5;208m│ #2   EventsRepository._uploadEventToSupabase (package:mealvana_endurance/features/events/data/events_repository.dart:306:15)\^[[0m
-flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ 14:39:51.100 (+0:00:42.993389)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ [EVENTS_REPOSITORY] Failed to upload event (will retry on next sync)\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ Data: {eventId: event_1761853173913}\^[[0m
-flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:52.367 (+0:00:44.260241)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 Got current location: 37.785834, -122.406417
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:52.424 (+0:00:44.316888)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 No cached weather forecast found for 2025-11-06T00:00:00.000
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:52.425 (+0:00:44.318325)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 Fetching weather from API for 37.785834, -122.406417 on 2025-11-06T13:39:00.000
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:53.087 (+0:00:44.980060)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 Successfully fetched weather forecast: 17.0°C, 69%
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:53.095 (+0:00:44.987784)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 Cached forecast weather forecast (expires: 2025-10-30 15:39:53.089634)
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:57.410 (+0:00:49.303250)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [NUTRITION_PLAN] Macro targets prepared for edge function
-flutter: │ 🐛 Data: {preRunCarbs: 152.0, preRunProtein: 19.0, duringRunCarbsTotal: 81.0, postRunCarbs: 76.0, postRunProtein: 23.0, totalExpectedCarbs: 309.0}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:166:5)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ 14:39:58.518 (+0:00:50.411314)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ [FoodRepository] Food not found in local database - triggering fallback sync\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ Data: {foodId: 43f39d86-8a2c-4139-887e-b2af95ddca78}\^[[0m
-flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: 🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)
 flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:184:5)\^[[0m
+flutter: \^[[38;5;196m│ FunctionException(status: 400, details: {success: false, message: Missing required fields: latitude, longitude, and activity_date are required}, reasonPhrase: Bad Request)\^[[0m
 flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 14:39:59.055 (+0:00:50.947693)\^[[0m
+flutter: \^[[38;5;196m│ #0   FunctionsClient.invoke (package:functions_client/src/functions_client.dart:167:7)\^[[0m
+flutter: \^[[38;5;196m│ #1   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m│ #2   WeatherService._fetchWeatherFromAPI (package:mealvana_endurance/features/weather/application/weather_service.dart:135:24)\^[[0m
+flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m│ #4   WeatherService.getWeatherForecast (package:mealvana_endurance/features/weather/application/weather_service.dart:102:24)\^[[0m
+flutter: \^[[38;5;196m│ #5   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m│ #6   CyclingInputController.fetchWeatherForecast (package:mealvana_endurance/features/nutrition_plan/presentation/providers/cycling_input_controller.dart:236:24)\^[[0m
+flutter: \^[[38;5;196m│ #7   <asynchronous suspension>\^[[0m
 flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [LLMNutritionPlanService] LLM Response Validation: Food Items vs Macro Targets Comparison\^[[0m
-flutter: \^[[38;5;196m│ ⛔ Data: {macro_targets: {total_sodium_mg: 2335, total_fluids_ml: 2993.0, total_carbs_g: 309}, food_items_actual: {total_sodium_mg: 2612, total_fluids_ml: 3219.6000000000004, total_carbs_g: 331}, discrepancies: {sodium_difference_mg: 277, fluids_difference_ml: 226.60000000000036, carbs_difference_g: 22}, percentage_match: {sodium_percentage: 112, fluids_percentage: 108, carbs_percentage: 107}}\^[[0m
+flutter: \^[[38;5;196m│ 19:49:55.461 (+0:00:21.316710)\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ ⛔ Error fetching weather from API\^[[0m
 flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:59.056 (+0:00:50.949443)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [NUTRITION_PLAN] Nutrition plan creation completed
-flutter: │ 🐛 Data: {plan_id: improved-lp-1761853198404-E28E6A, totalFoodItems: 13, beforeItems: 5, duringItems: 4, afterItems: 4}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:39:59.058 (+0:00:50.950743)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 🍎 Nutrition Plan Created
-flutter: │ 🐛 Data: {beforeItems: 5, duringItems: 4, afterItems: 4, totalItems: 13}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:166:5)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ 14:39:59.105 (+0:00:50.998049)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ CREATE mode - activityId provided but activity not found: activity_1761853190219\^[[0m
-flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🔵 [ActivityDetailScreen] Got activityType from state.macroTargets: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.nutritionPlan.activityType: null
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.activity.activityType: null
-flutter: 🔵 [ActivityDetailScreen] Final scheduledLabel: Run scheduled for
-flutter: 🟣 [PlanSectionsWidget] Building with plan.activityType: ActivityType.running
-flutter: 🟣 [PlanSectionsWidget] Number of sections: 3
-flutter: 🟣 [PlanSectionsWidget] Rendering section: before-run, title: Before Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: during-run, title: During Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: after-run, title: After Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: before-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: during-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): During Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: During Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: after-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): After Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: After Run
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:40:01.235 (+0:00:53.128036)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 Created new activity: 12.0 mi Run\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🔵 [ActivityDetailScreen] Got activityType from state.macroTargets: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.nutritionPlan.activityType: null
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.activity.activityType: null
-flutter: 🔵 [ActivityDetailScreen] Final scheduledLabel: Run scheduled for
-flutter: 🟣 [PlanSectionsWidget] Building with plan.activityType: ActivityType.running
-flutter: 🟣 [PlanSectionsWidget] Number of sections: 3
-flutter: 🟣 [PlanSectionsWidget] Rendering section: before-run, title: Before Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: during-run, title: During Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: after-run, title: After Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: before-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: during-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): During Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: During Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: after-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): After Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: After Run
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:40:01.302 (+0:00:53.194803)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [EVENTS_REPOSITORY] No event found for activity, skipping nutrition plan flag update
-flutter: │ 🐛 Data: {activityId: activity_1761853201232}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:40:01.303 (+0:00:53.196494)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [EVENTS_SERVICE] Updated event nutrition plan flag\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {activityId: activity_1761853201232, hasNutritionPlan: true}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:40:01.331 (+0:00:53.224279)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [EVENTS_REPOSITORY] No event found for activity, skipping nutrition plan flag update
-flutter: │ 🐛 Data: {activityId: activity_1761853201232}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:40:01.332 (+0:00:53.225258)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [EVENTS_SERVICE] Updated event nutrition plan flag\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {activityId: activity_1761853201232, hasNutritionPlan: true}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🔵 [ActivityDetailScreen] Got activityType from state.macroTargets: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.nutritionPlan.activityType: null
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.activity.activityType: null
-flutter: 🔵 [ActivityDetailScreen] Final scheduledLabel: Run scheduled for
-flutter: 🟣 [PlanSectionsWidget] Building with plan.activityType: ActivityType.running
-flutter: 🟣 [PlanSectionsWidget] Number of sections: 3
-flutter: 🟣 [PlanSectionsWidget] Rendering section: before-run, title: Before Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: during-run, title: During Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: after-run, title: After Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: before-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: during-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): During Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: During Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: after-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): After Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: After Run
-flutter: 🔵 [ActivityDetailScreen] Got activityType from state.macroTargets: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.nutritionPlan.activityType: null
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.activity.activityType: null
-flutter: 🔵 [ActivityDetailScreen] Final scheduledLabel: Run scheduled for
-flutter: 🟣 [PlanSectionsWidget] Building with plan.activityType: ActivityType.running
-flutter: 🟣 [PlanSectionsWidget] Number of sections: 3
-flutter: 🟣 [PlanSectionsWidget] Rendering section: before-run, title: Before Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: during-run, title: During Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: after-run, title: After Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: before-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: during-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): During Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: During Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: after-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): After Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: After Run
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m│ FunctionException(status: 500, details: {error: Could not find the 'device_id' column of 'activities' in the schema cache, code: SAVE_ACTIVITY_ERROR, timestamp: 2025-10-30T19:40:01.590Z}, reasonPhrase: Internal Server Error)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:166:5)\^[[0m
-flutter: \^[[38;5;208m│ #2   ActivitiesRepository._uploadActivityToSupabase (package:mealvana_endurance/features/activities/data/activities_repository.dart:262:15)\^[[0m
-flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ 14:40:01.608 (+0:00:53.500941)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ [ACTIVITIES_REPOSITORY] Failed to upload activity (will retry on next sync)\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ Data: {activityId: activity_1761853201232}\^[[0m
-flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:166:5)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ 14:40:11.565 (+0:01:03.458224)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ No nutrition plan found for activityId: activity_1761853190219\^[[0m
-flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🔵 [ActivityDetailScreen] Got activityType from state.activity: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.nutritionPlan.activityType: null
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.activity.activityType: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] Final scheduledLabel: Run scheduled for
-flutter: 🟣 [PlanSectionsWidget] Building with plan.activityType: ActivityType.running
-flutter: 🟣 [PlanSectionsWidget] Number of sections: 3
-flutter: 🟣 [PlanSectionsWidget] Rendering section: before-run, title: Before Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: during-run, title: During Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: after-run, title: After Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: before-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: during-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): During Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: During Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: after-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): After Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: After Run
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:40:47.137 (+0:01:39.029682)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 Found cached weather forecast (expires: 2025-10-30 15:39:53.000)
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:40:47.138 (+0:01:39.031053)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 Using database cached weather forecast
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:40:50.017 (+0:01:41.910211)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [NUTRITION_PLAN] Macro targets prepared for edge function
-flutter: │ 🐛 Data: {preRunCarbs: 152.0, preRunProtein: 19.0, duringRunCarbsTotal: 81.0, postRunCarbs: 76.0, postRunProtein: 23.0, totalExpectedCarbs: 309.0}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:184:5)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 14:40:51.074 (+0:01:42.966608)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [LLMNutritionPlanService] LLM Response Validation: Food Items vs Macro Targets Comparison\^[[0m
-flutter: \^[[38;5;196m│ ⛔ Data: {macro_targets: {total_sodium_mg: 2335, total_fluids_ml: 2993.0, total_carbs_g: 309}, food_items_actual: {total_sodium_mg: 2612, total_fluids_ml: 3219.6000000000004, total_carbs_g: 331}, discrepancies: {sodium_difference_mg: 277, fluids_difference_ml: 226.60000000000036, carbs_difference_g: 22}, percentage_match: {sodium_percentage: 112, fluids_percentage: 108, carbs_percentage: 107}}\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:40:51.075 (+0:01:42.968592)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [NUTRITION_PLAN] Nutrition plan creation completed
-flutter: │ 🐛 Data: {plan_id: improved-lp-1761853250968-E28E6A, totalFoodItems: 13, beforeItems: 5, duringItems: 4, afterItems: 4}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:40:51.077 (+0:01:42.969906)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 🍎 Nutrition Plan Created
-flutter: │ 🐛 Data: {beforeItems: 5, duringItems: 4, afterItems: 4, totalItems: 13}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: 🔵 [ActivityDetailScreen] Got activityType from state.macroTargets: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.nutritionPlan.activityType: null
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.activity.activityType: null
-flutter: 🔵 [ActivityDetailScreen] Final scheduledLabel: Run scheduled for
-flutter: 🟣 [PlanSectionsWidget] Building with plan.activityType: ActivityType.running
-flutter: 🟣 [PlanSectionsWidget] Number of sections: 3
-flutter: 🟣 [PlanSectionsWidget] Rendering section: before-run, title: Before Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: during-run, title: During Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: after-run, title: After Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: before-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: during-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): During Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: During Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: after-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): After Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: After Run
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: 🔵 [ActivityDetailScreen] Got activityType from state.macroTargets: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.nutritionPlan.activityType: null
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.activity.activityType: null
-flutter: 🔵 [ActivityDetailScreen] Final scheduledLabel: Run scheduled for
-flutter: 🟣 [PlanSectionsWidget] Building with plan.activityType: ActivityType.running
-flutter: 🟣 [PlanSectionsWidget] Number of sections: 3
-flutter: 🟣 [PlanSectionsWidget] Rendering section: before-run, title: Before Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: during-run, title: During Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: after-run, title: After Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: before-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: during-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): During Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: During Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: after-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): After Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: After Run
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:40:53.934 (+0:01:45.826669)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 Created new activity: 12.0 mi Run\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:40:53.950 (+0:01:45.843270)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [EVENTS_REPOSITORY] No event found for activity, skipping nutrition plan flag update
-flutter: │ 🐛 Data: {activityId: activity_1761853253924}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:40:53.951 (+0:01:45.844270)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [EVENTS_SERVICE] Updated event nutrition plan flag\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {activityId: activity_1761853253924, hasNutritionPlan: true}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 14:40:53.955 (+0:01:45.847967)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [EVENTS_REPOSITORY] No event found for activity, skipping nutrition plan flag update
-flutter: │ 🐛 Data: {activityId: activity_1761853253924}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:40:53.956 (+0:01:45.848735)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [EVENTS_SERVICE] Updated event nutrition plan flag\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {activityId: activity_1761853253924, hasNutritionPlan: true}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🔵 [ActivityDetailScreen] Got activityType from state.macroTargets: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.nutritionPlan.activityType: null
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.activity.activityType: null
-flutter: 🔵 [ActivityDetailScreen] Final scheduledLabel: Run scheduled for
-flutter: 🟣 [PlanSectionsWidget] Building with plan.activityType: ActivityType.running
-flutter: 🟣 [PlanSectionsWidget] Number of sections: 3
-flutter: 🟣 [PlanSectionsWidget] Rendering section: before-run, title: Before Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: during-run, title: During Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: after-run, title: After Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: before-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: during-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): During Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: During Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: after-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): After Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: After Run
-flutter: 🔍 DEBUG: adjust_macros_screen rendering with activityType: running
-flutter: 🔵 [ActivityDetailScreen] Got activityType from state.macroTargets: ActivityType.running
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.nutritionPlan.activityType: null
-flutter: 🔵 [ActivityDetailScreen] ActivityDetailState.activity.activityType: null
-flutter: 🔵 [ActivityDetailScreen] Final scheduledLabel: Run scheduled for
-flutter: 🟣 [PlanSectionsWidget] Building with plan.activityType: ActivityType.running
-flutter: 🟣 [PlanSectionsWidget] Number of sections: 3
-flutter: 🟣 [PlanSectionsWidget] Rendering section: before-run, title: Before Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: during-run, title: During Run
-flutter: 🟣 [PlanSectionsWidget] Rendering section: after-run, title: After Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: before-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: Before Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: during-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): During Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: During Run
-flutter: 🟢 [PlanSectionEditableWidget] Building section: after-run
-flutter: 🟢 [PlanSectionEditableWidget] widget.plan.activityType: ActivityType.running
-flutter: 🟢 [PlanSectionEditableWidget] widget.section.title (hardcoded): After Run
-flutter: 🟢 [PlanSectionEditableWidget] Dynamic title generated: After Run
-flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m│ FunctionException(status: 500, details: {error: Could not find the 'device_id' column of 'activities' in the schema cache, code: SAVE_ACTIVITY_ERROR, timestamp: 2025-10-30T19:40:54.260Z}, reasonPhrase: Internal Server Error)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
-flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:166:5)\^[[0m
-flutter: \^[[38;5;208m│ #2   ActivitiesRepository._uploadActivityToSupabase (package:mealvana_endurance/features/activities/data/activities_repository.dart:262:15)\^[[0m
-flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ 14:40:54.274 (+0:01:46.167472)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ [ACTIVITIES_REPOSITORY] Failed to upload activity (will retry on next sync)\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ Data: {activityId: activity_1761853253924}\^[[0m
-flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: 🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)

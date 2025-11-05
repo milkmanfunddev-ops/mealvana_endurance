@@ -37,6 +37,10 @@ class NutritionPlans extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
 
+  /// Sync tracking (offline-first architecture)
+  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
+  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+
   @override
   Set<Column> get primaryKey => {id};
 

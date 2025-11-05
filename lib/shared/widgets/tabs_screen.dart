@@ -26,34 +26,21 @@ class _TabsScreenState extends State<TabsScreen> {
 
   List<Widget> get _screens => [
     const ActivitiesListScreen(), // PRIMARY TAB: Activities-first interface with calendar picker
+    const _SurveyUnderConstructionScreen(), // Survey/Feedback tab
     const SettingsScreen(),
   ];
 
-  List<BottomNavigationBarItem> get _tabs => [
-    BottomNavigationBarItem(
-      icon: Icon(
-        Icons.list_alt,
-        size: 24,
-        color: Colors.grey,
-      ),
-      activeIcon: Icon(
-        Icons.list_alt,
-        size: 24,
-        color: AppTheme.primary900,
-      ),
+  List<_TabItem> get _tabs => [
+    _TabItem(
+      icon: Icons.list_alt,
       label: 'Activities',
     ),
-    BottomNavigationBarItem(
-      icon: Image.asset(
-        'assets/icons/settings.png',
-        width: 24,
-        height: 24,
-      ),
-      activeIcon: Image.asset(
-        'assets/icons/activeSettings.png',
-        width: 24,
-        height: 24,
-      ),
+    _TabItem(
+      icon: Icons.assignment,
+      label: 'Survey',
+    ),
+    _TabItem(
+      icon: Icons.settings,
       label: 'Settings',
     ),
   ];
@@ -66,19 +53,124 @@ class _TabsScreenState extends State<TabsScreen> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: _tabs,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primary900,
-        unselectedItemColor: Colors.grey,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: SizedBox(
+            height: 70,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(_tabs.length, (index) {
+                final isSelected = _currentIndex == index;
+                final tab = _tabs[index];
+
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      color: Colors.transparent,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            tab.icon,
+                            size: 28,
+                            color: isSelected ? AppTheme.primary900 : Colors.grey,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            tab.label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                              color: isSelected ? AppTheme.primary900 : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TabItem {
+  final IconData icon;
+  final String label;
+
+  _TabItem({
+    required this.icon,
+    required this.label,
+  });
+}
+
+class _SurveyUnderConstructionScreen extends StatelessWidget {
+  const _SurveyUnderConstructionScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.baseCream,
+      appBar: AppBar(
+        title: const Text('Survey'),
+        backgroundColor: AppTheme.baseCream,
+        elevation: 0,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.construction,
+              size: 80,
+              color: AppTheme.primary900.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Survey Coming Soon',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary900,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48),
+              child: Text(
+                'We\'re working on a survey feature to help improve your experience.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

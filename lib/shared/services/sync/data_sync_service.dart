@@ -5,6 +5,8 @@ import '../../database/app_database.dart';
 import '../../database/database_provider.dart';
 import '../logging_service.dart';
 import '../../../features/activities/application/calendar_sync_service.dart';
+import '../../../features/nutrition_plan/data/food_repository.dart';
+import '../../../features/carb_loading/application/carb_loading_food_sync_service.dart';
 
 part 'data_sync_service.g.dart';
 
@@ -15,28 +17,35 @@ DataSyncService dataSyncService(Ref ref) {
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
     calendarSyncService: ref.read(calendarSyncServiceProvider),
+    foodRepository: ref.read(foodRepositoryProvider),
+    carbLoadingFoodSyncService: ref.read(carbLoadingFoodSyncServiceProvider),
   );
 }
 
-/// Unified data sync service with single network call + offline-first architecture
-/// Phase 2A: Single network call to sync-all-data + upload dirty records
-/// Note: Only syncs calendar data (activities, events, carb loading plans/days, completions)
-/// Food syncing is handled by app startup service via checkAndRefreshFoodData()
+/// Unified data sync service - single network call to sync-all-data
+/// Phase 2B: Syncs ALL app data including calendar, nutrition foods, and carb loading foods
+/// Eliminates redundant network calls - everything comes from sync-all-data edge function
 class DataSyncService {
   const DataSyncService({
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
     required CalendarSyncService calendarSyncService,
+    required FoodRepository foodRepository,
+    required CarbLoadingFoodSyncService carbLoadingFoodSyncService,
   })  : _supabase = supabase,
         _database = database,
         _logger = logger,
-        _calendarSyncService = calendarSyncService;
+        _calendarSyncService = calendarSyncService,
+        _foodRepository = foodRepository,
+        _carbLoadingFoodSyncService = carbLoadingFoodSyncService;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
   final CalendarSyncService _calendarSyncService;
+  final FoodRepository _foodRepository;
+  final CarbLoadingFoodSyncService _carbLoadingFoodSyncService;
 
   /// Sync all app data using single network call + upload dirty records
   /// Returns true if sync was successful, false otherwise
@@ -93,18 +102,32 @@ class DataSyncService {
   /// Merge downloaded data into local Drift database
   Future<void> _mergeDownloadedData(Map<String, dynamic> data) async {
     try {
-      // Sync calendar data (activities, events, carb loading, completions)
-      await _calendarSyncService.syncFromDownloadedData(
-        activities: data['activities'] as List<dynamic>,
-        events: data['events'] as List<dynamic>,
-        carbLoadingPlans: data['carb_loading_plans'] as List<dynamic>,
-        carbLoadingDays: data['carb_loading_days'] as List<dynamic>,
-        activityCompletions: data['activity_completions'] as List<dynamic>,
-      );
+      _logger.debug('Merging downloaded data into Drift', context: 'DATA_SYNC');
 
-      // Note: Food syncing (carb loading foods and nutrition foods) is handled
-      // by app startup service via checkAndRefreshFoodData()
-      // This avoids duplicate syncing and keeps the sync-all-data focused on calendar data
+      // Run all merges in parallel for maximum speed
+      await Future.wait([
+        // Calendar data (activities, events, carb loading plans/days, completions)
+        _calendarSyncService.syncFromDownloadedData(
+          activities: data['activities'] as List<dynamic>,
+          events: data['events'] as List<dynamic>,
+          carbLoadingPlans: data['carb_loading_plans'] as List<dynamic>,
+          carbLoadingDays: data['carb_loading_days'] as List<dynamic>,
+          activityCompletions: data['activity_completions'] as List<dynamic>,
+        ),
+
+        // Nutrition plan foods (from sync-all-data, updates seed data)
+        _foodRepository.syncFromDownloadedData(
+          foods: data['nutrition_foods'] as List<dynamic>,
+        ),
+
+        // Carb loading foods and meal types (from sync-all-data, updates seed data)
+        _carbLoadingFoodSyncService.syncFromDownloadedData(
+          carbLoadingFoods: data['carb_loading_foods'] as List<dynamic>,
+          mealTypes: data['meal_types'] as List<dynamic>,
+        ),
+      ]);
+
+      _logger.debug('Successfully merged all data', context: 'DATA_SYNC');
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to merge downloaded data',
@@ -138,6 +161,10 @@ class DataSyncService {
             ..where((tbl) => tbl.needsUpload.equals(true)))
           .get();
 
+      final dirtyNutritionPlans = await (_database.select(_database.nutritionPlans)
+            ..where((tbl) => tbl.needsUpload.equals(true)))
+          .get();
+
       final uploadTasks = <Future<void>>[];
 
       for (final activity in dirtyActivities) {
@@ -160,6 +187,10 @@ class DataSyncService {
         uploadTasks.add(_uploadCompletion(userId, completion));
       }
 
+      for (final nutritionPlan in dirtyNutritionPlans) {
+        uploadTasks.add(_uploadNutritionPlan(userId, nutritionPlan));
+      }
+
       // Note: User foods upload removed - table doesn't have needsUpload column
       // User foods are synced via other mechanisms
 
@@ -176,19 +207,45 @@ class DataSyncService {
 
   Future<void> _uploadActivity(String userId, Activity activity) async {
     try {
+      // Convert Drift Activity to JSON format expected by edge function
+      final activityJson = {
+        'id': activity.id,
+        'userId': activity.userId,
+        'activityType': activity.activityType,
+        'title': activity.title,
+        'scheduledDateTime': activity.scheduledDateTime.toIso8601String(),
+        'status': activity.status,
+        'distanceMiles': activity.distanceMiles,
+        'durationMinutes': activity.durationMinutes,
+        'paceTargetMinutesPerMile': activity.paceTargetMinutesPerMile,
+        'intensityLevel': activity.intensityLevel,
+        'intensityTarget': activity.intensityTarget,
+        'timeBeforeMinutes': activity.timeBeforeMinutes,
+        'notes': activity.notes,
+        // Cycling fields
+        'cyclingSpeedMph': activity.cyclingSpeedMph,
+        'cyclingTerrain': activity.cyclingTerrain,
+        'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
+        'cyclingElevationGainFt': activity.cyclingElevationGainFt,
+        'cyclingSessionGoal': activity.cyclingSessionGoal,
+        // Swimming fields
+        'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
+        'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
+        'swimmingWaterTempC': activity.swimmingWaterTempC,
+        // Completion fields (if activity is completed)
+        'completedAt': activity.completedAt?.toIso8601String(),
+        'actualDistanceMiles': activity.actualDistanceMiles,
+        'actualDurationMinutes': activity.actualDurationMinutes,
+        'completionRating': activity.completionRating,
+        'completionNotes': activity.completionNotes,
+      };
+
       final response = await _supabase.functions.invoke(
         'save-calendar-activity',
         body: {
           'device_id': userId,
-          'activity_id': activity.id,
-          'user_id': activity.userId,
-          'activity_type': activity.activityType,
-          'title': activity.title,
-          'scheduled_date_time': activity.scheduledDateTime.toIso8601String(),
-          'distance_miles': activity.distanceMiles,
-          'duration_minutes': activity.durationMinutes,
-          'status': activity.status,
-          'notes': activity.notes,
+          'activity': activityJson,
+          'operation': 'update', // Use 'update' for sync (handles both create and update)
         },
       );
 
@@ -204,16 +261,38 @@ class DataSyncService {
 
   Future<void> _uploadEvent(String userId, Event event) async {
     try {
+      // Convert Drift Event to JSON format expected by edge function
+      final eventJson = {
+        'id': event.id,
+        'userId': event.userId,
+        'activityId': event.activityId,
+        'eventType': event.eventType,
+        'eventSubtype': event.eventSubtype,
+        'eventName': event.eventName,
+        'location': event.location,
+        'registrationUrl': event.registrationUrl,
+        'startTime': event.startTime, // Already a string
+        'goalTimeMinutes': event.goalTimeMinutes,
+        'goalPaceMinutesPerMile': event.goalPaceMinutesPerMile,
+        'predictedFinishTimeMinutes': event.predictedFinishTimeMinutes,
+        'hasCarbLoading': event.hasCarbLoading,
+        'carbLoadingDays': event.carbLoadingDays,
+        'carbLoadingStartDate': event.carbLoadingStartDate?.toIso8601String(),
+        'hasNutritionPlan': event.hasNutritionPlan,
+        'bibNumber': event.bibNumber,
+        'waveStartTime': event.waveStartTime,
+        'packetPickupInfo': event.packetPickupInfo,
+        'actualFinishTimeMinutes': event.actualFinishTimeMinutes,
+        'finalPlacement': event.finalPlacement,
+        'ageGroupPlacement': event.ageGroupPlacement,
+      };
+
       final response = await _supabase.functions.invoke(
         'save-calendar-event',
         body: {
           'device_id': userId,
-          'event_id': event.id,
-          'user_id': event.userId,
-          'event_name': event.eventName,
-          'event_type': event.eventType,
-          'location': event.location,
-          'activity_id': event.activityId,
+          'event': eventJson,
+          'operation': 'update', // Use 'update' for sync (handles both create and update)
         },
       );
 
@@ -229,23 +308,36 @@ class DataSyncService {
 
   Future<void> _uploadCarbLoadingPlan(String userId, CarbLoadingPlan plan) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'save-carb-loading-plan',
-        body: {
-          'device_id': userId,
-          'operation': 'create',
-          'plan_id': plan.id,
-          'event_id': plan.eventId,
-          'total_days': plan.totalDays,
-          'start_date': plan.startDate.toIso8601String(),
-          'end_date': plan.endDate.toIso8601String(),
-        },
-      );
+      // For sync, use direct Supabase upsert (plan already created locally)
+      // The edge function's 'create' operation expects raw input data we don't have
+      final response = await _supabase
+          .from('carb_loading_plans')
+          .upsert({
+            'id': plan.id,
+            'device_id': userId,
+            'event_id': plan.eventId,
+            'user_id': plan.userId,
+            'total_days': plan.totalDays,
+            'start_date': plan.startDate.toIso8601String().split('T')[0], // YYYY-MM-DD format
+            'end_date': plan.endDate.toIso8601String().split('T')[0],
+            'daily_carb_target_grams': plan.dailyCarbTargetGrams,
+            'daily_calorie_target': plan.dailyCalorieTarget,
+            'generated_at': plan.generatedAt.toIso8601String(),
+            'algorithm_version': plan.algorithmVersion,
+            'adherence_score': plan.adherenceScore,
+            'completed_at': plan.completedAt?.toIso8601String(),
+            'needs_upload': false,
+            'local_updated_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          });
 
-      if (response.status >= 200 && response.status < 300) {
+      // Check for error
+      if (response.error == null) {
         await (_database.update(_database.carbLoadingPlansTable)
               ..where((tbl) => tbl.id.equals(plan.id)))
             .write(const CarbLoadingPlansTableCompanion(needsUpload: Value(false)));
+      } else {
+        throw response.error!;
       }
     } catch (e) {
       _logger.warning('Failed to upload carb loading plan ${plan.id}', context: 'DATA_SYNC', error: e);
@@ -254,23 +346,38 @@ class DataSyncService {
 
   Future<void> _uploadCarbLoadingDay(String userId, CarbLoadingDay day) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'save-carb-loading-plan',
-        body: {
-          'device_id': userId,
-          'operation': 'update_day',
-          'carb_loading_day_id': day.id,
-          'updates': {
+      // Use direct Supabase upsert for carb loading days (already created locally)
+      final response = await _supabase
+          .from('carb_loading_days')
+          .upsert({
+            'id': day.id,
+            'carb_loading_plan_id': day.carbLoadingPlanId,
+            'plan_date': day.planDate.toIso8601String().split('T')[0], // YYYY-MM-DD format
+            'day_number': day.dayNumber,
             'carb_target_grams': day.carbTargetGrams,
+            'carb_protocol_g_per_kg': day.carbProtocolGPerKg,
+            'meal_count': day.mealCount,
+            'breakfast_percent': day.breakfastPercent,
+            'morning_snack_percent': day.morningSnackPercent,
+            'lunch_percent': day.lunchPercent,
+            'afternoon_snack_percent': day.afternoonSnackPercent,
+            'dinner_percent': day.dinnerPercent,
+            'evening_snack_percent': day.eveningSnackPercent,
+            'logged_carbs_grams': day.loggedCarbsGrams,
+            'logged_calories': day.loggedCalories,
             'completed': day.completed,
-          },
-        },
-      );
+            'needs_upload': false,
+            'local_updated_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          });
 
-      if (response.status >= 200 && response.status < 300) {
+      // Check for error
+      if (response.error == null) {
         await (_database.update(_database.carbLoadingDaysTable)
               ..where((tbl) => tbl.id.equals(day.id)))
             .write(const CarbLoadingDaysTableCompanion(needsUpload: Value(false)));
+      } else {
+        throw response.error!;
       }
     } catch (e) {
       _logger.warning('Failed to upload carb loading day ${day.id}', context: 'DATA_SYNC', error: e);
@@ -303,6 +410,47 @@ class DataSyncService {
       }
     } catch (e) {
       _logger.warning('Failed to upload completion ${completion.id}', context: 'DATA_SYNC', error: e);
+    }
+  }
+
+  Future<void> _uploadNutritionPlan(String userId, NutritionPlanEntry plan) async {
+    try {
+      // Use direct Supabase upsert for nutrition plans (already created locally)
+      final response = await _supabase
+          .from('nutrition_plans')
+          .upsert({
+            'id': plan.id,
+            'device_id': plan.deviceId,
+            'plan_data': plan.planData,
+            'plan_id': plan.planId,
+            'plan_name': plan.planName,
+            'distance_miles': plan.distanceMiles,
+            'pace_minutes_per_mile': plan.paceMinutesPerMile,
+            'total_calories': plan.totalCalories,
+            'notes': plan.notes,
+            'activity_id': plan.activityId,
+            'plan_type': plan.planType,
+            'sport_type': plan.sportType,
+            'version': plan.version,
+            'last_modified_by': plan.lastModifiedBy,
+            'client_updated_at': plan.clientUpdatedAt?.toIso8601String(),
+            'is_deleted': plan.isDeleted,
+            'conflict_resolution': plan.conflictResolution,
+            'needs_upload': false,
+            'local_updated_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+
+      // Check for error
+      if (response.error == null) {
+        await (_database.update(_database.nutritionPlans)
+              ..where((tbl) => tbl.id.equals(plan.id)))
+            .write(const NutritionPlansCompanion(needsUpload: Value(false)));
+      } else {
+        throw response.error!;
+      }
+    } catch (e) {
+      _logger.warning('Failed to upload nutrition plan ${plan.id}', context: 'DATA_SYNC', error: e);
     }
   }
 

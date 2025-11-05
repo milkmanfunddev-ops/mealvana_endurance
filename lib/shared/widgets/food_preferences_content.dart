@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
 import 'package:uuid/uuid.dart';
 import '../../features/auth/domain/user_preferences.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
@@ -1113,24 +1114,17 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
             padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 34.h),
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: PrimaryButton(
                 onPressed: widget.isSaving ? null : widget.onSave,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary600,
-                  foregroundColor: AppTheme.baseWhite,
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-                child: Text(
-                  widget.saveButtonText,
-                  style: AppTheme.textStyle.copyWith(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.baseWhite,
-                  ),
-                ),
+                // style: ElevatedButton.styleFrom(
+                //   backgroundColor: AppTheme.primary600,
+                //   foregroundColor: AppTheme.baseWhite,
+                //   padding: EdgeInsets.symmetric(vertical: 16.h),
+                //   shape: RoundedRectangleBorder(
+                //     borderRadius: BorderRadius.circular(12.r),
+                //   ),
+                // ),
+                text: widget.saveButtonText,
               ),
             ),
           );

@@ -154,7 +154,15 @@ function deduplicateFoods(foods) {
 // ---------------- Database Helpers ----------------
 async function getCategoryId(supabase, categoryName) {
   const { data, error } = await supabase.from("categories").select("id").eq("name", categoryName).maybeSingle();
-  if (error || !data) return null;
+  if (error) {
+    console.log(`[CATEGORY] Error fetching category "${categoryName}":`, error);
+    return null;
+  }
+  if (!data) {
+    console.log(`[CATEGORY] Category "${categoryName}" not found in database`);
+    return null;
+  }
+  console.log(`[CATEGORY] Found category "${categoryName}" with id: ${data.id}`);
   return data.id;
 }
 async function getFoodsForPhase(supabase, phase, deviceId, likedFoods, willTryFoods, dislikedFoods, activityType = 'running') {
@@ -165,12 +173,21 @@ async function getFoodsForPhase(supabase, phase, deviceId, likedFoods, willTryFo
 
   // STEP 1: Get generic foods for this phase (if category exists)
   let genericFoods = [];
+  if (!categoryId) {
+    console.log(`[FOODS-${phase.toUpperCase()}] CRITICAL: categoryId is null, cannot fetch foods for phase "${phase}"`);
+  }
   if (categoryId) {
     // Get food IDs for this category
     const { data: foodCategories, error: fcError } = await supabase.from("food_categories").select("food_id").eq("category_id", categoryId);
     if (fcError) {
       console.log(`[FOODS-${phase.toUpperCase()}] Error fetching food categories:`, fcError);
     } else if (foodCategories && foodCategories.length > 0) {
+      console.log(`[FOODS-${phase.toUpperCase()}] Found ${foodCategories.length} food category mappings`);
+    } else if (foodCategories && foodCategories.length === 0) {
+      console.log(`[FOODS-${phase.toUpperCase()}] WARNING: Category ${categoryId} exists but has NO food_categories mappings!`);
+    }
+
+    if (foodCategories && foodCategories.length > 0) {
       const foodIds = foodCategories.map((fc)=>fc.food_id);
       // Get generic foods with activity_type filtering
       // suitable_for_activities is JSONB like {"running": true, "cycling": true, "swimming": false}
@@ -280,7 +297,8 @@ async function getFoodsForPhase(supabase, phase, deviceId, likedFoods, willTryFo
   return allFoods.filter((f)=>{
     const isDisliked = matchesPreference(f, dislikedFoods);
     const isExcludedFromSolver = f.to_exclude_from_solver === true;
-    const isEssential = f.is_essential === true;
+    // Only generic foods have is_essential, user foods don't
+    const isEssential = ('is_essential' in f) && f.is_essential === true;
     // CRITICAL: Log when disliked foods are being filtered out
     if (isDisliked && !isEssential) {
       console.log(`[FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`);
@@ -292,7 +310,8 @@ async function getFoodsForPhase(supabase, phase, deviceId, likedFoods, willTryFo
     return !isExcludedFromSolver;
   }).map((f)=>{
     // Calculate preference score using improved matching
-    const isEssential = f.is_essential === true;
+    // Only generic foods have is_essential, user foods don't
+    const isEssential = ('is_essential' in f) && f.is_essential === true;
     const isLiked = matchesPreference(f, likedFoods);
     const isWilling = matchesPreference(f, willTryFoods) || isEssential;
     let preferenceCategory = 'neutral';
@@ -381,8 +400,10 @@ async function getElectrolyteFoods(supabase, deviceId, likedFoods, willTryFoods)
     Array.from(preferenceSet).some((pref)=>foodName && pref.toLowerCase().includes(foodName) || foodName && foodName.includes(pref.toLowerCase()));
   };
   return allElectrolytes.filter((e)=>{
-    // Only generic foods have is_essential, user foods don't
-    const isEssential = e.is_essential === true;
+    // Check if this is a generic food (has is_essential field)
+    const isGenericFood = 'is_essential' in e;
+    const isEssential = isGenericFood && e.is_essential === true;
+
     if (isEssential) {
       console.log(`[ELECTROLYTE] Including essential electrolyte: ${e.name}`);
       return true;
@@ -412,7 +433,7 @@ async function getElectrolyteFoods(supabase, deviceId, likedFoods, willTryFoods)
       },
       serving_amount: e.serving_amount,
       is_electrolyte: true,
-      is_essential: e.is_essential || false // Only generic foods have this field
+      is_essential: ('is_essential' in e) ? e.is_essential : false // Only generic foods have this field
     }));
 }
 // ---------------- LP Solver Integration ----------------
@@ -802,7 +823,8 @@ async function postProcessPhase(_supabase, result, targets, electrolyteFoods, al
   // Add sodium if needed
   if (needsSodium) {
     console.log(`[POST-PROCESS-${phase?.toUpperCase()}] Adding sodium for deficit: ${sodiumDeficit}mg`);
-    const essentialSodiumOptions = allFoods.filter((f)=>(f.is_essential || f.is_electrolyte) && safe(f.per_serving.sodium_mg) > 0);
+    // Only generic foods have is_essential property
+    const essentialSodiumOptions = allFoods.filter((f)=>((f.is_essential === true) || f.is_electrolyte) && safe(f.per_serving.sodium_mg) > 0);
     const sodiumCandidates = [
       ...electrolyteFoods,
       ...essentialSodiumOptions

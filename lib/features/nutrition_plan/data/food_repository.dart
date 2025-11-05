@@ -182,12 +182,24 @@ class FoodRepository {
   /// Checks both regular foods table and user_foods table
   Future<FoodItem?> getFoodById(String id) async {
     try {
+      // 🐛 DIAGNOSTIC: Log total food count before querying specific food
+      final allFoods = await _database.select(_database.foodsTable).get();
+      final totalFoods = allFoods.length;
+      _logger.debug('🔍 [FOOD_LOOKUP] Searching for food $id (total foods in table: $totalFoods)',
+        context: 'FoodRepository',
+        data: {'foodId': id, 'totalFoodsCount': totalFoods},
+      );
+
       // First try to get from regular foods table
       final foodEntry = await (_database.select(_database.foodsTable)
         ..where((f) => f.id.equals(id)))
         .getSingleOrNull();
 
       if (foodEntry != null) {
+        _logger.debug('✅ [FOOD_LOOKUP] Found food in foods table: ${foodEntry.name}',
+          context: 'FoodRepository',
+          data: {'foodId': id, 'foodName': foodEntry.name},
+        );
         // Log sports drink data from local Drift database
         if (foodEntry.name?.toLowerCase().contains('sports drink') == true) {        }
         return _mapLocalFoodToFoodItem(foodEntry);
@@ -199,12 +211,16 @@ class FoodRepository {
         .getSingleOrNull();
 
       if (userFoodEntry != null) {
+        _logger.debug('✅ [FOOD_LOOKUP] Found food in user_foods table: ${userFoodEntry.name}',
+          context: 'FoodRepository',
+          data: {'foodId': id, 'foodName': userFoodEntry.name},
+        );
         return _mapUserFoodToFoodItem(userFoodEntry);
       }
 
-      _logger.warning('Food not found in either foods or user_foods tables',
+      _logger.warning('⚠️ [FOOD_LOOKUP] Food not found in either table (searched $totalFoods foods)',
         context: 'FoodRepository',
-        data: {'foodId': id},
+        data: {'foodId': id, 'totalFoodsInTable': totalFoods},
       );
       return null;
     } catch (e) {
@@ -731,6 +747,38 @@ class FoodRepository {
         error: e,
       );
       // Don't rethrow - app should continue even if sync fails
+    }
+  }
+
+  /// Sync nutrition foods from pre-downloaded data (from sync-all-data edge function)
+  /// This method is called during app startup after sync-all-data returns
+  /// Updates seed database with latest food data from server
+  Future<void> syncFromDownloadedData({
+    required List<dynamic> foods,
+  }) async {
+    try {
+      _logger.info(
+        'Syncing nutrition foods from downloaded data',
+        context: 'FOOD_REPOSITORY',
+        data: {'count': foods.length},
+      );
+
+      // Reuse existing sync logic that clears and repopulates foods table
+      await _syncFoodsToLocalDatabase(foods);
+
+      _logger.info(
+        'Nutrition foods sync completed',
+        context: 'FOOD_REPOSITORY',
+        data: {'count': foods.length},
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Nutrition foods sync failed',
+        context: 'FOOD_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
     }
   }
 }

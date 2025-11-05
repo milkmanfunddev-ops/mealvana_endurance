@@ -8,9 +8,11 @@ import '../../domain/activity.dart';
 import '../../domain/event.dart';
 import '../providers/calendar_controller.dart';
 import '../widgets/upcoming_event_widget.dart';
-import 'activity_creation_screen.dart';
+import '../../../activities/presentation/screens/activity_creation_screen.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
+import '../../../../features/auth/application/auth_service.dart';
+import '../../../../shared/services/sync/data_sync_service.dart';
 
 /// Main screen showing calendar date picker and daily activity list.
 ///
@@ -30,6 +32,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   DateTime _selectedDate = DateTime.now();
   late ScrollController _dateScrollController;
   bool _showTodayButton = false;
+  bool _showMonthView = false; // NEW: Toggle for month view
 
   // Large range to allow scrolling far in both directions
   static const int _totalDays = 730; // 2 years worth of dates
@@ -79,32 +82,54 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     });
   }
 
+  // NEW: Show date picker dialog
+  Future<void> _showDatePickerDialog() async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+              onPrimary: Colors.white,
+              surface: AppTheme.baseCream,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null && pickedDate != _selectedDate) {
+      setState(() {
+        _selectedDate = pickedDate;
+        // Scroll to the picked date
+        final daysFromToday = _selectedDate.difference(DateTime.now()).inDays;
+        _dateScrollController.animateTo(
+          (_centerIndex + daysFromToday) * _dateItemWidth,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final calendarState = ref.watch(calendarControllerProvider);
     final upcomingEvent = ref.watch(nextUpcomingEventProvider);
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text('My Activities'),
-      //   actions: [
-      //     IconButton(
-      //       icon: const Icon(Icons.today),
-      //       tooltip: 'Go to today',
-      //       onPressed: () {
-      //         setState(() {
-      //           _selectedDate = DateTime.now();
-      //         });
-      //       },
-      //     ),
-      //   ],
-      // ),
       backgroundColor: AppTheme.baseCream,
       body: SafeArea(
         child: Column(
           children: [
             // Calendar Date Picker
-            _buildCalendarPicker(),
+            _buildCalendarPicker(calendarState),
         
             // Content based on calendar state
             Expanded(
@@ -125,6 +150,13 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
                   return RefreshIndicator(
                     onRefresh: () async {
+                      // Sync data with Supabase (download + upload dirty records)
+                      final authService = ref.read(authServiceProvider);
+                      final user = await authService.getCurrentUser();
+                      if (user != null) {
+                        await ref.read(dataSyncServiceProvider).syncAllData(user.id);
+                      }
+                      // Refresh local UI state
                       ref.invalidate(calendarControllerProvider);
                       ref.invalidate(nextUpcomingEventProvider);
                     },
@@ -204,7 +236,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     );
   }
 
-  Widget _buildCalendarPicker() {
+  Widget _buildCalendarPicker(AsyncValue<dynamic> calendarState) {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.baseCream,
@@ -218,7 +250,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       ),
       child: Column(
         children: [
-          // Month/Year Header
+          // Month/Year Header with controls
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
             child: Row(
@@ -230,15 +262,16 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                     setState(() {
                       // Move to previous month
                       final newMonth = DateTime(_selectedDate.year, _selectedDate.month - 1, 1);
-                      // Set to first day of the previous month
                       _selectedDate = newMonth;
-                      // Scroll the date picker to show the new selected date
-                      final daysFromToday = _selectedDate.difference(DateTime.now()).inDays;
-                      _dateScrollController.animateTo(
-                        (_centerIndex + daysFromToday) * _dateItemWidth,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
+                      // Only scroll if week view is visible
+                      if (!_showMonthView) {
+                        final daysFromToday = _selectedDate.difference(DateTime.now()).inDays;
+                        _dateScrollController.animateTo(
+                          (_centerIndex + daysFromToday) * _dateItemWidth,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      }
                     });
                   },
                 ),
@@ -246,11 +279,18 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        DateFormat('MMMM yyyy').format(_selectedDate),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      // NEW: Tappable date text that opens date picker
+                      InkWell(
+                        onTap: _showDatePickerDialog,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          child: Text(
+                            DateFormat('MMMM yyyy').format(_selectedDate),
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ),
                       ),
                       // "Today" pill button (appears when scrolled away from today)
                       if (_showTodayButton) ...[
@@ -293,89 +333,320 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () {
-                    setState(() {
-                      // Move to next month
-                      final newMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 1);
-                      // Set to first day of the next month
-                      _selectedDate = newMonth;
-                      // Scroll the date picker to show the new selected date
-                      final daysFromToday = _selectedDate.difference(DateTime.now()).inDays;
-                      _dateScrollController.animateTo(
-                        (_centerIndex + daysFromToday) * _dateItemWidth,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    });
-                  },
+                Row(
+                  children: [
+                    // NEW: Month view toggle button
+                    IconButton(
+                      icon: Icon(
+                        Icons.view_module,
+                        color: _showMonthView ? Theme.of(context).primaryColor : Colors.grey[600],
+                      ),
+                      tooltip: 'Month View',
+                      onPressed: () {
+                        setState(() {
+                          _showMonthView = !_showMonthView;
+                        });
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: () {
+                        setState(() {
+                          // Move to next month
+                          final newMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 1);
+                          _selectedDate = newMonth;
+                          // Only scroll if week view is visible
+                          if (!_showMonthView) {
+                            final daysFromToday = _selectedDate.difference(DateTime.now()).inDays;
+                            _dateScrollController.animateTo(
+                              (_centerIndex + daysFromToday) * _dateItemWidth,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
 
-          // Week Date Selector (scrollable)
-          SizedBox(
-                height: 80,
-                child: ListView.builder(
-                  controller: _dateScrollController,
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _totalDays,
-                  itemBuilder: (context, index) {
-                    final date = _getScrollableDate(index);
-                    final isSelected = _isSameDay(date, _selectedDate);
-                    final isToday = _isSameDay(date, DateTime.now());
-
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedDate = date;
-                        });
-                      },
-                      child: Container(
-                        width: 60,
-                        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? Theme.of(context).primaryColor
-                              : isToday
-                                  ? const Color(0xFFFFC107).withValues(alpha: 0.2)
-                                  : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isToday ? const Color(0xFFFFC107) : Colors.transparent,
-                            width: 2,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              DateFormat('EEE').format(date),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isSelected ? AppTheme.baseCream : Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              DateFormat('d').format(date),
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected ? AppTheme.baseCream : Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+          // Show either week view or month view
+          if (_showMonthView)
+            _buildMonthCalendarView(calendarState)
+          else
+            _buildWeekView(calendarState),
         ],
       ),
+    );
+  }
+
+  // NEW: Build month calendar view with event dots
+  // Build week view with event dots
+  Widget _buildWeekView(AsyncValue<dynamic> calendarState) {
+    return calendarState.when(
+      data: (calendarData) {
+        return SizedBox(
+          height: 90,
+          child: ListView.builder(
+            controller: _dateScrollController,
+            scrollDirection: Axis.horizontal,
+            itemCount: _totalDays,
+            itemBuilder: (context, index) {
+              final date = _getScrollableDate(index);
+              final isSelected = _isSameDay(date, _selectedDate);
+              final isToday = _isSameDay(date, DateTime.now());
+              
+              // Check for activities, events, and carb loading days
+              final hasActivity = calendarData.activities.any((a) => _isSameDay(a.scheduledDateTime, date));
+              final hasEvent = calendarData.events.any((e) => _isSameDay(e.dateTime, date));
+              final hasCarbDay = calendarData.carbLoadingDays.any((c) => _isSameDay(c.planDate, date));
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                },
+                child: Container(
+                  width: 60,
+                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Theme.of(context).primaryColor
+                        : isToday
+                            ? const Color(0xFFFFC107).withValues(alpha: 0.2)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isToday ? const Color(0xFFFFC107) : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('EEE').format(date),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isSelected ? AppTheme.baseCream : Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        DateFormat('d').format(date),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? AppTheme.baseCream : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // Event dots
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (hasActivity)
+                            Container(
+                              width: 5,
+                              height: 5,
+                              margin: const EdgeInsets.symmetric(horizontal: 1),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppTheme.baseCream : const Color(0xFF2196F3),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          if (hasEvent)
+                            Container(
+                              width: 5,
+                              height: 5,
+                              margin: const EdgeInsets.symmetric(horizontal: 1),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppTheme.baseCream : const Color(0xFF4CAF50),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          if (hasCarbDay)
+                            Container(
+                              width: 5,
+                              height: 5,
+                              margin: const EdgeInsets.symmetric(horizontal: 1),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppTheme.baseCream : const Color(0xFFFF9800),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+      loading: () => const SizedBox(
+        height: 90,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildMonthCalendarView(AsyncValue<dynamic> calendarState) {
+    return calendarState.when(
+      data: (calendarData) {
+        // Get first day of the month
+        final firstDayOfMonth = DateTime(_selectedDate.year, _selectedDate.month, 1);
+        final lastDayOfMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
+        final daysInMonth = lastDayOfMonth.day;
+        
+        // Get the weekday of the first day (1 = Monday, 7 = Sunday)
+        final firstWeekday = firstDayOfMonth.weekday;
+        
+        // Calculate total cells needed (including empty cells at start)
+        final totalCells = daysInMonth + (firstWeekday - 1);
+        final rows = (totalCells / 7).ceil();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Column(
+            children: [
+              // Weekday headers
+              Row(
+                children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                    .map((day) => Expanded(
+                          child: Center(
+                            child: Text(
+                              day,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 8),
+              // Calendar grid
+              ...List.generate(rows, (rowIndex) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: List.generate(7, (colIndex) {
+                      final cellIndex = rowIndex * 7 + colIndex;
+                      final dayNumber = cellIndex - (firstWeekday - 1) + 1;
+                      
+                      if (dayNumber < 1 || dayNumber > daysInMonth) {
+                        // Empty cell
+                        return Expanded(child: SizedBox(height: 50));
+                      }
+                      
+                      final date = DateTime(_selectedDate.year, _selectedDate.month, dayNumber);
+                      final isSelected = _isSameDay(date, _selectedDate);
+                      final isToday = _isSameDay(date, DateTime.now());
+                      
+                      // Check for activities, events, and carb loading days
+                      final hasActivity = calendarData.activities.any((a) => _isSameDay(a.scheduledDateTime, date));
+                      final hasEvent = calendarData.events.any((e) => _isSameDay(e.dateTime, date));
+                      final hasCarbDay = calendarData.carbLoadingDays.any((c) => _isSameDay(c.planDate, date));
+                      
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedDate = date;
+                              // Optionally hide month view after selection
+                              // _showMonthView = false;
+                            });
+                          },
+                          child: Container(
+                            height: 50,
+                            margin: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : isToday
+                                      ? const Color(0xFFFFC107).withValues(alpha: 0.2)
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isToday ? const Color(0xFFFFC107) : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '$dayNumber',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: isSelected ? AppTheme.baseCream : Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                // Event dots
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (hasActivity)
+                                      Container(
+                                        width: 5,
+                                        height: 5,
+                                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? AppTheme.baseCream : const Color(0xFF2196F3),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    if (hasEvent)
+                                      Container(
+                                        width: 5,
+                                        height: 5,
+                                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? AppTheme.baseCream : const Color(0xFF4CAF50),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    if (hasCarbDay)
+                                      Container(
+                                        width: 5,
+                                        height: 5,
+                                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? AppTheme.baseCream : const Color(0xFFFF9800),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox(
+        height: 300,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 
@@ -555,20 +826,20 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         // Delete the carb loading day and wait for completion
         await ref.read(calendarControllerProvider.notifier).deleteCarbLoadingDay(carbDay.id);
 
-        // Show confirmation
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Deleted "Carb Loading Day $dayNumber"'),
-              action: SnackBarAction(
-                label: 'Undo',
-                onPressed: () {
-                  // TODO: Implement undo functionality if needed
-                },
-              ),
+        // Show confirmation - check mounted after async operation
+        if (!context.mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Deleted "Carb Loading Day $dayNumber"'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () {
+                // TODO: Implement undo functionality if needed
+              },
             ),
-          );
-        }
+          ),
+        );
       },
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),

@@ -144,6 +144,13 @@ class NutritionPlanController extends _$NutritionPlanController {
     try {
       final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
+
+      // Check if provider is still mounted after async gap
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed, aborting getTempPlan');
+        return null;
+      }
+
       if (user == null) {
         DebugLogger.info('🔍 DEBUG: No user found for temp plan check');
         return null;
@@ -151,14 +158,21 @@ class NutritionPlanController extends _$NutritionPlanController {
 
       DebugLogger.info('🔍 DEBUG: Checking for temp plan for user: ${user.id}');
       final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
+
+      // Check if provider is still mounted after another async gap
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during getTempPlan, aborting');
+        return null;
+      }
+
       final tempPlan = await planRepository.getTempPlan(user.id);
-      
+
       if (tempPlan != null) {
         DebugLogger.info('🔍 DEBUG: Found temp plan: ${tempPlan.id}');
       } else {
         DebugLogger.info('🔍 DEBUG: No temp plan found');
       }
-      
+
       return tempPlan;
     } catch (error) {
       DebugLogger.error('Error getting temp plan: $error');
@@ -171,6 +185,13 @@ class NutritionPlanController extends _$NutritionPlanController {
     try {
       final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
+
+      // Check if provider is still mounted after async gap
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed, aborting saveTempPlan');
+        return;
+      }
+
       if (user == null) {
         DebugLogger.info('🔍 DEBUG: Cannot save temp plan - no user');
         return;
@@ -178,6 +199,13 @@ class NutritionPlanController extends _$NutritionPlanController {
 
       DebugLogger.info('🔍 DEBUG: Saving temp plan ${plan.id} for user: ${user.id}');
       final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
+
+      // Check if provider is still mounted after another async gap
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during saveTempPlan, aborting');
+        return;
+      }
+
       await planRepository.saveTempPlan(user.id, plan);
       DebugLogger.info('🔍 DEBUG: Temp plan saved successfully');
     } catch (error) {
@@ -190,9 +218,23 @@ class NutritionPlanController extends _$NutritionPlanController {
     try {
       final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
+
+      // Check if provider is still mounted after async gap
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed, aborting clearTempPlan');
+        return;
+      }
+
       if (user == null) return;
 
       final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
+
+      // Check if provider is still mounted after another async gap
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during clearTempPlan, aborting');
+        return;
+      }
+
       await planRepository.clearTempPlan(user.id);
     } catch (error) {
       DebugLogger.error('Error clearing temp plan: $error');
@@ -204,20 +246,19 @@ class NutritionPlanController extends _$NutritionPlanController {
   Future<void> setGeneratedPlan(NutritionPlan plan, {String? planId}) async {
     DebugLogger.info('🔍 DEBUG: setGeneratedPlan() called for plan: ${plan.id}');
     DebugLogger.info('🔍 DEBUG: planId for North-Star: $planId');
-    
-    // Set state to show plan as unsaved with planId
-    state = AsyncValue.data(NutritionPlanState(plan: plan, isSaved: false, planId: planId));
-    
+
+    // Read all providers FIRST before any async operations to avoid disposal issues
+    final authService = ref.read(authServiceProvider);
+    final database = ref.read(appDatabaseProvider);
+
     // Save temporarily so it persists through app reload
     DebugLogger.info('🔍 DEBUG: Saving plan temporarily');
     await _saveTempPlan(plan);
-    
+
     // Remove from permanent local storage if it was cached there
     try {
-      final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
       if (user != null) {
-        final database = ref.read(appDatabaseProvider);
         // Delete the plan from permanent local storage so it's only in temp storage
         DebugLogger.info('🔍 DEBUG: Removing plan from permanent local storage');
         await database.deleteNutritionPlan(plan.id);
@@ -225,6 +266,9 @@ class NutritionPlanController extends _$NutritionPlanController {
     } catch (error) {
       DebugLogger.error('Note: Could not remove plan from permanent local storage: $error');
     }
+
+    // Set state LAST after all async work is done
+    state = AsyncValue.data(NutritionPlanState(plan: plan, isSaved: false, planId: planId));
     DebugLogger.info('🔍 DEBUG: setGeneratedPlan() completed');
   }
 

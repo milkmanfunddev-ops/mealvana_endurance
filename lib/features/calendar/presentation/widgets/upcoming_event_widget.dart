@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/activity.dart';
 import '../../domain/event.dart';
 import '../screens/events_list_screen.dart';
 

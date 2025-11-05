@@ -3,16 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/hero_image.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/increment_decrement_widget.dart';
 import '../providers/distance_page_gut_entry_controller.dart';
+import '../providers/running_input_controller.dart';
 import '../widgets/pre_run_timing_selector.dart';
-import '../../domain/run_parameters.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../../weather/presentation/widgets/weather_indicator_badge.dart';
+import '../../../weather/presentation/screens/weather_detail_screen.dart';
+import '../../../weather/domain/weather_forecast.dart';
 
 /// Main Nutrition Plan Screen - Main input screen matching Alex's design
 /// Users enter run details and generate their nutrition plan
@@ -41,65 +43,55 @@ class DistancePaceGutEntryScreen extends ConsumerStatefulWidget {
 class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntryScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Using numeric values for increment/decrement widgets
-  late double _distance;
-  late double _paceMinutes;
-  int _selectedPreRunMinutes = 120; // Default 2 hours
-  GutTraining _selectedGutTraining = GutTraining.high;
-  SweatRateCat _selectedSweatRate = SweatRateCat.medium;
-  double _temperature = 20.0; // Default 20°C (68°F)
-  double _humidity = 60.0; // Default 60% humidity
-
-  // Date and time for the activity
-  late DateTime _selectedDate;
-  late TimeOfDay _selectedTime;
-
   @override
   void initState() {
     super.initState();
 
-    // Initialize distance and pace from widget parameters or use defaults
-    _distance = widget.initialDistance ?? 12.0; // Default 12 miles
-    _paceMinutes = widget.initialGoalPace ?? 9.0; // Default 9:00 pace
-
-    // Initialize date and time
-    _selectedDate = widget.initialDate ?? DateTime.now();
-    _selectedTime = widget.initialDate != null
-        ? TimeOfDay.fromDateTime(widget.initialDate!)
-        : const TimeOfDay(hour: 7, minute: 0); // Default to 7:00 AM
-
-    // Load user's gut training preference if available - CONTROLLER CALL ONLY
+    // Initialize form state with widget parameters if provided
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller = ref.read(runningInputControllerProvider.notifier);
+      final currentState = ref.read(runningInputControllerProvider);
+
+      // Only initialize with widget.initialDate if controller doesn't already have a user-set date
+      final now = DateTime.now();
+      final isDefaultDate = currentState.selectedDate.year == now.year &&
+          currentState.selectedDate.month == now.month &&
+          currentState.selectedDate.day == now.day;
+
+      if (isDefaultDate && widget.initialDate != null) {
+        controller.initializeWithDate(widget.initialDate);
+      }
+
+      // Set initial values from widget parameters if provided
+      if (widget.initialDistance != null && currentState.distance == 12.0) {
+        controller.updateDistance(widget.initialDistance!);
+      }
+      if (widget.initialGoalPace != null && currentState.paceMinutes == 9.0) {
+        controller.updatePace(widget.initialGoalPace!);
+      }
+
+      // Auto-fetch location and weather on screen load
+      if (currentState.location == null) {
+        controller.fetchCurrentLocation();
+      } else {
+        controller.fetchWeatherForecast();
+      }
+
+      // Load user's gut training preference
       ref.read(distancePageGutEntryControllerProvider.notifier).loadUserPreferences();
     });
   }
 
   Future<void> _handleGenerateButtonPress() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     // UI-only logic: dismiss keyboard
     FocusScope.of(context).unfocus();
-    
-    // Convert pace back to M:SS format for controller
-    final paceMinutePart = _paceMinutes.floor();
-    final paceSecondPart = ((_paceMinutes - paceMinutePart) * 60).round();
-    final paceText = '$paceMinutePart:${paceSecondPart.toString().padLeft(2, '0')}';
-    
-    // ALL business logic is in the controller
-    await ref.read(distancePageGutEntryControllerProvider.notifier).generateMacros(
-      distanceText: _distance.toString(),
-      paceText: paceText,
-      timeBeforeRunMinutes: _selectedPreRunMinutes,
-      gutTraining: _selectedGutTraining,
-      distanceUnit: DistanceUnit.miles, // Fixed to miles as per requirements
-      paceUnit: PaceUnit.minPerMile, // Fixed to min/mile as per requirements
-      scheduledDate: _selectedDate,
-      scheduledTime: _selectedTime,
-      sweatRateCat: _selectedSweatRate, // Add sweat rate category
-      temperatureC: _temperature,
-      humidityPct: _humidity,
-      activityId: widget.activityId, // Link to calendar activity/event
-      eventId: widget.eventId, // Link to calendar event
+
+    // ALL business logic is in the running controller
+    await ref.read(runningInputControllerProvider.notifier).generateMacros(
+      activityId: widget.activityId,
+      eventId: widget.eventId,
     );
     
     // Check if generation was successful by looking at the state
@@ -126,9 +118,10 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
   @override
   Widget build(BuildContext context) {
     final controllerState = ref.watch(distancePageGutEntryControllerProvider);
-    
+    final runningForm = ref.watch(runningInputControllerProvider);
+
     return controllerState.when(
-      data: (state) => _buildScreen(context, state),
+      data: (state) => _buildScreen(context, state, runningForm),
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
@@ -140,7 +133,7 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
     );
   }
 
-  Widget _buildScreen(BuildContext context, DistancePageGutEntryState state) {
+  Widget _buildScreen(BuildContext context, DistancePageGutEntryState state, RunningFormState runningForm) {
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       extendBodyBehindAppBar: true,
@@ -175,33 +168,39 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
               // Distance Input with Increment/Decrement
               IncrementDecrementWidget(
                 label: 'Distance',
-                value: _distance.toString(),
+                value: runningForm.distance.toString(),
                 formatValue: (value) => _formatDistance(double.parse(value)),
-                onIncrement: _incrementDistance,
-                onDecrement: _decrementDistance,
+                onIncrement: () => ref.read(runningInputControllerProvider.notifier).updateDistance(runningForm.distance + 1.0),
+                onDecrement: () {
+                  if (runningForm.distance > 1.0) {
+                    ref.read(runningInputControllerProvider.notifier).updateDistance(runningForm.distance - 1.0);
+                  }
+                },
               ),
-              
+
               SizedBox(height: 20.h),
-              
+
               // Pace Input with Increment/Decrement
               IncrementDecrementWidget(
                 label: 'Average Pace',
-                value: _paceMinutes.toString(),
+                value: runningForm.paceMinutes.toString(),
                 formatValue: (value) => _formatPace(double.parse(value)),
-                onIncrement: _incrementPace,
-                onDecrement: _decrementPace,
+                onIncrement: () => ref.read(runningInputControllerProvider.notifier).updatePace(runningForm.paceMinutes + 0.25),
+                onDecrement: () {
+                  if (runningForm.paceMinutes > 1.0) {
+                    ref.read(runningInputControllerProvider.notifier).updatePace(runningForm.paceMinutes - 0.25);
+                  }
+                },
               ),
-              
+
               SizedBox(height: 20.h),
-              
+
               // Pre-run Timing Selector
               PreRunTimingSelector(
                 label: state.preRunLabel,
-                selectedMinutes: _selectedPreRunMinutes,
+                selectedMinutes: runningForm.preRunMinutes,
                 onChanged: (int newValue) {
-                  setState(() {
-                    _selectedPreRunMinutes = newValue;
-                  });
+                  ref.read(runningInputControllerProvider.notifier).updatePreRunMinutes(newValue);
                 },
               ),
               
@@ -229,12 +228,10 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<GutTraining>(
-                        value: _selectedGutTraining,
+                        value: runningForm.gutTraining,
                         onChanged: (GutTraining? newValue) {
                           if (newValue != null) {
-                            setState(() {
-                              _selectedGutTraining = newValue;
-                            });
+                            ref.read(runningInputControllerProvider.notifier).updateGutTraining(newValue);
                           }
                         },
                         style: AppTheme.textStyle.copyWith(
@@ -291,14 +288,12 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                       thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12.r),
                     ),
                     child: Slider(
-                      value: _selectedSweatRate.index.toDouble(),
+                      value: runningForm.sweatRate.index.toDouble(),
                       min: 0,
                       max: 2,
                       divisions: 2,
                       onChanged: (value) {
-                        setState(() {
-                          _selectedSweatRate = SweatRateCat.values[value.round()];
-                        });
+                        ref.read(runningInputControllerProvider.notifier).updateSweatRate(SweatRateCat.values[value.round()]);
                       },
                     ),
                   ),
@@ -308,8 +303,8 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                       category.displayName,
                       style: AppTheme.textStyle.copyWith(
                         fontSize: 14.sp,
-                        color: _selectedSweatRate == category ? AppTheme.primary600 : AppTheme.baseGrey,
-                        fontWeight: _selectedSweatRate == category ? FontWeight.w600 : FontWeight.normal,
+                        color: runningForm.sweatRate == category ? AppTheme.primary600 : AppTheme.baseGrey,
+                        fontWeight: runningForm.sweatRate == category ? FontWeight.w600 : FontWeight.normal,
                       ),
                     )).toList(),
                   ),
@@ -322,16 +317,38 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Temperature',
-                    style: AppTheme.subtitleStyle.copyWith(
-                      fontSize: 16.sp,
-                      color: AppTheme.primary900,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Temperature',
+                        style: AppTheme.subtitleStyle.copyWith(
+                          fontSize: 16.sp,
+                          color: AppTheme.primary900,
+                        ),
+                      ),
+                      // Weather Badge - Show for forecast or historical, hide for defaults
+                      if (runningForm.weatherForecast != null &&
+                          runningForm.weatherForecast!.source != WeatherSource.defaultValue)
+                        WeatherIndicatorBadge(
+                          forecast: runningForm.weatherForecast!,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WeatherDetailScreen(
+                                  forecast: runningForm.weatherForecast!,
+                                  location: runningForm.location,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                    ],
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    '${_temperature.round()}°C (${(_temperature * 9/5 + 32).round()}°F)',
+                    '${runningForm.temperatureC.round()}°C (${(runningForm.temperatureC * 9/5 + 32).round()}°F)',
                     style: AppTheme.textStyle.copyWith(
                       fontSize: 14.sp,
                       color: AppTheme.primary600,
@@ -349,15 +366,11 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                       thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12.r),
                     ),
                     child: Slider(
-                      value: _temperature,
+                      value: runningForm.temperatureC,
                       min: -5,
                       max: 40,
                       divisions: 45,
-                      onChanged: (value) {
-                        setState(() {
-                          _temperature = value;
-                        });
-                      },
+                      onChanged: (value) => ref.read(runningInputControllerProvider.notifier).updateTemperature(value),
                     ),
                   ),
                   Row(
@@ -385,7 +398,7 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    '${_humidity.round()}%',
+                    '${runningForm.humidityPct.round()}%',
                     style: AppTheme.textStyle.copyWith(
                       fontSize: 14.sp,
                       color: AppTheme.primary600,
@@ -403,15 +416,11 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                       thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12.r),
                     ),
                     child: Slider(
-                      value: _humidity,
+                      value: runningForm.humidityPct,
                       min: 20,
                       max: 95,
                       divisions: 15,
-                      onChanged: (value) {
-                        setState(() {
-                          _humidity = value;
-                        });
-                      },
+                      onChanged: (value) => ref.read(runningInputControllerProvider.notifier).updateHumidity(value),
                     ),
                   ),
                   Row(
@@ -449,6 +458,8 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
   }
 
   Widget _buildDateTimePicker(BuildContext context) {
+    final runningForm = ref.watch(runningInputControllerProvider);
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -463,14 +474,12 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
               onTap: () async {
                 final picked = await showDatePicker(
                   context: context,
-                  initialDate: _selectedDate,
+                  initialDate: runningForm.selectedDate,
                   firstDate: DateTime.now().subtract(const Duration(days: 7)),
                   lastDate: DateTime.now().add(const Duration(days: 365)),
                 );
                 if (picked != null) {
-                  setState(() {
-                    _selectedDate = picked;
-                  });
+                  ref.read(runningInputControllerProvider.notifier).updateDateTime(picked, runningForm.selectedTime);
                 }
               },
               child: Column(
@@ -489,7 +498,7 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                       Icon(Icons.calendar_today, size: 16, color: AppTheme.primary900),
                       SizedBox(width: 8.w),
                       Text(
-                        DateFormat('MMM d, yyyy').format(_selectedDate),
+                        DateFormat('MMM d, yyyy').format(runningForm.selectedDate),
                         style: AppTheme.textStyle.copyWith(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
@@ -513,12 +522,10 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
               onTap: () async {
                 final picked = await showTimePicker(
                   context: context,
-                  initialTime: _selectedTime,
+                  initialTime: runningForm.selectedTime,
                 );
                 if (picked != null) {
-                  setState(() {
-                    _selectedTime = picked;
-                  });
+                  ref.read(runningInputControllerProvider.notifier).updateDateTime(runningForm.selectedDate, picked);
                 }
               },
               child: Column(
@@ -537,7 +544,7 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                       Icon(Icons.access_time, size: 16, color: AppTheme.primary900),
                       SizedBox(width: 8.w),
                       Text(
-                        _selectedTime.format(context),
+                        runningForm.selectedTime.format(context),
                         style: AppTheme.textStyle.copyWith(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
@@ -555,45 +562,17 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
     );
   }
 
-  // Helper methods for formatting and increment/decrement
+  // Helper methods for formatting
   String _formatDistance(double distance) {
     if (distance == distance.round()) {
       return '${distance.round()} miles';
     }
     return '${distance.toStringAsFixed(1)} miles';
   }
-  
+
   String _formatPace(double paceMinutes) {
     final minutes = paceMinutes.floor();
     final seconds = ((paceMinutes - minutes) * 60).round();
     return '$minutes:${seconds.toString().padLeft(2, '0')} min/mile';
-  }
-  
-  void _incrementDistance() {
-    setState(() {
-      _distance += 1.0;
-    });
-  }
-  
-  void _decrementDistance() {
-    setState(() {
-      if (_distance > 1.0) {
-        _distance -= 1.0;
-      }
-    });
-  }
-  
-  void _incrementPace() {
-    setState(() {
-      _paceMinutes += 0.25; // 15 second increments (0.25 minutes)
-    });
-  }
-  
-  void _decrementPace() {
-    setState(() {
-      if (_paceMinutes > 1.0) {
-        _paceMinutes -= 0.25; // 15 second increments (0.25 minutes)
-      }
-    });
   }
 }

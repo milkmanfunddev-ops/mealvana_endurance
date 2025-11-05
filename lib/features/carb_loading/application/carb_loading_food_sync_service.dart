@@ -138,6 +138,44 @@ class CarbLoadingFoodSyncService {
       }
     });
   }
+
+  /// Sync carb loading foods from pre-downloaded data (from sync-all-data edge function)
+  /// This method is called during app startup after sync-all-data returns
+  /// Updates seed database with latest carb loading foods and meal types
+  Future<void> syncFromDownloadedData({
+    required List<dynamic> carbLoadingFoods,
+    required List<dynamic> mealTypes,
+  }) async {
+    try {
+      _logger.info(
+        'Syncing carb loading foods from downloaded data',
+        context: 'CARB_LOADING_SYNC',
+        data: {
+          'carb_foods': carbLoadingFoods.length,
+          'meal_types': mealTypes.length,
+        },
+      );
+
+      // Sync meal types first (they're referenced by foods)
+      await _syncMealTypes(mealTypes);
+
+      // Sync carb loading foods with their meal type relationships
+      await _syncFoodsToLocalDatabase(carbLoadingFoods);
+
+      _logger.info(
+        'Carb loading foods sync completed',
+        context: 'CARB_LOADING_SYNC',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Carb loading foods sync failed',
+        context: 'CARB_LOADING_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
 }
 
 @riverpod

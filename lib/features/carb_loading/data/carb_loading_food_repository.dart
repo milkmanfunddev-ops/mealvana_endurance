@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../domain/carb_loading_food.dart' as domain;
-import '../domain/meal_type.dart' as domain;
 
 part 'carb_loading_food_repository.g.dart';
 

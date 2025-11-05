@@ -133,7 +133,7 @@ class LLMNutritionPlanService {
 
       // Call the edge function
       final response = await _supabase.functions.invoke(
-        'generate-ai-nutrition-plan',
+        'generate-nutrition-plan',
         body: requestData,
       );
 
@@ -493,7 +493,7 @@ class LLMNutritionPlanService {
 
       // Call the edge function
       final response = await _supabase.functions.invoke(
-        'generate-ai-nutrition-plan',
+        'generate-nutrition-plan',
         body: requestData,
       );
 

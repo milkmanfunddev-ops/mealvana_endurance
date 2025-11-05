@@ -4,8 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../domain/event.dart';
 import '../providers/calendar_controller.dart';
-import '../../../../shared/providers/device_id_provider.dart';
-import '../../domain/activity.dart';
 import '../../../../shared/widgets/primary_button.dart';
 
 /// Event Creation Screen for creating race events.
@@ -82,9 +80,6 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
-    // Get device ID for user identification
-    final deviceId = await ref.read(deviceIdProvider.future);
 
     // Combine date and time
     final scheduledDateTime = DateTime(
@@ -199,7 +194,7 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<EventType>(
-                value: _selectedEventType,
+                initialValue: _selectedEventType,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),

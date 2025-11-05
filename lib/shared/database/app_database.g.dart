@@ -2418,6 +2418,32 @@ class $NutritionPlansTable extends NutritionPlans
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2439,6 +2465,8 @@ class $NutritionPlansTable extends NutritionPlans
     conflictResolution,
     createdAt,
     updatedAt,
+    needsUpload,
+    localUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2591,6 +2619,24 @@ class $NutritionPlansTable extends NutritionPlans
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2676,6 +2722,14 @@ class $NutritionPlansTable extends NutritionPlans
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
     );
   }
 
@@ -2717,6 +2771,10 @@ class NutritionPlanEntry extends DataClass
   /// Timestamps (matches Supabase schema)
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// Sync tracking (offline-first architecture)
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
   const NutritionPlanEntry({
     required this.id,
     required this.deviceId,
@@ -2737,6 +2795,8 @@ class NutritionPlanEntry extends DataClass
     this.conflictResolution,
     required this.createdAt,
     required this.updatedAt,
+    this.needsUpload,
+    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2776,6 +2836,12 @@ class NutritionPlanEntry extends DataClass
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
     return map;
   }
 
@@ -2816,6 +2882,12 @@ class NutritionPlanEntry extends DataClass
           : Value(conflictResolution),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
     );
   }
 
@@ -2848,6 +2920,8 @@ class NutritionPlanEntry extends DataClass
       ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -2873,6 +2947,8 @@ class NutritionPlanEntry extends DataClass
       'conflictResolution': serializer.toJson<String?>(conflictResolution),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
@@ -2896,6 +2972,8 @@ class NutritionPlanEntry extends DataClass
     Value<String?> conflictResolution = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => NutritionPlanEntry(
     id: id ?? this.id,
     deviceId: deviceId ?? this.deviceId,
@@ -2928,6 +3006,10 @@ class NutritionPlanEntry extends DataClass
         : this.conflictResolution,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
   );
   NutritionPlanEntry copyWithCompanion(NutritionPlansCompanion data) {
     return NutritionPlanEntry(
@@ -2964,6 +3046,12 @@ class NutritionPlanEntry extends DataClass
           : this.conflictResolution,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
     );
   }
 
@@ -2988,13 +3076,15 @@ class NutritionPlanEntry extends DataClass
           ..write('isDeleted: $isDeleted, ')
           ..write('conflictResolution: $conflictResolution, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     deviceId,
     planData,
@@ -3014,7 +3104,9 @@ class NutritionPlanEntry extends DataClass
     conflictResolution,
     createdAt,
     updatedAt,
-  );
+    needsUpload,
+    localUpdatedAt,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3037,7 +3129,9 @@ class NutritionPlanEntry extends DataClass
           other.isDeleted == this.isDeleted &&
           other.conflictResolution == this.conflictResolution &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
 }
 
 class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
@@ -3060,6 +3154,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
   final Value<String?> conflictResolution;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
   final Value<int> rowid;
   const NutritionPlansCompanion({
     this.id = const Value.absent(),
@@ -3081,6 +3177,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
     this.conflictResolution = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   NutritionPlansCompanion.insert({
@@ -3103,6 +3201,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
     this.conflictResolution = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        deviceId = Value(deviceId),
@@ -3129,6 +3229,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
     Expression<String>? conflictResolution,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3152,6 +3254,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
       if (conflictResolution != null) 'conflict_resolution': conflictResolution,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3176,6 +3280,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
     Value<String?>? conflictResolution,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return NutritionPlansCompanion(
@@ -3198,6 +3304,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
       conflictResolution: conflictResolution ?? this.conflictResolution,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3262,6 +3370,12 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3290,6 +3404,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
           ..write('conflictResolution: $conflictResolution, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6590,7 +6706,7 @@ class $FoodsTableTable extends FoodsTable
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'foods_table';
+  static const String $name = 'foods';
   @override
   VerificationContext validateIntegrity(
     Insertable<FoodEntry> instance, {
@@ -8550,7 +8666,7 @@ class $FoodCategoriesTableTable extends FoodCategoriesTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES foods_table (id) ON DELETE CASCADE',
+      'REFERENCES foods (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _categoryIdMeta = const VerificationMeta(
@@ -23349,7 +23465,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
     WritePropagation(
       on: TableUpdateQuery.onTableName(
-        'foods_table',
+        'foods',
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('food_categories_table', kind: UpdateKind.delete)],
@@ -24359,6 +24475,8 @@ typedef $$NutritionPlansTableCreateCompanionBuilder =
       Value<String?> conflictResolution,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$NutritionPlansTableUpdateCompanionBuilder =
@@ -24382,6 +24500,8 @@ typedef $$NutritionPlansTableUpdateCompanionBuilder =
       Value<String?> conflictResolution,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -24486,6 +24606,16 @@ class $$NutritionPlansTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -24593,6 +24723,16 @@ class $$NutritionPlansTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$NutritionPlansTableAnnotationComposer
@@ -24674,6 +24814,16 @@ class $$NutritionPlansTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$NutritionPlansTableTableManager
@@ -24732,6 +24882,8 @@ class $$NutritionPlansTableTableManager
                 Value<String?> conflictResolution = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NutritionPlansCompanion(
                 id: id,
@@ -24753,6 +24905,8 @@ class $$NutritionPlansTableTableManager
                 conflictResolution: conflictResolution,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -24776,6 +24930,8 @@ class $$NutritionPlansTableTableManager
                 Value<String?> conflictResolution = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NutritionPlansCompanion.insert(
                 id: id,
@@ -24797,6 +24953,8 @@ class $$NutritionPlansTableTableManager
                 conflictResolution: conflictResolution,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

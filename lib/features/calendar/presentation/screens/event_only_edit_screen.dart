@@ -373,7 +373,7 @@ class _EventOnlyEditScreenState extends ConsumerState<EventOnlyEditScreen> {
 
   Widget _buildEventTypeDropdown() {
     return DropdownButtonFormField<EventType>(
-      value: _selectedEventType,
+      initialValue: _selectedEventType,
       decoration: InputDecoration(
         labelText: 'Event Type',
         prefixIcon: Icon(Icons.category, color: AppTheme.primary600),

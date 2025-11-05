@@ -185,7 +185,7 @@ class _CalendarWeekViewState extends ConsumerState<CalendarWeekView> {
 
   Widget _buildWeekDaysHeader() {
     final weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
@@ -197,58 +197,124 @@ class _CalendarWeekViewState extends ConsumerState<CalendarWeekView> {
           ),
         ),
       ),
-      child: Row(
-        children: weekDays.asMap().entries.map((entry) {
-          final index = entry.key;
-          final day = entry.value;
-          final date = _weekStart.add(Duration(days: index));
-          final isToday = _isToday(date);
-          final isSelected = widget.selectedDate != null && _isSameDay(date, widget.selectedDate!);
-          
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => widget.onDateSelected?.call(date),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                decoration: BoxDecoration(
-                  color: isSelected 
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : isToday 
-                          ? Theme.of(context).colorScheme.surfaceContainerHighest
-                          : null,
-                  borderRadius: BorderRadius.circular(8),
+      child: Consumer(
+        builder: (context, ref, child) {
+          final calendarState = ref.watch(calendarControllerProvider);
+
+          return Row(
+            children: weekDays.asMap().entries.map((entry) {
+              final index = entry.key;
+              final day = entry.value;
+              final date = _weekStart.add(Duration(days: index));
+              final isToday = _isToday(date);
+              final isSelected = widget.selectedDate != null && _isSameDay(date, widget.selectedDate!);
+
+              // Check if this day has events or carb loading days
+              final hasEvent = calendarState.maybeWhen(
+                data: (state) => state.events.any((event) {
+                  // Check if event has a linked activity
+                  if (event.activityId != null) {
+                    final activity = state.activities.where((a) => a.id == event.activityId).firstOrNull;
+                    if (activity != null) {
+                      return _isSameDay(activity.scheduledDateTime, date);
+                    }
+                  }
+                  // Check if event has a startTime
+                  if (event.startTime != null) {
+                    try {
+                      final eventDate = DateTime.parse(event.startTime!);
+                      return _isSameDay(eventDate, date);
+                    } catch (_) {
+                      return false;
+                    }
+                  }
+                  return false;
+                }),
+                orElse: () => false,
+              );
+
+              final hasCarbLoadingDay = calendarState.maybeWhen(
+                data: (state) => state.carbLoadingDays.any((carbDay) =>
+                  _isSameDay(carbDay.planDate, date)
                 ),
-                child: Column(
-                  children: [
-                    Text(
-                      day,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
-                        color: isSelected 
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : isToday 
-                                ? Theme.of(context).colorScheme.onSurfaceVariant
-                                : null,
-                      ),
+                orElse: () => false,
+              );
+
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => widget.onDateSelected?.call(date),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : isToday
+                              ? Theme.of(context).colorScheme.surfaceContainerHighest
+                              : null,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      date.day.toString(),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isSelected 
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : isToday 
-                                ? Theme.of(context).colorScheme.primary
-                                : null,
-                      ),
+                    child: Column(
+                      children: [
+                        Text(
+                          day,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.onPrimaryContainer
+                                : isToday
+                                    ? Theme.of(context).colorScheme.onSurfaceVariant
+                                    : null,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          date.day.toString(),
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.onPrimaryContainer
+                                : isToday
+                                    ? Theme.of(context).colorScheme.primary
+                                    : null,
+                          ),
+                        ),
+                        // Event and carb loading indicators
+                        if (hasEvent || hasCarbLoadingDay) ...[
+                          const SizedBox(height: 2),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (hasEvent)
+                                Container(
+                                  width: 5,
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              if (hasEvent && hasCarbLoadingDay)
+                                const SizedBox(width: 2),
+                              if (hasCarbLoadingDay)
+                                Container(
+                                  width: 5,
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            }).toList(),
           );
-        }).toList(),
+        },
       ),
     );
   }

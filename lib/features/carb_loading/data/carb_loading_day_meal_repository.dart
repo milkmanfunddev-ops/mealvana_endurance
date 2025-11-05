@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../domain/carb_loading_day_meal.dart' as domain;
-import '../domain/meal_type.dart' as domain;
 
 part 'carb_loading_day_meal_repository.g.dart';
 

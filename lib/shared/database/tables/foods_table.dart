@@ -83,6 +83,9 @@ class FoodsTable extends Table {
   Set<Column> get primaryKey => {id};
 
   @override
+  String get tableName => 'foods';
+
+  @override
   List<String> get customConstraints => [
     // Note: Unique constraint on name removed to match Supabase schema
     // Supabase uses case-insensitive unique index: uq_foods_lower_name

@@ -43,17 +43,24 @@ class AppStartup extends _$AppStartup {
       
       // 4. Check and restore user session if exists
       await startupService.checkUserSession();
-      
-      // 5. Check and refresh food data if needed (for updated image URLs)
-      await startupService.checkAndRefreshFoodData();
-      
+
+      // 5. Unified data sync (single network call - calendar + foods + carb loading)
+      // Note: Foods already loaded from seed DB on first launch, this updates them
+      final syncSuccess = await startupService.syncAllAppData();
+
       // 6. Initialize nutrition plans (now using Drift)
       await startupService.initializeNutritionPlans();
-      
-      // 7. Check for plans needing feedback
+
+      // 7. Fallback: If sync failed AND foods table is empty, try get-foods edge function
+      // This should rarely happen - only if seed DB copy failed AND sync failed
+      if (!syncSuccess) {
+        await startupService.fallbackLoadFoods();
+      }
+
+      // 8. Check for plans needing feedback
       final planIdNeedingFeedback = await startupService.checkForPendingFeedback();
-      
-      // 8. Track startup completion in Sentry
+
+      // 9. Track startup completion in Sentry
       final sentry = ref.read(appExternalDepsProvider).sentry;
       sentry.addBreadcrumb(
         message: 'App startup completed successfully',

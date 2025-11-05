@@ -10,8 +10,8 @@ import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/services/sync/data_sync_service.dart';
 import '../../nutrition_plan/data/food_repository.dart';
-import '../../carb_loading/application/carb_loading_food_sync_service.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -159,27 +159,94 @@ class AppStartupService {
     }
   }
 
-  /// Check if food data needs refreshing and refresh if necessary
-  /// Always pull and cache the latest food data from Supabase on app initialization
-  Future<void> checkAndRefreshFoodData() async {
+  /// Unified data sync - single network call to sync-all-data edge function
+  /// Syncs ALL app data: calendar, foods, carb loading foods, meal types
+  /// Returns true if sync was successful, false otherwise
+  /// Non-blocking: app continues with cached data if sync fails
+  Future<bool> syncAllAppData() async {
     try {
-      // Always fetch fresh food data from Supabase
-      final foodRepository = ref.read(foodRepositoryProvider);
+      final database = ref.read(appDatabaseProvider);
 
-      // Sync all foods from database
-      // This ensures food IDs returned by edge functions can be resolved locally
-      await foodRepository.getAllFoods();
+      // Get current user (required for sync-all-data edge function)
+      final user = await database.getCurrentUserProfile();
 
-      // Sync carb loading foods from Supabase
-      final carbLoadingFoodSyncService = ref.read(carbLoadingFoodSyncServiceProvider);
-      await carbLoadingFoodSyncService.syncCarbLoadingFoods();
+      if (user == null) {
+        _logger.info(
+          'No user profile found - skipping sync (fresh install before onboarding)',
+          context: 'APP_STARTUP',
+        );
+        // This is normal on fresh install before onboarding
+        // Reference data will be downloaded after onboarding completes
+        return true;
+      }
 
-    } catch (e) {
-      _logger.error('Food data refresh error',
-        context: 'FOOD_DATA',
-        error: e
+      _logger.info(
+        'Starting unified data sync',
+        context: 'APP_STARTUP',
+        data: {'userId': user.id},
       );
-      // Don't throw - app should continue even if food refresh fails
+
+      // Call unified sync service - single network call
+      final dataSyncService = ref.read(dataSyncServiceProvider);
+      final success = await dataSyncService.syncAllData(user.id);
+
+      if (success) {
+        _logger.info(
+          'Unified data sync completed successfully',
+          context: 'APP_STARTUP',
+        );
+      } else {
+        _logger.warning(
+          'Unified data sync failed - app continuing with cached/seed data',
+          context: 'APP_STARTUP',
+        );
+      }
+
+      return success;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Unified data sync error',
+        context: 'APP_STARTUP',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  /// Emergency fallback: Load foods if local database is empty AND sync failed
+  /// This should rarely be called - only if initial sync failed after onboarding
+  /// Uses get-foods edge function as last resort
+  Future<void> fallbackLoadFoods() async {
+    try {
+      final database = ref.read(appDatabaseProvider);
+
+      // Check if foods table is empty
+      final foodCount = await database.select(database.foodsTable).get().then((rows) => rows.length);
+
+      if (foodCount == 0) {
+        _logger.warning(
+          'Foods table is empty - attempting fallback load',
+          context: 'FOOD_DATA_FALLBACK',
+        );
+
+        // Last resort: call get-foods edge function directly
+        final foodRepository = ref.read(foodRepositoryProvider);
+        await foodRepository.getAllFoods();
+
+        _logger.info(
+          'Fallback food load completed',
+          context: 'FOOD_DATA_FALLBACK',
+        );
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Fallback food load failed - app will continue with no foods',
+        context: 'FOOD_DATA_FALLBACK',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - app should continue even if fallback fails
     }
   }
 

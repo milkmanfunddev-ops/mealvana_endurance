@@ -92,14 +92,14 @@ class WelcomeScreen extends ConsumerWidget {
                 width: double.infinity,
               ),
 
-              SizedBox(height: 16.h),
+              // SizedBox(height: 16.h),
 
-              // Skip for now option (for testing)
-              SecondaryButton(
-                text: 'Skip for Now',
-                onPressed: () => context.go('/main'),
-                width: double.infinity,
-              ),
+              // // Skip for now option (for testing)
+              // SecondaryButton(
+              //   text: 'Skip for Now',
+              //   onPressed: () => context.go('/main'),
+              //   width: double.infinity,
+              // ),
               
               SizedBox(height: 24.h),
             ],

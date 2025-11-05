@@ -102,7 +102,7 @@ class AppDatabase extends _$AppDatabase {
   final AppLogger _logger;
 
   @override
-  int get schemaVersion => 1; // v1: Baseline schema with 26 tables (fresh installs only)
+  int get schemaVersion => 2; // v2: Added needsUpload and localUpdatedAt columns to nutrition_plans table
 
   /// Generate a UUID for new records
   String _generateUuid() {
@@ -160,24 +160,132 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  /// V1 database setup - fresh installs only (no migrations needed)
+  /// V1 database setup with seed database support and migration strategy
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
+      // Called when database is first created (version 0 -> 1)
       onCreate: (Migrator m) async {
-        // Create all v1 tables for fresh installs
-        await m.createAll();
+        if (kDebugMode) {
+          print('🔨 onCreate triggered - checking for seed tables');
+        }
+
+        // Check which tables already exist (from seed DB)
+        final existingTablesResult = await customSelect(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        ).get();
+
+        final existingTables = existingTablesResult
+            .map((row) => row.read<String>('name'))
+            .toSet();
+
+        if (kDebugMode) {
+          print('📊 Found ${existingTables.length} existing tables from seed DB: ${existingTables.join(", ")}');
+        }
+
+        // 🚨 CRITICAL FIX: m.createAll() DROPS tables before recreating them!
+        // This wipes seed data even though tables exist. Instead, we manually
+        // create each table using CREATE TABLE IF NOT EXISTS to preserve seed data.
+
+        // Seed tables (already have data - must NOT be recreated)
+        // Using actual SQLite table names from seed DB (NOT Drift class names)
+        final seedTables = {
+          'foods',  // FoodsTable
+          'food_categories',  // FoodCategoriesTable
+          'categories',  // CategoriesTable
+          'product_types',  // ProductTypesTable
+          'meal_types',  // MealTypesTable
+          'carb_loading_foods',  // CarbLoadingFoodsTable
+          'carb_loading_food_meal_types'  // CarbLoadingFoodMealTypesTable
+        };
+
+        // For each table definition, manually create with IF NOT EXISTS
+        for (final table in allTables) {
+          final tableName = table.actualTableName;
+
+          // Skip tables that already exist AND are seed tables (have data)
+          if (existingTables.contains(tableName) && seedTables.contains(tableName)) {
+            if (kDebugMode) {
+              print('  ⏭️ Skipping $tableName (seed table with data)');
+            }
+            continue; // Don't recreate this table
+          }
+
+          // Create all other tables (new tables OR non-seed tables)
+          await m.createTable(table);
+        }
+
+        // Only populate default data for NEW tables (not seed tables)
         await _populateDefaultData();
+
+        if (kDebugMode) {
+          // Verify food count after onCreate
+          final foodCountResult = await customSelect('SELECT COUNT(*) as count FROM foods').getSingle();
+          final foodCount = foodCountResult.read<int>('count');
+          print('✅ onCreate completed - foods table has $foodCount items');
+        }
       },
-      // No onUpgrade needed - v1 is the baseline, all users start fresh
+
+      // Called immediately after database is opened
       beforeOpen: (details) async {
-        // Enable foreign key support
+        // Enable foreign key support (required for Drift)
         await customStatement('PRAGMA foreign_keys = ON');
 
         if (kDebugMode) {
           // Enable detailed logging in debug mode
           await customStatement('PRAGMA synchronous = NORMAL');
           await customStatement('PRAGMA cache_size = 10000');
+        }
+
+        if (details.wasCreated) {
+          // Database just created from seed file
+          // onCreate already ran to create missing tables
+          // Verify seed data is still present
+          try {
+            final foodCountResult = await customSelect('SELECT COUNT(*) as count FROM foods').getSingle();
+            final foodCount = foodCountResult.read<int>('count');
+
+            if (foodCount > 0) {
+              if (kDebugMode) {
+                print('✅ Database initialized with $foodCount seed foods');
+              }
+            } else {
+              if (kDebugMode) {
+                print('⚠️ No seed foods found - will need fallback sync');
+              }
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ Could not verify seed data: $e');
+            }
+          }
+        } else if (kDebugMode) {
+          // Existing database opened
+          print('📂 Existing database opened (v${details.versionBefore} → v${details.versionNow})');
+        }
+      },
+
+      // Called when upgrading from older version
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (kDebugMode) {
+          print('🔄 Migrating database from v$from to v$to');
+        }
+
+        // V1 → V2 migration: Add sync columns to nutrition_plans table
+        if (from == 1 && to == 2) {
+          // Add needsUpload and localUpdatedAt columns to nutrition_plans
+          // Drift will automatically handle this with ALTER TABLE ADD COLUMN
+          await m.addColumn(nutritionPlans, nutritionPlans.needsUpload);
+          await m.addColumn(nutritionPlans, nutritionPlans.localUpdatedAt);
+
+          if (kDebugMode) {
+            print('✅ Migration V1→V2 completed: Added sync columns to nutrition_plans');
+          }
+        }
+
+        // V2 → V3 migration (future)
+        if (from == 2 && to == 3) {
+          // Handle future migrations
         }
       },
     );
@@ -731,6 +839,7 @@ class AppDatabase extends _$AppDatabase {
     double? fluidMlPerServing,
     String? productTypeId,
     required List<int> categoryIds,
+    DateTime? clientUpdatedAt,
   }) async {
     await transaction(() async {
       // Insert the user food
@@ -754,6 +863,7 @@ class AppDatabase extends _$AppDatabase {
           sodiumMg: Value(sodiumMg),
           fluidMlPerServing: Value(fluidMlPerServing),
           productTypeId: Value(productTypeId),
+          clientUpdatedAt: Value(clientUpdatedAt),
           createdAt: Value(DateTime.now()),
           updatedAt: Value(DateTime.now()),
         ),
@@ -865,18 +975,32 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
-/// Database connection setup
+/// Database connection setup with seed database support
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     // Put the database file in the documents directory
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'mealvana_endurance_db.sqlite'));
-    
+
+    // Log database initialization status
+    if (kDebugMode) {
+      final dbExists = await file.exists();
+      if (!dbExists) {
+        print('🌱 Fresh install detected - creating empty database');
+        print('📍 Target path: ${file.path}');
+        print('📋 All tables will be created by onCreate migration');
+        print('📥 Reference data will be downloaded via sync after onboarding');
+      } else {
+        print('📂 Database file already exists at: ${file.path}');
+        print('💡 This is NOT a fresh install - using existing database');
+      }
+    }
+
     // Also work around limitations on old Android versions
     if (Platform.isAndroid) {
       await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
     }
-    
+
     // Make sqlite3 pick a more suitable location for temporary files
     final cachebase = (await getTemporaryDirectory()).path;
     sqlite3.tempDirectory = cachebase;

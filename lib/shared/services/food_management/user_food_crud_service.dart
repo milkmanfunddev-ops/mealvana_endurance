@@ -48,7 +48,7 @@ class UserFoodCrudService {
     }
   }
 
-  /// Save food from Open Food Facts or barcode scanning
+  /// Save food from Open Food Facts or barcode scanning (offline-first pattern)
   Future<void> saveUserFood(
     Food food,
     List<int> categoryIds, {
@@ -61,7 +61,7 @@ class UserFoodCrudService {
       // Generate unique UUID for this food
       final foodId = _uuid.v4();
 
-      // 1. Save to local Drift database first (for offline access)
+      // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
       await _database.saveUserFood(
         deviceId: deviceId,
         id: foodId,
@@ -82,44 +82,18 @@ class UserFoodCrudService {
         fluidMlPerServing: food.fluidMlPerServing,
         productTypeId: food.productTypeId,
         categoryIds: categoryIds,
+        clientUpdatedAt: DateTime.now(),
       );
 
-      // 2. Sync to Supabase via edge function (for backup and cross-device sync)
-      try {
-        final response = await _supabase.functions.invoke('save-user-food', body: {
-          'device_id': deviceId,
-          'id': foodId,
-          'client_food_id': food.id,
-          'barcode': barcode,
-          'name': food.name,
-          'display_name': food.displayName ?? food.name,
-          'display_name_plural': food.displayNamePlural ?? '${food.name}s',
-          'description': food.description,
-          'image_address': food.imageAddress,
-          'serving_amount': food.servingAmount,
-          'serving_unit': food.servingUnit,
-          'calories_per_serving': food.caloriesPerServing,
-          'carbs_per_serving': food.carbsPerServing,
-          'protein_per_serving': food.proteinPerServing,
-          'fat_per_serving': food.fatPerServing,
-          'sodium_mg': food.sodiumMg,
-          'fluid_ml_per_serving': food.fluidMlPerServing,
-          'product_type_id': food.productTypeId,
-          'category_ids': categoryIds,
-        });
-
-        if (response.status != 200) {
-          _logger.warning('Supabase sync failed, but local save succeeded',
-            context: 'UserFoodCrudService',
-            data: {'response': response.data},
-          );
-        } else {        }
-      } catch (supabaseError) {
-        _logger.warning('Supabase sync failed, but local save succeeded',
-          context: 'UserFoodCrudService',
-          error: supabaseError,
-        );
-      }    } catch (e) {
+      // Attempt background upload (non-blocking)
+      unawaited(_uploadUserFoodToSupabase(
+        deviceId: deviceId,
+        foodId: foodId,
+        food: food,
+        categoryIds: categoryIds,
+        barcode: barcode,
+      ));
+    } catch (e) {
       _logger.error('Error saving user food',
         context: 'UserFoodCrudService',
         data: {'foodName': food.name},
@@ -129,34 +103,19 @@ class UserFoodCrudService {
     }
   }
 
-  /// Delete user food
+  /// Delete user food (offline-first pattern)
   Future<void> deleteUserFood(String foodId) async {
     try {
       // Get current user's device ID
       final userProfile = await _database.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
-      // 1. Delete from local Drift database first
+
+      // OFFLINE-FIRST: Delete from Drift IMMEDIATELY
       await _database.deleteUserFood(foodId);
 
-      // 2. Sync deletion to Supabase via edge function
-      try {
-        final response = await _supabase.functions.invoke('delete-user-food', body: {
-          'device_id': deviceId,
-          'food_id': foodId,
-        });
-
-        if (response.status != 200) {
-          _logger.warning('Supabase delete sync failed, but local delete succeeded',
-            context: 'UserFoodCrudService',
-            data: {'response': response.data},
-          );
-        } else {        }
-      } catch (supabaseError) {
-        _logger.warning('Supabase delete sync failed, but local delete succeeded',
-          context: 'UserFoodCrudService',
-          error: supabaseError,
-        );
-      }    } catch (e) {
+      // Attempt background upload (non-blocking)
+      unawaited(_uploadUserFoodDeletion(deviceId, foodId));
+    } catch (e) {
       _logger.error('Error deleting user food',
         context: 'UserFoodCrudService',
         data: {'foodId': foodId},
@@ -165,6 +124,79 @@ class UserFoodCrudService {
       rethrow;
     }
   }
+
+  /// Upload user food to Supabase in background (non-blocking)
+  Future<void> _uploadUserFoodToSupabase({
+    required String deviceId,
+    required String foodId,
+    required Food food,
+    required List<int> categoryIds,
+    String? barcode,
+  }) async {
+    try {
+      final response = await _supabase.functions.invoke('save-user-food', body: {
+        'device_id': deviceId,
+        'id': foodId,
+        'client_food_id': food.id,
+        'barcode': barcode,
+        'name': food.name,
+        'display_name': food.displayName ?? food.name,
+        'display_name_plural': food.displayNamePlural ?? '${food.name}s',
+        'description': food.description,
+        'image_address': food.imageAddress,
+        'serving_amount': food.servingAmount,
+        'serving_unit': food.servingUnit,
+        'calories_per_serving': food.caloriesPerServing,
+        'carbs_per_serving': food.carbsPerServing,
+        'protein_per_serving': food.proteinPerServing,
+        'fat_per_serving': food.fatPerServing,
+        'sodium_mg': food.sodiumMg,
+        'fluid_ml_per_serving': food.fluidMlPerServing,
+        'product_type_id': food.productTypeId,
+        'category_ids': categoryIds,
+      });
+
+      if (response.status >= 200 && response.status < 300) {
+        // Upload successful
+      } else {
+        throw Exception('Edge function failed: ${response.data}');
+      }
+    } catch (e) {
+      _logger.warning(
+        'Failed to upload user food (will retry on next sync)',
+        context: 'UserFoodCrudService',
+        error: e,
+        data: {'foodId': foodId},
+      );
+      // Don't rethrow - keep dirty flag, will retry on next sync
+    }
+  }
+
+  /// Upload user food deletion to Supabase in background (non-blocking)
+  Future<void> _uploadUserFoodDeletion(String deviceId, String foodId) async {
+    try {
+      final response = await _supabase.functions.invoke('delete-user-food', body: {
+        'device_id': deviceId,
+        'food_id': foodId,
+      });
+
+      if (response.status < 200 || response.status >= 300) {
+        _logger.warning(
+          'Failed to upload user food deletion',
+          context: 'UserFoodCrudService',
+          data: {'foodId': foodId, 'status': response.status},
+        );
+      }
+    } catch (e) {
+      _logger.warning(
+        'Failed to upload user food deletion',
+        context: 'UserFoodCrudService',
+        error: e,
+        data: {'foodId': foodId},
+      );
+    }
+  }
+
 
   /// Check if food exists in user_foods
   Future<bool> isUserFood(String foodId) async {
