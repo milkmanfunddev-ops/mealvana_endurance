@@ -442,26 +442,8 @@ class _EventOnlyEditScreenState extends ConsumerState<EventOnlyEditScreen> {
     );
   }
 
+  /// Format event type - uses the extension method for display name
   String _formatEventType(EventType type) {
-    switch (type) {
-      case EventType.fiveK:
-        return '5K';
-      case EventType.tenK:
-        return '10K';
-      case EventType.halfMarathon:
-        return 'Half Marathon';
-      case EventType.marathon:
-        return 'Marathon';
-      case EventType.ultra50K:
-        return 'Ultra 50K';
-      case EventType.ultra50M:
-        return 'Ultra 50M';
-      case EventType.ultra100K:
-        return 'Ultra 100K';
-      case EventType.ultra100M:
-        return 'Ultra 100M';
-      case EventType.custom:
-        return 'Custom Event';
-    }
+    return type.displayName;
   }
 }

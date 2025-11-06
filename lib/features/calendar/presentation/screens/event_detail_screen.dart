@@ -8,6 +8,7 @@ import 'package:mealvana_endurance/shared/widgets/secondary_button.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../domain/activity.dart';
 import '../../domain/event.dart';
+import '../../domain/event_subtype.dart';
 import '../providers/calendar_controller.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import 'carb_loading_protocol_selection_screen.dart';
@@ -345,27 +346,17 @@ class EventDetailScreen extends ConsumerWidget {
     );
   }
 
-  double _getEventDistanceMiles(EventType eventType) {
-    switch (eventType) {
-      case EventType.marathon:
-        return 26.2;
-      case EventType.halfMarathon:
-        return 13.1;
-      case EventType.tenK:
-        return 6.2;
-      case EventType.fiveK:
-        return 3.1;
-      case EventType.ultra50K:
-        return 31.0;
-      case EventType.ultra50M:
-        return 50.0;
-      case EventType.ultra100K:
-        return 62.0;
-      case EventType.ultra100M:
-        return 100.0;
-      case EventType.custom:
-        return 0.0;
-    }
+  /// Get event distance in miles from the event's subtype
+  /// Returns null if distance is not available or event is time-based
+  double? _getEventDistanceMiles(Event event) {
+    if (event.eventSubtype == null) return null;
+
+    final subtype = EventSubtype.findByName(
+      event.eventType.dbValue,
+      event.eventSubtype!,
+    );
+
+    return subtype?.totalDistanceMiles;
   }
 
   Widget _buildActionButtonsCard(BuildContext context, WidgetRef ref, Activity? activity, Event event) {
@@ -414,11 +405,11 @@ class EventDetailScreen extends ConsumerWidget {
                 } else {
                   // No activity yet - create one first, then navigate
                   try {
-                    // Get event date and calculate distance from event type
+                    // Get event date and calculate distance from event subtype
                     final scheduledDateTime = event.startTime != null
                         ? DateTime.parse(event.startTime!)
                         : DateTime.now();
-                    final distanceMiles = _getEventDistanceMiles(event.eventType);
+                    final distanceMiles = _getEventDistanceMiles(event);
 
                     // Create activity
                     final activityId = await ref.read(calendarControllerProvider.notifier).createActivity(

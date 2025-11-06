@@ -192,17 +192,14 @@ class Event {
   }
 }
 
-/// Event type enum
+/// Event type enum - represents the primary sport category
 enum EventType {
-  marathon,
-  halfMarathon,
-  tenK,
-  fiveK,
-  ultra50K,
-  ultra50M,
-  ultra100K,
-  ultra100M,
-  custom,
+  running,
+  cycling,
+  swimming,
+  triathlon,
+  duathlon,
+  multisport,
 }
 
 /// Extension to convert EventType to database-compatible string
@@ -210,78 +207,97 @@ extension EventTypeExtension on EventType {
   /// Convert to database-compatible snake_case string
   String get dbValue {
     switch (this) {
-      case EventType.marathon:
-        return 'marathon';
-      case EventType.halfMarathon:
-        return 'half_marathon';
-      case EventType.tenK:
-        return '10k';
-      case EventType.fiveK:
-        return '5k';
-      case EventType.ultra50K:
-        return 'ultra_50k';
-      case EventType.ultra50M:
-        return 'ultra_50m';
-      case EventType.ultra100K:
-        return 'ultra_100k';
-      case EventType.ultra100M:
-        return 'ultra_100m';
-      case EventType.custom:
-        return 'custom';
+      case EventType.running:
+        return 'running';
+      case EventType.cycling:
+        return 'cycling';
+      case EventType.swimming:
+        return 'swimming';
+      case EventType.triathlon:
+        return 'triathlon';
+      case EventType.duathlon:
+        return 'duathlon';
+      case EventType.multisport:
+        return 'multisport';
+    }
+  }
+
+  /// Get display name for the sport category
+  String get displayName {
+    switch (this) {
+      case EventType.running:
+        return 'Running';
+      case EventType.cycling:
+        return 'Cycling';
+      case EventType.swimming:
+        return 'Swimming';
+      case EventType.triathlon:
+        return 'Triathlon';
+      case EventType.duathlon:
+        return 'Duathlon';
+      case EventType.multisport:
+        return 'Multi-Sport';
+    }
+  }
+
+  /// Get emoji icon for the sport category
+  String get icon {
+    switch (this) {
+      case EventType.running:
+        return '🏃';
+      case EventType.cycling:
+        return '🚴';
+      case EventType.swimming:
+        return '🏊';
+      case EventType.triathlon:
+        return '⚡';
+      case EventType.duathlon:
+        return '🔄';
+      case EventType.multisport:
+        return '🎯';
     }
   }
 
   /// Parse from database string to EventType
   static EventType fromDbValue(String value) {
     switch (value) {
+      case 'running':
+        return EventType.running;
+      case 'cycling':
+        return EventType.cycling;
+      case 'swimming':
+        return EventType.swimming;
+      case 'triathlon':
+        return EventType.triathlon;
+      case 'duathlon':
+        return EventType.duathlon;
+      case 'multisport':
+        return EventType.multisport;
+      // Legacy support for old running event types
       case 'marathon':
-        return EventType.marathon;
       case 'half_marathon':
-        return EventType.halfMarathon;
       case '10k':
-        return EventType.tenK;
       case '5k':
-        return EventType.fiveK;
       case 'ultra_50k':
-        return EventType.ultra50K;
       case 'ultra_50m':
-        return EventType.ultra50M;
       case 'ultra_100k':
-        return EventType.ultra100K;
       case 'ultra_100m':
-        return EventType.ultra100M;
       case 'custom':
-        return EventType.custom;
+        return EventType.running;
       default:
-        return EventType.marathon;
+        return EventType.running;
     }
   }
 }
 
 /// Event extensions for utility methods
 extension EventExtensions on Event {
-  /// Get formatted event type name
+  /// Get formatted event type name (combines category and subtype)
   String get formattedEventType {
-    switch (eventType) {
-      case EventType.marathon:
-        return 'Marathon';
-      case EventType.halfMarathon:
-        return 'Half Marathon';
-      case EventType.tenK:
-        return '10K';
-      case EventType.fiveK:
-        return '5K';
-      case EventType.ultra50K:
-        return '50K Ultra';
-      case EventType.ultra50M:
-        return '50 Mile Ultra';
-      case EventType.ultra100K:
-        return '100K Ultra';
-      case EventType.ultra100M:
-        return '100 Mile Ultra';
-      case EventType.custom:
-        return eventSubtype ?? 'Custom Event';
+    if (eventSubtype != null && eventSubtype!.isNotEmpty) {
+      return eventSubtype!;
     }
+    return eventType.displayName;
   }
   
   /// Get formatted goal time if available

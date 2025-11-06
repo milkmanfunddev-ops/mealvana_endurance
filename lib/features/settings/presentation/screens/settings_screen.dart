@@ -106,7 +106,11 @@ class SettingsScreen extends ConsumerWidget {
           // Gut training level
           _buildGutTrainingSelector(ref, state),
           SizedBox(height: 20.h),
-          
+
+          // Sport settings button
+          _buildSportSettingsButton(context, state),
+          SizedBox(height: 20.h),
+
           // Food preferences button
           _buildFoodPreferencesButton(context, state),
           SizedBox(height: 32.h),
@@ -543,6 +547,34 @@ class SettingsScreen extends ConsumerWidget {
           }).toList(),
         ),
       ],
+    );
+  }
+
+  Widget _buildSportSettingsButton(BuildContext context, dynamic state) {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to sport settings screen
+        context.push('/settings/sport-settings');
+      },
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Sport settings (cycling, swimming)',
+              style: AppTheme.textStyle.copyWith(
+                color: AppTheme.primary600,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios,
+            size: 16.sp,
+            color: AppTheme.primary600,
+          ),
+        ],
+      ),
     );
   }
 

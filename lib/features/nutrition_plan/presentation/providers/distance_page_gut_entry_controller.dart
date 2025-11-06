@@ -1213,11 +1213,8 @@ class DistancePageGutEntryController extends _$DistancePageGutEntryController {
             'plan_type': 'llm_generated',
           });
 
-          // Use setGeneratedPlan to mark as unsaved and save temporarily with planId
-          await ref.read(nutritionPlanControllerProvider.notifier).setGeneratedPlan(
-            nutritionPlan,
-            planId: currentState.planId, // Get planId from state
-          );
+          // Set the generated plan (saves immediately to database)
+          await ref.read(nutritionPlanControllerProvider.notifier).setGeneratedPlan(nutritionPlan);
 
           // Invalidate eventDetailProvider if eventId exists (to refresh "Create Nutrition Plan" button)
           if (currentStateValue?.eventId != null) {

@@ -178,27 +178,3 @@ class UpcomingEventWidget extends ConsumerWidget {
   }
 }
 
-extension EventTypeExtension on EventType {
-  String get displayName {
-    switch (this) {
-      case EventType.marathon:
-        return 'Marathon';
-      case EventType.halfMarathon:
-        return 'Half Marathon';
-      case EventType.tenK:
-        return '10K';
-      case EventType.fiveK:
-        return '5K';
-      case EventType.ultra50K:
-        return 'Ultra 50K';
-      case EventType.ultra50M:
-        return 'Ultra 50M';
-      case EventType.ultra100K:
-        return 'Ultra 100K';
-      case EventType.ultra100M:
-        return 'Ultra 100M';
-      case EventType.custom:
-        return 'Custom Event';
-    }
-  }
-}

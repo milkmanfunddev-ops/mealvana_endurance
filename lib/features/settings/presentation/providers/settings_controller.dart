@@ -68,6 +68,10 @@ class SettingsController extends _$SettingsController {
       cssPacePer100mSeconds: userProfile?.cssPacePer100mSeconds,
       typicalWetsuit: userProfile?.typicalWetsuit,
       typicalSwimCapType: userProfile?.typicalSwimCapType,
+      // User identity fields (needed for database operations)
+      userId: userProfile?.id,
+      createdAt: userProfile?.createdAt,
+      updatedAt: userProfile?.updatedAt,
     );
   }
 
@@ -236,15 +240,15 @@ class SettingsController extends _$SettingsController {
 
     state = await AsyncValue.guard(() async {
       final updatedProfile = UserProfile(
-        id: '', // Will be set by repository
+        id: currentState.userId ?? '', // Use stored user ID (which is the device_id)
         gender: currentState.gender ?? Gender.other,
         birthday: currentState.birthday ?? DateTime.now(),
         heightFeet: currentState.heightFeet ?? 5,
         heightInches: currentState.heightInches ?? 8,
         weightPounds: currentState.weightPounds ?? 150.0,
         runsWithWaterBottle: currentState.runsWithWaterBottle,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        createdAt: currentState.createdAt ?? DateTime.now(), // Use stored createdAt
+        updatedAt: DateTime.now(), // Update to current time
         gutTraining: currentState.gutTrainingLevel,
         appVersion: '1.0.0', // Default app version
         // Sport preferences
@@ -258,9 +262,9 @@ class SettingsController extends _$SettingsController {
         typicalSwimCapType: currentState.typicalSwimCapType,
       );
 
-      // Save locally first, then sync to Supabase
+      // Update existing profile (not create new one)
       final userRepository = await _userRepository;
-      await userRepository.saveUserProfile(updatedProfile);
+      await userRepository.updateUserProfile(updatedProfile);
 
       // TODO: Add Supabase sync once implemented
       // await _userRepository.syncToSupabase();

@@ -7,6 +7,7 @@ import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../providers/distance_page_gut_entry_controller.dart';
 import '../../domain/macro_targets.dart';
 
@@ -111,6 +112,20 @@ class AdjustMacrosScreen extends ConsumerWidget {
   }
 
   Widget _buildHeaderSection(MacroTargets macros) {
+    // Get the appropriate icon based on activity type
+    IconData activityIcon;
+    switch (macros.activityType) {
+      case ActivityType.running:
+        activityIcon = Icons.directions_run;
+        break;
+      case ActivityType.cycling:
+        activityIcon = Icons.directions_bike;
+        break;
+      case ActivityType.swimming:
+        activityIcon = Icons.pool;
+        break;
+    }
+
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
@@ -143,7 +158,7 @@ class AdjustMacrosScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Icon(
-                  Icons.directions_run,
+                  activityIcon,
                   color: AppTheme.primary600,
                   size: 24.w,
                 ),
@@ -175,17 +190,12 @@ class AdjustMacrosScreen extends ConsumerWidget {
           ),
           
           SizedBox(height: 20.h),
-          
+
           // Key Metrics Row
           Row(
             children: [
               Expanded(
-                child: _buildMetricCard(
-                  icon: Icons.speed,
-                  iconColor: Colors.green,
-                  label: 'Pace',
-                  value: '${macros.metrics.formattedPace} min/mile',
-                ),
+                child: _buildActivityMetricCard(macros),
               ),
               SizedBox(width: 12.w),
               Expanded(
@@ -200,6 +210,34 @@ class AdjustMacrosScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// Build activity-specific metric card (pace for running, speed for cycling/swimming)
+  Widget _buildActivityMetricCard(MacroTargets macros) {
+    String label;
+    String value;
+
+    switch (macros.activityType) {
+      case ActivityType.running:
+        label = 'Pace';
+        value = '${macros.metrics.formattedPace} min/mile';
+        break;
+      case ActivityType.cycling:
+        label = 'Speed';
+        value = '${macros.metrics.speedMph.toStringAsFixed(1)} mph';
+        break;
+      case ActivityType.swimming:
+        label = 'Speed';
+        value = '${macros.metrics.speedMph.toStringAsFixed(1)} mph';
+        break;
+    }
+
+    return _buildMetricCard(
+      icon: Icons.speed,
+      iconColor: Colors.green,
+      label: label,
+      value: value,
     );
   }
 

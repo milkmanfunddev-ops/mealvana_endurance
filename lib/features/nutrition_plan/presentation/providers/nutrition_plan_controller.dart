@@ -13,45 +13,35 @@ import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
-import '../../../../shared/database/database_provider.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'nutrition_plan_controller.g.dart';
 
-/// State class combining nutrition plan and its save status
+/// State class for nutrition plan (simplified - plans are always activity-owned)
 class NutritionPlanState {
   const NutritionPlanState({
     this.plan,
-    this.isSaved = true,
     this.isLoading = false,
     this.error,
-    this.planId,
   });
 
   final NutritionPlan? plan;
-  final bool isSaved;
   final bool isLoading;
   final String? error;
-  final String? planId; // UUID v4 for North-Star metric threading
 
   NutritionPlanState copyWith({
     NutritionPlan? plan,
-    bool? isSaved,
     bool? isLoading,
     String? error,
-    String? planId,
   }) {
     return NutritionPlanState(
       plan: plan ?? this.plan,
-      isSaved: isSaved ?? this.isSaved,
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
-      planId: planId ?? this.planId,
-    );
+      error: error ?? this.error);
   }
 
   @override
-  String toString() => 'NutritionPlanState(plan: ${plan?.id}, isSaved: $isSaved, isLoading: $isLoading, error: $error)';
+  String toString() => 'NutritionPlanState(plan: ${plan?.id}, isLoading: $isLoading, error: $error)';
 }
 
 
@@ -112,229 +102,50 @@ class NutritionPlanController extends _$NutritionPlanController {
       fat: totalFat,
       carbsRange: plan.macroTargets?.carbsRange ?? '80-90%',
       proteinRange: plan.macroTargets?.proteinRange ?? '5-15%',
-      fatRange: plan.macroTargets?.fatRange ?? '5-15%',
-    );
+      fatRange: plan.macroTargets?.fatRange ?? '5-15%');
   }
 
   @override
   FutureOr<NutritionPlanState> build() async {
-    DebugLogger.info('🔍 DEBUG: NutritionPlanController.build() called');
-    
-    // First try to get a temporarily saved plan (unsaved plan)
-    final tempPlan = await _getTempPlan();
-    if (tempPlan != null) {
-      DebugLogger.info('🔍 DEBUG: Found temp plan: ${tempPlan.id}, returning as unsaved');
-      return NutritionPlanState(plan: tempPlan, isSaved: false);
-    }
-    
-    DebugLogger.info('🔍 DEBUG: No temp plan found, getting latest saved plan');
-    // Otherwise get the latest saved nutrition plan  
+    DebugLogger.info('🔍 NutritionPlanController.build() - loading latest plan');
+
+    // Get the latest saved nutrition plan (all plans are now activity-owned)
     final savedPlan = await _nutritionPlanService.getLatestNutritionPlan();
     if (savedPlan != null) {
-      DebugLogger.info('🔍 DEBUG: Found saved plan: ${savedPlan.id}, returning as saved');
-      return NutritionPlanState(plan: savedPlan, isSaved: true);
+      DebugLogger.info('✅ Found plan: ${savedPlan.id}');
+      return NutritionPlanState(plan: savedPlan);
     } else {
-      DebugLogger.info('🔍 DEBUG: No plan found');
-      return const NutritionPlanState(plan: null, isSaved: true);
-    }
-  }
-
-  /// Get temporarily stored plan (unsaved plan that persists through app reload)
-  Future<NutritionPlan?> _getTempPlan() async {
-    try {
-      final authService = ref.read(authServiceProvider);
-      final user = await authService.getCurrentUser();
-
-      // Check if provider is still mounted after async gap
-      if (!ref.mounted) {
-        DebugLogger.info('🔍 DEBUG: Provider disposed, aborting getTempPlan');
-        return null;
-      }
-
-      if (user == null) {
-        DebugLogger.info('🔍 DEBUG: No user found for temp plan check');
-        return null;
-      }
-
-      DebugLogger.info('🔍 DEBUG: Checking for temp plan for user: ${user.id}');
-      final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
-
-      // Check if provider is still mounted after another async gap
-      if (!ref.mounted) {
-        DebugLogger.info('🔍 DEBUG: Provider disposed during getTempPlan, aborting');
-        return null;
-      }
-
-      final tempPlan = await planRepository.getTempPlan(user.id);
-
-      if (tempPlan != null) {
-        DebugLogger.info('🔍 DEBUG: Found temp plan: ${tempPlan.id}');
-      } else {
-        DebugLogger.info('🔍 DEBUG: No temp plan found');
-      }
-
-      return tempPlan;
-    } catch (error) {
-      DebugLogger.error('Error getting temp plan: $error');
-      return null;
-    }
-  }
-
-  /// Save plan temporarily (survives app restart until officially saved)
-  Future<void> _saveTempPlan(NutritionPlan plan) async {
-    try {
-      final authService = ref.read(authServiceProvider);
-      final user = await authService.getCurrentUser();
-
-      // Check if provider is still mounted after async gap
-      if (!ref.mounted) {
-        DebugLogger.info('🔍 DEBUG: Provider disposed, aborting saveTempPlan');
-        return;
-      }
-
-      if (user == null) {
-        DebugLogger.info('🔍 DEBUG: Cannot save temp plan - no user');
-        return;
-      }
-
-      DebugLogger.info('🔍 DEBUG: Saving temp plan ${plan.id} for user: ${user.id}');
-      final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
-
-      // Check if provider is still mounted after another async gap
-      if (!ref.mounted) {
-        DebugLogger.info('🔍 DEBUG: Provider disposed during saveTempPlan, aborting');
-        return;
-      }
-
-      await planRepository.saveTempPlan(user.id, plan);
-      DebugLogger.info('🔍 DEBUG: Temp plan saved successfully');
-    } catch (error) {
-      DebugLogger.error('Error saving temp plan: $error');
-    }
-  }
-
-  /// Clear temporary plan (called when plan is officially saved)
-  Future<void> _clearTempPlan() async {
-    try {
-      final authService = ref.read(authServiceProvider);
-      final user = await authService.getCurrentUser();
-
-      // Check if provider is still mounted after async gap
-      if (!ref.mounted) {
-        DebugLogger.info('🔍 DEBUG: Provider disposed, aborting clearTempPlan');
-        return;
-      }
-
-      if (user == null) return;
-
-      final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
-
-      // Check if provider is still mounted after another async gap
-      if (!ref.mounted) {
-        DebugLogger.info('🔍 DEBUG: Provider disposed during clearTempPlan, aborting');
-        return;
-      }
-
-      await planRepository.clearTempPlan(user.id);
-    } catch (error) {
-      DebugLogger.error('Error clearing temp plan: $error');
+      DebugLogger.info('📭 No plan found');
+      return const NutritionPlanState(plan: null);
     }
   }
 
 
-  /// Set a new generated plan (marks as unsaved and saves temporarily)
-  Future<void> setGeneratedPlan(NutritionPlan plan, {String? planId}) async {
-    DebugLogger.info('🔍 DEBUG: setGeneratedPlan() called for plan: ${plan.id}');
-    DebugLogger.info('🔍 DEBUG: planId for North-Star: $planId');
 
-    // Read all providers FIRST before any async operations to avoid disposal issues
-    final authService = ref.read(authServiceProvider);
-    final database = ref.read(appDatabaseProvider);
 
-    // Save temporarily so it persists through app reload
-    DebugLogger.info('🔍 DEBUG: Saving plan temporarily');
-    await _saveTempPlan(plan);
+  /// Set a new generated plan (saves immediately to database)
+  Future<void> setGeneratedPlan(NutritionPlan plan) async {
+    DebugLogger.info('🔍 Setting new generated plan: ${plan.id}');
 
-    // Remove from permanent local storage if it was cached there
-    try {
-      final user = await authService.getCurrentUser();
-      if (user != null) {
-        // Delete the plan from permanent local storage so it's only in temp storage
-        DebugLogger.info('🔍 DEBUG: Removing plan from permanent local storage');
-        await database.deleteNutritionPlan(plan.id);
-      }
-    } catch (error) {
-      DebugLogger.error('Note: Could not remove plan from permanent local storage: $error');
+    // Save immediately to database
+    await _saveUpdatedPlan(plan);
+
+    // Check if provider is still mounted after async gap
+    if (!ref.mounted) {
+      DebugLogger.info('⚠️ Provider disposed, aborting setGeneratedPlan');
+      return;
     }
 
-    // Set state LAST after all async work is done
-    state = AsyncValue.data(NutritionPlanState(plan: plan, isSaved: false, planId: planId));
-    DebugLogger.info('🔍 DEBUG: setGeneratedPlan() completed');
+    // Set state with the new plan
+    state = AsyncValue.data(NutritionPlanState(plan: plan));
+    DebugLogger.info('✅ Plan set and saved: ${plan.id}');
   }
 
-  /// Save the current plan permanently (move from temp to permanent storage)
+  /// Save the current plan (all plans are saved immediately now, this is a no-op for compatibility)
   Future<bool> savePlan() async {
-    final currentState = state.value;
-    if (currentState?.plan == null) {
-      DebugLogger.info('🔍 DEBUG: savePlan() - No plan to save');
-      return false;
-    }
-
-    try {
-      DebugLogger.info('🔍 DEBUG: savePlan() called for plan: ${currentState!.plan!.id}');
-      
-      // Save to permanent storage
-      final authService = ref.read(authServiceProvider);
-      final user = await authService.getCurrentUser();
-      if (user == null) {
-        DebugLogger.info('🔍 DEBUG: savePlan() - No user found');
-        return false;
-      }
-
-      final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
-      await planRepository.cachePlanLocally(user.id, currentState.plan!);
-      
-      // Track North-Star metric: plan_saved
-      if (currentState.planId != null) {
-        // TODO: Add macro coverage analytics tracking in future version
-        // This would calculate carbsCoveragePct, sodiumCoveragePct, fluidsCoveragePct
-        // by summing nutritional values from plan sections and comparing to macro targets
-
-        // Track plan_saved event with proper properties
-        final deviceId = user.id;
-
-        // Calculate time since generation (assuming it was just generated)
-        // In a real implementation, you'd store the generation start time
-        const timeSinceGeneration = 0; // Placeholder - should track actual time
-
-        // Check if this is the user's first plan
-        final userPlans = await planRepository.getNutritionPlans(user.id);
-        final totalPlansSaved = userPlans.length;
-        final isFirstPlan = totalPlansSaved <= 1; // Current plan is already saved
-
-        await _analytics.trackPlanSaved(
-          deviceId: deviceId,
-          planId: currentState.planId!,
-          timeSinceGenerationStarted: timeSinceGeneration,
-          isFirstPlan: isFirstPlan,
-          totalPlansSaved: totalPlansSaved,
-        );
-        
-        DebugLogger.info('📊 DEBUG: Tracked plan_saved event for planId: ${currentState.planId}');
-      }
-      
-      // Clear temp storage
-      await _clearTempPlan();
-      
-      // Update state to show as saved
-      state = AsyncValue.data(currentState.copyWith(isSaved: true));
-      
-      DebugLogger.info('🔍 DEBUG: savePlan() completed successfully');
-      return true;
-    } catch (error) {
-      DebugLogger.info('🔍 DEBUG: savePlan() failed: $error');
-      return false;
-    }
+    DebugLogger.info('ℹ️ savePlan() called - plans are now saved immediately');
+    // No-op: Plans are already saved when generated or modified
+    return true;
   }
 
   /// Get cached macro targets from repository
@@ -359,13 +170,23 @@ class NutritionPlanController extends _$NutritionPlanController {
     try {
       final plan = await _nutritionPlanService.generateNutritionPlan(
         distanceMiles: distanceMiles,
-        paceMinutesPerMile: paceMinutesPerMile,
-      );
+        paceMinutesPerMile: paceMinutesPerMile);
+
+      // Check if provider is still mounted after async gap
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed after generateNutritionPlan, aborting');
+        return null;
+      }
 
       // Use setGeneratedPlan to mark as unsaved
       await setGeneratedPlan(plan);
       return plan;
         } catch (error, stackTrace) {
+      // Check if provider is still mounted before setting error state
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during generatePlan error handling');
+        return null;
+      }
       state = AsyncValue.error(error, stackTrace);
       return null;
     }
@@ -384,12 +205,22 @@ class NutritionPlanController extends _$NutritionPlanController {
         distanceMiles: distanceMiles,
         paceMinutesPerMile: paceMinutesPerMile,
         timeBeforeRunHours: timeBeforeRunHours,
-        gutTrainingLevel: gutTrainingLevel,
-      );
-      
+        gutTrainingLevel: gutTrainingLevel);
+
+      // Check if provider is still mounted after async gap
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed after updateNutritionPlan, aborting');
+        return;
+      }
+
       // Mark updated plan as unsaved
       await setGeneratedPlan(updatedPlan);
         } catch (error, stackTrace) {
+      // Check if provider is still mounted before setting error state
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during updatePlan error handling');
+        return;
+      }
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -402,9 +233,9 @@ class NutritionPlanController extends _$NutritionPlanController {
       await _nutritionPlanService.deleteNutritionPlan(planId);
       // If we just deleted the current plan, return empty state
       if (currentState?.plan?.id == planId) {
-        return const NutritionPlanState(plan: null, isSaved: true);
+        return const NutritionPlanState(plan: null);
       }
-      return currentState ?? const NutritionPlanState(plan: null, isSaved: true);
+      return currentState ?? const NutritionPlanState(plan: null);
     });
   }
 
@@ -431,7 +262,7 @@ class NutritionPlanController extends _$NutritionPlanController {
 
   /// Clear current plan (reset state)
   void clearCurrentPlan() {
-    state = const AsyncData(NutritionPlanState(plan: null, isSaved: true));
+    state = const AsyncData(NutritionPlanState(plan: null));
   }
   
   /// Get content-driven error message
@@ -470,16 +301,13 @@ class NutritionPlanController extends _$NutritionPlanController {
                   protein: ((newFood.proteinPerServing ?? 0) * multiplier).toInt(),
                   fat: ((newFood.fatPerServing ?? 0) * multiplier).toInt(),
                   sodium: ((newFood.sodiumMg ?? 0) * multiplier).toInt(),
-                  fluids: ((newFood.fluidMlPerServing ?? 0) * multiplier),
-                ),
-              );
+                  fluids: ((newFood.fluidMlPerServing ?? 0) * multiplier)));
             }
             return item;
           }).toList();
           
           return section.copyWith(
-            foodItems: updatedItems,
-          );
+            foodItems: updatedItems);
         }
         return section;
       }).toList();
@@ -492,11 +320,16 @@ class NutritionPlanController extends _$NutritionPlanController {
         sections: updatedSections,
         macroTargets: updatedMacroTargets,
         totalCalories: updatedMacroTargets.calories,
-        updatedAt: DateTime.now(),
-      );
+        updatedAt: DateTime.now());
       
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
+
+      // Check if provider is still mounted after async operations
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during swapFoodItem, aborting state update');
+        return currentState;
+      }
 
       // Track plan_item_swapped event
       final user = await _authService.getCurrentUser();
@@ -515,13 +348,19 @@ class NutritionPlanController extends _$NutritionPlanController {
 
       await _analytics.trackPlanItemSwapped(
         deviceId: deviceId,
-        planId: updatedPlan.id,
+        planId: currentPlan.id,
         oldItemName: oldItemName,
         newItemName: newFood.name,
         phase: category, // before_run, during_run, or after_run
       );
 
-      return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
+      // Check if provider is still mounted before returning state
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during swapFoodItem analytics, aborting state update');
+        return currentState;
+      }
+
+      return NutritionPlanState(plan: updatedPlan);
     });
   }
   
@@ -556,16 +395,13 @@ class NutritionPlanController extends _$NutritionPlanController {
               protein: ((food.proteinPerServing ?? 0) * multiplier).toInt(),
               fat: ((food.fatPerServing ?? 0) * multiplier).toInt(),
               sodium: ((food.sodiumMg ?? 0) * multiplier).toInt(),
-              fluids: ((food.fluidMlPerServing ?? 0) * multiplier),
-            ),
-          );
+              fluids: ((food.fluidMlPerServing ?? 0) * multiplier)));
           
           return PlanSection(
             id: section.id,
             title: section.title,
             subtitle: section.subtitle,
-            foodItems: [...section.foodItems, newItem],
-          );
+            foodItems: [...section.foodItems, newItem]);
         }
         return section;
       }).toList();
@@ -578,11 +414,16 @@ class NutritionPlanController extends _$NutritionPlanController {
         sections: updatedSections,
         macroTargets: updatedMacroTargets,
         totalCalories: updatedMacroTargets.calories,
-        updatedAt: DateTime.now(),
-      );
+        updatedAt: DateTime.now());
       
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
+
+      // Check if provider is still mounted after async operations
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during addFoodItem, aborting state update');
+        return currentState;
+      }
 
       // Track item_added event
       final multiplier = customAmount ?? food.servingAmount ?? 1.0;
@@ -599,7 +440,13 @@ class NutritionPlanController extends _$NutritionPlanController {
         'sodium_mg': (food.sodiumMg ?? 0) * multiplier,
       });
 
-      return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
+      // Check if provider is still mounted before returning state
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during addFoodItem analytics, aborting state update');
+        return currentState;
+      }
+
+      return NutritionPlanState(plan: updatedPlan);
     });
   }
 
@@ -621,8 +468,7 @@ class NutritionPlanController extends _$NutritionPlanController {
             (category == 'after_run' && section.title == 'After Run')) {
           final itemToDelete = section.foodItems.firstWhere(
             (item) => item.id == foodId,
-            orElse: () => FoodItemData(id: '', name: 'Unknown', quantity: ''),
-          );
+            orElse: () => FoodItemData(id: '', name: 'Unknown', quantity: ''));
           deletedItemName = itemToDelete.name;
           break;
         }
@@ -636,8 +482,7 @@ class NutritionPlanController extends _$NutritionPlanController {
           final updatedItems = section.foodItems.where((item) => item.id != foodId).toList();
 
           return section.copyWith(
-            foodItems: updatedItems,
-          );
+            foodItems: updatedItems);
         }
         return section;
       }).toList();
@@ -650,11 +495,16 @@ class NutritionPlanController extends _$NutritionPlanController {
         sections: updatedSections,
         macroTargets: updatedMacroTargets,
         totalCalories: updatedMacroTargets.calories,
-        updatedAt: DateTime.now(),
-      );
+        updatedAt: DateTime.now());
 
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
+
+      // Check if provider is still mounted after async operations
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during deleteFoodItem, aborting state update');
+        return currentState;
+      }
 
       // Track item_removed event
       if (deletedItemName != null) {
@@ -667,7 +517,13 @@ class NutritionPlanController extends _$NutritionPlanController {
         });
       }
 
-      return NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved);
+      // Check if provider is still mounted before returning state
+      if (!ref.mounted) {
+        DebugLogger.info('🔍 DEBUG: Provider disposed during deleteFoodItem analytics, aborting state update');
+        return currentState;
+      }
+
+      return NutritionPlanState(plan: updatedPlan);
     });
   }
 
@@ -688,8 +544,7 @@ class NutritionPlanController extends _$NutritionPlanController {
           (category == 'after_run' && section.title == 'After Run')) {
         final item = section.foodItems.firstWhere(
           (item) => item.id == foodId,
-          orElse: () => FoodItemData(id: '', name: 'Unknown', quantity: ''),
-        );
+          orElse: () => FoodItemData(id: '', name: 'Unknown', quantity: ''));
         if (item.id == foodId) {
           itemName = item.name;
           // Extract the current quantity from the quantity string (e.g., "2.5 cups" -> 2.5)
@@ -768,17 +623,14 @@ class NutritionPlanController extends _$NutritionPlanController {
                     protein: (currentNutrition.protein! * scaleFactor).round(),
                     fat: (currentNutrition.fat! * scaleFactor).round(),
                     sodium: (currentNutrition.sodium! * scaleFactor).round(),
-                    fluids: currentNutrition.fluids! * scaleFactor,
-                  ),
-                );
+                    fluids: currentNutrition.fluids! * scaleFactor));
               }
             }
             return item;
           }).toList();
           
           return section.copyWith(
-            foodItems: updatedItems,
-          );
+            foodItems: updatedItems);
         }
         return section;
       }).toList();
@@ -791,8 +643,7 @@ class NutritionPlanController extends _$NutritionPlanController {
         sections: updatedSections,
         macroTargets: updatedMacroTargets,
         totalCalories: updatedMacroTargets.calories,
-        updatedAt: DateTime.now(),
-      );
+        updatedAt: DateTime.now());
       
       // Save the updated plan to storage
       await _saveUpdatedPlan(updatedPlan);
@@ -812,7 +663,7 @@ class NutritionPlanController extends _$NutritionPlanController {
       }
 
       // Update state without loading state to prevent UI rebuilds
-      state = AsyncData(NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved));
+      state = AsyncData(NutritionPlanState(plan: updatedPlan));
     } catch (error, stackTrace) {
       // Handle errors without changing to error state to prevent rebuilds
       _logger.error('Failed to update food quantity', error: error, stackTrace: stackTrace);
@@ -831,14 +682,13 @@ class NutritionPlanController extends _$NutritionPlanController {
       // Update the plan with new run date/time
       final updatedPlan = currentPlan.copyWith(
         runDateTime: runDateTime,
-        updatedAt: DateTime.now(),
-      );
+        updatedAt: DateTime.now());
       
       // Save the updated plan to local storage
       await _saveUpdatedPlan(updatedPlan);
       
       // Update state to reflect the change
-      state = AsyncData(NutritionPlanState(plan: updatedPlan, isSaved: currentState.isSaved));
+      state = AsyncData(NutritionPlanState(plan: updatedPlan));
       
       DebugLogger.info('✅ Updated run date/time for plan $planId');
     } catch (error, stackTrace) {

@@ -415,7 +415,28 @@ class DataSyncService {
 
   Future<void> _uploadNutritionPlan(String userId, NutritionPlanEntry plan) async {
     try {
+      // Check if activity_id exists in Supabase (if plan is linked to an activity)
+      String? activityIdToSync = plan.activityId;
+      if (plan.activityId != null) {
+        final activityExists = await _supabase
+            .from('activities')
+            .select('id')
+            .eq('id', plan.activityId!)
+            .maybeSingle();
+
+        // If activity doesn't exist in Supabase yet, set activity_id to null for now
+        // It will be updated later when the activity syncs
+        if (activityExists == null) {
+          activityIdToSync = null;
+          _logger.debug(
+            'Activity ${plan.activityId} not found in Supabase, syncing plan without activity link',
+            context: 'DATA_SYNC',
+          );
+        }
+      }
+
       // Use direct Supabase upsert for nutrition plans (already created locally)
+      // Specify onConflict to handle the UNIQUE constraint on (device_id, plan_id)
       final response = await _supabase
           .from('nutrition_plans')
           .upsert({
@@ -428,7 +449,7 @@ class DataSyncService {
             'pace_minutes_per_mile': plan.paceMinutesPerMile,
             'total_calories': plan.totalCalories,
             'notes': plan.notes,
-            'activity_id': plan.activityId,
+            'activity_id': activityIdToSync, // Use null if activity doesn't exist yet
             'plan_type': plan.planType,
             'sport_type': plan.sportType,
             'version': plan.version,
@@ -439,16 +460,14 @@ class DataSyncService {
             'needs_upload': false,
             'local_updated_at': DateTime.now().toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
-          });
+          },
+          onConflict: 'device_id,plan_id', // Handle UNIQUE constraint on (device_id, plan_id)
+        );
 
-      // Check for error
-      if (response.error == null) {
-        await (_database.update(_database.nutritionPlans)
-              ..where((tbl) => tbl.id.equals(plan.id)))
-            .write(const NutritionPlansCompanion(needsUpload: Value(false)));
-      } else {
-        throw response.error!;
-      }
+      // If upsert succeeds (no exception thrown), mark as synced
+      await (_database.update(_database.nutritionPlans)
+            ..where((tbl) => tbl.id.equals(plan.id)))
+          .write(const NutritionPlansCompanion(needsUpload: Value(false)));
     } catch (e) {
       _logger.warning('Failed to upload nutrition plan ${plan.id}', context: 'DATA_SYNC', error: e);
     }

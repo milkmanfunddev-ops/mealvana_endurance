@@ -4,9 +4,11 @@ import 'package:uuid/uuid.dart';
 import '../domain/activity.dart' as domain;
 import '../domain/event.dart' as domain;
 import '../domain/activity_completion.dart' as domain;
+import '../../activities/domain/activity_reminder.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/notification_service.dart';
 
 /// Service for managing calendar activities and events
 class CalendarService {
@@ -89,6 +91,10 @@ class CalendarService {
     double? paceTargetMinutesPerMile,
     domain.IntensityLevel? intensityLevel,
     String? notes,
+    bool reminderEnabled = false,
+    int? reminderDaysBefore,
+    String? reminderTimeOfDay,
+    bool reminderRecurring = false,
   }) async {
     try {
       final id = _generateId();
@@ -103,6 +109,10 @@ class CalendarService {
         paceTargetMinutesPerMile: Value(paceTargetMinutesPerMile),
         intensityLevel: Value(intensityLevel?.name),
         notes: Value(notes),
+        reminderEnabled: Value(reminderEnabled),
+        reminderDaysBefore: Value(reminderDaysBefore),
+        reminderTimeOfDay: Value(reminderTimeOfDay),
+        reminderRecurring: Value(reminderRecurring),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -113,6 +123,18 @@ class CalendarService {
       final createdActivity = await getActivityById(userId, id);
       if (createdActivity == null) {
         throw Exception('Failed to retrieve created activity');
+      }
+
+      // Schedule notification if reminder is enabled
+      if (reminderEnabled && reminderDaysBefore != null && reminderTimeOfDay != null) {
+        await _scheduleActivityReminder(
+          activityId: id,
+          activityTitle: title,
+          scheduledDateTime: scheduledDateTime,
+          daysBefore: reminderDaysBefore,
+          timeOfDay: reminderTimeOfDay,
+          recurring: reminderRecurring,
+        );
       }
 
       return createdActivity;
@@ -133,11 +155,32 @@ class CalendarService {
         paceTargetMinutesPerMile: Value(activity.paceTargetMinutesPerMile),
         intensityLevel: Value(activity.intensityLevel?.name),
         notes: Value(activity.notes),
+        reminderEnabled: Value(activity.reminderEnabled),
+        reminderDaysBefore: Value(activity.reminderDaysBefore),
+        reminderTimeOfDay: Value(activity.reminderTimeOfDay),
+        reminderRecurring: Value(activity.reminderRecurring),
         updatedAt: Value(DateTime.now()),
       );
 
       await (_database.update(_database.activitiesTable)..where((tbl) => tbl.id.equals(activity.id)))
           .write(companion);
+
+      // Cancel any existing reminders for this activity
+      await NotificationService.cancelAllReminders();
+
+      // Schedule new notification if reminder is enabled
+      if (activity.reminderEnabled &&
+          activity.reminderDaysBefore != null &&
+          activity.reminderTimeOfDay != null) {
+        await _scheduleActivityReminder(
+          activityId: activity.id,
+          activityTitle: activity.title,
+          scheduledDateTime: activity.scheduledDateTime,
+          daysBefore: activity.reminderDaysBefore!,
+          timeOfDay: activity.reminderTimeOfDay!,
+          recurring: activity.reminderRecurring,
+        );
+      }
 
       return activity;
     } catch (e) {
@@ -776,6 +819,40 @@ class CalendarService {
   }
 
   /// Helper method to generate UUID
+  /// Schedule activity reminder notification
+  Future<void> _scheduleActivityReminder({
+    required String activityId,
+    required String activityTitle,
+    required DateTime scheduledDateTime,
+    required int daysBefore,
+    required String timeOfDay,
+    required bool recurring,
+  }) async {
+    try {
+      final reminder = ActivityReminder(
+        enabled: true,
+        daysBefore: daysBefore,
+        timeOfDay: timeOfDay,
+        recurring: recurring,
+      );
+
+      final reminderDateTime = reminder.calculateReminderDateTime(scheduledDateTime);
+
+      await NotificationService.scheduleReminder(
+        scheduledDate: reminderDateTime,
+        recurring: recurring,
+        title: 'Upcoming Activity Reminder',
+        body: 'Your activity "$activityTitle" is in $daysBefore ${daysBefore == 1 ? "day" : "days"}!',
+        planId: activityId,
+      );
+
+      _logger.info('Scheduled reminder for activity $activityId at $reminderDateTime');
+    } catch (e) {
+      _logger.error('Error scheduling activity reminder', error: e);
+      // Don't rethrow - reminder scheduling failure shouldn't block activity creation
+    }
+  }
+
   String _generateId() {
     return _uuid.v4();
   }

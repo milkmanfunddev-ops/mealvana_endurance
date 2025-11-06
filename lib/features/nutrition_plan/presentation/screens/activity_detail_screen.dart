@@ -7,12 +7,14 @@ import '../../../../theme/app_theme.dart';
 import '../widgets/plan_container.dart';
 import '../widgets/macro_targets_widget.dart';
 import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/secondary_button.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/nutrition_plan_controller.dart';
 import '../providers/activity_detail_controller.dart';
 import '../../domain/macro_targets.dart' as targets_model;
 import '../providers/distance_page_gut_entry_controller.dart';
+import '../../../../features/activities/domain/activity_reminder.dart';
+import '../../../../features/activities/presentation/widgets/reminder_settings_bottom_sheet.dart';
+import '../../../../shared/domain/activity_type.dart';
 
 /// Activity Detail Screen - Shows nutrition plan and activity details
 /// Handles both create mode (new activity) and view mode (existing activity)
@@ -131,20 +133,84 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       macroTargets: widget.macroTargets,
     ).notifier);
 
-    await controller.saveActivity();
+    try {
+      await controller.saveActivity();
 
-    if (mounted && widget.mode == 'create') {
-      // Pop any Navigator.push screens (like ActivityCreationScreen) before going to main
-      // This handles the case where we went: TabsScreen -> ActivityCreationScreen (Navigator.push) -> adjust-macros (go_router) -> here
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+      // Show success snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.mode == 'create'
+                ? 'Activity created successfully!'
+                : 'Activity saved successfully!',
+            ),
+            backgroundColor: AppTheme.primary600,
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
-      // Now navigate to tabs screen
-      context.go('/main');
-    } else if (mounted) {
-      // Stay on screen or go back
-      context.go('/main');
+
+      // Navigate after showing snackbar
+      if (mounted && widget.mode == 'create') {
+        // Pop any Navigator.push screens (like ActivityCreationScreen) before going to main
+        // This handles the case where we went: TabsScreen -> ActivityCreationScreen (Navigator.push) -> adjust-macros (go_router) -> here
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+        // Now navigate to tabs screen
+        context.go('/main');
+      } else if (mounted) {
+        // Stay on screen or go back
+        context.go('/main');
+      }
+    } catch (error) {
+      // Show error snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save activity: ${error.toString()}'),
+            backgroundColor: AppTheme.highlight600,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
+  }
+
+  /// Show reminder settings bottom sheet
+  Future<void> _showReminderSettingsSheet(ActivityDetailState state) async {
+    // Get current reminder from activity or pending reminder
+    ActivityReminder? currentReminder;
+    if (state.activity != null && state.activity!.reminderEnabled) {
+      currentReminder = ActivityReminder.fromDatabase(
+        enabled: state.activity!.reminderEnabled,
+        daysBefore: state.activity!.reminderDaysBefore,
+        timeOfDay: state.activity!.reminderTimeOfDay,
+        recurring: state.activity!.reminderRecurring,
+      );
+    } else if (state.pendingReminder != null) {
+      currentReminder = state.pendingReminder;
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ReminderSettingsBottomSheet(
+        currentReminder: currentReminder,
+        onSave: (reminder) {
+          final controller = ref.read(activityDetailControllerProvider(
+            mode: widget.mode,
+            activityId: widget.activityId,
+            pendingActivityData: widget.pendingActivityData,
+            macroTargets: widget.macroTargets,
+          ).notifier);
+
+          controller.updateReminder(reminder);
+        },
+      ),
+    );
   }
 
   /// Show complete workout bottom sheet
@@ -235,6 +301,29 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             fontSize: 18.sp,
           ),
         ),
+        actions: [
+          // Reminder button
+          activityDetailState.when(
+            data: (state) {
+              // Check if reminder is set
+              final hasReminder = (state.activity != null && state.activity!.reminderEnabled) ||
+                                 (state.pendingReminder != null);
+
+              return IconButton(
+                icon: Icon(
+                  hasReminder ? Icons.notifications_active : Icons.notifications_outlined,
+                  color: hasReminder ? AppTheme.primary600 : AppTheme.baseGrey,
+                  size: 24.sp,
+                ),
+                onPressed: () => _showReminderSettingsSheet(state),
+                tooltip: 'Set reminder',
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+          SizedBox(width: 8.w),
+        ],
       ),
       body: activityDetailState.when(
         data: (state) => _buildContent(context, state, planState),
@@ -268,7 +357,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
           SizedBox(height: 24.h),
 
-          // Workout Reference Section (distance and pace)
+          // Workout Reference Section (distance and pace/speed)
           if (state.macroTargets != null)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -278,14 +367,14 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.directions_run,
+                      _getActivityIcon(state.macroTargets!.activityType),
                       color: AppTheme.primary600,
                       size: 20.sp,
                     ),
                     SizedBox(width: 16.w),
                     Expanded(
                       child: Text(
-                        '${state.macroTargets!.metrics.distanceMi.toStringAsFixed(1)} miles at ${state.macroTargets!.metrics.formattedPace} pace',
+                        _formatWorkoutReference(state.macroTargets!),
                         style: AppTheme.textStyle.copyWith(
                           color: AppTheme.primary900,
                           fontSize: 16.sp,
@@ -390,30 +479,29 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
           // Action Buttons
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: Column(
               children: [
                 if (state.isCreateMode) ...[
                   _buildSaveButton(state),
                 ] else ...[
-                  // Show Save button if there are unsaved changes (even if completed)
-                  if (state.hasUnsavedChanges) ...[
-                    _buildSaveChangesButton(state),
-                    SizedBox(height: 12.h),
+                  // Save and Complete buttons side by side (only if not completed)
+                  if (!state.isCompleted) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildSaveChangesButton(state),
+                        ),
+                        SizedBox(width: 6.w),
+                        Expanded(
+                          child: _buildCompleteWorkoutButton(state),
+                        ),
+                      ],
+                    ),
                   ],
 
-                  // Edit Nutrition Plan button (only if not completed and no unsaved changes)
-                  if (!state.isCompleted && !state.hasUnsavedChanges && state.macroTargets != null) ...[
-                    _buildEditPlanButton(state),
-                    SizedBox(height: 12.h),
-                  ],
-
-                  // Complete Workout button (only if not completed and no unsaved changes)
-                  if (!state.isCompleted && !state.hasUnsavedChanges)
-                    _buildCompleteWorkoutButton(state),
-
-                  // Completion info (if completed and no unsaved changes)
-                  if (state.isCompleted && !state.hasUnsavedChanges)
+                  // Completion info (if completed)
+                  if (state.isCompleted)
                     _buildCompletionInfo(state),
                 ],
               ],
@@ -456,7 +544,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                 SizedBox(width: 16.w),
                 Expanded(
                   child: Text(
-                    'Run scheduled for ${_formatDateTime(displayDateTime)}',
+                    '${_getActivityDisplayName(state)} scheduled for ${_formatDateTime(displayDateTime)}',
                     style: AppTheme.textStyle.copyWith(
                       color: AppTheme.primary900,
                       fontSize: 16.sp,
@@ -508,7 +596,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   Widget _buildSaveChangesButton(ActivityDetailState state) {
     return PrimaryButton(
-      text: state.isSaving ? 'Saving...' : 'Save Changes',
+      text: state.isSaving ? 'Saving...' : 'Save',
       isLoading: state.isSaving,
       onPressed: state.isSaving ? null : () async {
         final controller = ref.read(activityDetailControllerProvider(
@@ -518,11 +606,35 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           macroTargets: widget.macroTargets,
         ).notifier);
 
-        // Save the activity (this will save the nutrition plan changes)
-        await controller.saveActivity();
+        try {
+          // Save the activity (this will save the nutrition plan changes)
+          await controller.saveActivity();
 
-        // Clear the unsaved changes flag
-        controller.clearChanges();
+          // Clear the unsaved changes flag
+          controller.clearChanges();
+
+          // Show success snackbar
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Changes saved successfully!'),
+                backgroundColor: AppTheme.primary600,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        } catch (error) {
+          // Show error snackbar
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to save changes: ${error.toString()}'),
+                backgroundColor: AppTheme.highlight600,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
       },
       width: double.infinity,
       height: 56.h,
@@ -678,7 +790,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       await activityController.updateWorkoutNotes(result.isEmpty ? null : result);
     }
 
-    controller.dispose();
+    // Dispose controller after the current frame completes to avoid
+    // "TextEditingController was used after being disposed" errors
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.dispose();
+    });
   }
 
   Future<void> _handleDeleteNotes(ActivityDetailState state) async {
@@ -715,18 +831,61 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     }
   }
 
-  Widget _buildEditPlanButton(ActivityDetailState state) {
-    return SecondaryButton(
-      text: 'Edit Nutrition Plan',
-      onPressed: () {
-        // Navigate to distance/pace/gut entry screen
-        // The user will re-enter their distance/pace/gut level to regenerate the plan
-        context.push('/distance-pace-gut-entry');
-      },
-      width: double.infinity,
-      height: 56.h,
-    );
+  /// Get the appropriate icon for the activity type
+  IconData _getActivityIcon(ActivityType activityType) {
+    switch (activityType) {
+      case ActivityType.running:
+        return Icons.directions_run;
+      case ActivityType.cycling:
+        return Icons.directions_bike;
+      case ActivityType.swimming:
+        return Icons.pool;
+    }
   }
+
+  /// Format the workout reference text based on activity type
+  String _formatWorkoutReference(targets_model.MacroTargets targets) {
+    final metrics = targets.metrics;
+    final distance = metrics.distanceMi.toStringAsFixed(1);
+
+    switch (targets.activityType) {
+      case ActivityType.running:
+        return '$distance miles at ${metrics.formattedPace} pace';
+      case ActivityType.cycling:
+        return '$distance miles at ${metrics.speedMph.toStringAsFixed(1)} mph';
+      case ActivityType.swimming:
+        final meters = (metrics.distanceMi * 1609.34).round();
+        // Calculate pace per 100m if we have duration
+        if (metrics.durationMin > 0) {
+          final totalSeconds = metrics.durationMin * 60;
+          final secondsPer100m = (totalSeconds / (metrics.distanceMi * 1609.34) * 100).round();
+          final minutes = secondsPer100m ~/ 60;
+          final seconds = secondsPer100m % 60;
+          return '${meters}m at $minutes:${seconds.toString().padLeft(2, '0')}/100m pace';
+        }
+        return '${meters}m';
+    }
+  }
+
+  /// Get the display name for the activity type ("Run", "Ride", "Swim")
+  String _getActivityDisplayName(ActivityDetailState state) {
+    // Try to get from macroTargets first, then from activity
+    final activityType = state.macroTargets?.activityType ??
+                         state.activity?.activityType ??
+                         ActivityType.running; // Default to running
+
+    switch (activityType) {
+      case ActivityType.running:
+        return 'Run';
+      case ActivityType.cycling:
+        return 'Ride';
+      case ActivityType.swimming:
+        return 'Swim';
+      default:
+        return 'Run'; // Default fallback
+    }
+  }
+
 }
 
 /// Complete Workout Bottom Sheet

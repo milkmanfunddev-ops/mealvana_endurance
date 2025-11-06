@@ -26,6 +26,12 @@ class Activity {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+
+    // Reminder settings
+    this.reminderEnabled = false,
+    this.reminderDaysBefore,
+    this.reminderTimeOfDay,
+    this.reminderRecurring = false,
   });
 
   final String id;
@@ -34,25 +40,31 @@ class Activity {
   final String title;
   final DateTime scheduledDateTime;
   final ActivityStatus status;
-  
+
   // Activity parameters
   final double? distanceMiles;
   final int? durationMinutes;
   final double? paceTargetMinutesPerMile;
   final IntensityLevel? intensityLevel;
-  
+
   // Completion data
   final DateTime? completedAt;
   final int? completionRating;
   final String? completionNotes;
   final double? actualDistanceMiles;
   final int? actualDurationMinutes;
-  
+
   // Metadata
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+
+  // Reminder settings
+  final bool reminderEnabled;
+  final int? reminderDaysBefore;
+  final String? reminderTimeOfDay;
+  final bool reminderRecurring;
 
   Activity copyWith({
     String? id,
@@ -74,6 +86,10 @@ class Activity {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    bool? reminderEnabled,
+    int? reminderDaysBefore,
+    String? reminderTimeOfDay,
+    bool? reminderRecurring,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -95,6 +111,10 @@ class Activity {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+      reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
+      reminderTimeOfDay: reminderTimeOfDay ?? this.reminderTimeOfDay,
+      reminderRecurring: reminderRecurring ?? this.reminderRecurring,
     );
   }
 

@@ -96,16 +96,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     if (success && mounted) {
       // Track successful navigation
       await analytics.track('navigation', properties: {
-        'destination': 'Food Preferences Onboarding',
+        'destination': 'Sport Preferences Onboarding',
         'source': 'User Profile Submit',
       });
-      
+
       // Invalidate providers to refresh user state
       ref.invalidate(currentUserProvider);
       ref.invalidate(userRepositoryProvider);
-      
+
       if (mounted) {
-        context.push('/onboarding/food-preferences');
+        context.push('/onboarding/sport-preferences');
       }
     } else if (mounted) {
       // Show error if user creation failed
@@ -145,7 +145,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             children: [
               // Progress indicator
               LinearProgressIndicator(
-                value: 0.5, // 50% through onboarding
+                value: 0.33, // 33% through onboarding (step 1 of 3)
                 backgroundColor: AppTheme.baseGrey.withValues(alpha: 0.2),
                 valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary600),
               ),

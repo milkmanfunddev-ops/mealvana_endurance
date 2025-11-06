@@ -6,9 +6,7 @@
 Mealvana Endurance is a personalized nutrition planning app for endurance athletes (runners, cyclists, triathletes). It generates science-based nutrition plans based on run distance, pace, user biometrics, and food preferences.
 
 ### Target Users
-- Endurance athletes preparing for races (5K to ultra-marathons)
-- Runners seeking personalized nutrition guidance
-- Athletes wanting to optimize their fueling strategy
+- Endurance athletes preparing for races (5K to Ironmans and ultra-marathons) and seeking nutrition guidance
 
 ### Key Features
 - **Personalized Nutrition Plans**: Algorithm-based plans considering distance, pace, body weight, and gut training
@@ -43,6 +41,7 @@ lib/features/{feature_name}/
 - **Dependency Direction**: Only inward dependencies (presentation → application → domain ← data)
 - **Testability**: Business logic isolated from UI and data sources
 - **Scalability**: Features can be developed independently
+- **MODULARITY**: Keep ALL widgets and dart files small and modular, breaking down larger files when needed into smaller widgets.
 
 **🚨 CRITICAL FOA COMPLIANCE RULES:**
 
@@ -58,6 +57,7 @@ lib/features/{feature_name}/
 - Business calculations
 - Analytics tracking (except UI events like button taps)
 - Underscore methods that contain business logic
+- More than one widget or code that could be rationally broken down into smaller widgets.
 
 **Required in Controllers**:
 - All calls to external services (Supabase, analytics)
@@ -111,6 +111,7 @@ The app implements a "fat backend" strategy where business logic and content are
 
 ## Agents Available
 - docs-manager.  Please use for creating, amanging or updating our documentation.
+- code-researcher.  Please use for searching through the codebase for information.
 
 ## Project Structure
 
@@ -128,7 +129,7 @@ mealvana_endurance/
 │   └── main.dart           # App entry point
 ├── assets/
 │   ├── config/             # Configuration files
-│   │   └── content_defaults.json  # Default content & algorithm parameters
+│   │   └── content_defaults.json  # Default content & algorithm 
 │   ├── images/             # App images and icons
 │   └── fonts/              # Custom fonts
 ├── docs/
@@ -140,16 +141,12 @@ mealvana_endurance/
 
 ## Core Systems
 
-### Nutrition Algorithm (AI-First Architecture)
-The app uses a sophisticated **AI-first nutrition planning system** with intelligent algorithmic fallback:
+### Nutrition Algorithm
+The app uses a sophisticated **nutrition planning system**
 
-**Primary System: AI-Powered**
-- **LLM Integration**: Natural language understanding for personalized requirements
 - **Linear Programming**: Multi-objective optimization for food selection
 - **Advanced Personalization**: Context-aware recommendations and preference learning
 - **Constraint Solving**: Simultaneous optimization of carbs, protein, fat, sodium, hydration
-
-**Fallback System: Evidence-Based Algorithmic**
 - **ACSM Calculations**: Energy expenditure using ACSM running equation for MET calculation
 - **Evidence-Based Guidelines**: Carbohydrate requirements based on gut training levels
 - **Performance Optimized**: Sub-second response times with deterministic calculations

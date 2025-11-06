@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:location_iq/location_iq.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
-import '../../domain/event.dart';
-import '../providers/events_controller.dart';
-import '../../../../shared/providers/device_id_provider.dart';
+import '../../../calendar/domain/event.dart';
+import '../../../calendar/domain/event_subtype.dart';
+import '../../../calendar/presentation/providers/calendar_controller.dart';
+import '../../../calendar/presentation/widgets/sport_category_selector.dart';
+import '../../../calendar/presentation/widgets/event_subtype_dropdown.dart';
 import '../../../../shared/services/location_service.dart';
 import '../../../../shared/utils/location_formatter.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -34,7 +36,8 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Form fields
-  EventType _selectedEventType = EventType.halfMarathon;
+  EventType _selectedSportCategory = EventType.running;
+  EventSubtype? _selectedSubtype;
   final _eventNameController = TextEditingController();
   final _locationController = TextEditingController();
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 30));
@@ -54,11 +57,26 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
   @override
   void initState() {
     super.initState();
+    // Set default subtype for running (Half Marathon)
+    _selectedSubtype = EventSubtype.runningEvents.firstWhere(
+      (subtype) => subtype.name == 'half_marathon',
+    );
+
     // Add listener to location text field for autocomplete
     _locationController.addListener(_onLocationTextChanged);
 
     // Add focus listener to close dropdown when field loses focus
     _locationFocusNode.addListener(_onLocationFocusChanged);
+  }
+
+  /// Called when sport category changes - reset subtype to first option
+  void _onSportCategoryChanged(EventType newCategory) {
+    setState(() {
+      _selectedSportCategory = newCategory;
+      // Reset subtype to first option of the new category
+      final subtypes = EventSubtype.getSubtypesForEventType(newCategory.dbValue);
+      _selectedSubtype = subtypes.isNotEmpty ? subtypes.first : null;
+    });
   }
 
   /// Called when location field focus changes
@@ -217,8 +235,16 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
       return;
     }
 
-    // Get device ID for user identification
-    final deviceId = await ref.read(deviceIdProvider.future);
+    // Ensure subtype is selected
+    if (_selectedSubtype == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a race distance'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
     // Combine date and time
     final scheduledDateTime = DateTime(
@@ -238,20 +264,21 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
     }
 
     // Calculate goal pace if goal time is provided
+    // Note: Only calculate pace for single-sport running/cycling events
     double? goalPaceMinutesPerMile;
-    if (goalTimeMinutes != null) {
-      final distanceMiles = _getEventDistanceMiles(_selectedEventType);
+    if (goalTimeMinutes != null && _selectedSubtype!.distanceMiles != null) {
+      final distanceMiles = _selectedSubtype!.distanceMiles!;
       if (distanceMiles > 0) {
         goalPaceMinutesPerMile = goalTimeMinutes / distanceMiles;
       }
     }
 
     try {
-      // Create the event without creating an activity using EventsController directly
-      final eventsController = ref.read(eventsControllerProvider.notifier);
-      await eventsController.createEvent(
+      // Create the event without creating an activity
+      await ref.read(calendarControllerProvider.notifier).createEvent(
         activityId: null, // No activity yet
-        eventType: _selectedEventType,
+        eventType: _selectedSportCategory,
+        eventSubtype: _selectedSubtype!.name,
         eventName: _eventNameController.text.trim(),
         location: _locationController.text.trim().isEmpty
             ? null
@@ -284,28 +311,6 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
     }
   }
 
-  double _getEventDistanceMiles(EventType eventType) {
-    switch (eventType) {
-      case EventType.marathon:
-        return 26.2;
-      case EventType.halfMarathon:
-        return 13.1;
-      case EventType.tenK:
-        return 6.2;
-      case EventType.fiveK:
-        return 3.1;
-      case EventType.ultra50K:
-        return 31.0;
-      case EventType.ultra50M:
-        return 50.0;
-      case EventType.ultra100K:
-        return 62.0;
-      case EventType.ultra100M:
-        return 100.0;
-      case EventType.custom:
-        return 0.0;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -335,32 +340,22 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-              // Event Type Selection
-              Text(
-                'Event Type',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              // Sport Category Selection
+              SportCategorySelector(
+                selectedCategory: _selectedSportCategory,
+                onCategoryChanged: _onSportCategoryChanged,
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<EventType>(
-                initialValue: _selectedEventType,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                items: EventType.values.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(_getEventTypeDisplayName(type)),
-                  );
-                }).toList(),
-                onChanged: (EventType? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      _selectedEventType = newValue;
-                    });
-                  }
+
+              const SizedBox(height: 24),
+
+              // Event Subtype Selection (Race Distance)
+              EventSubtypeDropdown(
+                sportCategory: _selectedSportCategory,
+                selectedSubtype: _selectedSubtype,
+                onSubtypeChanged: (subtype) {
+                  setState(() {
+                    _selectedSubtype = subtype;
+                  });
                 },
               ),
 
@@ -591,26 +586,4 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
     );
   }
 
-  String _getEventTypeDisplayName(EventType type) {
-    switch (type) {
-      case EventType.marathon:
-        return 'Marathon (26.2 mi)';
-      case EventType.halfMarathon:
-        return 'Half Marathon (13.1 mi)';
-      case EventType.tenK:
-        return '10K (6.2 mi)';
-      case EventType.fiveK:
-        return '5K (3.1 mi)';
-      case EventType.ultra50K:
-        return 'Ultra 50K (31 mi)';
-      case EventType.ultra50M:
-        return 'Ultra 50 Mile';
-      case EventType.ultra100K:
-        return 'Ultra 100K (62 mi)';
-      case EventType.ultra100M:
-        return 'Ultra 100 Mile';
-      case EventType.custom:
-        return 'Custom Event';
-    }
-  }
 }

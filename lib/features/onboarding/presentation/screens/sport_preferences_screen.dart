@@ -154,13 +154,13 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Progress indicator
-              // LinearProgressIndicator(
-              //   value: 0.5, // 67% through onboarding (added step between profile and food)
-              //   backgroundColor: AppTheme.baseGrey.withValues(alpha: 0.2),
-              //   valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary600),
-              // ),
+              LinearProgressIndicator(
+                value: 0.67, // 67% through onboarding (step 2 of 3)
+                backgroundColor: AppTheme.baseGrey.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary600),
+              ),
 
-              // SizedBox(height: 32.h),
+              SizedBox(height: 32.h),
 
               Text(
                 'Which sports do you do?',

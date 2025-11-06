@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../features/calendar/presentation/screens/activities_list_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/feature_survey/presentation/screens/feature_survey_screen.dart';
 import '../../theme/app_theme.dart';
 
 class TabsScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class _TabsScreenState extends State<TabsScreen> {
 
   List<Widget> get _screens => [
     const ActivitiesListScreen(), // PRIMARY TAB: Activities-first interface with calendar picker
-    const _SurveyUnderConstructionScreen(), // Survey/Feedback tab
+    const FeatureSurveyScreen(), // Feature survey tab
     const SettingsScreen(),
   ];
 
@@ -125,53 +126,4 @@ class _TabItem {
     required this.icon,
     required this.label,
   });
-}
-
-class _SurveyUnderConstructionScreen extends StatelessWidget {
-  const _SurveyUnderConstructionScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.baseCream,
-      appBar: AppBar(
-        title: const Text('Survey'),
-        backgroundColor: AppTheme.baseCream,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.construction,
-              size: 80,
-              color: AppTheme.primary900.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Survey Coming Soon',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primary900,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48),
-              child: Text(
-                'We\'re working on a survey feature to help improve your experience.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -205,8 +205,8 @@ class RunningInputController extends _$RunningInputController {
       if (forecast.forecastAvailable) {
         state = state.copyWith(
           weatherForecast: forecast,
-          temperatureC: forecast.temperatureC,
-          humidityPct: forecast.humidityPct.toDouble(),
+          temperatureC: forecast.temperatureC.clamp(-5.0, 40.0),
+          humidityPct: forecast.humidityPct.toDouble().clamp(20.0, 95.0),
           isLoadingWeather: false,
         );
       } else {

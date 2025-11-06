@@ -8,8 +8,8 @@ class EventsTable extends Table {
   TextColumn get userId => text().named('user_id')(); // FOREIGN KEY to user_profiles.id
 
   // Event classification
-  TextColumn get eventType => text().named('event_type')(); // 'marathon', 'half_marathon', '10k', '5k', 'ultra_50k', 'ultra_50m', 'ultra_100k', 'ultra_100m', 'custom'
-  TextColumn get eventSubtype => text().nullable().named('event_subtype')(); // For custom categorization
+  TextColumn get eventType => text().named('event_type')(); // 'running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport'
+  TextColumn get eventSubtype => text().nullable().named('event_subtype')(); // Specific race type: 'marathon', 'half_marathon', '10k', '5k', 'ultra_50k', etc.
   
   // Event details
   TextColumn get eventName => text().nullable().named('event_name')();
@@ -56,7 +56,7 @@ class EventsTable extends Table {
   
   @override
   List<String> get customConstraints => [
-    "CHECK (event_type IN ('marathon', 'half_marathon', '10k', '5k', 'ultra_50k', 'ultra_50m', 'ultra_100k', 'ultra_100m', 'custom'))",
+    "CHECK (event_type IN ('running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport'))",
     'CHECK (carb_loading_days IS NULL OR carb_loading_days IN (1, 2, 3, 7))',
   ];
 }

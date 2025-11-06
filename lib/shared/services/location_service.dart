@@ -118,9 +118,7 @@ class LocationService {
   /// ```
   Future<List<LocationIQAutocompleteResult>> searchLocations(String query, {int limit = 5}) async {
     try {
-      // TODO: Implement LocationIQ autocomplete API call
-      logger.warning('searchLocations not yet implemented');
-      return [];
+      return await locationRepository.searchLocations(query, limit: limit);
     } catch (e, stackTrace) {
       logger.error('Error searching locations', error: e, stackTrace: stackTrace);
       return [];
@@ -132,9 +130,7 @@ class LocationService {
   /// Useful when you have a complete address and need lat/lng coordinates.
   Future<List<ForwardGeocodingResult>> geocodeAddress(String address) async {
     try {
-      // TODO: Implement forward geocoding API call
-      logger.warning('geocodeAddress not yet implemented');
-      return [];
+      return await locationRepository.geocode(address);
     } catch (e, stackTrace) {
       logger.error('Error geocoding address', error: e, stackTrace: stackTrace);
       return [];
@@ -149,9 +145,10 @@ class LocationService {
     required double longitude,
   }) async {
     try {
-      // TODO: Implement reverse geocoding API call
-      logger.warning('reverseGeocodeCoordinates not yet implemented');
-      return null;
+      return await locationRepository.reverseGeocode(
+        latitude: latitude,
+        longitude: longitude,
+      );
     } catch (e, stackTrace) {
       logger.error('Error reverse geocoding coordinates', error: e, stackTrace: stackTrace);
       return null;

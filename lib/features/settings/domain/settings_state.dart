@@ -45,6 +45,11 @@ class SettingsState {
   final bool? typicalWetsuit;
   final String? typicalSwimCapType;
 
+  // User identity fields (needed for database operations)
+  final String? userId;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
   const SettingsState({
     required this.title,
     required this.profileSectionTitle,
@@ -81,6 +86,9 @@ class SettingsState {
     this.cssPacePer100mSeconds,
     this.typicalWetsuit,
     this.typicalSwimCapType,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
   });
 
   SettingsState copyWith({
@@ -119,6 +127,9 @@ class SettingsState {
     int? cssPacePer100mSeconds,
     bool? typicalWetsuit,
     String? typicalSwimCapType,
+    String? userId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return SettingsState(
       title: title ?? this.title,
@@ -156,6 +167,9 @@ class SettingsState {
       cssPacePer100mSeconds: cssPacePer100mSeconds ?? this.cssPacePer100mSeconds,
       typicalWetsuit: typicalWetsuit ?? this.typicalWetsuit,
       typicalSwimCapType: typicalSwimCapType ?? this.typicalSwimCapType,
+      userId: userId ?? this.userId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

@@ -7,7 +7,7 @@ import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../domain/activity.dart';
 import '../../domain/event.dart';
 import '../providers/calendar_controller.dart';
-import 'event_creation_screen.dart';
+import '../../../events/presentation/screens/event_creation_screen.dart';
 import 'event_detail_screen.dart';
 
 /// Events List Screen showing all user events (past and upcoming).

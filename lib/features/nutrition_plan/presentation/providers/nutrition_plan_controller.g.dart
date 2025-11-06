@@ -38,7 +38,7 @@ final class NutritionPlanControllerProvider
 }
 
 String _$nutritionPlanControllerHash() =>
-    r'e2354b8ba3f08517a371d2144952c845308d5d77';
+    r'9cfdfb1c02975934aaf1816fd5494d202d90e31d';
 
 /// Controller for managing nutrition plan generation and display with save state
 

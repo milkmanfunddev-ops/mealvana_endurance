@@ -2425,12 +2425,13 @@ class $NutritionPlansTable extends NutritionPlans
   late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
     'needs_upload',
     aliasedName,
-    true,
+    false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("needs_upload" IN (0, 1))',
     ),
+    defaultValue: const Constant(false),
   );
   static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
     'localUpdatedAt',
@@ -2440,9 +2441,10 @@ class $NutritionPlansTable extends NutritionPlans
       GeneratedColumn<DateTime>(
         'local_updated_at',
         aliasedName,
-        true,
+        false,
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
+        defaultValue: currentDateAndTime,
       );
   @override
   List<GeneratedColumn> get $columns => [
@@ -2725,11 +2727,11 @@ class $NutritionPlansTable extends NutritionPlans
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
-      ),
+      )!,
       localUpdatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}local_updated_at'],
-      ),
+      )!,
     );
   }
 
@@ -2772,9 +2774,9 @@ class NutritionPlanEntry extends DataClass
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  /// Sync tracking (offline-first architecture)
-  final bool? needsUpload;
-  final DateTime? localUpdatedAt;
+  /// Offline-first sync flags (matches calendar tables pattern)
+  final bool needsUpload;
+  final DateTime localUpdatedAt;
   const NutritionPlanEntry({
     required this.id,
     required this.deviceId,
@@ -2795,8 +2797,8 @@ class NutritionPlanEntry extends DataClass
     this.conflictResolution,
     required this.createdAt,
     required this.updatedAt,
-    this.needsUpload,
-    this.localUpdatedAt,
+    required this.needsUpload,
+    required this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2836,12 +2838,8 @@ class NutritionPlanEntry extends DataClass
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
-    if (!nullToAbsent || needsUpload != null) {
-      map['needs_upload'] = Variable<bool>(needsUpload);
-    }
-    if (!nullToAbsent || localUpdatedAt != null) {
-      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
-    }
+    map['needs_upload'] = Variable<bool>(needsUpload);
+    map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
     return map;
   }
 
@@ -2882,12 +2880,8 @@ class NutritionPlanEntry extends DataClass
           : Value(conflictResolution),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
-      needsUpload: needsUpload == null && nullToAbsent
-          ? const Value.absent()
-          : Value(needsUpload),
-      localUpdatedAt: localUpdatedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(localUpdatedAt),
+      needsUpload: Value(needsUpload),
+      localUpdatedAt: Value(localUpdatedAt),
     );
   }
 
@@ -2920,8 +2914,8 @@ class NutritionPlanEntry extends DataClass
       ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
-      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+      needsUpload: serializer.fromJson<bool>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime>(json['localUpdatedAt']),
     );
   }
   @override
@@ -2947,8 +2941,8 @@ class NutritionPlanEntry extends DataClass
       'conflictResolution': serializer.toJson<String?>(conflictResolution),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'needsUpload': serializer.toJson<bool?>(needsUpload),
-      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+      'needsUpload': serializer.toJson<bool>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime>(localUpdatedAt),
     };
   }
 
@@ -2972,8 +2966,8 @@ class NutritionPlanEntry extends DataClass
     Value<String?> conflictResolution = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
-    Value<bool?> needsUpload = const Value.absent(),
-    Value<DateTime?> localUpdatedAt = const Value.absent(),
+    bool? needsUpload,
+    DateTime? localUpdatedAt,
   }) => NutritionPlanEntry(
     id: id ?? this.id,
     deviceId: deviceId ?? this.deviceId,
@@ -3006,10 +3000,8 @@ class NutritionPlanEntry extends DataClass
         : this.conflictResolution,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
-    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
-    localUpdatedAt: localUpdatedAt.present
-        ? localUpdatedAt.value
-        : this.localUpdatedAt,
+    needsUpload: needsUpload ?? this.needsUpload,
+    localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
   );
   NutritionPlanEntry copyWithCompanion(NutritionPlansCompanion data) {
     return NutritionPlanEntry(
@@ -3154,8 +3146,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
   final Value<String?> conflictResolution;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
-  final Value<bool?> needsUpload;
-  final Value<DateTime?> localUpdatedAt;
+  final Value<bool> needsUpload;
+  final Value<DateTime> localUpdatedAt;
   final Value<int> rowid;
   const NutritionPlansCompanion({
     this.id = const Value.absent(),
@@ -3280,8 +3272,8 @@ class NutritionPlansCompanion extends UpdateCompanion<NutritionPlanEntry> {
     Value<String?>? conflictResolution,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
-    Value<bool?>? needsUpload,
-    Value<DateTime?>? localUpdatedAt,
+    Value<bool>? needsUpload,
+    Value<DateTime>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return NutritionPlansCompanion(
@@ -23372,6 +23364,345 @@ class WeatherForecastsTableCompanion
   }
 }
 
+class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
+    with
+        TableInfo<
+          $FeatureSurveyResponsesTableTable,
+          FeatureSurveyResponseEntry
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FeatureSurveyResponsesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _selectedFeaturesMeta = const VerificationMeta(
+    'selectedFeatures',
+  );
+  @override
+  late final GeneratedColumn<String> selectedFeatures = GeneratedColumn<String>(
+    'selected_features',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _votedAtMeta = const VerificationMeta(
+    'votedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> votedAt = GeneratedColumn<DateTime>(
+    'voted_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    deviceId,
+    selectedFeatures,
+    votedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'feature_survey_responses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FeatureSurveyResponseEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('selected_features')) {
+      context.handle(
+        _selectedFeaturesMeta,
+        selectedFeatures.isAcceptableOrUnknown(
+          data['selected_features']!,
+          _selectedFeaturesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_selectedFeaturesMeta);
+    }
+    if (data.containsKey('voted_at')) {
+      context.handle(
+        _votedAtMeta,
+        votedAt.isAcceptableOrUnknown(data['voted_at']!, _votedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_votedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FeatureSurveyResponseEntry map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FeatureSurveyResponseEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      selectedFeatures: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}selected_features'],
+      )!,
+      votedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}voted_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FeatureSurveyResponsesTableTable createAlias(String alias) {
+    return $FeatureSurveyResponsesTableTable(attachedDatabase, alias);
+  }
+}
+
+class FeatureSurveyResponseEntry extends DataClass
+    implements Insertable<FeatureSurveyResponseEntry> {
+  /// Primary key - UUID
+  final String id;
+
+  /// Device ID of the user who voted
+  final String deviceId;
+
+  /// JSON array of selected feature IDs (exactly 3)
+  /// Example: ["shopping_list", "coach_sharing", "recipes"]
+  final String selectedFeatures;
+
+  /// Timestamp of when the vote was cast
+  final DateTime votedAt;
+  const FeatureSurveyResponseEntry({
+    required this.id,
+    required this.deviceId,
+    required this.selectedFeatures,
+    required this.votedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['device_id'] = Variable<String>(deviceId);
+    map['selected_features'] = Variable<String>(selectedFeatures);
+    map['voted_at'] = Variable<DateTime>(votedAt);
+    return map;
+  }
+
+  FeatureSurveyResponsesTableCompanion toCompanion(bool nullToAbsent) {
+    return FeatureSurveyResponsesTableCompanion(
+      id: Value(id),
+      deviceId: Value(deviceId),
+      selectedFeatures: Value(selectedFeatures),
+      votedAt: Value(votedAt),
+    );
+  }
+
+  factory FeatureSurveyResponseEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FeatureSurveyResponseEntry(
+      id: serializer.fromJson<String>(json['id']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      selectedFeatures: serializer.fromJson<String>(json['selectedFeatures']),
+      votedAt: serializer.fromJson<DateTime>(json['votedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'selectedFeatures': serializer.toJson<String>(selectedFeatures),
+      'votedAt': serializer.toJson<DateTime>(votedAt),
+    };
+  }
+
+  FeatureSurveyResponseEntry copyWith({
+    String? id,
+    String? deviceId,
+    String? selectedFeatures,
+    DateTime? votedAt,
+  }) => FeatureSurveyResponseEntry(
+    id: id ?? this.id,
+    deviceId: deviceId ?? this.deviceId,
+    selectedFeatures: selectedFeatures ?? this.selectedFeatures,
+    votedAt: votedAt ?? this.votedAt,
+  );
+  FeatureSurveyResponseEntry copyWithCompanion(
+    FeatureSurveyResponsesTableCompanion data,
+  ) {
+    return FeatureSurveyResponseEntry(
+      id: data.id.present ? data.id.value : this.id,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      selectedFeatures: data.selectedFeatures.present
+          ? data.selectedFeatures.value
+          : this.selectedFeatures,
+      votedAt: data.votedAt.present ? data.votedAt.value : this.votedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FeatureSurveyResponseEntry(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('selectedFeatures: $selectedFeatures, ')
+          ..write('votedAt: $votedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, deviceId, selectedFeatures, votedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FeatureSurveyResponseEntry &&
+          other.id == this.id &&
+          other.deviceId == this.deviceId &&
+          other.selectedFeatures == this.selectedFeatures &&
+          other.votedAt == this.votedAt);
+}
+
+class FeatureSurveyResponsesTableCompanion
+    extends UpdateCompanion<FeatureSurveyResponseEntry> {
+  final Value<String> id;
+  final Value<String> deviceId;
+  final Value<String> selectedFeatures;
+  final Value<DateTime> votedAt;
+  final Value<int> rowid;
+  const FeatureSurveyResponsesTableCompanion({
+    this.id = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.selectedFeatures = const Value.absent(),
+    this.votedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FeatureSurveyResponsesTableCompanion.insert({
+    required String id,
+    required String deviceId,
+    required String selectedFeatures,
+    required DateTime votedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       deviceId = Value(deviceId),
+       selectedFeatures = Value(selectedFeatures),
+       votedAt = Value(votedAt);
+  static Insertable<FeatureSurveyResponseEntry> custom({
+    Expression<String>? id,
+    Expression<String>? deviceId,
+    Expression<String>? selectedFeatures,
+    Expression<DateTime>? votedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (deviceId != null) 'device_id': deviceId,
+      if (selectedFeatures != null) 'selected_features': selectedFeatures,
+      if (votedAt != null) 'voted_at': votedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FeatureSurveyResponsesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? deviceId,
+    Value<String>? selectedFeatures,
+    Value<DateTime>? votedAt,
+    Value<int>? rowid,
+  }) {
+    return FeatureSurveyResponsesTableCompanion(
+      id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
+      selectedFeatures: selectedFeatures ?? this.selectedFeatures,
+      votedAt: votedAt ?? this.votedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (selectedFeatures.present) {
+      map['selected_features'] = Variable<String>(selectedFeatures.value);
+    }
+    if (votedAt.present) {
+      map['voted_at'] = Variable<DateTime>(votedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FeatureSurveyResponsesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('selectedFeatures: $selectedFeatures, ')
+          ..write('votedAt: $votedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -23428,6 +23759,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $CarbLoadingDayMealsTableTable(this);
   late final $WeatherForecastsTableTable weatherForecastsTable =
       $WeatherForecastsTableTable(this);
+  late final $FeatureSurveyResponsesTableTable featureSurveyResponsesTable =
+      $FeatureSurveyResponsesTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -23460,6 +23793,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     carbLoadingUserFoodMealTypesTable,
     carbLoadingDayMealsTable,
     weatherForecastsTable,
+    featureSurveyResponsesTable,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -24475,8 +24809,8 @@ typedef $$NutritionPlansTableCreateCompanionBuilder =
       Value<String?> conflictResolution,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      Value<bool?> needsUpload,
-      Value<DateTime?> localUpdatedAt,
+      Value<bool> needsUpload,
+      Value<DateTime> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$NutritionPlansTableUpdateCompanionBuilder =
@@ -24500,8 +24834,8 @@ typedef $$NutritionPlansTableUpdateCompanionBuilder =
       Value<String?> conflictResolution,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      Value<bool?> needsUpload,
-      Value<DateTime?> localUpdatedAt,
+      Value<bool> needsUpload,
+      Value<DateTime> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -24882,8 +25216,8 @@ class $$NutritionPlansTableTableManager
                 Value<String?> conflictResolution = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
-                Value<bool?> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NutritionPlansCompanion(
                 id: id,
@@ -24930,8 +25264,8 @@ class $$NutritionPlansTableTableManager
                 Value<String?> conflictResolution = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
-                Value<bool?> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NutritionPlansCompanion.insert(
                 id: id,
@@ -34643,6 +34977,208 @@ typedef $$WeatherForecastsTableTableProcessedTableManager =
       WeatherForecastData,
       PrefetchHooks Function()
     >;
+typedef $$FeatureSurveyResponsesTableTableCreateCompanionBuilder =
+    FeatureSurveyResponsesTableCompanion Function({
+      required String id,
+      required String deviceId,
+      required String selectedFeatures,
+      required DateTime votedAt,
+      Value<int> rowid,
+    });
+typedef $$FeatureSurveyResponsesTableTableUpdateCompanionBuilder =
+    FeatureSurveyResponsesTableCompanion Function({
+      Value<String> id,
+      Value<String> deviceId,
+      Value<String> selectedFeatures,
+      Value<DateTime> votedAt,
+      Value<int> rowid,
+    });
+
+class $$FeatureSurveyResponsesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $FeatureSurveyResponsesTableTable> {
+  $$FeatureSurveyResponsesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get selectedFeatures => $composableBuilder(
+    column: $table.selectedFeatures,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get votedAt => $composableBuilder(
+    column: $table.votedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FeatureSurveyResponsesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $FeatureSurveyResponsesTableTable> {
+  $$FeatureSurveyResponsesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get selectedFeatures => $composableBuilder(
+    column: $table.selectedFeatures,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get votedAt => $composableBuilder(
+    column: $table.votedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FeatureSurveyResponsesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FeatureSurveyResponsesTableTable> {
+  $$FeatureSurveyResponsesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get selectedFeatures => $composableBuilder(
+    column: $table.selectedFeatures,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get votedAt =>
+      $composableBuilder(column: $table.votedAt, builder: (column) => column);
+}
+
+class $$FeatureSurveyResponsesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FeatureSurveyResponsesTableTable,
+          FeatureSurveyResponseEntry,
+          $$FeatureSurveyResponsesTableTableFilterComposer,
+          $$FeatureSurveyResponsesTableTableOrderingComposer,
+          $$FeatureSurveyResponsesTableTableAnnotationComposer,
+          $$FeatureSurveyResponsesTableTableCreateCompanionBuilder,
+          $$FeatureSurveyResponsesTableTableUpdateCompanionBuilder,
+          (
+            FeatureSurveyResponseEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $FeatureSurveyResponsesTableTable,
+              FeatureSurveyResponseEntry
+            >,
+          ),
+          FeatureSurveyResponseEntry,
+          PrefetchHooks Function()
+        > {
+  $$FeatureSurveyResponsesTableTableTableManager(
+    _$AppDatabase db,
+    $FeatureSurveyResponsesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FeatureSurveyResponsesTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$FeatureSurveyResponsesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$FeatureSurveyResponsesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<String> selectedFeatures = const Value.absent(),
+                Value<DateTime> votedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FeatureSurveyResponsesTableCompanion(
+                id: id,
+                deviceId: deviceId,
+                selectedFeatures: selectedFeatures,
+                votedAt: votedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String deviceId,
+                required String selectedFeatures,
+                required DateTime votedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => FeatureSurveyResponsesTableCompanion.insert(
+                id: id,
+                deviceId: deviceId,
+                selectedFeatures: selectedFeatures,
+                votedAt: votedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FeatureSurveyResponsesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FeatureSurveyResponsesTableTable,
+      FeatureSurveyResponseEntry,
+      $$FeatureSurveyResponsesTableTableFilterComposer,
+      $$FeatureSurveyResponsesTableTableOrderingComposer,
+      $$FeatureSurveyResponsesTableTableAnnotationComposer,
+      $$FeatureSurveyResponsesTableTableCreateCompanionBuilder,
+      $$FeatureSurveyResponsesTableTableUpdateCompanionBuilder,
+      (
+        FeatureSurveyResponseEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $FeatureSurveyResponsesTableTable,
+          FeatureSurveyResponseEntry
+        >,
+      ),
+      FeatureSurveyResponseEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -34721,4 +35257,10 @@ class $AppDatabaseManager {
       );
   $$WeatherForecastsTableTableTableManager get weatherForecastsTable =>
       $$WeatherForecastsTableTableTableManager(_db, _db.weatherForecastsTable);
+  $$FeatureSurveyResponsesTableTableTableManager
+  get featureSurveyResponsesTable =>
+      $$FeatureSurveyResponsesTableTableTableManager(
+        _db,
+        _db.featureSurveyResponsesTable,
+      );
 }

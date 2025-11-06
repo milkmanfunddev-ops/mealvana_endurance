@@ -280,7 +280,7 @@ class MacroGenerationService {
     };
   }
 
-  Map<String, dynamic> _getUserMetrics(dynamic userProfile) {
+  Map<String, dynamic> _getUserMetrics(UserProfile? userProfile) {
     final age = userProfile?.age ?? 30;
     final gender = userProfile?.gender.name ?? 'other';
     final weightKg = userProfile != null

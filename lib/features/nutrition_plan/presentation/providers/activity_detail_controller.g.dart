@@ -65,7 +65,7 @@ final class ActivityDetailControllerProvider
 }
 
 String _$activityDetailControllerHash() =>
-    r'59e6b9e873ac9df283b75bfe29555f39ae176444';
+    r'341a47f09a725f255953f883baad52a86e51e669';
 
 /// Activity Detail Controller
 /// Manages activity creation, updates, and completion

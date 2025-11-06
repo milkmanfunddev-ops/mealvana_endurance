@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
@@ -324,63 +325,117 @@ class NutritionPlanRepository {
     }
   }
 
-  /// Save plan temporarily (survives app restart until officially saved)
+  // TODO: DEPRECATED - Remove temp plan system in favor of activity-owned plans
+  // These methods are kept temporarily for backward compatibility but do nothing
   Future<void> saveTempPlan(String deviceId, domain.NutritionPlan plan) async {
-    try {
-      DebugLogger.info('🔄 Saving temporary plan: planId=${plan.id}, deviceId=$deviceId');
-      final planJson = json.encode(plan.toJson());
-      await database.saveTempNutritionPlan(deviceId, planJson);
-      DebugLogger.info('✅ Temporary plan saved successfully');
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Error saving temporary plan', error: e, stackTrace: stackTrace);
-      await sentry.reportDatabaseError(
-        e,
-        operation: 'saveTempNutritionPlan',
-        table: 'temp_nutrition_plans',
-        stackTrace: stackTrace,
-      );
-    }
+    DebugLogger.warning('⚠️ saveTempPlan called but is deprecated - plans should be activity-owned');
+    // No-op: Plans are now saved immediately with activity ID
   }
 
-  /// Get temporarily stored plan
   Future<domain.NutritionPlan?> getTempPlan(String deviceId) async {
+    DebugLogger.warning('⚠️ getTempPlan called but is deprecated - plans should be activity-owned');
+    return null; // Always return null - no temp plans
+  }
+
+  Future<void> clearTempPlan(String deviceId) async {
+    DebugLogger.warning('⚠️ clearTempPlan called but is deprecated - plans should be activity-owned');
+    // No-op: No temp plans to clear
+  }
+
+  /// Get nutrition plan by activity ID (local cache first, then remote)
+  Future<domain.NutritionPlan?> getNutritionPlanByActivityId(String deviceId, String activityId) async {
+    DebugLogger.info('🔍 Getting nutrition plan for activityId: $activityId, deviceId: $deviceId');
+    
     try {
-      DebugLogger.info('🔍 Getting temporary plan for deviceId: $deviceId');
-      final planJson = await database.getTempNutritionPlan(deviceId);
-      if (planJson != null && planJson.isNotEmpty) {
-        final plan = domain.NutritionPlan.fromJson(json.decode(planJson));
-        DebugLogger.info('✅ Found temporary plan: ${plan.name}');
-        return plan;
+      // First try local cache
+      DebugLogger.info('📱 Checking local Drift cache...');
+      final cachedPlanEntry = await database.getNutritionPlanByActivityId(deviceId, activityId);
+
+      if (cachedPlanEntry != null && cachedPlanEntry.planData.isNotEmpty) {
+        DebugLogger.info('✅ Found cached plan for activity, parsing JSON...');
+        try {
+          final planData = json.decode(cachedPlanEntry.planData);
+          final plan = domain.NutritionPlan.fromJson(planData);
+          DebugLogger.info('✅ Successfully parsed cached plan: ${plan.name} with ${plan.sections.length} sections');
+          return plan;
+        } catch (e, stackTrace) {
+          DebugLogger.error('❌ Error parsing cached nutrition plan', error: e, stackTrace: stackTrace);
+        }
       } else {
-        DebugLogger.info('📭 No temporary plan found');
-        return null;
+        DebugLogger.info('📭 No cached plan found for activity, checking remote...');
       }
+
+      // Fall back to remote
+      DebugLogger.info('☁️ Checking Supabase for activity_id: $activityId');
+      final response = await supabase
+          .from('nutrition_plans')
+          .select('*')
+          .eq('device_id', deviceId)
+          .eq('activity_id', activityId)
+          .eq('is_deleted', false)
+          .maybeSingle();
+
+      if (response != null) {
+        DebugLogger.info('✅ Found remote plan for activity, parsing Supabase response...');
+        try {
+          final plan = domain.NutritionPlan.fromSupabaseJson(response);
+          DebugLogger.info('✅ Successfully parsed remote plan: ${plan.name} with ${plan.sections.length} sections');
+          
+          // Cache it locally for next time
+          DebugLogger.info('💾 Caching plan locally...');
+          await cachePlanLocally(deviceId, plan);
+          DebugLogger.info('✅ Plan cached successfully');
+          
+          return plan;
+        } catch (e, stackTrace) {
+          DebugLogger.error('❌ Error parsing Supabase nutrition plan', error: e, stackTrace: stackTrace);
+          return null;
+        }
+      } else {
+        DebugLogger.info('📭 No remote plan found for activity');
+      }
+      return null;
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ Error getting temporary plan', error: e, stackTrace: stackTrace);
-      await sentry.reportDatabaseError(
-        e,
-        operation: 'getTempNutritionPlan',
-        table: 'temp_nutrition_plans',
-        stackTrace: stackTrace,
-      );
+      DebugLogger.error('Error fetching nutrition plan by activity ID', error: e, stackTrace: stackTrace);
       return null;
     }
   }
 
-  /// Clear temporary plan
-  Future<void> clearTempPlan(String deviceId) async {
+  /// Update the activity ID for a nutrition plan (links plan to activity)
+  Future<bool> updatePlanActivityId(String deviceId, String planId, String activityId) async {
+    DebugLogger.info('🔗 Linking nutrition plan $planId to activity $activityId');
+    
     try {
-      DebugLogger.info('🗑️ Clearing temporary plan for deviceId: $deviceId');
-      await database.clearTempNutritionPlan(deviceId);
-      DebugLogger.info('✅ Temporary plan cleared successfully');
+      // Update in local cache
+      await database.updateNutritionPlanActivityId(deviceId, planId, activityId);
+      DebugLogger.info('✅ Updated local plan with activity ID');
+
+      // Update in remote (Supabase)
+      try {
+        await supabase
+            .from('nutrition_plans')
+            .update({
+              'activity_id': activityId,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('device_id', deviceId)
+            .eq('plan_id', planId);
+        DebugLogger.info('✅ Updated remote plan with activity ID');
+      } catch (e) {
+        DebugLogger.warning('⚠️ Failed to update remote plan (offline mode?): $e');
+        // Don't fail if remote update fails - local update is sufficient
+      }
+
+      return true;
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ Error clearing temporary plan', error: e, stackTrace: stackTrace);
+      DebugLogger.error('❌ Error updating plan activity ID', error: e, stackTrace: stackTrace);
       await sentry.reportDatabaseError(
         e,
-        operation: 'clearTempNutritionPlan',
-        table: 'temp_nutrition_plans',
+        operation: 'updatePlanActivityId',
+        table: 'nutrition_plans',
         stackTrace: stackTrace,
       );
+      return false;
     }
   }
 
@@ -573,8 +628,8 @@ class NutritionPlanRepository {
     final plan = data['plan'] as Map<String, dynamic>;
     final targets = data['targets'] as Map<String, dynamic>?;
 
-    // Generate plan ID
-    final planId = 'plan-${DateTime.now().millisecondsSinceEpoch}-${deviceId.substring(deviceId.length - 4)}';
+    // Generate plan ID using UUID to match Supabase schema
+    final planId = const Uuid().v4();
 
     // Convert before section - transform each item using the service
     final beforeData = plan['before'] as Map<String, dynamic>?;

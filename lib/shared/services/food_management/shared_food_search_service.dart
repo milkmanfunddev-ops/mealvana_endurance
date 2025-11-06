@@ -91,8 +91,9 @@ class SharedFoodSearchService {
       // Map API product to Food
       final food = await _foodMappingService.mapToFood(apiProduct);
 
-      // Convert categories from strings to category IDs (simplified - using empty list for now)
-      final categoryIds = <int>[];
+      // Assign all categories to user-imported foods so they're available in all contexts
+      // Categories: 1=before_run, 2=during_run, 3=after_run
+      final categoryIds = [1, 2, 3];
 
       // Save to user foods
       await _userFoodService.saveUserFood(food, categoryIds);      return food;

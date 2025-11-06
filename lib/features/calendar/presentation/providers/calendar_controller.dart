@@ -79,8 +79,9 @@ class CalendarController extends _$CalendarController {
 
       final activities = await _service.getActivitiesForWeek(userId, weekStart);
 
-      // Get all events for this week (events are separate from activities now)
-      final events = await _service.getEventsForWeek(userId, weekStart);
+      // Get ALL events (not just for this week) so they show as dots on the calendar
+      // The calendar shows a 2-year range, so we need events across that entire range
+      final events = await _service.getAllEvents(userId);
 
       // Fetch ALL carb loading days (not just for this week)
       // Carb loading days can be far in the future for upcoming events
@@ -110,6 +111,10 @@ class CalendarController extends _$CalendarController {
     double? paceTargetMinutesPerMile,
     IntensityLevel? intensityLevel,
     String? notes,
+    bool reminderEnabled = false,
+    int? reminderDaysBefore,
+    String? reminderTimeOfDay,
+    bool reminderRecurring = false,
   }) async {
     try {
       // Get current user's device ID
@@ -126,6 +131,10 @@ class CalendarController extends _$CalendarController {
         paceTargetMinutesPerMile: paceTargetMinutesPerMile,
         intensityLevel: intensityLevel,
         notes: notes,
+        reminderEnabled: reminderEnabled,
+        reminderDaysBefore: reminderDaysBefore,
+        reminderTimeOfDay: reminderTimeOfDay,
+        reminderRecurring: reminderRecurring,
       );
 
       // Refresh activities
@@ -266,6 +275,7 @@ class CalendarController extends _$CalendarController {
   Future<void> createEvent({
     String? activityId, // Now optional - events can exist without activities
     required EventType eventType,
+    String? eventSubtype, // Specific race distance/type
     String? eventName,
     String? location,
     String? registrationUrl,
@@ -284,6 +294,7 @@ class CalendarController extends _$CalendarController {
         userId: userId,
         activityId: activityId,
         eventType: eventType,
+        eventSubtype: eventSubtype,
         eventName: eventName,
         location: location,
         registrationUrl: registrationUrl,

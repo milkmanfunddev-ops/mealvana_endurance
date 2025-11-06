@@ -294,7 +294,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                       ),
                       // "Today" pill button (appears when scrolled away from today)
                       if (_showTodayButton) ...[
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 6),
                         Material(
                           elevation: 2,
                           borderRadius: BorderRadius.circular(16),
@@ -401,7 +401,10 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
               
               // Check for activities, events, and carb loading days
               final hasActivity = calendarData.activities.any((a) => _isSameDay(a.scheduledDateTime, date));
-              final hasEvent = calendarData.events.any((e) => _isSameDay(e.dateTime, date));
+              final hasEvent = calendarData.events.any((e) {
+                final eventDate = _getEventDate(e, calendarData.activities);
+                return eventDate != null && _isSameDay(eventDate, date);
+              });
               final hasCarbDay = calendarData.carbLoadingDays.any((c) => _isSameDay(c.planDate, date));
 
               return GestureDetector(
@@ -554,7 +557,10 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                       
                       // Check for activities, events, and carb loading days
                       final hasActivity = calendarData.activities.any((a) => _isSameDay(a.scheduledDateTime, date));
-                      final hasEvent = calendarData.events.any((e) => _isSameDay(e.dateTime, date));
+                      final hasEvent = calendarData.events.any((e) {
+                        final eventDate = _getEventDate(e, calendarData.activities);
+                        return eventDate != null && _isSameDay(eventDate, date);
+                      });
                       final hasCarbDay = calendarData.carbLoadingDays.any((c) => _isSameDay(c.planDate, date));
                       
                       return Expanded(
@@ -737,7 +743,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.directions_run,
+                    _getActivityIcon(activity.activityType),
                     color: accentColor,
                     size: 24,
                   ),
@@ -1053,16 +1059,54 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   String _formatActivityDetails(Activity activity) {
     final parts = <String>[];
 
-    if (activity.distanceMiles != null) {
-      parts.add('${activity.distanceMiles} mi');
-    }
+    if (activity.isSwimming) {
+      // Swimming: show distance in meters, duration, and pace per 100m
+      if (activity.distanceMiles != null) {
+        final meters = (activity.distanceMiles! * 1609.34).round();
+        parts.add('${meters}m');
+      }
 
-    if (activity.formattedDuration != null) {
-      parts.add(activity.formattedDuration!);
-    }
+      if (activity.formattedDuration != null) {
+        parts.add(activity.formattedDuration!);
+      }
 
-    if (activity.formattedPace != null) {
-      parts.add(activity.formattedPace!);
+      // Show pace per 100m if we have both distance and duration
+      if (activity.distanceMiles != null && activity.durationMinutes != null) {
+        final meters = activity.distanceMiles! * 1609.34;
+        final seconds = activity.durationMinutes! * 60;
+        final secondsPer100m = (seconds / meters * 100).round();
+        final minutes = secondsPer100m ~/ 60;
+        final secs = secondsPer100m % 60;
+        parts.add('$minutes:${secs.toString().padLeft(2, '0')}/100m');
+      }
+    } else if (activity.isCycling) {
+      // Cycling: show distance in miles, duration, and speed in mph
+      if (activity.distanceMiles != null) {
+        parts.add('${activity.distanceMiles} mi');
+      }
+
+      if (activity.formattedDuration != null) {
+        parts.add(activity.formattedDuration!);
+      }
+
+      // Calculate and show speed in mph if we have both distance and duration
+      if (activity.distanceMiles != null && activity.durationMinutes != null && activity.durationMinutes! > 0) {
+        final speedMph = activity.distanceMiles! / (activity.durationMinutes! / 60);
+        parts.add('${speedMph.toStringAsFixed(1)} mph');
+      }
+    } else {
+      // Running: show distance in miles, duration, and pace per mile
+      if (activity.distanceMiles != null) {
+        parts.add('${activity.distanceMiles} mi');
+      }
+
+      if (activity.formattedDuration != null) {
+        parts.add(activity.formattedDuration!);
+      }
+
+      if (activity.formattedPace != null) {
+        parts.add(activity.formattedPace!);
+      }
     }
 
     return parts.join(' • ');
@@ -1070,6 +1114,33 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  /// Get the date for an event by checking its linked activity or parsing startTime
+  DateTime? _getEventDate(Event event, List<Activity> activities) {
+    // First, try to get the date from the linked activity
+    if (event.activityId != null) {
+      final activity = activities.firstWhere(
+        (a) => a.id == event.activityId,
+        orElse: () => activities.first, // This won't be called if no match
+      );
+      // Check if we actually found a matching activity
+      if (activities.any((a) => a.id == event.activityId)) {
+        return activity.scheduledDateTime;
+      }
+    }
+
+    // Fall back to parsing startTime if available
+    if (event.startTime != null) {
+      try {
+        return DateTime.parse(event.startTime!);
+      } catch (e) {
+        // Invalid date format
+        return null;
+      }
+    }
+
+    return null;
   }
 
   DateTime _getScrollableDate(int index) {
@@ -1083,5 +1154,16 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     return UpcomingEventWidget(
       upcomingEvent: upcomingEvent,
     );
+  }
+
+  IconData _getActivityIcon(ActivityType activityType) {
+    switch (activityType) {
+      case ActivityType.running:
+        return Icons.directions_run;
+      case ActivityType.cycling:
+        return Icons.directions_bike;
+      case ActivityType.swimming:
+        return Icons.pool;
+    }
   }
 }

@@ -1059,7 +1059,7 @@ serve(async (req)=>{
       optimizePhase(supabase, "after", body.device_id, postTargets, likedFoods, willTryFoods, dislikedFoods, electrolyteFoods, activityType)
     ]);
     // Generate response
-    const planId = `improved-lp-${Date.now()}-${body.device_id.slice(-6)}`;
+    const planId = crypto.randomUUID(); // Generate proper UUID instead of custom string format
     const detailedMessage = `Optimized nutrition plan using linear programming with targeted macro optimization and intelligent electrolyte/water supplementation.`;
     // Save plan to database
     const nutritionPlan = {

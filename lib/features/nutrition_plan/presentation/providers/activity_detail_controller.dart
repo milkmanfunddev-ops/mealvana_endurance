@@ -6,8 +6,12 @@ import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../domain/nutrition_plan.dart' show NutritionPlan;
 import '../../domain/macro_targets.dart';
 import '../../../calendar/application/calendar_service.dart';
+import '../../../auth/application/auth_service.dart';
+import '../../../activities/domain/activity_reminder.dart';
 import 'distance_page_gut_entry_controller.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../data/nutrition_plan_repository.dart';
+import 'nutrition_plan_controller.dart';
 
 part 'activity_detail_controller.g.dart';
 
@@ -21,6 +25,7 @@ class ActivityDetailState {
     this.macroTargets,
     this.pendingActivityData,
     this.scheduledDateTime,
+    this.pendingReminder,
     this.isSaving = false,
     this.isCompleting = false,
     this.hasUnsavedChanges = false,
@@ -34,6 +39,7 @@ class ActivityDetailState {
   final MacroTargets? macroTargets;
   final PendingActivityData? pendingActivityData;
   final DateTime? scheduledDateTime;
+  final ActivityReminder? pendingReminder; // For create mode
   final bool isSaving;
   final bool isCompleting;
   final bool hasUnsavedChanges; // Tracks if nutrition plan has been modified
@@ -52,6 +58,7 @@ class ActivityDetailState {
     MacroTargets? macroTargets,
     PendingActivityData? pendingActivityData,
     DateTime? scheduledDateTime,
+    ActivityReminder? pendingReminder,
     bool? isSaving,
     bool? isCompleting,
     bool? hasUnsavedChanges,
@@ -65,6 +72,7 @@ class ActivityDetailState {
       macroTargets: macroTargets ?? this.macroTargets,
       pendingActivityData: pendingActivityData ?? this.pendingActivityData,
       scheduledDateTime: scheduledDateTime ?? this.scheduledDateTime,
+      pendingReminder: pendingReminder ?? this.pendingReminder,
       isSaving: isSaving ?? this.isSaving,
       isCompleting: isCompleting ?? this.isCompleting,
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
@@ -79,6 +87,10 @@ class ActivityDetailState {
 class ActivityDetailController extends _$ActivityDetailController {
   AppLogger get _logger => ref.read(appLoggerProvider);
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
+  AuthService get _authService => ref.read(authServiceProvider);
+
+  Future<NutritionPlanRepository> get _nutritionPlanRepository async =>
+      await ref.read(nutritionPlanRepositoryProvider.future);
 
   @override
   FutureOr<ActivityDetailState> build({
@@ -101,15 +113,29 @@ class ActivityDetailController extends _$ActivityDetailController {
         throw Exception('Activity ID required for view mode');
       }
 
-      final activity = await _calendarService.getActivityById('current-user', activityId);
+      // Get current user's ID
+      final user = await _authService.getCurrentUser();
+      final userId = user?.id ?? 'unknown';
+
+      final activity = await _calendarService.getActivityById(userId, activityId);
 
       if (activity == null) {
         throw Exception('Activity not found: $activityId');
       }
 
-      // Load nutrition plan if linked
+      // Load nutrition plan if linked to this activity
       NutritionPlan? nutritionPlan;
-      // TODO: Load nutrition plan by activityId when repository method exists
+      try {
+        final repository = await _nutritionPlanRepository;
+        nutritionPlan = await repository.getNutritionPlanByActivityId(userId, activityId);
+        if (nutritionPlan != null) {
+          _logger.info('Loaded nutrition plan for activity: ${nutritionPlan.id}');
+        } else {
+          _logger.info('No nutrition plan linked to activity: $activityId');
+        }
+      } catch (e) {
+        _logger.error('Error loading nutrition plan for activity', error: e);
+      }
 
       // Load completion if exists
       ActivityCompletion? completion;
@@ -145,7 +171,10 @@ class ActivityDetailController extends _$ActivityDetailController {
             throw Exception('Missing pending activity data');
           }
 
-          final activityId = await calendarController.createActivity(
+          // Get reminder data if available
+          final reminder = currentState.pendingReminder;
+
+          final newActivityId = await calendarController.createActivity(
             title: pendingData.title,
             scheduledDateTime: currentState.scheduledDateTime ?? pendingData.scheduledDateTime,
             activityType: ActivityType.running,
@@ -153,10 +182,14 @@ class ActivityDetailController extends _$ActivityDetailController {
             paceTargetMinutesPerMile: pendingData.paceMinutesPerMile,
             intensityLevel: pendingData.intensityLevel,
             notes: pendingData.notes,
+            reminderEnabled: reminder?.enabled ?? false,
+            reminderDaysBefore: reminder?.daysBefore,
+            reminderTimeOfDay: reminder?.timeOfDay,
+            reminderRecurring: reminder?.recurring ?? false,
           );
 
-          // TODO: Link nutrition plan to activity when method is implemented
-          // For now, the nutrition plan is already saved with the correct planId
+          // Link the current nutrition plan to the newly created activity
+          await _linkCurrentNutritionPlanToActivity(newActivityId);
 
           return currentState.copyWith(isSaving: false);
         } else {
@@ -172,9 +205,15 @@ class ActivityDetailController extends _$ActivityDetailController {
 
           await calendarController.updateActivity(updatedActivity);
 
+          // If nutrition plan was modified, ensure it's linked to this activity
+          if (currentState.hasUnsavedChanges) {
+            await _linkCurrentNutritionPlanToActivity(activity.id);
+          }
+
           return currentState.copyWith(
             isSaving: false,
             activity: updatedActivity,
+            hasUnsavedChanges: false,
           );
         }
       } catch (error) {
@@ -182,6 +221,44 @@ class ActivityDetailController extends _$ActivityDetailController {
         rethrow;
       }
     });
+  }
+
+  /// Helper method to link the current nutrition plan to an activity
+  Future<void> _linkCurrentNutritionPlanToActivity(String activityId) async {
+    try {
+      // Get the current nutrition plan from the NutritionPlanController
+      final nutritionPlanState = ref.read(nutritionPlanControllerProvider);
+      final currentPlan = nutritionPlanState.value?.plan;
+
+      if (currentPlan == null) {
+        _logger.info('No nutrition plan to link to activity $activityId');
+        return;
+      }
+
+      // Get current user
+      final user = await _authService.getCurrentUser();
+      if (user == null) {
+        _logger.warning('Cannot link nutrition plan: no user found');
+        return;
+      }
+
+      // Link the plan to the activity
+      final repository = await _nutritionPlanRepository;
+      final success = await repository.updatePlanActivityId(
+        user.id,
+        currentPlan.id,
+        activityId,
+      );
+
+      if (success) {
+        _logger.info('Successfully linked nutrition plan ${currentPlan.id} to activity $activityId');
+      } else {
+        _logger.warning('Failed to link nutrition plan to activity');
+      }
+    } catch (e) {
+      _logger.error('Error linking nutrition plan to activity', error: e);
+      // Don't rethrow - this is a non-critical operation
+    }
   }
 
   /// Complete activity with ratings and notes
@@ -248,7 +325,41 @@ class ActivityDetailController extends _$ActivityDetailController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    state = AsyncData(currentState.copyWith(scheduledDateTime: newDateTime));
+    // In view mode, mark as changed so Save button appears
+    // In create mode, don't mark as changed (user hasn't saved anything yet)
+    final hasChanges = currentState.isViewMode;
+
+    state = AsyncData(currentState.copyWith(
+      scheduledDateTime: newDateTime,
+      hasUnsavedChanges: hasChanges,
+    ));
+  }
+
+  /// Update reminder settings
+  Future<void> updateReminder(ActivityReminder? reminder) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    // If we have an existing activity, update it with new reminder settings
+    if (currentState.activity != null) {
+      final updatedActivity = currentState.activity!.copyWith(
+        reminderEnabled: reminder?.enabled ?? false,
+        reminderDaysBefore: reminder?.daysBefore,
+        reminderTimeOfDay: reminder?.timeOfDay,
+        reminderRecurring: reminder?.recurring ?? false,
+      );
+
+      state = AsyncData(currentState.copyWith(
+        activity: updatedActivity,
+        hasUnsavedChanges: true,
+      ));
+    } else {
+      // In create mode, store the reminder in pendingReminder
+      state = AsyncData(currentState.copyWith(
+        pendingReminder: reminder,
+        hasUnsavedChanges: true,
+      ));
+    }
   }
 
   /// Mark that the nutrition plan has unsaved changes

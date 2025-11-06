@@ -37,6 +37,8 @@ import 'tables/carb_loading_user_food_meal_types_table.dart';
 import 'tables/carb_loading_day_meals_table.dart';
 // NEW: Weather feature table
 import 'tables/weather_forecasts_table.dart';
+// NEW: Feature survey table
+import 'tables/feature_survey_responses_table.dart';
 import '../services/logging_service.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
@@ -44,7 +46,7 @@ import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
-/// V1 schema with 27 tables (100% parity with Supabase)
+/// V1 schema with 28 tables (100% parity with Supabase)
 @DriftDatabase(tables: [
   // Core tables aligned with Supabase
   UserProfilesTable,
@@ -88,6 +90,9 @@ part 'app_database.g.dart';
 
   // Weather feature tables
   WeatherForecastsTable,
+
+  // Feature survey tables
+  FeatureSurveyResponsesTable,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase({AppLogger? logger})
@@ -102,7 +107,7 @@ class AppDatabase extends _$AppDatabase {
   final AppLogger _logger;
 
   @override
-  int get schemaVersion => 2; // v2: Added needsUpload and localUpdatedAt columns to nutrition_plans table
+  int get schemaVersion => 1; // v1: Clean baseline schema
 
   /// Generate a UUID for new records
   String _generateUuid() {
@@ -271,22 +276,7 @@ class AppDatabase extends _$AppDatabase {
           print('🔄 Migrating database from v$from to v$to');
         }
 
-        // V1 → V2 migration: Add sync columns to nutrition_plans table
-        if (from == 1 && to == 2) {
-          // Add needsUpload and localUpdatedAt columns to nutrition_plans
-          // Drift will automatically handle this with ALTER TABLE ADD COLUMN
-          await m.addColumn(nutritionPlans, nutritionPlans.needsUpload);
-          await m.addColumn(nutritionPlans, nutritionPlans.localUpdatedAt);
-
-          if (kDebugMode) {
-            print('✅ Migration V1→V2 completed: Added sync columns to nutrition_plans');
-          }
-        }
-
-        // V2 → V3 migration (future)
-        if (from == 2 && to == 3) {
-          // Handle future migrations
-        }
+        // Future migrations will go here when we move to v2
       },
     );
   }
@@ -574,6 +564,33 @@ class AppDatabase extends _$AppDatabase {
 
     final results = await query.get();
     return results;
+  }
+
+  /// Get nutrition plan by activity ID
+  Future<NutritionPlanEntry?> getNutritionPlanByActivityId(String deviceId, String activityId) async {
+    final query = select(nutritionPlans)
+      ..where((n) =>
+        n.deviceId.equals(deviceId) &
+        n.activityId.equals(activityId) &
+        n.isDeleted.equals(false))
+      ..orderBy([(n) => OrderingTerm.desc(n.updatedAt)])
+      ..limit(1);
+
+    final results = await query.get();
+    return results.isNotEmpty ? results.first : null;
+  }
+
+  /// Update nutrition plan's activity ID (link plan to activity)
+  Future<bool> updateNutritionPlanActivityId(String deviceId, String planId, String activityId) async {
+    final updatedRows = await (update(nutritionPlans)
+      ..where((n) => n.deviceId.equals(deviceId) & n.planId.equals(planId)))
+      .write(NutritionPlansCompanion(
+        activityId: Value(activityId),
+        updatedAt: Value(DateTime.now()),
+        localUpdatedAt: Value(DateTime.now()),
+        needsUpload: const Value(true), // Mark for sync to Supabase
+      ));
+    return updatedRows > 0;
   }
 
   /// Delete nutrition plan

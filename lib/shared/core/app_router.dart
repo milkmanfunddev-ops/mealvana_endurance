@@ -6,15 +6,16 @@ import '../../features/app_startup/presentation/widgets/app_startup_widget.dart'
 // Import all screens
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
+import '../../features/onboarding/presentation/screens/sport_preferences_screen.dart';
 import '../../features/onboarding/presentation/screens/food_preferences_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/activity_detail_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart';
 import '../../features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/sport_settings_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_edit_screen.dart';
 import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
-import '../../features/feedback/presentation/screens/survey_screen.dart';
 import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
 import '../../features/user_journal/presentation/screens/voice_notes_list_screen.dart';
 import '../../features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart';
@@ -58,10 +59,16 @@ class AppRouter {
         name: 'onboarding-profile',
         builder: (context, state) => const UserProfileScreen(),
       ),
-      
+
+      GoRoute(
+        path: '/onboarding/sport-preferences',
+        name: 'onboarding-sport-preferences',
+        builder: (context, state) => const SportPreferencesScreen(),
+      ),
+
       GoRoute(
         path: '/onboarding/food-preferences',
-        name: 'onboarding-food-preferences', 
+        name: 'onboarding-food-preferences',
         builder: (context, state) => const FoodPreferencesScreen(),
       ),
       GoRoute(
@@ -118,19 +125,7 @@ class AppRouter {
           return TabsScreen(initialTabIndex: initialTab);
         },
       ),
-      
-      // Survey screen - shown after plan generation
-      GoRoute(
-        path: '/survey',
-        name: 'survey',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return SurveyScreen(
-            planName: extra?['planName'] as String?,
-          );
-        },
-      ),
-      
+
       // Activity Detail Screen - Shows nutrition plan and activity details
       GoRoute(
         path: '/plan',
@@ -174,7 +169,14 @@ class AppRouter {
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
       ),
-      
+
+      // Sport Settings Screen - Cycling, swimming, and sport-specific preferences
+      GoRoute(
+        path: '/settings/sport-settings',
+        name: 'settings-sport-settings',
+        builder: (context, state) => const SportSettingsScreen(),
+      ),
+
       // Food Preferences Edit Screen - Edit food preferences from settings
       GoRoute(
         path: '/settings/food-preferences',

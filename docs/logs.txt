@@ -1,22 +1,22 @@
-Restarted application in 1,145ms.
+Restarted application in 738ms.
 flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: 📂 Database file already exists at: /Users/leemartin/Library/Developer/CoreSimulator/Devices/336CB945-DD5C-4AE3-AFA6-82F66F9D48E1/data/Containers/Data/Application/DCB7BFDC-AB0F-418E-B0DC-1C953ACD45D1/Documents/mealvana_endurance_db.sqlite
+flutter: 📂 Database file already exists at: /Users/leemartin/Library/Developer/CoreSimulator/Devices/336CB945-DD5C-4AE3-AFA6-82F66F9D48E1/data/Containers/Data/Application/230D3DE6-D8D1-48D0-84FD-757A3A048867/Documents/mealvana_endurance_db.sqlite
 flutter: 💡 This is NOT a fresh install - using existing database
-flutter: 📂 Existing database opened (v2 → v2)
+flutter: 📂 Existing database opened (v1 → v1)
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 19:49:34.833 (+0:00:00.688929)\^[[0m
+flutter: \^[[38;5;12m│ 09:45:28.754 (+0:00:00.577535)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [APP_STARTUP] Starting unified data sync\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 9A7B36C0-9D0D-4CF6-9E21-D164F5741681}\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 121882A4-A01D-425A-8B29-67BD5E32B81F}\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
 flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 19:49:36.214 (+0:00:02.070468)
+flutter: │ 09:45:29.410 (+0:00:01.234353)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 flutter: │ 🐛 [DATA_SYNC] Merging downloaded data into Drift
 flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ flutter: \^[[38;5;12m┌──────────────────�
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 19:49:36.221 (+0:00:02.076725)\^[[0m
+flutter: \^[[38;5;12m│ 09:45:29.416 (+0:00:01.239738)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [FOOD_REPOSITORY] Syncing nutrition foods from downloaded data\^[[0m
 flutter: \^[[38;5;12m│ 💡 Data: {count: 31}\^[[0m
@@ -33,7 +33,7 @@ flutter: \^[[38;5;12m┌──────────────────�
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 19:49:36.226 (+0:00:02.081704)\^[[0m
+flutter: \^[[38;5;12m│ 09:45:29.422 (+0:00:01.245767)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [CARB_LOADING_SYNC] Syncing carb loading foods from downloaded data\^[[0m
 flutter: \^[[38;5;12m│ 💡 Data: {carb_foods: 27, meal_types: 7}\^[[0m
@@ -42,7 +42,7 @@ flutter: \^[[38;5;12m┌──────────────────�
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 19:49:36.338 (+0:00:02.193768)\^[[0m
+flutter: \^[[38;5;12m│ 09:45:29.585 (+0:00:01.409038)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [FOOD_REPOSITORY] Nutrition foods sync completed\^[[0m
 flutter: \^[[38;5;12m│ 💡 Data: {count: 31}\^[[0m
@@ -51,7 +51,7 @@ flutter: \^[[38;5;12m┌──────────────────�
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 19:49:36.352 (+0:00:02.207836)\^[[0m
+flutter: \^[[38;5;12m│ 09:45:29.602 (+0:00:01.425957)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [CARB_LOADING_SYNC] Carb loading foods sync completed\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
@@ -59,64 +59,41 @@ flutter: ┌──────────────────────�
 flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
 flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 19:49:36.358 (+0:00:02.214414)
+flutter: │ 09:45:29.609 (+0:00:01.433325)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 flutter: │ 🐛 [DATA_SYNC] Successfully merged all data
 flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)
+flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:134:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 09:45:29.804 (+0:00:01.627516)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 🐛 [DATA_SYNC] Activity 33fd1be4-8f59-4ab6-a135-5f163754fbb4 not found in Supabase, syncing plan without activity link
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ NoSuchMethodError: The getter 'error' was called on null.\^[[0m
+flutter: \^[[38;5;208m│ Receiver: null\^[[0m
+flutter: \^[[38;5;208m│ Tried calling: error\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
+flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:166:5)\^[[0m
+flutter: \^[[38;5;208m│ #2   DataSyncService._uploadNutritionPlan (package:mealvana_endurance/shared/services/sync/data_sync_service.dart:476:15)\^[[0m
+flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;208m│ #4   Future.wait.<anonymous closure> (dart:async/future.dart:525:21)\^[[0m
+flutter: \^[[38;5;208m│ #5   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;208m│ #6   DataSyncService._uploadDirtyRecords (package:mealvana_endurance/shared/services/sync/data_sync_service.dart:197:7)\^[[0m
+flutter: \^[[38;5;208m│ #7   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ 09:45:29.968 (+0:00:01.791540)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ [DATA_SYNC] Failed to upload nutrition plan 5f15ef59-02d7-4e3c-91ce-b9a0676ec865\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:352:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:150:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 19:49:36.413 (+0:00:02.269304)\^[[0m
+flutter: \^[[38;5;12m│ 09:45:29.983 (+0:00:01.806585)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [APP_STARTUP] Unified data sync completed successfully\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)
-flutter: DEBUG: Found cached macro targets:
-flutter:   Pre-run carbs: 152.0g
-flutter:   During-run carbs: 81.0g
-flutter:   Post-run carbs: 76.0g
-flutter:   Total carbs should be: 309.0g
-flutter:   Pre-run sodium: 450.0mg
-flutter:   During-run sodium: 1170.0mg
-flutter:   Post-run sodium: 625.0mg
-flutter:   Total sodium should be: 2245.0mg
-flutter:   Pre-run fluids: 555.0ml
-flutter:   During-run fluids: 1080.0ml
-flutter:   Post-run fluids: 1250.0ml
-flutter:   Total fluids should be: 2885.0ml
-flutter:   isUserModified: false
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ FunctionException(status: 400, details: {success: false, message: Missing required fields: latitude, longitude, and activity_date are required}, reasonPhrase: Bad Request)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ #0   FunctionsClient.invoke (package:functions_client/src/functions_client.dart:167:7)\^[[0m
-flutter: \^[[38;5;196m│ #1   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #2   WeatherService._fetchWeatherFromAPI (package:mealvana_endurance/features/weather/application/weather_service.dart:135:24)\^[[0m
-flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #4   WeatherService.getWeatherForecast (package:mealvana_endurance/features/weather/application/weather_service.dart:102:24)\^[[0m
-flutter: \^[[38;5;196m│ #5   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #6   CyclingInputController.fetchWeatherForecast (package:mealvana_endurance/features/nutrition_plan/presentation/providers/cycling_input_controller.dart:236:24)\^[[0m
-flutter: \^[[38;5;196m│ #7   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 19:49:47.845 (+0:00:13.701374)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ Error fetching weather from API\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ FunctionException(status: 400, details: {success: false, message: Missing required fields: latitude, longitude, and activity_date are required}, reasonPhrase: Bad Request)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ #0   FunctionsClient.invoke (package:functions_client/src/functions_client.dart:167:7)\^[[0m
-flutter: \^[[38;5;196m│ #1   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #2   WeatherService._fetchWeatherFromAPI (package:mealvana_endurance/features/weather/application/weather_service.dart:135:24)\^[[0m
-flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #4   WeatherService.getWeatherForecast (package:mealvana_endurance/features/weather/application/weather_service.dart:102:24)\^[[0m
-flutter: \^[[38;5;196m│ #5   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #6   CyclingInputController.fetchWeatherForecast (package:mealvana_endurance/features/nutrition_plan/presentation/providers/cycling_input_controller.dart:236:24)\^[[0m
-flutter: \^[[38;5;196m│ #7   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 19:49:55.461 (+0:00:21.316710)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ Error fetching weather from API\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)
