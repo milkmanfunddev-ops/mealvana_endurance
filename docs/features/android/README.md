@@ -1,147 +1,155 @@
-# Android Google Play Release Readiness
+# Android Google Play Release Documentation (LEGACY)
 
-## Overview
-
-This directory contains comprehensive documentation for releasing Mealvana Endurance on Google Play Store for Open Testing.
-
-**Current Status:** Version 1.7.1+26
-**Target:** Open Testing on Google Play Store
-**Timeline:** Estimated 2-3 weeks (depending on asset creation speed)
-
-## Documentation Structure
-
-- **README.md** (this file) - Overview and quick reference
-- **roadmap.md** - Complete technical implementation roadmap (AI-assisted tasks)
-- **roadmap_lee.md** - Lee's independent action items (manual tasks)
-
-## Quick Status Summary
-
-### ✅ Already Configured
-- Google Play Console account exists
-- Privacy Policy: https://milkmanfunddev-ops.github.io/mealvana_endurance_landing_page/privacypolicy
-- Terms of Service: https://milkmanfunddev-ops.github.io/mealvana_endurance_landing_page/terms
-- App Icon: 1024x1024 PNG (meets requirements)
-- Package ID: `com.milkman.mealvanaendurance`
-
-### 🔧 Needs Configuration (Technical - AI Can Help)
-- [ ] AndroidManifest.xml permissions for notifications, camera, internet
-- [ ] Notification channels setup (Android 8.0+)
-- [ ] Camera permissions for barcode scanning
-- [ ] Target SDK update to Android 14 (API 34) minimum
-- [ ] Release signing configuration
-- [ ] Shorebird Android integration
-- [ ] Data Safety form preparation
-
-### 📸 Needs Creation (Manual - Lee's Tasks)
-- [ ] App screenshots (phone & tablet)
-- [ ] Feature graphic (1024 x 500)
-- [ ] Short description (80 chars max)
-- [ ] Full description (4000 chars max)
-- [ ] App category selection
-- [ ] Content rating questionnaire
-- [ ] Store listing review & submission
-
-## Critical Requirements for Google Play (2025)
-
-### 1. Target API Level
-- **Required by August 31, 2025:** Target Android 15 (API 35) for new apps
-- **Current Requirement:** Target Android 14 (API 34) minimum
-- **Your App:** Currently using `flutter.targetSdkVersion` (needs explicit setting)
-
-### 2. Privacy & Data Safety
-- **Privacy Policy:** ✅ Ready
-- **Data Safety Form:** ⚠️ Needs completion in Play Console
-- **Permissions:** Must justify all requested permissions
-
-### 3. App Signing
-- **Method:** Google Play App Signing (recommended, you confirmed)
-- **Status:** ⚠️ Needs keystore generation and upload
-
-### 4. Content Rating
-- **Target:** General Audience (EVERYONE)
-- **Status:** ⚠️ Needs questionnaire completion in Play Console
-
-## Testing Strategy
-
-### Device Coverage
-- **Primary Test Device:** Google Pixel 7 Pro ✅
-- **Minimum SDK:** Android 5.0 (API 21)
-- **Recommended Additional Testing:** Android emulators for various screen sizes
-
-### Feature Testing Checklist
-- [ ] User authentication flow
-- [ ] Offline-first functionality (Drift database)
-- [ ] Push notifications (opt-in)
-- [ ] Barcode scanning (camera permissions)
-- [ ] Supabase backend connectivity
-- [ ] Analytics tracking (Mixpanel)
-- [ ] Error reporting (Sentry)
-- [ ] OTA updates (Shorebird)
-
-## Package-Specific Requirements
-
-Based on your `pubspec.yaml` analysis:
-
-### Active Features Needing Android Setup
-1. **flutter_local_notifications** - Notification channels, permissions
-2. **mobile_scanner** - Camera permissions, MLKit configuration
-3. **sentry_flutter** - ProGuard rules (optional, you declined)
-4. **supabase_flutter** - Internet permissions (already basic setup)
-5. **mixpanel_flutter** - Internet permissions (covered)
-6. **device_info_plus** - Basic permissions (auto-handled)
-
-### Inactive Features (No Setup Needed)
-- **speech_to_text** - Not actively used, no microphone permissions needed
-
-## Estimated Timeline
-
-### Week 1: Technical Configuration (AI-Assisted)
-- Days 1-2: Android permissions and manifest updates
-- Days 3-4: Release build configuration and signing
-- Day 5: Shorebird Android setup and testing
-
-### Week 2: Asset Creation & Store Listing (Lee's Manual Work)
-- Days 1-3: Screenshot creation and graphic design
-- Days 4-5: Store listing text and metadata
-
-### Week 3: Testing & Submission
-- Days 1-3: Internal testing and bug fixes
-- Days 4-5: Open Testing track submission and review
-
-## Key Contacts & Resources
-
-### Google Play Console
-- **URL:** https://play.google.com/console
-- **Account:** Your Google Play Developer account
-
-### Documentation Links
-- [Android App Release Guide](https://docs.flutter.dev/deployment/android)
-- [Google Play Policies](https://developer.android.com/distribute/play-policies)
-- [Data Safety Form Guide](https://support.google.com/googleplay/android-developer/answer/10787469)
-
-### External Services Status
-- Supabase: ✅ Configured (Dev environment)
-- Sentry: ✅ Configured
-- Mixpanel: ✅ Configured
-- Shorebird: ⚠️ iOS only, needs Android setup
-
-## Next Steps
-
-1. **Start with Technical Configuration** → See `roadmap.md`
-2. **Parallel: Begin Asset Creation** → See `roadmap_lee.md`
-3. **Test on Pixel 7 Pro** → Follow testing checklist
-4. **Submit for Open Testing** → Final steps in `roadmap_lee.md`
-
-## Questions or Issues?
-
-Refer to the detailed roadmaps for step-by-step instructions. Each roadmap includes:
-- Prerequisites
-- Detailed steps with code examples
-- Verification methods
-- Common troubleshooting
+⚠️ **NOTICE: This documentation is outdated and archived.**
 
 ---
 
+## 🔴 DEPRECATED DOCUMENTATION
+
+**Original Version:** 1.7.1+26
 **Last Updated:** 2025-10-17
-**App Version:** 1.7.1+26
-**Status:** Pre-release planning
+**Status:** ARCHIVED - DO NOT USE
+
+This documentation is **no longer accurate** for the current version of Mealvana Endurance.
+
+---
+
+## ✅ Current Documentation Location
+
+**Updated Android deployment documentation for v1.9.0+30 is now available at:**
+
+📂 **[/docs/android/](/docs/android/)**
+
+### New Documentation Structure
+
+| Document | Purpose |
+|----------|---------|
+| [README.md](/docs/android/README.md) | Overview, quick links, status summary |
+| [technical-requirements.md](/docs/android/technical-requirements.md) | SDK versions, package requirements, Gradle config |
+| [implementation-roadmap.md](/docs/android/implementation-roadmap.md) | Step-by-step deployment plan (5-7 days) |
+| [notification-implementation.md](/docs/android/notification-implementation.md) | Complete Android notification setup guide |
+| [build-configuration.md](/docs/android/build-configuration.md) | Gradle, signing, AndroidManifest configuration |
+| [google-play-submission.md](/docs/android/google-play-submission.md) | Store listing and submission process |
+
+---
+
+## Key Differences Between v1.7.1+26 and v1.9.0+30
+
+### Version Changes
+- **Old Version:** 1.7.1+26 (documented here)
+- **New Version:** 1.9.0+30 (current)
+- **Build Number Jump:** +4 versions
+- **Code Changes:** Major refactoring, new features
+
+### Technical Updates
+| Requirement | v1.7.1+26 (Old) | v1.9.0+30 (New) |
+|-------------|-----------------|-----------------|
+| **compileSdk** | Unknown/34 | **35** (critical change) |
+| **targetSdk** | Unknown/34 | **34** (explicit) |
+| **minSdk** | Unknown | **21** (explicit) |
+| **Desugaring** | Not configured | **Required** |
+| **MultiDex** | Not enabled | **Required** |
+| **Notifications** | Partially implemented | **Full Android support needed** |
+| **Camera Permissions** | Not configured | **Required in manifest** |
+
+### Package Updates
+Several packages have updated requirements:
+- **supabase_flutter:** 2.8.5 requires compileSdk 35
+- **sentry_flutter:** 9.6.0 requires compileSdk 35
+- **flutter_local_notifications:** 19.4.1 requires Android notification channels
+
+### Critical Blockers (New in v1.9.0+30)
+1. **Notification Implementation** - iOS-only code in `notification_service.dart` lines 60-96
+2. **Target SDK** - Must be explicitly set to 34 (Google Play requirement)
+3. **Release Signing** - Currently using debug keys (cannot publish)
+4. **Missing Permissions** - POST_NOTIFICATIONS, CAMERA, RECEIVE_BOOT_COMPLETED
+
+---
+
+## Why This Documentation Was Archived
+
+This directory contains outdated information that:
+- References old package versions
+- Missing critical Android 13+ permission requirements
+- Does not cover new notification channel implementation
+- Incomplete build configuration for current dependencies
+- Missing Shorebird Android setup (now required)
+
+**Using this old documentation could result in:**
+- ❌ Build failures (wrong SDK versions)
+- ❌ Google Play rejection (missing permissions)
+- ❌ App crashes (missing desugaring)
+- ❌ Features not working (notification channels)
+
+---
+
+## Migration Guide
+
+If you were following this old documentation:
+
+### Stop Following Old Docs
+1. Ignore SDK version recommendations here
+2. Don't use old permission configurations
+3. Skip outdated package setup instructions
+
+### Start Using New Docs
+1. Read [/docs/android/README.md](/docs/android/README.md) for overview
+2. Follow [/docs/android/implementation-roadmap.md](/docs/android/implementation-roadmap.md) step-by-step
+3. Reference [/docs/android/technical-requirements.md](/docs/android/technical-requirements.md) for package details
+
+### Key Migration Steps
+1. **Update build.gradle.kts:**
+   - Set compileSdk = 35 (not 34)
+   - Set targetSdk = 34 explicitly
+   - Enable multiDexEnabled = true
+   - Enable desugaring
+
+2. **Update AndroidManifest.xml:**
+   - Add POST_NOTIFICATIONS permission
+   - Add CAMERA permission
+   - Add notification receivers
+   - Add RECEIVE_BOOT_COMPLETED permission
+
+3. **Implement Android Notifications:**
+   - Update notification_service.dart
+   - Add notification channels
+   - Implement Android 13+ permission requests
+
+4. **Configure Release Signing:**
+   - Generate production keystore
+   - Create key.properties
+   - Update build.gradle.kts signing configs
+
+---
+
+## What's Preserved Here
+
+For historical reference, this directory still contains:
+
+- **roadmap.md** - Original technical roadmap (v1.7.1+26)
+- **roadmap_lee.md** - Original manual tasks (v1.7.1+26)
+- **data_safety_answers.md** - Data safety declaration (still relevant)
+
+**Note:** The data safety declaration is still largely accurate, but should be reviewed against the new documentation.
+
+---
+
+## Questions?
+
+- **For current Android deployment:** See [/docs/android/README.md](/docs/android/README.md)
+- **For technical requirements:** See [/docs/android/technical-requirements.md](/docs/android/technical-requirements.md)
+- **For step-by-step guide:** See [/docs/android/implementation-roadmap.md](/docs/android/implementation-roadmap.md)
+
+---
+
+## Archive Information
+
+**This directory will remain for historical reference but should not be used for current development.**
+
+**Archived Date:** 2025-11-12
+**Archived Version:** 1.7.1+26
+**Reason:** Major version update and technical requirement changes
+
+---
+
+*For all current Android deployment tasks, please use [/docs/android/](/docs/android/) documentation.*
