@@ -4,7 +4,7 @@ class WorkoutNote {
   const WorkoutNote({
     required this.id,
     required this.userId,
-    this.planId,
+    this.activityId,
     required this.noteText,
     this.rating,
     required this.createdAt,
@@ -12,13 +12,13 @@ class WorkoutNote {
   });
 
   /// Unique identifier for the note
-  final String id;
-  
-  /// User ID (device-based identifier)
+  final int id;
+
+  /// User ID (UUID-based identifier)
   final String userId;
-  
-  /// Optional reference to nutrition plan ID
-  final String? planId;
+
+  /// Optional reference to activity ID
+  final int? activityId;
   
   /// The text content of the note
   final String noteText;
@@ -34,9 +34,9 @@ class WorkoutNote {
 
   /// Creates a copy of this workout note with the given fields replaced
   WorkoutNote copyWith({
-    String? id,
+    int? id,
     String? userId,
-    String? planId,
+    int? activityId,
     String? noteText,
     int? rating,
     DateTime? createdAt,
@@ -45,7 +45,7 @@ class WorkoutNote {
     return WorkoutNote(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      planId: planId ?? this.planId,
+      activityId: activityId ?? this.activityId,
       noteText: noteText ?? this.noteText,
       rating: rating ?? this.rating,
       createdAt: createdAt ?? this.createdAt,
@@ -59,7 +59,7 @@ class WorkoutNote {
     return other is WorkoutNote &&
         other.id == id &&
         other.userId == userId &&
-        other.planId == planId &&
+        other.activityId == activityId &&
         other.noteText == noteText &&
         other.rating == rating &&
         other.createdAt == createdAt &&
@@ -71,7 +71,7 @@ class WorkoutNote {
     return Object.hash(
       id,
       userId,
-      planId,
+      activityId,
       noteText,
       rating,
       createdAt,
@@ -81,6 +81,6 @@ class WorkoutNote {
 
   @override
   String toString() {
-    return 'WorkoutNote(id: $id, userId: $userId, planId: $planId, noteText: $noteText, rating: $rating, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'WorkoutNote(id: $id, userId: $userId, activityId: $activityId, noteText: $noteText, rating: $rating, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }

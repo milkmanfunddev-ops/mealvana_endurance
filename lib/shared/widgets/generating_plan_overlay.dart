@@ -3,7 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../theme/app_theme.dart';
 
 /// Elegant full-screen overlay shown during nutrition plan generation
-/// Features rotating motivational messages and animated progress dots
+/// Features rotating motivational messages with Kyle's design system
+/// Supports both light and dark modes
 class GeneratingPlanOverlay extends StatefulWidget {
   const GeneratingPlanOverlay({super.key});
 
@@ -13,27 +14,33 @@ class GeneratingPlanOverlay extends StatefulWidget {
 
 class _GeneratingPlanOverlayState extends State<GeneratingPlanOverlay>
     with TickerProviderStateMixin {
+  // Kyle's Design System Colors
+  static const Color kyleBlackberry = Color(0xFF381633);
+  static const Color kyleCream = Color(0xFFF8F6EB);
+  static const Color kyleOrange = Color(0xFFF78B14);
+  static const Color kyleOffCream = Color(0xFFC6C3B2);
+
   late AnimationController _fadeController;
-  late AnimationController _dotsController;
+  late AnimationController _spinController;
   late Animation<double> _fadeAnimation;
-  
+
   int _currentMessageIndex = 0;
   late List<String> _motivationalMessages;
 
   @override
   void initState() {
     super.initState();
-    
+
     _motivationalMessages = [
       "Crafting your perfect fuel strategy...",
       "Analyzing your nutrition needs...",
       "Building your personalized plan...",
-      "Almost ready to fuel your run...",
+      "Almost ready to fuel your performance...",
     ];
-    
+
     // Fade animation for the overlay
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _fadeAnimation = Tween<double>(
@@ -43,17 +50,17 @@ class _GeneratingPlanOverlayState extends State<GeneratingPlanOverlay>
       parent: _fadeController,
       curve: Curves.easeInOut,
     ));
-    
-    // Dots animation
-    _dotsController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+
+    // Spin animation for circular progress
+    _spinController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     // Start animations
     _fadeController.forward();
-    _dotsController.repeat();
-    
+    _spinController.repeat();
+
     // Rotate messages every 2.5 seconds
     _startMessageRotation();
   }
@@ -74,113 +81,147 @@ class _GeneratingPlanOverlayState extends State<GeneratingPlanOverlay>
   @override
   void dispose() {
     _fadeController.dispose();
-    _dotsController.dispose();
+    _spinController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final brightness = MediaQuery.of(context).platformBrightness;
+    final isDark = brightness == Brightness.dark;
+
+    // Color scheme based on theme
+    final backgroundColor = isDark ? kyleBlackberry : kyleCream;
+    final textColor = isDark ? kyleCream : kyleBlackberry;
+    final accentColor = kyleOrange;
+    final secondaryTextColor = isDark ? kyleOffCream : AppTheme.baseGrey;
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        color: AppTheme.baseCream.withValues(alpha: 0.95),
+        color: backgroundColor,
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // App logo/icon area
-              Container(
-                padding: EdgeInsets.all(24.w),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary600.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.restaurant_menu,
-                  color: AppTheme.primary600,
-                  size: 48.sp,
-                ),
-              ),
-              
-              SizedBox(height: 32.h),
-              
-              // Motivational text with smooth transitions
-              SizedBox(
-                height: 60.h,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.3),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Circular progress indicator with Kyle's styling
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Outer rotating circle
+                    RotationTransition(
+                      turns: _spinController,
+                      child: Container(
+                        width: 80.w,
+                        height: 80.w,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: accentColor.withValues(alpha: 0.2),
+                            width: 3,
+                          ),
+                        ),
                       ),
-                    );
-                  },
-                  child: Text(
-                    _motivationalMessages[_currentMessageIndex],
-                    key: ValueKey(_currentMessageIndex),
-                    textAlign: TextAlign.center,
-                    style: AppTheme.titleStyle.copyWith(
-                      color: AppTheme.primary600,
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w600,
-                      height: 1.3,
+                    ),
+                    // Inner accent arc
+                    RotationTransition(
+                      turns: _spinController,
+                      child: SizedBox(
+                        width: 80.w,
+                        height: 80.w,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                          backgroundColor: Colors.transparent,
+                        ),
+                      ),
+                    ),
+                    // Center icon
+                    Icon(
+                      Icons.restaurant_menu,
+                      color: accentColor,
+                      size: 32.sp,
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 40.h),
+
+                // Motivational text with smooth transitions - Sansita Bold
+                SizedBox(
+                  height: 80.h,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 600),
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.2),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          )),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      _motivationalMessages[_currentMessageIndex],
+                      key: ValueKey(_currentMessageIndex),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Sansita',
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                        letterSpacing: 0.2,
+                      ).copyWith(color: textColor),
                     ),
                   ),
                 ),
-              ),
-              
-              SizedBox(height: 24.h),
-              
-              // Animated progress dots
-              AnimatedBuilder(
-                animation: _dotsController,
-                builder: (context, child) {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (index) {
-                      // Calculate animation offset for wave effect
-                      final animationValue = (_dotsController.value * 4 - index).clamp(0.0, 1.0);
-                      final scale = 0.5 + (0.5 * (1 - (animationValue - 0.5).abs() * 2).clamp(0.0, 1.0));
-                      
-                      return Container(
-                        margin: EdgeInsets.symmetric(horizontal: 4.w),
-                        child: Transform.scale(
-                          scale: scale,
-                          child: Container(
-                            width: 12.w,
-                            height: 12.w,
-                            decoration: BoxDecoration(
-                              color: AppTheme.primary600.withValues(
-                                alpha: 0.3 + (0.7 * scale),
-                              ),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
-                  );
-                },
-              ),
-              
-              SizedBox(height: 24.h),
-              
-              // Subtle "hold tight" text
-              Text(
-                "Hold tight while we work our magic ✨",
-                style: AppTheme.noteStyle.copyWith(
-                  color: AppTheme.baseGrey,
-                  fontSize: 14.sp,
-                  fontStyle: FontStyle.italic,
+
+                SizedBox(height: 16.h),
+
+                // Subtle progress dots indicator
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    _motivationalMessages.length,
+                    (index) => Container(
+                      margin: EdgeInsets.symmetric(horizontal: 4.w),
+                      width: 8.w,
+                      height: 8.w,
+                      decoration: BoxDecoration(
+                        color: index == _currentMessageIndex
+                            ? accentColor
+                            : secondaryTextColor.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+
+                SizedBox(height: 32.h),
+
+                // Subtle subtext - Apercu
+                Text(
+                  "This usually takes just a few seconds",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'Apercu',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    height: 1.4,
+                  ).copyWith(
+                    color: secondaryTextColor,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

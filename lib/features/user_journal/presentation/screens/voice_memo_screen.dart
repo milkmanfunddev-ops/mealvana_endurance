@@ -13,11 +13,11 @@ import '../../domain/workout_note.dart';
 class VoiceMemoScreen extends ConsumerStatefulWidget {
   const VoiceMemoScreen({
     super.key,
-    this.planId,
+    required this.activityId,
     this.rating,
   });
 
-  final String? planId;
+  final int activityId;
   final int? rating;
 
   @override
@@ -31,15 +31,17 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   bool _showNewNoteEntry = false; // Don't show by default when used in tabs
   List<WorkoutNote> _notes = [];
   bool _isLoadingNotes = false;
+  late final int _activityId;
 
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController();
     _textFieldFocusNode = FocusNode();
+    _activityId = widget.activityId;
     
     // Show new note entry by default if coming from plan rating
-    _showNewNoteEntry = widget.planId != null;
+    _showNewNoteEntry = widget.rating != null;
     
     _textController.addListener(() {
       if (!_hasChanges && _textController.text.isNotEmpty) {
@@ -465,8 +467,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
 
     try {
       final controller = ref.read(voiceMemoControllerProvider.notifier);
-      // Pass the planId directly (can be null for standalone notes)
-      await controller.saveNotes(widget.planId, notes);
+      await controller.saveNotes(_activityId, notes);
       
       if (mounted) {
         // Hide the new note entry and clear the form

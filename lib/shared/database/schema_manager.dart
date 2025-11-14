@@ -10,9 +10,7 @@ class DatabaseSchemaManager {
   /// Expected table names that should exist in the database
   static const Set<String> expectedTables = {
     'users',
-    'food_preferences', 
-    'nutrition_plans',
-    'macro_targets_table',
+    'food_preferences',
     'feedback',
   };
   
@@ -107,12 +105,6 @@ class DatabaseSchemaManager {
       case 'food_preferences':
         await _createFoodPreferencesTable();
         break;
-      case 'nutrition_plans':
-        await _createNutritionPlansTable();
-        break;
-      case 'macro_targets_table':
-        await _createMacroTargetsTable();
-        break;
       case 'feedback':
         await _createFeedbackTable();
         break;
@@ -161,38 +153,7 @@ class DatabaseSchemaManager {
       )
     ''');
   }
-  
-  /// Create the nutrition_plans table  
-  Future<void> _createNutritionPlansTable() async {
-    await _database.customStatement('''
-      CREATE TABLE nutrition_plans (
-        id TEXT NOT NULL PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        plan_data TEXT NOT NULL,
-        distance REAL NOT NULL,
-        pace_minutes INTEGER NOT NULL,
-        pace_seconds INTEGER NOT NULL,
-        weather_condition TEXT,
-        sweat_rate REAL,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      )
-    ''');
-  }
-  
-  /// Create the macro_targets_table
-  Future<void> _createMacroTargetsTable() async {
-    await _database.customStatement('''
-      CREATE TABLE macro_targets_table (
-        id TEXT NOT NULL PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        targets_data TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      )
-    ''');
-  }
-  
+
   /// Create the feedback table
   Future<void> _createFeedbackTable() async {
     await _database.customStatement('''

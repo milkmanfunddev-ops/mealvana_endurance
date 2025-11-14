@@ -34,7 +34,7 @@ class CarbLoadingFoodSelectionState {
     this.isSearchingOpenFoodFacts = false,
   });
 
-  final String carbLoadingDayId;
+  final int carbLoadingDayId;
   final MealType mealType;
 
   // All available food sources
@@ -54,7 +54,7 @@ class CarbLoadingFoodSelectionState {
   final bool isSearchingOpenFoodFacts;
 
   CarbLoadingFoodSelectionState copyWith({
-    String? carbLoadingDayId,
+    int? carbLoadingDayId,
     MealType? mealType,
     List<CarbLoadingFood>? carbLoadingFoods,
     List<CarbLoadingUserFood>? carbLoadingUserFoods,
@@ -92,7 +92,7 @@ class CarbLoadingFoodSelectionParams {
     required this.mealType,
   });
 
-  final String carbLoadingDayId;
+  final int carbLoadingDayId;
   final MealType mealType;
 
   @override
@@ -124,7 +124,7 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
   Future<CarbLoadingFoodSelectionState> build(CarbLoadingFoodSelectionParams params) async {
     // Load all food sources
     final deviceId = await ref.read(deviceIdProvider.future);
-    final database = await ref.read(databaseProvider.future);
+    final database = ref.read(appDatabaseProvider);
 
     // Load carb loading specific foods
     final carbLoadingFoods = await _carbLoadingFoodService.getDefaultFoodsForMealType(params.mealType);
@@ -435,6 +435,7 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
           // Import from nutrition plan foods table
           importedFood = await _importService.importFromFoodsTable(
             deviceId: deviceId,
+            userId: deviceId, // TODO: Replace with actual userId once user authentication is implemented
             sourceFoodId: selectedFood.id,
             mealTypes: [currentState.mealType],
           );
@@ -491,6 +492,7 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
           // Import from user_foods table
           importedFood = await _importService.importFromUserFoodsTable(
             deviceId: deviceId,
+            userId: deviceId, // TODO: Replace with actual userId once user authentication is implemented
             sourceUserFoodId: selectedFood.id,
             mealTypes: [currentState.mealType],
           );
@@ -564,6 +566,7 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
       // Note: We'll need to fetch detailed nutrition info or use default values
       importedFood = await _importService.createFromBarcodeScan(
         deviceId: deviceId,
+        userId: deviceId, // TODO: Replace with actual userId once user authentication is implemented
         barcode: result.id,
         productName: result.name,
         carbsPerServing: 30.0, // Default - user can edit later

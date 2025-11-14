@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/event.dart';
-import '../screens/events_list_screen.dart';
+import '../../../events/domain/event.dart';
+import '../../../events/presentation/screens/events_list_screen.dart';
+import '../../../events/presentation/screens/event_detail_screen.dart';
 
 /// Widget that displays the next upcoming event with countdown.
 ///
 /// Shows event name, date, and time until event. Tapping navigates to
-/// the Events List Screen where users can view all events and create new ones.
+/// the Event Detail Screen for the upcoming event.
 class UpcomingEventWidget extends ConsumerWidget {
   final Event? upcomingEvent;
 
@@ -90,7 +91,9 @@ class UpcomingEventWidget extends ConsumerWidget {
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => const EventsListScreen(),
+              builder: (context) => EventDetailScreen(
+                eventId: upcomingEvent!.id,
+              ),
             ),
           );
         },
@@ -152,29 +155,6 @@ class UpcomingEventWidget extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _formatCountdown(DateTime eventDate) {
-    final now = DateTime.now();
-    final difference = eventDate.difference(now);
-
-    if (difference.isNegative) {
-      return 'Event passed';
-    }
-
-    if (difference.inDays == 0) {
-      return 'Today!';
-    } else if (difference.inDays == 1) {
-      return 'Tomorrow';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days away';
-    } else if (difference.inDays < 30) {
-      final weeks = (difference.inDays / 7).floor();
-      return '$weeks ${weeks == 1 ? 'week' : 'weeks'} away';
-    } else {
-      final months = (difference.inDays / 30).floor();
-      return '$months ${months == 1 ? 'month' : 'months'} away';
-    }
   }
 }
 

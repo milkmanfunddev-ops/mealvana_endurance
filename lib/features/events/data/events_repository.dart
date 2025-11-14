@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/domain/activity_type.dart';
 import '../domain/event.dart' as domain;
 
 part 'events_repository.g.dart';
@@ -46,13 +47,16 @@ class EventsRepository {
         localUpdatedAt: DateTime.now(),
       );
 
-      await _saveToDrift(eventWithDirtyFlag);
+      // Save to Drift and get the generated ID
+      final generatedId = await _saveToDrift(eventWithDirtyFlag);
 
+      // Update event with the generated ID
+      final createdEvent = eventWithDirtyFlag.copyWith(id: generatedId);
 
-      // Attempt background upload (non-blocking)
-      unawaited(_uploadEventToSupabase(deviceId, event, 'create'));
+      // Attempt background upload (non-blocking) with the correct ID
+      unawaited(_uploadEventToSupabase(deviceId, createdEvent, 'create'));
 
-      return eventWithDirtyFlag;
+      return createdEvent;
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to create event',
@@ -77,11 +81,11 @@ class EventsRepository {
         updatedAt: DateTime.now(),
       );
 
+      // Save to Drift (will use existing ID for updates)
       await _saveToDrift(eventWithDirtyFlag);
 
-
       // Attempt background upload (non-blocking)
-      unawaited(_uploadEventToSupabase(deviceId, event, 'update'));
+      unawaited(_uploadEventToSupabase(deviceId, eventWithDirtyFlag, 'update'));
 
       return eventWithDirtyFlag;
     } catch (e, stackTrace) {
@@ -98,7 +102,7 @@ class EventsRepository {
   /// Delete an event (offline-first: hard delete from Drift first, background upload)
   Future<void> deleteEvent({
     required String deviceId,
-    required String eventId,
+    required int eventId,
   }) async {
     try {
       // OFFLINE-FIRST: Hard delete from Drift IMMEDIATELY
@@ -140,7 +144,7 @@ class EventsRepository {
   }
 
   /// Get a specific event by ID
-  Future<domain.Event?> getEventById(String eventId) async {
+  Future<domain.Event?> getEventById(int eventId) async {
     try {
       final query = _database.select(_database.eventsTable)
         ..where((tbl) => tbl.id.equals(eventId));
@@ -159,7 +163,7 @@ class EventsRepository {
   }
 
   /// Get event for a specific activity
-  Future<domain.Event?> getEventForActivity(String activityId) async {
+  Future<domain.Event?> getEventForActivity(int activityId) async {
     try {
       final query = _database.select(_database.eventsTable)
         ..where((tbl) => tbl.activityId.equals(activityId));
@@ -179,9 +183,9 @@ class EventsRepository {
 
   /// Update event's nutrition plan flag
   Future<void> updateEventNutritionPlanFlag({
-    required String activityId,
+    required int activityId,
     required bool hasNutritionPlan,
-  }) async {
+  }) async{
     try {
       // Get the event for this activity
       final event = await getEventForActivity(activityId);
@@ -212,9 +216,11 @@ class EventsRepository {
   }
 
   /// Save event to Drift database (offline-first pattern)
-  Future<void> _saveToDrift(domain.Event event) async {
+  Future<int> _saveToDrift(domain.Event event) async {
     final companion = EventsTableCompanion.insert(
-      id: event.id,
+      // Use Value.absent() for new events (id = 0) to let auto-increment work
+      // Use Value(event.id) for existing events (id > 0) to preserve the ID
+      id: event.id == 0 ? const Value.absent() : Value(event.id),
       userId: event.userId,
       activityId: Value(event.activityId),
       eventType: event.eventType.dbValue,
@@ -222,6 +228,7 @@ class EventsRepository {
       eventName: Value(event.eventName),
       location: Value(event.location),
       registrationUrl: Value(event.registrationUrl),
+      eventDate: Value(event.eventDate),
       startTime: Value(event.startTime),
       goalTimeMinutes: Value(event.goalTimeMinutes),
       goalPaceMinutesPerMile: Value(event.goalPaceMinutesPerMile),
@@ -244,7 +251,8 @@ class EventsRepository {
       updatedAt: event.updatedAt,
     );
 
-    await _database
+    // Insert and return the generated ID
+    return await _database
         .into(_database.eventsTable)
         .insert(companion, mode: InsertMode.insertOrReplace);
   }
@@ -286,7 +294,7 @@ class EventsRepository {
   /// Upload event deletion to Supabase in background (non-blocking)
   Future<void> _uploadEventDeletion(
     String deviceId,
-    String eventId,
+    int eventId,
   ) async {
     try {
       final response = await _supabase.functions.invoke(
@@ -314,7 +322,7 @@ class EventsRepository {
   }
 
   /// Clear dirty flag after successful upload
-  Future<void> _clearDirtyFlag(String eventId) async {
+  Future<void> _clearDirtyFlag(int eventId) async {
     await (_database.update(_database.eventsTable)
           ..where((tbl) => tbl.id.equals(eventId)))
         .write(const EventsTableCompanion(needsUpload: Value(false)));
@@ -326,11 +334,12 @@ class EventsRepository {
       id: event.id,
       userId: event.userId,
       activityId: event.activityId,
-      eventType: domain.EventTypeExtension.fromDbValue(event.eventType),
+      eventType: _parseActivityType(event.eventType),
       eventSubtype: event.eventSubtype,
       eventName: event.eventName,
       location: event.location,
       registrationUrl: event.registrationUrl,
+      eventDate: event.eventDate,
       startTime: event.startTime,
       goalTimeMinutes: event.goalTimeMinutes,
       goalPaceMinutesPerMile: event.goalPaceMinutesPerMile,
@@ -348,5 +357,25 @@ class EventsRepository {
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
     );
+  }
+
+  /// Parse database event_type string to ActivityType enum
+  ActivityType _parseActivityType(String eventType) {
+    switch (eventType.toLowerCase()) {
+      case 'running':
+        return ActivityType.running;
+      case 'cycling':
+        return ActivityType.cycling;
+      case 'swimming':
+        return ActivityType.swimming;
+      case 'triathlon':
+      case 'duathlon':
+      case 'multisport':
+        // For multi-sport events, default to running for now
+        // TODO: Consider adding multi-sport types to ActivityType enum
+        return ActivityType.running;
+      default:
+        return ActivityType.running;
+    }
   }
 }

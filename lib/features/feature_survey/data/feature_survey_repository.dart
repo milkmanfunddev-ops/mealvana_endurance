@@ -18,7 +18,7 @@ class FeatureSurveyRepository {
   /// Check if device has already voted
   Future<bool> hasVoted(String deviceId) async {
     final query = _database.select(_database.featureSurveyResponsesTable)
-      ..where((row) => row.deviceId.equals(deviceId));
+      ..where((row) => row.userId.equals(deviceId));
 
     final results = await query.get();
     return results.isNotEmpty;
@@ -27,7 +27,7 @@ class FeatureSurveyRepository {
   /// Get previous votes for device
   Future<FeatureSurveyResponse?> getPreviousVotes(String deviceId) async {
     final query = _database.select(_database.featureSurveyResponsesTable)
-      ..where((row) => row.deviceId.equals(deviceId));
+      ..where((row) => row.userId.equals(deviceId));
 
     final results = await query.get();
     if (results.isEmpty) return null;
@@ -35,8 +35,8 @@ class FeatureSurveyRepository {
     final entry = results.first;
     return FeatureSurveyResponse.fromDatabase(
       {
-        'id': entry.id,
-        'device_id': entry.deviceId,
+        'id': entry.id.toString(),
+        'device_id': entry.userId,
         'selected_features': entry.selectedFeatures,
         'voted_at': entry.votedAt.toIso8601String(),
       },
@@ -50,8 +50,7 @@ class FeatureSurveyRepository {
     // 1. Save to local Drift database first (offline-first)
     await _database.into(_database.featureSurveyResponsesTable).insert(
           FeatureSurveyResponsesTableCompanion(
-            id: Value(response.id),
-            deviceId: Value(response.deviceId),
+            userId: Value(response.deviceId),
             selectedFeatures: Value(
               jsonEncode(response.selectedFeatures.map((f) => f.id).toList()),
             ),
@@ -80,7 +79,7 @@ class FeatureSurveyRepository {
   /// Delete survey response (for testing or future "reset vote" feature)
   Future<void> deleteSurveyResponse(String deviceId) async {
     await (_database.delete(_database.featureSurveyResponsesTable)
-          ..where((row) => row.deviceId.equals(deviceId)))
+          ..where((row) => row.userId.equals(deviceId)))
         .go();
   }
 
@@ -91,8 +90,8 @@ class FeatureSurveyRepository {
     return results.map((entry) {
       return FeatureSurveyResponse.fromDatabase(
         {
-          'id': entry.id,
-          'device_id': entry.deviceId,
+          'id': entry.id.toString(),
+          'device_id': entry.userId,
           'selected_features': entry.selectedFeatures,
           'voted_at': entry.votedAt.toIso8601String(),
         },

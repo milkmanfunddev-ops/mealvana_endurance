@@ -102,16 +102,13 @@ The app implements a "fat backend" strategy where business logic and content are
 - Algorithm parameters are configurable without code changes
 - JSON-based content with fallback to local defaults
 
-**Benefits**:
-- Non-technical team members can update content
-- A/B testing of algorithm parameters
-- Instant updates without app releases
-
 📚 **Full Documentation**: [/docs/technical/fat-backend-architecture.md](/docs/technical/fat-backend-architecture.md)
 
 ## Agents Available
 - docs-manager.  Please use for creating, amanging or updating our documentation.
 - code-researcher.  Please use for searching through the codebase for information.
+- web-research-specialist.  Use this for doing research on the web or using context7.
+- git-commit-helper.  Please commit often using this agent whenever you finish a major task.
 
 ## Project Structure
 
@@ -184,23 +181,20 @@ Dynamic content system with backend control:
 📚 **Full Documentation**: [/docs/technical/content-management.md](/docs/technical/content-management.md)
 
 ### Data Storage
-Unified dual database architecture with 100% schema parity between local and cloud:
+Unified dual database architecture with local-first design and cloud synchronization:
 
-**Schema v1 (26 Tables - Living Baseline)**:
-- **All Tables Synced**: Complete parity between Drift SQLite and Supabase PostgreSQL
-- **Core Tables (5)**: `users`, `nutrition_plans`, `food_preferences_table`, `feedback`, `macro_targets_table`
-- **Food System (8)**: `foods_table`, `product_types_table`, `categories_table`, `food_categories_table`, `user_foods_table`, `user_food_categories_table`, `user_hidden_foods_table`, `edge_functions_table`
-- **Content (2)**: `app_content_table`, `workout_notes`
-- **Calendar Feature (5)**: `activities`, `events`, `activity_completions`, `carb_loading_plans`, `carb_loading_days`
-- **Carb Loading Foods (6)**: `meal_types`, `carb_loading_foods`, `carb_loading_user_foods`, `carb_loading_food_meal_types`, `carb_loading_user_food_meal_types`, `carb_loading_day_meals`
+**Schema v1 (Living Baseline)**:
+- please look at /database_schemas/v1
 
 **Local Storage (Drift SQLite)**:
-- Offline-first architecture with full schema v1 (26 tables)
+- Offline-first architecture with full schema v1 (27 tables)
 - Type-safe queries and compile-time validation
 - Automatic synchronization with Supabase
+- Multi-sport support (running, cycling, swimming) in development environment
 
 **Cloud Storage (Supabase PostgreSQL)**:
-- 100% schema parity with Drift (all 26 tables)
+- **Development**: Full multi-sport schema with 27 tables (cycling/swimming columns in users, activities, foods)
+- **Production**: Partial multi-sport schema with 27 tables (missing cycling/swimming columns in users and activities tables)
 - Content management system for dynamic UI text and algorithm parameters
 - Edge functions for AI-powered nutrition plan generation
 - Row Level Security based on device_id and user_id
@@ -327,24 +321,6 @@ shorebird patch ios                     # Push iOS update
 ```
 
 📚 **Full Documentation**: [/docs/technical/shorebird-code-push.md](/docs/technical/shorebird-code-push.md)
-
-## External Integrations
-
-### Supabase Backend
-**Tables**:
-- `app_content`: Dynamic content management
-- `user_profiles`: User data sync
-- `nutrition_plans`: Plan backup/sync
-- `feedback`: User feedback collection
-
-**Environment Variables**:
-```dart
-// lib/main.dart
-url: 'https://[PROJECT_ID].supabase.co'
-anonKey: '[ANON_KEY]'
-```
-
-📚 **Full Documentation**: [/docs/technical/backend-integration.md](/docs/technical/backend-integration.md)
 
 ### Analytics & Monitoring
 - **Analytics**: RudderStack → Mixpanel pipeline

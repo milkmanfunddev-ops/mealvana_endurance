@@ -10,6 +10,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../activities/data/activities_repository.dart';
 import '../../calendar/application/calendar_service.dart';
 import '../application/food_data_transformation_service.dart';
 import '../domain/food_item_data.dart';
@@ -26,6 +27,7 @@ class NutritionPlanRepository {
     required this.sentry,
     required this.transformationService,
     required this.calendarService,
+    required this.activitiesRepository,
   });
 
   final SupabaseClient supabase;
@@ -33,6 +35,27 @@ class NutritionPlanRepository {
   final SentryReporter sentry;
   final CalendarService calendarService;
   final FoodDataTransformationService transformationService;
+  final ActivitiesRepository activitiesRepository;
+
+  Future<Activity?> _getActivityRowWithPlan(int activityId) async {
+    final activity = await database.getActivityByIdLocal(activityId);
+    if (activity == null || activity.nutritionPlanData == null) {
+      return null;
+    }
+    return activity;
+  }
+
+  Map<String, dynamic> _decodePlanJson(String rawPlanData) {
+    try {
+      final decoded = jsonDecode(rawPlanData);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } catch (_) {
+      // Ignore parse errors and fall back to empty map.
+    }
+    return {};
+  }
 
   /// Create a new nutrition plan via new run-plan Edge Function
   Future<CreateNutritionPlanResult> createNutritionPlanV2({
@@ -172,156 +195,42 @@ class NutritionPlanRepository {
     }
   }
 
-  /// Create a new nutrition plan via Edge Function (Legacy)
-  Future<CreateNutritionPlanResult> createNutritionPlan({
-    required String deviceId,
-    required double distanceMiles,
-    required double paceMinutesPerMile,
-    double timeBeforeRunHours = 2.0,
-    String? gutTrainingLevel, // Override user's default
-  }) async {
-    final startTime = DateTime.now();
-    
-    try {
-      // Prepare request payload
-      final requestBody = {
-        'device_id': deviceId,
-        'distance_miles': distanceMiles,
-        'pace_minutes_per_mile': paceMinutesPerMile,
-        'time_before_run_hours': timeBeforeRunHours,
-        if (gutTrainingLevel != null) 'gut_training_level': gutTrainingLevel,
-      };
-
-      // Add breadcrumb for Edge Function call
-      sentry.addBreadcrumb(
-        message: 'Calling create-nutrition-plan Edge Function',
-        category: 'edge_function',
-        data: {
-          'device_id': deviceId,
-          'distance_miles': distanceMiles.toString(),
-          'pace_minutes_per_mile': paceMinutesPerMile.toString(),
-        },
-      );
-
-      // Call Edge Function
-      final response = await supabase.functions.invoke(
-        'create-nutrition-plan',
-        body: requestBody,
-      );
-
-      final responseTime = DateTime.now().difference(startTime);
-
-      // Handle response
-      if (response.status >= 200 && response.status < 300) {
-        final data = response.data as Map<String, dynamic>;
-        
-        if (data['success'] == true) {
-          final plan = domain.NutritionPlan.fromJson(data['plan']);
-          
-          // Cache the plan locally
-          await cachePlanLocally(deviceId, plan);
-          
-          // Success breadcrumb
-          sentry.addBreadcrumb(
-            message: 'Nutrition plan created successfully',
-            category: 'edge_function',
-            data: {
-              'plan_id': plan.id,
-              'response_time_ms': responseTime.inMilliseconds.toString(),
-            },
-          );
-          
-          return CreateNutritionPlanResult(
-            success: true,
-            plan: plan,
-            calculations: data['calculations'],
-            message: data['message'],
-          );
-        } else {
-          // Edge Function returned an error
-          await sentry.reportEdgeFunctionError(
-            'create-nutrition-plan',
-            Exception('Edge Function returned error: ${data['message']}'),
-            responseTime: responseTime,
-            statusCode: response.status,
-          );
-          
-          return CreateNutritionPlanResult(
-            success: false,
-            message: data['message'] ?? 'Unknown error occurred',
-          );
-        }
-      } else {
-        // HTTP error
-        await sentry.reportEdgeFunctionError(
-          'create-nutrition-plan',
-          Exception('Edge Function HTTP error: ${response.status}'),
-          responseTime: responseTime,
-          statusCode: response.status,
-        );
-        
-        return CreateNutritionPlanResult(
-          success: false,
-          message: 'Edge Function call failed with status ${response.status}',
-        );
-      }
-    } catch (e, stackTrace) {
-      final responseTime = DateTime.now().difference(startTime);
-      
-      await sentry.reportEdgeFunctionError(
-        'create-nutrition-plan',
-        e,
-        responseTime: responseTime,
-        stackTrace: stackTrace,
-      );
-      
-      return CreateNutritionPlanResult(
-        success: false,
-        message: 'Failed to create nutrition plan: $e',
-      );
-    }
-  }
-
   /// Cache nutrition plan locally in Drift database
-  Future<void> cachePlanLocally(String deviceId, domain.NutritionPlan plan) async {
+  Future<void> cachePlanLocally(String userId, domain.NutritionPlan plan) async {
     try {
-      DebugLogger.info('💾 Caching plan locally: planId=${plan.id}, deviceId=$deviceId, name=${plan.name}, activityId=${plan.activityId}');
-      final planJson = json.encode(plan.toJson());
-      DebugLogger.info('📄 Plan JSON length: ${planJson.length} characters');
-      await database.saveNutritionPlan(
-        id: plan.id,
-        deviceId: deviceId,
-        planId: plan.id,
-        planName: plan.name,
-        planData: planJson,
-        totalCalories: plan.totalCalories,
-        notes: plan.notes,
-        activityId: plan.activityId, // Link to calendar activity
-      );
-      DebugLogger.info('✅ Plan cached successfully in Drift database');
+      final activityId = plan.activityId;
+      if (activityId == null) {
+        DebugLogger.warning('⚠️ Cannot cache plan ${plan.id} without activityId');
+        return;
+      }
 
-      // Update event's has_nutrition_plan flag if this plan is linked to an event
-      if (plan.activityId != null) {
-        try {
-          await calendarService.updateEventNutritionPlanFlag(
-            activityId: plan.activityId!,
-            hasNutritionPlan: true,
-          );
-          DebugLogger.info('✅ Updated event nutrition plan flag for activity: ${plan.activityId}');
-        } catch (e) {
-          DebugLogger.error('⚠️ Failed to update event nutrition plan flag', error: e);
-          // Don't throw - flag update failure shouldn't break the main flow
-        }
+      DebugLogger.info(
+        '💾 Caching plan locally: planId=${plan.id}, userId=$userId, activityId=$activityId',
+      );
+
+      final planJson = json.encode(plan.toJson());
+      await database.setActivityNutritionPlan(
+        activityId: activityId,
+        planData: planJson,
+      );
+      DebugLogger.info('✅ Plan cached on activity row');
+
+      try {
+        await calendarService.updateEventNutritionPlanFlag(
+          activityId: activityId,
+          hasNutritionPlan: true,
+        );
+      } catch (e) {
+        DebugLogger.error('⚠️ Failed to update event nutrition plan flag', error: e);
       }
     } catch (e, stackTrace) {
       DebugLogger.error('❌ Error caching plan locally', error: e, stackTrace: stackTrace);
       await sentry.reportDatabaseError(
         e,
-        operation: 'saveNutritionPlan',
-        table: 'nutrition_plans',
+        operation: 'setActivityNutritionPlan',
+        table: 'activities',
         stackTrace: stackTrace,
       );
-      // Don't throw - caching failure shouldn't break the main flow
     }
   }
 
@@ -342,235 +251,58 @@ class NutritionPlanRepository {
     // No-op: No temp plans to clear
   }
 
-  /// Get nutrition plan by activity ID (local cache first, then remote)
-  Future<domain.NutritionPlan?> getNutritionPlanByActivityId(String deviceId, String activityId) async {
-    DebugLogger.info('🔍 Getting nutrition plan for activityId: $activityId, deviceId: $deviceId');
-    
+  /// Get nutrition plan by activity ID
+  ///
+  /// Retrieves nutrition plan from activity's embedded nutrition_plan_data JSON
+  Future<domain.NutritionPlan?> getNutritionPlanByActivityId(
+    String userId,
+    int activityId,
+  ) async {
+    DebugLogger.info('🔍 Getting nutrition plan for activityId: $activityId, userId: $userId');
+
     try {
-      // First try local cache
-      DebugLogger.info('📱 Checking local Drift cache...');
-      final cachedPlanEntry = await database.getNutritionPlanByActivityId(deviceId, activityId);
-
-      if (cachedPlanEntry != null && cachedPlanEntry.planData.isNotEmpty) {
-        DebugLogger.info('✅ Found cached plan for activity, parsing JSON...');
-        try {
-          final planData = json.decode(cachedPlanEntry.planData);
-          final plan = domain.NutritionPlan.fromJson(planData);
-          DebugLogger.info('✅ Successfully parsed cached plan: ${plan.name} with ${plan.sections.length} sections');
-          return plan;
-        } catch (e, stackTrace) {
-          DebugLogger.error('❌ Error parsing cached nutrition plan', error: e, stackTrace: stackTrace);
-        }
-      } else {
-        DebugLogger.info('📭 No cached plan found for activity, checking remote...');
+      // Get activity with nutrition plan data
+      final activity = await _getActivityRowWithPlan(activityId);
+      if (activity == null) {
+        DebugLogger.info('No nutrition plan found for activity $activityId');
+        return null;
       }
 
-      // Fall back to remote
-      DebugLogger.info('☁️ Checking Supabase for activity_id: $activityId');
-      final response = await supabase
-          .from('nutrition_plans')
-          .select('*')
-          .eq('device_id', deviceId)
-          .eq('activity_id', activityId)
-          .eq('is_deleted', false)
-          .maybeSingle();
-
-      if (response != null) {
-        DebugLogger.info('✅ Found remote plan for activity, parsing Supabase response...');
-        try {
-          final plan = domain.NutritionPlan.fromSupabaseJson(response);
-          DebugLogger.info('✅ Successfully parsed remote plan: ${plan.name} with ${plan.sections.length} sections');
-          
-          // Cache it locally for next time
-          DebugLogger.info('💾 Caching plan locally...');
-          await cachePlanLocally(deviceId, plan);
-          DebugLogger.info('✅ Plan cached successfully');
-          
-          return plan;
-        } catch (e, stackTrace) {
-          DebugLogger.error('❌ Error parsing Supabase nutrition plan', error: e, stackTrace: stackTrace);
-          return null;
-        }
-      } else {
-        DebugLogger.info('📭 No remote plan found for activity');
-      }
-      return null;
+      // Parse and return the nutrition plan
+      final planJson = _decodePlanJson(activity.nutritionPlanData!);
+      return domain.NutritionPlan.fromJson(planJson);
     } catch (e, stackTrace) {
-      DebugLogger.error('Error fetching nutrition plan by activity ID', error: e, stackTrace: stackTrace);
+      DebugLogger.error('Failed to get nutrition plan for activity $activityId', error: e);
+      DebugLogger.debug(stackTrace.toString());
       return null;
     }
   }
 
-  /// Update the activity ID for a nutrition plan (links plan to activity)
-  Future<bool> updatePlanActivityId(String deviceId, String planId, String activityId) async {
-    DebugLogger.info('🔗 Linking nutrition plan $planId to activity $activityId');
-    
-    try {
-      // Update in local cache
-      await database.updateNutritionPlanActivityId(deviceId, planId, activityId);
-      DebugLogger.info('✅ Updated local plan with activity ID');
+  /// Get latest nutrition plan (local activities only)
+  Future<domain.NutritionPlan?> getLatestNutritionPlan(String userId) async {
+    DebugLogger.info('🔍 Getting latest nutrition plan for userId: $userId');
+    return await getLatestCachedPlan(userId);
+  }
 
-      // Update in remote (Supabase)
+  /// Get nutrition plans for a user
+  Future<List<domain.NutritionPlan>> getNutritionPlans(String userId) async {
+    return await getUserNutritionPlans(userId);
+  }
+
+  /// Delete nutrition plan data for an activity (soft delete)
+  Future<bool> deleteNutritionPlanForActivity(int activityId) async {
+    try {
+      DebugLogger.info('🗑️ Clearing nutrition plan for activity $activityId');
+
+      await database.clearActivityNutritionPlan(activityId);
       try {
-        await supabase
-            .from('nutrition_plans')
-            .update({
-              'activity_id': activityId,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('device_id', deviceId)
-            .eq('plan_id', planId);
-        DebugLogger.info('✅ Updated remote plan with activity ID');
+        await calendarService.updateEventNutritionPlanFlag(
+          activityId: activityId,
+          hasNutritionPlan: false,
+        );
       } catch (e) {
-        DebugLogger.warning('⚠️ Failed to update remote plan (offline mode?): $e');
-        // Don't fail if remote update fails - local update is sufficient
+        DebugLogger.warning('⚠️ Failed to update event flag during plan delete: $e');
       }
-
-      return true;
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Error updating plan activity ID', error: e, stackTrace: stackTrace);
-      await sentry.reportDatabaseError(
-        e,
-        operation: 'updatePlanActivityId',
-        table: 'nutrition_plans',
-        stackTrace: stackTrace,
-      );
-      return false;
-    }
-  }
-
-  /// Get latest nutrition plan (try cache first, then remote)
-  Future<domain.NutritionPlan?> getLatestNutritionPlan(String deviceId) async {
-    DebugLogger.info('🔍 Getting latest nutrition plan for deviceId: $deviceId');
-    
-    try {
-      // First try local cache
-      DebugLogger.info('📱 Checking local Drift cache...');
-      final cachedPlanEntry = await database.getLatestNutritionPlan(deviceId);
-
-      if (cachedPlanEntry != null && cachedPlanEntry.planData.isNotEmpty) {
-        DebugLogger.info('✅ Found cached plan, parsing JSON...');
-        try {
-          final planData = json.decode(cachedPlanEntry.planData);
-          final plan = domain.NutritionPlan.fromJson(planData);
-          DebugLogger.info('✅ Successfully parsed cached plan: ${plan.name} with ${plan.sections.length} sections');
-          return plan;
-        } catch (e, stackTrace) {
-          DebugLogger.error('❌ Error parsing cached nutrition plan', error: e, stackTrace: stackTrace);
-          // Clear corrupted cache and continue to remote fetch
-          await database.clearAllData();
-        }
-      } else {
-        DebugLogger.info('📭 No cached plan found, checking remote...');
-      }
-
-      // Fall back to remote
-      DebugLogger.info('☁️ Checking Supabase for device_id: $deviceId');
-      final response = await supabase
-          .from('nutrition_plans')
-          .select('*')
-          .eq('device_id', deviceId)
-          .eq('is_deleted', false)
-          .order('updated_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
-
-      if (response != null) {
-        DebugLogger.info('✅ Found remote plan, parsing Supabase response...');
-        try {
-          final plan = domain.NutritionPlan.fromSupabaseJson(response);
-          DebugLogger.info('✅ Successfully parsed remote plan: ${plan.name} with ${plan.sections.length} sections');
-          
-          // Cache it locally for next time
-          DebugLogger.info('💾 Caching plan locally...');
-          await cachePlanLocally(deviceId, plan);
-          DebugLogger.info('✅ Plan cached successfully');
-          
-          return plan;
-        } catch (e, stackTrace) {
-          DebugLogger.error('❌ Error parsing Supabase nutrition plan', error: e, stackTrace: stackTrace);
-          DebugLogger.info('📊 Raw response: $response');
-          // Return null if parsing fails
-          return null;
-        }
-      } else {
-        DebugLogger.info('📭 No remote plan found');
-      }
-      return null;
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error fetching latest nutrition plan', error: e, stackTrace: stackTrace);
-      return null;
-    }
-  }
-
-  /// Get nutrition plans for a user (remote only for now)
-  Future<List<domain.NutritionPlan>> getNutritionPlans(String deviceId) async {
-    try {
-      final response = await supabase
-          .from('nutrition_plans')
-          .select('*')
-          .eq('device_id', deviceId)
-          .eq('is_deleted', false)
-          .order('updated_at', ascending: false);
-
-      return response.map<domain.NutritionPlan>((json) => domain.NutritionPlan.fromSupabaseJson(json)).toList();
-    } catch (e) {
-      DebugLogger.error('Error fetching nutrition plans: $e');
-      return [];
-    }
-  }
-
-  /// Get a specific nutrition plan by ID
-  Future<domain.NutritionPlan?> getNutritionPlan(String deviceId, String planId) async {
-    try {
-      final response = await supabase
-          .from('nutrition_plans')
-          .select('*')
-          .eq('device_id', deviceId)
-          .eq('plan_id', planId)
-          .eq('is_deleted', false)
-          .maybeSingle();
-
-      if (response != null) {
-        return domain.NutritionPlan.fromSupabaseJson(response);
-      }
-      return null;
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error fetching nutrition plan', error: e, stackTrace: stackTrace);
-      return null;
-    }
-  }
-
-  /// Update a nutrition plan (re-create via Edge Function for consistency)
-  Future<CreateNutritionPlanResult> updateNutritionPlan({
-    required String deviceId,
-    required double distanceMiles,
-    required double paceMinutesPerMile,
-    double timeBeforeRunHours = 2.0,
-    String? gutTrainingLevel,
-  }) async {
-    // For updates, we just call the create function again
-    // The Edge Function will handle versioning and conflicts
-    return await createNutritionPlan(
-      deviceId: deviceId,
-      distanceMiles: distanceMiles,
-      paceMinutesPerMile: paceMinutesPerMile,
-      timeBeforeRunHours: timeBeforeRunHours,
-      gutTrainingLevel: gutTrainingLevel,
-    );
-  }
-
-  /// Delete a nutrition plan (soft delete)
-  Future<bool> deleteNutritionPlan(String deviceId, String planId) async {
-    try {
-      await supabase
-          .from('nutrition_plans')
-          .update({
-            'is_deleted': true,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('device_id', deviceId)
-          .eq('plan_id', planId);
 
       return true;
     } catch (e, stackTrace) {
@@ -579,18 +311,13 @@ class NutritionPlanRepository {
     }
   }
 
-  /// Clear all nutrition plans for a user (for testing)
-  Future<bool> clearAllNutritionPlans(String deviceId) async {
+  /// Clear all nutrition plans for a user (primarily for testing)
+  Future<bool> clearAllNutritionPlans(String userId) async {
     try {
-      // Clear from remote
-      await supabase
-          .from('nutrition_plans')
-          .update({'is_deleted': true})
-          .eq('device_id', deviceId);
-
-      // Clear from local cache
-      await database.clearAllData();
-
+      final activities = await database.getActivitiesWithNutritionPlans(userId);
+      for (final activity in activities) {
+        await database.clearActivityNutritionPlan(activity.id);
+      }
       return true;
     } catch (e, stackTrace) {
       DebugLogger.error('Error clearing nutrition plans', error: e, stackTrace: stackTrace);
@@ -599,14 +326,14 @@ class NutritionPlanRepository {
   }
 
   /// Get latest cached plan (local only)
-  Future<domain.NutritionPlan?> getLatestCachedPlan(String deviceId) async {
+  Future<domain.NutritionPlan?> getLatestCachedPlan(String userId) async {
     try {
-      final cachedPlanEntry = await database.getLatestNutritionPlan(deviceId);
-      if (cachedPlanEntry != null) {
-        final planData = json.decode(cachedPlanEntry.planData);
-        return domain.NutritionPlan.fromJson(planData);
+      final activity = await database.getLatestActivityWithNutritionPlan(userId);
+      if (activity?.nutritionPlanData == null) {
+        return null;
       }
-      return null;
+      final planData = json.decode(activity!.nutritionPlanData!) as Map<String, dynamic>;
+      return domain.NutritionPlan.fromJson(planData);
     } catch (e, stackTrace) {
       DebugLogger.error('Error getting cached plan', error: e, stackTrace: stackTrace);
       return null;
@@ -667,7 +394,7 @@ class NutritionPlanRepository {
     }
 
     // Calculate macro targets if available
-    domain.MacroTargets? macroTargets;
+    domain.PlanMacroSummary? macroTargets;
     if (targets != null) {
       final beforeTargets = targets['before'] as Map<String, dynamic>?;
       final duringTargets = targets['during'] as Map<String, dynamic>?;
@@ -695,7 +422,7 @@ class NutritionPlanRepository {
         final totalFluidsOz = (beforeFluids + (duringFluidsPerH * durationH) + afterFluids) * mlToOz;
         final totalSodiumMg = beforeSodium + (duringSodium * durationH) + afterSodium;
 
-        macroTargets = domain.MacroTargets(
+        macroTargets = domain.PlanMacroSummary(
           calories: 0, // Will be calculated from food items
           carbs: totalCarbs.round(),
           protein: (afterTargets['protein_g'] as num? ?? 0).toDouble().round(),
@@ -742,50 +469,31 @@ class NutritionPlanRepository {
     );
   }
 
-  /// Update plan feedback (rating and journal notes)
-  Future<void> updatePlanFeedback(String planId, int? rating, String? notes) async {
+  /// Update plan feedback (rating and journal notes) by activity ID.
+  Future<void> updatePlanFeedbackForActivity({
+    required int activityId,
+    int? rating,
+    String? notes,
+  }) async {
     try {
-      await database.transaction(() async {
-        // Get the existing plan data
-        final existingPlan = await (database.select(database.nutritionPlans)
-          ..where((plan) => plan.id.equals(planId)))
-          .getSingleOrNull();
-        
-        if (existingPlan == null) {
-          throw Exception('Plan not found: $planId');
-        }
+      final activity = await _getActivityRowWithPlan(activityId);
+      if (activity == null) {
+        throw Exception('Plan not found for activity $activityId');
+      }
 
-        // Update the plan JSON data to include feedback
-        Map<String, dynamic> planJson = {};
-        final existingPlanData = existingPlan.planData;
-        if (existingPlanData.isNotEmpty) {
-          try {
-            planJson = jsonDecode(existingPlanData) as Map<String, dynamic>;
-          } catch (e) {
-            DebugLogger.warning('Could not parse existing plan data JSON: $e');
-            planJson = {};
-          }
-        }
-        
-        // Update JSON with feedback
-        if (rating != null) planJson['planRating'] = rating;
-        if (notes != null) planJson['journalNotes'] = notes;
-        
-        // Clear the runDateTime so feedback won't be requested again
-        planJson.remove('runDateTime');
-        
-        final updatedPlanData = jsonEncode(planJson);
+      final planJson = _decodePlanJson(activity.nutritionPlanData!);
+      if (rating != null) planJson['planRating'] = rating;
+      if (notes != null) planJson['journalNotes'] = notes;
+      planJson.remove('runDateTime');
 
-        // Update the plan with new feedback
-        await (database.update(database.nutritionPlans)
-          ..where((plan) => plan.id.equals(planId)))
-          .write(NutritionPlansCompanion(
-            planData: Value(updatedPlanData), // Update JSON data with feedback
-            updatedAt: Value(DateTime.now()),
-          ));
-      });
-      
-      DebugLogger.info('✅ Plan feedback updated: planId=$planId, rating=$rating, notes=$notes');
+      await database.setActivityNutritionPlan(
+        activityId: activity.id,
+        planData: jsonEncode(planJson),
+      );
+
+      DebugLogger.info(
+        '✅ Plan feedback updated for activity $activityId (rating=$rating, notes=$notes)',
+      );
     } catch (e, stackTrace) {
       DebugLogger.error('❌ Failed to update plan feedback', error: e, stackTrace: stackTrace);
       await sentry.reportDatabaseError(e, stackTrace: stackTrace, operation: 'updatePlanFeedback');
@@ -794,28 +502,22 @@ class NutritionPlanRepository {
   }
 
   /// Update plan run date/time (store in JSON planData since runDateTime field doesn't exist)
-  Future<void> updatePlanRunDateTime(String planId, DateTime runDateTime) async {
+  Future<void> updatePlanRunDateTimeForActivity(int activityId, DateTime runDateTime) async {
     try {
-      await database.transaction(() async {
-        // Get the existing plan to update the JSON data
-        final existingPlan = await (database.select(database.nutritionPlans)
-          ..where((plan) => plan.id.equals(planId))).getSingleOrNull();
+      final activity = await _getActivityRowWithPlan(activityId);
+      if (activity == null) {
+        throw Exception('Plan not found for activity $activityId');
+      }
 
-        if (existingPlan != null) {
-          // Update the JSON data to include runDateTime
-          final planJson = jsonDecode(existingPlan.planData) as Map<String, dynamic>;
-          planJson['runDateTime'] = runDateTime.toIso8601String();
+      final planJson = _decodePlanJson(activity.nutritionPlanData!);
+      planJson['runDateTime'] = runDateTime.toIso8601String();
 
-          await (database.update(database.nutritionPlans)
-            ..where((plan) => plan.id.equals(planId)))
-            .write(NutritionPlansCompanion(
-              planData: Value(jsonEncode(planJson)),
-              updatedAt: Value(DateTime.now()),
-            ));
-        }
-      });
+      await database.setActivityNutritionPlan(
+        activityId: activity.id,
+        planData: jsonEncode(planJson),
+      );
 
-      DebugLogger.info('✅ Plan run date updated: planId=$planId, runDateTime=$runDateTime');
+      DebugLogger.info('✅ Plan run date updated: activityId=$activityId, runDateTime=$runDateTime');
     } catch (e, stackTrace) {
       DebugLogger.error('❌ Failed to update plan run date: $e');
       await sentry.reportDatabaseError(e, stackTrace: stackTrace, operation: 'updatePlanRunDateTime');
@@ -824,77 +526,84 @@ class NutritionPlanRepository {
   }
 
   /// Get plans pending feedback (past run date with no rating)
-  Future<List<domain.NutritionPlan>> getPlansPendingFeedback(String deviceId) async {
+  ///
+  /// Returns activities that:
+  /// - Have nutrition plan data
+  /// - Are completed (or past scheduled date)
+  /// - Don't have a completion rating yet
+  Future<List<domain.NutritionPlan>> getPlansPendingFeedback(String userId) async {
+    DebugLogger.info('🔍 Getting plans pending feedback for userId: $userId');
+
     try {
       final now = DateTime.now();
-      final query = database.select(database.nutritionPlans)
-        ..where((plan) =>
-          plan.deviceId.equals(deviceId) &
-          plan.isDeleted.equals(false))
-        ..orderBy([(plan) => OrderingTerm.desc(plan.updatedAt)])
-        ..limit(10); // Get recent plans and filter for pending feedback in code
 
-      final results = await query.get();
+      // Query activities with nutrition plan data and no rating
+      final activities = await (database.select(database.activitiesTable)
+            ..where((tbl) => tbl.userId.equals(userId))
+            ..where((tbl) => tbl.nutritionPlanData.isNotNull())
+            ..where((tbl) => tbl.completionRating.isNull())
+            ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]))
+          .get();
+
+      // Filter to past activities and parse nutrition plans
       final plans = <domain.NutritionPlan>[];
-
-      for (final row in results) {
-        try {
-          final planData = jsonDecode(row.planData) as Map<String, dynamic>;
-
-          // Check if plan has runDateTime but no rating (pending feedback)
-          final runDateTime = planData['runDateTime'] as String?;
-          final planRating = planData['planRating'] as int?;
-
-          if (runDateTime != null && planRating == null) {
-            final runDate = DateTime.parse(runDateTime);
-            if (runDate.isBefore(now)) {
-              final plan = domain.NutritionPlan.fromJson(planData);
-              plans.add(plan);
-            }
-          }
-        } catch (e) {
-          DebugLogger.error('❌ Failed to parse plan ${row.id}: $e');
-          // Skip invalid plans
+      for (final activity in activities) {
+        // Only include if scheduled date is in the past
+        if (activity.scheduledDateTime.isAfter(now)) {
           continue;
         }
+
+        try {
+          if (activity.nutritionPlanData != null) {
+            final planJson = _decodePlanJson(activity.nutritionPlanData!);
+            plans.add(domain.NutritionPlan.fromJson(planJson));
+          }
+        } catch (e) {
+          DebugLogger.warning('Failed to parse plan for activity ${activity.id}: $e');
+        }
       }
-      
-      DebugLogger.info('✅ Found ${plans.length} plans pending feedback');
+
+      DebugLogger.info('Found ${plans.length} plans pending feedback');
       return plans;
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to get plans pending feedback: $e');
-      await sentry.reportDatabaseError(e, stackTrace: stackTrace, operation: 'getPlansPendingFeedback');
+      DebugLogger.error('Failed to get plans pending feedback', error: e);
+      DebugLogger.debug(stackTrace.toString());
       return [];
     }
   }
 
   /// Get all nutrition plans for a user
-  Future<List<domain.NutritionPlan>> getUserNutritionPlans(String deviceId) async {
+  ///
+  /// Returns all activities with nutrition plan data
+  Future<List<domain.NutritionPlan>> getUserNutritionPlans(String userId) async {
+    DebugLogger.info('🔍 Getting all nutrition plans for userId: $userId');
+
     try {
-      final query = database.select(database.nutritionPlans)
-        ..where((plan) => plan.deviceId.equals(deviceId) & plan.isDeleted.equals(false))
-        ..orderBy([(plan) => OrderingTerm.desc(plan.createdAt)]);
+      // Query all activities with nutrition plan data
+      final activities = await (database.select(database.activitiesTable)
+            ..where((tbl) => tbl.userId.equals(userId))
+            ..where((tbl) => tbl.nutritionPlanData.isNotNull())
+            ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]))
+          .get();
 
-      final results = await query.get();
+      // Parse nutrition plans from activity rows
       final plans = <domain.NutritionPlan>[];
-
-      for (final row in results) {
+      for (final activity in activities) {
         try {
-          final planData = jsonDecode(row.planData) as Map<String, dynamic>;
-          final plan = domain.NutritionPlan.fromJson(planData);
-          plans.add(plan);
+          if (activity.nutritionPlanData != null) {
+            final planJson = _decodePlanJson(activity.nutritionPlanData!);
+            plans.add(domain.NutritionPlan.fromJson(planJson));
+          }
         } catch (e) {
-          DebugLogger.error('❌ Failed to parse plan ${row.id}: $e');
-          // Skip invalid plans
-          continue;
+          DebugLogger.warning('Failed to parse plan for activity ${activity.id}: $e');
         }
       }
-      
-      DebugLogger.info('✅ Retrieved ${plans.length} nutrition plans for user $deviceId');
+
+      DebugLogger.info('Found ${plans.length} nutrition plans');
       return plans;
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to get user nutrition plans: $e');
-      await sentry.reportDatabaseError(e, stackTrace: stackTrace, operation: 'getUserNutritionPlans');
+      DebugLogger.error('Failed to get user nutrition plans', error: e);
+      DebugLogger.debug(stackTrace.toString());
       return [];
     }
   }
@@ -926,6 +635,7 @@ Future<NutritionPlanRepository> nutritionPlanRepository(Ref ref) async {
   final sentry = ref.watch(sentryReporterProvider);
   final transformationService = ref.watch(foodDataTransformationServiceProvider);
   final calendarService = ref.watch(calendarServiceProvider);
+  final activitiesRepository = ref.watch(activitiesRepositoryProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
 
   return NutritionPlanRepository(
@@ -934,5 +644,6 @@ Future<NutritionPlanRepository> nutritionPlanRepository(Ref ref) async {
     sentry: sentry,
     transformationService: transformationService,
     calendarService: calendarService,
+    activitiesRepository: activitiesRepository,
   );
 }

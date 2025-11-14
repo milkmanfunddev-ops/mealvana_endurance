@@ -1,12 +1,13 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:drift/drift.dart';
+import 'dart:convert';
 
-import '../../../shared/database/app_database.dart';
-import '../../../shared/database/database_provider.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/services/preferences_service.dart';
 import '../domain/macro_targets.dart';
 import 'offline_macro_calculator.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'macro_repository.g.dart';
 
@@ -52,10 +53,13 @@ abstract class MacroRepository {
 /// Implementation of macro repository
 class MacroRepositoryImpl implements MacroRepository {
   const MacroRepositoryImpl({
-    required this.database,
-  });
+    required SharedPreferences sharedPreferences,
+  }) : _prefs = sharedPreferences;
 
-  final AppDatabase database;
+  final SharedPreferences _prefs;
+
+  static const _cachedKey = 'macro_targets.cached';
+  static const _originalKey = 'macro_targets.original';
 
   @override
   Future<MacroTargets> generateMacroTargets({
@@ -173,152 +177,17 @@ class MacroRepositoryImpl implements MacroRepository {
 
   @override
   Future<void> saveMacroTargets(MacroTargets targets) async {
-    final macroTargetsCompanion = MacroTargetsTableCompanion.insert(
-      id: targets.id,
-      preRunCarbsG: targets.preRun.carbsG,
-      preRunProteinG: targets.preRun.proteinG,
-      preRunFatCapG: targets.preRun.fatCapG,
-      preRunFluidsMl: targets.preRun.fluidsMl,
-      preRunSodiumMg: targets.preRun.sodiumMg,
-      duringCarbRateGPerH: targets.duringRun.carbRateGPerH,
-      duringCarbTotalG: targets.duringRun.carbTotalG,
-      duringFluidRateMlPerH: targets.duringRun.fluidRateMlPerH,
-      duringFluidTotalMl: targets.duringRun.fluidTotalMl,
-      duringSodiumRateMgPerH: targets.duringRun.sodiumRateMgPerH,
-      duringSodiumTotalMg: targets.duringRun.sodiumTotalMg,
-      duringMassNormRateGPerH: Value(targets.duringRun.massNormRateGPerH),
-      postRunCarbsG: targets.postRun.carbsG,
-      postRunProteinG: targets.postRun.proteinG,
-      postRunFluidsMl: targets.postRun.fluidsMl,
-      postRunSodiumMg: targets.postRun.sodiumMg,
-      distanceMi: targets.metrics.distanceMi,
-      durationH: targets.metrics.durationH,
-      paceMinPerMile: Value(targets.metrics.paceMinPerMile),
-      caloriesGrossKcal: targets.metrics.caloriesGrossKcal,
-      met: targets.metrics.met,
-      calculationRule: targets.calculationRule,
-      timestamp: targets.timestamp,
-      isUserModified: Value(targets.isUserModified),
-      modifiedFields: Value(targets.modifiedFields.join(',')),
-    );
+    final encoded = jsonEncode(targets.toJson());
+    await _prefs.setString(_cachedKey, encoded);
 
-    await database.into(database.macroTargetsTable).insertOnConflictUpdate(macroTargetsCompanion);
-    
-    // If this is a newly generated macro target (not user modified), also store as original
     if (!targets.isUserModified) {
-      await _saveOriginalMacroTargets(targets);
+      await _prefs.setString(_originalKey, encoded);
     }
-  }
-
-  /// Save original macro targets for reset functionality
-  Future<void> _saveOriginalMacroTargets(MacroTargets targets) async {
-    // Store as a separate entry with a special ID prefix
-    final originalId = 'original_${targets.id}';
-    final originalTargetsCompanion = MacroTargetsTableCompanion.insert(
-      id: originalId,
-      preRunCarbsG: targets.preRun.carbsG,
-      preRunProteinG: targets.preRun.proteinG,
-      preRunFatCapG: targets.preRun.fatCapG,
-      preRunFluidsMl: targets.preRun.fluidsMl,
-      preRunSodiumMg: targets.preRun.sodiumMg,
-      duringCarbRateGPerH: targets.duringRun.carbRateGPerH,
-      duringCarbTotalG: targets.duringRun.carbTotalG,
-      duringFluidRateMlPerH: targets.duringRun.fluidRateMlPerH,
-      duringFluidTotalMl: targets.duringRun.fluidTotalMl,
-      duringSodiumRateMgPerH: targets.duringRun.sodiumRateMgPerH,
-      duringSodiumTotalMg: targets.duringRun.sodiumTotalMg,
-      duringMassNormRateGPerH: Value(targets.duringRun.massNormRateGPerH),
-      postRunCarbsG: targets.postRun.carbsG,
-      postRunProteinG: targets.postRun.proteinG,
-      postRunFluidsMl: targets.postRun.fluidsMl,
-      postRunSodiumMg: targets.postRun.sodiumMg,
-      distanceMi: targets.metrics.distanceMi,
-      durationH: targets.metrics.durationH,
-      paceMinPerMile: Value(targets.metrics.paceMinPerMile),
-      caloriesGrossKcal: targets.metrics.caloriesGrossKcal,
-      met: targets.metrics.met,
-      calculationRule: '${targets.calculationRule} (Original)',
-      timestamp: targets.timestamp,
-      isUserModified: Value(false),
-      modifiedFields: Value(''),
-    );
-
-    await database.into(database.macroTargetsTable).insertOnConflictUpdate(originalTargetsCompanion);
   }
 
   @override
   Future<MacroTargets?> getCachedMacroTargets() async {
-    final query = database.select(database.macroTargetsTable)
-      ..orderBy([(t) => OrderingTerm.desc(t.timestamp)])
-      ..limit(1);
-
-    final result = await query.getSingleOrNull();
-    if (result == null) {
-      DebugLogger.debug('DEBUG: No cached macro targets found');
-      return null;
-    }
-
-    DebugLogger.debug('DEBUG: Found cached macro targets:');
-    DebugLogger.debug('  Pre-run carbs: ${result.preRunCarbsG}g');
-    DebugLogger.debug('  During-run carbs: ${result.duringCarbTotalG}g');
-    DebugLogger.debug('  Post-run carbs: ${result.postRunCarbsG}g');
-    DebugLogger.debug('  Total carbs should be: ${result.preRunCarbsG + result.duringCarbTotalG + result.postRunCarbsG}g');
-    DebugLogger.debug('  Pre-run sodium: ${result.preRunSodiumMg}mg');
-    DebugLogger.debug('  During-run sodium: ${result.duringSodiumTotalMg}mg');
-    DebugLogger.debug('  Post-run sodium: ${result.postRunSodiumMg}mg');
-    DebugLogger.debug('  Total sodium should be: ${result.preRunSodiumMg + result.duringSodiumTotalMg + result.postRunSodiumMg}mg');
-    DebugLogger.debug('  Pre-run fluids: ${result.preRunFluidsMl}ml');
-    DebugLogger.debug('  During-run fluids: ${result.duringFluidTotalMl}ml');
-    DebugLogger.debug('  Post-run fluids: ${result.postRunFluidsMl}ml');
-    DebugLogger.debug('  Total fluids should be: ${result.preRunFluidsMl + result.duringFluidTotalMl + result.postRunFluidsMl}ml');
-    DebugLogger.debug('  isUserModified: ${result.isUserModified}');
-
-    return _mapDatabaseRowToMacroTargets(result);
-  }
-
-  MacroTargets _mapDatabaseRowToMacroTargets(MacroTargetsTableData row) {
-    return MacroTargets(
-      id: row.id,
-      activityType: ActivityType.running,
-      preRun: PreRunMacros(
-        carbsG: row.preRunCarbsG,
-        proteinG: row.preRunProteinG,
-        fatCapG: row.preRunFatCapG,
-        fluidsMl: row.preRunFluidsMl,
-        sodiumMg: row.preRunSodiumMg,
-      ),
-      duringRun: DuringRunMacros(
-        carbRateGPerH: row.duringCarbRateGPerH,
-        carbTotalG: row.duringCarbTotalG,
-        fluidRateMlPerH: row.duringFluidRateMlPerH,
-        fluidTotalMl: row.duringFluidTotalMl,
-        sodiumRateMgPerH: row.duringSodiumRateMgPerH,
-        sodiumTotalMg: row.duringSodiumTotalMg,
-        massNormRateGPerH: row.duringMassNormRateGPerH ?? 0,
-        absClampRangeGPerH: [30, 60], // Default values
-      ),
-      postRun: PostRunMacros(
-        carbsG: row.postRunCarbsG,
-        proteinG: row.postRunProteinG,
-        fluidsMl: row.postRunFluidsMl,
-        sodiumMg: row.postRunSodiumMg,
-      ),
-      metrics: RunMetrics(
-        distanceMi: row.distanceMi,
-        distanceKm: row.distanceMi * 1.60934, // Convert to km
-        durationH: row.durationH,
-        durationMin: row.durationH * 60,
-        paceMinPerMile: row.paceMinPerMile,
-        speedMph: row.paceMinPerMile != null ? 60.0 / row.paceMinPerMile! : row.distanceMi / row.durationH,
-        caloriesGrossKcal: row.caloriesGrossKcal,
-        caloriesNetKcal: row.caloriesGrossKcal * 0.8, // Estimate
-        met: row.met,
-      ),
-      calculationRule: row.calculationRule,
-      timestamp: row.timestamp,
-      isUserModified: row.isUserModified,
-      modifiedFields: row.modifiedFields.isEmpty ? [] : row.modifiedFields.split(','),
-    );
+    return _readTargets(_cachedKey);
   }
 
   @override
@@ -441,34 +310,34 @@ class MacroRepositoryImpl implements MacroRepository {
 
   @override
   Future<void> clearCachedMacroTargets() async {
-    await database.delete(database.macroTargetsTable).go();
+    await _prefs.remove(_cachedKey);
+    await _prefs.remove(_originalKey);
   }
 
   @override
   Future<MacroTargets?> getOriginalMacroTargets() async {
-    // Look for the most recent original macro targets
-    final query = database.select(database.macroTargetsTable)
-      ..where((t) => t.id.like('original_%'))
-      ..orderBy([(t) => OrderingTerm.desc(t.timestamp)])
-      ..limit(1);
+    return _readTargets(_originalKey);
+  }
 
-    final result = await query.getSingleOrNull();
-    if (result == null) {
-      DebugLogger.debug('DEBUG: No original macro targets found');
+  Future<MacroTargets?> _readTargets(String key) async {
+    final raw = _prefs.getString(key);
+    if (raw == null) {
       return null;
     }
 
-    DebugLogger.debug('DEBUG: Found original macro targets with ID: ${result.id}');
-    DebugLogger.debug('  Original pre-run carbs: ${result.preRunCarbsG}g');
-    
-    return _mapDatabaseRowToMacroTargets(result);
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return MacroTargets.fromJson(decoded);
+    } catch (error, stackTrace) {
+      DebugLogger.error('Failed to decode cached macro targets', error: error);
+      DebugLogger.debug(stackTrace.toString());
+      return null;
+    }
   }
 }
 
 @riverpod
 Future<MacroRepository> macroRepository(Ref ref) async {
-  final database = ref.watch(appDatabaseProvider);
-  return MacroRepositoryImpl(
-    database: database,
-  );
+  final prefs = await ref.watch(sharedPreferencesProvider.future);
+  return MacroRepositoryImpl(sharedPreferences: prefs);
 }

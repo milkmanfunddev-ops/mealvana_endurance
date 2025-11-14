@@ -151,7 +151,7 @@ class PdfGeneratorService {
     );
   }
 
-  pw.Widget _buildMacroTargets(MacroTargets targets) {
+  pw.Widget _buildMacroTargets(PlanMacroSummary targets) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(

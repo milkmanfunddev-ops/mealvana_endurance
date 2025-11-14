@@ -1,14 +1,9 @@
 import 'dart:io';
-import 'package:uuid/uuid.dart';
 import 'analytics_tracker.dart';
 
 /// Extension methods for analytics events defined in docs/features/analytics/README.md
 /// These are the ONLY events that should be tracked in the app
 extension AnalyticsEvents on AnalyticsTracker {
-  // Helper to generate plan IDs
-  static const _uuid = Uuid();
-  static String generatePlanId() => _uuid.v4();
-
   // 1. User Lifecycle Events
 
   Future<void> trackUserRegistered({
@@ -36,14 +31,14 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanGenerationStarted({
     required String deviceId,
-    required String planId,
+    int? activityId,
     required double distanceMiles,
     required double paceMinutesPerMile,
     required String gutTrainingLevel,
   }) {
     return track('plan_generation_started', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      if (activityId != null) 'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
       'distance_miles': distanceMiles,
       'pace_minutes_per_mile': paceMinutesPerMile,
@@ -53,14 +48,14 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanGenerationFailed({
     required String deviceId,
-    required String planId,
+    int? activityId,
     required double distanceMiles,
     required double paceMinutesPerMile,
     required String errorMessage,
   }) {
     return track('plan_generation_failed', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      if (activityId != null) 'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
       'distance_miles': distanceMiles,
       'pace_minutes_per_mile': paceMinutesPerMile,
@@ -70,7 +65,7 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanGenerated({
     required String deviceId,
-    required String planId,
+    int? activityId,
     required String activityType,
     required double distanceMiles,
     required double paceMinutesPerMile,
@@ -83,7 +78,7 @@ extension AnalyticsEvents on AnalyticsTracker {
   }) {
     return track('plan_generated', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      if (activityId != null) 'activity_id': activityId,
       'activity_type': activityType,
       'timestamp': DateTime.now().toIso8601String(),
       'distance_miles': distanceMiles,
@@ -99,14 +94,14 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanSaved({
     required String deviceId,
-    required String planId,
+    required int activityId,
     required int timeSinceGenerationStarted,
     required bool isFirstPlan,
     required int totalPlansSaved,
   }) {
     return track('plan_saved', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
       'time_since_generation_started': timeSinceGenerationStarted,
       'is_first_plan': isFirstPlan,
@@ -118,14 +113,14 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackMacrosEdited({
     required String deviceId,
-    required String planId,
+    int? activityId,
     required String macroType,
     required double oldValue,
     required double newValue,
   }) {
     return track('macros_edited', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      if (activityId != null) 'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
       'macro_type': macroType,
       'old_value': oldValue,
@@ -135,12 +130,12 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackMacroInfoViewed({
     required String deviceId,
-    required String planId,
+    int? activityId,
     required String macroType,
   }) {
     return track('macro_info_viewed', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      if (activityId != null) 'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
       'macro_type': macroType,
     });
@@ -148,13 +143,13 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanItemDeleted({
     required String deviceId,
-    required String planId,
+    required int activityId,
     required String itemName,
     required String phase,
   }) {
     return track('plan_item_deleted', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
       'item_name': itemName,
       'phase': phase,
@@ -163,14 +158,14 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanItemSwapped({
     required String deviceId,
-    required String planId,
+    required int activityId,
     required String oldItemName,
     required String newItemName,
     required String phase,
   }) {
     return track('plan_item_swapped', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
       'old_item_name': oldItemName,
       'new_item_name': newItemName,
@@ -180,13 +175,13 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanItemAdded({
     required String deviceId,
-    required String planId,
+    required int activityId,
     required String itemName,
     required String phase,
   }) {
     return track('plan_item_added', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
       'item_name': itemName,
       'phase': phase,
@@ -197,12 +192,12 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackReminderSet({
     required String deviceId,
-    required String planId,
+    required int activityId,
     required DateTime reminderTime,
   }) {
     return track('reminder_set', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
       'reminder_time': reminderTime.toIso8601String(),
     });
@@ -210,12 +205,12 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackReminderScheduled({
     required String deviceId,
-    required String planId,
+    required int activityId,
     required DateTime reminderTime,
   }) {
     return track('reminder_scheduled', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      'activity_id': activityId,
       'timestamp': reminderTime.toIso8601String(), // When reminder will fire
       'scheduled_at': DateTime.now().toIso8601String(), // When scheduling occurred
     });
@@ -223,11 +218,11 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackReminderClicked({
     required String deviceId,
-    required String planId,
+    required int activityId,
   }) {
     return track('reminder_clicked', properties: {
       'device_id': deviceId,
-      'plan_id': planId,
+      'activity_id': activityId,
       'timestamp': DateTime.now().toIso8601String(),
     });
   }
@@ -250,14 +245,14 @@ extension AnalyticsEvents on AnalyticsTracker {
   }
 
   Future<void> trackFeedbackSubmitted({
-    required String planId,
+    int? activityId,
     required int confidenceLevel,
     required String reuseIntent,
     required bool reminderRequested,
     String? message,
   }) {
     return track('feedback_submitted', properties: {
-      'plan_id': planId,
+      if (activityId != null) 'activity_id': activityId,
       'confidence_level': confidenceLevel,
       'reuse_intent': reuseIntent,
       'reminder_requested': reminderRequested,

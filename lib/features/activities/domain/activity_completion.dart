@@ -39,8 +39,8 @@ class ActivityCompletion {
     this.localUpdatedAt,
   });
 
-  final String id;
-  final String activityId;
+  final int id;
+  final int activityId;
   final String userId;
   final DateTime completedAt;
   final CompletionType completionType;
@@ -105,8 +105,8 @@ class ActivityCompletion {
   }
 
   ActivityCompletion copyWith({
-    String? id,
-    String? activityId,
+    int? id,
+    int? activityId,
     String? userId,
     DateTime? completedAt,
     CompletionType? completionType,

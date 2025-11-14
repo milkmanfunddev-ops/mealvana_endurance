@@ -23,93 +23,93 @@ class CarbLoadingFoodSyncService {
   final AppDatabase _database;
   final AppLogger _logger;
 
-  /// Sync carb loading foods and meal types from Supabase to local database
+  /// Sync carb loading foods from Supabase to local database
   /// This should be called during app startup to ensure data is available offline
+  /// Note: meal_types are now stored as array column, not separate table
+  /// REFACTORED: Uses direct Supabase query instead of edge function
   Future<void> syncCarbLoadingFoods() async {
     try {
-      // Call the get-carb-loading-foods edge function
-      final response = await _supabase.functions.invoke(
-        'get-carb-loading-foods',
-        body: {
-          'meal_type_id': null, // Get all foods regardless of meal type
-        },
+      _logger.info(
+        'Syncing carb loading foods directly from Supabase',
+        context: 'CARB_LOADING_SYNC',
       );
 
-      if (response.status != 200) {
-        throw Exception(
-          'Edge Function error: ${response.data?['error'] ?? 'Unknown error'}',
-        );
-      }
+      // Direct Supabase query - no edge function needed!
+      final response = await _supabase
+          .from('carb_loading_foods')
+          .select('id, name, display_name, display_name_plural, carbs_per_serving, '
+                  'image_address, is_default, meal_types, created_at')
+          .order('display_name');
 
-      final data = response.data;
-      if (data == null) {
-        throw Exception('Invalid response from get-carb-loading-foods');
-      }
+      final List<dynamic> foodsData = response as List<dynamic>;
 
-      final List<dynamic> foodsData = data['foods'] as List<dynamic>? ?? [];
-      final List<dynamic> mealTypesData = data['meal_types'] as List<dynamic>? ?? [];
+      _logger.info(
+        'Retrieved ${foodsData.length} carb loading foods from Supabase',
+        context: 'CARB_LOADING_SYNC',
+      );
 
-      // Sync meal types first
-      await _syncMealTypes(mealTypesData);
-
-      // Sync foods and their meal type associations
+      // Sync foods with their meal type arrays
       await _syncFoodsToLocalDatabase(foodsData);
 
-    } catch (e) {
+      _logger.info(
+        'Successfully synced carb loading foods',
+        context: 'CARB_LOADING_SYNC',
+      );
+
+    } catch (e, stackTrace) {
       _logger.error(
         'Error syncing carb loading foods from Supabase',
-        context: 'CarbLoadingFoodSyncService',
+        context: 'CARB_LOADING_SYNC',
         error: e,
+        stackTrace: stackTrace,
       );
       // Don't rethrow - app should continue even if sync fails
       // Foods might already be in local database from previous sync
     }
   }
 
-  /// Sync meal types to local database
-  Future<void> _syncMealTypes(List<dynamic> mealTypesData) async {
-    if (mealTypesData.isEmpty) {
-      _logger.warning('No meal types to sync');
-      return;
-    }
-
-    await _database.batch((batch) {
-      for (final mealTypeJson in mealTypesData) {
-        final mealType = MealTypesTableCompanion.insert(
-          id: Value(mealTypeJson['id'] as int),
-          name: mealTypeJson['name'] as String,
-          displayName: mealTypeJson['display_name'] as String,
-        );
-
-        batch.insert(
-          _database.mealTypesTable,
-          mealType,
-          mode: InsertMode.insertOrReplace,
-        );
-      }
-    });
-  }
-
-  /// Sync foods and their meal type associations to local database
+  /// Sync foods with their meal type arrays to local database
+  /// Meal types are now stored as array column in foods table
   Future<void> _syncFoodsToLocalDatabase(List<dynamic> foodsData) async {
     if (foodsData.isEmpty) {
-      _logger.warning('No carb loading foods to sync');
+      _logger.warning('No carb loading foods to sync', context: 'CARB_LOADING_SYNC');
       return;
     }
+
+    _logger.info(
+      'Syncing ${foodsData.length} foods to local database',
+      context: 'CARB_LOADING_SYNC',
+    );
 
     await _database.batch((batch) {
       for (final foodJson in foodsData) {
         final foodId = foodJson['id'] as String;
+        final displayName = foodJson['display_name'] as String;
 
-        // Insert food
+        // Convert meal_types array from PostgreSQL format to String
+        // Production schema: meal_types text[] (e.g., ['breakfast', 'lunch'])
+        final mealTypesFromDb = foodJson['meal_types'] as List<dynamic>? ?? [];
+        final mealTypesArray = mealTypesFromDb.isEmpty
+            ? null
+            : '{${mealTypesFromDb.join(',')}}';
+
+        // Debug logging removed for performance - was logging 27 foods on every sync
+        // Uncomment if debugging specific food sync issues:
+        // _logger.debug(
+        //   'Syncing food: $displayName with meal_types: $mealTypesArray',
+        //   context: 'CARB_LOADING_SYNC',
+        // );
+
+        // Insert food with meal_types array
         final food = CarbLoadingFoodsTableCompanion.insert(
           id: foodId,
           name: foodJson['name'] as String,
-          displayName: foodJson['display_name'] as String,
+          displayName: displayName,
           displayNamePlural: Value(foodJson['display_name_plural'] as String?),
           carbsPerServing: (foodJson['carbs_per_serving'] as num).toDouble(),
           imageAddress: Value(foodJson['image_address'] as String? ?? ''),
           isDefault: Value(foodJson['is_default'] as bool? ?? true),
+          mealTypes: Value(mealTypesArray),
           createdAt: Value(
             DateTime.parse(foodJson['created_at'] as String),
           ),
@@ -120,31 +120,20 @@ class CarbLoadingFoodSyncService {
           food,
           mode: InsertMode.insertOrReplace,
         );
-
-        // Insert meal type associations
-        final mealTypeIds = foodJson['meal_type_ids'] as List<dynamic>? ?? [];
-        for (final mealTypeId in mealTypeIds) {
-          final association = CarbLoadingFoodMealTypesTableCompanion.insert(
-            carbLoadingFoodId: foodId,
-            mealTypeId: mealTypeId as int,
-          );
-
-          batch.insert(
-            _database.carbLoadingFoodMealTypesTable,
-            association,
-            mode: InsertMode.insertOrReplace,
-          );
-        }
       }
     });
+
+    _logger.info(
+      'Successfully synced ${foodsData.length} foods to local database',
+      context: 'CARB_LOADING_SYNC',
+    );
   }
 
   /// Sync carb loading foods from pre-downloaded data (from sync-all-data edge function)
   /// This method is called during app startup after sync-all-data returns
-  /// Updates seed database with latest carb loading foods and meal types
+  /// Note: meal_types are now stored as array column, not separate table
   Future<void> syncFromDownloadedData({
     required List<dynamic> carbLoadingFoods,
-    required List<dynamic> mealTypes,
   }) async {
     try {
       _logger.info(
@@ -152,14 +141,10 @@ class CarbLoadingFoodSyncService {
         context: 'CARB_LOADING_SYNC',
         data: {
           'carb_foods': carbLoadingFoods.length,
-          'meal_types': mealTypes.length,
         },
       );
 
-      // Sync meal types first (they're referenced by foods)
-      await _syncMealTypes(mealTypes);
-
-      // Sync carb loading foods with their meal type relationships
+      // Sync carb loading foods with their meal type arrays
       await _syncFoodsToLocalDatabase(carbLoadingFoods);
 
       _logger.info(

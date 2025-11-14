@@ -1,30 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_database.dart';
-import '../services/logging_service.dart';
 
 /// Provider for the main app database
 /// This ensures a single database instance across the app
+///
+/// IMPORTANT: The database is ready immediately - Drift's LazyDatabase handles
+/// async initialization internally. No need for a FutureProvider wrapper.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  final logger = ref.watch(appLoggerProvider);
-  return AppDatabase(logger: logger);
+  return AppDatabase();
 });
 
-/// Provider for database operations
-/// Makes it easy to access database methods throughout the app
-final databaseProvider = FutureProvider<AppDatabase>((ref) async {
-  final db = ref.watch(appDatabaseProvider);
-  final logger = ref.watch(appLoggerProvider);
-  
-  // Ensure database is ready by performing a simple check
-  try {
-    await db.getDatabaseStats();
-    return db;
-  } catch (e) {
-    logger.error(
-      'Database initialization error',
-      context: 'DATABASE',
-      error: e,
-    );
-    rethrow;
-  }
+/// DEPRECATED: Use appDatabaseProvider directly instead
+/// This FutureProvider caused deadlocks and race conditions
+@Deprecated('Use appDatabaseProvider directly - database is ready immediately')
+final databaseProvider = Provider<AppDatabase>((ref) {
+  // Just return the same instance - no async needed
+  return ref.watch(appDatabaseProvider);
 });

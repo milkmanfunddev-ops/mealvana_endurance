@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../domain/event.dart';
 import '../screens/events_list_screen.dart';
+import '../screens/event_detail_screen.dart';
 
 /// Widget that displays the next upcoming event with countdown.
 ///
-/// Shows event name, date, and time until event. Tapping navigates to
-/// the Events List Screen where users can view all events and create new ones.
+/// Shows event name, date, and time until event. Tapping navigates directly to
+/// the Event Detail Screen for quick access.
 class UpcomingEventWidget extends ConsumerWidget {
   final ({Event event, DateTime eventDate})? upcomingEventData;
 
@@ -94,7 +95,9 @@ class UpcomingEventWidget extends ConsumerWidget {
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => const EventsListScreen(),
+              builder: (context) => EventDetailScreen(
+                eventId: event.id,
+              ),
             ),
           );
         },
@@ -194,31 +197,6 @@ class UpcomingEventWidget extends ConsumerWidget {
     } else {
       final months = (difference.inDays / 30).floor();
       return '$months ${months == 1 ? 'month' : 'months'} away';
-    }
-  }
-}
-
-extension EventTypeExtension on EventType {
-  String get displayName {
-    switch (this) {
-      case EventType.marathon:
-        return 'Marathon';
-      case EventType.halfMarathon:
-        return 'Half Marathon';
-      case EventType.tenK:
-        return '10K';
-      case EventType.fiveK:
-        return '5K';
-      case EventType.ultra50K:
-        return 'Ultra 50K';
-      case EventType.ultra50M:
-        return 'Ultra 50M';
-      case EventType.ultra100K:
-        return 'Ultra 100K';
-      case EventType.ultra100M:
-        return 'Ultra 100M';
-      case EventType.custom:
-        return 'Custom Event';
     }
   }
 }

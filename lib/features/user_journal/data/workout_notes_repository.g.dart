@@ -8,12 +8,9 @@ part of 'workout_notes_repository.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provider for the workout notes repository
 
 @ProviderFor(workoutNotesRepository)
 const workoutNotesRepositoryProvider = WorkoutNotesRepositoryProvider._();
-
-/// Provider for the workout notes repository
 
 final class WorkoutNotesRepositoryProvider
     extends
@@ -25,7 +22,6 @@ final class WorkoutNotesRepositoryProvider
     with
         $FutureModifier<WorkoutNotesRepository>,
         $FutureProvider<WorkoutNotesRepository> {
-  /// Provider for the workout notes repository
   const WorkoutNotesRepositoryProvider._()
     : super(
         from: null,
@@ -53,4 +49,4 @@ final class WorkoutNotesRepositoryProvider
 }
 
 String _$workoutNotesRepositoryHash() =>
-    r'1d09b203a2d6b737c521feaddc62562848cb9605';
+    r'774fde414af7e8c93cb0a04d2761165ab70d6c2e';

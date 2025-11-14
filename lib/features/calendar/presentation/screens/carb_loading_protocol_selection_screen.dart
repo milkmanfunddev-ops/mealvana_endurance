@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/event.dart';
+import '../../../events/domain/event.dart';
 
 /// Screen for selecting carb loading protocol
 /// Displays 2-day and 3-day protocol options with detailed information

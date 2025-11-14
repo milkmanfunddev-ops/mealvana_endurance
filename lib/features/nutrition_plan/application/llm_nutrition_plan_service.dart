@@ -27,7 +27,7 @@ class LLMNutritionPlanService {
     required double paceMinutesPerMile,
     required double timeBeforeRunHours,
     String? sweatRate,
-    String? activityId,
+    int? activityId,
   }) async {
     try {
       // Get current user
@@ -131,6 +131,10 @@ class LLMNutritionPlanService {
         },
       };
 
+      if (activityId != null) {
+        requestData['activity_id'] = activityId;
+      }
+
       // Call the edge function
       final response = await _supabase.functions.invoke(
         'generate-nutrition-plan',
@@ -167,7 +171,11 @@ class LLMNutritionPlanService {
       );
 
       // Convert the LLM response to our NutritionPlan format
-      final nutritionPlan = await _convertLLMResponseToPlan(data, user.id, activityId: activityId);
+      final nutritionPlan = await _convertLLMResponseToPlan(
+        data,
+        user.id,
+        activityId: activityId,
+      );
 
       _logger.nutritionPlan('Nutrition plan conversion completed',
         planId: nutritionPlan.id,
@@ -212,7 +220,11 @@ class LLMNutritionPlanService {
 
 
   /// Convert LLM response format to our NutritionPlan domain model
-  Future<NutritionPlan> _convertLLMResponseToPlan(Map<String, dynamic> data, String userId, {String? activityId}) async {
+  Future<NutritionPlan> _convertLLMResponseToPlan(
+    Map<String, dynamic> data,
+    String userId, {
+    int? activityId,
+  }) async {
     final planData = data['plan'] as Map<String, dynamic>;
     final macroTargets = data['macro_targets'] as Map<String, dynamic>;
     final detailedMessage = data['detailed_message'] as String? ?? 'AI-generated nutrition plan';
@@ -370,7 +382,7 @@ class LLMNutritionPlanService {
           fluidsTarget: ((duringRun['water_total_ml'] as num? ?? 600) * 1.25).toDouble(),
         ),
       ],
-      macroTargets: MacroTargets(
+      macroTargets: PlanMacroSummary(
         calories: totalCalories,
         carbs: totalCarbs,
         protein: totalProtein,
@@ -402,7 +414,7 @@ class LLMNutritionPlanService {
   /// Generate nutrition plan from adjusted macro targets
   Future<NutritionPlan?> generateLLMNutritionPlanFromMacros({
     required targets.MacroTargets macroTargets,
-    String? activityId,
+    int? activityId,
   }) async {
     try {
       // Get current user
@@ -490,6 +502,10 @@ class LLMNutritionPlanService {
           },
         },
       };
+
+      if (activityId != null) {
+        requestData['activity_id'] = activityId;
+      }
 
       // Call the edge function
       final response = await _supabase.functions.invoke(

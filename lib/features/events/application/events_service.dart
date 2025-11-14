@@ -4,6 +4,7 @@ import '../domain/event.dart' as domain;
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/domain/activity_type.dart';
 import '../data/events_repository.dart';
 import '../../activities/application/activities_service.dart';
 
@@ -35,7 +36,7 @@ class EventsService {
   );
 
   /// Get event for a specific activity
-  Future<domain.Event?> getEventForActivity(String activityId) async {
+  Future<domain.Event?> getEventForActivity(int activityId) async {
     try {
       final query = _database.select(_database.eventsTable)
             ..where((tbl) => tbl.activityId.equals(activityId));
@@ -55,7 +56,7 @@ class EventsService {
   }
 
   /// Get a specific event by ID
-  Future<domain.Event?> getEventById(String userId, String eventId) async {
+  Future<domain.Event?> getEventById(String userId, int eventId) async {
     try {
       final query = _database.select(_database.eventsTable)
             ..where((tbl) => tbl.id.equals(eventId));
@@ -115,8 +116,8 @@ class EventsService {
   /// Create an event (optionally linked to an activity)
   Future<domain.Event> createEvent({
     required String deviceId,
-    String? activityId,
-    required domain.EventType eventType,
+    int? activityId,
+    required ActivityType eventType,
     String? eventSubtype,
     String? eventName,
     String? location,
@@ -133,11 +134,26 @@ class EventsService {
     String? packetPickupInfo,
   }) async {
     try {
-      final id = _generateId();
       final now = DateTime.now();
 
+      // Parse eventDate from startTime if available
+      DateTime? eventDate;
+      if (startTime != null && startTime.isNotEmpty) {
+        try {
+          final parsedDateTime = DateTime.parse(startTime);
+          // Extract just the date portion (no time)
+          eventDate = DateTime(
+            parsedDateTime.year,
+            parsedDateTime.month,
+            parsedDateTime.day,
+          );
+        } catch (e) {
+          _logger.warning('Failed to parse startTime for eventDate: $startTime', error: e);
+        }
+      }
+
       final event = domain.Event(
-        id: id,
+        id: 0, // Placeholder - repository will assign actual ID via autoIncrement
         userId: deviceId,
         activityId: activityId,
         eventType: eventType,
@@ -145,6 +161,7 @@ class EventsService {
         eventName: eventName,
         location: location,
         registrationUrl: registrationUrl,
+        eventDate: eventDate, // Set the event date for calendar display
         startTime: startTime,
         goalTimeMinutes: goalTimeMinutes,
         goalPaceMinutesPerMile: goalPaceMinutesPerMile,
@@ -190,7 +207,7 @@ class EventsService {
   /// Delete an event
   Future<void> deleteEvent({
     required String deviceId,
-    required String eventId,
+    required int eventId,
   }) async {
     try {
       await _eventsRepository.deleteEvent(
@@ -205,7 +222,7 @@ class EventsService {
 
   /// Update event's nutrition plan flag
   Future<void> updateEventNutritionPlanFlag({
-    required String activityId,
+    required int activityId,
     required bool hasNutritionPlan,
   }) async {
     try {
@@ -220,22 +237,18 @@ class EventsService {
     }
   }
 
-  /// Generate a unique ID for events
-  String _generateId() {
-    return 'event_${DateTime.now().millisecondsSinceEpoch}';
-  }
-
   /// Map database Event to domain Event
   domain.Event _mapToEventDomain(Event event) {
     return domain.Event(
       id: event.id,
       userId: event.userId,
       activityId: event.activityId,
-      eventType: domain.EventTypeExtension.fromDbValue(event.eventType),
+      eventType: _parseActivityType(event.eventType),
       eventSubtype: event.eventSubtype,
       eventName: event.eventName,
       location: event.location,
       registrationUrl: event.registrationUrl,
+      eventDate: event.eventDate, // Map the event date for calendar display
       startTime: event.startTime,
       goalTimeMinutes: event.goalTimeMinutes,
       goalPaceMinutesPerMile: event.goalPaceMinutesPerMile,
@@ -253,5 +266,25 @@ class EventsService {
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
     );
+  }
+
+  /// Parse database event_type string to ActivityType enum
+  ActivityType _parseActivityType(String eventType) {
+    switch (eventType.toLowerCase()) {
+      case 'running':
+        return ActivityType.running;
+      case 'cycling':
+        return ActivityType.cycling;
+      case 'swimming':
+        return ActivityType.swimming;
+      case 'triathlon':
+      case 'duathlon':
+      case 'multisport':
+        // For multi-sport events, default to running for now
+        // TODO: Consider adding multi-sport types to ActivityType enum
+        return ActivityType.running;
+      default:
+        return ActivityType.running;
+    }
   }
 }

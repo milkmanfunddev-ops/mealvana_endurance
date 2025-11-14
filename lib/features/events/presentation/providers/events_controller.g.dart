@@ -39,7 +39,7 @@ final class EventsControllerProvider
   EventsController create() => EventsController();
 }
 
-String _$eventsControllerHash() => r'28d3306ed5768f8b4dbc96057056035695273e97';
+String _$eventsControllerHash() => r'bfa856c17361fd6e7472eaabcdd6b3aa24288e98';
 
 /// Controller for managing events
 /// Handles event CRUD operations (create, read, update, delete)
@@ -83,7 +83,7 @@ final class EventDetailProvider
   /// Provider for getting event detail with associated activity
   const EventDetailProvider._({
     required EventDetailFamily super.from,
-    required String super.argument,
+    required int super.argument,
   }) : super(
          retry: null,
          name: r'eventDetailProvider',
@@ -110,7 +110,7 @@ final class EventDetailProvider
 
   @override
   FutureOr<({Activity? activity, Event event})> create(Ref ref) {
-    final argument = this.argument as String;
+    final argument = this.argument as int;
     return eventDetail(ref, argument);
   }
 
@@ -125,7 +125,7 @@ final class EventDetailProvider
   }
 }
 
-String _$eventDetailHash() => r'57b3d04e2510d6a359181badbfae1909ad84a86e';
+String _$eventDetailHash() => r'76f59804ac904ae28f12be52ff126d1867e6bff5';
 
 /// Provider for getting event detail with associated activity
 
@@ -133,7 +133,7 @@ final class EventDetailFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<({Activity? activity, Event event})>,
-          String
+          int
         > {
   const EventDetailFamily._()
     : super(
@@ -146,7 +146,7 @@ final class EventDetailFamily extends $Family
 
   /// Provider for getting event detail with associated activity
 
-  EventDetailProvider call(String eventId) =>
+  EventDetailProvider call(int eventId) =>
       EventDetailProvider._(argument: eventId, from: this);
 
   @override

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../domain/event.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../domain/event_subtype.dart';
 
-/// A dropdown widget for selecting specific race distances/types
+/// Kyle's Event Subtype Dropdown for race distances
 ///
-/// Displays the appropriate race options based on the selected sport category.
-/// Shows formatted labels with distances and organizes options clearly.
+/// Custom styled dropdown matching Kyle's design system with Blackberry/Cream theme.
+/// Uses Font Awesome icons and follows 15px border radius standard.
 class EventSubtypeDropdown extends StatelessWidget {
   const EventSubtypeDropdown({
     super.key,
@@ -14,7 +16,7 @@ class EventSubtypeDropdown extends StatelessWidget {
     required this.onSubtypeChanged,
   });
 
-  final EventType sportCategory;
+  final ActivityType sportCategory;
   final EventSubtype? selectedSubtype;
   final ValueChanged<EventSubtype> onSubtypeChanged;
 
@@ -27,28 +29,66 @@ class EventSubtypeDropdown extends StatelessWidget {
       children: [
         Text(
           'Race Distance',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<EventSubtype>(
           value: selectedSubtype,
           decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            prefixIcon: Icon(
-              _getIconForCategory(sportCategory),
-              color: Colors.grey.shade600,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(
+                color: AppColors.electrolyte,
+                width: 2,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(
+                color: AppColors.dragonfruit,
+              ),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(
+                color: AppColors.dragonfruit,
+                width: 2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            // prefixIcon: FaIcon(
+            //   _getIconForCategory(sportCategory),
+            //   size: AppIconSizes.sm,
+            //   color: AppColors.blackberry,
+            // ),
           ),
           isExpanded: true,
+          style: AppTextStyles.inputText.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          dropdownColor: Theme.of(context).colorScheme.surface,
           items: subtypes.map((subtype) {
             return DropdownMenuItem<EventSubtype>(
               value: subtype,
               child: Text(
                 subtype.displayName,
-                style: const TextStyle(fontSize: 15),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             );
           }).toList(),
@@ -68,20 +108,18 @@ class EventSubtypeDropdown extends StatelessWidget {
     );
   }
 
-  IconData _getIconForCategory(EventType category) {
+  IconData _getIconForCategory(ActivityType category) {
     switch (category) {
-      case EventType.running:
-        return Icons.directions_run;
-      case EventType.cycling:
-        return Icons.directions_bike;
-      case EventType.swimming:
-        return Icons.pool;
-      case EventType.triathlon:
-        return Icons.flash_on;
-      case EventType.duathlon:
-        return Icons.sync_alt;
-      case EventType.multisport:
-        return Icons.sports_score;
+      case ActivityType.running:
+        return FontAwesomeIcons.personRunning;
+      case ActivityType.cycling:
+        return FontAwesomeIcons.personBiking;
+      case ActivityType.swimming:
+        return FontAwesomeIcons.personSwimming;
+      case ActivityType.triathlon:
+      case ActivityType.duathlon:
+      case ActivityType.multisport:
+        return FontAwesomeIcons.trophy;
     }
   }
 }

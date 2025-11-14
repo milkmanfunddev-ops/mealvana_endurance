@@ -52,7 +52,6 @@ async function createTestUser(deviceId: string, profile?: any) {
 
 async function cleanupTestUser(deviceId: string) {
   await supabase.from('food_preferences').delete().eq('device_id', deviceId);
-  await supabase.from('nutrition_plans').delete().eq('device_id', deviceId);
   await supabase.from('users').delete().eq('device_id', deviceId);
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'debug_log_storage.dart';
 
 /// Abstraction for logging so we can swap implementations in tests.
 abstract class AppLogger {
@@ -356,8 +357,42 @@ class PrettyAppLogger implements AppLogger {
       print('Logger error: $e - Original message: $payload');
     }
 
+    // Capture to debug log storage for in-app viewing
+    try {
+      DebugLogStorage().addLog(DebugLogEntry(
+        timestamp: DateTime.now(),
+        level: _convertLevel(level),
+        message: message,
+        context: context,
+        data: data,
+        error: error,
+      ));
+    } catch (e) {
+      // Don't let debug logging break the app
+      // ignore: avoid_print
+      print('Debug log storage error: $e');
+    }
+
     if (_enableFileOutput) {
       // Placeholder for future file output support.
+    }
+  }
+
+  /// Convert logger Level to LogLevel enum
+  LogLevel _convertLevel(Level level) {
+    switch (level) {
+      case Level.debug:
+        return LogLevel.debug;
+      case Level.info:
+        return LogLevel.info;
+      case Level.warning:
+        return LogLevel.warning;
+      case Level.error:
+        return LogLevel.error;
+      case Level.fatal:
+        return LogLevel.fatal;
+      default:
+        return LogLevel.info;
     }
   }
 }

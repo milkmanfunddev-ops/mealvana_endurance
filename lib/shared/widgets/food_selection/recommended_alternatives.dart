@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../theme/app_theme.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../features/nutrition_plan/domain/food.dart';
 import '../../../features/auth/domain/user_preferences.dart';
 import 'food_item_tile.dart';
 
 /// Widget for displaying recommended alternatives
 /// Used in swap food and add food screens
+/// Uses Kyle's design system for consistent styling
 class RecommendedAlternatives extends StatelessWidget {
   const RecommendedAlternatives({
     super.key,
@@ -29,7 +30,7 @@ class RecommendedAlternatives extends StatelessWidget {
     final displayFoods = foods.take(maxItems).toList();
 
     if (displayFoods.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(context);
     }
 
     return Column(
@@ -37,25 +38,23 @@ class RecommendedAlternatives extends StatelessWidget {
       children: [
         // Section title
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           child: Text(
             title,
-            style: AppTheme.subtitleStyle.copyWith(
-              color: AppTheme.primary900,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
 
-        SizedBox(height: 16.h),
+        const SizedBox(height: AppSpacing.md),
 
         // Foods list
         Expanded(
           child: ListView.separated(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             itemCount: displayFoods.length,
-            separatorBuilder: (context, index) => SizedBox(height: 8.h),
+            separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final food = displayFoods[index];
               final preference = preferences[food.name];
@@ -74,33 +73,32 @@ class RecommendedAlternatives extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: EdgeInsets.all(24.w),
-      child: Center(
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.restaurant,
-              size: 48.sp,
-              color: AppTheme.primary100,
+              FontAwesomeIcons.utensils,
+              size: AppIconSizes.xl,
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
-            SizedBox(height: 16.h),
+            const SizedBox(height: AppSpacing.md),
             Text(
               'No recommendations available',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: AppTheme.primary600,
+              style: AppTextStyles.subtitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            SizedBox(height: 8.h),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'Try searching for foods or use the barcode scanner',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: AppTheme.primary100,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
               ),
             ),
           ],

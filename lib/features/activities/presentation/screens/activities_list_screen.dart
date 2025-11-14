@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mealvana_endurance/theme/app_theme.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/activities_controller.dart';
+import '../../../calendar/presentation/providers/calendar_view_provider.dart';
+import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
+import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
+import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
+import '../../../calendar/domain/calendar_day_indicators.dart';
 import '../../../events/presentation/providers/events_controller.dart';
-import '../../../events/presentation/widgets/upcoming_event_widget.dart';
+import '../../../events/presentation/widgets/upcoming_event_card_kyle.dart';
+import '../../../../shared/widgets/kyle_design/typography/section_header_text.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
-import '../widgets/calendar_date_picker.dart' as custom_calendar;
 import '../widgets/activity_card.dart';
 import '../widgets/carb_loading_day_card.dart';
-import 'activity_creation_screen.dart';
 import '../../../../shared/database/app_database.dart' as db;
 
 /// Main screen showing calendar date picker and daily activity list.
@@ -36,44 +40,126 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   Widget build(BuildContext context) {
     final activitiesState = ref.watch(activitiesControllerProvider);
     final upcomingEvent = ref.watch(nextUpcomingEventProvider);
+    final allEventsState = ref.watch(allEventsProvider);
     final carbLoadingState = ref.watch(carbLoadingDaysForRangeProvider(
       _queryStartDate,
       _queryEndDate,
     ));
+    final calendarMode = ref.watch(calendarViewProvider);
+
+    // Build comprehensive indicator map for calendar dots
+    final dayIndicators = _buildDayIndicatorsMap(
+      activitiesState,
+      allEventsState,
+      carbLoadingState,
+    );
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
+      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       body: SafeArea(
         child: Column(
           children: [
-            custom_calendar.CalendarDatePicker(
-              selectedDate: _selectedDate,
-              onDateSelected: (date) {
-                setState(() {
-                  _selectedDate = date;
-                });
+            // Calendar view toggle
+            CalendarViewToggle(
+              selectedMode: calendarMode,
+              onModeChanged: (mode) {
+                ref.read(calendarViewProvider.notifier).setView(mode);
               },
             ),
+            const SizedBox(height: 8),
+            // Calendar (week or month view)
+            if (calendarMode == CalendarViewMode.week)
+              CalendarWeekViewKyle(
+                selectedDate: _selectedDate,
+                onDateSelected: (date) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                },
+                dayIndicators: dayIndicators,
+              )
+            else
+              CalendarMonthViewKyle(
+                selectedDate: _selectedDate,
+                onDateSelected: (date) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                },
+                dayIndicators: dayIndicators,
+              ),
             Expanded(
               child: _buildContent(activitiesState, upcomingEvent, carbLoadingState),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ActivityCreationScreen(
-                selectedDate: _selectedDate,
-              ),
-            ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('New Activity'),
-      ),
+      // FloatingActionButton removed - now in FloatingActionButtonsBar
     );
+  }
+
+  /// Build comprehensive map of day indicators for calendar dots
+  /// Combines activities, events, and carb loading days
+  Map<DateTime, Set<DayIndicatorType>> _buildDayIndicatorsMap(
+    AsyncValue activitiesState,
+    AsyncValue allEventsState,
+    AsyncValue<List<dynamic>> carbLoadingState,
+  ) {
+    final map = <DateTime, Set<DayIndicatorType>>{};
+
+    // Add activity indicators
+    activitiesState.whenData((activities) {
+      print('📊 Building indicators: Found ${activities.length} activities');
+      for (final activity in activities) {
+        final date = DateTime(
+          activity.scheduledDateTime.year,
+          activity.scheduledDateTime.month,
+          activity.scheduledDateTime.day,
+        );
+        map.putIfAbsent(date, () => {}).add(DayIndicatorType.activity);
+        print('  ✅ Activity on ${date.toString().split(' ')[0]}');
+      }
+    });
+
+    // Add event indicators
+    allEventsState.whenData((events) {
+      print('📊 Building indicators: Found ${events.length} events');
+      for (final event in events) {
+        // Use the dedicated eventDate field
+        if (event.eventDate != null) {
+          final date = DateTime(
+            event.eventDate!.year,
+            event.eventDate!.month,
+            event.eventDate!.day,
+          );
+          map.putIfAbsent(date, () => {}).add(DayIndicatorType.event);
+          print('  🟠 Event on ${date.toString().split(' ')[0]}');
+        } else {
+          print('  ⚠️  Event "${event.eventName ?? 'Unnamed'}" has no eventDate');
+        }
+      }
+    });
+
+    // Add carb loading indicators
+    carbLoadingState.whenData((carbDays) {
+      final carbLoadingDays = carbDays.cast<db.CarbLoadingDay>();
+      print('📊 Building indicators: Found ${carbLoadingDays.length} carb loading days');
+      for (final carbDay in carbLoadingDays) {
+        final date = DateTime(
+          carbDay.planDate.year,
+          carbDay.planDate.month,
+          carbDay.planDate.day,
+        );
+        map.putIfAbsent(date, () => {}).add(DayIndicatorType.carbLoading);
+        print('  🌸 Carb loading on ${date.toString().split(' ')[0]}');
+      }
+    });
+
+    print('📊 Final indicator map has ${map.length} dates with indicators');
+    return map;
   }
 
   Widget _buildContent(
@@ -81,6 +167,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     AsyncValue upcomingEvent,
     AsyncValue<List<dynamic>> carbLoadingState,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return activitiesState.when(
       data: (activities) {
         final carbLoadingDays = carbLoadingState.maybeWhen(
@@ -106,20 +195,40 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           },
           child: CustomScrollView(
             slivers: [
-              // Upcoming Event Widget
+              // Upcoming Events Section Header
+              const SliverToBoxAdapter(
+                child: SectionHeaderText(text: "Upcoming Events"),
+              ),
+              // Upcoming Event Card
               SliverToBoxAdapter(
                 child: upcomingEvent.when(
-                  data: (event) => UpcomingEventWidget(upcomingEventData: event),
+                  data: (event) => UpcomingEventCardKyle(upcomingEventData: event),
                   loading: () => const SizedBox.shrink(),
                   error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
+              // Divider between Upcoming Events and Today's Activities
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  height: 1,
+                  color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.2),
+                ),
+              ),
+              // Section Header
+              if (hasItems)
+                const SliverToBoxAdapter(
+                  child: SectionHeaderText(
+                    text: "Today's Activities",
+                    topPadding: 0,
+                  ),
+                ),
               // Activities and Carb Days List
               if (!hasItems)
                 SliverFillRemaining(child: _buildEmptyState())
               else
                 SliverPadding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {

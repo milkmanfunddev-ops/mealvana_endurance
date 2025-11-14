@@ -12,7 +12,7 @@ class MacroTargetsExpander extends StatefulWidget {
     this.isExpanded = false,
   });
 
-  final MacroTargets macroTargets;
+  final PlanMacroSummary macroTargets;
   final bool isExpanded;
 
   @override

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../theme/app_theme.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../features/nutrition_plan/domain/food.dart';
 import '../../../features/auth/domain/user_preferences.dart';
-import '../food_icon.dart';
 import '../food_preference_widget.dart';
 
 /// Unified food item display tile
@@ -41,30 +40,8 @@ class FoodItemTile extends StatelessWidget {
     return AnimatedOpacity(
       opacity: isAvoided ? 0.5 : 1.0,
       duration: const Duration(milliseconds: 200),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12.r),
-        child: Container(
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
-            color: _getBackgroundColor(),
-            borderRadius: BorderRadius.circular(12.r),
-            border: isAvoided ? Border.all(color: AppTheme.primary100) : null,
-          ),
-          child: showPreference ? _buildPreferenceItem() : _buildSimpleItem(),
-        ),
-      ),
+      child: showPreference ? _buildPreferenceItem() : _buildSimpleItem(context),
     );
-  }
-
-  Color _getBackgroundColor() {
-    if (isAvoided) {
-      return AppTheme.primary50.withValues(alpha: 0.3);
-    }
-    if (showPreference) {
-      return AppTheme.baseWhite;
-    }
-    return AppTheme.primary50.withValues(alpha: 0.2);
   }
 
   /// Build item with preference selection (for preferences screen)
@@ -82,52 +59,192 @@ class FoodItemTile extends StatelessWidget {
   }
 
   /// Build simple item (for swap/add screens)
-  Widget _buildSimpleItem() {
-    return Row(
-      children: [
-        // Food icon
-        FoodIcon(
-          imageUrl: food.imageUrl,
-          size: 40.w,
-        ),
-        SizedBox(width: 12.w),
-
-        // Food name
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildSimpleItem(BuildContext context) {
+    return BaseCard(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadius.cardRadius,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
             children: [
-              Text(
-                food.displayName ?? food.name,
-                style: TextStyle(
-                  color: isAvoided ? AppTheme.primary100 : AppTheme.baseBlack,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
+              // Food icon with colored circular background
+              Container(
+                width: AppIconSizes.foodIcon,
+                height: AppIconSizes.foodIcon,
+                decoration: BoxDecoration(
+                  color: _getFoodIconColor(food.name),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _getFoodIcon(food.name),
+                  size: AppIconSizes.controlIcon,
+                  color: Colors.white,
                 ),
               ),
-              if (isAvoided) ...[
-                SizedBox(height: 2.h),
-                Text(
-                  'Marked as Avoid',
-                  style: TextStyle(
-                    color: AppTheme.primary100,
-                    fontSize: 11.sp,
-                    fontStyle: FontStyle.italic,
-                  ),
+              const SizedBox(width: AppSpacing.md),
+
+              // Food name and details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      food.displayName ?? food.name,
+                      style: AppTextStyles.foodTitle.copyWith(
+                        color: isAvoided
+                          ? AppColors.dragonfruit
+                          : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    if (food.carbsPerServing != null) ...[
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        '${food.carbsPerServing!.toInt()}g carbs per serving',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    if (isAvoided) ...[
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        'Marked as Avoid',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.dragonfruit,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
+
+              // Action indicator
+              Icon(
+                FontAwesomeIcons.circlePlus,
+                color: isAvoided ? AppColors.dragonfruit : AppColors.orange,
+                size: AppIconSizes.md,
+              ),
             ],
           ),
         ),
-
-        // Action indicator
-        Icon(
-          Icons.chevron_right,
-          color: isAvoided ? AppTheme.primary100 : AppTheme.primary900,
-          size: 24.sp,
-        ),
-      ],
+      ),
     );
+  }
+
+  /// Get the appropriate icon for a food based on its name
+  IconData _getFoodIcon(String foodName) {
+    final name = foodName.toLowerCase();
+
+    // Map generic foods to specific icons
+    if (name.contains('apple') && !name.contains('applesauce')) {
+      return FontAwesomeIcons.appleWhole;
+    } else if (name.contains('applesauce') || name.contains('purée')) {
+      return FontAwesomeIcons.bottleDroplet;
+    } else if (name.contains('bagel')) {
+      return FontAwesomeIcons.breadSlice;
+    } else if (name.contains('banana')) {
+      return FontAwesomeIcons.appleWhole;
+    } else if (name.contains('berr')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('chocolate milk')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('coconut water')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('coffee')) {
+      return FontAwesomeIcons.mugHot;
+    } else if (name.contains('date')) {
+      return FontAwesomeIcons.appleWhole;
+    } else if (name.contains('electrolyte drink mix')) {
+      return FontAwesomeIcons.flask;
+    } else if (name.contains('electrolyte tablet')) {
+      return FontAwesomeIcons.pills;
+    } else if (name.contains('energy bar')) {
+      return FontAwesomeIcons.bars;
+    } else if (name.contains('energy chew')) {
+      return FontAwesomeIcons.candyCane;
+    } else if (name.contains('energy waffle') || name.contains('stroopwafel')) {
+      return FontAwesomeIcons.cookie;
+    } else if (name.contains('fig bar')) {
+      return FontAwesomeIcons.bars;
+    } else if (name.contains('gel')) {
+      return FontAwesomeIcons.droplet;
+    } else if (name.contains('oatmeal')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('orange juice')) {
+      return FontAwesomeIcons.glassWater;
+    } else if (name.contains('peanut butter')) {
+      return FontAwesomeIcons.jar;
+    } else if (name.contains('pickle juice')) {
+      return FontAwesomeIcons.vial;
+    } else if (name.contains('pretzel')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('protein bar')) {
+      return FontAwesomeIcons.bars;
+    } else if (name.contains('protein powder')) {
+      return FontAwesomeIcons.jar;
+    } else if (name.contains('protein shake')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('salt packet')) {
+      return FontAwesomeIcons.bagShopping;
+    } else if (name.contains('sports drink mix')) {
+      return FontAwesomeIcons.flask;
+    } else if (name.contains('sports drink')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('toast')) {
+      return FontAwesomeIcons.breadSlice;
+    } else if (name.contains('trail mix')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('water')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('yogurt')) {
+      return FontAwesomeIcons.bowlFood;
+    }
+
+    // Check if this is likely a user-imported food
+    final knownGenericFoods = [
+      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
+      'chocolate milk', 'coconut water', 'coffee', 'date',
+      'electrolyte drink', 'electrolyte tablet', 'energy bar',
+      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
+      'gel', 'oatmeal', 'orange juice', 'peanut butter',
+      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
+      'protein shake', 'salt packet', 'sports drink', 'toast',
+      'trail mix', 'water', 'yogurt',
+    ];
+
+    // If none of the generic food keywords match, it's likely user-imported
+    if (!knownGenericFoods.any((keyword) => name.contains(keyword))) {
+      return FontAwesomeIcons.userPen;
+    }
+
+    // Default fallback icon
+    return FontAwesomeIcons.utensils;
+  }
+
+  /// Get the background color for the food icon
+  Color _getFoodIconColor(String foodName) {
+    final name = foodName.toLowerCase();
+
+    final knownGenericFoods = [
+      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
+      'chocolate milk', 'coconut water', 'coffee', 'date',
+      'electrolyte drink', 'electrolyte tablet', 'energy bar',
+      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
+      'gel', 'oatmeal', 'orange juice', 'peanut butter',
+      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
+      'protein shake', 'salt packet', 'sports drink', 'toast',
+      'trail mix', 'water', 'yogurt',
+    ];
+
+    // User-imported foods get orange color
+    if (!knownGenericFoods.any((keyword) => name.contains(keyword))) {
+      return AppColors.orange;
+    }
+
+    // Generic foods get electrolyte color
+    return AppColors.electrolyte;
   }
 
   /// Convert Food to FoodItem for compatibility with existing widgets

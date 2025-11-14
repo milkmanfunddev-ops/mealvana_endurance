@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/food.dart';
 import '../../domain/food_item.dart';
 import '../../data/food_repository.dart';
-import '../providers/nutrition_plan_controller.dart';
+import '../providers/activity_detail_controller.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/database/database_provider.dart';
@@ -12,20 +12,30 @@ import '../../../../shared/services/food_management/food_recommendation_service.
 import '../../../../shared/services/food_management/shared_food_search_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../domain/pending_activity_data.dart';
+import '../../domain/macro_targets.dart';
 
 part 'swap_food_controller.g.dart';
 
 /// Parameters for the swap food controller
 class SwapFoodParams {
   const SwapFoodParams({
+    required this.activityId,
     required this.category,
     this.originalFoodId,
     this.originalFoodName,
+    this.mode = 'view',
+    this.pendingActivityData,
+    this.macroTargets,
   });
 
+  final int activityId; // Activity ID for activity-scoped nutrition plan
   final String category; // Keep for context (before_run, during_run, after_run)
   final String? originalFoodId; // Food being swapped (for product type matching)
   final String? originalFoodName; // Food name being swapped (fallback if ID lookup fails)
+  final String mode; // 'create' or 'view' - must match ActivityDetailController mode
+  final PendingActivityData? pendingActivityData; // Required to match ActivityDetailController instance
+  final MacroTargets? macroTargets; // Required to match ActivityDetailController instance
 }
 
 /// State for the swap food screen
@@ -272,12 +282,18 @@ class SwapFoodController extends _$SwapFoodController {
     }
   }
   
-  /// Select a food
+  /// Select a food and clear search
   void selectFood(Food food) {
     final currentState = state.value;
     if (currentState == null) return;
-    
-    state = AsyncValue.data(currentState.copyWith(selectedFood: food));
+
+    // When selecting a food, clear the search query and show recommendations
+    state = AsyncValue.data(currentState.copyWith(
+      selectedFood: food,
+      searchQuery: '',
+      searchResults: currentState.recommendations,
+      isSearching: false,
+    ));
   }
   
   /// Clear selection
@@ -289,15 +305,25 @@ class SwapFoodController extends _$SwapFoodController {
   }
   
   /// Swap a food in the nutrition plan
-  Future<void> swapFood(String oldFoodId, Food newFood, String category, {double? customAmount}) async {
-    final planController = ref.read(nutritionPlanControllerProvider.notifier);
-    await planController.swapFoodItem(oldFoodId, newFood, category, customAmount: customAmount);
+  Future<void> swapFood(SwapFoodParams params, String oldFoodId, Food newFood, String category, {double? customAmount}) async {
+    final activityDetailController = ref.read(activityDetailControllerProvider(
+      mode: params.mode,
+      activityId: params.activityId,
+      pendingActivityData: params.pendingActivityData, // Pass to ensure same provider instance
+      macroTargets: params.macroTargets, // Pass to ensure same provider instance
+    ).notifier);
+    await activityDetailController.swapFoodItem(oldFoodId, newFood, category, customAmount: customAmount);
   }
 
   /// Add a food to the nutrition plan
-  Future<void> addFood(Food food, String category, {double? customAmount}) async {
-    final planController = ref.read(nutritionPlanControllerProvider.notifier);
-    await planController.addFoodItem(food, category, customAmount: customAmount);
+  Future<void> addFood(SwapFoodParams params, Food food, String category, {double? customAmount}) async {
+    final activityDetailController = ref.read(activityDetailControllerProvider(
+      mode: params.mode,
+      activityId: params.activityId,
+      pendingActivityData: params.pendingActivityData, // Pass to ensure same provider instance
+      macroTargets: params.macroTargets, // Pass to ensure same provider instance
+    ).notifier);
+    await activityDetailController.addFoodItem(food, category, customAmount: customAmount);
   }
 
   /// Search Open Food Facts and update state
@@ -346,10 +372,13 @@ class SwapFoodController extends _$SwapFoodController {
       final food = await searchService.addSearchResultToUserFoods(result, deviceId);
 
       if (food != null) {
-        // Auto-select the food
+        // Auto-select the food and clear search state
         state = AsyncValue.data(currentState.copyWith(
           selectedFood: food,
-          openFoodFactsResults: [], // Clear search results
+          searchQuery: '', // Clear search query
+          searchResults: currentState.recommendations, // Show recommendations
+          isSearching: false,
+          openFoodFactsResults: [], // Clear Open Food Facts results
         ));      } else {
         _logger.warning('Failed to add Open Food Facts result');
       }

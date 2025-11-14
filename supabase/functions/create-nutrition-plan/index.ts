@@ -71,9 +71,7 @@ serve(async (req)=>{
         caffeine_mg,
         potassium_mg,
         nutritional_info,
-        food_categories (
-          category_id
-        )
+        categories
       `).order('name', {
       ascending: true
     });
@@ -145,35 +143,6 @@ serve(async (req)=>{
         }
       ]
     };
-    // Save nutrition plan to database
-    const { data: savedPlan, error: planError } = await supabaseClient.from('nutrition_plans').insert({
-      device_id,
-      plan_id: planId,
-      plan_name: planData.name,
-      plan_data: planData,
-      total_calories: calculations.grossCalories,
-      distance_miles,
-      pace_minutes_per_mile,
-      notes: planData.notes,
-      version: 1,
-      last_modified_by: device_id,
-      client_updated_at: new Date().toISOString(),
-      is_deleted: false,
-      conflict_resolution: 'last_write_wins'
-    }).select().single();
-    if (planError) {
-      console.error('Error saving nutrition plan:', planError);
-      return new Response(JSON.stringify({
-        success: false,
-        message: `Failed to save nutrition plan: ${planError.message}`
-      }), {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
-    }
     return new Response(JSON.stringify({
       success: true,
       plan: planData,
@@ -284,17 +253,14 @@ function calculateNutrition({ user, distance_miles, pace_minutes_per_mile, time_
 }
 // FOOD SELECTION LOGIC
 async function selectFoodsForPlan({ calculations, foods, likedFoods, distanceMiles, durationHours }) {
-  // Helper function to check if food belongs to category
-  const foodBelongsToCategory = (food, categoryId)=>{
-    return food.food_categories?.some((fc)=>fc.category_id === categoryId);
+  // Helper function to check if food belongs to category (now using array column)
+  const foodBelongsToCategory = (food, categoryName)=>{
+    return food.categories?.includes(categoryName);
   };
-  // Filter foods by category using the new multi-category system
-  const preRunFoods = foods.filter((f)=>foodBelongsToCategory(f, 1)) // before_run = 1
-  ;
-  const duringRunFoods = foods.filter((f)=>foodBelongsToCategory(f, 2)) // during_run = 2
-  ;
-  const postRunFoods = foods.filter((f)=>foodBelongsToCategory(f, 3)) // after_run = 3
-  ;
+  // Filter foods by category using array contains
+  const preRunFoods = foods.filter((f)=>foodBelongsToCategory(f, 'before_run'));
+  const duringRunFoods = foods.filter((f)=>foodBelongsToCategory(f, 'during_run'));
+  const postRunFoods = foods.filter((f)=>foodBelongsToCategory(f, 'after_run'));
   // Select pre-run foods
   const selectedPreRun = selectFoodsForCategory({
     foods: preRunFoods,

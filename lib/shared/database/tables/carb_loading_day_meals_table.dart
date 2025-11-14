@@ -5,13 +5,13 @@ import 'package:drift/drift.dart';
 /// Example: Day -2, Breakfast: 2x Cereal (28g carbs), 1x Banana (27g carbs)
 @DataClassName('CarbLoadingDayMeal')
 class CarbLoadingDayMealsTable extends Table {
-  TextColumn get id => text()(); // PRIMARY KEY (UUID)
-  TextColumn get carbLoadingDayId => text().named('carb_loading_day_id')(); // FK to carb_loading_days.id
+  IntColumn get id => integer().autoIncrement()(); // PRIMARY KEY (auto-incrementing int)
+  IntColumn get carbLoadingDayId => integer().named('carb_loading_day_id')(); // FK to carb_loading_days.id
   IntColumn get mealTypeId => integer().named('meal_type_id')(); // FK to meal_types.id (1=breakfast, 2=lunch, etc.)
 
   // EXACTLY ONE of these must be non-null (enforced by CHECK constraint)
-  TextColumn get carbLoadingFoodId => text().nullable().named('carb_loading_food_id')(); // FK to carb_loading_foods.id
-  TextColumn get carbLoadingUserFoodId => text().nullable().named('carb_loading_user_food_id')(); // FK to carb_loading_user_foods.id
+  TextColumn get carbLoadingFoodId => text().nullable().named('carb_loading_food_id')(); // FK to carb_loading_foods.id (UUID)
+  TextColumn get carbLoadingUserFoodId => text().nullable().named('carb_loading_user_food_id')(); // FK to carb_loading_user_foods.id (UUID)
 
   TextColumn get foodDisplayName => text().nullable().named('food_display_name')(); // Cached food name for display
   IntColumn get quantity => integer().withDefault(const Constant(1))(); // Number of servings
@@ -20,17 +20,12 @@ class CarbLoadingDayMealsTable extends Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
 
   @override
-  Set<Column> get primaryKey => {id};
-
-  @override
   String get tableName => 'carb_loading_day_meals';
 
   @override
   List<String> get customConstraints => [
-    'FOREIGN KEY (carb_loading_day_id) REFERENCES carb_loading_days(id) ON DELETE CASCADE',
-    'FOREIGN KEY (meal_type_id) REFERENCES meal_types(id)',
-    'FOREIGN KEY (carb_loading_food_id) REFERENCES carb_loading_foods(id)',
-    'FOREIGN KEY (carb_loading_user_food_id) REFERENCES carb_loading_user_foods(id)',
+    // Note: Foreign key constraints are handled by Drift's type system and relationships
+    // The actual FK enforcement happens in Supabase PostgreSQL, not in SQLite
     'CHECK (quantity > 0)',
     'CHECK (carbs_consumed >= 0)',
     // Ensure exactly one food type is set (either default food OR user food, not both)

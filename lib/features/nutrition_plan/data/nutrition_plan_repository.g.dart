@@ -53,4 +53,4 @@ final class NutritionPlanRepositoryProvider
 }
 
 String _$nutritionPlanRepositoryHash() =>
-    r'65b1b13e4552192cd5d63df58483ea8246ee699b';
+    r'966be2994923b5b88e98387c8d5698a117b7e2b7';

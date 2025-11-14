@@ -32,7 +32,7 @@ class MacroGenerationService {
 
   /// Generate running macro targets
   Future<MacroTargets> generateRunningMacros({
-    required String planId,
+    int? activityId,
     required String deviceId,
     required double distanceMiles,
     required double paceMinutesPerMile,
@@ -61,7 +61,7 @@ class MacroGenerationService {
 
     await analytics.trackPlanGenerated(
       deviceId: deviceId,
-      planId: planId,
+      activityId: activityId,
       activityType: 'running',
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
@@ -78,7 +78,7 @@ class MacroGenerationService {
 
   /// Generate cycling macro targets
   Future<MacroTargets> generateCyclingMacros({
-    required String planId,
+    int? activityId,
     required String deviceId,
     required double distanceMiles,
     required double speedMph,
@@ -91,6 +91,9 @@ class MacroGenerationService {
     double? temperatureC,
     double? humidityPct,
   }) async {
+    DebugLogger.info('🚴 MACRO SERVICE: generateCyclingMacros called - distance: ${distanceMiles}mi, speed: ${speedMph}mph');
+
+    DebugLogger.info('🚴 MACRO SERVICE: Building request data...');
     final requestData = await _buildCyclingRequestData(
       distanceMiles: distanceMiles,
       speedMph: speedMph,
@@ -103,17 +106,20 @@ class MacroGenerationService {
       temperatureC: temperatureC,
       humidityPct: humidityPct,
     );
+    DebugLogger.info('🚴 MACRO SERVICE: Request data built, calling edge function...');
 
     final macroTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
       expectedActivityType: ActivityType.cycling,
     );
+    DebugLogger.info('🚴 MACRO SERVICE: Edge function returned, caching targets...');
 
     await _cacheMacroTargets(macroTargets);
+    DebugLogger.info('🚴 MACRO SERVICE: Targets cached, tracking analytics...');
 
     await analytics.trackPlanGenerated(
       deviceId: deviceId,
-      planId: planId,
+      activityId: activityId,
       activityType: 'cycling',
       distanceMiles: distanceMiles,
       paceMinutesPerMile: speedMph,
@@ -124,13 +130,14 @@ class MacroGenerationService {
       afterRunItems: 1,
       isFirstPlan: true,
     );
+    DebugLogger.info('🚴 MACRO SERVICE: Analytics tracked, returning macro targets');
 
     return macroTargets;
   }
 
   /// Generate swimming macro targets
   Future<MacroTargets> generateSwimmingMacros({
-    required String planId,
+    int? activityId,
     required String deviceId,
     required int distanceMeters,
     required int paceSecondsper100m,
@@ -140,6 +147,9 @@ class MacroGenerationService {
     String? sessionGoal,
     double? waterTempC,
   }) async {
+    DebugLogger.info('🏊 MACRO SERVICE: generateSwimmingMacros called - distance: ${distanceMeters}m, pace: ${paceSecondsper100m}s/100m');
+
+    DebugLogger.info('🏊 MACRO SERVICE: Building request data...');
     final requestData = await _buildSwimmingRequestData(
       distanceMeters: distanceMeters,
       paceSecondsper100m: paceSecondsper100m,
@@ -149,17 +159,20 @@ class MacroGenerationService {
       sessionGoal: sessionGoal,
       waterTempC: waterTempC,
     );
+    DebugLogger.info('🏊 MACRO SERVICE: Request data built, calling edge function...');
 
     final macroTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
       expectedActivityType: ActivityType.swimming,
     );
+    DebugLogger.info('🏊 MACRO SERVICE: Edge function returned, caching targets...');
 
     await _cacheMacroTargets(macroTargets);
+    DebugLogger.info('🏊 MACRO SERVICE: Targets cached, tracking analytics...');
 
     await analytics.trackPlanGenerated(
       deviceId: deviceId,
-      planId: planId,
+      activityId: activityId,
       activityType: 'swimming',
       distanceMiles: distanceMeters / 1609.34,
       paceMinutesPerMile: paceSecondsper100m / 60,
@@ -170,6 +183,7 @@ class MacroGenerationService {
       afterRunItems: 1,
       isFirstPlan: true,
     );
+    DebugLogger.info('🏊 MACRO SERVICE: Analytics tracked, returning macro targets');
 
     return macroTargets;
   }
@@ -302,32 +316,47 @@ class MacroGenerationService {
     required Map<String, dynamic> requestData,
     required ActivityType expectedActivityType,
   }) async {
+    DebugLogger.info('🌐 EDGE FUNCTION: Calling generate-macros for ${expectedActivityType.name}...');
+    DebugLogger.info('📤 EDGE FUNCTION: Request payload: ${requestData.toString().substring(0, 200)}...');
+
     final response = await supabaseClient.functions.invoke(
       'generate-macros',
       body: requestData,
     );
 
+    DebugLogger.info('📥 EDGE FUNCTION: Response status: ${response.status}');
+
     if (response.status >= 400) {
       final data = response.data as Map<String, dynamic>?;
-      throw Exception(data?['message'] ?? 'Failed to generate macro targets');
+      final errorMessage = data?['message'] ?? 'Failed to generate macro targets';
+      DebugLogger.error('❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage');
+      throw Exception(errorMessage);
     }
 
     final data = response.data as Map<String, dynamic>;
+    DebugLogger.info('📊 EDGE FUNCTION: Response data keys: ${data.keys.toList()}');
 
     if (data['success'] != true) {
-      throw Exception(data['message'] ?? 'Failed to generate macro targets');
+      final errorMessage = data['message'] ?? 'Failed to generate macro targets';
+      DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
+      throw Exception(errorMessage);
     }
 
     final macrosData = data['macros'] as Map<String, dynamic>;
     final activityTypeString = data['activity_type'] as String? ?? expectedActivityType.name;
+    DebugLogger.info('✅ EDGE FUNCTION: Got macros data with ${macrosData.keys.length} keys');
 
     ActivityType activityType = expectedActivityType;
     try {
       activityType = ActivityType.values.byName(activityTypeString);
     } catch (e) {
+      DebugLogger.warning('⚠️ EDGE FUNCTION: Could not parse activity type "$activityTypeString", using $expectedActivityType');
     }
 
-    return _parseMacroTargets(macrosData, activityType);
+    final macroTargets = _parseMacroTargets(macrosData, activityType);
+    DebugLogger.info('✅ EDGE FUNCTION: Successfully parsed macro targets - preRun carbs: ${macroTargets.preRun.carbsG}g, total burn: ${macroTargets.metrics.caloriesNetKcal}kcal');
+
+    return macroTargets;
   }
 
   MacroTargets _parseMacroTargets(Map<String, dynamic> macrosData, ActivityType activityType) {

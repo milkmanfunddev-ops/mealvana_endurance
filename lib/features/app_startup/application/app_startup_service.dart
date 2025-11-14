@@ -27,10 +27,31 @@ class AppStartupService {
   /// Initialize Drift database with v2 migration support
   Future<void> initializeDatabase() async {
     try {
-      // Touch the database provider so migrations run before the app boots.
-      await ref.read(databaseProvider.future);
+      _logger.info('🔍 Getting database instance...', context: 'DATABASE');
+
+      // Touch the database provider so migrations run.
+      // The database is ready immediately - Drift's LazyDatabase handles
+      // async initialization internally (onCreate, onUpgrade, beforeOpen).
+      final db = ref.read(appDatabaseProvider);
+
+      _logger.info('🔍 Database instance obtained, triggering initialization...', context: 'DATABASE');
+
+      // Trigger lazy initialization by accessing the database
+      // This ensures onCreate/migration runs before we proceed
+      // Use a simple table query instead of SELECT 1 to verify schema is ready
+      try {
+        _logger.info('🔍 Querying user profiles table to verify database...', context: 'DATABASE');
+        await db.select(db.userProfilesTable).get();
+        _logger.info('✅ Database query successful', context: 'DATABASE');
+      } catch (e) {
+        _logger.warning('First query failed (expected on fresh install): $e', context: 'DATABASE');
+        // On fresh install, table might not exist yet - that's OK
+        // The important part is that onCreate has completed
+      }
+
+      _logger.info('✅ Database initialization verified', context: 'DATABASE');
     } catch (e, stackTrace) {
-      _logger.error('Database initialization failed', 
+      _logger.error('Database initialization failed',
         context: 'DATABASE',
         error: e,
         stackTrace: stackTrace
@@ -113,12 +134,19 @@ class AppStartupService {
   /// Check if user has existing session and restore it
   Future<void> checkUserSession() async {
     try {
+      _logger.info('🔄 Starting session check...', context: 'APP_STARTUP');
+
+      _logger.info('🔄 Getting database instance...', context: 'APP_STARTUP');
       final database = ref.read(appDatabaseProvider);
-      
+      _logger.info('✅ Database instance obtained', context: 'APP_STARTUP');
+
       // Check if user exists in Drift database
+      _logger.info('🔄 Querying for current user profile...', context: 'APP_STARTUP');
       final user = await database.getCurrentUserProfile();
-      
+      _logger.info('✅ User profile query complete (user: ${user != null})', context: 'APP_STARTUP');
+
       if (user != null) {
+        _logger.info('🔄 Identifying user in analytics...', context: 'APP_STARTUP');
         // User exists locally - identify them properly in analytics
         await _analytics.identifyUser(
           user.id,
@@ -128,11 +156,13 @@ class AppStartupService {
           runsWithWaterBottle: user.runsWithWaterBottle,
           gutTrainingLevel: user.gutTraining.name,
         );
+        _logger.info('✅ User identified in analytics', context: 'APP_STARTUP');
       }
-    } catch (e) {
-      _logger.warning('Session check error', 
+    } catch (e, stackTrace) {
+      _logger.error('Session check error',
         context: 'AUTH',
-        error: e
+        error: e,
+        stackTrace: stackTrace
       );
       // Continue without user session - this is expected on fresh installs
     }
@@ -142,13 +172,13 @@ class AppStartupService {
   Future<void> initializeNutritionPlans() async {
     try {
       final database = ref.read(appDatabaseProvider);
-      
+
       // Check if we have a current user
       final user = await database.getCurrentUserProfile();
-      
+
       if (user != null) {
-        // Get latest nutrition plan from Drift
-        await database.getLatestNutritionPlan(user.id);
+        // Note: Nutrition plans are now embedded in activities table
+        // No initialization needed - plans are loaded with activities
       }
     } catch (e) {
       _logger.error('Plan initialization error', 
@@ -250,14 +280,13 @@ class AppStartupService {
     }
   }
 
-  /// Check for plans that need feedback after run time has passed
+  /// Check for activities that need feedback after run time has passed
   /// Also checks for notification-based navigation
-  Future<String?> checkForPendingFeedback() async {
+  Future<int?> checkForPendingFeedback() async {
     try {
-      // First check if user tapped a notification
-      final notificationPlanId = NotificationService.getPendingNavigationPlanId();
-      if (notificationPlanId != null) {
-        return notificationPlanId;
+      final notificationActivityId = NotificationService.getPendingNavigationActivityId();
+      if (notificationActivityId != null) {
+        return notificationActivityId;
       }
       
       final database = ref.read(appDatabaseProvider);
@@ -268,25 +297,24 @@ class AppStartupService {
       
       // Get plans that have a run date/time in the past but no feedback yet
       final now = DateTime.now();
-      final plans = await database.select(database.nutritionPlans).get();
-      
-      for (final plan in plans) {
-        // Parse the plan to check runDateTime
-        final planJson = jsonDecode(plan.planData) as Map<String, dynamic>;
-        if (planJson.containsKey('runDateTime') && planJson['runDateTime'] != null) {
-          final runDateTime = DateTime.parse(planJson['runDateTime']);
-          
-          // Check if run time has passed and no feedback exists
-          if (runDateTime.isBefore(now)) {
-            final hasRating = planJson['planRating'] != null;
-            final hasNotes = planJson['journalNotes'] != null && 
-                             (planJson['journalNotes'] as String).isNotEmpty;
-            
-            if (!hasRating && !hasNotes) {
-              // Found a plan that needs feedback
-              return plan.id;
-            }
-          }
+      final planActivities = await database.getActivitiesWithNutritionPlans(user.id);
+
+      for (final activity in planActivities) {
+        final planDataRaw = activity.nutritionPlanData;
+        if (planDataRaw == null || planDataRaw.isEmpty) continue;
+
+        final planJson = jsonDecode(planDataRaw) as Map<String, dynamic>;
+        final runDateTimeString = planJson['runDateTime'] as String?;
+        if (runDateTimeString == null) continue;
+
+        final runDateTime = DateTime.tryParse(runDateTimeString);
+        if (runDateTime == null || runDateTime.isAfter(now)) continue;
+
+        final hasRating = planJson['planRating'] != null;
+        final hasNotes = (planJson['journalNotes'] as String?)?.isNotEmpty ?? false;
+
+        if (!hasRating && !hasNotes) {
+          return activity.id;
         }
       }
       

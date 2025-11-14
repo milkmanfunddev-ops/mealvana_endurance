@@ -162,7 +162,7 @@ Add logic in `_handleNavigation`:
 // Check for pending plan feedback
 final pendingFeedbackPlan = await checkForPendingFeedback();
 if (pendingFeedbackPlan != null) {
-  context.go('/plan-how-well/${pendingFeedbackPlan.id}');
+  context.go('/plan-how-well/${pendingFeedbackPlan.activityId}');
   return;
 }
 ```
@@ -172,7 +172,7 @@ if (pendingFeedbackPlan != null) {
 
 Modify `_onNotificationTapped`:
 - Extract plan ID from payload
-- Navigate to `/plan-how-well/{planId}`
+- Navigate to `/plan-how-well/{activityId}`
 - Track analytics event (existing)
 
 #### 6.3 Test Notification Handler
@@ -196,9 +196,9 @@ class PendingFeedbackService {
     // Return plan if feedback pending, null otherwise
   }
   
-  Future<void> saveFeedback(String planId, int rating, String notes) {
-    // Update plan with rating and notes
-    // Clear from pending feedback
+  Future<void> saveFeedback(int activityId, int rating, String notes) {
+    // Update the activity-owned plan with rating and notes
+    // Clear from pending feedback queue
   }
 }
 ```
@@ -207,24 +207,24 @@ class PendingFeedbackService {
 **Location**: `/lib/features/nutrition_plan/data/nutrition_plan_repository.dart`
 
 Add methods:
-- `updatePlanRunDateTime(String planId, DateTime runDateTime)`
-- `updatePlanFeedback(String planId, int rating, String notes)`
-- `getPlansPendingFeedback()` - Returns plans with past run dates and no rating
+- `updatePlanRunDateTimeForActivity(int activityId, DateTime runDateTime)`
+- `updatePlanFeedbackForActivity(int activityId, int rating, String notes)`
+- `getPlansPendingFeedback()` - Returns activity-owned plans with past run dates and no rating
 
 ### 8. Navigation Routes
 
 Add to router configuration:
 ```dart
 GoRoute(
-  path: '/plan-how-well/:planId',
+  path: '/plan-how-well/:activityId',
   builder: (context, state) => PlanHowWellScreen(
-    planId: state.pathParameters['planId']!,
+    activityId: int.parse(state.pathParameters['activityId']!),
   ),
 ),
 GoRoute(
-  path: '/voice-memo/:planId',
+  path: '/voice-memo/:activityId',
   builder: (context, state) => VoiceMemoScreen(
-    planId: state.pathParameters['planId']!,
+    activityId: int.parse(state.pathParameters['activityId']!),
     rating: state.extra as int,
   ),
 ),

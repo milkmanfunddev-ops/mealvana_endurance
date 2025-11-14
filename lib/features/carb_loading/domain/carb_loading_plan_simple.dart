@@ -32,7 +32,7 @@ enum TrainingVolume {
 
 /// Simplified carb loading plan focused on carbs-only tracking
 class CarbLoadingPlan {
-  final String id;
+  final int id;
   final String userId;
   final DateTime raceDate;
   final RaceDistance raceDistance;
@@ -79,7 +79,7 @@ class CarbLoadingPlan {
     final dailyServingsTarget = (dailyCarbTargetG / 50).round();
 
     return CarbLoadingPlan(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: DateTime.now().millisecondsSinceEpoch,
       userId: userId,
       raceDate: raceDate,
       raceDistance: raceDistance,
@@ -137,7 +137,7 @@ class CarbLoadingPlan {
     }
 
     return CarbLoadingPlan(
-      id: json['id'] ?? '',
+      id: json['id'] ?? 0,
       userId: json['userId'] ?? '',
       raceDate: DateTime.parse(json['raceDate']),
       raceDistance: RaceDistance.values.firstWhere(
@@ -185,7 +185,7 @@ class CarbLoadingPlan {
 
   /// Create a copy with updated fields
   CarbLoadingPlan copyWith({
-    String? id,
+    int? id,
     String? userId,
     DateTime? raceDate,
     RaceDistance? raceDistance,

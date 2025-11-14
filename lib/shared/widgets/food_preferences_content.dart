@@ -94,7 +94,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
   Future<void> _loadFoods() async {
     try {
       final foodRepository = ref.read(foodRepositoryProvider);
-      final database = await ref.read(databaseProvider.future);
+      final database = ref.read(appDatabaseProvider);
 
       // Get current user's device ID
       final userProfile = await database.getCurrentUserProfile();
@@ -153,7 +153,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
 
   Future<void> _deleteScannedFood(FoodItem food) async {
     try {
-      final database = await ref.read(databaseProvider.future);
+      final database = ref.read(appDatabaseProvider);
       final userProfile = await database.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
@@ -406,7 +406,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
     double? sodiumMg,
   }) async {
     try {
-      final database = await ref.read(databaseProvider.future);
+      final database = ref.read(appDatabaseProvider);
       final userProfile = await database.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
@@ -414,9 +414,23 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
       // Generate unique UUID for this food
       final foodId = _uuid.v4();
 
+      final categoryNames = categoryIds.map((id) {
+        switch (id) {
+          case 1:
+            return 'before_run';
+          case 2:
+            return 'during_run';
+          case 3:
+            return 'after_run';
+          default:
+            return 'before_run';
+        }
+      }).toList();
+
       // 1. Save to local Drift database first (for offline access)
       await database.saveUserFood(
         deviceId: deviceId,
+        userId: deviceId,
         id: foodId,
         clientFoodId: foodItem.id,
         name: foodItem.name,
@@ -433,7 +447,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
         sodiumMg: (sodiumMg?.toInt()) ?? foodItem.sodiumMg,
         fluidMlPerServing: finalFluidAmount ?? foodItem.fluidMlPerServing,
         productTypeId: foodItem.productTypeId,
-        categoryIds: categoryIds,
+        categories: categoryNames,
       );
 
       // 2. Sync to Supabase via edge function (for backup and cross-device sync)

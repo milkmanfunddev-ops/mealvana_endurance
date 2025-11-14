@@ -9,6 +9,7 @@ import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../../../shared/services/location_service.dart';
 import '../../../../shared/utils/location_formatter.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../activities/domain/activity.dart';
 import '../../domain/event.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
@@ -42,7 +43,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
   // State
   late DateTime _scheduledDateTime;
-  late EventType _selectedEventType;
+  late ActivityType _selectedSportType;
+  String? _selectedEventSubtype;
   bool _isSaving = false;
 
   // Location search state
@@ -69,7 +71,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     _notesController = TextEditingController(text: widget.activity.notes);
 
     _scheduledDateTime = widget.activity.scheduledDateTime;
-    _selectedEventType = widget.event.eventType;
+    _selectedSportType = widget.event.eventType;
+    _selectedEventSubtype = widget.event.eventSubtype;
 
     // Add listener to location text field for autocomplete
     _locationController.addListener(_onLocationTextChanged);
@@ -279,7 +282,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
       // Update event using EventsController directly
       final updatedEvent = widget.event.copyWith(
-        eventType: _selectedEventType,
+        eventType: _selectedSportType,
+        eventSubtype: _selectedEventSubtype,
         eventName: _eventNameController.text.isNotEmpty
             ? _eventNameController.text
             : null,
@@ -417,7 +421,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -563,11 +567,11 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   }
 
   Widget _buildEventTypeDropdown() {
-    return DropdownButtonFormField<EventType>(
-      initialValue: _selectedEventType,
+    return DropdownButtonFormField<ActivityType>(
+      initialValue: _selectedSportType,
       decoration: InputDecoration(
-        labelText: 'Event Type',
-        prefixIcon: Icon(Icons.category, color: AppTheme.primary600),
+        labelText: 'Sport Type',
+        prefixIcon: Icon(Icons.sports, color: AppTheme.primary600),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -578,15 +582,15 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         filled: true,
         fillColor: AppTheme.baseWhite,
       ),
-      items: EventType.values.map((type) {
+      items: ActivityType.values.map((type) {
         return DropdownMenuItem(
           value: type,
-          child: Text(_formatEventType(type)),
+          child: Text(type.displayName),
         );
       }).toList(),
       onChanged: (value) {
         if (value != null) {
-          setState(() => _selectedEventType = value);
+          setState(() => _selectedSportType = value);
         }
       },
     );
@@ -631,26 +635,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     );
   }
 
-  String _formatEventType(EventType type) {
-    switch (type) {
-      case EventType.fiveK:
-        return '5K';
-      case EventType.tenK:
-        return '10K';
-      case EventType.halfMarathon:
-        return 'Half Marathon';
-      case EventType.marathon:
-        return 'Marathon';
-      case EventType.ultra50K:
-        return 'Ultra 50K';
-      case EventType.ultra50M:
-        return 'Ultra 50M';
-      case EventType.ultra100K:
-        return 'Ultra 100K';
-      case EventType.ultra100M:
-        return 'Ultra 100M';
-      case EventType.custom:
-        return 'Custom Event';
-    }
-  }
+  // Note: The old _formatEventType function has been removed.
+  // ActivityType enum now has a built-in displayName getter.
+  // Event subtypes (race distances like '5K', 'marathon') are stored as strings in eventSubtype field.
 }

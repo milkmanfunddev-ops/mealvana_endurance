@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../domain/feature_survey_data.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../../../theme/kyle_design/app_spacing.dart';
 
 /// Widget showing the user has already voted
 /// Displays their previous selections in a read-only format
@@ -15,68 +17,71 @@ class AlreadyVotedView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.screenPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Thank you card
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  // Success icon
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.successColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_circle,
-                      color: AppTheme.successColor,
-                      size: 48,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Thank you message
-                  Text(
-                    'Thank You!',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Your feedback gave us the boost we needed. Thank you!',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: isDarkMode
-                          ? Colors.grey.shade400
-                          : Colors.grey.shade600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(15.0), // 15px from Kyle's design
+              border: Border.all(
+                color: AppColors.electrolyte.withOpacity(0.3),
+                width: 1,
               ),
             ),
+            child: Column(
+              children: [
+                // Success icon with circular background
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.electrolyte,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: AppColors.blackberry,
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                // Thank you message
+                Text(
+                  'Thank You!',
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Your feedback gave us the boost we needed. Thank you!',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: isDark
+                        ? AppColors.textDarkSecondary
+                        : AppColors.textLightSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
           // Your top 3 picks header
           Text(
             'Your Top 3 Picks:',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: isDark ? AppColors.cream : AppColors.blackberry,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           // List of selected features
           ...previousVotes.selectedFeatures.asMap().entries.map((entry) {
             final index = entry.key;
@@ -84,15 +89,17 @@ class AlreadyVotedView extends StatelessWidget {
             return _FeatureItem(
               rank: index + 1,
               feature: feature,
-              isDarkMode: isDarkMode,
+              isDark: isDark,
             );
           }),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
           // Vote date
           Text(
             'Voted on ${_formatDate(previousVotes.votedAt)}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600,
+            style: AppTextStyles.smallLabel.copyWith(
+              color: isDark
+                  ? AppColors.textDarkSecondary
+                  : AppColors.textLightSecondary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -125,74 +132,72 @@ class _FeatureItem extends StatelessWidget {
   const _FeatureItem({
     required this.rank,
     required this.feature,
-    required this.isDarkMode,
+    required this.isDark,
   });
 
   final int rank;
   final Feature feature;
-  final bool isDarkMode;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: AppTheme.successColor.withValues(alpha: 0.3),
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(15.0), // 15px from Kyle's design
+        border: Border.all(
+          color: AppColors.electrolyte.withOpacity(0.3),
           width: 1,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Rank badge
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppTheme.successColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  '$rank',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+      child: Row(
+        children: [
+          // Rank badge (circular with Electrolyte)
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppColors.electrolyte,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 16),
-            // Icon
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.successColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                feature.icon,
-                color: AppTheme.successColor,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Feature name
-            Expanded(
+            child: Center(
               child: Text(
-                feature.name,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+                '$rank',
+                style: AppTextStyles.buttonPrimary.copyWith(
+                  color: AppColors.blackberry,
+                  fontSize: 14,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          // Icon with circular background (36px per Kyle's design)
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.electrolyte,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              feature.icon,
+              color: AppColors.blackberry,
+              size: 18, // ~50% of container size
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          // Feature name
+          Expanded(
+            child: Text(
+              feature.name,
+              style: AppTextStyles.subtitle.copyWith(
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

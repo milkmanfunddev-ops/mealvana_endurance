@@ -11,7 +11,7 @@ Mealvana Endurance uses Drift (formerly Moor) as its local SQLite database solut
 - **Total Tables**: 27
 - **Synced Tables**: 13 (sync with Supabase)
 - **Local-Only Tables**: 7 (exist only in Drift, includes weather cache)
-- **Calendar Feature Tables**: 8 (activities, events, carb_loading_plans, carb_loading_days, activity_completions, plus food system tables)
+- **Calendar Feature Tables**: 7 (activities, events, carb_loading_plans, carb_loading_days, plus food system tables — completion data now lives on `activities`)
 - **Weather Table**: 1 (weather_forecasts for API response caching)
 
 ### Database Location

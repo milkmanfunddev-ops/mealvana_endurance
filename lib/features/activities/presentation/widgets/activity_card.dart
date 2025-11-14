@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/activities_controller.dart';
+import 'activity_action_buttons.dart';
 
-/// Reusable activity card widget with swipe-to-delete functionality.
+/// Reusable activity card widget matching Kyle's design.
+///
+/// Displays activity information in a card with:
+/// - Activity icon (36px circle with Electrolyte background)
+/// - Activity title and details (Compadre + Apercu fonts)
+/// - Action buttons (check mark and X)
+///
+/// Specifications:
+/// - Border radius: 15px
+/// - Icon: 36px circle, Electrolyte background, Blackberry icon
+/// - Title: Compadre, 16px
+/// - Details: Apercu Mono, 12px
+/// - Action buttons: 36px circles on the right
 class ActivityCard extends ConsumerWidget {
   const ActivityCard({
     super.key,
@@ -16,128 +31,141 @@ class ActivityCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accentColor = const Color(0xFF2196F3);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Dismissible(
-      key: Key(activity.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-          size: 32,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.blackberryLight : Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: (isDark ? AppColors.cream : AppColors.blackberry)
+              .withValues(alpha: 0.1),
+          width: 1,
         ),
       ),
-      confirmDismiss: (direction) => _confirmDelete(context),
-      onDismissed: (direction) => _handleDelete(context, ref),
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: InkWell(
-          onTap: () => _handleTap(context),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _buildActivityIcon(accentColor),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildActivityDetails(context),
-                ),
-                _buildStatusIndicator(),
-              ],
-            ),
+      child: InkWell(
+        onTap: () => _handleTap(context),
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              _buildActivityIcon(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildActivityDetails(context, isDark),
+              ),
+              ActivityActionButtons(
+                isCompleted: activity.status == ActivityStatus.completed,
+                onComplete: () => _handleComplete(context, ref),
+                onDelete: () => _handleDelete(context, ref),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildActivityIcon(Color accentColor) {
+  Widget _buildActivityIcon() {
     return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.2),
+      width: 36,
+      height: 36,
+      decoration: const BoxDecoration(
+        color: AppColors.electrolyte,
         shape: BoxShape.circle,
       ),
       child: Icon(
         _getActivityIcon(activity.activityType),
-        color: accentColor,
-        size: 24,
+        color: AppColors.blackberry,
+        size: 18,
       ),
     );
   }
 
-  Widget _buildActivityDetails(BuildContext context) {
+  Widget _buildActivityDetails(BuildContext context, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           activity.title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: TextStyle(
+            fontFamily: 'Compadre',
+            fontSize: 14,
+            color: isDark ? AppColors.cream : AppColors.blackberry,
+            height: 1.3,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 4),
         Text(
           _formatActivityDetails(),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+          style: TextStyle(
+            fontFamily: 'Apercu',
+            fontSize: 12,
+            color: (isDark ? AppColors.cream : AppColors.blackberry)
+                .withValues(alpha: 0.7),
+            height: 1.3,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
   }
 
-  Widget _buildStatusIndicator() {
-    switch (activity.status) {
-      case ActivityStatus.completed:
-        return const Icon(
-          Icons.check_circle,
-          color: Color(0xFF4CAF50),
-          size: 24,
-        );
-      case ActivityStatus.skipped:
-        return const Icon(
-          Icons.remove_circle_outline,
-          color: Colors.grey,
-          size: 24,
-        );
-      case ActivityStatus.inProgress:
-        return const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation(Color(0xFFFF9800)),
+  Future<void> _handleComplete(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final activitiesController = ref.read(activitiesControllerProvider.notifier);
+
+    // Toggle completion status
+    final newStatus = activity.status == ActivityStatus.completed
+        ? ActivityStatus.planned
+        : ActivityStatus.completed;
+
+    try {
+      final updatedActivity = activity.copyWith(
+        status: newStatus,
+        completedAt: newStatus == ActivityStatus.completed ? DateTime.now() : null,
+      );
+
+      await activitiesController.updateActivity(updatedActivity);
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            newStatus == ActivityStatus.completed
+                ? 'Activity marked as completed'
+                : 'Activity marked as incomplete',
           ),
-        );
-      case ActivityStatus.planned:
-        return Container(
-          width: 10,
-          height: 10,
-          decoration: const BoxDecoration(
-            color: Color(0xFF2196F3),
-            shape: BoxShape.circle,
-          ),
-        );
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error updating activity: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
-  Future<bool?> _confirmDelete(BuildContext context) async {
-    return await showDialog<bool>(
+  Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
+    // Capture messenger before async gap
+    final messenger = ScaffoldMessenger.of(context);
+    final activityTitle = activity.title;
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Delete Activity'),
-          content: Text('Are you sure you want to delete "${activity.title}"?'),
+          content: Text('Are you sure you want to delete "$activityTitle"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -145,41 +173,39 @@ class ActivityCard extends ConsumerWidget {
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
               child: const Text('Delete'),
             ),
           ],
         );
       },
     );
-  }
 
-  void _handleDelete(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final activityTitle = activity.title;
-    final activityId = activity.id;
+    if (confirmed != true) return;
 
-    // Delete activity after dismissal is complete
-    final activitiesController = ref.read(activitiesControllerProvider.notifier);
-    await activitiesController.deleteActivity(activityId);
+    try {
+      final activitiesController = ref.read(activitiesControllerProvider.notifier);
+      await activitiesController.deleteActivity(activity.id);
 
-    // Show SnackBar after deletion (widget is already dismissed)
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('Deleted "$activityTitle"'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () {
-            // TODO: Implement undo functionality if needed
-          },
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Deleted "$activityTitle"'),
+          duration: const Duration(seconds: 3),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error deleting activity: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   void _handleTap(BuildContext context) {
     context.push('/plan', extra: {
-      'mode': 'edit',
+      'mode': 'view',
       'activityId': activity.id,
     });
   }
@@ -190,7 +216,7 @@ class ActivityCard extends ConsumerWidget {
     switch (activity.activityType) {
       case ActivityType.running:
         if (activity.distanceMiles != null) {
-          parts.add('${activity.distanceMiles} mi');
+          parts.add('${activity.distanceMiles!.toStringAsFixed(1)} mi');
         }
         if (activity.formattedPace != null) {
           parts.add(activity.formattedPace!);
@@ -199,7 +225,7 @@ class ActivityCard extends ConsumerWidget {
 
       case ActivityType.cycling:
         if (activity.distanceMiles != null) {
-          parts.add('${activity.distanceMiles} mi');
+          parts.add('${activity.distanceMiles!.toStringAsFixed(1)} mi');
         }
         if (activity.cyclingSpeedMph != null) {
           parts.add('${activity.cyclingSpeedMph!.toStringAsFixed(1)} mph');
@@ -218,6 +244,14 @@ class ActivityCard extends ConsumerWidget {
           parts.add('$minutes:${seconds.toString().padLeft(2, '0')}/100m');
         }
         break;
+
+      case ActivityType.triathlon:
+      case ActivityType.duathlon:
+      case ActivityType.multisport:
+        if (activity.distanceMiles != null) {
+          parts.add('${activity.distanceMiles!.toStringAsFixed(1)} mi');
+        }
+        break;
     }
 
     return parts.join(' • ');
@@ -226,11 +260,15 @@ class ActivityCard extends ConsumerWidget {
   IconData _getActivityIcon(ActivityType activityType) {
     switch (activityType) {
       case ActivityType.running:
-        return Icons.directions_run;
+        return FontAwesomeIcons.personRunning;
       case ActivityType.cycling:
-        return Icons.directions_bike;
+        return FontAwesomeIcons.personBiking;
       case ActivityType.swimming:
-        return Icons.pool;
+        return FontAwesomeIcons.personSwimming;
+      case ActivityType.triathlon:
+      case ActivityType.duathlon:
+      case ActivityType.multisport:
+        return FontAwesomeIcons.trophy;
     }
   }
 }

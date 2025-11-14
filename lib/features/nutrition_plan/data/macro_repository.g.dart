@@ -46,4 +46,4 @@ final class MacroRepositoryProvider
   }
 }
 
-String _$macroRepositoryHash() => r'5c5c34ddca47ab4be53852055020e39ed82332ae';
+String _$macroRepositoryHash() => r'ed6d18df92d394666b362ce99270b8f9cbfff019';

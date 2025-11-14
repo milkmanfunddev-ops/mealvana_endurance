@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import 'package:mealvana_endurance/theme/app_theme.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/database/app_database.dart' as db;
-import '../widgets/daily_progress_widget.dart';
 import '../widgets/carb_loading_food_pills.dart';
 import '../providers/carb_loading_day_detail_controller.dart';
 import '../../domain/meal_type.dart';
@@ -41,44 +39,76 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
   @override
   Widget build(BuildContext context) {
     final controllerState = ref.watch(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id));
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
+      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
         leading: CustomAppBarBackButton(),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Carb Loading Day ${widget.carbLoadingDay.dayNumber}'),
+            Text(
+              'Carb Loading Day ${widget.carbLoadingDay.dayNumber}',
+              style: AppTextStyles.subtitle.copyWith(
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+              ),
+            ),
             Text(
               DateFormat('EEEE, MMM d').format(widget.carbLoadingDay.planDate),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+              style: AppTextStyles.smallLabel.copyWith(
+                color: isDark ? AppColors.cream.withValues(alpha: 0.7) : AppColors.blackberry.withValues(alpha: 0.7),
+              ),
             ),
           ],
         ),
-        backgroundColor: AppTheme.baseCream,
+        backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
         elevation: 0,
+        iconTheme: IconThemeData(
+          color: isDark ? AppColors.cream : AppColors.blackberry,
+        ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
+            icon: Icon(
+              Icons.more_vert,
+              color: isDark ? AppColors.cream : AppColors.blackberry,
+            ),
             onSelected: (value) => _handleMenuAction(context, value),
+            color: isDark ? AppColors.blackberryLight : AppColors.cream,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'reset_progress',
                 child: ListTile(
-                  leading: Icon(Icons.refresh, size: 20),
-                  title: Text('Reset Progress'),
+                  leading: Icon(
+                    Icons.refresh,
+                    size: 20,
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  ),
+                  title: Text(
+                    'Reset Progress',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                    ),
+                  ),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'mark_complete',
                 child: ListTile(
-                  leading: Icon(Icons.check_circle, size: 20, color: Colors.green),
-                  title: Text('Mark Complete'),
+                  leading: Icon(
+                    Icons.check_circle,
+                    size: 20,
+                    color: AppColors.electrolyte,
+                  ),
+                  title: Text(
+                    'Mark Complete',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                    ),
+                  ),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -87,60 +117,67 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
         ],
       ),
       body: controllerState.when(
-        data: (state) => CustomScrollView(
-          slivers: [
-            // Day Info Card
-            SliverToBoxAdapter(
-              child: _buildDayInfoCard(context, state),
-            ),
+        data: (state) => SingleChildScrollView(
+          padding: AppSpacing.screenPaddingHorizontal,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: AppSpacing.lg),
 
-            // Spacing
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 16),
-            ),
+              // Progress Card (Kyle's Design)
+              _buildProgressCard(context, state),
 
-            // Sticky progress widget
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickyProgressDelegate(
-                totalConsumed: state.totalConsumed,
-                targetAmount: state.carbLoadingDay.carbTargetGrams,
-                onEditTarget: () => _showEditTargetDialog(context),
-              ),
-            ),
+              SizedBox(height: AppSpacing.lg),
 
-            // Spacing after sticky header
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 16),
-            ),
+              // Meal sections
+              _buildMealSections(context, state),
 
-            // Meal sections
-            SliverToBoxAdapter(
-              child: _buildMealSections(context, state),
-            ),
-
-            // Bottom padding for FAB
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 80),
-            ),
-          ],
+              // Bottom padding
+              SizedBox(height: AppSpacing.xxxl),
+            ],
+          ),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: AppColors.electrolyte,
+          ),
+        ),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error loading day: $error'),
-              const SizedBox(height: 16),
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: AppColors.dragonfruit,
+              ),
+              SizedBox(height: AppSpacing.md),
+              Text(
+                'Error loading day: $error',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.cream
+                      : AppColors.blackberry,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.md),
               ElevatedButton(
                 onPressed: () {
                   ref
                       .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
                       .refresh();
                 },
-                child: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.orange,
+                  foregroundColor: AppColors.blackberry,
+                ),
+                child: Text(
+                  'Retry',
+                  style: AppTextStyles.buttonPrimary.copyWith(
+                    color: AppColors.blackberry,
+                  ),
+                ),
               ),
             ],
           ),
@@ -150,9 +187,15 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
         data: (state) => state.totalConsumed >= state.carbLoadingDay.carbTargetGrams
             ? FloatingActionButton.extended(
                 onPressed: () => _markDayComplete(context),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.electrolyte,
+                foregroundColor: AppColors.blackberry,
                 icon: const Icon(Icons.check),
-                label: const Text('Mark Complete'),
+                label: Text(
+                  'Mark Complete',
+                  style: AppTextStyles.buttonPrimary.copyWith(
+                    color: AppColors.blackberry,
+                  ),
+                ),
               )
             : null,
         loading: () => null,
@@ -161,128 +204,119 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
     );
   }
 
-  Widget _buildDayInfoCard(BuildContext context, CarbLoadingDayDetailState state) {
-    final theme = Theme.of(context);
+  /// Build progress card matching Kyle's design
+  Widget _buildProgressCard(BuildContext context, CarbLoadingDayDetailState state) {
     final carbDay = state.carbLoadingDay;
+    final consumed = state.totalConsumed;
+    final target = carbDay.carbTargetGrams;
+    final isOverloaded = consumed > target;
+    final overloadAmount = consumed - target;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFFFF9800),
-            const Color(0xFFFF9800).withValues(alpha: 0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with title and edit button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Total Daily Progress',
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: textColor,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => _showEditTargetDialog(context),
+                icon: Icon(
+                  Icons.edit,
+                  size: 16,
+                  color: textColor,
+                ),
+                label: Text(
+                  'Edit Target',
+                  style: AppTextStyles.smallLabel.copyWith(
+                    color: textColor,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Day ${carbDay.dayNumber}',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
+
+          SizedBox(height: AppSpacing.md),
+
+          // Progress display
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '${consumed}g',
+                style: AppTextStyles.dataNumberLarge.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                ' / ',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: textColor,
+                ),
+              ),
+              Text(
+                '${target}g',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+
+          // Warning banner if overloaded
+          if (isOverloaded) ...[
+            SizedBox(height: AppSpacing.md),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.orange.withValues(alpha: 0.1),
+                border: Border.all(
+                  color: AppColors.orange,
+                  width: 2,
+                ),
+                borderRadius: AppRadius.cardRadius,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning,
+                    color: AppColors.orange,
+                    size: 20,
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'OVERLOADED BY ${overloadAmount}G',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: AppColors.orange,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('EEEE').format(carbDay.planDate),
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    'RACE PREP',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Target carbs with icon
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.restaurant_menu,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${carbDay.carbProtocolGPerKg.toStringAsFixed(1)}g/kg bodyweight',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            if (state.totalConsumed > 0) ...[
-              // const SizedBox(height: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Text(
-                  //   'Progress: ${state.totalConsumed}g / ${carbDay.carbTargetGrams}g',
-                  //   style: theme.textTheme.bodyMedium?.copyWith(
-                  //     color: Colors.white.withValues(alpha: 0.9),
-                  //   ),
-                  // ),
-                  // const SizedBox(height: 8),
-                  // ClipRRect(
-                  //   borderRadius: BorderRadius.circular(4),
-                  //   child: LinearProgressIndicator(
-                  //     value: state.progress,
-                  //     backgroundColor: Colors.white.withValues(alpha: 0.3),
-                  //     valueColor: AlwaysStoppedAnimation<Color>(
-                  //       state.progress >= 0.9 ? Colors.green : Colors.white,
-                  //     ),
-                  //     minHeight: 8,
-                  //   ),
-                  // ),
                 ],
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -332,53 +366,47 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
     meals,
   ) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      child: BaseCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with meal name and progress
+            // Header with meal name and progress badge
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   displayName,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: textColor,
                   ),
                 ),
+                // Progress badge (blue circle)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4285F4),
+                    color: AppColors.electrolyte,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '$currentCarbs/${targetCarbs}g',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
+                    style: AppTextStyles.smallLabel.copyWith(
+                      color: AppColors.blackberry,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 12),
+            SizedBox(height: AppSpacing.md),
 
             // Food pills - inline pattern: show blue pills for selected, gray buttons for available
             Wrap(
@@ -492,29 +520,45 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
   }
 
   Widget _buildQuickAddFoodButton(BuildContext context, String name, String carbs, VoidCallback onTap) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: isDark
+              ? AppColors.blackberryLight.withValues(alpha: 0.5)
+              : AppColors.cream.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: isDark
+                ? AppColors.cream.withValues(alpha: 0.3)
+                : AppColors.blackberry.withValues(alpha: 0.2),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               name,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[700],
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark
+                    ? AppColors.cream.withValues(alpha: 0.7)
+                    : AppColors.blackberry.withValues(alpha: 0.7),
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: AppSpacing.xs),
             Text(
               carbs,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
+              style: AppTextStyles.smallLabel.copyWith(
+                color: isDark
+                    ? AppColors.cream.withValues(alpha: 0.5)
+                    : AppColors.blackberry.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -539,18 +583,18 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
               .refresh();
         }
       },
-      borderRadius: BorderRadius.circular(20.r),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        width: 40.w,
-        height: 40.w,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: AppTheme.highlight100,
+          color: const Color(0xFFE8B4BC), // Light pink/rose from Kyle's design
           shape: BoxShape.circle,
         ),
         child: Icon(
           Icons.add,
-          color: AppTheme.primary900,
-          size: 24.sp,
+          color: AppColors.blackberry,
+          size: 24,
         ),
       ),
     );
@@ -575,17 +619,34 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
   }
 
   void _showResetProgressDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset Progress'),
-        content: const Text(
+        backgroundColor: isDark ? AppColors.blackberryLight : AppColors.cream,
+        title: Text(
+          'Reset Progress',
+          style: AppTextStyles.subtitle.copyWith(
+            color: isDark ? AppColors.cream : AppColors.blackberry,
+          ),
+        ),
+        content: Text(
           'This will clear all your food selections for this day. Are you sure?',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? AppColors.cream : AppColors.blackberry,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.buttonTertiary.copyWith(
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -595,10 +656,15 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
                   .resetDay();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.orange,
+              foregroundColor: AppColors.blackberry,
             ),
-            child: const Text('Reset'),
+            child: Text(
+              'Reset',
+              style: AppTextStyles.buttonPrimary.copyWith(
+                color: AppColors.blackberry,
+              ),
+            ),
           ),
         ],
       ),
@@ -608,48 +674,17 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
   void _markDayComplete(BuildContext context) {
     // TODO: Mark day as complete in database
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Day marked as complete!'),
-        backgroundColor: Colors.green,
+      SnackBar(
+        content: Text(
+          'Day marked as complete!',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.blackberry,
+          ),
+        ),
+        backgroundColor: AppColors.electrolyte,
       ),
     );
     Navigator.of(context).pop();
   }
 }
 
-/// Custom delegate for sticky progress widget
-class _StickyProgressDelegate extends SliverPersistentHeaderDelegate {
-  final int totalConsumed;
-  final int targetAmount;
-  final VoidCallback onEditTarget;
-
-  const _StickyProgressDelegate({
-    required this.totalConsumed,
-    required this.targetAmount,
-    required this.onEditTarget,
-  });
-
-  @override
-  double get minExtent => 120.0;
-
-  @override
-  double get maxExtent => 120.0;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: AppTheme.baseCream,
-      child: DailyProgressWidget(
-        totalConsumed: totalConsumed,
-        targetAmount: targetAmount,
-        onEditTarget: onEditTarget,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    if (oldDelegate is! _StickyProgressDelegate) return true;
-    return oldDelegate.totalConsumed != totalConsumed || oldDelegate.targetAmount != targetAmount;
-  }
-}

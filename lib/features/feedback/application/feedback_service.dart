@@ -93,14 +93,14 @@ class FeedbackService {
 
       // Get the latest plan ID for notification tracking
       // Since notifications are for "how did your plan work", we need a plan ID for analytics
-      String? planId;
+      int? activityId;
       try {
         final database = ref.read(appDatabaseProvider);
-        final plans = await database.select(database.nutritionPlans).get();
-        if (plans.isNotEmpty) {
-          // Get the most recent plan for tracking purposes
-          plans.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          planId = plans.first.id;
+        final currentUser = await database.getCurrentUserProfile();
+        if (currentUser != null) {
+          final latestPlanActivity =
+              await database.getLatestActivityWithNutritionPlan(currentUser.id);
+          activityId = latestPlanActivity?.id;
         }
       } catch (e) {
         if (kDebugMode) {
@@ -114,7 +114,7 @@ class FeedbackService {
         recurring: preference.isRecurring,
         title: 'How did your nutrition plan work?',
         body: 'Share your feedback to help us improve your fueling strategy.',
-        planId: planId, // Include planId for notification tap tracking
+        activityId: activityId,
       );
 
       if (kDebugMode) {
@@ -256,7 +256,7 @@ class FeedbackService {
 
     // Track feedback submission attempt
     await _analytics.trackFeedbackSubmitted(
-      planId: feedback.planName ?? 'unknown',
+      activityId: null,
       confidenceLevel: _satisfactionToRating(feedback.satisfactionLevel),
       reuseIntent: 'n/a', // FeedbackResponse doesn't have reuseIntent (that's in SurveyResponse)
       reminderRequested: false, // FeedbackResponse doesn't have reminderPreference (that's in SurveyResponse)

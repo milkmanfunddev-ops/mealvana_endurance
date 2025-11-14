@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../domain/feature_survey_data.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../../../theme/kyle_design/app_spacing.dart';
+import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 
 /// Success screen shown after submitting the survey
 /// Displays the user's selected features and thank you message
@@ -15,63 +18,78 @@ class FeatureSurveySuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
-        leading: const CloseButton(),
-        title: const Text('Survey Complete'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.of(context).pop(),
+          color: isDark ? AppColors.cream : AppColors.blackberry,
+        ),
+        title: Text(
+          'Survey Complete',
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: isDark ? AppColors.cream : AppColors.blackberry,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+        elevation: 0,
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Success icon
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppTheme.successColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.celebration,
-                  color: AppTheme.successColor,
-                  size: 80,
+              // Success icon with circular background
+              Center(
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.electrolyte,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.celebration,
+                    color: AppColors.blackberry,
+                    size: 60,
+                  ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xxl),
               // Thank you message
               Text(
                 'Thank You!',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: AppTextStyles.pageTitle.copyWith(
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 'Your feedback gave us the boost we needed. Thank you!',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: isDarkMode
-                      ? Colors.grey.shade400
-                      : Colors.grey.shade600,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isDark
+                      ? AppColors.textDarkSecondary
+                      : AppColors.textLightSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: AppSpacing.xxxl),
               // Your top 3 picks
               Text(
                 'Your Top 3 Picks:',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               // List of selected features
               ...selectedFeatures.asMap().entries.map((entry) {
                 final index = entry.key;
@@ -79,31 +97,14 @@ class FeatureSurveySuccessScreen extends StatelessWidget {
                 return _FeatureItem(
                   rank: index + 1,
                   feature: feature,
-                  isDarkMode: isDarkMode,
+                  isDark: isDark,
                 );
               }),
               const Spacer(),
               // Done button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.successColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Done',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              KylePrimaryButton(
+                text: 'Done',
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
@@ -118,69 +119,68 @@ class _FeatureItem extends StatelessWidget {
   const _FeatureItem({
     required this.rank,
     required this.feature,
-    required this.isDarkMode,
+    required this.isDark,
   });
 
   final int rank;
   final Feature feature;
-  final bool isDarkMode;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(15.0), // 15px from Kyle's design
         border: Border.all(
-          color: AppTheme.successColor.withValues(alpha: 0.3),
+          color: AppColors.electrolyte.withOpacity(0.3),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          // Rank badge
+          // Rank badge (circular with Electrolyte)
           Container(
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: AppTheme.successColor,
+              color: AppColors.electrolyte,
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 '$rank',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                style: AppTextStyles.buttonPrimary.copyWith(
+                  color: AppColors.blackberry,
+                  fontSize: 14,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          // Icon
+          const SizedBox(width: AppSpacing.md),
+          // Icon with circular background (36px per Kyle's design)
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: AppTheme.successColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.electrolyte,
+              shape: BoxShape.circle,
             ),
             child: Icon(
               feature.icon,
-              color: AppTheme.successColor,
-              size: 20,
+              color: AppColors.blackberry,
+              size: 18, // ~50% of container size
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.sm),
           // Feature name
           Expanded(
             child: Text(
               feature.name,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: AppTextStyles.subtitle.copyWith(
+                color: isDark ? AppColors.cream : AppColors.blackberry,
               ),
             ),
           ),

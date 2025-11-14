@@ -69,7 +69,6 @@ serve(async (req) => {
         .from('events')
         .insert({
           id: event.id,
-          device_id: device_id,
           user_id: deviceData.id,
           activity_id: event.activityId || null,
           event_type: event.eventType,

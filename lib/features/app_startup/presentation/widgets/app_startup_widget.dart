@@ -39,17 +39,17 @@ class AppStartupWidget extends ConsumerWidget {
         context.go('/welcome');
       } else if (!appStartupData.hasCompletedOnboarding) {
         context.go('/onboarding/food-preferences');
-      } else if (appStartupData.planIdNeedingFeedback != null) {
+      } else if (appStartupData.activityIdNeedingFeedback != null) {
         // User has a plan that needs feedback - navigate to the rating screen
-        context.go('/plan-how-well/${appStartupData.planIdNeedingFeedback}');
+        context.go('/plan-how-well/${appStartupData.activityIdNeedingFeedback}');
       } else {
         context.go('/main');
       }
     });
 
-    // Return minimal placeholder to prevent flash - just white screen
+    // Return minimal placeholder to prevent flash - blackberry screen
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF3D1F47), // AppColors.blackberry
       body: Container(),
     );
   }

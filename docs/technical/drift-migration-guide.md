@@ -1,5 +1,7 @@
 # Drift Migration Guide for Mealvana Endurance
 
+> **Note (2025‑11‑09):** Supabase follow-ups removed the `nutrition_plans` table (see migration `20251109000000_embed_nutrition_plan_on_activities.sql`). The Flutter app now stores plan JSON directly on `activities_table` (`nutrition_plan_data`), so references to the standalone table below describe the deprecated approach.
+
 ## Overview
 
 This guide covers the migration from Hive to Drift and provides comprehensive information on managing database schema changes using Drift's built-in migration system.

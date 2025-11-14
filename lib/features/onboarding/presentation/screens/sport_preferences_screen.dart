@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../providers/onboarding_controller.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/services/app_external_deps.dart';
 
-/// Sport preferences selection screen
+/// Sport Preferences Screen - Kyle's Design System
 /// Allows users to select which sports they participate in and provide sport-specific details
 class SportPreferencesScreen extends ConsumerStatefulWidget {
   const SportPreferencesScreen({super.key});
@@ -65,7 +63,10 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
     if (!_doesRunning && !_doesCycling && !_doesSwimming) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select at least one sport')),
+          SnackBar(
+            content: const Text('Please select at least one sport'),
+            backgroundColor: AppColors.dragonfruit,
+          ),
         );
       }
       return;
@@ -116,7 +117,10 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
       final errorMessage = state.asError?.error.toString() ?? 'Failed to save sport preferences';
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: AppColors.dragonfruit,
+        ),
       );
     }
   }
@@ -132,102 +136,99 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
     final asyncState = ref.watch(onboardingControllerProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
-      appBar: AppBar(
-        leading: CustomAppBarBackButton(),
-        backgroundColor: AppTheme.baseCream,
-        elevation: 0,
-        title: Text(
-          'Sport Preferences',
-          style: AppTheme.titleStyle.copyWith(
-            color: AppTheme.primary900,
-            fontSize: 20.sp,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: _buildAppBar(context),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(24.w),
+          padding: AppSpacing.screenPadding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Progress indicator
-              LinearProgressIndicator(
-                value: 0.67, // 67% through onboarding (step 2 of 3)
-                backgroundColor: AppTheme.baseGrey.withValues(alpha: 0.2),
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary600),
-              ),
-
-              SizedBox(height: 32.h),
-
-              Text(
-                'Which sports do you do?',
-                style: AppTheme.titleStyle.copyWith(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary900,
+              ClipRRect(
+                borderRadius: AppRadius.circularRadius,
+                child: LinearProgressIndicator(
+                  value: 0.67, // 67% through onboarding (step 2 of 3)
+                  backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+                  minHeight: 8,
                 ),
               ),
 
-              SizedBox(height: 8.h),
+              const SizedBox(height: AppSpacing.xxl),
+
+              // Title and subtitle
+              Text(
+                'Which sports do you do?',
+                style: AppTextStyles.pageTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.xs),
 
               Text(
                 'We\'ll customize your nutrition plans for each sport.',
-                style: AppTheme.textStyle.copyWith(
-                  fontSize: 16.sp,
-                  color: AppTheme.baseGrey,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
 
-              SizedBox(height: 32.h),
+              const SizedBox(height: AppSpacing.xxl),
 
-              // Sport selection
-              _buildSportCheckbox('Running 🏃', _doesRunning, (value) {
-                setState(() => _doesRunning = value!);
-              }),
+              // Sport selection cards
+              _buildSportSelectionCard(
+                icon: FontAwesomeIcons.personRunning,
+                label: 'Running',
+                isSelected: _doesRunning,
+                onTap: () => setState(() => _doesRunning = !_doesRunning),
+              ),
 
-              SizedBox(height: 12.h),
+              const SizedBox(height: AppSpacing.md),
 
-              _buildSportCheckbox('Cycling 🚴', _doesCycling, (value) {
-                setState(() => _doesCycling = value!);
-              }),
+              _buildSportSelectionCard(
+                icon: FontAwesomeIcons.personBiking,
+                label: 'Cycling',
+                isSelected: _doesCycling,
+                onTap: () => setState(() => _doesCycling = !_doesCycling),
+              ),
 
-              SizedBox(height: 12.h),
+              const SizedBox(height: AppSpacing.md),
 
-              _buildSportCheckbox('Swimming 🏊', _doesSwimming, (value) {
-                setState(() => _doesSwimming = value!);
-              }),
+              _buildSportSelectionCard(
+                icon: FontAwesomeIcons.personSwimming,
+                label: 'Swimming',
+                isSelected: _doesSwimming,
+                onTap: () => setState(() => _doesSwimming = !_doesSwimming),
+              ),
 
-              SizedBox(height: 32.h),
+              const SizedBox(height: AppSpacing.xxl),
 
-              // GI Sensitivity (shared)
+              // GI Sensitivity section
               _buildGISensitivitySection(),
 
               // Cycling details (conditional)
               if (_doesCycling) ...[
-                SizedBox(height: 32.h),
+                const SizedBox(height: AppSpacing.xxl),
                 _buildCyclingDetailsSection(),
               ],
 
               // Swimming details (conditional)
               if (_doesSwimming) ...[
-                SizedBox(height: 32.h),
+                const SizedBox(height: AppSpacing.xxl),
                 _buildSwimmingDetailsSection(),
               ],
 
-              SizedBox(height: 40.h),
+              const SizedBox(height: AppSpacing.xxxl),
 
               // Continue button
-              PrimaryButton(
+              KylePrimaryButton(
                 text: 'Continue',
                 onPressed: asyncState.isLoading ? null : _submitPreferences,
-                isLoading: asyncState.isLoading,
-                width: double.infinity,
               ),
 
-              SizedBox(height: 24.h),
+              const SizedBox(height: AppSpacing.xl),
             ],
           ),
         ),
@@ -235,26 +236,96 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
     );
   }
 
-  Widget _buildSportCheckbox(String label, bool value, ValueChanged<bool?> onChanged) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.baseWhite,
-        border: Border.all(color: AppTheme.baseGrey.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: CheckboxListTile(
-        title: Text(
-          label,
-          style: AppTheme.textStyle.copyWith(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.primary900,
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      title: Row(
+        children: [
+          // Custom back button
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(
+                FontAwesomeIcons.arrowLeft,
+                size: AppIconSizes.controlIcon,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              onPressed: () => context.pop(),
+            ),
           ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            'Sport Preferences',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSportSelectionCard({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: BaseCard(
+        backgroundColor: isSelected ? AppColors.orange : null,
+        border: Border.all(
+          color: isSelected ? AppColors.orange : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+          width: isSelected ? 2 : 1,
         ),
-        value: value,
-        onChanged: onChanged,
-        activeColor: AppTheme.primary600,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+        child: Row(
+          children: [
+            // Sport icon
+            Container(
+              width: AppIconSizes.activityIcon,
+              height: AppIconSizes.activityIcon,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.blackberry : AppColors.electrolyte,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 18,
+                color: isSelected ? AppColors.cream : AppColors.blackberry,
+              ),
+            ),
+
+            const SizedBox(width: AppSpacing.md),
+
+            // Sport label
+            Expanded(
+              child: Text(
+                label,
+                style: AppTextStyles.subtitle.copyWith(
+                  color: isSelected ? AppColors.blackberry : Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+
+            // Checkmark indicator
+            if (isSelected)
+              Icon(
+                FontAwesomeIcons.check,
+                size: AppIconSizes.controlIcon,
+                color: AppColors.blackberry,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -265,43 +336,48 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
       children: [
         Text(
           'Gut Sensitivity',
-          style: AppTheme.titleStyle.copyWith(
-            fontSize: 20.sp,
+          style: AppTextStyles.subtitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
-            color: AppTheme.primary900,
           ),
         ),
 
-        SizedBox(height: 12.h),
+        const SizedBox(height: AppSpacing.sm),
 
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.baseWhite,
-            border: Border.all(color: AppTheme.baseGrey.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: SwitchListTile(
-            title: Text(
-              'Sensitive stomach during exercise',
-              style: AppTheme.textStyle.copyWith(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.primary900,
+        BaseCard(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sensitive stomach during exercise',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      'Helps us recommend easier-to-digest foods',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            subtitle: Text(
-              'Helps us recommend easier-to-digest foods',
-              style: AppTheme.noteStyle.copyWith(
-                fontSize: 14.sp,
-                color: AppTheme.baseGrey,
+              const SizedBox(width: AppSpacing.sm),
+              Switch(
+                value: _giSensitivity,
+                onChanged: (value) => setState(() => _giSensitivity = value),
+                activeColor: AppColors.orange,
+                activeTrackColor: AppColors.orange.withOpacity(0.5),
+                inactiveThumbColor: AppColors.cream,
+                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
               ),
-            ),
-            value: _giSensitivity,
-            onChanged: (value) {
-              setState(() => _giSensitivity = value);
-            },
-            activeColor: AppTheme.primary600,
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+            ],
           ),
         ),
       ],
@@ -314,165 +390,201 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
       children: [
         Text(
           'Cycling Details',
-          style: AppTheme.titleStyle.copyWith(
-            fontSize: 20.sp,
+          style: AppTextStyles.subtitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
-            color: AppTheme.primary900,
           ),
         ),
 
-        SizedBox(height: 12.h),
+        const SizedBox(height: AppSpacing.sm),
 
         // FTP input
-        Text(
-          'FTP (Functional Threshold Power)',
-          style: AppTheme.textStyle.copyWith(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.primary900,
-          ),
-        ),
-
-        SizedBox(height: 4.h),
-
-        Text(
-          'Maximum power you can sustain for ~1 hour (enter 0 if unknown)',
-          style: AppTheme.noteStyle.copyWith(
-            fontSize: 14.sp,
-            color: AppTheme.baseGrey,
-          ),
-        ),
-
-        SizedBox(height: 8.h),
-
-        TextFormField(
-          controller: _ftpController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            hintText: 'e.g., 250',
-            suffixText: 'watts',
-            filled: true,
-            fillColor: AppTheme.baseWhite,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withOpacity(0.3)),
-            ),
-          ),
-          validator: (value) {
-            if (value?.isEmpty ?? true) return 'Required';
-            final ftp = int.tryParse(value!);
-            if (ftp == null || ftp < 0) return 'Enter valid FTP (0 or higher)';
-            return null;
-          },
-        ),
-
-        SizedBox(height: 20.h),
-
-        // Bike bottles
-        Text(
-          'Water Bottles',
-          style: AppTheme.textStyle.copyWith(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.primary900,
-          ),
-        ),
-
-        SizedBox(height: 8.h),
-
-        Row(
-          children: [1, 2, 3].map((bottles) {
-            final isSelected = _bikeBottles == bottles;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _bikeBottles = bottles),
-                child: Container(
-                  margin: EdgeInsets.only(right: bottles != 3 ? 8.w : 0),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withOpacity(0.3),
-                      width: 1.5,
-                    ),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    bottles == 3 ? '3+' : '$bottles',
-                    textAlign: TextAlign.center,
-                    style: AppTheme.textStyle.copyWith(
-                      color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+        BaseCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'FTP (Functional Threshold Power)',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            );
-          }).toList(),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                'Maximum power you can sustain for ~1 hour (enter 0 if unknown)',
+                style: AppTextStyles.smallLabel.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _ftpController,
+                keyboardType: TextInputType.number,
+                style: AppTextStyles.bodyMedium,
+                decoration: InputDecoration(
+                  hintText: 'e.g., 250',
+                  suffixText: 'watts',
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: BorderSide(
+                      color: AppColors.orange,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: AppSpacing.inputPadding,
+                ),
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'Required';
+                  final ftp = int.tryParse(value!);
+                  if (ftp == null || ftp < 0) return 'Enter valid FTP (0 or higher)';
+                  return null;
+                },
+              ),
+            ],
+          ),
         ),
 
-        SizedBox(height: 20.h),
+        const SizedBox(height: AppSpacing.md),
 
-        // Aero bottle
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.baseWhite,
-            border: Border.all(color: AppTheme.baseGrey.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: SwitchListTile(
-            title: Text(
-              'Aero Bottle',
-              style: AppTheme.textStyle.copyWith(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.primary900,
+        // Bike bottles
+        BaseCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Water Bottles',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-            subtitle: Text(
-              'Do you have an aero bottle?',
-              style: AppTheme.noteStyle.copyWith(
-                fontSize: 14.sp,
-                color: AppTheme.baseGrey,
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [1, 2, 3].map((bottles) {
+                  final isSelected = _bikeBottles == bottles;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _bikeBottles = bottles),
+                      child: Container(
+                        margin: EdgeInsets.only(right: bottles != 3 ? 8 : 0),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.blackberry : Colors.transparent,
+                          border: Border.all(
+                            color: isSelected ? AppColors.blackberry : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                            width: 2,
+                          ),
+                          borderRadius: AppRadius.inputRadius,
+                        ),
+                        child: Text(
+                          bottles == 3 ? '3+' : '$bottles',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: isSelected ? AppColors.cream : Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
-            ),
-            value: _hasAeroBottle,
-            onChanged: (value) => setState(() => _hasAeroBottle = value),
-            activeColor: AppTheme.primary600,
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+            ],
           ),
         ),
 
-        SizedBox(height: 12.h),
+        const SizedBox(height: AppSpacing.md),
 
-        // Bento box
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.baseWhite,
-            border: Border.all(color: AppTheme.baseGrey.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(12.r),
+        // Aero bottle switch
+        BaseCard(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Aero Bottle',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      'Do you have an aero bottle?',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Switch(
+                value: _hasAeroBottle,
+                onChanged: (value) => setState(() => _hasAeroBottle = value),
+                activeColor: AppColors.orange,
+                activeTrackColor: AppColors.orange.withOpacity(0.5),
+                inactiveThumbColor: AppColors.cream,
+                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              ),
+            ],
           ),
-          child: SwitchListTile(
-            title: Text(
-              'Bento Box',
-              style: AppTheme.textStyle.copyWith(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.primary900,
+        ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        // Bento box switch
+        BaseCard(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bento Box',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      'Do you have a bento box for food?',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            subtitle: Text(
-              'Do you have a bento box for food?',
-              style: AppTheme.noteStyle.copyWith(
-                fontSize: 14.sp,
-                color: AppTheme.baseGrey,
+              const SizedBox(width: AppSpacing.sm),
+              Switch(
+                value: _hasBentoBox,
+                onChanged: (value) => setState(() => _hasBentoBox = value),
+                activeColor: AppColors.orange,
+                activeTrackColor: AppColors.orange.withOpacity(0.5),
+                inactiveThumbColor: AppColors.cream,
+                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
               ),
-            ),
-            value: _hasBentoBox,
-            onChanged: (value) => setState(() => _hasBentoBox = value),
-            activeColor: AppTheme.primary600,
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+            ],
           ),
         ),
       ],
@@ -485,156 +597,201 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
       children: [
         Text(
           'Swimming Details',
-          style: AppTheme.titleStyle.copyWith(
-            fontSize: 20.sp,
+          style: AppTextStyles.subtitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
-            color: AppTheme.primary900,
           ),
         ),
 
-        SizedBox(height: 12.h),
+        const SizedBox(height: AppSpacing.sm),
 
         // CSS input
-        Text(
-          'CSS (Critical Swim Speed)',
-          style: AppTheme.textStyle.copyWith(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.primary900,
-          ),
-        ),
-
-        SizedBox(height: 4.h),
-
-        Text(
-          'Fastest pace per 100m you can sustain for 30 min (MM:SS format)',
-          style: AppTheme.noteStyle.copyWith(
-            fontSize: 14.sp,
-            color: AppTheme.baseGrey,
-          ),
-        ),
-
-        SizedBox(height: 8.h),
-
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _cssMinutesController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Minutes',
-                  filled: true,
-                  fillColor: AppTheme.baseWhite,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(color: AppTheme.baseGrey.withOpacity(0.3)),
+        BaseCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'CSS (Critical Swim Speed)',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                'Fastest pace per 100m you can sustain for 30 min (MM:SS format)',
+                style: AppTextStyles.smallLabel.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _cssMinutesController,
+                      keyboardType: TextInputType.number,
+                      style: AppTextStyles.bodyMedium,
+                      decoration: InputDecoration(
+                        labelText: 'Minutes',
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: AppRadius.inputRadius,
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: AppRadius.inputRadius,
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: AppRadius.inputRadius,
+                          borderSide: BorderSide(
+                            color: AppColors.orange,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: AppSpacing.inputPadding,
+                      ),
+                      validator: (value) {
+                        if (value?.isEmpty ?? true) return 'Required';
+                        final minutes = int.tryParse(value!);
+                        if (minutes == null || minutes < 0 || minutes > 10) {
+                          return 'Enter 0-10';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                ),
-                validator: (value) {
-                  if (value?.isEmpty ?? true) return 'Required';
-                  final minutes = int.tryParse(value!);
-                  if (minutes == null || minutes < 0 || minutes > 10) {
-                    return 'Enter 0-10';
-                  }
-                  return null;
-                },
-              ),
-            ),
 
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.w),
-              child: Text(
-                ':',
-                style: AppTheme.titleStyle.copyWith(
-                  fontSize: 24.sp,
-                  color: AppTheme.primary900,
-                ),
-              ),
-            ),
-
-            Expanded(
-              child: TextFormField(
-                controller: _cssSecondsController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Seconds',
-                  filled: true,
-                  fillColor: AppTheme.baseWhite,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(color: AppTheme.baseGrey.withOpacity(0.3)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                    child: Text(
+                      ':',
+                      style: AppTextStyles.pageTitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
                   ),
+
+                  Expanded(
+                    child: TextFormField(
+                      controller: _cssSecondsController,
+                      keyboardType: TextInputType.number,
+                      style: AppTextStyles.bodyMedium,
+                      decoration: InputDecoration(
+                        labelText: 'Seconds',
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: AppRadius.inputRadius,
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: AppRadius.inputRadius,
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: AppRadius.inputRadius,
+                          borderSide: BorderSide(
+                            color: AppColors.orange,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: AppSpacing.inputPadding,
+                      ),
+                      validator: (value) {
+                        if (value?.isEmpty ?? true) return 'Required';
+                        final seconds = int.tryParse(value!);
+                        if (seconds == null || seconds < 0 || seconds >= 60) {
+                          return 'Enter 0-59';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        // Wetsuit switch
+        BaseCard(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Wetsuit',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      'Do you typically wear a wetsuit?',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-                validator: (value) {
-                  if (value?.isEmpty ?? true) return 'Required';
-                  final seconds = int.tryParse(value!);
-                  if (seconds == null || seconds < 0 || seconds >= 60) {
-                    return 'Enter 0-59';
-                  }
-                  return null;
-                },
               ),
-            ),
-          ],
-        ),
-
-        SizedBox(height: 20.h),
-
-        // Wetsuit
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.baseWhite,
-            border: Border.all(color: AppTheme.baseGrey.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: SwitchListTile(
-            title: Text(
-              'Wetsuit',
-              style: AppTheme.textStyle.copyWith(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.primary900,
+              const SizedBox(width: AppSpacing.sm),
+              Switch(
+                value: _typicalWetsuit,
+                onChanged: (value) => setState(() => _typicalWetsuit = value),
+                activeColor: AppColors.orange,
+                activeTrackColor: AppColors.orange.withOpacity(0.5),
+                inactiveThumbColor: AppColors.cream,
+                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
               ),
-            ),
-            subtitle: Text(
-              'Do you typically wear a wetsuit?',
-              style: AppTheme.noteStyle.copyWith(
-                fontSize: 14.sp,
-                color: AppTheme.baseGrey,
-              ),
-            ),
-            value: _typicalWetsuit,
-            onChanged: (value) => setState(() => _typicalWetsuit = value),
-            activeColor: AppTheme.primary600,
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+            ],
           ),
         ),
 
-        SizedBox(height: 20.h),
+        const SizedBox(height: AppSpacing.md),
 
         // Swim cap type
-        Text(
-          'Swim Cap Type',
-          style: AppTheme.textStyle.copyWith(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.primary900,
+        BaseCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Swim Cap Type',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Column(
+                children: [
+                  _buildSwimCapOption('none', 'None'),
+                  const SizedBox(height: AppSpacing.xs),
+                  _buildSwimCapOption('latex', 'Latex'),
+                  const SizedBox(height: AppSpacing.xs),
+                  _buildSwimCapOption('silicone', 'Silicone'),
+                  const SizedBox(height: AppSpacing.xs),
+                  _buildSwimCapOption('neoprene', 'Neoprene'),
+                ],
+              ),
+            ],
           ),
-        ),
-
-        SizedBox(height: 8.h),
-
-        Column(
-          children: [
-            _buildSwimCapOption('none', 'None'),
-            SizedBox(height: 8.h),
-            _buildSwimCapOption('latex', 'Latex'),
-            SizedBox(height: 8.h),
-            _buildSwimCapOption('silicone', 'Silicone'),
-            SizedBox(height: 8.h),
-            _buildSwimCapOption('neoprene', 'Neoprene'),
-          ],
         ),
       ],
     );
@@ -646,22 +803,21 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
       onTap: () => setState(() => _swimCapType = value),
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.all(16.w),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
+          color: isSelected ? AppColors.blackberry : Colors.transparent,
           border: Border.all(
-            color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withOpacity(0.3),
-            width: 1.5,
+            color: isSelected ? AppColors.blackberry : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            width: 2,
           ),
-          borderRadius: BorderRadius.circular(8.r),
+          borderRadius: AppRadius.inputRadius,
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
-          style: AppTheme.textStyle.copyWith(
-            color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w500,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isSelected ? AppColors.cream : Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

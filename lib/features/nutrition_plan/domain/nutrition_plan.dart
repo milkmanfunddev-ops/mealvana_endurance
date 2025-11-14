@@ -27,13 +27,13 @@ class NutritionPlan {
   final String id;
   final String name; // e.g., "Long Run Nutrition Plan"
   final List<PlanSection> sections;
-  final MacroTargets? macroTargets;
+  final PlanMacroSummary? macroTargets;
   final int? totalCalories;
   final String? notes;
   final DateTime? runDateTime; // Scheduled run date and time
   final int? planRating; // 1=Could be better, 2=Neutral, 3=Satisfied
   final String? journalNotes; // User's feedback notes about the plan
-  final String? activityId; // Foreign key to activities table (calendar integration)
+  final int? activityId; // Foreign key to activities table (calendar integration)
   
   // Versioning fields
   final int version;
@@ -49,13 +49,13 @@ class NutritionPlan {
     String? id,
     String? name,
     List<PlanSection>? sections,
-    MacroTargets? macroTargets,
+    PlanMacroSummary? macroTargets,
     int? totalCalories,
     String? notes,
     DateTime? runDateTime,
     int? planRating,
     String? journalNotes,
-    String? activityId,
+    int? activityId,
     int? version,
     String? lastModifiedBy,
     DateTime? clientUpdatedAt,
@@ -98,6 +98,14 @@ class NutritionPlan {
   }
 
   /// Create NutritionPlan from Edge Function JSON response
+  static int? _parseActivityId(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   factory NutritionPlan.fromJson(Map<String, dynamic> json) {
     return NutritionPlan(
       id: json['id'] as String,
@@ -106,7 +114,7 @@ class NutritionPlan {
           .map((section) => PlanSection.fromJson(section))
           .toList(),
       macroTargets: json['macroTargets'] != null
-          ? MacroTargets.fromJson(json['macroTargets'])
+          ? PlanMacroSummary.fromJson(json['macroTargets'])
           : null,
       totalCalories: json['totalCalories'] as int?,
       notes: json['notes'] as String?,
@@ -115,7 +123,7 @@ class NutritionPlan {
           : null,
       planRating: json['planRating'] as int?,
       journalNotes: json['journalNotes'] as String?,
-      activityId: json['activityId'] as String?,
+      activityId: _parseActivityId(json['activityId']),
       version: json['version'] as int? ?? 1,
       lastModifiedBy: json['lastModifiedBy'] as String?,
       clientUpdatedAt: json['clientUpdatedAt'] != null
@@ -195,10 +203,10 @@ class NutritionPlan {
     }
 
     // Parse macro targets with error handling
-    MacroTargets? macroTargets;
+    PlanMacroSummary? macroTargets;
     if (planData != null && planData['macroTargets'] is Map) {
       try {
-        macroTargets = MacroTargets.fromJson(planData['macroTargets'] as Map<String, dynamic>);
+        macroTargets = PlanMacroSummary.fromJson(planData['macroTargets'] as Map<String, dynamic>);
       } catch (e) {
         DebugLogger.error('Error parsing macroTargets: $e');
         macroTargets = null;
@@ -217,7 +225,7 @@ class NutritionPlan {
           : null,
       planRating: json['plan_rating'] is num ? (json['plan_rating'] as num).toInt() : null,
       journalNotes: json['journal_notes'] as String?,
-      activityId: json['activity_id'] as String?,
+      activityId: _parseActivityId(json['activity_id'] ?? planData?['activityId']),
       version: json['version'] is num ? (json['version'] as num).toInt() : 1,
       lastModifiedBy: json['last_modified_by'] as String?,
       clientUpdatedAt: json['client_updated_at'] is String
@@ -436,9 +444,9 @@ class PlanSection {
   String toString() => 'PlanSection(title: $title, items: ${foodItems.length})';
 }
 
-/// Macro targets for nutrition plan
-class MacroTargets {
-  const MacroTargets({
+/// Macro summary for nutrition plan display
+class PlanMacroSummary {
+  const PlanMacroSummary({
     required this.calories,
     required this.carbs,
     required this.protein,
@@ -456,7 +464,7 @@ class MacroTargets {
 
   final int calories;
   final int carbs; // grams
-  final int protein; // grams  
+  final int protein; // grams
   final int fat; // grams
   final int? sodium; // mg (average)
   final int? sodiumMin; // mg (minimum)
@@ -468,9 +476,9 @@ class MacroTargets {
   final String? proteinRange; // e.g., "10-15%"
   final String? fatRange; // e.g., "20-35%"
 
-  /// Create MacroTargets from JSON
-  factory MacroTargets.fromJson(Map<String, dynamic> json) {
-    return MacroTargets(
+  /// Create PlanMacroSummary from JSON
+  factory PlanMacroSummary.fromJson(Map<String, dynamic> json) {
+    return PlanMacroSummary(
       calories: json['calories'] as int,
       carbs: json['carbs'] as int,
       protein: json['protein'] as int,
@@ -507,7 +515,7 @@ class MacroTargets {
   }
 
   @override
-  String toString() => 'MacroTargets(cal: $calories, carbs: ${carbs}g, protein: ${protein}g, fat: ${fat}g)';
+  String toString() => 'PlanMacroSummary(cal: $calories, carbs: ${carbs}g, protein: ${protein}g, fat: ${fat}g)';
 }
 
 /// Result of a versioned operation that may have conflicts

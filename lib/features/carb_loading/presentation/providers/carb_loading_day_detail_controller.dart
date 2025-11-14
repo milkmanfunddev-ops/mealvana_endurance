@@ -71,7 +71,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   FoodSelectionService get _selectionService => ref.read(foodSelectionServiceProvider);
 
   @override
-  Future<CarbLoadingDayDetailState> build(String carbLoadingDayId) async {
+  Future<CarbLoadingDayDetailState> build(int carbLoadingDayId) async {
     // TODO: Get actual carb loading day from repository
     // For now, throwing as this should be passed differently
     throw UnimplementedError('Must pass carbLoadingDay directly');
@@ -162,7 +162,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   }
 
   /// Update quantity for a meal
-  Future<void> updateQuantity(String mealId, int newQuantity) async {
+  Future<void> updateQuantity(int mealId, int newQuantity) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -190,7 +190,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   }
 
   /// Increment quantity for a meal
-  Future<void> incrementQuantity(String mealId) async {
+  Future<void> incrementQuantity(int mealId) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -199,7 +199,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   }
 
   /// Decrement quantity for a meal
-  Future<void> decrementQuantity(String mealId) async {
+  Future<void> decrementQuantity(int mealId) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -208,7 +208,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   }
 
   /// Remove a meal
-  Future<void> removeMeal(String mealId) async {
+  Future<void> removeMeal(int mealId) async {
     final currentState = state.value;
     if (currentState == null) return;
 

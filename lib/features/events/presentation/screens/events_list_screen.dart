@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import 'package:mealvana_endurance/theme/app_theme.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/utils/location_formatter.dart';
 import '../../../activities/domain/activity.dart';
 import '../../domain/event.dart';
@@ -12,6 +13,12 @@ import 'event_form_screen.dart';
 import 'event_detail_screen.dart';
 
 /// Events List Screen showing all user events (past and upcoming).
+///
+/// Updated with Kyle's Design System:
+/// - AppColors for theme-aware colors
+/// - AppTextStyles for typography
+/// - BaseCard for consistent card styling
+/// - KylePrimaryButton for actions
 ///
 /// Accessed via the "Upcoming Event" widget on the Activities List screen.
 /// Shows:
@@ -29,11 +36,36 @@ class EventsListScreen extends ConsumerWidget {
     final activitiesState = ref.watch(activitiesControllerProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: CustomAppBarBackButton(),
-        backgroundColor: AppTheme.baseCream,
-        title: const Text('My Events'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            FontAwesomeIcons.chevronLeft,
+            size: AppIconSizes.sm,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'My Events',
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              FontAwesomeIcons.house,
+              size: AppIconSizes.sm,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            tooltip: 'Home',
+            onPressed: () => context.go('/main'),
+          ),
+        ],
       ),
       body: eventsState.when(
         data: (events) {
@@ -97,19 +129,21 @@ class EventsListScreen extends ConsumerWidget {
               ref.invalidate(eventsControllerProvider);
               ref.invalidate(activitiesControllerProvider);
             },
+            color: AppColors.electrolyte,
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: AppSpacing.screenPaddingHorizontal,
               children: [
+                const SizedBox(height: AppSpacing.lg),
+
                 // Upcoming Events Section
                 if (upcomingEvents.isNotEmpty) ...[
                   Text(
                     'Upcoming Events',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primary900,
-                        ),
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   ...upcomingEvents.map((eventData) => _buildEventCard(
                         context,
                         ref,
@@ -121,15 +155,14 @@ class EventsListScreen extends ConsumerWidget {
 
                 // Past Events Section
                 if (pastEvents.isNotEmpty) ...[
-                  if (upcomingEvents.isNotEmpty) const SizedBox(height: 24),
+                  if (upcomingEvents.isNotEmpty) const SizedBox(height: AppSpacing.xl),
                   Text(
                     'Past Events',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[600],
-                        ),
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   ...pastEvents.map((eventData) => _buildEventCard(
                         context,
                         ref,
@@ -138,25 +171,52 @@ class EventsListScreen extends ConsumerWidget {
                         eventData.eventDate,
                       )),
                 ],
+
+                const SizedBox(height: AppSpacing.xxxl),
               ],
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(
+            color: AppColors.electrolyte,
+          ),
+        ),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error loading events: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
+              Icon(
+                FontAwesomeIcons.circleExclamation,
+                size: AppIconSizes.xl,
+                color: AppColors.dragonfruit,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Error loading events',
+                style: AppTextStyles.subtitle.copyWith(
+                  color: AppColors.dragonfruit,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Padding(
+                padding: AppSpacing.screenPaddingHorizontal,
+                child: Text(
+                  error.toString(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              KylePrimaryButton(
+                text: 'Retry',
+                isFullWidth: false,
                 onPressed: () {
                   ref.invalidate(eventsControllerProvider);
                   ref.invalidate(activitiesControllerProvider);
                 },
-                child: const Text('Retry'),
               ),
             ],
           ),
@@ -178,16 +238,39 @@ class EventsListScreen extends ConsumerWidget {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Event "${result['eventName']}" created successfully!'),
-                  backgroundColor: AppTheme.successColor,
+                  content: Text(
+                    'Event "${result['eventName']}" created successfully!',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                  backgroundColor: AppColors.success,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+
+            final createdEventId = result['eventId'];
+            if (createdEventId is int && context.mounted) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => EventDetailScreen(
+                    eventId: createdEventId,
+                  ),
                 ),
               );
             }
           }
         },
-        icon: const Icon(Icons.add),
-        label: const Text('New Event'),
-        backgroundColor: AppTheme.primary900 // Purple for events
+        icon: const Icon(FontAwesomeIcons.plus, size: AppIconSizes.sm),
+        label: Text(
+          'New Event',
+          style: AppTextStyles.buttonPrimary.copyWith(
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: AppColors.orange,
+        foregroundColor: Colors.white,
       ),
     );
   }
@@ -198,23 +281,22 @@ class EventsListScreen extends ConsumerWidget {
     final today = DateTime(now.year, now.month, now.day);
     final eventDateOnly = DateTime(eventDate.year, eventDate.month, eventDate.day);
     final isPast = eventDateOnly.isBefore(today);
-    final isUpcoming = !isPast;
 
     return Dismissible(
-      key: Key(event.id), // Use event ID since activity might be null
+      key: Key(event.id.toString()), // Use event ID since activity might be null
       direction: DismissDirection.endToStart,
       background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
         decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.dragonfruit,
+          borderRadius: AppRadius.cardRadius,
         ),
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
         child: const Icon(
-          Icons.delete,
+          FontAwesomeIcons.trash,
           color: Colors.white,
-          size: 32,
+          size: AppIconSizes.md,
         ),
       ),
       confirmDismiss: (direction) async {
@@ -222,19 +304,37 @@ class EventsListScreen extends ConsumerWidget {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Delete Event'),
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              title: Text(
+                'Delete Event',
+                style: AppTextStyles.subtitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
               content: Text(
                 'Are you sure you want to delete "${event.eventName ?? event.formattedEventType}"?',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    'Cancel',
+                    style: AppTextStyles.buttonTertiary.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Delete'),
+                  child: Text(
+                    'Delete',
+                    style: AppTextStyles.buttonTertiary.copyWith(
+                      color: AppColors.dragonfruit,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -253,7 +353,12 @@ class EventsListScreen extends ConsumerWidget {
               SnackBar(
                 content: Text(
                   'Deleted "${event.eventName ?? event.formattedEventType}"',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.white,
+                  ),
                 ),
+                backgroundColor: Theme.of(context).colorScheme.onSurface,
+                behavior: SnackBarBehavior.floating,
               ),
             );
           }
@@ -264,137 +369,139 @@ class EventsListScreen extends ConsumerWidget {
               SnackBar(
                 content: Text(
                   'Error deleting event: $e',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.white,
+                  ),
                 ),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.dragonfruit,
+                behavior: SnackBarBehavior.floating,
               ),
             );
           }
         }
       },
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        elevation: isUpcoming ? 2 : 1,
-        child: InkWell(
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => EventDetailScreen(
-                  eventId: event.id,
-                ),
+      child: BaseCard(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => EventDetailScreen(
+                eventId: event.id,
               ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Event icon
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF9C27B0).withValues(
-                      alpha: isPast ? 0.1 : 0.2,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.event,
-                    color: Color(0xFF9C27B0).withValues(
-                      alpha: isPast ? 0.5 : 1.0,
-                    ),
-                    size: 28,
-                  ),
+            ),
+          );
+        },
+        child: Row(
+          children: [
+            // Event icon
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.electrolyte.withValues(
+                  alpha: isPast ? 0.2 : 0.3,
                 ),
-                const SizedBox(width: 16),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                FontAwesomeIcons.calendarDay,
+                color: AppColors.electrolyte.withValues(
+                  alpha: isPast ? 0.5 : 1.0,
+                ),
+                size: AppIconSizes.md,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
 
-                // Event details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        event.eventName ?? event.formattedEventType,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isPast ? Colors.grey[600] : Colors.black,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (event.location != null) ...[
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 14,
-                              color: Colors.grey[500],
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                LocationFormatter.parseAndFormatCityState(event.location),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.grey[500],
-                                    ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+            // Event details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.eventName ?? event.formattedEventType,
+                    style: AppTextStyles.activityTitle.copyWith(
+                      color: isPast
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  if (event.location != null) ...[
+                    Row(
+                      children: [
+                        Icon(
+                          FontAwesomeIcons.locationDot,
+                          size: AppIconSizes.xs,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(height: 2),
-                      ],
-                      if (event.formattedGoalTime != null) ...[
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.timer,
-                              size: 14,
-                              color: Colors.grey[500],
+                        const SizedBox(width: AppSpacing.xxs),
+                        Expanded(
+                          child: Text(
+                            LocationFormatter.parseAndFormatCityState(event.location),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Goal: ${event.formattedGoalTime}',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[500],
-                                  ),
-                            ),
-                          ],
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
-                    ],
-                  ),
-                ),
-
-                // Date display on the right
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      DateFormat('MMM').format(eventDate),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isPast ? Colors.grey[500] : AppTheme.primary900,
-                            fontWeight: FontWeight.w600,
-                          ),
                     ),
-                    Text(
-                      DateFormat('d').format(eventDate),
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: isPast ? Colors.grey[600] : AppTheme.primary900,
-                            fontWeight: FontWeight.bold,
-                            height: 1.0,
+                    const SizedBox(height: AppSpacing.xxs),
+                  ],
+                  if (event.formattedGoalTime != null) ...[
+                    Row(
+                      children: [
+                        Icon(
+                          FontAwesomeIcons.clock,
+                          size: AppIconSizes.xs,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: AppSpacing.xxs),
+                        Text(
+                          'Goal: ${event.formattedGoalTime}',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
-                    ),
-                    Text(
-                      DateFormat('yyyy').format(eventDate),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isPast ? Colors.grey[500] : Colors.grey[600],
-                          ),
+                        ),
+                      ],
                     ),
                   ],
+                ],
+              ),
+            ),
+
+            // Date display on the right
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  DateFormat('MMM').format(eventDate).toUpperCase(),
+                  style: AppTextStyles.smallLabel.copyWith(
+                    color: isPast
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : AppColors.electrolyte,
+                  ),
+                ),
+                Text(
+                  DateFormat('d').format(eventDate),
+                  style: AppTextStyles.dateTime.copyWith(
+                    color: isPast
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : AppColors.electrolyte,
+                    height: 1.0,
+                  ),
+                ),
+                Text(
+                  DateFormat('yyyy').format(eventDate),
+                  style: AppTextStyles.smallLabel.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -402,59 +509,33 @@ class EventsListScreen extends ConsumerWidget {
 
   Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.event,
-            size: 80,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No Events Yet',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
-            child: Text(
+      child: Padding(
+        padding: AppSpacing.screenPaddingHorizontal,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              FontAwesomeIcons.calendarDay,
+              size: AppIconSizes.xxl,
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              'No Events Yet',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
               'Create your first race event to get started with event-specific nutrition planning!',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey[500],
-                  ),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
-          ),
-          // const SizedBox(height: 32),
-          // PrimaryButton(
-          //   onPressed: () async {
-          //     final result = await Navigator.of(context).push<Map<String, dynamic>>(
-          //       MaterialPageRoute(
-          //         builder: (context) => const EventCreationScreen(),
-          //       ),
-          //     );
-
-          //     // Invalidate the provider to refresh the list
-          //     if (result != null && result['success'] == true) {
-          //       ref.invalidate(allEventsControllerProvider);
-
-          //       if (context.mounted) {
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           SnackBar(
-          //             content: Text('Event "${result['eventName']}" created successfully!'),
-          //             backgroundColor: AppTheme.successColor,
-          //           ),
-          //         );
-          //       }
-          //     }
-          //   },
-          //   text: 'Create Event',
-          // ),
-        ],
+          ],
+        ),
       ),
     );
   }

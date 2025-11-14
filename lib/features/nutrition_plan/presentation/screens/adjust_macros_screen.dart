@@ -1,28 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mealvana_endurance/shared/widgets/generating_plan_overlay.dart';
-import 'package:mealvana_endurance/theme/app_theme.dart';
-import '../../../../shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/primary_button.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../shared/widgets/generating_plan_overlay.dart';
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/domain/activity_type.dart';
-import '../providers/distance_page_gut_entry_controller.dart';
-import '../../domain/macro_targets.dart';
+import '../providers/macro_targets_controller.dart';
+import '../../domain/macro_targets.dart' as domain;
+import '../../../../core/utils/debug_logger.dart';
 
-/// Modern Adjust Macros Screen with beautiful design
-/// Inspired by eat_my_ride screen with colorful icons and gradients
-class AdjustMacrosScreen extends ConsumerWidget {
+/// Adjust Macros Screen - Simplified Kyle's Design
+/// Refactored from 1,151 lines to match Figma design exactly
+class AdjustMacrosScreen extends ConsumerStatefulWidget {
   const AdjustMacrosScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncState = ref.watch(distancePageGutEntryControllerProvider);
+  ConsumerState<AdjustMacrosScreen> createState() => _AdjustMacrosScreenState();
+}
+
+class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
+  int _buildCount = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    _buildCount++;
+    final asyncState = ref.watch(macroTargetsControllerProvider);
+
+    DebugLogger.info('🎬 ADJUST MACROS: Screen building (build #$_buildCount), asyncState type: ${asyncState.runtimeType}');
+    asyncState.when(
+      data: (state) {
+        DebugLogger.info('📊 ADJUST MACROS: Has data - macroTargets null? ${state.macroTargets == null}');
+        if (state.macroTargets != null) {
+          DebugLogger.info('✅ ADJUST MACROS: MacroTargets present - preRun carbs: ${state.macroTargets!.preRun.carbsG}g');
+        }
+      },
+      loading: () => DebugLogger.info('⏳ ADJUST MACROS: State is loading...'),
+      error: (e, st) => DebugLogger.error('❌ ADJUST MACROS: State has error: $e'),
+    );
 
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
-      appBar: _buildAppBar(context, ref),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: _buildAppBar(context, ref, asyncState.value),
       body: Stack(
         children: [
           asyncState.when(
@@ -30,7 +49,6 @@ class AdjustMacrosScreen extends ConsumerWidget {
             loading: () => _buildLoadingState(context),
             error: (error, stackTrace) => _buildErrorState(context, ref, error),
           ),
-          // Show loading overlay when creating plan
           if (asyncState.value?.isCreatingPlan == true)
             const GeneratingPlanOverlay(),
         ],
@@ -38,247 +56,285 @@ class AdjustMacrosScreen extends ConsumerWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, WidgetRef ref) {
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    WidgetRef ref,
+    MacroTargetsState? state,
+  ) {
     return AppBar(
-      backgroundColor: AppTheme.baseCream,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
-      centerTitle: false,
-      leading: CustomAppBarBackButton(
-        onPressed: () => context.pop(),
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      title: Row(
+        children: [
+          // Circular back button
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(
+                FontAwesomeIcons.arrowLeft,
+                size: AppIconSizes.controlIcon,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              onPressed: () => context.pop(),
+              padding: EdgeInsets.zero,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          // Title from ContentService
+          Text(
+            state?.adjustMacrosTitle ?? 'Adjust Your Macros',
+            style: AppTextStyles.sectionTitle.copyWith(
+              fontSize: 17,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
       ),
-      title: Consumer(
-        builder: (context, ref, _) {
-          final asyncState = ref.watch(distancePageGutEntryControllerProvider);
-          return asyncState.when(
-            data: (state) => Text(
-              state.adjustMacrosTitle,
-              style: AppTheme.titleStyle.copyWith(
-                color: AppTheme.baseBlack,
-                fontSize: 18.sp,
-              ),
-            ),
-            loading: () => Text(
-              'Adjust Your Macros',
-              style: AppTheme.titleStyle.copyWith(
-                color: AppTheme.baseBlack,
-                fontSize: 18.sp,
-              ),
-            ),
-            error: (_, __) => Text(
-              'Adjust Your Macros',
-              style: AppTheme.titleStyle.copyWith(
-                color: AppTheme.baseBlack,
-                fontSize: 18.sp,
-              ),
-            ),
-          );
-        },
-      ),
-      actions: [
-        SizedBox(width: 16.w),
-      ],
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, DistancePageGutEntryState state) {
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    MacroTargetsState state,
+  ) {
+    DebugLogger.info('📝 ADJUST MACROS: _buildContent called - macroTargets null? ${state.macroTargets == null}');
+
     if (state.macroTargets == null) {
+      DebugLogger.error('❌ ADJUST MACROS: Showing NO DATA state - this should not happen!');
       return _buildNoDataState(context);
     }
 
+    DebugLogger.info('✅ ADJUST MACROS: Rendering content with macros - preRun carbs: ${state.macroTargets!.preRun.carbsG}g');
     final macros = state.macroTargets!;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(20.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Section with Run Summary
-          _buildHeaderSection(macros),
-          
-          SizedBox(height: 32.h),
-          
-          // Main macro display with open layout
-          _buildOpenMacroLayout(context, ref, macros, state),
-          
-          SizedBox(height: 40.h),
-          
-          // Action Buttons
-          _buildActionButtons(context, ref, state),
-          
-          SizedBox(height: 20.h),
+          const SizedBox(height: 24), // Top padding
+
+          // "During this Run" dynamic header
+          _buildActivityHeader(context, state),
+
+          const SizedBox(height: 24),
+
+          // PACE and TOTAL BURN stats
+          _buildPaceBurnStats(context, state, macros),
+
+          const SizedBox(height: 24),
+
+          // "Your Nutritional Targets" with table
+          _buildMacroTargetsSection(context, ref, state, macros),
+
+          const SizedBox(height: 16),
+
+          // Edit Macros + Reset All buttons
+          _buildActionButtons(context, ref, state, macros),
+
+          const SizedBox(height: 24),
+
+          // Create Plan button
+          _buildCreatePlanButton(context, ref, state),
+
+          const SizedBox(height: 40), // Bottom padding
         ],
       ),
     );
   }
 
-  Widget _buildHeaderSection(MacroTargets macros) {
-    // Get the appropriate icon based on activity type
-    IconData activityIcon;
-    switch (macros.activityType) {
+  Widget _buildActivityHeader(
+    BuildContext context,
+    MacroTargetsState state,
+  ) {
+    // Get dynamic activity type text
+    final activityTypeText = _getActivityTypeText(state.pendingActivityData?.activityType);
+
+    // Format activity info (duration • distance)
+    final activityInfo = _formatActivityInfo(state);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17),
+      child: Column(
+        children: [
+          // "During this Run" (dynamic based on activity type)
+          Text(
+            activityTypeText,
+            style: AppTextStyles.sectionTitle.copyWith(
+              fontSize: 20,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 4),
+
+          // "1.8 h • 12MI"
+          if (activityInfo.isNotEmpty)
+            Text(
+              activityInfo,
+              style: TextStyle(
+                fontFamily: 'Compadre',
+                fontSize: 10,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _getActivityTypeText(ActivityType? type) {
+    switch (type) {
       case ActivityType.running:
-        activityIcon = Icons.directions_run;
-        break;
+        return 'During this Run';
       case ActivityType.cycling:
-        activityIcon = Icons.directions_bike;
-        break;
+        return 'During this Ride';
       case ActivityType.swimming:
-        activityIcon = Icons.pool;
-        break;
+        return 'During this Swim';
+      default:
+        return 'During this Activity';
+    }
+  }
+
+  String _formatActivityInfo(MacroTargetsState state) {
+    final pendingData = state.pendingActivityData;
+    if (pendingData == null) return '';
+
+    // Calculate duration from distance and pace
+    final distance = pendingData.distanceMiles;
+    final pace = pendingData.paceMinutesPerMile;
+    final duration = (distance * pace) / 60.0; // Convert to hours
+
+    // Format duration (hours with 1 decimal)
+    final durationStr = '${duration.toStringAsFixed(1)} h';
+
+    // Format distance based on activity type
+    String distanceStr;
+    if (pendingData.activityType == ActivityType.swimming) {
+      // Convert miles to meters for swimming
+      final meters = (distance * 1609.34).round();
+      distanceStr = '${meters}m';
+    } else {
+      distanceStr = '${distance.toStringAsFixed(0)}MI';
     }
 
-    return Container(
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primary50.withValues(alpha: 0.8),
-            AppTheme.highlight50.withValues(alpha: 0.6),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary600.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Activity Summary
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary600.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Icon(
-                  activityIcon,
-                  color: AppTheme.primary600,
-                  size: 24.w,
-                ),
-              ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'During this activity',
-                      style: AppTheme.subtitleStyle.copyWith(
-                        fontSize: 16.sp,
-                        color: AppTheme.baseBlack,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      '${macros.metrics.durationH.toStringAsFixed(1)}h - ${macros.metrics.distanceMi.toStringAsFixed(1)}mi',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: AppTheme.baseGrey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          
-          SizedBox(height: 20.h),
+    return '$durationStr  •  $distanceStr';
+  }
 
-          // Key Metrics Row
-          Row(
-            children: [
-              Expanded(
-                child: _buildActivityMetricCard(macros),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: _buildMetricCard(
-                  icon: Icons.local_fire_department,
-                  iconColor: Colors.orange,
-                  label: 'Total burn',
-                  value: '${macros.metrics.caloriesNetKcal.round()} cal',
-                ),
-              ),
-            ],
-          ),
-        ],
+  Widget _buildPaceBurnStats(
+    BuildContext context,
+    MacroTargetsState state,
+    domain.MacroTargets macros,
+  ) {
+    // Format pace value based on activity type
+    final pace = _formatPaceValue(state);
+
+    // Format total burn (calories)
+    final totalBurn = macros.metrics.caloriesNetKcal.round().toString();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17),
+      child: PaceBurnDisplay(
+        pace: pace,
+        totalBurn: totalBurn,
+        backgroundColor: Colors.transparent,
       ),
     );
   }
 
-  /// Build activity-specific metric card (pace for running, speed for cycling/swimming)
-  Widget _buildActivityMetricCard(MacroTargets macros) {
-    String label;
-    String value;
+  String _formatPaceValue(MacroTargetsState state) {
+    final pendingData = state.pendingActivityData;
+    if (pendingData == null) return '--';
 
-    switch (macros.activityType) {
+    switch (pendingData.activityType) {
       case ActivityType.running:
-        label = 'Pace';
-        value = '${macros.metrics.formattedPace} min/mile';
-        break;
-      case ActivityType.cycling:
-        label = 'Speed';
-        value = '${macros.metrics.speedMph.toStringAsFixed(1)} mph';
-        break;
-      case ActivityType.swimming:
-        label = 'Speed';
-        value = '${macros.metrics.speedMph.toStringAsFixed(1)} mph';
-        break;
-    }
+        final pace = pendingData.paceMinutesPerMile;
+        final minutes = pace.floor();
+        final seconds = ((pace - minutes) * 60).round();
+        return '$minutes:${seconds.toString().padLeft(2, '0')}/mi';
 
-    return _buildMetricCard(
-      icon: Icons.speed,
-      iconColor: Colors.green,
-      label: label,
-      value: value,
+      case ActivityType.cycling:
+        final speed = pendingData.cyclingSpeedMph ?? 0;
+        return '${speed.toStringAsFixed(1)} mph';
+
+      case ActivityType.swimming:
+        final paceSeconds = pendingData.swimmingPacePer100mSeconds ?? 0;
+        final minutes = paceSeconds ~/ 60;
+        final seconds = paceSeconds % 60;
+        return '$minutes:${seconds.toString().padLeft(2, '0')}/100m';
+
+      default:
+        return '--';
+    }
+  }
+
+  Widget _buildMacroTargetsSection(
+    BuildContext context,
+    WidgetRef ref,
+    MacroTargetsState state,
+    domain.MacroTargets macros,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17),
+      child: MacroTargetsTable(
+        title: 'Your Nutritional Targets',
+        macroData: MacroTableData(
+          preCarbs: macros.preRun.carbsG.round(),
+          duringCarbs: macros.duringRun.carbTotalG.round(),
+          postCarbs: macros.postRun.carbsG.round(),
+          preProtein: macros.preRun.proteinG.round(),
+          duringProtein: 0, // No protein during activity
+          postProtein: macros.postRun.proteinG.round(),
+          preFluids: macros.preRun.fluidsMl.round(),
+          duringFluids: macros.duringRun.fluidTotalMl.round(),
+          postFluids: macros.postRun.fluidsMl.round(),
+          preSodium: macros.preRun.sodiumMg.round(),
+          duringSodium: macros.duringRun.sodiumTotalMg.round(),
+          postSodium: macros.postRun.sodiumMg.round(),
+        ),
+        onInfoPressed: () => _showHelpBottomSheet(context, ref, state),
+        backgroundColor: Colors.transparent,
+      ),
     );
   }
 
-  Widget _buildMetricCard({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required String value,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppTheme.baseWhite.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: iconColor.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
+  Widget _buildActionButtons(
+    BuildContext context,
+    WidgetRef ref,
+    MacroTargetsState state,
+    domain.MacroTargets macros,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17),
+      child: Row(
         children: [
-          Icon(
-            icon,
-            color: iconColor,
-            size: 20.w,
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.primary900,
+          // Edit Macros button (left)
+          Expanded(
+            child: KyleSecondaryButton(
+              text: 'Edit Macros',
+              onPressed: () => _showEditMacrosDialog(context, ref, state, macros),
+              isFullWidth: true,
+              variant: SecondaryButtonVariant.orange,
             ),
           ),
-          SizedBox(height: 4.h),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: AppTheme.baseGrey,
+
+          const SizedBox(width: 16), // Gap between buttons
+
+          // Reset All button (right)
+          Expanded(
+            child: KyleSecondaryButton(
+              text: state.resetAllButton,
+              onPressed: () => _handleResetAll(context, ref),
+              isFullWidth: true,
+              variant: SecondaryButtonVariant.orange,
             ),
           ),
         ],
@@ -286,480 +342,278 @@ class AdjustMacrosScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOpenMacroLayout(BuildContext context, WidgetRef ref, MacroTargets macros, DistancePageGutEntryState state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section Title with Edit Button
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Your nutrition targets',
-                style: AppTheme.subtitleStyle.copyWith(
-                  color: AppTheme.primary900,
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.primary600.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: IconButton(
-                onPressed: () => _showEditAllMacrosDialog(context, ref, macros),
-                icon: Icon(
-                  Icons.edit,
-                  color: AppTheme.primary600,
-                  size: 20.w,
-                ),
-                padding: EdgeInsets.all(8.w),
-                constraints: BoxConstraints(minWidth: 36.w, minHeight: 36.h),
-              ),
-            ),
-          ],
-        ),
-        
-        SizedBox(height: 24.h),
-        
-        // Unified Macro Display - Table Layout
-        Container(
-          padding: EdgeInsets.all(20.w),
-          decoration: BoxDecoration(
-            color: AppTheme.baseWhite,
-            borderRadius: BorderRadius.circular(16.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primary600.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border: Border.all(
-              color: AppTheme.primary600.withValues(alpha: 0.2),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              // Header row
-              _buildHeaderRow(context, ref),
-              SizedBox(height: 16.h),
-              // Carbs row
-              _buildMacroTableRow(
-                icon: Icons.grain,
-                iconColor: Colors.orange,
-                label: 'Carbs',
-                preValue: macros.preRun.carbsG,
-                duringValue: macros.duringRun.carbTotalG,
-                postValue: macros.postRun.carbsG,
-                unit: 'g',
-              ),
-              SizedBox(height: 12.h),
-              // Protein row
-              _buildMacroTableRow(
-                icon: Icons.fitness_center,
-                iconColor: Colors.pink,
-                label: 'Protein',
-                preValue: macros.preRun.proteinG,
-                duringValue: 0, // No protein during run
-                postValue: macros.postRun.proteinG,
-                unit: 'g',
-              ),
-              SizedBox(height: 12.h),
-              // Fluids row
-              _buildMacroTableRow(
-                icon: Icons.water_drop,
-                iconColor: Colors.blue,
-                label: 'Fluids',
-                preValue: macros.preRun.fluidsMl,
-                duringValue: macros.duringRun.fluidTotalMl,
-                postValue: macros.postRun.fluidsMl,
-                unit: 'ml',
-              ),
-              SizedBox(height: 12.h),
-              // Sodium row
-              _buildMacroTableRow(
-                icon: Icons.scatter_plot,
-                iconColor: Colors.purple,
-                label: 'Sodium',
-                preValue: macros.preRun.sodiumMg,
-                duringValue: macros.duringRun.sodiumTotalMg,
-                postValue: macros.postRun.sodiumMg,
-                unit: 'mg',
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeaderRow(BuildContext context, WidgetRef ref) {
-    return Row(
-      children: [
-        // Help icon positioned at the left, above the Carbs icon
-        GestureDetector(
-          onTap: () {
-            ref.read(appExternalDepsProvider).analytics.track('help_button_tapped', properties: {
-              'screen': 'adjust_macros',
-            });
-            _showHelpBottomSheet(context, ref);
-          },
-          child: Container(
-            padding: EdgeInsets.all(4.w),
-            child: Icon(
-              Icons.help_outline,
-              color: AppTheme.primary900,
-              size: 20.sp,
-            ),
-          ),
-        ),
-        // Space for the rest of the icon + label column
-        SizedBox(width: 56.w),
-        // Column headers
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: 4.w),
-                  child: Text(
-                    'Pre',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.baseGrey,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w),
-                  child: Text(
-                    'During',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.baseGrey,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(left: 4.w),
-                  child: Text(
-                    'Post',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.baseGrey,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMacroTableRow({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required double preValue,
-    required double duringValue,
-    required double postValue,
-    required String unit,
-  }) {
-    return Row(
-      children: [
-        // Icon and label
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(4.w),
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6.r),
-              ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 16.w,
-              ),
-            ),
-            SizedBox(width: 8.w),
-            SizedBox(
-              width: 52.w,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.baseBlack,
-                ),
-              ),
-            ),
-          ],
-        ),
-        // Values aligned in columns
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: 4.w),
-                  child: _buildTableValue(preValue, unit),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w),
-                  child: _buildTableValue(duringValue, unit),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(left: 4.w),
-                  child: _buildTableValue(postValue, unit),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTableValue(double value, String unit) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: AppTheme.primary50.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(
-          color: AppTheme.primary600.withValues(alpha: 0.2),
-          width: 1,
-        ),
+  Widget _buildCreatePlanButton(
+    BuildContext context,
+    WidgetRef ref,
+    MacroTargetsState state,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17),
+      child: KylePrimaryButton(
+        text: state.createPlanButton,
+        onPressed: () => _handleCreatePlan(context, ref),
+        isFullWidth: true,
+        isLoading: state.isCreatingPlan,
       ),
-      child: Text(
-        '${value.toStringAsFixed(value < 10 && value != 0 ? 1 : 0)}$unit',
-        style: TextStyle(
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.primary900,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context, WidgetRef ref, DistancePageGutEntryState state) {
-    return Column(
-      children: [
-        // Reset All Button
-        TextButton.icon(
-          onPressed: state.isCreatingPlan ? null : () {
-            ref.read(distancePageGutEntryControllerProvider.notifier)
-                .resetToRecommended();
-          },
-          icon: Icon(
-            Icons.refresh,
-            color: AppTheme.baseGrey,
-            size: 18.w,
-          ),
-          label: Text(
-            state.resetAllButton,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.baseGrey,
-            ),
-          ),
-        ),
-        
-        SizedBox(height: 16.h),
-        
-        // Create Plan Button
-        PrimaryButton(
-          text: state.isCreatingPlan ? 'Creating...' : state.createPlanButton,
-          isLoading: state.isCreatingPlan,
-          onPressed: state.isCreatingPlan ? null : () async {
-            await ref.read(distancePageGutEntryControllerProvider.notifier)
-                .createNutritionPlan();
-
-            if (context.mounted) {
-              // Navigate to activity detail screen in create mode
-              context.push('/current-plan', extra: {
-                'mode': 'create',
-                'pendingActivityData': state.pendingActivityData,
-                'macroTargets': state.macroTargets,
-              });
-            }
-          },
-          width: double.infinity,
-          height: 56.h,
-        ),
-      ],
     );
   }
 
   Widget _buildLoadingState(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: AppColors.orange,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Loading macros...',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64.w,
-            color: AppTheme.highlight600,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'Error loading content',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.baseBlack,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              FontAwesomeIcons.triangleExclamation,
+              size: 48,
+              color: AppColors.dragonfruit,
             ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            error.toString(),
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppTheme.baseGrey,
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Error loading macros',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: AppColors.dragonfruit,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              error.toString(),
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            KyleSecondaryButton(
+              text: 'Go Back',
+              onPressed: () => context.pop(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildNoDataState(BuildContext context) {
+    DebugLogger.error('🚨 ADJUST MACROS: _buildNoDataState being rendered - USER SEES "No macro data available"');
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.no_food,
-            size: 64.w,
-            color: AppTheme.baseGrey,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'No macro targets available',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.baseBlack,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              FontAwesomeIcons.circleInfo,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'No macro data available',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Please go back and generate macros first.',
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            KyleSecondaryButton(
+              text: 'Go Back',
+              onPressed: () => context.pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Action handlers
+  Future<void> _handleResetAll(BuildContext context, WidgetRef ref) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Reset to Recommended',
+          style: AppTextStyles.sectionTitle,
+        ),
+        content: Text(
+          'This will reset all macro values to the recommended amounts. Continue?',
+          style: AppTextStyles.bodyLarge,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.dragonfruit),
             ),
           ),
-          SizedBox(height: 8.h),
-          Text(
-            'Generate a nutrition plan first',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppTheme.baseGrey,
-            ),
+          KylePrimaryButton(
+            text: 'Reset',
+            onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
       ),
     );
+
+    if (confirmed == true && context.mounted) {
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track('reset_all_macros_tapped', properties: {
+        'screen': 'adjust_macros',
+      });
+
+      await ref
+          .read(macroTargetsControllerProvider.notifier)
+          .resetToRecommended();
+    }
   }
 
-  void _showEditAllMacrosDialog(BuildContext context, WidgetRef ref, MacroTargets macros) {
-    final analytics = ref.read(appExternalDepsProvider).analytics;
-    analytics.track('edit_all_macros_opened', properties: {
-      'plan_id': 'pre_generation',
-      'screen': 'adjust_macros_screen',
-      'experiment_variant': 'auto_items_v1',
+  Future<void> _handleCreatePlan(BuildContext context, WidgetRef ref) async {
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('create_plan_button_tapped', properties: {
+      'screen': 'adjust_macros',
+    });
+
+    await ref
+        .read(macroTargetsControllerProvider.notifier)
+        .createNutritionPlan();
+
+    // Wait a brief moment for state updates to propagate through Riverpod
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    // Navigate to activity detail screen after plan creation
+    if (context.mounted) {
+      final state = ref.read(macroTargetsControllerProvider).value;
+      if (state != null) {
+        context.push('/current-plan', extra: {
+          'mode': 'create', // Use 'create' mode to show "Save Workout" button for first-time viewing
+          'activityId': state.activityId, // Activity already created and saved to DB
+          'macroTargets': state.macroTargets,
+        });
+      }
+    }
+  }
+
+  void _showEditMacrosDialog(
+    BuildContext context,
+    WidgetRef ref,
+    MacroTargetsState state,
+    domain.MacroTargets macros,
+  ) {
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('edit_macros_button_tapped', properties: {
+      'screen': 'adjust_macros',
     });
 
     showDialog(
       context: context,
-      builder: (context) => _EditAllMacrosDialog(
+      builder: (context) => _EditMacrosDialog(
         macros: macros,
+        activityId: state.activityId,
       ),
     );
   }
 
-  void _showHelpBottomSheet(BuildContext context, WidgetRef ref) {
-    final analytics = ref.read(appExternalDepsProvider).analytics;
-    analytics.track('guidelines_opened', properties: {
-      'plan_id': 'pre_generation',
-      'screen': 'adjust_macros_screen',
-      'experiment_variant': 'auto_items_v1',
-      'topic': 'macro_calculation',
+  void _showHelpBottomSheet(
+    BuildContext context,
+    WidgetRef ref,
+    MacroTargetsState state,
+  ) {
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('help_icon_tapped', properties: {
+      'screen': 'adjust_macros',
     });
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _HelpBottomSheet(),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      builder: (context) => _HelpBottomSheet(state: state),
     );
   }
 }
 
-class _EditAllMacrosDialog extends ConsumerStatefulWidget {
-  final MacroTargets macros;
-
-  const _EditAllMacrosDialog({
+/// Edit Macros Dialog
+class _EditMacrosDialog extends ConsumerStatefulWidget {
+  const _EditMacrosDialog({
     required this.macros,
+    this.activityId,
   });
 
+  final domain.MacroTargets macros;
+  final int? activityId;
+
   @override
-  ConsumerState<_EditAllMacrosDialog> createState() => _EditAllMacrosDialogState();
+  ConsumerState<_EditMacrosDialog> createState() => _EditMacrosDialogState();
 }
 
-class _EditAllMacrosDialogState extends ConsumerState<_EditAllMacrosDialog> {
-  late Map<String, TextEditingController> controllers;
+class _EditMacrosDialogState extends ConsumerState<_EditMacrosDialog> {
+  late Map<String, TextEditingController> _controllers;
 
   @override
   void initState() {
     super.initState();
-    
-    // Initialize controllers for all 12 values
-    controllers = {
-      'preCarbs': TextEditingController(text: widget.macros.preRun.carbsG.toStringAsFixed(1)),
-      'preFluids': TextEditingController(text: widget.macros.preRun.fluidsMl.toStringAsFixed(0)),
-      'preProtein': TextEditingController(text: widget.macros.preRun.proteinG.toStringAsFixed(1)),
-      'preSodium': TextEditingController(text: widget.macros.preRun.sodiumMg.toStringAsFixed(0)),
-      
-      'duringCarbs': TextEditingController(text: widget.macros.duringRun.carbTotalG.toStringAsFixed(1)),
-      'duringFluids': TextEditingController(text: widget.macros.duringRun.fluidTotalMl.toStringAsFixed(0)),
-      'duringProtein': TextEditingController(text: '0.0'), // No protein during run
-      'duringSodium': TextEditingController(text: widget.macros.duringRun.sodiumTotalMg.toStringAsFixed(0)),
-      
-      'postCarbs': TextEditingController(text: widget.macros.postRun.carbsG.toStringAsFixed(1)),
-      'postFluids': TextEditingController(text: widget.macros.postRun.fluidsMl.toStringAsFixed(0)),
-      'postProtein': TextEditingController(text: widget.macros.postRun.proteinG.toStringAsFixed(1)),
-      'postSodium': TextEditingController(text: widget.macros.postRun.sodiumMg.toStringAsFixed(0)),
+    _controllers = {
+      'preCarbs': TextEditingController(text: widget.macros.preRun.carbsG.round().toString()),
+      'duringCarbs': TextEditingController(text: widget.macros.duringRun.carbTotalG.round().toString()),
+      'postCarbs': TextEditingController(text: widget.macros.postRun.carbsG.round().toString()),
+      'preProtein': TextEditingController(text: widget.macros.preRun.proteinG.round().toString()),
+      'duringProtein': TextEditingController(text: '0'),
+      'postProtein': TextEditingController(text: widget.macros.postRun.proteinG.round().toString()),
+      'preFluids': TextEditingController(text: widget.macros.preRun.fluidsMl.round().toString()),
+      'duringFluids': TextEditingController(text: widget.macros.duringRun.fluidTotalMl.round().toString()),
+      'postFluids': TextEditingController(text: widget.macros.postRun.fluidsMl.round().toString()),
+      'preSodium': TextEditingController(text: widget.macros.preRun.sodiumMg.round().toString()),
+      'duringSodium': TextEditingController(text: widget.macros.duringRun.sodiumTotalMg.round().toString()),
+      'postSodium': TextEditingController(text: widget.macros.postRun.sodiumMg.round().toString()),
     };
   }
 
   @override
   void dispose() {
-    for (final controller in controllers.values) {
+    for (final controller in _controllers.values) {
       controller.dispose();
     }
     super.dispose();
@@ -767,280 +621,159 @@ class _EditAllMacrosDialogState extends ConsumerState<_EditAllMacrosDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
-          maxWidth: 400.w,
+    return AlertDialog(
+      title: Text(
+        'Edit Macro Targets',
+        style: AppTextStyles.sectionTitle.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
         ),
-        decoration: BoxDecoration(
-          color: AppTheme.baseWhite,
-          borderRadius: BorderRadius.circular(20.r),
-        ),
+      ),
+      content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
-            Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: AppTheme.primary600.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.edit,
-                    color: AppTheme.primary600,
-                    size: 24.w,
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Text(
-                      'Edit All Macro Values',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.primary900,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(
-                      Icons.close,
-                      color: AppTheme.baseGrey,
-                      size: 20.w,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Content
-            Flexible(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(20.w),
-                child: Column(
-                  children: [
-                    _buildMacroEditSection('Carbohydrates', 'g', 'Carbs', Colors.orange),
-                    SizedBox(height: 20.h),
-                    _buildMacroEditSection('Protein', 'g', 'Protein', Colors.pink),
-                    SizedBox(height: 20.h),
-                    _buildMacroEditSection('Fluids', 'ml', 'Fluids', Colors.blue),
-                    SizedBox(height: 20.h),
-                    _buildMacroEditSection('Sodium', 'mg', 'Sodium', Colors.purple),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Actions
-            Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: AppTheme.baseGrey.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.baseGrey,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: PrimaryButton(
-                      text: 'Save',
-                      onPressed: _saveChanges,
-                      height: 44.h,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildMacroSection('CARBS (g)', 'preCarbs', 'duringCarbs', 'postCarbs'),
+            const SizedBox(height: AppSpacing.md),
+            _buildMacroSection('PROTEIN (g)', 'preProtein', 'duringProtein', 'postProtein'),
+            const SizedBox(height: AppSpacing.md),
+            _buildMacroSection('FLUIDS (mL)', 'preFluids', 'duringFluids', 'postFluids'),
+            const SizedBox(height: AppSpacing.md),
+            _buildMacroSection('SODIUM (mg)', 'preSodium', 'duringSodium', 'postSodium'),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildMacroEditSection(String label, String unit, String key, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(6.w),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6.r),
-              ),
-              child: Container(
-                width: 4.w,
-                height: 4.w,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            SizedBox(width: 8.w),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.baseBlack,
-              ),
-            ),
-          ],
+      actions: [
+        KyleSecondaryButton(
+          text: 'Cancel',
+          onPressed: () => Navigator.of(context).pop(),
+          variant: SecondaryButtonVariant.blackberry,
         ),
-        SizedBox(height: 12.h),
-        Row(
-          children: [
-            Expanded(
-              child: _buildInputField(
-                label: 'Pre',
-                controller: controllers['pre$key']!,
-                unit: unit,
-                color: AppTheme.highlight600Alt,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: _buildInputField(
-                label: 'During',
-                controller: controllers['during$key']!,
-                unit: unit,
-                color: AppTheme.primary600,
-                enabled: key != 'Protein', // Disable protein during run
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: _buildInputField(
-                label: 'Post',
-                controller: controllers['post$key']!,
-                unit: unit,
-                color: AppTheme.highlight600,
-              ),
-            ),
-          ],
+        KylePrimaryButton(
+          text: 'Save Changes',
+          onPressed: _saveChanges,
         ),
       ],
     );
   }
 
-  Widget _buildInputField({
-    required String label,
-    required TextEditingController controller,
-    required String unit,
-    required Color color,
-    bool enabled = true,
-  }) {
+  Widget _buildMacroSection(String label, String preKey, String duringKey, String postKey) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.baseGrey,
+          style: AppTextStyles.smallLabel.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        SizedBox(height: 4.h),
-        TextFormField(
-          controller: controller,
-          enabled: enabled,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            suffixText: unit,
-            suffixStyle: TextStyle(
-              fontSize: 12.sp,
-              color: AppTheme.baseGrey,
-            ),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: color.withValues(alpha: 0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: color, width: 2),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.2)),
-            ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            Expanded(child: _buildTextField('PRE', preKey)),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: _buildTextField('DURING', duringKey)),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: _buildTextField('POST', postKey)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField(String label, String key) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.smallLabel.copyWith(
+            fontSize: 10,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: enabled ? AppTheme.baseBlack : AppTheme.baseGrey,
+        ),
+        const SizedBox(height: 4),
+        TextField(
+          controller: _controllers[key],
+          keyboardType: TextInputType.number,
+          style: AppTextStyles.bodyLarge,
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 8,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         ),
       ],
     );
   }
 
-  void _saveChanges() async {
-    if (!mounted) return;
-    
-    // All business logic moved to controller
+  Future<void> _saveChanges() async {
     try {
-      final controller = ref.read(distancePageGutEntryControllerProvider.notifier);
-      
-      // Parse all values and save via controller
-      await controller.saveAllMacroChanges(
-        // Pre-run values
-        preRunCarbs: double.parse(controllers['preCarbs']!.text),
-        preRunProtein: double.parse(controllers['preProtein']!.text),
-        preRunFluids: double.parse(controllers['preFluids']!.text),
-        preRunSodium: double.parse(controllers['preSodium']!.text),
-        // During-run values
-        duringRunCarbs: double.parse(controllers['duringCarbs']!.text),
-        duringRunFluids: double.parse(controllers['duringFluids']!.text),
-        duringRunSodium: double.parse(controllers['duringSodium']!.text),
-        // Post-run values
-        postRunCarbs: double.parse(controllers['postCarbs']!.text),
-        postRunProtein: double.parse(controllers['postProtein']!.text),
-        postRunFluids: double.parse(controllers['postFluids']!.text),
-        postRunSodium: double.parse(controllers['postSodium']!.text),
-      );
+      // Parse values
+      final preCarbs = double.parse(_controllers['preCarbs']!.text);
+      final duringCarbs = double.parse(_controllers['duringCarbs']!.text);
+      final postCarbs = double.parse(_controllers['postCarbs']!.text);
+      final preProtein = double.parse(_controllers['preProtein']!.text);
+      // Note: duringProtein is not used as there's no protein during activity
+      final postProtein = double.parse(_controllers['postProtein']!.text);
+      final preFluids = double.parse(_controllers['preFluids']!.text);
+      final duringFluids = double.parse(_controllers['duringFluids']!.text);
+      final postFluids = double.parse(_controllers['postFluids']!.text);
+      final preSodium = double.parse(_controllers['preSodium']!.text);
+      final duringSodium = double.parse(_controllers['duringSodium']!.text);
+      final postSodium = double.parse(_controllers['postSodium']!.text);
+
+      // Save to controller
+      await ref
+          .read(macroTargetsControllerProvider.notifier)
+          .saveAllMacroChanges(
+            preRunCarbs: preCarbs,
+            duringRunCarbs: duringCarbs,
+            postRunCarbs: postCarbs,
+            preRunProtein: preProtein,
+            postRunProtein: postProtein,
+            preRunFluids: preFluids,
+            duringRunFluids: duringFluids,
+            postRunFluids: postFluids,
+            preRunSodium: preSodium,
+            duringRunSodium: duringSodium,
+            postRunSodium: postSodium,
+          );
 
       if (mounted) {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      // Error handling - silently fail for now
-      // TODO: Show user-friendly error message
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Invalid input: ${e.toString()}'),
+            backgroundColor: AppColors.dragonfruit,
+          ),
+        );
+      }
     }
   }
 }
 
-class _HelpBottomSheet extends StatefulWidget {
-  const _HelpBottomSheet();
+/// Help Bottom Sheet with detailed nutrition science
+class _HelpBottomSheet extends ConsumerStatefulWidget {
+  const _HelpBottomSheet({required this.state});
+
+  final MacroTargetsState state;
 
   @override
-  State<_HelpBottomSheet> createState() => _HelpBottomSheetState();
+  ConsumerState<_HelpBottomSheet> createState() => _HelpBottomSheetState();
 }
 
-class _HelpBottomSheetState extends State<_HelpBottomSheet> {
-  // Track which sections are expanded
-  String? expandedSection = 'Carbohydrates'; // Default expanded section
+class _HelpBottomSheetState extends ConsumerState<_HelpBottomSheet> {
+  String? _expandedSection = 'Carbohydrates'; // Default expanded
 
   @override
   Widget build(BuildContext context) {
@@ -1050,145 +783,128 @@ class _HelpBottomSheetState extends State<_HelpBottomSheet> {
       maxChildSize: 0.95,
       builder: (context, scrollController) => Container(
         padding: EdgeInsets.only(
-          left: 20.w,
-          right: 20.w,
-          top: 20.h,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20.h,
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: AppSpacing.lg,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
         ),
         decoration: BoxDecoration(
-          color: AppTheme.baseWhite,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(20.r),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(15),
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Handle bar
             Center(
               child: Container(
-                width: 40.w,
-                height: 4.h,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.baseGrey.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2.r),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            SizedBox(height: 20.h),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Title
             Text(
               'Nutrition Guidelines',
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primary900,
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            SizedBox(height: 20.h),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Scrollable content
             Expanded(
               child: SingleChildScrollView(
                 controller: scrollController,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Accordion sections
+                    // Carbohydrates
                     _buildAccordionSection(
                       title: 'Carbohydrates',
-                      content: '''**How we calculate it:** Duration establishes a safe **absorption band**. We adjust for **intensity (MET)**, **gut training**, **body size**, and fuel mix—then **cap** based on what your gut can process.
-
-Replenish with high-quality carbs immediately after exercise to jumpstart recovery and restore glycogen.''',
-                      isExpanded: expandedSection == 'Carbohydrates',
+                      content: '**How we calculate it:** Duration establishes a safe **absorption band**. We adjust for **intensity (MET)**, **gut training**, **body size**, and fuel mix—then **cap** based on what your gut can process.\n\nReplenish with high-quality carbs immediately after exercise to jumpstart recovery and restore glycogen.',
+                      isExpanded: _expandedSection == 'Carbohydrates',
                       onTap: () {
                         setState(() {
-                          expandedSection = expandedSection == 'Carbohydrates' ? null : 'Carbohydrates';
+                          _expandedSection = _expandedSection == 'Carbohydrates' ? null : 'Carbohydrates';
                         });
                       },
                     ),
-                    
+
+                    // Sodium
                     _buildAccordionSection(
                       title: 'Sodium',
-                      content: '''**How we calculate it:** If you know your **sweat rate**, we estimate hourly sodium loss (**sweat sodium × sweat rate**) and target **~50–70%** of that (clamped at **300–1200 mg/h**). If not, we determine needs based on your **sweater type** (low/medium/high) and adjust for **heat/humidity**.
-
-Include sodium in your **pre-run** and **post-run** drinks to enhance fluid retention and improve rehydration.''',
-                      isExpanded: expandedSection == 'Sodium',
+                      content: '**How we calculate it:** If you know your **sweat rate**, we estimate hourly sodium loss (**sweat sodium × sweat rate**) and target **~50–70%** of that (clamped at **300–1200 mg/h**). If not, we determine needs based on your **sweater type** (low/medium/high) and adjust for **heat/humidity**.\n\nInclude sodium in your **pre-run** and **post-run** drinks to enhance fluid retention and improve rehydration.',
+                      isExpanded: _expandedSection == 'Sodium',
                       onTap: () {
                         setState(() {
-                          expandedSection = expandedSection == 'Sodium' ? null : 'Sodium';
+                          _expandedSection = _expandedSection == 'Sodium' ? null : 'Sodium';
                         });
                       },
                     ),
-                    
+
+                    // Fluids
                     _buildAccordionSection(
                       title: 'Fluids',
-                      content: '''**How we calculate it:** We begin with a running-friendly range (**~0.4–0.8 L/h**), adjust for **body size** and **intensity (MET)**, then modify based on **weather** (less in cool conditions, more in hot/humid). For those with a **measured sweat rate**, we target **~70–80%** of that rate, staying within the safe range to prevent overhydration.
-
-Post-run, replenish approximately **125%** of your **estimated fluid deficit** using a drink containing **~500–700 mg/L sodium**.''',
-                      isExpanded: expandedSection == 'Fluids',
+                      content: '**How we calculate it:** We begin with a running-friendly range (**~0.4–0.8 L/h**), adjust for **body size** and **intensity (MET)**, then modify based on **weather** (less in cool conditions, more in hot/humid). For those with a **measured sweat rate**, we target **~70–80%** of that rate, staying within the safe range to prevent overhydration.\n\nPost-run, replenish approximately **125%** of your **estimated fluid deficit** using a drink containing **~500–700 mg/L sodium**.',
+                      isExpanded: _expandedSection == 'Fluids',
                       onTap: () {
                         setState(() {
-                          expandedSection = expandedSection == 'Fluids' ? null : 'Fluids';
+                          _expandedSection = _expandedSection == 'Fluids' ? null : 'Fluids';
                         });
                       },
                     ),
-                    
+
+                    // Protein
                     _buildAccordionSection(
                       title: 'Protein',
-                      content: '''**How we calculate it:**
-
-- **Pre-run:** small amount, **~0.15–0.25 g/kg** (varies with timing) for satiety without digestive discomfort.
-- **During:** **0 g/h** for runs ≤3.5 h (minimal amounts only for ultramarathons).
-- **After:** **~0.3 g/kg** within the first hour; 20–40 g high-quality protein containing **~2–3 g leucine**.
-
-Remember: "carbs first, protein **right after**" for optimal recovery.''',
-                      isExpanded: expandedSection == 'Protein',
+                      content: '**How we calculate it:**\n\n- **Pre-run:** small amount, **~0.15–0.25 g/kg** (varies with timing) for satiety without digestive discomfort.\n- **During:** **0 g/h** for runs ≤3.5 h (minimal amounts only for ultramarathons).\n- **After:** **~0.3 g/kg** within the first hour; 20–40 g high-quality protein containing **~2–3 g leucine**.\n\nRemember: "carbs first, protein **right after**" for optimal recovery.',
+                      isExpanded: _expandedSection == 'Protein',
                       onTap: () {
                         setState(() {
-                          expandedSection = expandedSection == 'Protein' ? null : 'Protein';
+                          _expandedSection = _expandedSection == 'Protein' ? null : 'Protein';
                         });
                       },
                     ),
-                    
+
+                    // Fats
                     _buildAccordionSection(
                       title: 'Fats',
-                      content: '''**How we calculate it:**
-
-- **Pre-run:** modest intake, **~0.1–0.2 g/kg** (reduce fiber/fat closer to start time).
-- **During:** **0–2 g/h** maximum (minimized to protect gut function).
-- **After:** approximately **~0.2 g/kg** as part of your recovery meal—supports satiety and overall energy intake.
-
-Prioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.''',
-                      isExpanded: expandedSection == 'Fats',
+                      content: '**How we calculate it:**\n\n- **Pre-run:** modest intake, **~0.1–0.2 g/kg** (reduce fiber/fat closer to start time).\n- **During:** **0–2 g/h** maximum (minimized to protect gut function).\n- **After:** approximately **~0.2 g/kg** as part of your recovery meal—supports satiety and overall energy intake.\n\nPrioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.',
+                      isExpanded: _expandedSection == 'Fats',
                       onTap: () {
                         setState(() {
-                          expandedSection = expandedSection == 'Fats' ? null : 'Fats';
+                          _expandedSection = _expandedSection == 'Fats' ? null : 'Fats';
                         });
                       },
                     ),
-                    
-                    SizedBox(height: 24.h),
-                    
-                    // Key References section (always visible)
-                    Container(
-                      padding: EdgeInsets.all(16.w),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primary50.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(
-                          color: AppTheme.primary600.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
+
+                    const SizedBox(height: 24),
+
+                    // Key References section
+                    BaseCard(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: AppColors.orange.withOpacity(0.1),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Key References',
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primary900,
+                            style: AppTextStyles.subtitle.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
-                          SizedBox(height: 8.h),
+                          const SizedBox(height: 8),
                           Text(
                             '• ACSM Metabolic Calculations Handbook; ACSM Guidelines 10e\n'
                             '• Jeukendrup AE (2004, 2011)\n'
@@ -1196,17 +912,16 @@ Prioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.'
                             '• Thomas et al., JAND 2016\n'
                             '• IOC/consensus updates on recovery protein\n'
                             '• Burke et al., IOC consensus on athlete nutrition',
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: AppTheme.baseGrey,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               height: 1.5,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
-                    SizedBox(height: 20.h),
+
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -1224,96 +939,65 @@ Prioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.'
     required VoidCallback onTap,
   }) {
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.baseWhite,
-        borderRadius: BorderRadius.circular(12.r),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isExpanded 
-              ? AppTheme.primary600.withValues(alpha: 0.3)
-              : AppTheme.baseGrey.withValues(alpha: 0.2),
+          color: isExpanded
+              ? AppColors.orange.withOpacity(0.3)
+              : Theme.of(context).colorScheme.outline.withOpacity(0.2),
           width: 1,
         ),
-        boxShadow: isExpanded 
-            ? [
-                BoxShadow(
-                  color: AppTheme.primary600.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : [],
       ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(12.r),
-              bottom: Radius.circular(isExpanded ? 0 : 12.r),
-            ),
-            child: Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: isExpanded 
-                    ? AppTheme.primary50.withValues(alpha: 0.5)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(12.r),
-                  bottom: Radius.circular(isExpanded ? 0 : 12.r),
-                ),
-              ),
-              child: Row(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
                   Expanded(
                     child: Text(
                       title,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: isExpanded 
-                            ? AppTheme.primary900
-                            : AppTheme.baseBlack,
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
                   Icon(
-                    isExpanded 
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: isExpanded 
-                        ? AppTheme.primary600
-                        : AppTheme.baseGrey,
-                    size: 24.w,
+                    isExpanded
+                        ? FontAwesomeIcons.chevronUp
+                        : FontAwesomeIcons.chevronDown,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ],
               ),
-            ),
-          ),
-          if (isExpanded) ...[
-            Container(
-              padding: EdgeInsets.all(16.w),
-              child: Text(
-                _formatMarkdownText(content),
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: AppTheme.baseGrey,
-                  height: 1.5,
+              if (isExpanded) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _formatMarkdownText(content),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.6,
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ],
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
 
+  // Helper to render simple markdown-like bold text
   String _formatMarkdownText(String text) {
-    // Simple markdown processing - remove markdown formatting for display
-    return text
-        .replaceAll('**', '') // Remove bold markdown
-        .replaceAll('*', '') // Remove italic markdown
-        .replaceAll('~', '') // Remove strikethrough
-        .trim();
+    // Remove markdown ** symbols for now (could add RichText support later)
+    return text.replaceAll('**', '');
   }
 }

@@ -9,10 +9,11 @@ import '../../../../theme/app_theme.dart';
 import '../../application/food_import_service.dart';
 import '../../domain/meal_type.dart';
 import '../../../../shared/providers/device_id_provider.dart';
+import '../../../auth/application/auth_service.dart';
 
 /// Screen for creating a custom carb loading food from scratch
 class CreateCustomCarbLoadingFoodScreen extends ConsumerStatefulWidget {
-  final String dayId;
+  final int dayId;
   final MealType mealType;
 
   const CreateCustomCarbLoadingFoodScreen({
@@ -74,11 +75,15 @@ class _CreateCustomCarbLoadingFoodScreenState
 
     try {
       final deviceId = await ref.read(deviceIdProvider.future);
+      final authService = ref.read(authServiceProvider);
+      final user = await authService.getCurrentUser();
+      final userId = user?.id ?? deviceId; // Fallback to deviceId if no user
       final importService = ref.read(foodImportServiceProvider);
 
       // Create the custom food
       final newFood = await importService.createCustomFood(
         deviceId: deviceId,
+        userId: userId,
         name: _nameController.text.trim().toLowerCase().replaceAll(' ', '_'),
         displayName: _displayNameController.text.trim(),
         displayNamePlural: _displayNameController.text.trim(),

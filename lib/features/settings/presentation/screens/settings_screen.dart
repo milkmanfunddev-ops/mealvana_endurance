@@ -1,242 +1,437 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../shared/widgets/primary_button.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/services/app_external_deps.dart';
+import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
-import '../providers/settings_controller.dart';
+import 'debug_screen.dart';
 
-/// Settings Screen - User profile and preferences management
-class SettingsScreen extends ConsumerWidget {
+/// Settings Screen - Kyle's Design System + Database Integration RESTORED
+/// Main settings screen with full controller integration for data persistence
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settingsState = ref.watch(settingsControllerProvider);
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  // Triple-tap debug feature
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
+
+  void _handleProfileTap() {
+    final now = DateTime.now();
+
+    // Reset counter if more than 2 seconds since last tap
+    if (_lastTapTime != null && now.difference(_lastTapTime!) > const Duration(seconds: 2)) {
+      _tapCount = 0;
+    }
+
+    _tapCount++;
+    _lastTapTime = now;
+
+    debugPrint('🐛 Settings tap detected! Tap count: $_tapCount');
+
+    if (_tapCount == 3) {
+      _tapCount = 0; // Reset counter
+      debugPrint('🎉 Triple tap detected! Opening debug screen...');
+
+      // Navigate to debug screen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const DebugScreen(),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settingsAsync = ref.watch(settingsControllerProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
-      appBar: AppBar(
-        backgroundColor: AppTheme.baseCream,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        // leading: CustomAppBarBackButton(
-        //   onPressed: () {
-        //     // Navigate back to plan screen
-        //     context.pop();
-        //   },
-        // ),
-        title: settingsState.when(
-          data: (state) => Text(
-            state.title,
-            style: AppTheme.titleStyle.copyWith(
-              color: AppTheme.baseBlack,
-              fontSize: 18.sp,
-            ),
-          ),
-          loading: () => Text(
-            'Settings',
-            style: AppTheme.titleStyle.copyWith(
-              color: AppTheme.baseBlack,
-              fontSize: 18.sp,
-            ),
-          ),
-          error: (_, __) => Text(
-            'Settings',
-            style: AppTheme.titleStyle.copyWith(
-              color: AppTheme.baseBlack,
-              fontSize: 18.sp,
-            ),
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: settingsState.when(
-        data: (state) => _buildContent(context, ref, state),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _buildErrorState(context, error.toString()),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: _buildAppBar(context),
+      body: settingsAsync.when(
+        data: (state) => _buildContent(context, state),
+        loading: () => _buildLoadingState(context),
+        error: (error, stack) => _buildErrorState(context, error),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, dynamic state) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      title: Text(
+        'Settings',
+        style: AppTextStyles.sectionTitle.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(
+        color: AppColors.electrolyte,
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, Object error) {
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Profile Section
-          _buildSectionHeader(state.profileSectionTitle),
-          SizedBox(height: 16.h),
-          
-          // Gender
-          _buildGenderSelector(context, ref, state),
-          SizedBox(height: 20.h),
-          
-          // Birthday
-          _buildBirthdaySelector(context, ref, state),
-          SizedBox(height: 20.h),
-          
-          // Height
-          _buildHeightSelector(context, ref, state),
-          SizedBox(height: 20.h),
-          
-          // Weight
-          _buildWeightSelector(context, ref, state),
-          SizedBox(height: 20.h),
-          
-          // Water bottle preference
-          _buildWaterBottleToggle(ref, state),
-          SizedBox(height: 32.h),
-          
-          // Preferences Section
-          _buildSectionHeader(state.preferenceSectionTitle),
-          SizedBox(height: 16.h),
-          
-          // Distance unit
-          _buildDistanceUnitSelector(ref, state),
-          SizedBox(height: 20.h),
-          
-          // Pace unit
-          _buildPaceUnitSelector(ref, state),
-          SizedBox(height: 20.h),
-          
-          // Gut training level
-          _buildGutTrainingSelector(ref, state),
-          SizedBox(height: 20.h),
-
-          // Sport settings button
-          _buildSportSettingsButton(context, state),
-          SizedBox(height: 20.h),
-
-          // Food preferences button
-          _buildFoodPreferencesButton(context, state),
-          SizedBox(height: 32.h),
-          
-          // Save button
-          PrimaryButton(
-            text: state.saveButtonText,
-            onPressed: state.isSaving ? null : () {
-              // Show save confirmation
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('✅ Settings saved!'),
-                  backgroundColor: AppTheme.primary600,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-            width: double.infinity,
+          const Icon(
+            FontAwesomeIcons.circleExclamation,
+            color: AppColors.dragonfruit,
+            size: 64,
           ),
-          
-          SizedBox(height: 40.h),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Error loading settings',
+            style: AppTextStyles.subtitle.copyWith(
+              color: AppColors.dragonfruit,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            error.toString(),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: AppTheme.titleStyle.copyWith(
-        color: AppTheme.baseBlack,
-        fontSize: 20.sp,
-        fontWeight: FontWeight.w600,
+  Widget _buildContent(BuildContext context, dynamic state) {
+    return SingleChildScrollView(
+      padding: AppSpacing.screenPaddingHorizontal,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppSpacing.lg),
+
+          // Theme toggle section
+          _buildThemeSection(context),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // Profile section (with triple-tap gesture)
+          GestureDetector(
+            onTap: _handleProfileTap,
+            behavior: HitTestBehavior.opaque,
+            child: _buildProfileSection(context, state),
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // Preferences section
+          _buildPreferencesSection(context, state),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // Quick links section
+          _buildQuickLinksSection(context),
+
+          const SizedBox(height: AppSpacing.xxxl),
+        ],
       ),
     );
   }
 
-  Widget _buildGenderSelector(BuildContext context, WidgetRef ref, dynamic state) {
+  Widget _buildThemeSection(BuildContext context) {
+    final themeModeAsync = ref.watch(kyleThemeModeProvider);
+
+    return themeModeAsync.when(
+      data: (themeMode) => BaseCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Appearance',
+              style: AppTextStyles.subtitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Theme mode selector
+            Row(
+              children: [
+                Icon(
+                  FontAwesomeIcons.palette,
+                  size: AppIconSizes.md,
+                  color: AppColors.electrolyte,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Theme Mode',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      KyleSegmentedControl<ThemeMode>(
+                        segments: ThemeMode.values,
+                        selected: themeMode,
+                        onChanged: (mode) => ref.read(kyleThemeModeProvider.notifier).setThemeMode(mode),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      loading: () => const BaseCard(
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.electrolyte),
+        ),
+      ),
+      error: (error, stack) => BaseCard(
+        child: Text(
+          'Error loading theme settings',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.dragonfruit,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileSection(BuildContext context, dynamic state) {
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                state.profileSectionTitle,
+                style: AppTextStyles.subtitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                '(Tap 3x for debug)',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Gender selector
+          _buildGenderSelector(context, state),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Birthday selector
+          _buildBirthdaySelector(context, state),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Height selector
+          _buildHeightSelector(context, state),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Weight selector
+          _buildWeightSelector(context, state),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Water bottle toggle
+          _buildWaterBottleToggle(context, state),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreferencesSection(BuildContext context, dynamic state) {
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            state.preferenceSectionTitle,
+            style: AppTextStyles.subtitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Distance unit
+          _buildDistanceUnitSelector(context, state),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Pace unit
+          _buildPaceUnitSelector(context, state),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Gut training level
+          _buildGutTrainingSelector(context, state),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickLinksSection(BuildContext context) {
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Quick Links',
+            style: AppTextStyles.subtitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Food preferences
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.utensils,
+            title: 'Food Preferences',
+            subtitle: 'Manage your food likes & dislikes',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_food_preferences_tapped');
+              context.push('/settings/food-preferences');
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Help & Feedback
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.circleQuestion,
+            title: 'Help & Feedback',
+            subtitle: 'Get help and send feedback',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_help_tapped');
+              context.push('/help');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGenderSelector(BuildContext context, dynamic state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           state.genderLabel,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 16.sp,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        SizedBox(height: 8.h),
-        Row(
-          children: Gender.values.map((gender) {
-            final isSelected = state.gender == gender;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => ref.read(settingsControllerProvider.notifier).updateGender(gender),
-                child: Container(
-                  margin: EdgeInsets.only(right: gender != Gender.values.last ? 8.w : 0),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    gender.name.toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: AppTheme.textStyle.copyWith(
-                      color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+
+        const SizedBox(height: AppSpacing.sm),
+
+        KyleSegmentedControl<Gender>(
+          segments: [Gender.male, Gender.female],
+          selected: state.gender ?? Gender.male,
+          onChanged: (gender) => ref.read(settingsControllerProvider.notifier).updateGender(gender),
         ),
       ],
     );
   }
 
-  Widget _buildBirthdaySelector(BuildContext context, WidgetRef ref, dynamic state) {
+  Widget _buildBirthdaySelector(BuildContext context, dynamic state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           state.birthdayLabel,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 16.sp,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        SizedBox(height: 8.h),
-        GestureDetector(
+
+        const SizedBox(height: AppSpacing.sm),
+
+        InkWell(
           onTap: () async {
             final selectedDate = await showDatePicker(
               context: context,
-              initialDate: state.birthday ?? DateTime.now().subtract(const Duration(days: 365 * 25)),
+              initialDate: state.birthday ?? DateTime.now().subtract(const Duration(days: 365 * 30)),
               firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
-              lastDate: DateTime.now(),
+              lastDate: DateTime.now().subtract(const Duration(days: 365 * 16)),
             );
             if (selectedDate != null) {
               ref.read(settingsControllerProvider.notifier).updateBirthday(selectedDate);
             }
           },
+          borderRadius: AppRadius.inputRadius,
           child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            decoration: BoxDecoration(
-              color: AppTheme.baseWhite,
-              border: Border.all(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
-              borderRadius: BorderRadius.circular(8.r),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
             ),
-            child: Text(
-              state.birthday != null 
-                ? '${state.birthday!.month}/${state.birthday!.day}/${state.birthday!.year}'
-                : 'Select your birthday',
-              style: AppTheme.textStyle.copyWith(
-                color: state.birthday != null ? AppTheme.baseBlack : AppTheme.baseGrey,
-                fontSize: 16.sp,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
               ),
+              borderRadius: AppRadius.inputRadius,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  FontAwesomeIcons.calendar,
+                  size: AppIconSizes.controlIcon,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    state.birthday != null
+                        ? '${state.birthday!.month}/${state.birthday!.day}/${state.birthday!.year}'
+                        : 'Select your birthday',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: state.birthday != null
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -244,78 +439,51 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeightSelector(BuildContext context, WidgetRef ref, dynamic state) {
+  Widget _buildHeightSelector(BuildContext context, dynamic state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           state.heightLabel,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 16.sp,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        SizedBox(height: 8.h),
+
+        const SizedBox(height: AppSpacing.sm),
+
         Row(
           children: [
-            // Feet selector
+            // Feet dropdown
             Expanded(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: AppTheme.baseWhite,
-                  border: Border.all(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: state.heightFeet,
-                    hint: const Text('Feet'),
-                    items: List.generate(4, (index) => index + 4).map((feet) {
-                      return DropdownMenuItem(
-                        value: feet,
-                        child: Text('$feet ft'),
-                      );
-                    }).toList(),
-                    onChanged: (feet) {
-                      if (feet != null) {
-                        ref.read(settingsControllerProvider.notifier)
-                            .updateHeight(feet, state.heightInches ?? 0);
-                      }
-                    },
-                  ),
-                ),
+              child: _buildDropdown<int>(
+                context: context,
+                value: state.heightFeet,
+                hint: 'Feet',
+                items: List.generate(6, (index) => index + 3),
+                itemBuilder: (feet) => '$feet ft',
+                onChanged: (feet) {
+                  if (feet != null) {
+                    ref.read(settingsControllerProvider.notifier).updateHeight(feet, state.heightInches ?? 0);
+                  }
+                },
               ),
             ),
-            SizedBox(width: 12.w),
-            // Inches selector
+            const SizedBox(width: AppSpacing.sm),
+            // Inches dropdown
             Expanded(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: AppTheme.baseWhite,
-                  border: Border.all(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: state.heightInches,
-                    hint: const Text('Inches'),
-                    items: List.generate(12, (index) => index).map((inches) {
-                      return DropdownMenuItem(
-                        value: inches,
-                        child: Text('$inches in'),
-                      );
-                    }).toList(),
-                    onChanged: (inches) {
-                      if (inches != null) {
-                        ref.read(settingsControllerProvider.notifier)
-                            .updateHeight(state.heightFeet ?? 5, inches);
-                      }
-                    },
-                  ),
-                ),
+              child: _buildDropdown<int>(
+                context: context,
+                value: state.heightInches,
+                hint: 'Inches',
+                items: List.generate(12, (index) => index),
+                itemBuilder: (inches) => '$inches in',
+                onChanged: (inches) {
+                  if (inches != null) {
+                    ref.read(settingsControllerProvider.notifier).updateHeight(state.heightFeet ?? 5, inches);
+                  }
+                },
               ),
             ),
           ],
@@ -324,39 +492,60 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildWeightSelector(BuildContext context, WidgetRef ref, dynamic state) {
+  Widget _buildWeightSelector(BuildContext context, dynamic state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           state.weightLabel,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 16.sp,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        SizedBox(height: 8.h),
+
+        const SizedBox(height: AppSpacing.sm),
+
         TextFormField(
           initialValue: state.weightPounds?.toString() ?? '',
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            hintText: 'Enter weight in pounds',
+            hintText: 'Enter weight',
+            hintStyle: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             suffixText: 'lbs',
+            suffixStyle: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+              borderRadius: AppRadius.inputRadius,
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+              borderRadius: AppRadius.inputRadius,
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.primary600),
+              borderRadius: AppRadius.inputRadius,
+              borderSide: const BorderSide(
+                color: AppColors.orange,
+                width: 2,
+              ),
             ),
             filled: true,
-            fillColor: AppTheme.baseWhite,
+            fillColor: Theme.of(context).colorScheme.surface,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+          ),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           onChanged: (value) {
             final weight = double.tryParse(value);
@@ -369,287 +558,252 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildWaterBottleToggle(WidgetRef ref, dynamic state) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(
-            state.waterBottleLabel,
-            style: AppTheme.textStyle.copyWith(
-              color: AppTheme.baseBlack,
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-            ),
+  Widget _buildWaterBottleToggle(BuildContext context, dynamic state) {
+    return InkWell(
+      onTap: () => ref.read(settingsControllerProvider.notifier).updateWaterBottle(!state.runsWithWaterBottle),
+      borderRadius: AppRadius.cardRadius,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: state.runsWithWaterBottle
+              ? AppColors.blackberry.withOpacity(0.1)
+              : Colors.transparent,
+          border: Border.all(
+            color: state.runsWithWaterBottle
+                ? AppColors.blackberry
+                : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+            width: state.runsWithWaterBottle ? 2 : 1,
           ),
+          borderRadius: AppRadius.cardRadius,
         ),
-        Switch(
-          value: state.runsWithWaterBottle,
-          onChanged: (value) {
-            ref.read(settingsControllerProvider.notifier).updateWaterBottle(value);
-          },
-          thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return AppTheme.baseWhite;
-            }
-            return AppTheme.baseWhite;
-          }),
-          trackColor: WidgetStateProperty.resolveWith<Color>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return AppTheme.primary600;
-            }
-            return AppTheme.baseGrey.withValues(alpha: 0.3);
-          }),
+        child: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: state.runsWithWaterBottle
+                    ? AppColors.blackberry
+                    : Colors.transparent,
+                border: Border.all(
+                  color: state.runsWithWaterBottle
+                      ? AppColors.blackberry
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: state.runsWithWaterBottle
+                  ? const Icon(
+                      FontAwesomeIcons.check,
+                      size: 14,
+                      color: AppColors.cream,
+                    )
+                  : null,
+            ),
+
+            const SizedBox(width: AppSpacing.md),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'I run with a water bottle',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'This helps us estimate your hydration needs',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildDistanceUnitSelector(WidgetRef ref, dynamic state) {
+  Widget _buildDistanceUnitSelector(BuildContext context, dynamic state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           state.distanceUnitLabel,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 16.sp,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        SizedBox(height: 8.h),
-        Row(
-          children: DistanceUnit.values.map((unit) {
-            final isSelected = state.preferredDistanceUnit == unit;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => ref.read(settingsControllerProvider.notifier).updateDistanceUnit(unit),
-                child: Container(
-                  margin: EdgeInsets.only(right: unit != DistanceUnit.values.last ? 8.w : 0),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    unit.displayName,
-                    textAlign: TextAlign.center,
-                    style: AppTheme.textStyle.copyWith(
-                      color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+
+        const SizedBox(height: AppSpacing.sm),
+
+        KyleSegmentedControl<DistanceUnit>(
+          segments: DistanceUnit.values,
+          selected: state.preferredDistanceUnit ?? DistanceUnit.miles,
+          onChanged: (unit) => ref.read(settingsControllerProvider.notifier).updateDistanceUnit(unit),
         ),
       ],
     );
   }
 
-  Widget _buildPaceUnitSelector(WidgetRef ref, dynamic state) {
+  Widget _buildPaceUnitSelector(BuildContext context, dynamic state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           state.paceUnitLabel,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 16.sp,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        SizedBox(height: 8.h),
-        Row(
-          children: PaceUnit.values.map((unit) {
-            final isSelected = state.preferredPaceUnit == unit;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => ref.read(settingsControllerProvider.notifier).updatePaceUnit(unit),
-                child: Container(
-                  margin: EdgeInsets.only(right: unit != PaceUnit.values.last ? 8.w : 0),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    unit.displayName,
-                    textAlign: TextAlign.center,
-                    style: AppTheme.textStyle.copyWith(
-                      color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+
+        const SizedBox(height: AppSpacing.sm),
+
+        KyleSegmentedControl<PaceUnit>(
+          segments: PaceUnit.values,
+          selected: state.preferredPaceUnit ?? PaceUnit.minPerMile,
+          onChanged: (unit) => ref.read(settingsControllerProvider.notifier).updatePaceUnit(unit),
         ),
       ],
     );
   }
 
-  Widget _buildGutTrainingSelector(WidgetRef ref, dynamic state) {
+  Widget _buildGutTrainingSelector(BuildContext context, dynamic state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           state.gutTrainingLabel,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 16.sp,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
-        SizedBox(height: 8.h),
-        Column(
-          children: GutTraining.values.map((level) {
-            final isSelected = state.gutTrainingLevel == level;
-            return Container(
-              margin: EdgeInsets.only(bottom: level != GutTraining.values.last ? 8.h : 0),
-              child: GestureDetector(
-                onTap: () => ref.read(settingsControllerProvider.notifier).updateGutTraining(level),
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(16.w),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    level.name.toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: AppTheme.textStyle.copyWith(
-                      color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+
+        const SizedBox(height: AppSpacing.sm),
+
+        KyleGutTrainingSegmentedControl(
+          selected: state.gutTrainingLevel ?? GutTraining.moderate,
+          onChanged: (level) => ref.read(settingsControllerProvider.notifier).updateGutTraining(level),
         ),
       ],
     );
   }
 
-  Widget _buildSportSettingsButton(BuildContext context, dynamic state) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to sport settings screen
-        context.push('/settings/sport-settings');
-      },
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Sport settings (cycling, swimming)',
-              style: AppTheme.textStyle.copyWith(
-                color: AppTheme.primary600,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-              ),
+  Widget _buildDropdown<T>({
+    required BuildContext context,
+    required T? value,
+    required String hint,
+    required List<T> items,
+    required String Function(T) itemBuilder,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
+        borderRadius: AppRadius.inputRadius,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          hint: Text(
+            hint,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-          Icon(
-            Icons.arrow_forward_ios,
-            size: 16.sp,
-            color: AppTheme.primary600,
-          ),
-        ],
+          isExpanded: true,
+          items: items.map((item) {
+            return DropdownMenuItem<T>(
+              value: item,
+              child: Text(
+                itemBuilder(item),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+          dropdownColor: Theme.of(context).colorScheme.surface,
+        ),
       ),
     );
   }
 
-  Widget _buildFoodPreferencesButton(BuildContext context, dynamic state) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to food preferences editing screen
-        context.push('/settings/food-preferences');
-      },
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Edit food likes & dislikes',
-              style: AppTheme.textStyle.copyWith(
-                color: AppTheme.primary600,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
+  Widget _buildQuickLink({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.cardRadius,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.electrolyte.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: AppIconSizes.controlIcon,
+                color: AppColors.electrolyte,
               ),
             ),
-          ),
-          Icon(
-            Icons.arrow_forward_ios,
-            size: 16.sp,
-            color: AppTheme.primary600,
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildErrorState(BuildContext context, String error) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64.sp,
-            color: AppTheme.highlight600,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'Error loading settings',
-            style: AppTheme.textStyle.copyWith(
-              color: AppTheme.highlight600,
-              fontSize: 18.sp,
+            const SizedBox(width: AppSpacing.md),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            error,
-            style: AppTheme.noteStyle.copyWith(
-              color: AppTheme.baseGrey,
-              fontSize: 14.sp,
+
+            Icon(
+              FontAwesomeIcons.chevronRight,
+              size: AppIconSizes.controlIcon,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 24.h),
-          PrimaryButton(
-            text: 'Go Back',
-            onPressed: () {
-              try {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                } else {
-                  context.go('/main');
-                }
-              } catch (e) {
-                // Fallback: navigate to main if pop fails
-                context.go('/main');
-              }
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

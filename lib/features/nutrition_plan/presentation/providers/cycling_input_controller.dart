@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'distance_page_gut_entry_controller.dart';
+import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'cycling_input_controller.g.dart';
 
@@ -267,17 +268,21 @@ class CyclingInputController extends _$CyclingInputController {
 
   /// Delegate to the main controller for macro generation
   Future<void> generateMacros({
-    String? activityId,
-    String? eventId,
+    int? activityId,
+    int? eventId,
   }) async {
+    DebugLogger.info('🚴 CYCLING CONTROLLER: generateMacros called - activityId: $activityId');
     final currentState = state;
+    DebugLogger.info('🚴 CYCLING CONTROLLER: Current state - distance: ${currentState.distance}mi, speed: ${currentState.speedMph}mph');
 
     // Extract terrain type (e.g., 'flat' from 'flat_outdoor')
     final terrainType = currentState.terrain.split('_')[0];
     final indoorOutdoorType = currentState.terrain.contains('indoor') ? 'indoor' : 'outdoor';
+    DebugLogger.info('🚴 CYCLING CONTROLLER: Extracted terrain: $terrainType, indoorOutdoor: $indoorOutdoorType');
 
     // Delegate to the main controller
-    await ref.read(distancePageGutEntryControllerProvider.notifier).generateCyclingMacros(
+    DebugLogger.info('🚴 CYCLING CONTROLLER: About to call distancePageGutEntryController.generateCyclingMacros...');
+    await ref.read(macroTargetsControllerProvider.notifier).generateCyclingMacros(
       distanceMiles: currentState.distance,
       speedMph: currentState.speedMph,
       terrain: terrainType,
@@ -293,5 +298,6 @@ class CyclingInputController extends _$CyclingInputController {
       activityId: activityId,
       eventId: eventId,
     );
+    DebugLogger.info('🚴 CYCLING CONTROLLER: distancePageGutEntryController.generateCyclingMacros completed!');
   }
 }

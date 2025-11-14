@@ -39,6 +39,9 @@ class Activity {
     this.actualDistanceMiles,
     this.actualDurationMinutes,
 
+    // Nutrition plan data (embedded JSON from activities.nutrition_plan_data)
+    this.nutritionPlanData,
+
     // Metadata
     this.notes,
     required this.createdAt,
@@ -56,7 +59,7 @@ class Activity {
     this.localUpdatedAt,
   });
 
-  final String id;
+  final int id;
   final String userId;
   final ActivityType activityType;
   final String title;
@@ -91,7 +94,10 @@ class Activity {
   final String? completionNotes;
   final double? actualDistanceMiles;
   final int? actualDurationMinutes;
-  
+
+  // Nutrition plan data (embedded JSON from activities.nutrition_plan_data)
+  final Map<String, dynamic>? nutritionPlanData;
+
   // Metadata
   final String? notes;
   final DateTime createdAt;
@@ -136,6 +142,7 @@ class Activity {
       'completionNotes': completionNotes,
       'actualDistanceMiles': actualDistanceMiles,
       'actualDurationMinutes': actualDurationMinutes,
+      'nutritionPlanData': nutritionPlanData,
       'notes': notes,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -148,7 +155,7 @@ class Activity {
   }
 
   Activity copyWith({
-    String? id,
+    int? id,
     String? userId,
     ActivityType? activityType,
     String? title,
@@ -173,6 +180,7 @@ class Activity {
     String? completionNotes,
     double? actualDistanceMiles,
     int? actualDurationMinutes,
+    Map<String, dynamic>? nutritionPlanData,
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -210,6 +218,7 @@ class Activity {
       completionNotes: completionNotes ?? this.completionNotes,
       actualDistanceMiles: actualDistanceMiles ?? this.actualDistanceMiles,
       actualDurationMinutes: actualDurationMinutes ?? this.actualDurationMinutes,
+      nutritionPlanData: nutritionPlanData ?? this.nutritionPlanData,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -252,6 +261,7 @@ class Activity {
         other.completionNotes == completionNotes &&
         other.actualDistanceMiles == actualDistanceMiles &&
         other.actualDurationMinutes == actualDurationMinutes &&
+        other.nutritionPlanData == nutritionPlanData &&
         other.notes == notes &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt &&
@@ -291,6 +301,7 @@ class Activity {
       completionNotes,
       actualDistanceMiles,
       actualDurationMinutes,
+      nutritionPlanData,
       notes,
       createdAt,
       updatedAt,

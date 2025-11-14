@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
 
 /// Loading widget shown during app initialization
 class AppStartupLoadingWidget extends StatelessWidget {
@@ -8,10 +8,10 @@ class AppStartupLoadingWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.baseWhite,
+      backgroundColor: AppColors.blackberry,
       body: Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary900),
+          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.orange),
           strokeWidth: 3.0,
         ),
       ),

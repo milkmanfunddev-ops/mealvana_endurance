@@ -9,6 +9,9 @@ class UserFoodsTable extends Table {
   /// Device ID of the user who created this food (matches Supabase user_foods.device_id)
   TextColumn get deviceId => text().named('device_id')();
 
+  /// User ID (UUID) - references users.id (matches Supabase user_foods.user_id)
+  TextColumn get userId => text().named('user_id')();
+
   /// Client-generated food ID for offline sync (matches Supabase user_foods.client_food_id)
   TextColumn get clientFoodId => text().nullable().named('client_food_id')();
 
@@ -43,6 +46,13 @@ class UserFoodsTable extends Table {
   /// Product type reference (matches Supabase user_foods.product_type_id)
   TextColumn get productTypeId => text().nullable().named('product_type_id')();
 
+  // Array-based columns (stored as JSON strings in SQLite, arrays in Postgres)
+  /// Categories: array of category_enum values (e.g., ['before_run', 'during_run'])
+  TextColumn get categories => text().nullable()();
+
+  /// Activity types: array of activity_type_enum values (e.g., ['running', 'cycling'])
+  TextColumn get activityTypes => text().nullable().named('activity_types')();
+
   /// Flags (matches Supabase user_foods)
   BoolColumn get isElectrolyte => boolean().withDefault(const Constant(false)).named('is_electrolyte')();
   BoolColumn get toExcludeFromSolver => boolean().withDefault(const Constant(false)).named('to_exclude_from_solver')();
@@ -58,8 +68,6 @@ class UserFoodsTable extends Table {
 
   @override
   List<String> get customConstraints => [
-    'FOREIGN KEY (device_id) REFERENCES users(device_id) ON DELETE CASCADE',
-    'FOREIGN KEY (product_type_id) REFERENCES product_types(id)',
     'UNIQUE (device_id, client_food_id)',
   ];
 }

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/calendar_service.dart';
-import '../../domain/activity.dart';
-import '../../domain/event.dart';
+import '../../../activities/application/activities_service.dart';
+import '../../../activities/domain/activity.dart';
+import '../../../events/domain/event.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../auth/application/auth_service.dart';
@@ -52,7 +54,8 @@ class CalendarState {
 /// Calendar controller for managing activities and events
 @riverpod
 class CalendarController extends _$CalendarController {
-  CalendarService get _service => ref.read(calendarServiceProvider);
+  CalendarService get _calendarService => ref.read(calendarServiceProvider);
+  ActivitiesService get _activitiesService => ref.read(activitiesServiceProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
   AuthService get _authService => ref.read(authServiceProvider);
 
@@ -77,15 +80,15 @@ class CalendarController extends _$CalendarController {
       final user = await _authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      final activities = await _service.getActivitiesForWeek(userId, weekStart);
+      final activities = await _calendarService.getActivitiesForWeek(userId, weekStart);
 
       // Get ALL events (not just for this week) so they show as dots on the calendar
       // The calendar shows a 2-year range, so we need events across that entire range
-      final events = await _service.getAllEvents(userId);
+      final events = await _calendarService.getAllEvents(userId);
 
       // Fetch ALL carb loading days (not just for this week)
       // Carb loading days can be far in the future for upcoming events
-      final carbLoadingDays = await _service.getCarbLoadingDaysForRange(
+      final carbLoadingDays = await _calendarService.getCarbLoadingDaysForRange(
         startDate: DateTime.now().subtract(const Duration(days: 365)), // 1 year ago
         endDate: DateTime.now().add(const Duration(days: 730)), // 2 years in future
       );
@@ -102,7 +105,7 @@ class CalendarController extends _$CalendarController {
   }
 
   /// Create a new activity
-  Future<String> createActivity({
+  Future<int> createActivity({
     required String title,
     required DateTime scheduledDateTime,
     ActivityType activityType = ActivityType.running,
@@ -117,11 +120,13 @@ class CalendarController extends _$CalendarController {
     bool reminderRecurring = false,
   }) async {
     try {
-      // Get current user's device ID
+      // Get current user's device ID (stored in id field) and userId
       final user = await _authService.getCurrentUser();
+      final deviceId = user?.id ?? 'unknown';
       final userId = user?.id ?? 'unknown';
 
-      final createdActivity = await _service.createActivity(
+      final createdActivity = await _activitiesService.createActivity(
+        deviceId: deviceId,
         userId: userId,
         activityType: activityType,
         title: title,
@@ -131,10 +136,6 @@ class CalendarController extends _$CalendarController {
         paceTargetMinutesPerMile: paceTargetMinutesPerMile,
         intensityLevel: intensityLevel,
         notes: notes,
-        reminderEnabled: reminderEnabled,
-        reminderDaysBefore: reminderDaysBefore,
-        reminderTimeOfDay: reminderTimeOfDay,
-        reminderRecurring: reminderRecurring,
       );
 
       // Refresh activities
@@ -150,7 +151,13 @@ class CalendarController extends _$CalendarController {
   /// Update an existing activity
   Future<void> updateActivity(Activity activity) async {
     try {
-      await _service.updateActivity(activity);
+      final user = await _authService.getCurrentUser();
+      final deviceId = user?.id ?? 'unknown';
+
+      await _activitiesService.updateActivity(
+        deviceId: deviceId,
+        activity: activity,
+      );
 
       // Refresh activities
       ref.invalidateSelf();
@@ -164,7 +171,7 @@ class CalendarController extends _$CalendarController {
   /// Update an existing event
   Future<void> updateEvent(Event event) async {
     try {
-      await _service.updateEvent(event);
+      await _calendarService.updateEvent(event);
 
       // Refresh activities and upcoming event providers
       ref.invalidateSelf();
@@ -177,10 +184,16 @@ class CalendarController extends _$CalendarController {
     }
   }
 
-  /// Delete an activity
-  Future<void> deleteActivity(String activityId) async {
+  /// Delete an activity and its associated event/carb loading
+  Future<void> deleteActivity(int activityId) async {
     try {
-      await _service.deleteActivity(activityId);
+      final user = await _authService.getCurrentUser();
+      final deviceId = user?.id ?? 'unknown';
+
+      await _calendarService.deleteActivity(
+        deviceId: deviceId,
+        activityId: activityId,
+      );
 
       // Refresh activities and upcoming event providers
       ref.invalidateSelf();
@@ -193,9 +206,9 @@ class CalendarController extends _$CalendarController {
   }
 
   /// Delete a carb loading day
-  Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
+  Future<void> deleteCarbLoadingDay(int carbLoadingDayId) async {
     try {
-      await _service.deleteCarbLoadingDay(carbLoadingDayId);
+      await _calendarService.deleteCarbLoadingDay(carbLoadingDayId);
 
       // Refresh activities to update the list
       ref.invalidateSelf();
@@ -205,9 +218,9 @@ class CalendarController extends _$CalendarController {
     }
   }
 
-  /// Complete an activity
+  /// Complete an activity by updating it with completion data
   Future<void> completeActivity({
-    required String activityId,
+    required int activityId,
     required DateTime completedAt,
     int? effortRating,
     int? nutritionRating,
@@ -219,28 +232,28 @@ class CalendarController extends _$CalendarController {
     int? humidityPercent,
   }) async {
     try {
-      // Get current user's device ID
+      // Get current user and activity
       final user = await _authService.getCurrentUser();
+      final deviceId = user?.id ?? 'unknown';
       final userId = user?.id ?? 'unknown';
 
-      final activity = await _service.getActivityById(userId, activityId);
+      final activity = await _activitiesService.getActivityById(userId, activityId);
       if (activity == null) {
         _logger.error('Activity not found: $activityId', error: null);
         return;
       }
 
-      await _service.completeActivity(
-        activityId: activityId,
-        userId: activity.userId,
+      // Update activity with completion data
+      final completedActivity = activity.copyWith(
+        status: ActivityStatus.completed,
         completedAt: completedAt,
-        effortRating: effortRating,
-        nutritionRating: nutritionRating,
-        overallSatisfaction: overallSatisfaction,
-        textNotes: textNotes,
-        hasVoiceRecording: hasVoiceRecording,
-        weatherConditions: weatherConditions,
-        temperatureFahrenheit: temperatureFahrenheit,
-        humidityPercent: humidityPercent,
+        completionRating: overallSatisfaction,
+        completionNotes: textNotes,
+      );
+
+      await _activitiesService.updateActivity(
+        deviceId: deviceId,
+        activity: completedActivity,
       );
 
       // Refresh activities
@@ -253,13 +266,28 @@ class CalendarController extends _$CalendarController {
 
   /// Update activity completion notes
   Future<void> updateActivityCompletion({
-    required String activityId,
+    required int activityId,
     String? textNotes,
   }) async {
     try {
-      await _service.updateActivityCompletion(
-        activityId: activityId,
-        textNotes: textNotes,
+      final user = await _authService.getCurrentUser();
+      final deviceId = user?.id ?? 'unknown';
+      final userId = user?.id ?? 'unknown';
+
+      final activity = await _activitiesService.getActivityById(userId, activityId);
+      if (activity == null) {
+        _logger.error('Activity not found: $activityId', error: null);
+        return;
+      }
+
+      // Update activity with new completion notes
+      final updatedActivity = activity.copyWith(
+        completionNotes: textNotes,
+      );
+
+      await _activitiesService.updateActivity(
+        deviceId: deviceId,
+        activity: updatedActivity,
       );
 
       // Refresh activities
@@ -273,8 +301,8 @@ class CalendarController extends _$CalendarController {
 
   /// Create a new event (optionally linked to an activity)
   Future<void> createEvent({
-    String? activityId, // Now optional - events can exist without activities
-    required EventType eventType,
+    int? activityId, // Now optional - events can exist without activities
+    required ActivityType eventType, // Event type: running, cycling, swimming, triathlon, duathlon, multisport
     String? eventSubtype, // Specific race distance/type
     String? eventName,
     String? location,
@@ -290,7 +318,7 @@ class CalendarController extends _$CalendarController {
       final user = await _authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      await _service.createEvent(
+      await _calendarService.createEvent(
         userId: userId,
         activityId: activityId,
         eventType: eventType,
@@ -357,7 +385,7 @@ class CalendarController extends _$CalendarController {
 
   /// Create a carb loading plan for an event
   Future<void> createCarbLoadingPlan({
-    required String eventId,
+    required int eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -367,7 +395,7 @@ class CalendarController extends _$CalendarController {
       final user = await _authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      await _service.createCarbLoadingPlan(
+      await _calendarService.createCarbLoadingPlan(
         userId: userId,
         eventId: eventId,
         protocolDays: protocolDays,
@@ -386,7 +414,7 @@ class CalendarController extends _$CalendarController {
 
   /// Update carb loading protocol for an event
   Future<void> updateCarbLoadingProtocol({
-    required String eventId,
+    required int eventId,
     required int newProtocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -396,7 +424,7 @@ class CalendarController extends _$CalendarController {
       final user = await _authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      await _service.updateCarbLoadingProtocol(
+      await _calendarService.updateCarbLoadingProtocol(
         userId: userId,
         eventId: eventId,
         newProtocolDays: newProtocolDays,
@@ -418,7 +446,7 @@ class CalendarController extends _$CalendarController {
 /// Used by EventsListScreen to show ALL events, not just current week
 @riverpod
 class AllEventsController extends _$AllEventsController {
-  CalendarService get _service => ref.read(calendarServiceProvider);
+  CalendarService get _calendarService => ref.read(calendarServiceProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
   AuthService get _authService => ref.read(authServiceProvider);
 
@@ -434,10 +462,10 @@ class AllEventsController extends _$AllEventsController {
       final user = await _authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      final activities = await _service.getAllActivities(userId);
+      final activities = await _calendarService.getAllActivities(userId);
 
       // Get all events (events are now separate from activities)
-      final events = await _service.getAllEvents(userId);
+      final events = await _calendarService.getAllEvents(userId);
 
       return CalendarState.data(
         activities: activities,
@@ -460,7 +488,7 @@ class AllEventsController extends _$AllEventsController {
 @riverpod
 Future<({Activity? activity, Event event})> eventDetail(
   Ref ref,
-  String eventId,
+  int eventId,
 ) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);
@@ -495,7 +523,7 @@ Future<({Activity? activity, Event event})> eventDetail(
 @riverpod
 Future<({Activity activity, Event? event})> activityDetail(
   Ref ref,
-  String activityId,
+  int activityId,
 ) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);

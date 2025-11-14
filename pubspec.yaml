@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.9.0+28
+version: 1.10.0+31
 
 environment:
   sdk: ^3.8.1
@@ -82,6 +82,9 @@ dependencies:
 
   # Barcode Scanning
   mobile_scanner: ^7.0.1
+  
+  # Font Awesome Icons
+  font_awesome_flutter: ^10.6.0
 
   # PDF Generation
   pdf: ^3.11.1
@@ -124,6 +127,8 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - .env.dev.local
+    - .env.prod.local
     - shorebird.yaml
     - assets/images/
     - assets/config/
@@ -194,6 +199,12 @@ flutter:
       fonts:
         - asset: assets/fonts/Compadre/Compadre-Demo-Regular.otf
           weight: 400
+        - asset: assets/fonts/Compadre/Compadre-Demo-Wide.otf
+          weight: 400
+        - asset: assets/fonts/Compadre/Compadre-Demo-Extended.otf
+          weight: 400
+        - asset: assets/fonts/Compadre/Compadre-Demo-Narrow.otf
+          weight: 400
   
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
@@ -202,16 +213,28 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/endurance_launcher_icon_basecream_1024.png"
+  image_path: "assets/images/launcher_inverted.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#FFF9F0"
-  adaptive_icon_foreground: "assets/images/endurance_launcher_icon_basecream_1024.png"
+  adaptive_icon_background: "#3D1F47"
+  adaptive_icon_foreground: "assets/images/launcher_inverted.png"
   remove_alpha_ios: true
   web:
     generate: true
-    image_path: "assets/images/endurance_launcher_icon_basecream_1024.png"
+    image_path: "assets/images/launcher_inverted.png"
 
-
+# Flutter Native Splash configuration
+flutter_native_splash:
+  color: "#3D1F47"
+  image: "assets/images/launcher_inverted.png"
+  ios_content_mode: center
+  android_gravity: center
+  fullscreen: true
+  android_12:
+    color: "#3D1F47"
+    icon_background_color: "#3D1F47"
+    image: "assets/images/launcher_inverted.png"
+  ios: true
+  web: true
 
 sentry:
   upload_debug_symbols: true

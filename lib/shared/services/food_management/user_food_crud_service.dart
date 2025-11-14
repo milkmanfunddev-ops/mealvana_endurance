@@ -61,9 +61,12 @@ class UserFoodCrudService {
       // Generate unique UUID for this food
       final foodId = _uuid.v4();
 
+      final categoryNames = _mapCategoryIdsToNames(categoryIds);
+
       // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
       await _database.saveUserFood(
         deviceId: deviceId,
+        userId: deviceId,
         id: foodId,
         clientFoodId: food.id,
         barcode: barcode,
@@ -81,7 +84,7 @@ class UserFoodCrudService {
         sodiumMg: food.sodiumMg,
         fluidMlPerServing: food.fluidMlPerServing,
         productTypeId: food.productTypeId,
-        categoryIds: categoryIds,
+        categories: categoryNames,
         clientUpdatedAt: DateTime.now(),
       );
 
@@ -242,5 +245,20 @@ class UserFoodCrudService {
       servingUnitPlural: userFood.servingUnit != null ? '${userFood.servingUnit}s' : null,
       servingQualifier: null,
     );
+  }
+
+  List<String> _mapCategoryIdsToNames(List<int> categoryIds) {
+    return categoryIds.map((id) {
+      switch (id) {
+        case 1:
+          return 'before_run';
+        case 2:
+          return 'during_run';
+        case 3:
+          return 'after_run';
+        default:
+          return 'before_run';
+      }
+    }).toList();
   }
 }

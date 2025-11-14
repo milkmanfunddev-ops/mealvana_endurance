@@ -37,14 +37,14 @@ class CarbLoadingRepository {
   Future<CarbLoadingPlan> createCarbLoadingPlan({
     required String deviceId,
     required String userId,
-    String? eventId,
+    int? eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
     try {
-      // Generate plan ID upfront
-      final planId = _generateId();
+      // Auto-increment will generate plan ID
+      late int planId;
 
       // OFFLINE-FIRST: Calculate and save to Drift IMMEDIATELY
       final bodyWeightKg = bodyWeightPounds * 0.453592;
@@ -65,10 +65,7 @@ class CarbLoadingRepository {
 
       // Create the plan locally with dirty flag
       final planCompanion = CarbLoadingPlansTableCompanion.insert(
-        id: planId,
-        eventId: eventId != null && eventId.isNotEmpty
-            ? Value(eventId)
-            : const Value.absent(),
+        eventId: eventId != null ? Value(eventId) : const Value.absent(),
         userId: userId,
         totalDays: protocolDays,
         startDate: startDate,
@@ -79,7 +76,7 @@ class CarbLoadingRepository {
         localUpdatedAt: Value(DateTime.now()),
       );
 
-      await _database.into(_database.carbLoadingPlansTable).insert(planCompanion);
+      planId = await _database.into(_database.carbLoadingPlansTable).insert(planCompanion);
 
       // Generate carb loading day records locally with dirty flags
       for (int dayOffset = 0; dayOffset < protocolDays; dayOffset++) {
@@ -93,9 +90,8 @@ class CarbLoadingRepository {
 
         final targetCarbsGrams = carbProtocolGPerKg * bodyWeightKg;
 
-        final carbDayId = _generateId();
+        // Auto-increment will generate day ID
         final carbDayCompanion = CarbLoadingDaysTableCompanion.insert(
-          id: carbDayId,
           carbLoadingPlanId: planId,
           planDate: dayDate,
           dayNumber: dayOffset + 1,
@@ -139,7 +135,7 @@ class CarbLoadingRepository {
   /// Update a carb loading day (offline-first: save to Drift first, background upload)
   Future<CarbLoadingDay> updateCarbLoadingDay({
     required String deviceId,
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required Map<String, dynamic> updates,
   }) async {
     try {
@@ -206,7 +202,7 @@ class CarbLoadingRepository {
 
   Future<void> deleteCarbLoadingPlan({
     required String deviceId,
-    required String planId,
+    required int planId,
   }) async {
     try {
       await _database.transaction(() async {
@@ -242,7 +238,7 @@ class CarbLoadingRepository {
   }
 
   /// Get carb loading plan by ID
-  Future<CarbLoadingPlan?> getCarbLoadingPlanById(String planId) async {
+  Future<CarbLoadingPlan?> getCarbLoadingPlanById(int planId) async {
     try {
       final query = _database.select(_database.carbLoadingPlansTable)
         ..where((tbl) => tbl.id.equals(planId));
@@ -260,7 +256,7 @@ class CarbLoadingRepository {
   }
 
   /// Get carb loading plan for an event
-  Future<CarbLoadingPlan?> getCarbLoadingPlanForEvent(String eventId) async {
+  Future<CarbLoadingPlan?> getCarbLoadingPlanForEvent(int eventId) async {
     try {
       final query = _database.select(_database.carbLoadingPlansTable)
         ..where((tbl) => tbl.eventId.equals(eventId));
@@ -278,7 +274,7 @@ class CarbLoadingRepository {
   }
 
   /// Get carb loading days for a plan
-  Future<List<CarbLoadingDay>> getCarbLoadingDaysForPlan(String planId) async {
+  Future<List<CarbLoadingDay>> getCarbLoadingDaysForPlan(int planId) async {
     try {
       final query = _database.select(_database.carbLoadingDaysTable)
         ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))
@@ -297,7 +293,7 @@ class CarbLoadingRepository {
   }
 
   /// Get carb loading day by ID
-  Future<CarbLoadingDay?> getCarbLoadingDayById(String dayId) async {
+  Future<CarbLoadingDay?> getCarbLoadingDayById(int dayId) async {
     try {
       final query = _database.select(_database.carbLoadingDaysTable)
         ..where((tbl) => tbl.id.equals(dayId));
@@ -363,43 +359,82 @@ class CarbLoadingRepository {
     return 8.0;
   }
 
-  /// Generate a UUID
-  String _generateId() {
-    return '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond % 1000}';
-  }
-
   Future<void> _uploadCarbLoadingPlanToSupabase({
     required String deviceId,
-    required String planId,
-    String? eventId,
+    required int planId,
+    int? eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'save-carb-loading-plan',
-        body: {
-          'device_id': deviceId,
-          'operation': 'create',
-          'plan': {
-            'id': planId,
-            'eventId': eventId,
-            'protocolDays': protocolDays,
-            'raceDate': raceDate.toIso8601String(),
-            'bodyWeightPounds': bodyWeightPounds,
-          },
-        },
-      );
+      // Get the plan from Drift
+      final plan = await getCarbLoadingPlanById(planId);
+      if (plan == null) {
+        throw Exception('Plan not found: $planId');
+      }
 
-      if (response.status >= 200 && response.status < 300) {
-        await _clearPlanDirtyFlag(planId);
-      } else {
-        _logger.warning(
-          'Failed to upload carb loading plan, will retry on next sync',
-          context: 'CARB_LOADING_REPOSITORY',
-          data: {'planId': planId, 'status': response.status},
-        );
+      // Get all days for this plan from Drift
+      final days = await (_database.select(_database.carbLoadingDaysTable)
+            ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))
+            ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]))
+          .get();
+
+      // Get user_id from device_id
+      final userResult = await _supabase
+          .from('users')
+          .select('id')
+          .eq('device_id', deviceId)
+          .maybeSingle();
+
+      if (userResult == null) {
+        throw Exception('User not found for device_id: $deviceId');
+      }
+
+      final userId = userResult['id'] as String;
+
+      // Insert plan directly to Supabase (using upsert for idempotency)
+      await _supabase.from('carb_loading_plans').upsert({
+        'id': plan.id,
+        'event_id': plan.eventId,
+        'user_id': userId,
+        'total_days': plan.totalDays,
+        'start_date': plan.startDate.toIso8601String().split('T')[0],
+        'end_date': plan.endDate.toIso8601String().split('T')[0],
+        'daily_carb_target_grams': plan.dailyCarbTargetGrams,
+        'generated_at': plan.generatedAt.toIso8601String(),
+        'needs_upload': false,
+        'local_updated_at': DateTime.now().toIso8601String(),
+      });
+
+      // Insert all days directly to Supabase (using upsert for idempotency)
+      for (final day in days) {
+        await _supabase.from('carb_loading_days').upsert({
+          'id': day.id,
+          'carb_loading_plan_id': day.carbLoadingPlanId,
+          'plan_date': day.planDate.toIso8601String().split('T')[0],
+          'day_number': day.dayNumber,
+          'carb_target_grams': day.carbTargetGrams,
+          'carb_protocol_g_per_kg': day.carbProtocolGPerKg,
+          'meal_count': day.mealCount,
+          'breakfast_percent': day.breakfastPercent,
+          'morning_snack_percent': day.morningSnackPercent,
+          'lunch_percent': day.lunchPercent,
+          'afternoon_snack_percent': day.afternoonSnackPercent,
+          'dinner_percent': day.dinnerPercent,
+          'evening_snack_percent': day.eveningSnackPercent,
+          'logged_carbs_grams': day.loggedCarbsGrams,
+          'logged_calories': day.loggedCalories,
+          'completed': day.completed,
+          'needs_upload': false,
+          'local_updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+
+      // Clear dirty flags
+      await _clearPlanDirtyFlag(planId);
+      for (final day in days) {
+        await _clearDayDirtyFlag(day.id);
       }
     } catch (e, stackTrace) {
       _logger.error(
@@ -408,34 +443,46 @@ class CarbLoadingRepository {
         error: e,
         stackTrace: stackTrace,
       );
+      // Don't rethrow - will retry on next sync
     }
   }
 
   Future<void> _uploadCarbLoadingDayToSupabase({
     required String deviceId,
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required Map<String, dynamic> updates,
   }) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'save-carb-loading-plan',
-        body: {
-          'device_id': deviceId,
-          'operation': 'update_day',
-          'carb_loading_day_id': carbLoadingDayId,
-          'updates': updates,
-        },
-      );
-
-      if (response.status >= 200 && response.status < 300) {
-        await _clearDayDirtyFlag(carbLoadingDayId);
-      } else {
-        _logger.warning(
-          'Failed to upload carb loading day, will retry on next sync',
-          context: 'CARB_LOADING_REPOSITORY',
-          data: {'dayId': carbLoadingDayId, 'status': response.status},
-        );
+      // Get the day from Drift to get complete data
+      final day = await getCarbLoadingDayById(carbLoadingDayId);
+      if (day == null) {
+        throw Exception('Carb loading day not found: $carbLoadingDayId');
       }
+
+      // Update directly in Supabase using upsert
+      await _supabase.from('carb_loading_days').upsert({
+        'id': day.id,
+        'carb_loading_plan_id': day.carbLoadingPlanId,
+        'plan_date': day.planDate.toIso8601String().split('T')[0],
+        'day_number': day.dayNumber,
+        'carb_target_grams': day.carbTargetGrams,
+        'carb_protocol_g_per_kg': day.carbProtocolGPerKg,
+        'meal_count': day.mealCount,
+        'breakfast_percent': day.breakfastPercent,
+        'morning_snack_percent': day.morningSnackPercent,
+        'lunch_percent': day.lunchPercent,
+        'afternoon_snack_percent': day.afternoonSnackPercent,
+        'dinner_percent': day.dinnerPercent,
+        'evening_snack_percent': day.eveningSnackPercent,
+        'logged_carbs_grams': day.loggedCarbsGrams,
+        'logged_calories': day.loggedCalories,
+        'completed': day.completed,
+        'needs_upload': false,
+        'local_updated_at': DateTime.now().toIso8601String(),
+      });
+
+      // Clear dirty flag
+      await _clearDayDirtyFlag(carbLoadingDayId);
     } catch (e, stackTrace) {
       _logger.error(
         'Error uploading carb loading day, will retry on next sync',
@@ -443,30 +490,26 @@ class CarbLoadingRepository {
         error: e,
         stackTrace: stackTrace,
       );
+      // Don't rethrow - will retry on next sync
     }
   }
 
   Future<void> _uploadCarbLoadingPlanDeletion({
     required String deviceId,
-    required String planId,
+    required int planId,
   }) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'save-carb-loading-plan',
-        body: {
-          'device_id': deviceId,
-          'operation': 'delete',
-          'plan_id': planId,
-        },
-      );
+      // Delete days first (cascade handled by database, but doing explicitly for clarity)
+      await _supabase
+          .from('carb_loading_days')
+          .delete()
+          .eq('carb_loading_plan_id', planId);
 
-      if (response.status < 200 || response.status >= 300) {
-        _logger.warning(
-          'Failed to upload carb loading plan deletion',
-          context: 'CARB_LOADING_REPOSITORY',
-          data: {'planId': planId, 'status': response.status},
-        );
-      }
+      // Delete the plan
+      await _supabase
+          .from('carb_loading_plans')
+          .delete()
+          .eq('id', planId);
     } catch (e, stackTrace) {
       _logger.error(
         'Error uploading carb loading plan deletion',
@@ -474,10 +517,11 @@ class CarbLoadingRepository {
         error: e,
         stackTrace: stackTrace,
       );
+      // Don't rethrow - deletion already succeeded locally
     }
   }
 
-  Future<void> _clearPlanDirtyFlag(String planId) async {
+  Future<void> _clearPlanDirtyFlag(int planId) async {
     try {
       await (_database.update(_database.carbLoadingPlansTable)
             ..where((tbl) => tbl.id.equals(planId)))
@@ -494,7 +538,7 @@ class CarbLoadingRepository {
     }
   }
 
-  Future<void> _clearDayDirtyFlag(String dayId) async {
+  Future<void> _clearDayDirtyFlag(int dayId) async {
     try {
       await (_database.update(_database.carbLoadingDaysTable)
             ..where((tbl) => tbl.id.equals(dayId)))

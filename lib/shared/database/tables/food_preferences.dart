@@ -7,8 +7,8 @@ class FoodPreferencesTable extends Table {
   /// UUID primary key (matches Supabase food_preferences.id)
   TextColumn get id => text().withLength(min: 36, max: 36)();
 
-  /// Device ID (foreign key reference to users.device_id)
-  TextColumn get deviceId => text().named('device_id')();
+  /// User ID (foreign key reference to users.id UUID)
+  TextColumn get userId => text().named('user_id')();
 
   /// Food name (should match foods.name) - matches Supabase food_preferences.food_name
   TextColumn get foodName => text().named('food_name')();
@@ -27,7 +27,7 @@ class FoodPreferencesTable extends Table {
 
   @override
   List<String> get customConstraints => [
-    'UNIQUE(device_id, food_name)', // Ensure one preference per food per user
+    'UNIQUE(user_id, food_name)', // Ensure one preference per food per user
     'CHECK (preference IN (\'like\', \'dislike\', \'willing_to_try\'))', // Match Supabase constraint
   ];
 }

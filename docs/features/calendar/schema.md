@@ -202,51 +202,46 @@ CREATE TABLE carb_loading_days (
 - Purpose: Enables UI to display contextual information like "8g/kg bodyweight (610g total)" instead of just "610g"
 - Benefits user understanding of why their target is what it is
 
-### Activity Completions Table
+### Completion Metadata (Embedded on `activities`)
 
-Detailed completion data with voice notes and ratings.
+As of **November 2025** we no longer maintain a standalone `activity_completions` table. Completion metadata
+lives directly on the `activities` row so that every activity (planned or completed) is self-contained.
+This simplifies syncing, avoids "current plan" assumptions, and lets us fetch/update a single record per workout.
+
+Key columns on `activities`:
 
 ```sql
-CREATE TABLE activity_completions (
-  id TEXT PRIMARY KEY,
-  activity_id TEXT NOT NULL UNIQUE REFERENCES activities(id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL,
+ALTER TABLE activities
+  ADD COLUMN completed_at TIMESTAMP,
+  ADD COLUMN completion_type TEXT DEFAULT 'manual' CHECK (completion_type IN ('manual','automatic','imported')),
+  ADD COLUMN completion_rating INTEGER CHECK (completion_rating BETWEEN 1 AND 5),
+  ADD COLUMN completion_notes TEXT,
+  ADD COLUMN actual_distance_miles REAL,
+  ADD COLUMN actual_duration_minutes INTEGER,
+  ADD COLUMN average_pace_minutes_per_mile REAL,
+  ADD COLUMN max_heart_rate INTEGER,
+  ADD COLUMN average_heart_rate INTEGER,
+  ADD COLUMN calories_burned INTEGER,
+  ADD COLUMN effort_rating INTEGER CHECK (effort_rating BETWEEN 1 AND 5),
+  ADD COLUMN nutrition_rating INTEGER CHECK (nutrition_rating BETWEEN 1 AND 5),
+  ADD COLUMN overall_satisfaction INTEGER CHECK (overall_satisfaction BETWEEN 1 AND 5),
+  ADD COLUMN voice_note_id TEXT,
+  ADD COLUMN has_voice_recording BOOLEAN DEFAULT FALSE,
+  ADD COLUMN weather_conditions TEXT,
+  ADD COLUMN temperature_fahrenheit INTEGER,
+  ADD COLUMN humidity_percent INTEGER,
+  ADD COLUMN nutrition_adherence_score REAL CHECK (nutrition_adherence_score BETWEEN 0 AND 1),
+  ADD COLUMN performance_vs_target REAL;
+```
 
-  -- Completion details
-  completed_at TIMESTAMP NOT NULL,
-  completion_type TEXT NOT NULL DEFAULT 'manual' CHECK (completion_type IN ('manual', 'automatic', 'imported')),
+Queries that previously joined `activity_completions` should now filter directly on the `activities`
+table (e.g., `WHERE completed_at IS NOT NULL`). Indexes should be created on `completed_at` and `user_id`
+to support analytics dashboards:
 
-  -- Performance data
-  actual_distance_miles REAL,
-  actual_duration_minutes INTEGER,
-  average_pace_minutes_per_mile REAL,
-  max_heart_rate INTEGER,
-  average_heart_rate INTEGER,
-  calories_burned INTEGER,
-
-  -- User feedback
-  effort_rating INTEGER CHECK (effort_rating BETWEEN 1 AND 5), -- How hard was the workout
-  nutrition_rating INTEGER CHECK (nutrition_rating BETWEEN 1 AND 5), -- How well did nutrition work
-  overall_satisfaction INTEGER CHECK (overall_satisfaction BETWEEN 1 AND 5), -- Overall experience
-
-  -- Notes and feedback
-  text_notes TEXT,
-  voice_note_id TEXT, -- References existing voice note entry when available
-  has_voice_recording BOOLEAN DEFAULT FALSE,
-
-  -- Conditions
-  weather_conditions TEXT,
-  temperature_fahrenheit INTEGER,
-  humidity_percent INTEGER,
-
-  -- Analysis (populated by background processing)
-  nutrition_adherence_score REAL, -- 0.0 to 1.0 based on plan execution
-  performance_vs_target REAL, -- Actual performance vs. planned
-
-  INDEX idx_completions_activity (activity_id),
-  INDEX idx_completions_user_date (user_id, completed_at),
-  INDEX idx_completions_ratings (user_id, nutrition_rating, overall_satisfaction)
-);
+```sql
+CREATE INDEX IF NOT EXISTS idx_activities_completion_window
+  ON activities(user_id, completed_at)
+  WHERE completed_at IS NOT NULL;
 ```
 
 ## Modified Tables
@@ -367,7 +362,6 @@ class Migration001CreateCalendarTables extends Migration {
   void down() {
     drop.table('carb_loading_days');
     drop.table('carb_loading_plans');
-    drop.table('activity_completions');
     drop.table('events');
     drop.table('activities');
   }
@@ -449,25 +443,21 @@ class Migration003MigrateExistingData extends Migration {
       WHERE activity_id IS NULL;
     ''');
 
-    // Create completion records for rated plans
+    // Backfill completion metadata directly onto activities
     custom('''
-      INSERT INTO activity_completions (id, activity_id, user_id, completed_at, nutrition_rating, text_notes)
-      SELECT
-        'comp_' || np.id,
-        np.activity_id,
-        np.user_id,
-        np.run_date_time,
-        np.plan_rating,
-        np.journal_notes
-      FROM nutrition_plans np
-      WHERE np.plan_rating IS NOT NULL AND np.run_date_time IS NOT NULL;
+      UPDATE activities a
+         SET completed_at = COALESCE(a.completed_at, np.run_date_time),
+             completion_rating = COALESCE(a.completion_rating, np.plan_rating),
+             completion_notes = COALESCE(a.completion_notes, np.journal_notes)
+        FROM nutrition_plans np
+       WHERE np.activity_id = a.id
+         AND (np.plan_rating IS NOT NULL OR np.journal_notes IS NOT NULL);
     ''');
   }
 
   @override
   void down() {
     // Remove migrated data
-    delete.from('activity_completions').where('id LIKE "comp_%"');
     delete.from('activities').where('id LIKE "act_%"');
     update.table('nutrition_plans').set('activity_id', null);
   }
@@ -530,7 +520,9 @@ CREATE INDEX idx_carb_days_progress ON carb_loading_days(carb_loading_plan_id, p
 **Analytics and Reporting**:
 ```sql
 -- Optimized for completion trend analysis
-CREATE INDEX idx_completions_analytics ON activity_completions(user_id, completed_at, nutrition_rating, overall_satisfaction);
+CREATE INDEX idx_activities_completion_analytics
+  ON activities(user_id, completed_at, nutrition_rating, overall_satisfaction)
+  WHERE completed_at IS NOT NULL;
 
 -- Optimized for performance correlation queries
 CREATE INDEX idx_activities_performance ON activities(user_id, activity_type, completed_at)
@@ -541,10 +533,10 @@ WHERE status = 'completed';
 
 **Calendar Week Load** (most frequent query):
 ```sql
-SELECT a.*, e.event_type, e.has_carb_loading, np.id as nutrition_plan_id
+SELECT a.*, e.event_type, e.has_carb_loading,
+       (a.nutrition_plan_data IS NOT NULL) AS has_nutrition_plan
 FROM activities a
 LEFT JOIN events e ON a.id = e.activity_id
-LEFT JOIN nutrition_plans np ON a.id = np.activity_id
 WHERE a.user_id = ?
   AND a.scheduled_date_time BETWEEN ? AND ?
   AND a.deleted_at IS NULL
@@ -553,13 +545,13 @@ ORDER BY a.scheduled_date_time;
 
 **Pending Completions Check** (app startup):
 ```sql
-SELECT a.*, np.id as nutrition_plan_id
+SELECT a.*
 FROM activities a
-LEFT JOIN nutrition_plans np ON a.id = np.activity_id
 WHERE a.user_id = ?
   AND a.status = 'planned'
   AND a.scheduled_date_time < CURRENT_TIMESTAMP
   AND a.deleted_at IS NULL
+  AND a.nutrition_plan_data IS NOT NULL
 ORDER BY a.scheduled_date_time DESC
 LIMIT 1;
 ```

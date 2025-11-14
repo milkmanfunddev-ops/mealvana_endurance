@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../application/barcode_scanner_service.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../widgets/nutrition_verification_dialog.dart';
 
+/// Barcode Scanner Screen - Kyle's Design System
+/// Unified scanner for all contexts (swap, add, preferences, carb loading)
 class BarcodeScannerScreen extends ConsumerStatefulWidget {
-  final String category; // 'before_run', 'during_run', 'after_run'
+  final String category; // 'before_run', 'during_run', 'after_run', 'add_food', 'preferences', 'carb_loading'
   final String? foodToSwapId;
   final String? foodToSwapName;
+  final String? context; // Additional context parameter
 
   const BarcodeScannerScreen({
     super.key,
     required this.category,
     this.foodToSwapId,
     this.foodToSwapName,
+    this.context,
   });
 
   @override
@@ -31,12 +35,22 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   bool _isScanning = true;
   String? _lastScannedBarcode;
   BarcodeScanResult? _lastScanResult;
+  bool _flashOn = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeController();
+
+    // Track scanner opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final analytics = ref.read(appExternalDepsProvider);
+      analytics.analytics.track('barcode_scanner_opened', properties: {
+        'category': widget.category,
+        'context': widget.context,
+      });
+    });
   }
 
   @override
@@ -78,7 +92,6 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         _controller!.stop();
         break;
       case AppLifecycleState.detached:
-        break;
       case AppLifecycleState.hidden:
         break;
     }
@@ -103,6 +116,13 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     // Stop scanning temporarily to prevent multiple scans
     _controller?.stop();
 
+    // Track scan
+    final analytics = ref.read(appExternalDepsProvider);
+    analytics.analytics.track('barcode_scanned', properties: {
+      'code': barcodeValue,
+      'category': widget.category,
+    });
+
     // Perform barcode lookup
     _lookupBarcode(barcodeValue);
   }
@@ -112,28 +132,44 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('Barcode Detected'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Barcode: $barcode'),
-            SizedBox(height: 16.h),
-            Text('Looking up product information...'),
-            SizedBox(height: 16.h),
-            LinearProgressIndicator(),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _resetScanning();
-            },
-            child: Text('Cancel'),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: AppRadius.lgRadius,
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Barcode Detected',
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Barcode: $barcode',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Looking up product information...',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
 
@@ -192,7 +228,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         },
         onConfirm: (updatedFood) {
           Navigator.of(context).pop();
-          context.pop(updatedFood); // Return to swap food screen with the verified food
+          context.pop(updatedFood); // Return food to calling screen
         },
       ),
     );
@@ -201,33 +237,72 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   void _showNotFoundResult(String barcode, String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Product Not Found'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Barcode: $barcode'),
-            SizedBox(height: 16.h),
-            Text(message),
-          ],
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: AppRadius.lgRadius,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                FontAwesomeIcons.triangleExclamation,
+                size: AppIconSizes.xl,
+                color: AppColors.dragonfruit,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Product Not Found',
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Barcode: $barcode',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                message,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: KyleSecondaryButton(
+                      text: 'Try Another',
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _resetScanning();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: KylePrimaryButton(
+                      text: 'Cancel',
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        context.pop();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _resetScanning();
-            },
-            child: Text('Try Another'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.pop(); // Return to swap food screen
-            },
-            child: Text('Cancel'),
-          ),
-        ],
       ),
     );
   }
@@ -235,26 +310,56 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   void _showInvalidFormatResult(String barcode, String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Invalid Barcode'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Barcode: $barcode'),
-            SizedBox(height: 16.h),
-            Text(message),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _resetScanning();
-            },
-            child: Text('Try Another'),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: AppRadius.lgRadius,
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                FontAwesomeIcons.xmark,
+                size: AppIconSizes.xl,
+                color: AppColors.dragonfruit,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Invalid Barcode',
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Barcode: $barcode',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                message,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              KyleSecondaryButton(
+                text: 'Try Another',
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _resetScanning();
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -262,25 +367,64 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   void _showError(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _resetScanning();
-            },
-            child: Text('Try Again'),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: AppRadius.lgRadius,
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.pop(); // Return to swap food screen
-            },
-            child: Text('Cancel'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                FontAwesomeIcons.triangleExclamation,
+                size: AppIconSizes.xl,
+                color: AppColors.dragonfruit,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Error',
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                message,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: KyleSecondaryButton(
+                      text: 'Try Again',
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _resetScanning();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: KylePrimaryButton(
+                      text: 'Cancel',
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        context.pop();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -296,6 +440,9 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
   void _toggleFlashlight() {
     _controller?.toggleTorch();
+    setState(() {
+      _flashOn = !_flashOn;
+    });
   }
 
   void _switchCamera() {
@@ -311,22 +458,50 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
     return Scaffold(
       backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: CustomAppBarBackButton(
-          onPressed: () => context.pop(),
-          // color: Colors.white,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: Icon(
+                  FontAwesomeIcons.arrowLeft,
+                  size: AppIconSizes.controlIcon,
+                  color: Colors.white,
+                ),
+                onPressed: () => context.pop(),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              title,
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
-        title: Text(
-          title,
-          style: AppTheme.titleStyle.copyWith(
-            color: Colors.white,
-            fontSize: 18.sp,
+        actions: [
+          // Flash toggle button
+          IconButton(
+            onPressed: _toggleFlashlight,
+            icon: Icon(
+              _flashOn ? FontAwesomeIcons.bolt : FontAwesomeIcons.bolt,
+              color: _flashOn ? AppColors.orange : Colors.white,
+              size: AppIconSizes.md,
+            ),
           ),
-        ),
-        centerTitle: true,
+        ],
       ),
       body: Stack(
         children: [
@@ -342,19 +517,20 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
           // Bottom controls
           Positioned(
-            bottom: 60.h,
+            bottom: 60,
             left: 0,
             right: 0,
             child: _buildBottomControls(),
           ),
 
           // Instructions
-          Positioned(
-            top: 100.h,
-            left: 20.w,
-            right: 20.w,
-            child: _buildInstructions(),
-          ),
+          if (_isScanning)
+            Positioned(
+              top: 120,
+              left: 20,
+              right: 20,
+              child: _buildInstructions(),
+            ),
         ],
       ),
     );
@@ -369,16 +545,15 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
   Widget _buildInstructions() {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(12.r),
+        color: Colors.black.withOpacity(0.7),
+        borderRadius: AppRadius.cardRadius,
       ),
       child: Text(
         'Position the barcode within the scanning area',
-        style: AppTheme.textStyle.copyWith(
+        style: AppTextStyles.bodyMedium.copyWith(
           color: Colors.white,
-          fontSize: 16.sp,
         ),
         textAlign: TextAlign.center,
       ),
@@ -389,23 +564,16 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        // Flashlight button
-        _buildControlButton(
-          icon: Icons.flashlight_on,
-          onPressed: _toggleFlashlight,
-          label: 'Flash',
-        ),
-
         // Reset scanning button
         _buildControlButton(
-          icon: Icons.refresh,
+          icon: FontAwesomeIcons.arrowRotateRight,
           onPressed: _resetScanning,
           label: 'Reset',
         ),
 
         // Switch camera button
         _buildControlButton(
-          icon: Icons.cameraswitch,
+          icon: FontAwesomeIcons.cameraRotate,
           onPressed: _switchCamera,
           label: 'Switch',
         ),
@@ -422,27 +590,30 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 60.w,
-          height: 60.w,
+          width: 60,
+          height: 60,
           decoration: BoxDecoration(
-            color: AppTheme.primary900.withValues(alpha: 0.8),
+            color: Colors.black.withOpacity(0.7),
             shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.electrolyte.withOpacity(0.5),
+              width: 2,
+            ),
           ),
           child: IconButton(
             icon: Icon(
               icon,
               color: Colors.white,
-              size: 28.sp,
+              size: AppIconSizes.md,
             ),
             onPressed: onPressed,
           ),
         ),
-        SizedBox(height: 8.h),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           label,
-          style: AppTheme.textStyle.copyWith(
+          style: AppTextStyles.smallLabel.copyWith(
             color: Colors.white,
-            fontSize: 12.sp,
           ),
         ),
       ],
@@ -454,11 +625,11 @@ class ScannerOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.5)
+      ..color = Colors.black.withOpacity(0.5)
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()
-      ..color = AppTheme.primary900
+      ..color = AppColors.electrolyte
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
 
@@ -473,21 +644,21 @@ class ScannerOverlayPainter extends CustomPainter {
     // Draw the overlay with cut-out
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..addRRect(RRect.fromRectAndRadius(scannerRect, Radius.circular(12.r)))
+      ..addRRect(RRect.fromRectAndRadius(scannerRect, const Radius.circular(12)))
       ..fillType = PathFillType.evenOdd;
 
     canvas.drawPath(path, paint);
 
     // Draw scanner border
     canvas.drawRRect(
-      RRect.fromRectAndRadius(scannerRect, Radius.circular(12.r)),
+      RRect.fromRectAndRadius(scannerRect, const Radius.circular(12)),
       borderPaint,
     );
 
     // Draw corner indicators
-    final cornerLength = 30.0;
+    const cornerLength = 30.0;
     final cornerPaint = Paint()
-      ..color = AppTheme.primary900
+      ..color = AppColors.electrolyte
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
-import 'package:mealvana_endurance/theme/app_theme.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
+import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
+import '../../../../shared/widgets/kyle_design/cards/base_card.dart';
+import '../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../shared/widgets/food_icon.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
 import '../providers/carb_loading_food_selection_controller.dart';
@@ -17,7 +21,7 @@ import '../../../../shared/database/app_database.dart' as db;
 /// Screen for selecting foods to add to a carb loading meal
 /// Searches across all food sources and handles importing from nutrition plan
 class CarbLoadingFoodSelectionScreen extends ConsumerStatefulWidget {
-  final String dayId;
+  final int dayId;
   final MealType mealType;
 
   const CarbLoadingFoodSelectionScreen({
@@ -123,24 +127,6 @@ class _CarbLoadingFoodSelectionScreenState
     });
   }
 
-  void _incrementQuantity() {
-    setState(() {
-      _selectedQuantity += 0.5;
-    });
-    ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-      .updateQuantity(_selectedQuantity);
-  }
-
-  void _decrementQuantity() {
-    if (_selectedQuantity > 0.5) {
-      setState(() {
-        _selectedQuantity -= 0.5;
-      });
-      ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-        .updateQuantity(_selectedQuantity);
-    }
-  }
-
   Future<void> _handleAddFood() async {
     await ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
       .addFoodToMeal();
@@ -176,9 +162,9 @@ class _CarbLoadingFoodSelectionScreenState
     final controllerState = ref.watch(carbLoadingFoodSelectionControllerProvider(_params));
 
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppTheme.baseCream,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: CustomAppBarBackButton(
@@ -186,9 +172,8 @@ class _CarbLoadingFoodSelectionScreenState
         ),
         title: Text(
           'Add Food to $_mealTypeName',
-          style: AppTheme.titleStyle.copyWith(
-            color: AppTheme.primary900,
-            fontSize: 18.sp,
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         centerTitle: true,
@@ -200,13 +185,12 @@ class _CarbLoadingFoodSelectionScreenState
 
           return FloatingActionButton.extended(
             onPressed: _navigateToCustomFoodEntry,
-            backgroundColor: AppTheme.primary600,
-            icon: const Icon(Icons.add, color: AppTheme.baseWhite),
+            backgroundColor: AppColors.orange,
+            icon: const Icon(FontAwesomeIcons.plus, color: AppColors.textLight, size: AppIconSizes.controlIcon),
             label: Text(
               'Create Custom Food',
-              style: AppTheme.textStyle.copyWith(
-                color: AppTheme.baseWhite,
-                fontWeight: FontWeight.w600,
+              style: AppTextStyles.buttonPrimary.copyWith(
+                color: AppColors.textLight,
               ),
             ),
           );
@@ -216,7 +200,10 @@ class _CarbLoadingFoodSelectionScreenState
       ),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 0.h),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           child: controllerState.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(
@@ -245,12 +232,12 @@ class _CarbLoadingFoodSelectionScreenState
                   onClear: _onClearSearch,
                 ),
 
-                SizedBox(height: 16.h),
+                const SizedBox(height: AppSpacing.md),
 
                 // Selected food details
                 if (state.selectedFood != null && state.searchQuery.isEmpty) ...[
                   _buildSelectedFoodCard(state),
-                  SizedBox(height: 24.h),
+                  const SizedBox(height: AppSpacing.lg),
                 ],
 
                 // Open Food Facts search results
@@ -258,7 +245,7 @@ class _CarbLoadingFoodSelectionScreenState
                   Expanded(
                     child: _buildOpenFoodFactsResults(state),
                   ),
-                  SizedBox(height: 16.h),
+                  const SizedBox(height: AppSpacing.md),
                 ] else
                   // Local search results
                   Expanded(
@@ -267,13 +254,13 @@ class _CarbLoadingFoodSelectionScreenState
 
                 // Add button - only show when food is selected
                 if (state.selectedFood != null && state.searchQuery.isEmpty) ...[
-                  SizedBox(height: 16.h),
-                  PrimaryButton(
+                  const SizedBox(height: AppSpacing.md),
+                  KylePrimaryButton(
                     text: 'Add to $_mealTypeName',
                     onPressed: _handleAddFood,
-                    width: double.infinity,
+                    isFullWidth: true,
                   ),
-                  SizedBox(height: 16.h),
+                  const SizedBox(height: AppSpacing.md),
                 ],
               ],
             ),
@@ -310,108 +297,56 @@ class _CarbLoadingFoodSelectionScreenState
 
     final totalCarbs = carbsPerServing * _selectedQuantity;
 
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppTheme.primary50.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              FoodIcon(
-                imageUrl: imageUrl,
-                size: 40.w,
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Text(
-                  displayName,
-                  style: AppTheme.textStyle.copyWith(
-                    color: AppTheme.baseBlack,
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w500,
+    return BaseCard(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Food header
+            Row(
+              children: [
+                FoodIcon(
+                  imageUrl: imageUrl,
+                  size: AppIconSizes.foodIcon,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    displayName,
+                    style: AppTextStyles.foodTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          // Quantity adjustment controls
-          Row(
-            children: [
-              Text(
-                'Quantity:',
-                style: AppTheme.textStyle.copyWith(
-                  color: AppTheme.primary900,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              // Decrement button
-              Container(
-                width: 36.w,
-                height: 36.w,
-                decoration: const BoxDecoration(
-                  color: AppTheme.primary900,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: Icon(
-                    Icons.remove,
-                    color: Colors.white,
-                    size: 18.sp,
-                  ),
-                  onPressed: _decrementQuantity,
-                ),
-              ),
-              SizedBox(width: 16.w),
-              // Quantity display
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppTheme.primary100),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Text(
-                  _selectedQuantity == _selectedQuantity.toInt()
-                      ? _selectedQuantity.toInt().toString()
-                      : _selectedQuantity.toStringAsFixed(1),
-                  style: AppTheme.textStyle.copyWith(
-                    color: AppTheme.baseBlack,
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              SizedBox(width: 16.w),
-              // Increment button
-              Container(
-                width: 36.w,
-                height: 36.w,
-                decoration: const BoxDecoration(
-                  color: AppTheme.primary900,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: Icon(
-                    Icons.add,
-                    color: Colors.white,
-                    size: 18.sp,
-                  ),
-                  onPressed: _incrementQuantity,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          _buildNutrientRow('Carbohydrates', '${totalCarbs.toStringAsFixed(0)} g'),
-        ],
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Quantity control using Kyle's design
+            KylePlusMinusDecimalControl(
+              value: _selectedQuantity,
+              onChanged: (value) {
+                setState(() {
+                  _selectedQuantity = value;
+                });
+                ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
+                  .updateQuantity(value);
+              },
+              min: 0.5,
+              max: 10.0,
+              step: 0.5,
+              decimalPlaces: 1,
+              label: 'QUANTITY',
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Nutrition facts
+            _buildNutrientRow('Carbohydrates', '${totalCarbs.toStringAsFixed(0)} g'),
+          ],
+        ),
       ),
     );
   }
@@ -422,17 +357,16 @@ class _CarbLoadingFoodSelectionScreenState
       children: [
         Text(
           label,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.primary900,
-            fontSize: 14.sp,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         Text(
           value,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
+          style: AppTextStyles.dataNumber.copyWith(
+            color: AppColors.electrolyte,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -441,9 +375,8 @@ class _CarbLoadingFoodSelectionScreenState
 
   Widget _buildOpenFoodFactsResults(CarbLoadingFoodSelectionState state) {
     return ListView.separated(
-      padding: EdgeInsets.all(16.w),
       itemCount: state.openFoodFactsResults.length,
-      separatorBuilder: (context, index) => SizedBox(height: 12.h),
+      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
         final result = state.openFoodFactsResults[index];
         return _buildSearchResultItem(result);
@@ -452,78 +385,82 @@ class _CarbLoadingFoodSelectionScreenState
   }
 
   Widget _buildSearchResultItem(dynamic result) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppTheme.baseWhite,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppTheme.primary100),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return BaseCard(
+      child: InkWell(
+        onTap: () => _handleOpenFoodFactsSelection(result),
+        borderRadius: AppRadius.cardRadius,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
             children: [
-              // Product image
-              if (result.imageUrl?.isNotEmpty == true)
-                Container(
-                  width: 50.w,
-                  height: 50.w,
-                  margin: EdgeInsets.only(right: 12.w),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.r),
-                    image: DecorationImage(
-                      image: NetworkImage(result.imageUrl!),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+              // Product image with Electrolyte background
+              Container(
+                width: AppIconSizes.foodIcon,
+                height: AppIconSizes.foodIcon,
+                decoration: BoxDecoration(
+                  color: AppColors.electrolyte.withValues(alpha: 0.2),
+                  borderRadius: AppRadius.smRadius,
                 ),
+                child: result.imageUrl?.isNotEmpty == true
+                    ? ClipRRect(
+                        borderRadius: AppRadius.smRadius,
+                        child: Image.network(
+                          result.imageUrl!,
+                          width: AppIconSizes.foodIcon,
+                          height: AppIconSizes.foodIcon,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            FontAwesomeIcons.utensils,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            size: AppIconSizes.controlIcon,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        FontAwesomeIcons.utensils,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: AppIconSizes.controlIcon,
+                      ),
+              ),
 
+              const SizedBox(width: AppSpacing.md),
+
+              // Product details
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       result.name.isNotEmpty ? result.name : 'Unknown Product',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.baseBlack,
+                      style: AppTextStyles.foodTitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     if (result.brand?.isNotEmpty == true) ...[
-                      SizedBox(height: 4.h),
+                      const SizedBox(height: AppSpacing.xxs),
                       Text(
                         result.brand!,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppTheme.primary100,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ],
                 ),
               ),
 
-              // Right chevron icon
-              GestureDetector(
-                onTap: () => _handleOpenFoodFactsSelection(result),
-                child: Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary600,
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Icon(
-                    Icons.chevron_right,
-                    color: AppTheme.baseWhite,
-                    size: 20.sp,
-                  ),
-                ),
+              Icon(
+                FontAwesomeIcons.chevronRight,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: AppIconSizes.chevron,
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -546,7 +483,7 @@ class _CarbLoadingFoodSelectionScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to import food: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.dragonfruit,
           ),
         );
       }
@@ -556,20 +493,30 @@ class _CarbLoadingFoodSelectionScreenState
   Widget _buildLocalSearchResults(CarbLoadingFoodSelectionState state) {
     if (state.searchResults.isEmpty) {
       return Center(
-        child: Text(
-          state.searchQuery.isEmpty
-              ? 'No foods available'
-              : 'No foods found for "${state.searchQuery}"',
-          style: TextStyle(
-            fontSize: 16.sp,
-            color: AppTheme.baseGrey,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              FontAwesomeIcons.magnifyingGlass,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              state.searchQuery.isEmpty
+                  ? 'No foods available'
+                  : 'No foods found for "${state.searchQuery}"',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       );
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
       itemCount: state.searchResults.length,
       itemBuilder: (context, index) {
         final food = state.searchResults[index];
@@ -610,80 +557,76 @@ class _CarbLoadingFoodSelectionScreenState
       badge = 'Custom Food';
     }
 
-    return Card(
-      margin: EdgeInsets.only(bottom: 12.h),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      elevation: 2,
-      child: InkWell(
-        onTap: () => _selectFood(food),
-        borderRadius: BorderRadius.circular(12.r),
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Row(
-            children: [
-              // Food icon
-              FoodIcon(
-                imageUrl: imageUrl,
-                size: 48.w,
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: BaseCard(
+        child: InkWell(
+          onTap: () => _selectFood(food),
+          borderRadius: AppRadius.cardRadius,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                // Food icon
+                FoodIcon(
+                  imageUrl: imageUrl,
+                  size: AppIconSizes.foodIcon,
+                ),
 
-              SizedBox(width: 16.w),
+                const SizedBox(width: AppSpacing.md),
 
-              // Food details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.baseBlack,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      '${carbsPerServing.toInt()}g carbs per serving',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: AppTheme.baseGrey,
-                      ),
-                    ),
-                    if (badge != null) ...[
-                      SizedBox(height: 4.h),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 2.h,
+                // Food details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: AppTextStyles.foodTitle.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: BoxDecoration(
-                          color: isCustom ? AppTheme.highlight100 : AppTheme.primary100,
-                          borderRadius: BorderRadius.circular(4.r),
+                      ),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        '${carbsPerServing.toInt()}g carbs per serving',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        child: Text(
-                          badge,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppTheme.primary900,
-                            fontWeight: FontWeight.w500,
+                      ),
+                      if (badge != null) ...[
+                        const SizedBox(height: AppSpacing.xxs),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.xxs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isCustom
+                                ? AppColors.orange.withValues(alpha: 0.2)
+                                : AppColors.electrolyte.withValues(alpha: 0.2),
+                            borderRadius: AppRadius.xsRadius,
+                          ),
+                          child: Text(
+                            badge,
+                            style: AppTextStyles.smallLabel.copyWith(
+                              color: isCustom ? AppColors.orange : AppColors.electrolyte,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
 
-              // Add icon
-              Icon(
-                Icons.add_circle,
-                color: AppTheme.primary600,
-                size: 28.sp,
-              ),
-            ],
+                // Add icon
+                Icon(
+                  FontAwesomeIcons.circlePlus,
+                  color: AppColors.orange,
+                  size: AppIconSizes.md,
+                ),
+              ],
+            ),
           ),
         ),
       ),

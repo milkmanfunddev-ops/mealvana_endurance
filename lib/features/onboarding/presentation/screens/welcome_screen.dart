@@ -1,172 +1,178 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/secondary_button.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
+import '../../../../shared/services/app_external_deps.dart';
 
-/// Welcome screen - first screen users see
-/// Simple introduction to the app with call-to-action to start onboarding
+/// Welcome Screen - Design System
+/// First screen in onboarding flow
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            children: [
-              SizedBox(height: 80.h),
+      backgroundColor: AppColors.blackberry,
+      body: _buildContent(context, ref),
+    );
+  }
 
-              // App logo
-              SizedBox(
-                width: 120.w,
-                height: 120.h,
-                child: Image.asset(
-                  'assets/images/endurance_welcome_logo_base_cream.png',
-                  width: 120.w,
-                  height: 120.h,
-                  fit: BoxFit.contain,
-                ),
-              ),
+  Widget _buildContent(BuildContext context, WidgetRef ref) {
+    return SafeArea(
+      child: Padding(
+        padding: AppSpacing.screenPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: AppSpacing.xxxl),
+            // Hero image
+            _buildHeroImage(context),
+            const SizedBox(height: AppSpacing.lg),
+            // Logo and title
+            _buildHeader(context),
 
-              SizedBox(height: 16.h),
 
-              // App title
-              Text(
-                'Endurance',
-                style: AppTheme.heading1Style.copyWith(
-                  color: AppTheme.primary900,
-                  fontSize: 32.sp,
-                ),
-                textAlign: TextAlign.center,
-              ),
+            
 
-              SizedBox(height: 16.h),
+            const SizedBox(height: AppSpacing.xxxl),
+            const SizedBox(height: AppSpacing.xxxl),
 
-              // Subtitle
-              Text(
-                'Personalized Nutrition Plans\nfor Long Run Days',
-                style: AppTheme.subtitleStyle.copyWith(
-                  color: AppTheme.baseGrey,
-                  fontSize: 18.sp,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              SizedBox(height: 32.h),
-              
-              // Features list
-              _FeatureItem(
-                icon: Icons.calculate,
-                title: 'Smart Calculations',
-                description: 'Evidence-based nutrition formulas tailored to your body and run distance',
-              ),
-              
-              SizedBox(height: 24.h),
-              
-              _FeatureItem(
-                icon: Icons.restaurant,
-                title: 'Food Preferences',
-                description: 'Plans based on foods you actually like and want to try',
-              ),
-              
-              SizedBox(height: 24.h),
-              
-              _FeatureItem(
-                icon: Icons.offline_bolt,
-                title: 'Offline Ready',
-                description: 'Works completely offline - no internet required',
-              ),
-              
-              const Spacer(),
-              
-              // Get started button
-              PrimaryButton(
-                text: 'Get Started',
-                onPressed: () => context.go('/onboarding/profile'),
-                width: double.infinity,
-              ),
+            // Welcome message
+            _buildWelcomeMessage(context),
 
-              // SizedBox(height: 16.h),
+            const Spacer(),
 
-              // // Skip for now option (for testing)
-              // SecondaryButton(
-              //   text: 'Skip for Now',
-              //   onPressed: () => context.go('/main'),
-              //   width: double.infinity,
-              // ),
-              
-              SizedBox(height: 24.h),
-            ],
-          ),
+            // Get Started button
+            KylePrimaryButton(
+              text: 'Get Started',
+              onPressed: () => _getStarted(context, ref),
+              isFullWidth: false,
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // // Skip link
+            // InkWell(
+            //   onTap: () => _skipOnboarding(context, ref),
+            //   child: Text(
+            //     'Skip for now',
+            //     style: AppTextStyles.buttonTertiary.copyWith(
+            //       color: AppColors.dragonfruit,
+            //       decoration: TextDecoration.underline,
+            //     ),
+            //   ),
+            // ),
+          ],
         ),
       ),
     );
   }
-}
 
-class _FeatureItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-
-  const _FeatureItem({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget _buildHeader(BuildContext context) {
+    return Column(
       children: [
-        Container(
-          width: 48.w,
-          height: 48.h,
-          decoration: BoxDecoration(
-            color: AppTheme.primary100,
-            borderRadius: BorderRadius.circular(12.r),
-            boxShadow: [AppTheme.dropShadow],
-          ),
-          child: Icon(
-            icon,
-            size: 24.w,
-            color: AppTheme.primary600,
+        // App logo
+        // Container(
+        //   width: 120,
+        //   height: 120,
+        //   decoration: BoxDecoration(
+        //     color: AppColors.cream.withOpacity(0.2),
+        //     shape: BoxShape.circle,
+        //   ),
+        //   child: Icon(
+        //     FontAwesomeIcons.personRunning,
+        //     size: AppIconSizes.xl,
+        //     color: AppColors.cream,
+        //   ),
+        // ),
+
+        // const SizedBox(height: AppSpacing.lg),
+
+        // App title
+        Text(
+          'Mealvana',
+          style: AppTextStyles.pageTitle.copyWith(
+            color: AppColors.cream,
           ),
         ),
 
-        SizedBox(width: 16.w),
+        const SizedBox(height: AppSpacing.sm),
 
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: AppTheme.heading3Style.copyWith(
-                  fontSize: 16.sp,
-                  color: AppTheme.primary900,
-                ),
-              ),
-
-              SizedBox(height: 4.h),
-
-              Text(
-                description,
-                style: AppTheme.textStyle.copyWith(
-                  fontSize: 14.sp,
-                  color: AppTheme.baseGrey,
-                ),
-              ),
-            ],
+        // Subtitle
+        Text(
+          'Endurance',
+          style: AppTextStyles.subtitle.copyWith(
+            color: AppColors.cream.withOpacity(0.8),
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildHeroImage(BuildContext context) {
+    // scale the image down
+    return Container(
+      width: double.infinity,
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.lgRadius,
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadius.lgRadius,
+        child: Image.asset(
+          'assets/images/welcome_inverted.png',
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeMessage(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          'Welcome to Your Personal\nNutrition Coach',
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: AppColors.cream,
+            fontSize: 24,
+            height: 1.3,
+          ),
+          textAlign: TextAlign.center,
+        ),
+
+        const SizedBox(height: AppSpacing.lg),
+
+        Text(
+          'Get personalized nutrition plans tailored to your endurance activities. Track your fueling, optimize your performance, and achieve your goals.',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.cream.withOpacity(0.9),
+            height: 1.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  void _getStarted(BuildContext context, WidgetRef ref) {
+    // Track get started
+    final analytics = ref.read(appExternalDepsProvider);
+    analytics.analytics.track('welcome_get_started_tapped');
+
+    // Navigate to profile setup
+    context.push('/onboarding/profile');
+  }
+
+  void _skipOnboarding(BuildContext context, WidgetRef ref) {
+    // Track skip onboarding
+    final analytics = ref.read(appExternalDepsProvider);
+    analytics.analytics.track('welcome_skip_tapped');
+
+    // Navigate to main app
+    context.push('/main');
   }
 }

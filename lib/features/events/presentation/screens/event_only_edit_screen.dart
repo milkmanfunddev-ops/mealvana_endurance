@@ -9,6 +9,7 @@ import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../../../shared/services/location_service.dart';
 import '../../../../shared/utils/location_formatter.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../domain/event.dart';
 import '../providers/events_controller.dart';
 
@@ -41,7 +42,7 @@ class _EventOnlyEditScreenState extends ConsumerState<EventOnlyEditScreen> {
 
   // State
   late DateTime? _startTime;
-  late EventType _selectedEventType;
+  late ActivityType _selectedEventType;
   bool _isSaving = false;
 
   // Location search state
@@ -370,7 +371,8 @@ class _EventOnlyEditScreenState extends ConsumerState<EventOnlyEditScreen> {
 
             const SizedBox(height: 16),
 
-            _buildEventTypeDropdown(),
+            // Sport type is read-only after creation - shown in the event detail screen
+            // This edit screen focuses on editable event details only
 
             const SizedBox(height: 16),
 
@@ -585,36 +587,6 @@ class _EventOnlyEditScreenState extends ConsumerState<EventOnlyEditScreen> {
     );
   }
 
-  Widget _buildEventTypeDropdown() {
-    return DropdownButtonFormField<EventType>(
-      initialValue: _selectedEventType,
-      decoration: InputDecoration(
-        labelText: 'Event Type',
-        prefixIcon: Icon(Icons.category, color: AppTheme.primary600),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppTheme.primary600, width: 2),
-        ),
-        filled: true,
-        fillColor: AppTheme.baseWhite,
-      ),
-      items: EventType.values.map((type) {
-        return DropdownMenuItem(
-          value: type,
-          child: Text(_formatEventType(type)),
-        );
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) {
-          setState(() => _selectedEventType = value);
-        }
-      },
-    );
-  }
-
   Widget _buildDateTimeSelector() {
     return InkWell(
       onTap: _selectDateTime,
@@ -654,28 +626,5 @@ class _EventOnlyEditScreenState extends ConsumerState<EventOnlyEditScreen> {
         ),
       ),
     );
-  }
-
-  String _formatEventType(EventType type) {
-    switch (type) {
-      case EventType.fiveK:
-        return '5K';
-      case EventType.tenK:
-        return '10K';
-      case EventType.halfMarathon:
-        return 'Half Marathon';
-      case EventType.marathon:
-        return 'Marathon';
-      case EventType.ultra50K:
-        return 'Ultra 50K';
-      case EventType.ultra50M:
-        return 'Ultra 50M';
-      case EventType.ultra100K:
-        return 'Ultra 100K';
-      case EventType.ultra100M:
-        return 'Ultra 100M';
-      case EventType.custom:
-        return 'Custom Event';
-    }
   }
 }

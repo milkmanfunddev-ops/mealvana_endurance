@@ -1,162 +1,233 @@
-import 'dart:async';
-import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart';
 
+import '../../auth/application/auth_service.dart';
+import '../../calendar/application/calendar_service.dart';
+import '../../activities/application/activities_service.dart';
+import '../../activities/domain/activity.dart' as calendar_activity;
 import '../domain/workout_note.dart';
-import '../../../shared/database/app_database.dart';
-import '../../../shared/database/database_provider.dart';
 
 part 'workout_notes_repository.g.dart';
 
-/// Repository for managing workout notes in local database
-/// Follows FOA pattern with local-only storage
 class WorkoutNotesRepository {
-  WorkoutNotesRepository(this._database);
+  WorkoutNotesRepository({
+    required CalendarService calendarService,
+    required ActivitiesService activitiesService,
+    required AuthService authService,
+  })  : _calendarService = calendarService,
+        _activitiesService = activitiesService,
+        _authService = authService;
 
-  final AppDatabase _database;
+  final CalendarService _calendarService;
+  final ActivitiesService _activitiesService;
+  final AuthService _authService;
 
-  /// Get all workout notes for a user, ordered by creation date (newest first)
-  Future<List<WorkoutNote>> getAllNotesForUser(String userId) async {
-    final notes = await (_database.select(_database.workoutNotesTable)
-          ..where((tbl) => tbl.userId.equals(userId))
-          ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
-        .get();
-
-    return notes.map(_mapFromDrift).toList();
+  Future<String> _requireUserId() async {
+    final user = await _authService.getCurrentUser();
+    if (user == null) {
+      throw Exception('No user session found');
+    }
+    return user.id;
   }
 
-  /// Get a specific workout note by ID
-  Future<WorkoutNote?> getNoteById(String noteId) async {
-    final note = await (_database.select(_database.workoutNotesTable)
-          ..where((tbl) => tbl.id.equals(noteId)))
-        .getSingleOrNull();
+  Future<List<WorkoutNote>> getAllNotes() async {
+    final userId = await _requireUserId();
+    final activities = await _calendarService.getAllActivities(userId);
+    final notes = activities
+        .where(_activityHasNotes)
+        .map(_mapActivityToNote)
+        .toList();
 
-    return note != null ? _mapFromDrift(note) : null;
+    notes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return notes;
   }
 
-  /// Get workout notes for a specific nutrition plan
-  Future<List<WorkoutNote>> getNotesForPlan(String planId) async {
-    final notes = await (_database.select(_database.workoutNotesTable)
-          ..where((tbl) => tbl.planId.equals(planId))
-          ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
-        .get();
-
-    return notes.map(_mapFromDrift).toList();
+  Future<WorkoutNote?> getNoteById(int noteId) async {
+    final userId = await _requireUserId();
+    final activity = await _calendarService.getActivityById(userId, noteId);
+    if (activity == null || !_activityHasNotes(activity)) {
+      return null;
+    }
+    return _mapActivityToNote(activity);
   }
 
-  /// Save a new workout note
+  Future<List<WorkoutNote>> getNotesForActivity(int activityId) async {
+    final note = await getNoteById(activityId);
+    if (note == null) return [];
+    return [note];
+  }
+
   Future<WorkoutNote> saveNote({
-    required String userId,
-    String? planId,
+    required int activityId,
     required String noteText,
     int? rating,
   }) async {
-    final now = DateTime.now();
-    final noteId = const Uuid().v4();
+    final user = await _authService.getCurrentUser();
+    if (user == null) throw Exception('No user session found');
+    final userId = user.id;
+    final deviceId = user.id;
 
-    final companion = WorkoutNotesTableCompanion(
-      id: Value(noteId),
-      userId: Value(userId),
-      planId: Value(planId),
-      noteText: Value(noteText),
-      rating: Value(rating),
-      createdAt: Value(now),
-      updatedAt: Value(now),
+    // Get current activity
+    final activity = await _calendarService.getActivityById(userId, activityId);
+    if (activity == null) {
+      throw Exception('Activity not found');
+    }
+
+    // Update activity with completion notes
+    final updatedActivity = activity.copyWith(
+      completionNotes: noteText,
     );
 
-    await _database.into(_database.workoutNotesTable).insert(companion);
-
-    return WorkoutNote(
-      id: noteId,
-      userId: userId,
-      planId: planId,
-      noteText: noteText,
-      rating: rating,
-      createdAt: now,
-      updatedAt: now,
+    await _activitiesService.updateActivity(
+      deviceId: deviceId,
+      activity: updatedActivity,
     );
+
+    await _maybeUpdateRating(activityId: activityId, rating: rating);
+
+    final reloadedActivity =
+        await _calendarService.getActivityById(userId, activityId);
+    if (reloadedActivity == null) {
+      throw Exception('Failed to reload activity after saving note');
+    }
+    return _mapActivityToNote(reloadedActivity);
   }
 
-  /// Update an existing workout note
   Future<WorkoutNote?> updateNote({
-    required String noteId,
+    required int noteId,
     String? noteText,
     int? rating,
   }) async {
-    final now = DateTime.now();
-    
-    // First get the current note to preserve other fields
-    final currentNote = await getNoteById(noteId);
-    if (currentNote == null) return null;
+    final user = await _authService.getCurrentUser();
+    if (user == null) throw Exception('No user session found');
+    final userId = user.id;
+    final deviceId = user.id;
 
-    final companion = WorkoutNotesTableCompanion(
-      noteText: noteText != null ? Value(noteText) : Value.absent(),
-      rating: rating != null ? Value(rating) : Value.absent(),
-      updatedAt: Value(now),
+    final activity = await _calendarService.getActivityById(userId, noteId);
+    if (activity == null) {
+      return null;
+    }
+
+    if (noteText != null) {
+      // Update activity with new completion notes
+      final updatedActivity = activity.copyWith(
+        completionNotes: noteText,
+      );
+
+      await _activitiesService.updateActivity(
+        deviceId: deviceId,
+        activity: updatedActivity,
+      );
+    }
+
+    await _maybeUpdateRating(
+      activityId: noteId,
+      rating: rating,
+      fallbackCompletedAt: activity.completedAt,
     );
 
-    final updatedRows = await (_database.update(_database.workoutNotesTable)
-          ..where((tbl) => tbl.id.equals(noteId)))
-        .write(companion);
+    final updated =
+        await _calendarService.getActivityById(userId, noteId);
+    return updated == null ? null : _mapActivityToNote(updated);
+  }
 
-    if (updatedRows == 0) return null;
+  Future<bool> deleteNote(int noteId) async {
+    final user = await _authService.getCurrentUser();
+    if (user == null) throw Exception('No user session found');
+    final userId = user.id;
+    final deviceId = user.id;
 
-    return currentNote.copyWith(
-      noteText: noteText ?? currentNote.noteText,
-      rating: rating ?? currentNote.rating,
-      updatedAt: now,
+    final activity = await _calendarService.getActivityById(userId, noteId);
+    if (activity == null) return false;
+
+    // Update activity to remove completion notes
+    final updatedActivity = activity.copyWith(
+      completionNotes: null,
     );
+
+    await _activitiesService.updateActivity(
+      deviceId: deviceId,
+      activity: updatedActivity,
+    );
+
+    final reloadedActivity = await _calendarService.getActivityById(userId, noteId);
+    return reloadedActivity?.completionNotes == null;
   }
 
-  /// Delete a workout note
-  Future<bool> deleteNote(String noteId) async {
-    final deletedRows = await (_database.delete(_database.workoutNotesTable)
-          ..where((tbl) => tbl.id.equals(noteId)))
-        .go();
-
-    return deletedRows > 0;
+  Future<int> getNotesCount() async {
+    final notes = await getAllNotes();
+    return notes.length;
   }
 
-  /// Get count of notes for a user
-  Future<int> getNotesCountForUser(String userId) async {
-    final count = await (_database.selectOnly(_database.workoutNotesTable)
-          ..addColumns([_database.workoutNotesTable.id.count()])
-          ..where(_database.workoutNotesTable.userId.equals(userId)))
-        .getSingle();
-
-    return count.read(_database.workoutNotesTable.id.count()) ?? 0;
+  Future<List<WorkoutNote>> searchNotes(String searchTerm) async {
+    final lower = searchTerm.toLowerCase();
+    final notes = await getAllNotes();
+    return notes
+        .where((note) => note.noteText.toLowerCase().contains(lower))
+        .toList();
   }
 
-  /// Search notes by text content
-  Future<List<WorkoutNote>> searchNotes(String userId, String searchTerm) async {
-    final notes = await (_database.select(_database.workoutNotesTable)
-          ..where((tbl) => 
-              tbl.userId.equals(userId) & 
-              tbl.noteText.like('%$searchTerm%'))
-          ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]))
-        .get();
-
-    return notes.map(_mapFromDrift).toList();
+  bool _activityHasNotes(calendar_activity.Activity activity) {
+    final hasText = (activity.completionNotes?.trim().isNotEmpty ?? false);
+    final hasRating = activity.completionRating != null;
+    return hasText || hasRating;
   }
 
-  /// Map from Drift database entry to domain model
-  WorkoutNote _mapFromDrift(WorkoutNoteEntry entry) {
+  WorkoutNote _mapActivityToNote(calendar_activity.Activity activity) {
+    final created =
+        activity.completedAt ?? activity.updatedAt ?? DateTime.now();
+    final updated = activity.updatedAt ?? created;
+
     return WorkoutNote(
-      id: entry.id,
-      userId: entry.userId,
-      planId: entry.planId,
-      noteText: entry.noteText,
-      rating: entry.rating,
-      createdAt: entry.createdAt,
-      updatedAt: entry.updatedAt,
+      id: activity.id,
+      userId: activity.userId,
+      activityId: activity.id,
+      noteText: activity.completionNotes ?? '',
+      rating: activity.completionRating,
+      createdAt: created,
+      updatedAt: updated,
+    );
+  }
+
+  Future<void> _maybeUpdateRating({
+    required int activityId,
+    int? rating,
+    DateTime? fallbackCompletedAt,
+  }) async {
+    if (rating == null) return;
+
+    final user = await _authService.getCurrentUser();
+    if (user == null) throw Exception('No user session found');
+    final userId = user.id;
+    final deviceId = user.id;
+
+    final activity =
+        await _calendarService.getActivityById(userId, activityId);
+    if (activity == null) return;
+
+    // Update activity with completion rating
+    final updatedActivity = activity.copyWith(
+      status: calendar_activity.ActivityStatus.completed,
+      completedAt: fallbackCompletedAt ?? activity.completedAt ?? DateTime.now(),
+      completionRating: rating,
+    );
+
+    await _activitiesService.updateActivity(
+      deviceId: deviceId,
+      activity: updatedActivity,
     );
   }
 }
 
-/// Provider for the workout notes repository
 @riverpod
-Future<WorkoutNotesRepository> workoutNotesRepository(Ref ref) async {
-  final database = await ref.watch(databaseProvider.future);
-  return WorkoutNotesRepository(database);
+Future<WorkoutNotesRepository> workoutNotesRepository(
+  Ref ref,
+) async {
+  final calendarService = ref.read(calendarServiceProvider);
+  final activitiesService = ref.read(activitiesServiceProvider);
+  final authService = ref.read(authServiceProvider);
+  return WorkoutNotesRepository(
+    calendarService: calendarService,
+    activitiesService: activitiesService,
+    authService: authService,
+  );
 }

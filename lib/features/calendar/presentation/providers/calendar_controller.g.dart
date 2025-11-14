@@ -37,7 +37,7 @@ final class CalendarControllerProvider
 }
 
 String _$calendarControllerHash() =>
-    r'dffce3674b342980899b412d2c8dd8369b885096';
+    r'ba1421e08976630901137918834f2076c5c58ef8';
 
 /// Calendar controller for managing activities and events
 
@@ -92,7 +92,7 @@ final class AllEventsControllerProvider
 }
 
 String _$allEventsControllerHash() =>
-    r'b5cd7540b02269db4a02f13a6210292a970f9622';
+    r'8ee590ab9d775d2973c8b747340d696f9a1499e9';
 
 /// All Events Controller - separate from calendar week view
 /// Used by EventsListScreen to show ALL events, not just current week
@@ -139,7 +139,7 @@ final class EventDetailProvider
   /// This ensures the UI updates when the event data changes in the database
   const EventDetailProvider._({
     required EventDetailFamily super.from,
-    required String super.argument,
+    required int super.argument,
   }) : super(
          retry: null,
          name: r'eventDetailProvider',
@@ -166,7 +166,7 @@ final class EventDetailProvider
 
   @override
   FutureOr<({Activity? activity, Event event})> create(Ref ref) {
-    final argument = this.argument as String;
+    final argument = this.argument as int;
     return eventDetail(ref, argument);
   }
 
@@ -181,7 +181,7 @@ final class EventDetailProvider
   }
 }
 
-String _$eventDetailHash() => r'bec5e5822f59fd939d6e02c5a45bb95157d17d86';
+String _$eventDetailHash() => r'1c64de23308f8999f48bc7e933f9ee834f358b82';
 
 /// Provider to watch a specific event by eventId
 /// This ensures the UI updates when the event data changes in the database
@@ -190,7 +190,7 @@ final class EventDetailFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<({Activity? activity, Event event})>,
-          String
+          int
         > {
   const EventDetailFamily._()
     : super(
@@ -204,7 +204,7 @@ final class EventDetailFamily extends $Family
   /// Provider to watch a specific event by eventId
   /// This ensures the UI updates when the event data changes in the database
 
-  EventDetailProvider call(String eventId) =>
+  EventDetailProvider call(int eventId) =>
       EventDetailProvider._(argument: eventId, from: this);
 
   @override
@@ -234,7 +234,7 @@ final class ActivityDetailProvider
   /// This ensures the UI updates when the activity data changes in the database
   const ActivityDetailProvider._({
     required ActivityDetailFamily super.from,
-    required String super.argument,
+    required int super.argument,
   }) : super(
          retry: null,
          name: r'activityDetailProvider',
@@ -261,7 +261,7 @@ final class ActivityDetailProvider
 
   @override
   FutureOr<({Activity activity, Event? event})> create(Ref ref) {
-    final argument = this.argument as String;
+    final argument = this.argument as int;
     return activityDetail(ref, argument);
   }
 
@@ -276,7 +276,7 @@ final class ActivityDetailProvider
   }
 }
 
-String _$activityDetailHash() => r'c71c536ebd31d1c59e0f81e47e7d5b0de46433eb';
+String _$activityDetailHash() => r'd4133035f59f8f065aa5f50a80bdbe6db5be7a62';
 
 /// Provider to watch a specific activity by activityId
 /// This ensures the UI updates when the activity data changes in the database
@@ -285,7 +285,7 @@ final class ActivityDetailFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<({Activity activity, Event? event})>,
-          String
+          int
         > {
   const ActivityDetailFamily._()
     : super(
@@ -299,7 +299,7 @@ final class ActivityDetailFamily extends $Family
   /// Provider to watch a specific activity by activityId
   /// This ensures the UI updates when the activity data changes in the database
 
-  ActivityDetailProvider call(String activityId) =>
+  ActivityDetailProvider call(int activityId) =>
       ActivityDetailProvider._(argument: activityId, from: this);
 
   @override

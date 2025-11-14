@@ -56,12 +56,17 @@ class VoiceNotesController extends _$VoiceNotesController {
   }
 
   /// Delete a note (clear journal notes and rating)
-  Future<void> deleteNote(String planId) async {
+  Future<void> deleteNote(int? activityId) async {
+    if (activityId == null) {
+      throw Exception('Cannot delete note without activity reference');
+    }
     try {
       final repository = await ref.read(nutritionPlanRepositoryProvider.future);
-      await repository.updatePlanFeedback(planId, null, null);
-      
-      // Refresh the list
+      await repository.updatePlanFeedbackForActivity(
+        activityId: activityId,
+        rating: null,
+        notes: null,
+      );
       await refresh();
     } catch (e) {
       throw Exception('Failed to delete note: $e');
@@ -69,12 +74,17 @@ class VoiceNotesController extends _$VoiceNotesController {
   }
 
   /// Update a note
-  Future<void> updateNote(String planId, String notes) async {
+  Future<void> updateNote(int? activityId, String notes) async {
+    if (activityId == null) {
+      throw Exception('Cannot update note without activity reference');
+    }
     try {
       final repository = await ref.read(nutritionPlanRepositoryProvider.future);
-      await repository.updatePlanFeedback(planId, null, notes);
-      
-      // Refresh the list
+      await repository.updatePlanFeedbackForActivity(
+        activityId: activityId,
+        rating: null,
+        notes: notes,
+      );
       await refresh();
     } catch (e) {
       throw Exception('Failed to update note: $e');

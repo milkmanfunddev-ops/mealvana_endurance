@@ -22,7 +22,7 @@ class FoodSelectionService {
 
   /// Add a default food to a meal
   Future<CarbLoadingDayMeal> addDefaultFoodToMeal({
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required MealType mealType,
     required CarbLoadingFood food,
     int quantity = 1,
@@ -46,7 +46,7 @@ class FoodSelectionService {
 
   /// Add a user food to a meal
   Future<CarbLoadingDayMeal> addUserFoodToMeal({
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required MealType mealType,
     required CarbLoadingUserFood food,
     int quantity = 1,
@@ -70,7 +70,7 @@ class FoodSelectionService {
 
   /// Add any food (default or user) to a meal
   Future<CarbLoadingDayMeal> addFoodToMeal({
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required MealType mealType,
     required dynamic food,
     int quantity = 1,
@@ -96,7 +96,7 @@ class FoodSelectionService {
 
   /// Update the quantity of a meal
   Future<CarbLoadingDayMeal> updateMealQuantity({
-    required String mealId,
+    required int mealId,
     required int newQuantity,
   }) async {
     if (newQuantity < 1) {
@@ -117,13 +117,13 @@ class FoodSelectionService {
   }
 
   /// Remove a meal
-  Future<void> removeMeal(String mealId) async {
+  Future<void> removeMeal(int mealId) async {
     return _dayMealRepository.removeMeal(mealId);
   }
 
   /// Replace a meal with a different food
   Future<CarbLoadingDayMeal> replaceMeal({
-    required String mealId,
+    required int mealId,
     required dynamic newFood,
     int quantity = 1,
   }) async {
@@ -151,13 +151,13 @@ class FoodSelectionService {
   }
 
   /// Get all meals for a specific day
-  Future<List<CarbLoadingDayMeal>> getMealsByDay(String carbLoadingDayId) async {
+  Future<List<CarbLoadingDayMeal>> getMealsByDay(int carbLoadingDayId) async {
     return _dayMealRepository.getMealsByDay(carbLoadingDayId);
   }
 
   /// Get meals for a specific meal type on a day
   Future<List<CarbLoadingDayMeal>> getMealsByDayAndMealType({
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required MealType mealType,
   }) async {
     return _dayMealRepository.getMealsByDayAndMealType(
@@ -167,13 +167,13 @@ class FoodSelectionService {
   }
 
   /// Calculate total carbs consumed for a day
-  Future<double> calculateTotalCarbsForDay(String carbLoadingDayId) async {
+  Future<double> calculateTotalCarbsForDay(int carbLoadingDayId) async {
     return _dayMealRepository.calculateTotalCarbsForDay(carbLoadingDayId);
   }
 
   /// Calculate carbs consumed for a specific meal type on a day
   Future<double> calculateCarbsForMealType({
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required MealType mealType,
   }) async {
     return _dayMealRepository.calculateCarbsForMealType(
@@ -184,7 +184,7 @@ class FoodSelectionService {
 
   /// Get meals grouped by meal type for a day
   Future<Map<MealType, List<CarbLoadingDayMeal>>> getMealsGroupedByMealType(
-    String carbLoadingDayId,
+    int carbLoadingDayId,
   ) async {
     final allMeals = await _dayMealRepository.getMealsByDay(carbLoadingDayId);
     final grouped = <MealType, List<CarbLoadingDayMeal>>{};
@@ -200,7 +200,7 @@ class FoodSelectionService {
 
   /// Clear all meals for a specific meal type on a day
   Future<void> clearMealsByMealType({
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required MealType mealType,
   }) async {
     return _dayMealRepository.removeMealsByDayAndMealType(
@@ -211,7 +211,7 @@ class FoodSelectionService {
 
   /// Bulk add multiple foods to different meals
   Future<List<CarbLoadingDayMeal>> bulkAddFoods({
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required List<({
       MealType mealType,
       dynamic food,
@@ -249,13 +249,13 @@ class FoodSelectionService {
   }
 
   /// Watch meals for a day (for real-time UI updates)
-  Stream<List<CarbLoadingDayMeal>> watchMealsByDay(String carbLoadingDayId) {
+  Stream<List<CarbLoadingDayMeal>> watchMealsByDay(int carbLoadingDayId) {
     return _dayMealRepository.watchMealsByDay(carbLoadingDayId);
   }
 
   /// Watch meals for a specific meal type on a day
   Stream<List<CarbLoadingDayMeal>> watchMealsByDayAndMealType({
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required MealType mealType,
   }) {
     return _dayMealRepository.watchMealsByDayAndMealType(
@@ -267,7 +267,7 @@ class FoodSelectionService {
   /// Calculate progress towards carb target
   Future<({double consumed, double remaining, double percentage})>
       calculateProgress({
-    required String carbLoadingDayId,
+    required int carbLoadingDayId,
     required double targetCarbs,
   }) async {
     final consumed = await calculateTotalCarbsForDay(carbLoadingDayId);
@@ -278,7 +278,7 @@ class FoodSelectionService {
   }
 
   /// Increment meal quantity by 1
-  Future<CarbLoadingDayMeal> incrementMealQuantity(String mealId) async {
+  Future<CarbLoadingDayMeal> incrementMealQuantity(int mealId) async {
     final meal = await _dayMealRepository.getMealById(mealId);
     if (meal == null) {
       throw ArgumentError('Meal not found');
@@ -291,7 +291,7 @@ class FoodSelectionService {
   }
 
   /// Decrement meal quantity by 1 (minimum 1)
-  Future<CarbLoadingDayMeal> decrementMealQuantity(String mealId) async {
+  Future<CarbLoadingDayMeal> decrementMealQuantity(int mealId) async{
     final meal = await _dayMealRepository.getMealById(mealId);
     if (meal == null) {
       throw ArgumentError('Meal not found');

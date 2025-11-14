@@ -9,83 +9,57 @@ import 'dart:io';
 import '../../features/auth/domain/user_preferences.dart' as domain;
 import 'tables/user_profiles.dart';
 import 'tables/food_preferences.dart';
-import 'tables/nutrition_plans.dart';
-import 'tables/macro_targets.dart';
 import 'tables/feedback.dart';
 import 'tables/foods_table.dart';
-import 'tables/categories_table.dart';
-import 'tables/food_categories_table.dart';
-import 'tables/product_types_table.dart';
 import 'tables/app_content_table.dart';
-import 'tables/workout_notes_table.dart';
 import 'tables/edge_functions_table.dart';
 import 'tables/user_foods_table.dart';
-import 'tables/user_food_categories_table.dart';
-import 'tables/user_hidden_foods_table.dart';
 // NEW: Calendar tables
 import 'tables/activities_table.dart';
 import 'tables/events_table.dart';
-import 'tables/activity_completions_table.dart';
 import 'tables/carb_loading_plans_table.dart';
 import 'tables/carb_loading_days_table.dart';
 // NEW: Carb Loading Food tables
-import 'tables/meal_types_table.dart';
 import 'tables/carb_loading_foods_table.dart';
 import 'tables/carb_loading_user_foods_table.dart';
-import 'tables/carb_loading_food_meal_types_table.dart';
-import 'tables/carb_loading_user_food_meal_types_table.dart';
 import 'tables/carb_loading_day_meals_table.dart';
 // NEW: Weather feature table
 import 'tables/weather_forecasts_table.dart';
 // NEW: Feature survey table
 import 'tables/feature_survey_responses_table.dart';
-import '../services/logging_service.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
-/// V1 schema with 28 tables (100% parity with Supabase)
+/// V1 schema with 18 tables (Phase 3C.5 - embedded macros/notes on activities)
 @DriftDatabase(tables: [
   // Core tables aligned with Supabase
   UserProfilesTable,
   FoodPreferencesTable,
-  NutritionPlans,
-  MacroTargetsTable,
   FeedbackTable,
 
   // Food system tables
   FoodsTable,
-  CategoriesTable,
-  FoodCategoriesTable,
-  ProductTypesTable,
 
-  // User-specific food tables (new in v3)
+  // User-specific food tables
   UserFoodsTable,
-  UserFoodCategoriesTable,
-  UserHiddenFoodsTable,
 
   // Content management
   AppContentTable,
 
   // Additional features
-  WorkoutNotesTable,
   EdgeFunctionsTable,
 
   // Calendar feature tables
   ActivitiesTable,
   EventsTable,
-  ActivityCompletionsTable,
   CarbLoadingPlansTable,
   CarbLoadingDaysTable,
 
   // Carb Loading Food tables
-  MealTypesTable,
   CarbLoadingFoodsTable,
   CarbLoadingUserFoodsTable,
-  CarbLoadingFoodMealTypesTable,
-  CarbLoadingUserFoodMealTypesTable,
   CarbLoadingDayMealsTable,
 
   // Weather feature tables
@@ -95,16 +69,10 @@ part 'app_database.g.dart';
   FeatureSurveyResponsesTable,
 ])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase({AppLogger? logger})
-      : _logger = logger ?? const NoopAppLogger(),
-        super(_openConnection());
+  AppDatabase() : super(_openConnection());
 
   /// Constructor for testing with in-memory database
-  AppDatabase.memory({AppLogger? logger})
-      : _logger = logger ?? const NoopAppLogger(),
-        super(NativeDatabase.memory());
-
-  final AppLogger _logger;
+  AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
   int get schemaVersion => 1; // v1: Clean baseline schema
@@ -123,47 +91,7 @@ class AppDatabase extends _$AppDatabase {
     return uuid;
   }
 
-  /// Initialize default product types if they don't exist
-  Future<void> initializeDefaultProductTypes() async {
-    try {
-      // Check if product types already exist
-      final existingTypes = await select(productTypesTable).get();
-      if (existingTypes.isNotEmpty) {
-        return; // Already initialized
-      }
-
-      DebugLogger.debug('🏭 Initializing default product types...');
-      
-      // Insert default product types
-      final importedId = _generateUuid();
-      await into(productTypesTable).insert(
-        ProductTypesTableCompanion.insert(
-          id: importedId,
-          code: 'imported',
-          name: 'Imported',
-          namePlural: 'Imported',
-          sortOrder: const Value(1),
-        ),
-      );
-
-      DebugLogger.info('✅ Default product types initialized successfully');
-    } catch (e) {
-      _logger.error('Failed to initialize default product types', error: e);
-      rethrow;
-    }
-  }
-
-  /// Get the ID for the 'Imported' product type
-  Future<String?> getImportedProductTypeId() async {
-    try {
-      final importedType = await (select(productTypesTable)
-        ..where((tbl) => tbl.code.equals('imported'))).getSingleOrNull();
-      return importedType?.id;
-    } catch (e) {
-      _logger.error('Failed to get imported product type ID', error: e);
-      return null;
-    }
-  }
+  // Note: product_types table has been dropped - now using product_type_enum
 
   /// V1 database setup with seed database support and migration strategy
   @override
@@ -194,17 +122,17 @@ class AppDatabase extends _$AppDatabase {
 
         // Seed tables (already have data - must NOT be recreated)
         // Using actual SQLite table names from seed DB (NOT Drift class names)
+        // Note: categories, meal_types, product_types, and their join tables are now dropped
         final seedTables = {
           'foods',  // FoodsTable
-          'food_categories',  // FoodCategoriesTable
-          'categories',  // CategoriesTable
-          'product_types',  // ProductTypesTable
-          'meal_types',  // MealTypesTable
           'carb_loading_foods',  // CarbLoadingFoodsTable
-          'carb_loading_food_meal_types'  // CarbLoadingFoodMealTypesTable
         };
 
         // For each table definition, manually create with IF NOT EXISTS
+        if (kDebugMode) {
+          print('📝 Creating ${allTables.length} tables...');
+        }
+
         for (final table in allTables) {
           final tableName = table.actualTableName;
 
@@ -217,7 +145,17 @@ class AppDatabase extends _$AppDatabase {
           }
 
           // Create all other tables (new tables OR non-seed tables)
+          if (kDebugMode) {
+            print('  🔨 Creating table: $tableName');
+          }
           await m.createTable(table);
+          if (kDebugMode) {
+            print('  ✅ Created table: $tableName');
+          }
+        }
+
+        if (kDebugMode) {
+          print('✅ All tables created successfully');
         }
 
         // Only populate default data for NEW tables (not seed tables)
@@ -233,16 +171,28 @@ class AppDatabase extends _$AppDatabase {
 
       // Called immediately after database is opened
       beforeOpen: (details) async {
+        if (kDebugMode) {
+          print('🔓 beforeOpen called (wasCreated: ${details.wasCreated})');
+        }
+
         // Enable foreign key support (required for Drift)
+        if (kDebugMode) {
+          print('  🔧 Enabling foreign keys...');
+        }
         await customStatement('PRAGMA foreign_keys = ON');
 
         if (kDebugMode) {
+          print('  ✅ Foreign keys enabled');
           // Enable detailed logging in debug mode
           await customStatement('PRAGMA synchronous = NORMAL');
           await customStatement('PRAGMA cache_size = 10000');
+          print('  ✅ PRAGMA settings configured');
         }
 
         if (details.wasCreated) {
+          if (kDebugMode) {
+            print('  🔍 Verifying database creation...');
+          }
           // Database just created from seed file
           // onCreate already ran to create missing tables
           // Verify seed data is still present
@@ -282,112 +232,45 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Populate default data for fresh installations
+  /// Note: categories, meal_types, and product_types are now enums in the database
   Future<void> _populateDefaultData() async {
-    try {
-      // Step 1: Populate categories (nutrition plan timing)
-      await batch((batch) {
-        batch.insert(categoriesTable,
-          CategoriesTableCompanion.insert(id: const Value(1), name: 'before_run'),
-          mode: InsertMode.insertOrIgnore
-        );
-        batch.insert(categoriesTable,
-          CategoriesTableCompanion.insert(id: const Value(2), name: 'during_run'),
-          mode: InsertMode.insertOrIgnore
-        );
-        batch.insert(categoriesTable,
-          CategoriesTableCompanion.insert(id: const Value(3), name: 'after_run'),
-          mode: InsertMode.insertOrIgnore
-        );
-      });
-
-      // Step 1b: Populate meal types (carb loading meals)
-      await batch((batch) {
-        batch.insert(mealTypesTable,
-          MealTypesTableCompanion.insert(
-            id: const Value(1),
-            name: 'breakfast',
-            displayName: 'Breakfast'
-          ),
-          mode: InsertMode.insertOrIgnore
-        );
-        batch.insert(mealTypesTable,
-          MealTypesTableCompanion.insert(
-            id: const Value(2),
-            name: 'lunch',
-            displayName: 'Lunch'
-          ),
-          mode: InsertMode.insertOrIgnore
-        );
-        batch.insert(mealTypesTable,
-          MealTypesTableCompanion.insert(
-            id: const Value(3),
-            name: 'dinner',
-            displayName: 'Dinner'
-          ),
-          mode: InsertMode.insertOrIgnore
-        );
-        batch.insert(mealTypesTable,
-          MealTypesTableCompanion.insert(
-            id: const Value(4),
-            name: 'snacks',
-            displayName: 'Snacks'
-          ),
-          mode: InsertMode.insertOrIgnore
-        );
-      });
-
-      // Step 2: Populate product types with seed data
-      await batch((batch) {
-        // Product types data provided by user
-        final productTypes = [
-          {'id': '8a847f4f-8c26-41ef-a1e2-132b404be95e', 'code': 'gel', 'name': 'Gel', 'namePlural': 'Gels', 'sortOrder': 10},
-          {'id': 'fc915f1b-d541-45fa-ae5c-695ee41073db', 'code': 'chew', 'name': 'Chew', 'namePlural': 'Chews', 'sortOrder': 20},
-          {'id': 'd3908cb2-a21d-4ef1-8d33-c999d29eefcc', 'code': 'drink_mix', 'name': 'Drink mix', 'namePlural': 'Drink mixes', 'sortOrder': 30},
-          {'id': '09930546-1942-485e-9728-bced1cf933a2', 'code': 'electrolyte_only', 'name': 'Electrolyte-only', 'namePlural': 'Electrolyte-only', 'sortOrder': 40},
-          {'id': 'b27bc986-1402-4e20-b022-a65b5ffbd4d2', 'code': 'sports_drink', 'name': 'Sports drink', 'namePlural': 'Sports drinks', 'sortOrder': 50},
-          {'id': '6102eea1-2dfe-44cf-8863-b258c27262ef', 'code': 'bar', 'name': 'Bar', 'namePlural': 'Bars', 'sortOrder': 60},
-          {'id': '666408c5-6d5b-4fc6-bda3-d6428e8362b9', 'code': 'waffle', 'name': 'Waffle', 'namePlural': 'Waffles', 'sortOrder': 70},
-          {'id': '52a0ff7c-a0f5-4e26-b409-2a7ce3298f4d', 'code': 'capsule', 'name': 'Capsule', 'namePlural': 'Capsules', 'sortOrder': 80},
-          {'id': '76c16c67-1746-47d7-adea-e5fc9dcd1f4d', 'code': 'real_food', 'name': 'Real food', 'namePlural': 'Real foods', 'sortOrder': 90},
-          {'id': 'cbcfd036-127c-43fb-88d5-34a9d9ba5db4', 'code': 'recovery_shake', 'name': 'Recovery shake', 'namePlural': 'Recovery shakes', 'sortOrder': 100},
-          {'id': '3b5d6f2e-3d3a-4b6a-9e3b-5c7a1f0d7a10', 'code': 'quick_carbs', 'name': 'Quick carb', 'namePlural': 'Quick carbs', 'sortOrder': 10},
-          {'id': '8f4f2c73-9a65-4d5a-b3be-9d5f9e2a1c2d', 'code': 'solid_carb_snacks', 'name': 'Solid carb snack', 'namePlural': 'Solid carb snacks', 'sortOrder': 20},
-          {'id': 'f2a8c4e1-7d82-4d9b-8b79-9a03e7b4a6c1', 'code': 'real_food_carbs', 'name': 'Real-food carb', 'namePlural': 'Real-food carbs', 'sortOrder': 30},
-          {'id': 'c7e2a1d4-5b6c-4f9d-8e2a-1a7c9b3e5d2f', 'code': 'hydration_with_carbs', 'name': 'Hydration with carbs', 'namePlural': 'Hydration with carbs', 'sortOrder': 40},
-          {'id': 'a1e2c3d4-b5a6-4c7d-8e9f-0a1b2c3d4e5f', 'code': 'electrolytes_fluids', 'name': 'Electrolytes & fluids', 'namePlural': 'Electrolytes & fluids', 'sortOrder': 50},
-          {'id': 'd4c3b2a1-6e5d-4c3b-8a9f-1e2d3c4b5a6f', 'code': 'protein_recovery', 'name': 'Protein & recovery', 'namePlural': 'Protein & recovery', 'sortOrder': 60},
-          {'id': 'cdd6a8f1-750c-4c78-93f7-ab706285ac7b', 'code': 'imported', 'name': 'Imported', 'namePlural': 'Imported', 'sortOrder': 70},
-        ];
-
-        for (final productType in productTypes) {
-          batch.insert(productTypesTable,
-            ProductTypesTableCompanion.insert(
-              id: productType['id'] as String,
-              code: productType['code'] as String,
-              name: productType['name'] as String,
-              namePlural: productType['namePlural'] as String,
-              sortOrder: Value(productType['sortOrder'] as int),
-            ),
-            mode: InsertMode.insertOrIgnore
-          );
-        }
-      });
-    } catch (e) {
-      _logger.error('Failed to populate default data',
-        context: 'DATABASE',
-        error: e
-      );
-      // Don't rethrow - app should continue even if default data fails
-    }
+    // No longer need to populate default data - using enums now
   }
 
   /// Get or create the current user profile (device-based)
   Future<domain.UserProfile?> getCurrentUserProfile() async {
+    if (kDebugMode) {
+      print('🔍 getCurrentUserProfile: Building query...');
+    }
     final query = select(userProfilesTable)
       ..orderBy([(u) => OrderingTerm.desc(u.updatedAt)])
       ..limit(1);
+
+    if (kDebugMode) {
+      print('🔍 getCurrentUserProfile: Executing query...');
+    }
     final results = await query.get();
-    return results.isNotEmpty ? _convertToDomainUserProfile(results.first) : null;
+
+    if (kDebugMode) {
+      print('🔍 getCurrentUserProfile: Query returned ${results.length} results');
+    }
+
+    if (results.isEmpty) {
+      if (kDebugMode) {
+        print('🔍 getCurrentUserProfile: No user found, returning null');
+      }
+      return null;
+    }
+
+    if (kDebugMode) {
+      print('🔍 getCurrentUserProfile: Converting result to domain model...');
+    }
+    final profile = _convertToDomainUserProfile(results.first);
+
+    if (kDebugMode) {
+      print('🔍 getCurrentUserProfile: Conversion complete, returning profile');
+    }
+    return profile;
   }
 
   /// Save a user profile
@@ -436,10 +319,10 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Save food preferences for a user
-  Future<void> saveFoodPreferences(String deviceId, Map<String, domain.FoodPreference> preferences) async {
+  Future<void> saveFoodPreferences(String userId, Map<String, domain.FoodPreference> preferences) async {
     await batch((batch) {
       // First delete existing preferences for this user
-      batch.deleteWhere(foodPreferencesTable, (f) => f.deviceId.equals(deviceId));
+      batch.deleteWhere(foodPreferencesTable, (f) => f.userId.equals(userId));
 
       // Insert new preferences
       for (final entry in preferences.entries) {
@@ -447,7 +330,7 @@ class AppDatabase extends _$AppDatabase {
           foodPreferencesTable,
           FoodPreferencesTableCompanion.insert(
             id: _generateUuid(),
-            deviceId: deviceId,
+            userId: userId,
             foodName: entry.key,
             preference: entry.value.value, // Use .value instead of .name to get database-compatible format
             createdAt: Value(DateTime.now()),
@@ -460,8 +343,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Get food preferences for a user
-  Future<Map<String, domain.FoodPreference>> getUserFoodPreferences(String deviceId) async {
-    final query = select(foodPreferencesTable)..where((f) => f.deviceId.equals(deviceId));
+  Future<Map<String, domain.FoodPreference>> getUserFoodPreferences(String userId) async {
+    final query = select(foodPreferencesTable)..where((f) => f.userId.equals(userId));
     final results = await query.get();
 
     final preferencesMap = <String, domain.FoodPreference>{};
@@ -477,126 +360,77 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Get liked foods for a user
-  Future<List<String>> getLikedFoods(String deviceId) async {
+  Future<List<String>> getLikedFoods(String userId) async {
     final query = select(foodPreferencesTable)
-      ..where((f) => f.deviceId.equals(deviceId) & f.preference.equals('like'));
+      ..where((f) => f.userId.equals(userId) & f.preference.equals('like'));
     final results = await query.get();
     return results.map((r) => r.foodName).toList();
   }
 
   /// Get disliked foods for a user
-  Future<List<String>> getDislikedFoods(String deviceId) async {
+  Future<List<String>> getDislikedFoods(String userId) async {
     final query = select(foodPreferencesTable)
-      ..where((f) => f.deviceId.equals(deviceId) & f.preference.equals('dislike'));
+      ..where((f) => f.userId.equals(userId) & f.preference.equals('dislike'));
     final results = await query.get();
     return results.map((r) => r.foodName).toList();
   }
 
-  /// Save nutrition plan with complete metadata (updated for new schema)
-  Future<void> saveNutritionPlan({
-    required String id,
-    required String deviceId,
-    required String planId,
-    required String planName,
+  /// Get count of nutrition foods in local database
+  /// Used during app startup to determine if fallback food loading is needed
+  Future<int> getFoodCount() async {
+    final countQuery = selectOnly(foodsTable)..addColumns([foodsTable.id.count()]);
+    final result = await countQuery.getSingle();
+    return result.read(foodsTable.id.count()) ?? 0;
+  }
+
+  /// Attach a nutrition plan JSON payload directly to an activity row.
+  Future<void> setActivityNutritionPlan({
+    required int activityId,
     required String planData,
-    double? distanceMiles,
-    double? paceMinutesPerMile,
-    int? totalCalories,
-    String? notes,
-    String? activityId, // Link to calendar activity
   }) async {
-    await into(nutritionPlans).insertOnConflictUpdate(
-      NutritionPlansCompanion.insert(
-        id: id,
-        deviceId: deviceId,
-        planId: planId,
-        planName: planName,
-        planData: planData,
-        distanceMiles: Value(distanceMiles),
-        paceMinutesPerMile: Value(paceMinutesPerMile),
-        totalCalories: Value(totalCalories),
-        notes: Value(notes),
-        activityId: Value(activityId), // Save activity ID linkage
-        createdAt: Value(DateTime.now()),
+    await (update(activitiesTable)..where((tbl) => tbl.id.equals(activityId))).write(
+      ActivitiesTableCompanion(
+        nutritionPlanData: Value(planData),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
       ),
     );
   }
 
-  /// Save temporary nutrition plan (unsaved plan that persists through app restart)
-  Future<void> saveTempNutritionPlan(String userId, String planData) async {
-    await (update(userProfilesTable)..where((u) => u.id.equals(userId)))
-        .write(UserProfilesTableCompanion(tempPlanData: Value(planData)));
+  /// Clear the nutrition plan fields for an activity.
+  Future<void> clearActivityNutritionPlan(int activityId) async {
+    await (update(activitiesTable)..where((tbl) => tbl.id.equals(activityId))).write(
+      const ActivitiesTableCompanion(
+        nutritionPlanData: Value(null),
+        needsUpload: Value(true),
+      ),
+    );
   }
 
-  /// Get temporary nutrition plan
-  Future<String?> getTempNutritionPlan(String userId) async {
-    final query = select(userProfilesTable)..where((u) => u.id.equals(userId));
-    final result = await query.getSingleOrNull();
-    return result?.tempPlanData;
-  }
-
-  /// Clear temporary nutrition plan
-  Future<void> clearTempNutritionPlan(String userId) async {
-    await (update(userProfilesTable)..where((u) => u.id.equals(userId)))
-        .write(const UserProfilesTableCompanion(tempPlanData: Value(null)));
-  }
-
-  /// Get latest nutrition plan for user (updated for new schema)
-  Future<NutritionPlanEntry?> getLatestNutritionPlan(String deviceId) async {
-    final query = select(nutritionPlans)
-      ..where((n) => n.deviceId.equals(deviceId) & n.isDeleted.equals(false))
-      ..orderBy([
-        (n) => OrderingTerm.desc(n.updatedAt),
-        (n) => OrderingTerm.desc(n.id), // Secondary sort by ID to handle ties
-      ])
+  /// Fetch an activity row by primary key.
+  Future<Activity?> getActivityByIdLocal(int activityId) async {
+    final query = select(activitiesTable)
+      ..where((tbl) => tbl.id.equals(activityId))
       ..limit(1);
-
-    final results = await query.get();
-    return results.isNotEmpty ? results.first : null;
+    return await query.getSingleOrNull();
   }
 
-  /// Get all nutrition plans for user (updated for new schema)
-  Future<List<NutritionPlanEntry>> getAllNutritionPlans(String deviceId) async {
-    final query = select(nutritionPlans)
-      ..where((n) => n.deviceId.equals(deviceId) & n.isDeleted.equals(false))
-      ..orderBy([(n) => OrderingTerm.desc(n.updatedAt)]);
-
-    final results = await query.get();
-    return results;
-  }
-
-  /// Get nutrition plan by activity ID
-  Future<NutritionPlanEntry?> getNutritionPlanByActivityId(String deviceId, String activityId) async {
-    final query = select(nutritionPlans)
-      ..where((n) =>
-        n.deviceId.equals(deviceId) &
-        n.activityId.equals(activityId) &
-        n.isDeleted.equals(false))
-      ..orderBy([(n) => OrderingTerm.desc(n.updatedAt)])
+  /// Get the most recently updated activity that has a nutrition plan.
+  Future<Activity?> getLatestActivityWithNutritionPlan(String userId) async {
+    final query = select(activitiesTable)
+      ..where((tbl) => tbl.userId.equals(userId) & tbl.nutritionPlanData.isNotNull())
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
       ..limit(1);
-
-    final results = await query.get();
-    return results.isNotEmpty ? results.first : null;
+    return await query.getSingleOrNull();
   }
 
-  /// Update nutrition plan's activity ID (link plan to activity)
-  Future<bool> updateNutritionPlanActivityId(String deviceId, String planId, String activityId) async {
-    final updatedRows = await (update(nutritionPlans)
-      ..where((n) => n.deviceId.equals(deviceId) & n.planId.equals(planId)))
-      .write(NutritionPlansCompanion(
-        activityId: Value(activityId),
-        updatedAt: Value(DateTime.now()),
-        localUpdatedAt: Value(DateTime.now()),
-        needsUpload: const Value(true), // Mark for sync to Supabase
-      ));
-    return updatedRows > 0;
-  }
-
-  /// Delete nutrition plan
-  Future<bool> deleteNutritionPlan(String planId) async {
-    final deletedRows = await (delete(nutritionPlans)..where((n) => n.id.equals(planId))).go();
-    return deletedRows > 0;
+  /// Get all activities for a user that contain nutrition plans.
+  Future<List<Activity>> getActivitiesWithNutritionPlans(String userId) async {
+    final query = select(activitiesTable)
+      ..where((tbl) => tbl.userId.equals(userId) & tbl.nutritionPlanData.isNotNull())
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
+    return await query.get();
   }
 
   /// Clear all data (for testing/reset)
@@ -604,7 +438,6 @@ class AppDatabase extends _$AppDatabase {
     await batch((batch) {
       batch.deleteAll(userProfilesTable);
       batch.deleteAll(foodPreferencesTable);
-      batch.deleteAll(nutritionPlans);
     });
   }
 
@@ -617,18 +450,14 @@ class AppDatabase extends _$AppDatabase {
   /// Get database statistics for logging/debugging
   Future<Map<String, int>> getDatabaseStats() async {
     final userCount = await (selectOnly(userProfilesTable)..addColumns([userProfilesTable.id.count()])).getSingle();
-    final preferencesCount = await (selectOnly(foodPreferencesTable)..addColumns([foodPreferencesTable.deviceId.count()])).getSingle();
-    final plansCount = await (selectOnly(nutritionPlans)..addColumns([nutritionPlans.id.count()])).getSingle();
+    final preferencesCount = await (selectOnly(foodPreferencesTable)..addColumns([foodPreferencesTable.userId.count()])).getSingle();
     final foodsCount = await (selectOnly(foodsTable)..addColumns([foodsTable.id.count()])).getSingle();
-    final categoriesCount = await (selectOnly(categoriesTable)..addColumns([categoriesTable.id.count()])).getSingle();
     final contentCount = await (selectOnly(appContentTable)..addColumns([appContentTable.id.count()])).getSingle();
 
     return {
       'users': userCount.read(userProfilesTable.id.count())!,
-      'preferences': preferencesCount.read(foodPreferencesTable.deviceId.count())!,
-      'plans': plansCount.read(nutritionPlans.id.count())!,
+      'preferences': preferencesCount.read(foodPreferencesTable.userId.count())!,
       'foods': foodsCount.read(foodsTable.id.count())!,
-      'categories': categoriesCount.read(categoriesTable.id.count())!,
       'content': contentCount.read(appContentTable.id.count())!,
     };
   }
@@ -649,16 +478,11 @@ class AppDatabase extends _$AppDatabase {
     });
   }
   
-  /// Get foods by category
+  /// Get foods by category (using array-based categories now)
+  /// TODO: Implement array-based category filtering after foods_table is updated
   Future<List<FoodEntry>> getFoodsByCategory(String categoryName) async {
-    final query = select(foodsTable).join([
-      leftOuterJoin(foodCategoriesTable, foodCategoriesTable.foodId.equalsExp(foodsTable.id)),
-      leftOuterJoin(categoriesTable, categoriesTable.id.equalsExp(foodCategoriesTable.categoryId)),
-    ])
-    ..where(categoriesTable.name.equals(categoryName));
-    
-    final result = await query.get();
-    return result.map((row) => row.readTable(foodsTable)).toList();
+    // Temporarily return all foods until array filtering is implemented
+    return await select(foodsTable).get();
   }
   
   /// Get active app content
@@ -710,12 +534,6 @@ class AppDatabase extends _$AppDatabase {
       servingQualifier: Value(foodData['serving_qualifier']),
       servingSize: Value(foodData['serving_size']),
       servingDescription: Value(foodData['serving_description']),
-      beforeRunSuitable: Value(foodData['before_run_suitable'] ?? false),
-      duringRunSuitable: Value(foodData['during_run_suitable'] ?? false),
-      afterRunSuitable: Value(foodData['after_run_suitable'] ?? false),
-      runPortable: Value(foodData['run_portable'] ?? false),
-      requiresPreparation: Value(foodData['requires_preparation'] ?? false),
-      aidStationAvailable: Value(foodData['aid_station_available'] ?? false),
       isElectrolyte: Value(foodData['is_electrolyte'] ?? false),
       maxServingsBefore: Value(foodData['max_servings_before']),
       maxServingsDuring: Value(foodData['max_servings_during']),
@@ -835,9 +653,10 @@ class AppDatabase extends _$AppDatabase {
 
   // === User Foods Methods (Phase 3 implementation) ===
 
-  /// Save a scanned food with category associations
+  /// Save a scanned food with categories and activity types arrays
   Future<void> saveUserFood({
     required String deviceId,
+    required String userId,
     required String id,
     required String clientFoodId,
     String? barcode,
@@ -855,48 +674,48 @@ class AppDatabase extends _$AppDatabase {
     int? sodiumMg,
     double? fluidMlPerServing,
     String? productTypeId,
-    required List<int> categoryIds,
+    required List<String> categories,
+    List<String>? activityTypes,
     DateTime? clientUpdatedAt,
   }) async {
-    await transaction(() async {
-      // Insert the user food
-      await into(userFoodsTable).insert(
-        UserFoodsTableCompanion.insert(
-          id: id,
-          deviceId: deviceId,
-          clientFoodId: Value(clientFoodId),
-          barcode: Value(barcode),
-          name: name,
-          displayName: Value(displayName),
-          displayNamePlural: Value(displayNamePlural),
-          description: Value(description),
-          imageAddress: Value(imageAddress),
-          servingAmount: Value(servingAmount),
-          servingUnit: Value(servingUnit),
-          caloriesPerServing: Value(caloriesPerServing),
-          carbsPerServing: Value(carbsPerServing),
-          proteinPerServing: Value(proteinPerServing),
-          fatPerServing: Value(fatPerServing),
-          sodiumMg: Value(sodiumMg),
-          fluidMlPerServing: Value(fluidMlPerServing),
-          productTypeId: Value(productTypeId),
-          clientUpdatedAt: Value(clientUpdatedAt),
-          createdAt: Value(DateTime.now()),
-          updatedAt: Value(DateTime.now()),
-        ),
-      );
+    // Convert arrays to PostgreSQL array format for consistency with Supabase
+    // Format: {value1,value2,value3} or null if empty
+    final categoriesJson = categories.isNotEmpty
+        ? '{${categories.join(',')}}'
+        : null;
+    final activityTypesJson = activityTypes != null && activityTypes.isNotEmpty
+        ? '{${activityTypes.join(',')}}'
+        : null;
 
-      // Insert category associations
-      for (final categoryId in categoryIds) {
-        await into(userFoodCategoriesTable).insert(
-          UserFoodCategoriesTableCompanion.insert(
-            userFoodId: id,
-            categoryId: categoryId,
-          ),
-          mode: InsertMode.insertOrIgnore,
-        );
-      }
-    });
+    // Insert the user food with category and activity type arrays
+    await into(userFoodsTable).insert(
+      UserFoodsTableCompanion.insert(
+        id: id,
+        deviceId: deviceId,
+        userId: userId,
+        clientFoodId: Value(clientFoodId),
+        barcode: Value(barcode),
+        name: name,
+        displayName: Value(displayName),
+        displayNamePlural: Value(displayNamePlural),
+        description: Value(description),
+        imageAddress: Value(imageAddress),
+        servingAmount: Value(servingAmount),
+        servingUnit: Value(servingUnit),
+        caloriesPerServing: Value(caloriesPerServing),
+        carbsPerServing: Value(carbsPerServing),
+        proteinPerServing: Value(proteinPerServing),
+        fatPerServing: Value(fatPerServing),
+        sodiumMg: Value(sodiumMg),
+        fluidMlPerServing: Value(fluidMlPerServing),
+        productTypeId: Value(productTypeId),
+        categories: Value(categoriesJson),
+        activityTypes: Value(activityTypesJson),
+        clientUpdatedAt: Value(clientUpdatedAt),
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   /// Get user foods for a device
@@ -922,20 +741,11 @@ class AppDatabase extends _$AppDatabase {
 
   /// Delete user food completely (not soft delete)
   Future<bool> deleteUserFood(String userFoodId) async {
-    return await transaction(() async {
-      // Delete category associations first
-      await (delete(userFoodCategoriesTable)
-        ..where((c) => c.userFoodId.equals(userFoodId))).go();
+    // Delete the user food (categories are now stored as array, no join table)
+    final deletedRows = await (delete(userFoodsTable)
+      ..where((f) => f.id.equals(userFoodId))).go();
 
-      // Delete the user food
-      final deletedRows = await (delete(userFoodsTable)
-        ..where((f) => f.id.equals(userFoodId))).go();
-
-      if (deletedRows > 0) {
-        return true;
-      }
-      return false;
-    });
+    return deletedRows > 0;
   }
 
   /// Convert UserFood (Drift) to FoodItem (Domain) for display
@@ -995,12 +805,25 @@ class AppDatabase extends _$AppDatabase {
 /// Database connection setup with seed database support
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
+    if (kDebugMode) {
+      print('🔌 _openConnection: Starting database connection setup');
+    }
+
     // Put the database file in the documents directory
+    if (kDebugMode) {
+      print('🔌 _openConnection: Getting documents directory...');
+    }
     final dbFolder = await getApplicationDocumentsDirectory();
+
+    if (kDebugMode) {
+      print('🔌 _openConnection: Documents directory: ${dbFolder.path}');
+      print('🔌 _openConnection: Creating file path...');
+    }
     final file = File(p.join(dbFolder.path, 'mealvana_endurance_db.sqlite'));
 
     // Log database initialization status
     if (kDebugMode) {
+      print('🔌 _openConnection: Checking if database exists...');
       final dbExists = await file.exists();
       if (!dbExists) {
         print('🌱 Fresh install detected - creating empty database');
@@ -1011,17 +834,39 @@ LazyDatabase _openConnection() {
         print('📂 Database file already exists at: ${file.path}');
         print('💡 This is NOT a fresh install - using existing database');
       }
+      print('🔌 _openConnection: Creating NativeDatabase instance...');
     }
 
     // Also work around limitations on old Android versions
     if (Platform.isAndroid) {
+      if (kDebugMode) {
+        print('🔌 _openConnection: Applying Android workarounds...');
+      }
       await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
     }
 
     // Make sqlite3 pick a more suitable location for temporary files
+    if (kDebugMode) {
+      print('🔌 _openConnection: Setting temp directory for sqlite3...');
+    }
     final cachebase = (await getTemporaryDirectory()).path;
     sqlite3.tempDirectory = cachebase;
 
-    return NativeDatabase.createInBackground(file);
+    if (kDebugMode) {
+      print('🔌 _openConnection: Calling NativeDatabase.createInBackground...');
+    }
+
+    // TEMPORARY FIX: Use synchronous database in debug mode to avoid isolate issues
+    // Background isolates can hang on iOS simulator during development
+    final db = kDebugMode
+        ? NativeDatabase(file, logStatements: true)
+        : NativeDatabase.createInBackground(file);
+
+    if (kDebugMode) {
+      print('🔌 _openConnection: NativeDatabase created (debug mode: direct, release mode: background isolate)');
+      print('🔌 _openConnection: Returning database instance');
+    }
+
+    return db;
   });
 }

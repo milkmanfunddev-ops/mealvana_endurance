@@ -5,13 +5,49 @@ import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../providers/settings_controller.dart';
+import 'debug_screen.dart';
 
 /// Profile Settings Screen - Personal information
-class ProfileSettingsScreen extends ConsumerWidget {
+class ProfileSettingsScreen extends ConsumerStatefulWidget {
   const ProfileSettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
+}
+
+class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
+
+  void _handleTitleTap() {
+    final now = DateTime.now();
+
+    // Reset counter if more than 2 seconds since last tap
+    if (_lastTapTime != null && now.difference(_lastTapTime!) > const Duration(seconds: 2)) {
+      _tapCount = 0;
+    }
+
+    _tapCount++;
+    _lastTapTime = now;
+
+    // Debug logging
+    debugPrint('🐛 Profile title tap detected! Tap count: $_tapCount');
+
+    if (_tapCount == 3) {
+      _tapCount = 0; // Reset counter
+      debugPrint('🎉 Triple tap detected! Opening debug screen...');
+
+      // Navigate to debug screen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const DebugScreen(),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settingsState = ref.watch(settingsControllerProvider);
 
     return Scaffold(
@@ -20,26 +56,33 @@ class ProfileSettingsScreen extends ConsumerWidget {
         backgroundColor: AppTheme.baseCream,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: settingsState.when(
-          data: (state) => Text(
-            state.profileSectionTitle,
-            style: AppTheme.titleStyle.copyWith(
-              color: AppTheme.baseBlack,
-              fontSize: 18.sp,
-            ),
-          ),
-          loading: () => Text(
-            'Profile',
-            style: AppTheme.titleStyle.copyWith(
-              color: AppTheme.baseBlack,
-              fontSize: 18.sp,
-            ),
-          ),
-          error: (_, __) => Text(
-            'Profile',
-            style: AppTheme.titleStyle.copyWith(
-              color: AppTheme.baseBlack,
-              fontSize: 18.sp,
+        title: GestureDetector(
+          onTap: _handleTitleTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+            child: settingsState.when(
+              data: (state) => Text(
+                state.profileSectionTitle,
+                style: AppTheme.titleStyle.copyWith(
+                  color: AppTheme.baseBlack,
+                  fontSize: 18.sp,
+                ),
+              ),
+              loading: () => Text(
+                'Profile',
+                style: AppTheme.titleStyle.copyWith(
+                  color: AppTheme.baseBlack,
+                  fontSize: 18.sp,
+                ),
+              ),
+              error: (_, __) => Text(
+                'Profile',
+                style: AppTheme.titleStyle.copyWith(
+                  color: AppTheme.baseBlack,
+                  fontSize: 18.sp,
+                ),
+              ),
             ),
           ),
         ),

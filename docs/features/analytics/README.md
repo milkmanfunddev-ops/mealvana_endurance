@@ -26,7 +26,7 @@ Fired every time the app is opened.
 Fired when user initiates plan creation (taps generate or enters plan flow).
 - **Properties:**
   - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Unique plan identifier (generated at this point)
+  - `activity_id` (int): Activity identifier (auto-increment) that owns this plan
   - `timestamp` (ISO-8601): Start timestamp
   - `distance_miles` (number): Run distance
   - `pace_minutes_per_mile` (number): Run pace
@@ -36,7 +36,7 @@ Fired when user initiates plan creation (taps generate or enters plan flow).
 Fired when user saves a nutrition plan.
 - **Properties:**
   - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Unique plan identifier
+  - `activity_id` (int): Activity identifier owning the plan
   - `timestamp` (ISO-8601): Save timestamp
   - `time_since_generation_started` (number): Seconds from plan_generation_started
   - `is_first_plan` (boolean): True if this is user's first saved plan
@@ -48,7 +48,7 @@ Fired when user saves a nutrition plan.
 Fired when user edits macro targets.
 - **Properties:**
   - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Plan identifier
+  - `activity_id` (int): Activity identifier owning the plan
   - `timestamp` (ISO-8601): Edit timestamp
   - `macro_type` (string): "carbs" | "protein" | "fat" | "sodium" | "fluids" | "all"
   - `old_value` (number): Previous value
@@ -58,7 +58,7 @@ Fired when user edits macro targets.
 Fired when user clicks info button to view macro calculation details.
 - **Properties:**
   - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Plan identifier
+  - `activity_id` (int): Activity identifier owning the plan
   - `timestamp` (ISO-8601): View timestamp
   - `macro_type` (string): Which macro info was viewed
 
@@ -66,7 +66,7 @@ Fired when user clicks info button to view macro calculation details.
 Fired when user deletes an item from plan.
 - **Properties:**
   - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Plan identifier
+  - `activity_id` (int): Activity identifier owning the plan
   - `timestamp` (ISO-8601): Delete timestamp
   - `item_name` (string): Name of deleted item
   - `phase` (string): "before_run" | "during_run" | "after_run"
@@ -75,7 +75,7 @@ Fired when user deletes an item from plan.
 Fired when user swaps one food for another.
 - **Properties:**
   - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Plan identifier
+  - `activity_id` (int): Activity identifier owning the plan
   - `timestamp` (ISO-8601): Swap timestamp
   - `old_item_name` (string): Item being replaced
   - `new_item_name` (string): Replacement item
@@ -85,7 +85,7 @@ Fired when user swaps one food for another.
 Fired when user adds a new item to plan.
 - **Properties:**
   - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Plan identifier
+  - `activity_id` (int): Activity identifier owning the plan
   - `timestamp` (ISO-8601): Add timestamp
   - `item_name` (string): Name of added item
   - `phase` (string): "before_run" | "during_run" | "after_run"
@@ -96,7 +96,7 @@ Fired when user adds a new item to plan.
 Fired when user schedules a reminder notification (proxy for delivery).
 - **Properties:**
   - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Plan identifier
+  - `activity_id` (int): Activity identifier owning the plan
   - `reminder_time` (ISO-8601): When the reminder is scheduled to fire
   - `scheduled_at` (ISO-8601): When the scheduling action occurred (event timestamp)
 
@@ -104,7 +104,7 @@ Fired when user schedules a reminder notification (proxy for delivery).
 Fired when user taps on a reminder notification.
 - **Properties:**
   - `device_id` (string): Unique device identifier
-  - `plan_id` (UUID): Plan identifier
+  - `activity_id` (int): Activity identifier owning the plan
   - `timestamp` (ISO-8601): Click timestamp
 
 ### 5. Barcode Scanning Events
@@ -149,10 +149,10 @@ Fired whenever a barcode is scanned, regardless of the result (success, not foun
    - Uses `plan_saved` as the retention action
 
 6. **Conversion (plan_saved → reminder_set → reminder_clicked)**
-   - Funnel analysis using `plan_id` to connect:
+   - Funnel analysis using `activity_id` to connect:
      1. `plan_saved` event
-     2. `reminder_set` event with same `plan_id`
-     3. `reminder_clicked` event with same `plan_id`
+     2. `reminder_set` event with same `activity_id`
+     3. `reminder_clicked` event with same `activity_id`
    - Conversion rates calculated at each step
 
 ### Hypothesis Testing Metrics
@@ -184,7 +184,7 @@ Fired whenever a barcode is scanned, regardless of the result (success, not foun
 
 ## Implementation Notes
 
-1. **Plan ID Threading**: Every plan gets a unique `plan_id` at `plan_generation_started` that threads through all subsequent plan-related events.
+1. **Activity ID Threading**: Every plan is tied to the parent `activity_id` at `plan_generation_started`, and that identifier threads through all subsequent plan-related events.
 
 2. **User Identification**: `device_id` is consistently used across all events to identify unique users.
 
@@ -197,7 +197,7 @@ Fired whenever a barcode is scanned, regardless of the result (success, not foun
 ## Mixpanel Configuration
 
 These events enable Mixpanel to:
-- Create funnels using `plan_id` for conversion tracking
+- Create funnels using `activity_id` for conversion tracking
 - Build cohorts based on `user_registered` timestamps
 - Calculate retention using `device_id` and time-based queries
 - Compute percentages using distinct user counts

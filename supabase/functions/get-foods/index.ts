@@ -39,22 +39,14 @@ serve(async (req)=>{
     let essentialFoods = [];
 
     if (categoryId) {
-      // Get foods assigned to this specific category
-      const { data, error } = await supabaseClient.from('foods').select(`
-        *,
-        food_categories!inner(category_id),
-        categories!inner(*)
-      `).eq('food_categories.category_id', categoryId);
+      // Get foods assigned to this specific category using array contains
+      const { data, error } = await supabaseClient.from('foods').select('*').filter('categories', 'cs', `{${categoryId}}`);
 
       if (error) throw error;
       categorizedFoods = data || [];
     } else {
-      // Get ALL categorized foods (no category filter)
-      const { data, error } = await supabaseClient.from('foods').select(`
-        *,
-        food_categories!inner(category_id),
-        categories!inner(*)
-      `);
+      // Get ALL foods with categories (non-empty array)
+      const { data, error } = await supabaseClient.from('foods').select('*').not('categories', 'eq', '{}');
 
       if (error) throw error;
       categorizedFoods = data || [];

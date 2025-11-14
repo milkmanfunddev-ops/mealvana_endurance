@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_spacing.dart';
+import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
+import '../../../../shared/widgets/kyle_design/cards/base_card.dart';
+import '../../../../shared/widgets/kyle_design/inputs/text_field.dart';
 import '../../../../shared/widgets/scanned_food_category_sheet.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../nutrition_plan/domain/food.dart';
@@ -82,7 +87,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cannot load details for this product'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.dragonfruit,
         ),
       );
       return;
@@ -116,7 +121,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Unable to load product details'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.dragonfruit,
             ),
           );
         }
@@ -162,7 +167,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.message),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.dragonfruit,
           ),
         );
       }
@@ -176,7 +181,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to load product details'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.dragonfruit,
           ),
         );
       }
@@ -242,7 +247,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
 
     try {
       DebugLogger.info('🔄 _saveSearchedFood - Getting database connection...');
-      final database = await ref.read(databaseProvider.future);
+      final database = ref.read(appDatabaseProvider);
       DebugLogger.info('✅ _saveSearchedFood - Database connection obtained');
 
       DebugLogger.info('🔄 _saveSearchedFood - Getting user profile...');
@@ -263,7 +268,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${foodItem.name} is already in your foods'),
-              backgroundColor: AppTheme.primary600,
+              backgroundColor: AppColors.orange,
             ),
           );
         }
@@ -283,8 +288,19 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       DebugLogger.debug('   - sodiumMg: ${sodiumMg?.toInt() ?? foodItem.sodiumMg}');
       DebugLogger.debug('   - categoryIds: $categoryIds');
 
+      // Convert category IDs to category names (array-based categories)
+      final categoryNames = categoryIds.map((id) {
+        switch (id) {
+          case 1: return 'before_run';
+          case 2: return 'during_run';
+          case 3: return 'after_run';
+          default: return 'before_run'; // Default fallback
+        }
+      }).toList();
+
       await database.saveUserFood(
         deviceId: deviceId,
+        userId: deviceId,
         id: foodItem.id,
         clientFoodId: foodItem.id,
         barcode: barcode,
@@ -302,7 +318,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         sodiumMg: sodiumMg?.toInt() ?? foodItem.sodiumMg,
         fluidMlPerServing: fluidMlPerServing ?? foodItem.fluidMlPerServing,
         productTypeId: foodItem.productTypeId,
-        categoryIds: categoryIds,
+        categories: categoryNames,  // Now using string array instead of int IDs
       );
 
       DebugLogger.info('✅ _saveSearchedFood - Successfully saved to database');
@@ -312,7 +328,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${foodItem.name} added to your foods'),
-            backgroundColor: AppTheme.primary600,
+            backgroundColor: AppColors.electrolyte,
           ),
         );
 
@@ -331,7 +347,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to save food: ${e.toString()}. Please try again.'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.dragonfruit,
           ),
         );
       } else {
@@ -384,265 +400,233 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         leading: CustomAppBarBackButton(),
-        backgroundColor: AppTheme.baseCream,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
+        scrolledUnderElevation: 0,
         title: Text(
           'Add Food',
-          style: AppTheme.textStyle.copyWith(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.baseBlack,
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         centerTitle: true,
-        // leading: IconButton(
-        //   onPressed: () => Navigator.of(context).pop(),
-        //   icon: Icon(
-        //     Icons.arrow_back_ios,
-        //     color: AppTheme.baseBlack,
-        //     size: 20.sp,
-        //   ),
-        // ),
       ),
-      body: Column(
-        children: [
-
-          // Content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search section with search button
+              Row(
                 children: [
-                  // Search section
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          focusNode: _searchFocusNode,
-                          decoration: InputDecoration(
-                            hintText: 'Search for food...',
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: AppTheme.baseGrey,
-                              size: 20.sp,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                              borderSide: BorderSide(
-                                color: AppTheme.baseGrey.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                              borderSide: BorderSide(color: AppTheme.primary600),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16.w,
-                              vertical: 12.h,
-                            ),
-                          ),
-                          style: AppTheme.textStyle.copyWith(
-                            fontSize: 16.sp,
-                            color: AppTheme.baseBlack,
-                          ),
-                          onSubmitted: (_) => _performSearch(),
+                  Expanded(
+                    child: KyleSearchField(
+                      controller: _searchController,
+                      hint: 'Search for food...',
+                      onChanged: (value) {
+                        // Real-time search feedback could go here
+                      },
+                      onSubmitted: (_) => _performSearch(),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  SizedBox(
+                    height: AppSizes.inputHeight,
+                    child: KylePrimaryButton(
+                      text: 'SEARCH',
+                      onPressed: _isSearching ? null : _performSearch,
+                      isFullWidth: false,
+                      isLoading: _isSearching,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // Barcode scan button
+              BaseCard(
+                child: InkWell(
+                  onTap: _handleBarcodeScan,
+                  borderRadius: AppRadius.cardRadius,
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Icon(
+                          FontAwesomeIcons.barcode,
+                          color: AppColors.orange,
+                          size: AppIconSizes.controlIcon,
                         ),
-                      ),
-                      SizedBox(width: 8.w),
-                      ElevatedButton(
-                        onPressed: _isSearching ? null : _performSearch,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary600,
-                          foregroundColor: AppTheme.baseWhite,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 12.h,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
-                        child: _isSearching
-                            ? SizedBox(
-                                width: 20.w,
-                                height: 20.w,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppTheme.baseWhite,
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Scan product barcode',
+                                style: AppTextStyles.subtitle.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                              )
-                            : Text('Search'),
+                              ),
+                              const SizedBox(height: AppSpacing.xxs),
+                              Text(
+                                'Scan any food product to add brand-specific preferences',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          FontAwesomeIcons.chevronRight,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: AppIconSizes.chevron,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // Error message
+              if (_errorMessage != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: AppColors.dragonfruit.withValues(alpha: 0.1),
+                    borderRadius: AppRadius.smRadius,
+                    border: Border.all(
+                      color: AppColors.dragonfruit.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        FontAwesomeIcons.triangleExclamation,
+                        color: AppColors.dragonfruit,
+                        size: AppIconSizes.controlIcon,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.dragonfruit,
+                          ),
+                        ),
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
 
-                  SizedBox(height: 24.h),
-
-                  // Barcode scan button
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: AppTheme.baseWhite.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: AppTheme.primary600.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: InkWell(
-                      onTap: _handleBarcodeScan,
-                      borderRadius: BorderRadius.circular(12.r),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.qr_code_scanner,
-                              color: AppTheme.primary600,
-                              size: 20.sp,
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Scan product barcode',
-                                    style: AppTheme.textStyle.copyWith(
-                                      color: AppTheme.primary600,
-                                      fontSize: 16.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2.h),
-                                  Text(
-                                    'Scan any food product to add brand-specific preferences',
-                                    style: AppTheme.textStyle.copyWith(
-                                      color: AppTheme.primary600.withValues(alpha: 0.7),
-                                      fontSize: 14.sp,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              color: AppTheme.primary600,
-                              size: 16.sp,
-                            ),
-                          ],
+              // Search results
+              if (_searchResults.isNotEmpty) ...[
+                Text(
+                  'Search Results',
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: _searchResults.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: AppSpacing.sm),
+                    itemBuilder: (context, index) {
+                      final result = _searchResults[index];
+                      return _buildSearchResultItem(result);
+                    },
+                  ),
+                ),
+              ] else if (!_isSearching && _searchController.text.isEmpty) ...[
+                // Empty state when no search has been performed
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          FontAwesomeIcons.magnifyingGlass,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                         ),
-                      ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Search for foods or scan a barcode',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
-
-                  SizedBox(height: 24.h),
-
-                  // Error message
-                  if (_errorMessage != null) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(12.w),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: AppTheme.textStyle.copyWith(
-                          color: Colors.red,
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16.h),
-                  ],
-
-                  // Search results
-                  if (_searchResults.isNotEmpty) ...[
-                    Text(
-                      'Search Results',
-                      style: AppTheme.textStyle.copyWith(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.baseBlack,
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _searchResults.length,
-                      separatorBuilder: (context, index) => SizedBox(height: 8.h),
-                      itemBuilder: (context, index) {
-                        final result = _searchResults[index];
-                        return _buildSearchResultItem(result);
-                      },
-                    ),
-                  ],
-                ],
-              ),
-            ),
+                ),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildSearchResultItem(FoodSearchResult result) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.baseWhite,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppTheme.baseGrey.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
+    return BaseCard(
       child: InkWell(
         onTap: () => _handleSearchResultTap(result),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: AppRadius.cardRadius,
         child: Padding(
-          padding: EdgeInsets.all(12.w),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
-              // Product image or placeholder
+              // Product image or placeholder with Electrolyte background
               Container(
-                width: 48.w,
-                height: 48.w,
+                width: AppIconSizes.foodIcon,
+                height: AppIconSizes.foodIcon,
                 decoration: BoxDecoration(
-                  color: AppTheme.baseGrey.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8.r),
+                  color: AppColors.electrolyte.withValues(alpha: 0.2),
+                  borderRadius: AppRadius.smRadius,
                 ),
                 child: result.imageUrl != null
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8.r),
+                        borderRadius: AppRadius.smRadius,
                         child: Image.network(
                           result.imageUrl!,
-                          width: 48.w,
-                          height: 48.w,
+                          width: AppIconSizes.foodIcon,
+                          height: AppIconSizes.foodIcon,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.food_bank,
-                            color: AppTheme.baseGrey,
-                            size: 24.sp,
+                            FontAwesomeIcons.utensils,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            size: AppIconSizes.controlIcon,
                           ),
                         ),
                       )
                     : Icon(
-                        Icons.food_bank,
-                        color: AppTheme.baseGrey,
-                        size: 24.sp,
+                        FontAwesomeIcons.utensils,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: AppIconSizes.controlIcon,
                       ),
               ),
 
-              SizedBox(width: 12.w),
+              const SizedBox(width: AppSpacing.md),
 
               // Product details
               Expanded(
@@ -651,21 +635,18 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                   children: [
                     Text(
                       result.displayName,
-                      style: AppTheme.textStyle.copyWith(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.baseBlack,
+                      style: AppTextStyles.foodTitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (result.categories?.isNotEmpty == true) ...[
-                      SizedBox(height: 4.h),
+                      const SizedBox(height: AppSpacing.xxs),
                       Text(
                         result.categories!,
-                        style: AppTheme.textStyle.copyWith(
-                          fontSize: 14.sp,
-                          color: AppTheme.baseGrey,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -676,9 +657,9 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
               ),
 
               Icon(
-                Icons.arrow_forward_ios,
-                color: AppTheme.baseGrey,
-                size: 16.sp,
+                FontAwesomeIcons.chevronRight,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: AppIconSizes.chevron,
               ),
             ],
           ),

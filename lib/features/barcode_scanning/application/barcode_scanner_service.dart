@@ -276,7 +276,7 @@ BarcodeScannerService barcodeScannerService(Ref ref) {
   return BarcodeScannerService(
     barcodeService: ref.watch(supabaseBarcodeServiceProvider),
     mappingService: ref.watch(foodMappingServiceProvider),
-    database: ref.read(databaseProvider).requireValue,
+    database: ref.read(appDatabaseProvider),
     logger: externalDeps.logger,
   );
 }

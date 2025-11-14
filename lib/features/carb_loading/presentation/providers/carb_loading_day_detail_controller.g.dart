@@ -21,7 +21,7 @@ final class CarbLoadingDayDetailControllerProvider
         > {
   const CarbLoadingDayDetailControllerProvider._({
     required CarbLoadingDayDetailControllerFamily super.from,
-    required String super.argument,
+    required int super.argument,
   }) : super(
          retry: null,
          name: r'carbLoadingDayDetailControllerProvider',
@@ -57,7 +57,7 @@ final class CarbLoadingDayDetailControllerProvider
 }
 
 String _$carbLoadingDayDetailControllerHash() =>
-    r'027397548ac6b029457e7d4cf4f1670284d93acc';
+    r'ef1a2c122abae179095e84e0a3a98a348de46591';
 
 final class CarbLoadingDayDetailControllerFamily extends $Family
     with
@@ -66,7 +66,7 @@ final class CarbLoadingDayDetailControllerFamily extends $Family
           AsyncValue<CarbLoadingDayDetailState>,
           CarbLoadingDayDetailState,
           FutureOr<CarbLoadingDayDetailState>,
-          String
+          int
         > {
   const CarbLoadingDayDetailControllerFamily._()
     : super(
@@ -77,7 +77,7 @@ final class CarbLoadingDayDetailControllerFamily extends $Family
         isAutoDispose: true,
       );
 
-  CarbLoadingDayDetailControllerProvider call(String carbLoadingDayId) =>
+  CarbLoadingDayDetailControllerProvider call(int carbLoadingDayId) =>
       CarbLoadingDayDetailControllerProvider._(
         argument: carbLoadingDayId,
         from: this,
@@ -89,10 +89,10 @@ final class CarbLoadingDayDetailControllerFamily extends $Family
 
 abstract class _$CarbLoadingDayDetailController
     extends $AsyncNotifier<CarbLoadingDayDetailState> {
-  late final _$args = ref.$arg as String;
-  String get carbLoadingDayId => _$args;
+  late final _$args = ref.$arg as int;
+  int get carbLoadingDayId => _$args;
 
-  FutureOr<CarbLoadingDayDetailState> build(String carbLoadingDayId);
+  FutureOr<CarbLoadingDayDetailState> build(int carbLoadingDayId);
   @$mustCallSuper
   @override
   void runBuild() {

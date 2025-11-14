@@ -64,7 +64,7 @@ Future<void> generateCyclingMacros({
   String? sessionGoal,
   double? temperatureC,
   double? humidityPct,
-  String? activityId,
+  int? activityId,
   String? eventId,
 })
 ```
@@ -89,7 +89,7 @@ Future<void> generateSwimmingMacros({
   String? intensityTarget,
   String? sessionGoal,
   double? waterTempC,
-  String? activityId,
+  int? activityId,
   String? eventId,
 })
 ```

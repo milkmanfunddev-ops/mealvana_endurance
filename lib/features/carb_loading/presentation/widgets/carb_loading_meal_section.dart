@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../domain/carb_loading_plan_simple.dart';
 import '../../domain/carb_foods_list.dart';
 import 'carb_loading_food_pills.dart';

@@ -8,7 +8,7 @@ import '../../../../shared/widgets/hero_image.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/increment_decrement_widget.dart';
-import '../providers/distance_page_gut_entry_controller.dart';
+import '../providers/macro_targets_controller.dart';
 import '../providers/cycling_input_controller.dart';
 import '../widgets/pre_run_timing_selector.dart';
 import '../../../weather/presentation/widgets/weather_indicator_badge.dart';
@@ -23,8 +23,8 @@ class CyclingInputScreen extends ConsumerStatefulWidget {
   final DateTime? initialDate;
   final double? initialDistance;
   final double? initialSpeed;
-  final String? activityId; // Link to calendar activity
-  final String? eventId; // Link to calendar event
+  final int? activityId; // Link to calendar activity
+  final int? eventId; // Link to calendar event
 
   const CyclingInputScreen({
     super.key,
@@ -93,7 +93,7 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
     );
 
     // Check if generation was successful by looking at the state
-    final currentState = ref.read(distancePageGutEntryControllerProvider).value;
+    final currentState = ref.read(macroTargetsControllerProvider).value;
 
     // If we have macro targets and no error, navigate
     if (currentState?.macroTargets != null && currentState?.errorMessage == null) {
@@ -120,7 +120,7 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controllerState = ref.watch(distancePageGutEntryControllerProvider);
+    final controllerState = ref.watch(macroTargetsControllerProvider);
     final cyclingForm = ref.watch(cyclingInputControllerProvider);
 
     return controllerState.when(
@@ -136,7 +136,7 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
     );
   }
 
-  Widget _buildScreen(BuildContext context, DistancePageGutEntryState state, CyclingFormState cyclingForm) {
+  Widget _buildScreen(BuildContext context, MacroTargetsState state, CyclingFormState cyclingForm) {
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       extendBodyBehindAppBar: true,

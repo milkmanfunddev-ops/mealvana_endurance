@@ -8,7 +8,7 @@ import '../../../../shared/widgets/hero_image.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/increment_decrement_widget.dart';
-import '../providers/distance_page_gut_entry_controller.dart';
+import '../providers/macro_targets_controller.dart';
 import '../providers/swimming_input_controller.dart';
 import '../widgets/pre_run_timing_selector.dart';
 import '../../../weather/presentation/widgets/weather_indicator_badge.dart';
@@ -23,8 +23,8 @@ class SwimmingInputScreen extends ConsumerStatefulWidget {
   final DateTime? initialDate;
   final int? initialDistanceMeters;
   final int? initialPacePer100mSeconds;
-  final String? activityId; // Link to calendar activity
-  final String? eventId; // Link to calendar event
+  final int? activityId; // Link to calendar activity
+  final int? eventId; // Link to calendar event
 
   const SwimmingInputScreen({
     super.key,
@@ -93,7 +93,7 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
     );
 
     // Check if generation was successful by looking at the state
-    final currentState = ref.read(distancePageGutEntryControllerProvider).value;
+    final currentState = ref.read(macroTargetsControllerProvider).value;
 
     // If we have macro targets and no error, navigate
     if (currentState?.macroTargets != null && currentState?.errorMessage == null) {
@@ -127,7 +127,7 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controllerState = ref.watch(distancePageGutEntryControllerProvider);
+    final controllerState = ref.watch(macroTargetsControllerProvider);
     final swimmingForm = ref.watch(swimmingInputControllerProvider);
 
     return controllerState.when(
@@ -143,7 +143,7 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
     );
   }
 
-  Widget _buildScreen(BuildContext context, DistancePageGutEntryState state, SwimmingFormState swimmingForm) {
+  Widget _buildScreen(BuildContext context, MacroTargetsState state, SwimmingFormState swimmingForm) {
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       extendBodyBehindAppBar: true,

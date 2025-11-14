@@ -76,14 +76,16 @@ class UsersTable extends Table {
   BoolColumn get autoGenerateNutrition => boolean().withDefault(const Constant(true)).named('auto_generate_nutrition')();
   BoolColumn get completionReminders => boolean().withDefault(const Constant(true)).named('completion_reminders')();
 
-  // Cycling-specific preferences (nullable)
-  IntColumn get ftpWatts => integer().nullable().named('ftp_watts')(); // Functional Threshold Power
+  // Cycling-specific preferences (nullable) - matches Supabase users table
+  IntColumn get cyclingFtpWatts => integer().nullable().named('cycling_ftp_watts')(); // Functional Threshold Power
+  BoolColumn get prefersCyclingPower => boolean().withDefault(const Constant(false)).named('prefers_cycling_power')();
   IntColumn get typicalBikeBottles => integer().nullable().named('typical_bike_bottles')(); // Carrying capacity
   BoolColumn get hasAeroBottle => boolean().nullable().named('has_aero_bottle')();
   BoolColumn get hasBentoBox => boolean().nullable().named('has_bento_box')();
 
-  // Swimming-specific preferences (nullable)
-  IntColumn get cssPacePer100mSeconds => integer().nullable().named('css_pace_per_100m_seconds')(); // Critical Swim Speed
+  // Swimming-specific preferences (nullable) - matches Supabase users table
+  IntColumn get swimmingCssSecondsPer100m => integer().nullable().named('swimming_css_seconds_per_100m')(); // Critical Swim Speed
+  BoolColumn get prefersSwimmingPace => boolean().withDefault(const Constant(false)).named('prefers_swimming_pace')();
   BoolColumn get typicalWetsuit => boolean().nullable().named('typical_wetsuit')();
   TextColumn get typicalSwimCapType => text().nullable().named('typical_swim_cap_type')(); // 'none', 'latex', 'silicone', 'neoprene'
 

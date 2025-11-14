@@ -2,14 +2,20 @@
 
 ## Overview
 
-Mealvana Endurance uses a unified database architecture with 100% schema parity:
+Mealvana Endurance uses a unified database architecture with local-first design:
 - **Drift (SQLite)**: Local offline-first storage with 27 tables (v1)
-- **Supabase (PostgreSQL)**: Cloud backend with 27 tables (v1) - complete parity
+- **Supabase Dev (PostgreSQL)**: Cloud backend with 27 tables (v1) - full multi-sport schema
+- **Supabase Prod (PostgreSQL)**: Cloud backend with 27 tables (v1) - partial multi-sport schema
 
-**Multi-Sport Support (Added 2025-10-15):**
-- Activities table supports running, cycling, and swimming
-- Foods table includes sport-specific suitability filtering
-- User profiles store sport-specific preferences (FTP, CSS)
+**⚠️ Schema Parity Status:**
+- **Development**: Full schema parity between Drift and Supabase (all multi-sport columns)
+- **Production**: Schema discrepancy - missing multi-sport columns in `users` and `activities` tables
+- See `/docs/dev_schema.txt` and `/docs/prod_schema.txt` for complete schemas
+
+**Multi-Sport Support (Added 2025-10-15 to Dev):**
+- Activities table supports running, cycling, and swimming (dev only)
+- Foods table includes sport-specific suitability filtering (dev and prod)
+- User profiles store sport-specific preferences - FTP, CSS (dev only)
 
 **Weather Integration (Added 2025-10-28):**
 - Weather forecasts table for caching weather data
@@ -20,17 +26,21 @@ Mealvana Endurance uses a unified database architecture with 100% schema parity:
 
 ### Local Database (Drift)
 - **Schema Version**: 1
-- **Tables**: 27 total (100% synced with Supabase)
+- **Tables**: 27 total
 - **Location**: `/lib/shared/database/`
 - **Purpose**: Offline functionality, fast local access
-- **Multi-Sport**: Cycling/swimming columns added to activities, users, foods tables
+- **Multi-Sport**: Full support - cycling/swimming columns in activities, users, foods tables
 - **Weather Caching**: weather_forecasts_table for API response caching
 
 ### Cloud Database (Supabase)
-- **Tables**: 27 production tables (includes weather_forecasts)
-- **Schema Dump**: `/database_schemas/v1/schema.sql`
+- **Dev Environment**: 27 tables with full multi-sport support
+- **Prod Environment**: 27 tables with partial multi-sport support (missing users/activities columns)
+- **Schema Dumps**:
+  - Dev: `/docs/dev_schema.txt` (full multi-sport)
+  - Prod: `/docs/prod_schema.txt` (partial multi-sport)
+  - V1 Baseline: `/database_schemas/v1/schema.sql` (from dev)
 - **Purpose**: Data backup, cross-device sync, content management
-- **Multi-Sport Migration**: `20251015000000_add_cycling_swimming_support.sql`
+- **Multi-Sport Migration**: Applied to dev, pending for prod
 - **Weather Support**: Local-only table, not synced to Supabase
 
 ## Table Structure

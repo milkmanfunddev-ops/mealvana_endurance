@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'distance_page_gut_entry_controller.dart';
+import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
@@ -251,13 +251,13 @@ class SwimmingInputController extends _$SwimmingInputController {
 
   /// Delegate to the main controller for macro generation
   Future<void> generateMacros({
-    String? activityId,
-    String? eventId,
+    int? activityId,
+    int? eventId,
   }) async {
     final currentState = state;
 
     // Delegate to the main controller
-    await ref.read(distancePageGutEntryControllerProvider.notifier).generateSwimmingMacros(
+    await ref.read(macroTargetsControllerProvider.notifier).generateSwimmingMacros(
       distanceMeters: currentState.distanceMeters,
       paceSecondsper100m: currentState.pacePer100mSeconds,
       poolOrOpenWater: currentState.poolOrOpenWater,

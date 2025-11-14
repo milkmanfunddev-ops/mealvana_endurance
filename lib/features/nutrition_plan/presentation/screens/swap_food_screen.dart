@@ -1,30 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/food_icon.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
 import '../../../../shared/widgets/food_selection/recommended_alternatives.dart';
 import '../providers/swap_food_controller.dart';
 import '../../domain/food.dart';
-import '../../domain/food_item.dart';
-import '../../../../shared/services/food_management/shared_food_search_service.dart';
-import '../../../auth/application/auth_service.dart';
-import '../../../../shared/widgets/scanned_food_category_sheet.dart';
+import '../../../../shared/services/app_external_deps.dart';
+import '../../domain/pending_activity_data.dart';
+import '../../domain/macro_targets.dart';
 
+/// Swap/Add Food Screen - Kyle's Design System
+/// Allows users to swap existing food or add new food to nutrition plan
+/// Features: Smart recommendations, search, barcode scanning, OpenFoodFacts integration
 class SwapFoodScreen extends ConsumerStatefulWidget {
   final String? foodToSwapId;
   final String? foodToSwapName;
-  final String category; // 'before_run', 'during_run', 'after_run'
-  
+  final String category; // before_run, during_run, after_run
+  final int activityId;
+  final String mode; // 'create' or 'view' - must match ActivityDetailController mode
+  final PendingActivityData? pendingActivityData; // Required to match ActivityDetailController instance
+  final MacroTargets? macroTargets; // Required to match ActivityDetailController instance
+
   const SwapFoodScreen({
     super.key,
     this.foodToSwapId,
     this.foodToSwapName,
     required this.category,
+    required this.activityId,
+    this.mode = 'view', // Default to 'view' for backwards compatibility
+    this.pendingActivityData,
+    this.macroTargets,
   });
 
   @override
@@ -32,19 +40,33 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
 }
 
 class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
-  final _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   double _selectedQuantity = 1.0;
+
   late final SwapFoodParams _params;
 
   @override
   void initState() {
     super.initState();
     _params = SwapFoodParams(
+      activityId: widget.activityId,
       category: widget.category,
       originalFoodId: widget.foodToSwapId,
       originalFoodName: widget.foodToSwapName,
+      mode: widget.mode,
+      pendingActivityData: widget.pendingActivityData,
+      macroTargets: widget.macroTargets,
     );
-    // No need to manually load foods - controller auto-initializes
+
+    // Track screen viewed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final analytics = ref.read(appExternalDepsProvider);
+      analytics.analytics.track('swap_food_screen_viewed', properties: {
+        'is_swapping': widget.foodToSwapId != null,
+        'category': widget.category,
+        'mode': widget.mode,
+      });
+    });
   }
 
   @override
@@ -53,14 +75,30 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     super.dispose();
   }
 
+  bool get _isSwapping => widget.foodToSwapId != null;
+
+  String get _screenTitle => _isSwapping
+      ? 'Swap ${widget.foodToSwapName ?? 'Food'}'
+      : 'Add Food to ${_getCategoryDisplayName()}';
+
+  String _getCategoryDisplayName() {
+    switch (widget.category) {
+      case 'before_run':
+        return 'Before Run';
+      case 'during_run':
+        return 'During Run';
+      case 'after_run':
+        return 'After Run';
+      default:
+        return widget.category;
+    }
+  }
+
   void _onSearchChanged(String query) {
-    // For real-time filtering (as user types)
-    ref.read(swapFoodControllerProvider(_params).notifier)
-      .updateSearch(query);
+    ref.read(swapFoodControllerProvider(_params).notifier).updateSearch(query);
   }
 
   Future<void> _onSearchButtonPressed(String query) async {
-    // When "Search" button is pressed - search Open Food Facts
     if (query.trim().isNotEmpty) {
       await ref.read(swapFoodControllerProvider(_params).notifier)
         .searchOpenFoodFacts(query.trim());
@@ -69,305 +107,525 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
   void _onClearSearch() {
     _searchController.clear();
-    ref.read(swapFoodControllerProvider(_params).notifier)
-      .updateSearch('');
-    ref.read(swapFoodControllerProvider(_params).notifier)
-      .clearOpenFoodFactsResults();
+    ref.read(swapFoodControllerProvider(_params).notifier).updateSearch('');
+    ref.read(swapFoodControllerProvider(_params).notifier).clearOpenFoodFactsResults();
   }
 
   Future<void> _onBarcodeScan() async {
-    final result = await context.pushNamed<Food>(
+    // Navigate to barcode scanner
+    final result = await context.pushNamed<dynamic>(
       'barcode-scanner',
       extra: {
         'category': widget.category,
         'foodToSwapId': widget.foodToSwapId,
         'foodToSwapName': widget.foodToSwapName,
+        'context': _isSwapping ? 'swap' : 'add',
       },
     );
 
-    // If a food was successfully scanned, select it with quantity 1
-    if (result != null) {
-      _selectFood(result);
-      setState(() {
-        _selectedQuantity = 1.0;
-      });
+    if (result != null && mounted) {
+      final food = result as Food;
+      ref.read(swapFoodControllerProvider(_params).notifier).selectFood(food);
+      _searchController.clear();
+      _onSearchChanged('');
     }
   }
 
   void _selectFood(Food food) {
-    ref.read(swapFoodControllerProvider(_params).notifier)
-      .selectFood(food);
-
-    // Clear the search field when a food is selected
+    ref.read(swapFoodControllerProvider(_params).notifier).selectFood(food);
     _searchController.clear();
-    // Update search to show recommended alternatives again
     _onSearchChanged('');
-
-    // Reset quantity when selecting a new food
     setState(() {
-      _selectedQuantity = food.servingAmount ?? 1.0;
+      _selectedQuantity = 1.0;
     });
   }
 
-  void _incrementQuantity() {
-    setState(() {
-      _selectedQuantity += 0.5;
-    });
-  }
-
-  void _decrementQuantity() {
-    if (_selectedQuantity > 0.5) {
-      setState(() {
-        _selectedQuantity -= 0.5;
-      });
-    }
-  }
-
-  Future<void> _handleAction() async {
+  Future<void> _handleConfirm() async {
     final controllerState = ref.read(swapFoodControllerProvider(_params));
-    final selectedFood = controllerState.value?.selectedFood;
+    final state = controllerState.value;
 
-    if (selectedFood == null) return;
+    if (state?.selectedFood == null) return;
 
-    final controller = ref.read(swapFoodControllerProvider(_params).notifier);
-    
-    if (widget.foodToSwapId != null) {
-      // Swap existing food
-      await controller.swapFood(
-        widget.foodToSwapId!,
-        selectedFood,
-        widget.category,
-        customAmount: _selectedQuantity,
-      );
-    } else {
-      // Add new food
-      await controller.addFood(
-        selectedFood,
-        widget.category,
-        customAmount: _selectedQuantity,
-      );
+    final food = state!.selectedFood!;
+
+    try {
+      if (_isSwapping) {
+        await ref.read(swapFoodControllerProvider(_params).notifier)
+          .swapFood(_params, widget.foodToSwapId!, food, widget.category, customAmount: _selectedQuantity);
+      } else {
+        await ref.read(swapFoodControllerProvider(_params).notifier)
+          .addFood(_params, food, widget.category, customAmount: _selectedQuantity);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isSwapping ? 'Food swapped successfully!' : 'Food added successfully!'),
+            backgroundColor: AppColors.electrolyte,
+          ),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to ${_isSwapping ? 'swap' : 'add'} food: $e'),
+            backgroundColor: AppColors.dragonfruit,
+          ),
+        );
+      }
     }
+  }
 
-    if (mounted) {
-      context.pop();
+  Future<void> _handleOpenFoodFactsSelection(dynamic result) async {
+    try {
+      await ref.read(swapFoodControllerProvider(_params).notifier)
+        .addOpenFoodFactsResult(result);
+
+      // Reset quantity after selection
+      setState(() {
+        _selectedQuantity = 1.0;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to import food: $e'),
+            backgroundColor: AppColors.dragonfruit,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final controllerState = ref.watch(swapFoodControllerProvider(_params));
-    final isSwapping = widget.foodToSwapId != null;
-    final title = isSwapping ? 'Swap ${widget.foodToSwapName ?? 'Food'}' : 'Add Food';
-    final buttonText = isSwapping ? 'Swap food' : 'Add food';
 
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: AppTheme.baseCream,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: CustomAppBarBackButton(
           onPressed: () => context.pop(),
         ),
         title: Text(
-          title,
-          style: AppTheme.titleStyle.copyWith(
-            color: AppTheme.primary900,
-            fontSize: 18.sp,
+          _screenTitle,
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
+      body: controllerState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => _buildErrorState(error),
+        data: (state) => _buildContent(state),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(Object error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              FontAwesomeIcons.triangleExclamation,
+              size: AppIconSizes.xl,
+              color: AppColors.dragonfruit,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Error loading foods',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              error.toString(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            KylePrimaryButton(
+              text: 'Retry',
+              onPressed: () => ref.invalidate(swapFoodControllerProvider(_params)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(SwapFoodState state) {
+    return SafeArea(
+      child: Column(
+        children: [
+          // Search bar with barcode
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: FoodSearchBar(
+              controller: _searchController,
+              onSearch: _onSearchButtonPressed,
+              onChanged: _onSearchChanged,
+              onBarcodeScan: _onBarcodeScan,
+              hintText: 'Search for food...',
+              showClearButton: state.openFoodFactsResults.isNotEmpty,
+              onClear: _onClearSearch,
+            ),
+          ),
+
+          // Selected food card (when food is selected and no active search)
+          if (state.selectedFood != null && state.searchQuery.isEmpty && state.openFoodFactsResults.isEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: _buildSelectedFoodCard(state.selectedFood!),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
+          // Content area (recommendations, search results, or OpenFoodFacts results)
+          Expanded(
+            child: _buildContentArea(state),
+          ),
+
+          // Confirm button (only when food is selected and no active search)
+          if (state.selectedFood != null && state.searchQuery.isEmpty && state.openFoodFactsResults.isEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: KylePrimaryButton(
+                text: _isSwapping ? 'SWAP FOOD' : 'ADD FOOD',
+                onPressed: _handleConfirm,
+                isFullWidth: true,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContentArea(SwapFoodState state) {
+    // OpenFoodFacts results take priority
+    if (state.openFoodFactsResults.isNotEmpty) {
+      return _buildOpenFoodFactsResults(state);
+    }
+
+    // Show recommendations or search results
+    if (state.searchQuery.isEmpty) {
+      // Show recommendations
+      return RecommendedAlternatives(
+        foods: state.recommendations,
+        onFoodSelected: _selectFood,
+        preferences: state.preferences,
+        title: _isSwapping ? 'Recommended Alternatives' : 'Recommended Foods',
+      );
+    } else {
+      // Show search results
+      return _buildSearchResults(state);
+    }
+  }
+
+  Widget _buildSearchResults(SwapFoodState state) {
+    if (state.searchResults.isEmpty) {
+      return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 0.h),
-          child: controllerState.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Error loading foods: $error'),
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(swapFoodControllerProvider(_params)),
-                    child: Text('Retry'),
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                FontAwesomeIcons.magnifyingGlass,
+                size: AppIconSizes.xl,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'No foods found for "${state.searchQuery}"',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      itemCount: state.searchResults.length,
+      itemBuilder: (context, index) {
+        final food = state.searchResults[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: _buildFoodCard(food),
+        );
+      },
+    );
+  }
+
+  Widget _buildOpenFoodFactsResults(SwapFoodState state) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      itemCount: state.openFoodFactsResults.length,
+      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
+      itemBuilder: (context, index) {
+        final result = state.openFoodFactsResults[index];
+        return _buildOpenFoodFactsCard(result);
+      },
+    );
+  }
+
+  Widget _buildFoodCard(Food food) {
+    return BaseCard(
+      child: InkWell(
+        onTap: () => _selectFood(food),
+        borderRadius: AppRadius.cardRadius,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              // Food icon with colored circular background
+              Container(
+                width: AppIconSizes.foodIcon,
+                height: AppIconSizes.foodIcon,
+                decoration: BoxDecoration(
+                  color: _getFoodIconColor(food.name),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _getFoodIcon(food.name),
+                  size: AppIconSizes.controlIcon,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      food.displayName ?? food.name,
+                      style: AppTextStyles.foodTitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    if (food.carbsPerServing != null) ...[
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        '${food.carbsPerServing!.toInt()}g carbs per serving',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                FontAwesomeIcons.circlePlus,
+                color: AppColors.orange,
+                size: AppIconSizes.md,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOpenFoodFactsCard(dynamic result) {
+    return BaseCard(
+      child: InkWell(
+        onTap: () => _handleOpenFoodFactsSelection(result),
+        borderRadius: AppRadius.cardRadius,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              // Product image
+              Container(
+                width: AppIconSizes.foodIcon,
+                height: AppIconSizes.foodIcon,
+                decoration: BoxDecoration(
+                  color: AppColors.electrolyte.withValues(alpha: 0.2),
+                  borderRadius: AppRadius.smRadius,
+                ),
+                child: result.imageUrl?.isNotEmpty == true
+                    ? ClipRRect(
+                        borderRadius: AppRadius.smRadius,
+                        child: Image.network(
+                          result.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            FontAwesomeIcons.utensils,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            size: AppIconSizes.controlIcon,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        FontAwesomeIcons.utensils,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: AppIconSizes.controlIcon,
+                      ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      result.displayName ?? 'Unknown Product',
+                      style: AppTextStyles.foodTitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (result.categories?.isNotEmpty == true) ...[
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        result.categories!,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                FontAwesomeIcons.chevronRight,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: AppIconSizes.chevron,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedFoodCard(Food food) {
+    final totalCarbs = (food.carbsPerServing ?? 0) * _selectedQuantity;
+    final totalProtein = (food.proteinPerServing ?? 0) * _selectedQuantity;
+    final totalFat = (food.fatPerServing ?? 0) * _selectedQuantity;
+    final totalCalories = ((food.caloriesPerServing ?? 0) * _selectedQuantity).toInt();
+
+    return BaseCard(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Food header
+            Row(
+              children: [
+                // Food icon with colored circular background
+                Container(
+                  width: AppIconSizes.foodIcon,
+                  height: AppIconSizes.foodIcon,
+                  decoration: BoxDecoration(
+                    color: _getFoodIconColor(food.name),
+                    shape: BoxShape.circle,
                   ),
+                  child: Icon(
+                    _getFoodIcon(food.name),
+                    size: AppIconSizes.controlIcon,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        food.displayName ?? food.name,
+                        style: AppTextStyles.foodTitle.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      if (food.description?.isNotEmpty == true) ...[
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          food.description!,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    FontAwesomeIcons.xmark,
+                    size: AppIconSizes.controlIcon,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () {
+                    ref.read(swapFoodControllerProvider(_params).notifier).clearSelection();
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Quantity control
+            KylePlusMinusDecimalControl(
+              value: _selectedQuantity,
+              onChanged: (value) {
+                setState(() {
+                  _selectedQuantity = value;
+                });
+              },
+              min: 0.5,
+              max: 10.0,
+              step: 0.5,
+              decimalPlaces: 1,
+              label: 'QUANTITY',
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Nutrition info
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.electrolyte.withValues(alpha: 0.1),
+                borderRadius: AppRadius.smRadius,
+              ),
+              child: Column(
+                children: [
+                  _buildNutrientRow('Carbohydrates', '${totalCarbs.toStringAsFixed(1)} g'),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildNutrientRow('Protein', '${totalProtein.toStringAsFixed(1)} g'),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildNutrientRow('Fat', '${totalFat.toStringAsFixed(1)} g'),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildNutrientRow('Calories', '$totalCalories kcal'),
                 ],
               ),
             ),
-            data: (state) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Search bar with barcode scanner
-                FoodSearchBar(
-                  controller: _searchController,
-                  onSearch: _onSearchButtonPressed, // Open Food Facts search when button pressed
-                  onChanged: _onSearchChanged, // Real-time local filtering as user types
-                  onBarcodeScan: _onBarcodeScan,
-                  hintText: 'Search foods...',
-                  showClearButton: state.openFoodFactsResults.isNotEmpty,
-                  onClear: _onClearSearch,
-                ),
-
-                SizedBox(height: 16.h),
-
-                // Selected food details - only show when not actively searching
-                if (state.selectedFood != null && state.searchQuery.isEmpty) ...[
-                  Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary50.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            FoodIcon(
-                              imageUrl: state.selectedFood!.imageUrl,
-                              size: 40.w,
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: Text(
-                                state.selectedFood!.generateQuantityDisplay(customAmount: _selectedQuantity),
-                                style: AppTheme.textStyle.copyWith(
-                                  color: AppTheme.baseBlack,
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 16.h),
-                        // Quantity adjustment controls
-                        Row(
-                          children: [
-                            Text(
-                              'Quantity:',
-                              style: AppTheme.textStyle.copyWith(
-                                color: AppTheme.primary900,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Spacer(),
-                            // Decrement button
-                            Container(
-                              width: 36.w,
-                              height: 36.w,
-                              decoration: BoxDecoration(
-                                color: AppTheme.primary900,
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                icon: Icon(
-                                  Icons.remove,
-                                  color: Colors.white,
-                                  size: 18.sp,
-                                ),
-                                onPressed: _decrementQuantity,
-                              ),
-                            ),
-                            SizedBox(width: 16.w),
-                            // Quantity display
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: AppTheme.primary100),
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                              child: Text(
-                                _selectedQuantity == _selectedQuantity.toInt() 
-                                    ? _selectedQuantity.toInt().toString()
-                                    : _selectedQuantity.toStringAsFixed(1),
-                                style: AppTheme.textStyle.copyWith(
-                                  color: AppTheme.baseBlack,
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 16.w),
-                            // Increment button
-                            Container(
-                              width: 36.w,
-                              height: 36.w,
-                              decoration: BoxDecoration(
-                                color: AppTheme.primary900,
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                icon: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 18.sp,
-                                ),
-                                onPressed: _incrementQuantity,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 16.h),
-                        _buildNutrientRow('Carbohydrates', 
-                          '${((state.selectedFood!.carbsPerServing ?? 0) * _selectedQuantity).toStringAsFixed(0)} g'),
-                        SizedBox(height: 8.h),
-                        _buildNutrientRow('Sodium', 
-                          '${((state.selectedFood!.sodiumMg ?? 0) * _selectedQuantity).toStringAsFixed(0)} mg'),
-                        SizedBox(height: 8.h),
-                        _buildNutrientRow('Fluids', 
-                          '${(((state.selectedFood!.fluidMlPerServing ?? 0) * _selectedQuantity) / 1000).toStringAsFixed(1)} L'),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
-                ],
-
-                // Open Food Facts search results - show when available (no header, like food preferences)
-                if (state.openFoodFactsResults.isNotEmpty) ...[
-                  SizedBox(
-                    height: 200.h, // Fixed height for Open Food Facts results
-                    child: ListView.separated(
-                      padding: EdgeInsets.all(16.w),
-                      itemCount: state.openFoodFactsResults.length,
-                      separatorBuilder: (context, index) => SizedBox(height: 12.h),
-                      itemBuilder: (context, index) {
-                        final result = state.openFoodFactsResults[index];
-                        return _buildSearchResultItem(result);
-                      },
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
-                ],
-
-                // Show filtered recommendations only when NOT showing Open Food Facts results
-                if (state.openFoodFactsResults.isEmpty)
-                  Expanded(
-                    child: RecommendedAlternatives(
-                      foods: state.searchResults, // This contains filtered results when searching, or recommendations when not
-                      onFoodSelected: _selectFood,
-                      preferences: state.preferences,
-                      title: 'Recommended Alternatives',
-                    ),
-                  ),
-
-                // Action button - only show when food is selected and not actively searching
-                if (state.selectedFood != null && state.searchQuery.isEmpty) ...[
-                  SizedBox(height: 16.h),
-                  PrimaryButton(
-                    text: buttonText,
-                    onPressed: _handleAction,
-                    width: double.infinity,
-                  ),
-                  SizedBox(height: 16.h),
-                ],
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -379,257 +637,133 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       children: [
         Text(
           label,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.primary900,
-            fontSize: 14.sp,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         Text(
           value,
-          style: AppTheme.textStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
+          style: AppTextStyles.dataNumber.copyWith(
+            color: AppColors.electrolyte,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
     );
   }
 
-  /// Build search result item matching food preferences pattern
-  Widget _buildSearchResultItem(dynamic result) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppTheme.baseWhite,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppTheme.primary100),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Product image (if available)
-              if (result.imageUrl?.isNotEmpty == true)
-                Container(
-                  width: 50.w,
-                  height: 50.w,
-                  margin: EdgeInsets.only(right: 12.w),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.r),
-                    image: DecorationImage(
-                      image: NetworkImage(result.imageUrl!),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
+  /// Get the appropriate icon for a food based on its name
+  IconData _getFoodIcon(String foodName) {
+    final name = foodName.toLowerCase();
 
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      result.name.isNotEmpty ? result.name : 'Unknown Product',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.baseBlack,
-                      ),
-                    ),
-                    if (result.brand?.isNotEmpty == true) ...[
-                      SizedBox(height: 4.h),
-                      Text(
-                        result.brand!,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppTheme.primary100,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-
-              // Right chevron icon for Open Food Facts results
-              GestureDetector(
-                onTap: () => _handleSearchResultTap(result),
-                child: Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary600,
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Icon(
-                    Icons.chevron_right,
-                    color: AppTheme.baseWhite,
-                    size: 20.sp,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Handle search result tap - shows bottom sheet for nutritional verification
-  Future<void> _handleSearchResultTap(dynamic result) async {
-    if (!result.hasValidId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot load details for this product'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
+    // Map generic foods to specific icons
+    if (name.contains('apple') && !name.contains('applesauce')) {
+      return FontAwesomeIcons.appleWhole;
+    } else if (name.contains('applesauce') || name.contains('purée')) {
+      return FontAwesomeIcons.bottleDroplet;
+    } else if (name.contains('bagel')) {
+      return FontAwesomeIcons.breadSlice;
+    } else if (name.contains('banana')) {
+      return FontAwesomeIcons.appleWhole;
+    } else if (name.contains('berr')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('chocolate milk')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('coconut water')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('coffee')) {
+      return FontAwesomeIcons.mugHot;
+    } else if (name.contains('date')) {
+      return FontAwesomeIcons.appleWhole;
+    } else if (name.contains('electrolyte drink mix')) {
+      return FontAwesomeIcons.flask;
+    } else if (name.contains('electrolyte tablet')) {
+      return FontAwesomeIcons.pills;
+    } else if (name.contains('energy bar')) {
+      return FontAwesomeIcons.bars;
+    } else if (name.contains('energy chew')) {
+      return FontAwesomeIcons.candyCane;
+    } else if (name.contains('energy waffle') || name.contains('stroopwafel')) {
+      return FontAwesomeIcons.cookie;
+    } else if (name.contains('fig bar')) {
+      return FontAwesomeIcons.bars;
+    } else if (name.contains('gel')) {
+      return FontAwesomeIcons.droplet;
+    } else if (name.contains('oatmeal')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('orange juice')) {
+      return FontAwesomeIcons.glassWater;
+    } else if (name.contains('peanut butter')) {
+      return FontAwesomeIcons.jar;
+    } else if (name.contains('pickle juice')) {
+      return FontAwesomeIcons.vial;
+    } else if (name.contains('pretzel')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('protein bar')) {
+      return FontAwesomeIcons.bars;
+    } else if (name.contains('protein powder')) {
+      return FontAwesomeIcons.jar;
+    } else if (name.contains('protein shake')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('salt packet')) {
+      return FontAwesomeIcons.bagShopping;
+    } else if (name.contains('sports drink mix')) {
+      return FontAwesomeIcons.flask;
+    } else if (name.contains('sports drink')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('toast')) {
+      return FontAwesomeIcons.breadSlice;
+    } else if (name.contains('trail mix')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('water')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('yogurt')) {
+      return FontAwesomeIcons.bowlFood;
     }
 
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+    // Check if this is likely a user-imported food
+    final knownGenericFoods = [
+      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
+      'chocolate milk', 'coconut water', 'coffee', 'date',
+      'electrolyte drink', 'electrolyte tablet', 'energy bar',
+      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
+      'gel', 'oatmeal', 'orange juice', 'peanut butter',
+      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
+      'protein shake', 'salt packet', 'sports drink', 'toast',
+      'trail mix', 'water', 'yogurt',
+    ];
 
-      // Get product details using shared service
-      final searchService = ref.read(sharedFoodSearchServiceProvider);
-
-      // Get current user's device ID
-      final authService = ref.read(authServiceProvider);
-      final currentUser = await authService.getCurrentUser();
-      final deviceId = currentUser?.id ?? 'unknown';
-
-      // Add search result to user foods and get Food object
-      final food = await searchService.addSearchResultToUserFoods(result, deviceId);
-
-      // Close loading dialog
-      if (mounted) Navigator.of(context).pop();
-
-      if (food == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Unable to load product details'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      // Convert Food to FoodItem for ScannedFoodCategorySheet
-      final foodItem = _convertFoodToFoodItem(food);
-
-      // Show category selection sheet
-      if (mounted) {
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => ScannedFoodCategorySheet(
-            scannedFood: foodItem,
-            context: widget.foodToSwapId != null ? 'swap_food' : 'add_food',
-            fluidMlPerServing: foodItem.fluidMlPerServing,
-            onSave: (categoryIds, finalFluidAmount, {carbsPerServing, proteinPerServing, fatPerServing, sodiumMg}) async {
-              // The food is already saved by SharedFoodSearchService
-              // Create updated food with verified nutrition values if provided
-              final updatedFood = Food(
-                id: food.id,
-                name: food.name,
-                imageAddress: food.imageAddress,
-                description: food.description,
-                instructions: food.instructions,
-                servingAmount: food.servingAmount,
-                displayName: food.displayName,
-                displayNamePlural: food.displayNamePlural,
-                servingUnit: food.servingUnit,
-                servingUnitPlural: food.servingUnitPlural,
-                servingQualifier: food.servingQualifier,
-                beforeRunSuitable: food.beforeRunSuitable,
-                duringRunSuitable: food.duringRunSuitable,
-                carbsPerServing: carbsPerServing ?? food.carbsPerServing,
-                proteinPerServing: proteinPerServing ?? food.proteinPerServing,
-                fatPerServing: fatPerServing ?? food.fatPerServing,
-                caloriesPerServing: food.caloriesPerServing,
-                fluidMlPerServing: finalFluidAmount ?? food.fluidMlPerServing,
-                sodiumMg: sodiumMg?.toInt() ?? food.sodiumMg,
-                productTypeId: food.productTypeId,
-                runPortable: food.runPortable,
-                requiresPreparation: food.requiresPreparation,
-                aidStationAvailable: food.aidStationAvailable,
-                maxServingsBefore: food.maxServingsBefore,
-                maxServingsDuring: food.maxServingsDuring,
-                caffeineMg: food.caffeineMg,
-                potassiumMg: food.potassiumMg,
-                servingSize: food.servingSize,
-              );
-
-              // Select the food and clear Open Food Facts results
-              if (mounted) {
-                _selectFood(updatedFood);
-                ref.read(swapFoodControllerProvider(_params).notifier).clearOpenFoodFactsResults();
-                // Note: ScannedFoodCategorySheet handles closing itself via _handleSave()
-              }
-            },
-          ),
-        );
-      }
-    } catch (e) {
-      // Close loading dialog if still open
-      if (mounted && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to load product details'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    // If none of the generic food keywords match, it's likely user-imported
+    if (!knownGenericFoods.any((keyword) => name.contains(keyword))) {
+      return FontAwesomeIcons.userPen;
     }
+
+    // Default fallback icon
+    return FontAwesomeIcons.utensils;
   }
 
-  /// Convert Food to FoodItem for compatibility with ScannedFoodCategorySheet
-  FoodItem _convertFoodToFoodItem(Food food) {
-    return FoodItem(
-      id: food.id,
-      name: food.name,
-      imageAddress: food.imageAddress,
-      description: food.description,
-      instructions: food.instructions,
-      categories: [],
-      servingSize: food.servingSize,
-      servingAmount: food.servingAmount,
-      servingUnit: food.servingUnit,
-      servingUnitPlural: food.servingUnitPlural,
-      servingQualifier: food.servingQualifier,
-      displayName: food.displayName,
-      displayNamePlural: food.displayNamePlural,
-      fluidMlPerServing: food.fluidMlPerServing,
-      carbsPerServing: food.carbsPerServing,
-      proteinPerServing: food.proteinPerServing,
-      fatPerServing: food.fatPerServing,
-      sodiumMg: food.sodiumMg,
-      caloriesPerServing: food.caloriesPerServing,
-      productTypeId: food.productTypeId,
-      beforeRunSuitable: food.beforeRunSuitable,
-      duringRunSuitable: food.duringRunSuitable,
-      runPortable: food.runPortable,
-      requiresPreparation: food.requiresPreparation,
-      aidStationAvailable: food.aidStationAvailable,
-      maxServingsBefore: food.maxServingsBefore,
-      maxServingsDuring: food.maxServingsDuring,
-      caffeineMg: food.caffeineMg,
-      potassiumMg: food.potassiumMg,
-    );
-  }
+  /// Get the background color for the food icon
+  Color _getFoodIconColor(String foodName) {
+    final name = foodName.toLowerCase();
 
+    final knownGenericFoods = [
+      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
+      'chocolate milk', 'coconut water', 'coffee', 'date',
+      'electrolyte drink', 'electrolyte tablet', 'energy bar',
+      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
+      'gel', 'oatmeal', 'orange juice', 'peanut butter',
+      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
+      'protein shake', 'salt packet', 'sports drink', 'toast',
+      'trail mix', 'water', 'yogurt',
+    ];
+
+    // User-imported foods get orange color
+    if (!knownGenericFoods.any((keyword) => name.contains(keyword))) {
+      return AppColors.orange;
+    }
+
+    // Generic foods get electrolyte color
+    return AppColors.electrolyte;
+  }
 }
-

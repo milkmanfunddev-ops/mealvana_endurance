@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../features/calendar/presentation/screens/activities_list_screen.dart';
-import '../../features/settings/presentation/screens/settings_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../features/activities/presentation/screens/activities_list_screen.dart';
+import '../../features/calendar/presentation/providers/calendar_view_provider.dart';
 import '../../features/feature_survey/presentation/screens/feature_survey_screen.dart';
-import '../../theme/app_theme.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../theme/kyle_design/app_colors.dart';
+import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 
-class TabsScreen extends StatefulWidget {
+class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({
     super.key,
     this.initialTabIndex = 0,
@@ -13,10 +17,10 @@ class TabsScreen extends StatefulWidget {
   final int initialTabIndex;
 
   @override
-  State<TabsScreen> createState() => _TabsScreenState();
+  ConsumerState<TabsScreen> createState() => _TabsScreenState();
 }
 
-class _TabsScreenState extends State<TabsScreen> {
+class _TabsScreenState extends ConsumerState<TabsScreen> {
   late int _currentIndex;
 
   @override
@@ -48,71 +52,46 @@ class _TabsScreenState extends State<TabsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.baseCream,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: SizedBox(
-            height: 70,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(_tabs.length, (index) {
-                final isSelected = _currentIndex == index;
-                final tab = _tabs[index];
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      color: Colors.transparent,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            tab.icon,
-                            size: 28,
-                            color: isSelected ? AppTheme.primary900 : Colors.grey,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            tab.label,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                              color: isSelected ? AppTheme.primary900 : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
+    return Scaffold(
+      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: _currentIndex,
+            children: _screens,
           ),
-        ),
+          FloatingActionButtonsBar(
+            activeButton: _currentIndex,
+            onCalendarTap: () {
+              // Navigate to Activities tab if not already there
+              if (_currentIndex != 0) {
+                setState(() {
+                  _currentIndex = 0;
+                });
+              } else {
+                // Only toggle calendar view if already on Activities tab
+                ref.read(calendarViewProvider.notifier).toggleView();
+              }
+            },
+            onSurveyTap: () {
+              setState(() {
+                _currentIndex = 1; // Navigate to Survey
+              });
+            },
+            onMenuTap: () {
+              setState(() {
+                _currentIndex = 2; // Navigate to Settings
+              });
+            },
+            onAddTap: () {
+              // Navigate to New Activity Screen (Kyle's unified tabbed design)
+              context.pushNamed('distancepacegut');
+            },
+          ),
+        ],
       ),
     );
   }

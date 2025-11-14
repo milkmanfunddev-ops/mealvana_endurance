@@ -38,6 +38,7 @@ serve(async (req)=>{
     const { data: userFoodData, error: userFoodError } = await supabaseClient.from('user_foods').upsert({
       id: requestData.id,
       device_id: requestData.device_id,
+      user_id: requestData.device_id, // Set user_id to device_id (privacy-first approach)
       client_food_id: requestData.client_food_id,
       barcode: requestData.barcode,
       name: requestData.name,
@@ -53,7 +54,7 @@ serve(async (req)=>{
       fat_per_serving: requestData.fat_per_serving,
       sodium_mg: requestData.sodium_mg,
       fluid_ml_per_serving: requestData.fluid_ml_per_serving,
-      product_type_id: requestData.product_type_id,
+      product_type: requestData.product_type,
       updated_at: new Date().toISOString()
     }).select();
     if (userFoodError) {

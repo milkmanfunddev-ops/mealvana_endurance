@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../domain/macro_targets.dart';
-import '../providers/distance_page_gut_entry_controller.dart';
+import '../providers/macro_targets_controller.dart';
 
 class EditMacroSectionDialog extends StatefulWidget {
   final MacroSection section;
@@ -283,7 +283,7 @@ class _EditMacroSectionDialogState extends State<EditMacroSectionDialog> {
   }
 
   void _saveChanges() async {
-    final controller = widget.ref.read(distancePageGutEntryControllerProvider.notifier);
+    final controller = widget.ref.read(macroTargetsControllerProvider.notifier);
     
     // Update each field value through the controller
     for (final entry in _controllers.entries) {

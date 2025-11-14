@@ -1,17 +1,20 @@
+import '../../../shared/domain/activity_type.dart';
+
 /// Event domain model for calendar feature
 class Event {
   const Event({
     required this.id,
     required this.userId, // User ID for direct filtering (eliminates need for joins)
     this.activityId, // Now nullable - events can exist without activities
-    required this.eventType,
+    required this.eventType, // Event type: running, cycling, swimming, triathlon, duathlon, multisport
     this.eventSubtype,
     
     // Event details
     this.eventName,
     this.location,
     this.registrationUrl,
-    this.startTime,
+    this.eventDate, // Primary event date for calendar
+    this.startTime, // Optional precise start time
     
     // Goals and targets
     this.goalTimeMinutes,
@@ -45,17 +48,18 @@ class Event {
     this.localUpdatedAt,
   });
 
-  final String id;
+  final int id;
   final String userId; // User ID for direct filtering (eliminates need for joins)
-  final String? activityId; // Nullable - events can exist without activities
-  final EventType eventType;
-  final String? eventSubtype;
+  final int? activityId; // Nullable - events can exist without activities
+  final ActivityType eventType; // Event type: running, cycling, swimming, triathlon, duathlon, multisport
+  final String? eventSubtype; // Race distance: 'marathon', 'half_marathon', '10k', etc.
   
   // Event details
   final String? eventName;
   final String? location;
   final String? registrationUrl;
-  final String? startTime;
+  final DateTime? eventDate; // Primary event date for calendar displays
+  final String? startTime; // Optional precise start time with timezone
   
   // Goals and targets
   final int? goalTimeMinutes;
@@ -94,11 +98,12 @@ class Event {
       'id': id,
       'userId': userId,
       'activityId': activityId,
-      'eventType': eventType.dbValue,
+      'eventType': eventType.dbValue, // Maps to event_type column in database
       'eventSubtype': eventSubtype,
       'eventName': eventName,
       'location': location,
       'registrationUrl': registrationUrl,
+      'eventDate': eventDate?.toIso8601String(),
       'startTime': startTime,
       'goalTimeMinutes': goalTimeMinutes,
       'goalPaceMinutesPerMile': goalPaceMinutesPerMile,
@@ -119,14 +124,15 @@ class Event {
   }
 
   Event copyWith({
-    String? id,
+    int? id,
     String? userId,
-    String? activityId,
-    EventType? eventType,
+    int? activityId,
+    ActivityType? eventType,
     String? eventSubtype,
     String? eventName,
     String? location,
     String? registrationUrl,
+    DateTime? eventDate,
     String? startTime,
     int? goalTimeMinutes,
     double? goalPaceMinutesPerMile,
@@ -155,6 +161,7 @@ class Event {
       eventName: eventName ?? this.eventName,
       location: location ?? this.location,
       registrationUrl: registrationUrl ?? this.registrationUrl,
+      eventDate: eventDate ?? this.eventDate,
       startTime: startTime ?? this.startTime,
       goalTimeMinutes: goalTimeMinutes ?? this.goalTimeMinutes,
       goalPaceMinutesPerMile: goalPaceMinutesPerMile ?? this.goalPaceMinutesPerMile,
@@ -238,96 +245,25 @@ class Event {
   }
 }
 
-/// Event type enum
-enum EventType {
-  marathon,
-  halfMarathon,
-  tenK,
-  fiveK,
-  ultra50K,
-  ultra50M,
-  ultra100K,
-  ultra100M,
-  custom,
-}
-
-/// Extension to convert EventType to database-compatible string
-extension EventTypeExtension on EventType {
-  /// Convert to database-compatible snake_case string
-  String get dbValue {
-    switch (this) {
-      case EventType.marathon:
-        return 'marathon';
-      case EventType.halfMarathon:
-        return 'half_marathon';
-      case EventType.tenK:
-        return '10k';
-      case EventType.fiveK:
-        return '5k';
-      case EventType.ultra50K:
-        return 'ultra_50k';
-      case EventType.ultra50M:
-        return 'ultra_50m';
-      case EventType.ultra100K:
-        return 'ultra_100k';
-      case EventType.ultra100M:
-        return 'ultra_100m';
-      case EventType.custom:
-        return 'custom';
-    }
-  }
-
-  /// Parse from database string to EventType
-  static EventType fromDbValue(String value) {
-    switch (value) {
-      case 'marathon':
-        return EventType.marathon;
-      case 'half_marathon':
-        return EventType.halfMarathon;
-      case '10k':
-        return EventType.tenK;
-      case '5k':
-        return EventType.fiveK;
-      case 'ultra_50k':
-        return EventType.ultra50K;
-      case 'ultra_50m':
-        return EventType.ultra50M;
-      case 'ultra_100k':
-        return EventType.ultra100K;
-      case 'ultra_100m':
-        return EventType.ultra100M;
-      case 'custom':
-        return EventType.custom;
-      default:
-        return EventType.marathon;
-    }
-  }
-}
+// Note: Old EventType enum (for race distances) has been removed. The Event model now uses:
+// - eventType (ActivityType): Sport category - 'running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport'
+// - eventSubtype (String?): Race distance - 'marathon', 'half_marathon', '10k', '5k', etc.
 
 /// Event extensions for utility methods
 extension EventExtensions on Event {
-  /// Get formatted event type name
+  /// Get formatted event type and subtype name
   String get formattedEventType {
-    switch (eventType) {
-      case EventType.marathon:
-        return 'Marathon';
-      case EventType.halfMarathon:
-        return 'Half Marathon';
-      case EventType.tenK:
-        return '10K';
-      case EventType.fiveK:
-        return '5K';
-      case EventType.ultra50K:
-        return '50K Ultra';
-      case EventType.ultra50M:
-        return '50 Mile Ultra';
-      case EventType.ultra100K:
-        return '100K Ultra';
-      case EventType.ultra100M:
-        return '100 Mile Ultra';
-      case EventType.custom:
-        return eventSubtype ?? 'Custom Event';
+    final sportName = eventType.displayName;
+    if (eventSubtype != null && eventSubtype!.isNotEmpty) {
+      // Format common event subtypes nicely
+      final formatted = eventSubtype!
+          .replaceAll('_', ' ')
+          .split(' ')
+          .map((word) => word[0].toUpperCase() + word.substring(1))
+          .join(' ');
+      return '$sportName - $formatted';
     }
+    return sportName;
   }
   
   /// Get formatted goal time if available

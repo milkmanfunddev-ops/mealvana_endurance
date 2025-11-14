@@ -103,7 +103,7 @@
 //       final existingPlan = await repository.getCurrentPlan(user.id);
 
 //       if (existingPlan != null) {
-////         return CarbLoadingState(plan: existingPlan);
+//         return CarbLoadingState(plan: existingPlan);
 //       }
 
 //       // No existing plan - will need to create one
@@ -146,7 +146,7 @@
 //           userId: user.id,
 //         );
 
-////       } catch (e) {
+//       } catch (e) {
 //         _logger.warning('Edge function failed, using local calculations',
 //           context: 'CARB_LOADING_CONTROLLER',
 //           error: e
@@ -167,7 +167,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(plan);
 
-////       return CarbLoadingState(plan: plan);
+//       return CarbLoadingState(plan: plan);
 //     });
 //   }
 
@@ -178,7 +178,7 @@
 
 //     state = AsyncValue.data(currentState.copyWith(selectedDay: day));
 
-////   }
+//   }
 
 //   /// Select a meal (breakfast, lunch, etc.)
 //   Future<void> selectMeal(String meal) async {
@@ -187,7 +187,7 @@
 
 //     state = AsyncValue.data(currentState.copyWith(selectedMeal: meal));
 
-////   }
+//   }
 
 //   /// Add food to current meal
 //   Future<void> addFood(String foodName) async {
@@ -218,7 +218,7 @@
 //       // Update state immediately
 //       state = AsyncValue.data(currentState.copyWith(plan: updatedPlan));
 
-////       // Persist to database in background
+//       // Persist to database in background
 //       final repository = await _repository;
 //       await repository.addFoodToMeal(
 //         plan.id,
@@ -260,7 +260,7 @@
 //         throw Exception('Plan not found after update');
 //       }
 
-////       return currentState.copyWith(
+//       return currentState.copyWith(
 //         plan: updatedPlan,
 //         isLoading: false,
 //       );
@@ -296,7 +296,7 @@
 //       // Update state immediately
 //       state = AsyncValue.data(currentState.copyWith(plan: updatedPlan));
 
-////       // Persist to database in background
+//       // Persist to database in background
 //       final repository = await _repository;
 //       await repository.updateFoodQuantity(
 //         plan.id,
@@ -379,7 +379,7 @@
 //           userId: user.id,
 //         );
 
-////       } catch (e) {
+//       } catch (e) {
 //         _logger.warning('Edge function failed during update, using fallback calculation',
 //           context: 'CARB_LOADING_CONTROLLER',
 //           error: e.toString(),
@@ -418,7 +418,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(updatedPlan);
 
-////       return currentState.copyWith(plan: updatedPlan);
+//       return currentState.copyWith(plan: updatedPlan);
 //     });
 //   }
 
@@ -449,7 +449,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(newPlan);
 
-////       return currentState.copyWith(plan: newPlan);
+//       return currentState.copyWith(plan: newPlan);
 //     });
 //   }
 
@@ -475,7 +475,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(resetPlan);
 
-////       return currentState.copyWith(plan: resetPlan);
+//       return currentState.copyWith(plan: resetPlan);
 //     });
 //   }
 
@@ -490,7 +490,7 @@
 //       final repository = await _repository;
 //       await repository.deletePlan(currentState!.plan!.id);
 
-////       return const CarbLoadingState();
+//       return const CarbLoadingState();
 //     });
 //   }
 
@@ -517,7 +517,7 @@
 //       final repository = await _repository;
 //       await repository.savePlan(updatedPlan);
 
-////       return currentState.copyWith(plan: updatedPlan);
+//       return currentState.copyWith(plan: updatedPlan);
 //     });
 //   }
 

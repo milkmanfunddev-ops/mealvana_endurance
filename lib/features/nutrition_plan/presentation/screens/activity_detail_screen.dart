@@ -1,23 +1,23 @@
+import 'dart:math' show cos, sin;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import '../../../../theme/app_theme.dart';
-import '../widgets/plan_container.dart';
-import '../widgets/macro_targets_widget.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/custom_app_bar_back_button.dart';
-import '../providers/nutrition_plan_controller.dart';
-import '../providers/activity_detail_controller.dart';
-import '../../domain/macro_targets.dart' as targets_model;
-import '../providers/distance_page_gut_entry_controller.dart';
-import '../../../../features/activities/domain/activity_reminder.dart';
-import '../../../../features/activities/presentation/widgets/reminder_settings_bottom_sheet.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../providers/activity_detail_controller.dart';
+import '../../domain/pending_activity_data.dart';
+import '../../domain/macro_targets.dart';
+import '../../domain/nutrition_plan.dart';
 
-/// Activity Detail Screen - Shows nutrition plan and activity details
-/// Handles both create mode (new activity) and view mode (existing activity)
+/// Activity Detail Screen - Kyle's Design System
+/// Shows activity details with nutrition sections and food items
+///
+/// **RESTORED FUNCTIONALITY**: This screen now integrates with ActivityDetailController
+/// and supports both 'create' and 'view' modes with real data
 class ActivityDetailScreen extends ConsumerStatefulWidget {
   const ActivityDetailScreen({
     super.key,
@@ -28,881 +28,1043 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
   });
 
   final String mode; // 'create' or 'view'
-  final String? activityId; // For view mode
-  final PendingActivityData? pendingActivityData; // For create mode
-  final targets_model.MacroTargets? macroTargets; // For create mode
+  final int? activityId; // Required for view mode
+  final PendingActivityData? pendingActivityData; // Required for create mode
+  final MacroTargets? macroTargets; // Macro targets for create mode
 
   @override
   ConsumerState<ActivityDetailScreen> createState() => _ActivityDetailScreenState();
 }
 
 class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
-  String? _lastPlanId;
-  int? _lastPlanUpdateCount;
-
-  /// Get next Saturday at 7am as default date
-  DateTime _getDefaultDateTime() {
-    final now = DateTime.now();
-    final daysUntilSaturday = (DateTime.saturday - now.weekday) % 7;
-    final nextSaturday = now.add(Duration(days: daysUntilSaturday == 0 ? 7 : daysUntilSaturday));
-    return DateTime(nextSaturday.year, nextSaturday.month, nextSaturday.day, 7, 0);
-  }
-
-  /// Format date/time for display
-  String _formatDateTime(DateTime dateTime) {
-    final dateFormat = DateFormat('EEEE, MMM d');
-    final timeFormat = DateFormat('h:mm a');
-    return '${dateFormat.format(dateTime)} at ${timeFormat.format(dateTime)}';
-  }
-
-  /// Show date/time picker
-  Future<void> _showDateTimePicker(DateTime currentDateTime) async {
-    final controller = ref.read(activityDetailControllerProvider(
-      mode: widget.mode,
-      activityId: widget.activityId,
-      pendingActivityData: widget.pendingActivityData,
-      macroTargets: widget.macroTargets,
-    ).notifier);
-
-    final selectedDate = await showDatePicker(
-      context: context,
-      initialDate: currentDateTime,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppTheme.primary600,
-              onPrimary: AppTheme.baseWhite,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (selectedDate == null || !mounted) return;
-
-    final selectedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(currentDateTime),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppTheme.primary600,
-              onPrimary: AppTheme.baseWhite,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (selectedTime == null || !mounted) return;
-
-    final newDateTime = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      selectedTime.hour,
-      selectedTime.minute,
-    );
-
-    // Update both the activity detail controller and the nutrition plan
-    await controller.updateScheduledDateTime(newDateTime);
-
-    // Also update the nutrition plan's runDateTime
-    final planState = ref.read(nutritionPlanControllerProvider);
-    planState.whenData((planData) {
-      if (planData.plan != null) {
-        ref
-            .read(nutritionPlanControllerProvider.notifier)
-            .updateRunDateTime(planData.plan!.id, newDateTime);
-      }
-    });
-  }
-
-  /// Handle save button press
-  Future<void> _handleSave() async {
-    final controller = ref.read(activityDetailControllerProvider(
-      mode: widget.mode,
-      activityId: widget.activityId,
-      pendingActivityData: widget.pendingActivityData,
-      macroTargets: widget.macroTargets,
-    ).notifier);
-
-    try {
-      await controller.saveActivity();
-
-      // Show success snackbar
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.mode == 'create'
-                ? 'Activity created successfully!'
-                : 'Activity saved successfully!',
-            ),
-            backgroundColor: AppTheme.primary600,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-
-      // Navigate after showing snackbar
-      if (mounted && widget.mode == 'create') {
-        // Pop any Navigator.push screens (like ActivityCreationScreen) before going to main
-        // This handles the case where we went: TabsScreen -> ActivityCreationScreen (Navigator.push) -> adjust-macros (go_router) -> here
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
-        // Now navigate to tabs screen
-        context.go('/main');
-      } else if (mounted) {
-        // Stay on screen or go back
-        context.go('/main');
-      }
-    } catch (error) {
-      // Show error snackbar
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save activity: ${error.toString()}'),
-            backgroundColor: AppTheme.highlight600,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Show reminder settings bottom sheet
-  Future<void> _showReminderSettingsSheet(ActivityDetailState state) async {
-    // Get current reminder from activity or pending reminder
-    ActivityReminder? currentReminder;
-    if (state.activity != null && state.activity!.reminderEnabled) {
-      currentReminder = ActivityReminder.fromDatabase(
-        enabled: state.activity!.reminderEnabled,
-        daysBefore: state.activity!.reminderDaysBefore,
-        timeOfDay: state.activity!.reminderTimeOfDay,
-        recurring: state.activity!.reminderRecurring,
-      );
-    } else if (state.pendingReminder != null) {
-      currentReminder = state.pendingReminder;
-    }
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ReminderSettingsBottomSheet(
-        currentReminder: currentReminder,
-        onSave: (reminder) {
-          final controller = ref.read(activityDetailControllerProvider(
-            mode: widget.mode,
-            activityId: widget.activityId,
-            pendingActivityData: widget.pendingActivityData,
-            macroTargets: widget.macroTargets,
-          ).notifier);
-
-          controller.updateReminder(reminder);
-        },
-      ),
-    );
-  }
-
-  /// Show complete workout bottom sheet
-  Future<void> _showCompleteWorkoutSheet() async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _CompleteWorkoutBottomSheet(
-        onComplete: (overallSatisfaction, textNotes) async {
-          final controller = ref.read(activityDetailControllerProvider(
-            mode: widget.mode,
-            activityId: widget.activityId,
-            pendingActivityData: widget.pendingActivityData,
-            macroTargets: widget.macroTargets,
-          ).notifier);
-
-          await controller.completeActivity(
-            overallSatisfaction: overallSatisfaction,
-            textNotes: textNotes,
-          );
-
-          if (context.mounted) {
-            Navigator.of(context).pop();
-          }
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final activityDetailState = ref.watch(activityDetailControllerProvider(
-      mode: widget.mode,
-      activityId: widget.activityId,
-      pendingActivityData: widget.pendingActivityData,
-      macroTargets: widget.macroTargets,
-    ));
-    final planState = ref.watch(nutritionPlanControllerProvider);
+    // Watch the activity detail controller with parameters
+    final activityDetailAsync = ref.watch(
+      activityDetailControllerProvider(
+        mode: widget.mode,
+        activityId: widget.activityId,
+        pendingActivityData: widget.pendingActivityData,
+        macroTargets: widget.macroTargets,
+      ),
+    );
 
-    // Detect changes in nutrition plan to mark activity as changed
-    planState.whenData((planData) {
-      if (planData.plan != null) {
-        final currentPlanId = planData.plan!.id;
-        // Count all food items across all sections
-        final currentUpdateCount = planData.plan!.sections
-            .fold<int>(0, (sum, section) => sum + section.foodItems.length);
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      extendBodyBehindAppBar: true,
+      appBar: _buildAppBar(context),
+      body: activityDetailAsync.when(
+        data: (state) => _buildContent(context, state),
+        loading: () => _buildLoadingState(context),
+        error: (error, stack) => _buildErrorState(context, error),
+      ),
+    );
+  }
 
-        // If plan exists and we've seen it before, check for changes
-        if (_lastPlanId == currentPlanId && _lastPlanUpdateCount != null) {
-          if (currentUpdateCount != _lastPlanUpdateCount) {
-            // Plan has changed - mark as dirty
-            final controller = ref.read(activityDetailControllerProvider(
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      title: Row(
+        children: [
+          // Custom back button
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(
+                FontAwesomeIcons.arrowLeft,
+                size: AppIconSizes.controlIcon,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              onPressed: () => context.pop(),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            widget.mode == 'create' ? 'New Activity' : 'Activity Details',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Loading activity...',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, Object error) {
+    return Center(
+      child: Padding(
+        padding: AppSpacing.screenPadding,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              FontAwesomeIcons.triangleExclamation,
+              size: AppIconSizes.xxl,
+              color: AppColors.dragonfruit,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Error Loading Activity',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              error.toString(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            KyleSecondaryButton(
+              text: 'Go Back',
+              onPressed: () => context.pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, ActivityDetailState state) {
+    // Get activity data - either from existing activity or pending data
+    final activity = state.activity;
+    final pendingData = state.pendingActivityData;
+
+    // If we have neither, show error
+    if (activity == null && pendingData == null) {
+      return _buildErrorState(context, 'No activity data available');
+    }
+
+    return SingleChildScrollView(
+      padding: AppSpacing.screenPaddingHorizontal,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppSpacing.xxl),
+
+          // Hero image with activity info
+          _buildHeroSection(context, state),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // Nutrition Sections (only show if we have a nutrition plan)
+          if (state.nutritionPlan != null)
+            _buildNutritionSections(context, state),
+
+          // Show placeholder if no nutrition plan yet
+          if (state.nutritionPlan == null)
+            _buildNoNutritionPlanState(context),
+
+          const SizedBox(height: AppSpacing.xl),
+
+          // Action Buttons
+          _buildActionButtons(context, state),
+
+          const SizedBox(height: AppSpacing.xxxl),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroSection(BuildContext context, ActivityDetailState state) {
+    final activity = state.activity;
+    final pendingData = state.pendingActivityData;
+
+    // Get activity details from either source
+    final activityType = activity?.activityType ?? pendingData?.activityType ?? ActivityType.running;
+    final scheduledDateTime = state.scheduledDateTime ?? DateTime.now();
+
+    return Column(
+      children: [
+        // Hero image with geometric background pattern
+        _buildHeroImageWithPattern(context, activityType),
+
+        const SizedBox(height: AppSpacing.lg),
+
+        // Schedule info section
+        _buildScheduleInfo(context, scheduledDateTime, activityType),
+      ],
+    );
+  }
+
+  Widget _buildHeroImageWithPattern(BuildContext context, ActivityType activityType) {
+    // Get the appropriate image based on activity type
+    String imagePath = 'assets/images/Runner.png';
+    if (activityType == ActivityType.cycling) {
+      imagePath = 'assets/images/Biker.png';
+    } else if (activityType == ActivityType.swimming) {
+      imagePath = 'assets/images/Swimmer.png';
+    }
+
+    return Container(
+      height: 280,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.blackberry.withValues(alpha: 0.3),
+            AppColors.electrolyte.withValues(alpha: 0.2),
+            AppColors.dragonfruit.withValues(alpha: 0.2),
+          ],
+        ),
+        borderRadius: AppRadius.cardRadius,
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Geometric pattern background
+          CustomPaint(
+            size: const Size(double.infinity, 280),
+            painter: _GeometricPatternPainter(),
+          ),
+
+          // Hero image
+          Image.asset(
+            imagePath,
+            height: 200,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(
+                FontAwesomeIcons.personRunning,
+                size: 120,
+                color: AppColors.cream.withValues(alpha: 0.5),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleInfo(BuildContext context, DateTime scheduledDateTime, ActivityType activityType) {
+    // Generate the appropriate label based on activity type
+    String activityLabel;
+    switch (activityType) {
+      case ActivityType.running:
+        activityLabel = 'RUN';
+        break;
+      case ActivityType.cycling:
+        activityLabel = 'BIKE';
+        break;
+      case ActivityType.swimming:
+        activityLabel = 'SWIM';
+        break;
+      default:
+        activityLabel = 'ACTIVITY';
+    }
+
+    return Column(
+      children: [
+        Text(
+          '$activityLabel SCHEDULED FOR',
+          style: AppTextStyles.smallLabel.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Date
+            Column(
+              children: [
+                Text(
+                  'DATE',
+                  style: AppTextStyles.smallLabel.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _formatDateShort(scheduledDateTime),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(width: AppSpacing.xxl),
+
+            // Time
+            Column(
+              children: [
+                Text(
+                  'TIME',
+                  style: AppTextStyles.smallLabel.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _formatTime(scheduledDateTime),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildNoNutritionPlanState(BuildContext context) {
+    return BaseCard(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            children: [
+              Icon(
+                FontAwesomeIcons.utensils,
+                size: AppIconSizes.xl,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'No nutrition plan yet',
+                style: AppTextStyles.subtitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Generate a nutrition plan to see recommendations',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNutritionSections(BuildContext context, ActivityDetailState state) {
+    final plan = state.nutritionPlan!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: plan.sections.map((section) {
+        // Map section title to category
+        String category = 'before_run';
+        Color sectionColor = AppColors.orange;
+
+        if (section.title.contains('During')) {
+          category = 'during_run';
+          sectionColor = AppColors.electrolyte;
+        } else if (section.title.contains('After')) {
+          category = 'after_run';
+          sectionColor = AppColors.dragonfruit;
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+          child: _buildNutritionSection(
+            context: context,
+            state: state,
+            title: section.title.toUpperCase(),
+            section: section,
+            category: category,
+            sectionColor: sectionColor,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildNutritionSection({
+    required BuildContext context,
+    required ActivityDetailState state,
+    required String title,
+    required PlanSection section,
+    required String category,
+    required Color sectionColor,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.cardRadius,
+        border: Border.all(
+          color: sectionColor.withValues(alpha: 0.3),
+          width: 2,
+        ),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section title
+          Text(
+            title,
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: sectionColor,
+              fontSize: 18,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Macro summary - pass section for targets
+          _buildMacroSummaryRow(context, state, section.foodItems, category, section),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Food items list
+          ...section.foodItems.asMap().entries.map((entry) {
+            final index = entry.key;
+            final food = entry.value;
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: index < section.foodItems.length - 1 ? AppSpacing.sm : 0,
+              ),
+              child: _buildExpandableFoodItem(context, state, food, category),
+            );
+          }),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Add Food button
+          KyleAddFoodButton(
+            text: 'ADD FOOD',
+            onPressed: () => _addFood(context, category),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMacroSummaryRow(
+    BuildContext context,
+    ActivityDetailState state,
+    List<FoodItemData> foods,
+    String category,
+    PlanSection section,
+  ) {
+    // Calculate totals from current food items
+    int totalCarbs = 0;
+    int totalProtein = 0;
+    int totalSodium = 0;
+    double totalFluids = 0;
+
+    for (final food in foods) {
+      if (food.nutritionalInfo != null) {
+        totalCarbs += food.nutritionalInfo!.carbs ?? 0;
+        totalProtein += food.nutritionalInfo!.protein ?? 0;
+        totalSodium += food.nutritionalInfo!.sodium ?? 0;
+        totalFluids += food.nutritionalInfo!.fluids ?? 0;
+      }
+    }
+
+    // Get target values from the section's stored targets (from nutrition plan)
+    // These are the originally calculated targets when the plan was created
+    int targetCarbs = section.carbsTarget?.round() ?? totalCarbs;
+    int targetProtein = section.proteinTarget?.round() ?? totalProtein;
+    int targetSodium = section.sodiumTarget?.round() ?? totalSodium;
+    int targetFluids = section.fluidsTarget?.round() ?? totalFluids.round();
+
+    // If section doesn't have targets (rare case), try state.macroTargets from creation
+    if (section.carbsTarget == null && state.macroTargets != null) {
+      final macroTargets = state.macroTargets!;
+      if (category == 'before_run') {
+        targetCarbs = macroTargets.preRun.carbsG.round();
+        targetProtein = macroTargets.preRun.proteinG.round();
+        targetSodium = macroTargets.preRun.sodiumMg.round();
+      } else if (category == 'during_run') {
+        targetCarbs = macroTargets.duringRun.carbTotalG.round();
+        targetFluids = macroTargets.duringRun.fluidTotalMl.round();
+        targetSodium = macroTargets.duringRun.sodiumTotalMg.round();
+      } else if (category == 'after_run') {
+        targetCarbs = macroTargets.postRun.carbsG.round();
+        targetProtein = macroTargets.postRun.proteinG.round();
+        targetSodium = macroTargets.postRun.sodiumMg.round();
+      }
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _buildMacroSummaryItem(
+          context: context,
+          value: '$totalCarbs/${targetCarbs}g',
+          label: 'CARBS',
+        ),
+        if (category == 'during_run')
+          _buildMacroSummaryItem(
+            context: context,
+            value: '${totalFluids.round()}/${targetFluids}mL',
+            label: 'FLUIDS',
+          )
+        else
+          _buildMacroSummaryItem(
+            context: context,
+            value: '$totalProtein/${targetProtein}g',
+            label: 'PROTEIN',
+          ),
+        _buildMacroSummaryItem(
+          context: context,
+          value: '$totalSodium/${targetSodium}mg',
+          label: 'SODIUM',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMacroSummaryItem({
+    required BuildContext context,
+    required String value,
+    required String label,
+  }) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.dataNumber.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(
+          label,
+          style: AppTextStyles.smallLabel.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExpandableFoodItem(
+    BuildContext context,
+    ActivityDetailState state,
+    FoodItemData food,
+    String category,
+  ) {
+    return Dismissible(
+      key: Key(food.id),
+      // Swipe right-to-left for swap
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.dragonfruit,
+          borderRadius: AppRadius.smRadius,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              FontAwesomeIcons.trash,
+              color: Colors.white,
+              size: AppIconSizes.md,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              'Delete',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+      // Swipe left-to-right for delete
+      secondaryBackground: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.electrolyte,
+          borderRadius: AppRadius.smRadius,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              'Swap',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Icon(
+              FontAwesomeIcons.arrowRightArrowLeft,
+              color: Colors.white,
+              size: AppIconSizes.md,
+            ),
+          ],
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Delete - show confirmation
+          return await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Delete Food Item'),
+              content: Text('Remove ${food.name} from this section?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: Text(
+                    'Delete',
+                    style: TextStyle(color: AppColors.dragonfruit),
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else if (direction == DismissDirection.endToStart) {
+          // Swap - navigate to swap screen, don't dismiss
+          _swapFood(context, state, food.id, food.name, category);
+          return false; // Don't dismiss the item
+        }
+        return false;
+      },
+      onDismissed: (direction) {
+        if (direction == DismissDirection.startToEnd) {
+          // Delete confirmed
+          _deleteFood(context, state, food.id, category);
+        }
+      },
+      child: _ExpandableFoodItem(
+        food: food,
+        onSwap: () => _swapFood(context, state, food.id, food.name, category),
+        onRemove: () => _deleteFood(context, state, food.id, category),
+        onQuantityChange: (newQuantity) => _updateFoodQuantity(context, state, food.id, category, newQuantity),
+      ),
+    );
+  }
+
+  Widget _buildCompletedState(BuildContext context, ActivityDetailState state) {
+    return BaseCard(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          children: [
+            Icon(
+              FontAwesomeIcons.circleCheck,
+              size: AppIconSizes.xl,
+              color: AppColors.electrolyte,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Workout Completed',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            if (state.completion?.completedAt != null)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: Text(
+                  'Completed on ${_formatDate(state.completion!.completedAt)}',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  void _showFoodDetailsDialog(
+    BuildContext context,
+    ActivityDetailState state,
+    FoodItemData food,
+    String category,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _FoodDetailsDialog(
+        food: food,
+        onSwap: () {
+          Navigator.of(dialogContext).pop();
+          _swapFood(context, state, food.id, food.name, category);
+        },
+        onDelete: () {
+          Navigator.of(dialogContext).pop();
+          _deleteFood(context, state, food.id, category);
+        },
+      ),
+    );
+  }
+
+  /// Build action buttons based on current state
+  Widget _buildActionButtons(BuildContext context, ActivityDetailState state) {
+    // If completed, show completion info
+    if (state.isCompleted) {
+      return _buildCompletedState(context, state);
+    }
+
+    // Create mode: Show "Save Workout" button
+    if (state.isCreateMode) {
+      return KylePrimaryButton(
+        text: state.isSaving ? 'Saving...' : 'Save Workout',
+        onPressed: state.isSaving ? null : () => _saveWorkout(context, state),
+      );
+    }
+
+    // View mode (not completed): Show "Edit" and "Complete Workout" buttons
+    if (state.isViewMode) {
+      return Row(
+        children: [
+          Expanded(
+            child: KyleSecondaryButton(
+              text: 'Edit',
+              onPressed: () => _editWorkout(context, state),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: KylePrimaryButton(
+              text: state.isCompleting ? 'Completing...' : 'Complete Workout',
+              onPressed: state.isCompleting ? null : () => _completeWorkout(context, state),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  void _saveWorkout(BuildContext context, ActivityDetailState state) async {
+    // Call controller to save the activity
+    final controller = ref.read(
+      activityDetailControllerProvider(
+        mode: widget.mode,
+        activityId: widget.activityId,
+        pendingActivityData: widget.pendingActivityData,
+        macroTargets: widget.macroTargets,
+      ).notifier,
+    );
+
+    await controller.saveActivity();
+
+    // Track analytics
+    final analytics = ref.read(appExternalDepsProvider);
+    analytics.analytics.track('workout_saved', properties: {
+      'activity_id': state.activity?.id,
+      'has_nutrition_plan': state.nutritionPlan != null,
+    });
+
+    // Show success message
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Workout saved successfully!'),
+          backgroundColor: AppColors.electrolyte,
+        ),
+      );
+
+      // Navigate to home screen (activities list) after saving
+      // Use go() instead of pop() to replace the navigation stack
+      context.go('/main');
+    }
+  }
+
+  void _editWorkout(BuildContext context, ActivityDetailState state) {
+    // TODO: Navigate to edit screen or show edit dialog
+    // For now, show a simple message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Edit functionality coming soon!'),
+      ),
+    );
+  }
+
+  void _completeWorkout(BuildContext context, ActivityDetailState state) {
+    // Show completion dialog
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _CompletionDialog(
+        onComplete: (rating, notes) async {
+          Navigator.of(dialogContext).pop();
+
+          // Call controller to complete the activity
+          final controller = ref.read(
+            activityDetailControllerProvider(
               mode: widget.mode,
               activityId: widget.activityId,
               pendingActivityData: widget.pendingActivityData,
               macroTargets: widget.macroTargets,
-            ).notifier);
-            controller.markAsChanged();
-          }
-        }
+            ).notifier,
+          );
 
-        // Update tracking variables
-        _lastPlanId = currentPlanId;
-        _lastPlanUpdateCount = currentUpdateCount;
-      }
+          await controller.completeActivity(
+            overallSatisfaction: rating,
+            textNotes: notes,
+          );
+
+          // Track analytics
+          final analytics = ref.read(appExternalDepsProvider);
+          analytics.analytics.track('workout_completed', properties: {
+            'activity_id': state.activity?.id,
+            'rating': rating,
+            'has_notes': notes?.isNotEmpty ?? false,
+          });
+
+          // Show success message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Workout completed successfully!'),
+                backgroundColor: AppColors.electrolyte,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  void _swapFood(BuildContext context, ActivityDetailState state, String foodId, String foodName, String category) {
+    // Track swap food action
+    final analytics = ref.read(appExternalDepsProvider);
+    analytics.analytics.track('swap_food_tapped', properties: {
+      'food_id': foodId,
+      'food_name': foodName,
+      'section': category,
     });
 
-    return Scaffold(
-      backgroundColor: AppTheme.baseCream,
-      appBar: AppBar(
-        backgroundColor: AppTheme.baseCream,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: CustomAppBarBackButton(
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              context.pop();
-            } else {
-              context.go('/main');
-            }
-          },
+    // Get activity ID - try from existing activity first, then from widget parameter
+    final activityId = state.activity?.id ?? widget.activityId;
+
+    if (activityId == null) {
+      // This should rarely happen, but provide a helpful error if it does
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot swap food: no activity found. Please save the activity first.'),
+          duration: Duration(seconds: 3),
         ),
-        title: Text(
-          widget.mode == 'create' ? 'New Activity' : 'Activity Details',
-          style: AppTheme.titleStyle.copyWith(
-            color: AppTheme.baseBlack,
-            fontSize: 18.sp,
-          ),
-        ),
-        actions: [
-          // Reminder button
-          activityDetailState.when(
-            data: (state) {
-              // Check if reminder is set
-              final hasReminder = (state.activity != null && state.activity!.reminderEnabled) ||
-                                 (state.pendingReminder != null);
-
-              return IconButton(
-                icon: Icon(
-                  hasReminder ? Icons.notifications_active : Icons.notifications_outlined,
-                  color: hasReminder ? AppTheme.primary600 : AppTheme.baseGrey,
-                  size: 24.sp,
-                ),
-                onPressed: () => _showReminderSettingsSheet(state),
-                tooltip: 'Set reminder',
-              );
-            },
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-          ),
-          SizedBox(width: 8.w),
-        ],
-      ),
-      body: activityDetailState.when(
-        data: (state) => _buildContent(context, state, planState),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Error: $error'),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContent(
-    BuildContext context,
-    ActivityDetailState state,
-    AsyncValue planState,
-  ) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Hero image at top (like original current_plan_screen)
-          SizedBox(
-            height: 200.h,
-            width: double.infinity,
-            child: Image.asset(
-              'assets/images/checklist.png',
-              fit: BoxFit.cover,
-              width: double.infinity,
-            ),
-          ),
-
-          SizedBox(height: 24.h),
-
-          // Workout Reference Section (distance and pace/speed)
-          if (state.macroTargets != null)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.fromLTRB(8.w, 0.h, 16.w, 12.h),
-                child: Row(
-                  children: [
-                    Icon(
-                      _getActivityIcon(state.macroTargets!.activityType),
-                      color: AppTheme.primary600,
-                      size: 20.sp,
-                    ),
-                    SizedBox(width: 16.w),
-                    Expanded(
-                      child: Text(
-                        _formatWorkoutReference(state.macroTargets!),
-                        style: AppTheme.textStyle.copyWith(
-                          color: AppTheme.primary900,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          // Date/Time Section (simplified like original)
-          _buildDateTimeSection(state),
-
-          // Macro Targets Widget (if we have macro targets)
-          if (state.macroTargets != null)
-            planState.when(
-              data: (planData) {
-                if (planData.plan != null) {
-                  return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 0.w),
-                    child: MacroTargetsWidget(
-                      plan: planData.plan!,
-                      targets: state.macroTargets,
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
-
-          // SizedBox(height: 24.h),
-
-          // Nutrition Plan Section with full functionality
-          planState.when(
-            data: (planData) {
-              if (planData.plan != null) {
-                return PlanContainer(
-                  plan: planData.plan!,
-                  macroTargets: state.macroTargets,
-                  onFoodItemTap: (foodItemId) {
-                    // Handle food item tap - expand details
-                  },
-                  onSwapFood: (foodItemId, foodName, category) {
-                    context.push(
-                      '/swap-food',
-                      extra: {
-                        'foodToSwapId': foodItemId,
-                        'foodToSwapName': foodName,
-                        'category': category,
-                      },
-                    );
-                  },
-                  onDeleteFood: (foodItemId, category) async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Delete Food Item'),
-                        content: const Text(
-                          'Are you sure you want to remove this item from your plan?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: Text(
-                              'Delete',
-                              style: TextStyle(color: AppTheme.highlight600),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      await ref
-                          .read(nutritionPlanControllerProvider.notifier)
-                          .deleteFoodItem(foodItemId, category);
-                    }
-                  },
-                  onUpdateQuantity: (foodItemId, category, newQuantity) async {
-                    await ref
-                        .read(nutritionPlanControllerProvider.notifier)
-                        .updateFoodQuantity(foodItemId, category, newQuantity);
-                  },
-                );
-              } else {
-                return _buildNoPlanState();
-              }
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => _buildNoPlanState(),
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Action Buttons
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w),
-            child: Column(
-              children: [
-                if (state.isCreateMode) ...[
-                  _buildSaveButton(state),
-                ] else ...[
-                  // Save and Complete buttons side by side (only if not completed)
-                  if (!state.isCompleted) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSaveChangesButton(state),
-                        ),
-                        SizedBox(width: 6.w),
-                        Expanded(
-                          child: _buildCompleteWorkoutButton(state),
-                        ),
-                      ],
-                    ),
-                  ],
-
-                  // Completion info (if completed)
-                  if (state.isCompleted)
-                    _buildCompletionInfo(state),
-                ],
-              ],
-            ),
-          ),
-
-          SizedBox(height: 120.h), // Bottom padding for FAB
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateTimeSection(ActivityDetailState state) {
-    final planState = ref.watch(nutritionPlanControllerProvider);
-    final dateTime = state.scheduledDateTime ?? _getDefaultDateTime();
-
-    final displayDateTime = planState.when(
-      data: (planData) => state.scheduledDateTime ?? planData.plan?.runDateTime ?? _getDefaultDateTime(),
-      loading: () => dateTime,
-      error: (_, __) => dateTime,
-    );
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.fromLTRB(8.w, 0.h, 16.w, 12.h),
-        child: InkWell(
-          onTap: () => _showDateTimePicker(displayDateTime),
-          borderRadius: BorderRadius.circular(8.r),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.h),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  color: AppTheme.primary600,
-                  size: 20.sp,
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: Text(
-                    '${_getActivityDisplayName(state)} scheduled for ${_formatDateTime(displayDateTime)}',
-                    style: AppTheme.textStyle.copyWith(
-                      color: AppTheme.primary900,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.edit,
-                  color: AppTheme.baseGrey,
-                  size: 16.sp,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoPlanState() {
-    return Container(
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        color: AppTheme.baseWhite,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Center(
-        child: Text(
-          'No nutrition plan available',
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: AppTheme.baseGrey,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSaveButton(ActivityDetailState state) {
-    return PrimaryButton(
-      text: state.isSaving ? 'Saving...' : 'Save Activity',
-      isLoading: state.isSaving,
-      onPressed: state.isSaving ? null : _handleSave,
-      width: double.infinity,
-      height: 56.h,
-    );
-  }
-
-  Widget _buildSaveChangesButton(ActivityDetailState state) {
-    return PrimaryButton(
-      text: state.isSaving ? 'Saving...' : 'Save',
-      isLoading: state.isSaving,
-      onPressed: state.isSaving ? null : () async {
-        final controller = ref.read(activityDetailControllerProvider(
-          mode: widget.mode,
-          activityId: widget.activityId,
-          pendingActivityData: widget.pendingActivityData,
-          macroTargets: widget.macroTargets,
-        ).notifier);
-
-        try {
-          // Save the activity (this will save the nutrition plan changes)
-          await controller.saveActivity();
-
-          // Clear the unsaved changes flag
-          controller.clearChanges();
-
-          // Show success snackbar
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Changes saved successfully!'),
-                backgroundColor: AppTheme.primary600,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          }
-        } catch (error) {
-          // Show error snackbar
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to save changes: ${error.toString()}'),
-                backgroundColor: AppTheme.highlight600,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-        }
-      },
-      width: double.infinity,
-      height: 56.h,
-    );
-  }
-
-  Widget _buildCompleteWorkoutButton(ActivityDetailState state) {
-    return PrimaryButton(
-      text: state.isCompleting ? 'Completing...' : 'Complete Workout',
-      isLoading: state.isCompleting,
-      onPressed: state.isCompleting ? null : _showCompleteWorkoutSheet,
-      width: double.infinity,
-      height: 56.h,
-    );
-  }
-
-  Widget _buildCompletionInfo(ActivityDetailState state) {
-    final completion = state.completion;
-    if (completion == null) return const SizedBox.shrink();
-
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppTheme.baseWhite,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppTheme.primary600.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Workout Completed',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.baseBlack,
-                ),
-              ),
-              Text(
-                _getEmojiForRating(completion.overallSatisfaction ?? 3),
-                style: TextStyle(fontSize: 24.sp),
-              ),
-            ],
-          ),
-          if (completion.textNotes != null && completion.textNotes!.isNotEmpty) ...[
-            SizedBox(height: 12.h),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    completion.textNotes!,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: AppTheme.baseGrey,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.edit, size: 18.sp, color: AppTheme.primary600),
-                  onPressed: () => _showEditNotesDialog(state),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                SizedBox(width: 8.w),
-                IconButton(
-                  icon: Icon(Icons.delete, size: 18.sp, color: AppTheme.highlight600),
-                  onPressed: () => _handleDeleteNotes(state),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-          ] else ...[
-            SizedBox(height: 12.h),
-            TextButton.icon(
-              onPressed: () => _showEditNotesDialog(state),
-              icon: Icon(Icons.add, size: 18.sp),
-              label: const Text('Add notes'),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _getEmojiForRating(int rating) {
-    switch (rating) {
-      case 1:
-        return '😞';
-      case 2:
-        return '😕';
-      case 3:
-        return '😐';
-      case 4:
-        return '🙂';
-      case 5:
-        return '😄';
-      default:
-        return '😐';
+      );
+      return;
     }
+
+    // Navigate to food swap screen with correct parameters
+    context.push('/swap-food', extra: {
+      'foodToSwapId': foodId,
+      'foodToSwapName': foodName,
+      'category': category,
+      'activityId': activityId,
+      'mode': widget.mode, // Pass the mode so SwapFoodController uses the correct provider instance
+      'pendingActivityData': widget.pendingActivityData, // Pass to ensure same ActivityDetailController instance
+      'macroTargets': widget.macroTargets, // Pass to ensure same ActivityDetailController instance
+    });
   }
 
-  Future<void> _showEditNotesDialog(ActivityDetailState state) async {
-    final controller = TextEditingController(text: state.completion?.textNotes ?? '');
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Workout Notes'),
-        content: TextField(
-          controller: controller,
-          maxLines: 4,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: 'How did it go? Any observations?',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.primary600, width: 2),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null) {
-      final activityController = ref.read(activityDetailControllerProvider(
+  Future<void> _deleteFood(BuildContext context, ActivityDetailState state, String foodId, String category) async {
+    final controller = ref.read(
+      activityDetailControllerProvider(
         mode: widget.mode,
         activityId: widget.activityId,
         pendingActivityData: widget.pendingActivityData,
         macroTargets: widget.macroTargets,
-      ).notifier);
-
-      await activityController.updateWorkoutNotes(result.isEmpty ? null : result);
-    }
-
-    // Dispose controller after the current frame completes to avoid
-    // "TextEditingController was used after being disposed" errors
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.dispose();
-    });
-  }
-
-  Future<void> _handleDeleteNotes(ActivityDetailState state) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Notes'),
-        content: const Text('Are you sure you want to delete these workout notes?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              'Delete',
-              style: TextStyle(color: AppTheme.highlight600),
-            ),
-          ),
-        ],
-      ),
+      ).notifier,
     );
 
-    if (confirm == true) {
-      final activityController = ref.read(activityDetailControllerProvider(
+    await controller.deleteFoodItem(foodId, category);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Food item removed'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _updateFoodQuantity(BuildContext context, ActivityDetailState state, String foodId, String category, double newQuantity) async {
+    final controller = ref.read(
+      activityDetailControllerProvider(
         mode: widget.mode,
         activityId: widget.activityId,
         pendingActivityData: widget.pendingActivityData,
         macroTargets: widget.macroTargets,
-      ).notifier);
+      ).notifier,
+    );
 
-      await activityController.updateWorkoutNotes(null);
+    await controller.updateFoodQuantity(foodId, category, newQuantity);
+  }
+
+  void _addFood(BuildContext context, String category) {
+    // Track add food
+    final analytics = ref.read(appExternalDepsProvider);
+    analytics.analytics.track('add_food_tapped', properties: {
+      'section': category,
+    });
+
+    // Get activity ID from state - try state first, then widget parameter
+    final activityDetailAsync = ref.read(
+      activityDetailControllerProvider(
+        mode: widget.mode,
+        activityId: widget.activityId,
+        pendingActivityData: widget.pendingActivityData,
+        macroTargets: widget.macroTargets,
+      ),
+    );
+
+    final activityId = activityDetailAsync.value?.activity?.id ?? widget.activityId;
+
+    if (activityId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot add food: no activity found. Please save the activity first.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    // Navigate to swap food screen in add mode (foodToSwapId = null)
+    context.push('/swap-food', extra: {
+      'foodToSwapId': null, // null = add mode
+      'foodToSwapName': null,
+      'category': category,
+      'activityId': activityId,
+      'mode': widget.mode, // Pass the mode so SwapFoodController uses the correct provider instance
+      'pendingActivityData': widget.pendingActivityData, // Pass to ensure same ActivityDetailController instance
+      'macroTargets': widget.macroTargets, // Pass to ensure same ActivityDetailController instance
+    });
+  }
+
+  String _formatDate(DateTime dateTime) {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dateTime.month - 1]} ${dateTime.day}, ${dateTime.year}';
+  }
+
+  String _formatDateShort(DateTime dateTime) {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dateTime.month - 1]} ${dateTime.day}, ${dateTime.year}';
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'pm' : 'am';
+    return '$hour:$minute$period';
+  }
+
+  String _formatDuration(int minutes) {
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+
+    if (hours > 0) {
+      return '${hours}h ${mins}m';
+    } else {
+      return '${mins}m';
     }
   }
 
-  /// Get the appropriate icon for the activity type
-  IconData _getActivityIcon(ActivityType activityType) {
+  KyleActivityType _mapActivityType(ActivityType activityType) {
     switch (activityType) {
       case ActivityType.running:
-        return Icons.directions_run;
+        return KyleActivityType.running;
       case ActivityType.cycling:
-        return Icons.directions_bike;
+        return KyleActivityType.cycling;
       case ActivityType.swimming:
-        return Icons.pool;
+        return KyleActivityType.swimming;
+      case ActivityType.triathlon:
+      case ActivityType.duathlon:
+      case ActivityType.multisport:
+        return KyleActivityType.triathlon;
     }
   }
 
-  /// Format the workout reference text based on activity type
-  String _formatWorkoutReference(targets_model.MacroTargets targets) {
-    final metrics = targets.metrics;
-    final distance = metrics.distanceMi.toStringAsFixed(1);
+  KyleFoodType _mapFoodType(String foodName) {
+    // Simple mapping based on food name
+    final name = foodName.toLowerCase();
 
-    switch (targets.activityType) {
-      case ActivityType.running:
-        return '$distance miles at ${metrics.formattedPace} pace';
-      case ActivityType.cycling:
-        return '$distance miles at ${metrics.speedMph.toStringAsFixed(1)} mph';
-      case ActivityType.swimming:
-        final meters = (metrics.distanceMi * 1609.34).round();
-        // Calculate pace per 100m if we have duration
-        if (metrics.durationMin > 0) {
-          final totalSeconds = metrics.durationMin * 60;
-          final secondsPer100m = (totalSeconds / (metrics.distanceMi * 1609.34) * 100).round();
-          final minutes = secondsPer100m ~/ 60;
-          final seconds = secondsPer100m % 60;
-          return '${meters}m at $minutes:${seconds.toString().padLeft(2, '0')}/100m pace';
-        }
-        return '${meters}m';
+    if (name.contains('banana') || name.contains('fruit')) {
+      return KyleFoodType.fruit;
+    } else if (name.contains('bread') || name.contains('sandwich')) {
+      return KyleFoodType.sandwich;
+    } else if (name.contains('pasta')) {
+      return KyleFoodType.pasta;
+    } else if (name.contains('rice')) {
+      return KyleFoodType.rice;
+    } else if (name.contains('gel') || name.contains('gummy')) {
+      return KyleFoodType.gel;
+    } else if (name.contains('bar') || name.contains('energy')) {
+      return KyleFoodType.energyBar;
+    } else if (name.contains('drink') || name.contains('water') || name.contains('fluid')) {
+      return KyleFoodType.drink;
+    } else if (name.contains('protein') || name.contains('meat') || name.contains('chicken')) {
+      return KyleFoodType.protein;
+    } else if (name.contains('vegetable') || name.contains('carrot') || name.contains('salad')) {
+      return KyleFoodType.vegetable;
+    } else if (name.contains('snack') || name.contains('cookie') || name.contains('cracker')) {
+      return KyleFoodType.snack;
+    } else if (name.contains('supplement') || name.contains('pill') || name.contains('vitamin')) {
+      return KyleFoodType.supplement;
+    } else {
+      return KyleFoodType.other;
     }
   }
-
-  /// Get the display name for the activity type ("Run", "Ride", "Swim")
-  String _getActivityDisplayName(ActivityDetailState state) {
-    // Try to get from macroTargets first, then from activity
-    final activityType = state.macroTargets?.activityType ??
-                         state.activity?.activityType ??
-                         ActivityType.running; // Default to running
-
-    switch (activityType) {
-      case ActivityType.running:
-        return 'Run';
-      case ActivityType.cycling:
-        return 'Ride';
-      case ActivityType.swimming:
-        return 'Swim';
-      default:
-        return 'Run'; // Default fallback
-    }
-  }
-
 }
 
-/// Complete Workout Bottom Sheet
-class _CompleteWorkoutBottomSheet extends StatefulWidget {
-  const _CompleteWorkoutBottomSheet({
-    required this.onComplete,
-  });
+class _CompletionDialog extends StatefulWidget {
+  final Function(int rating, String? notes) onComplete;
 
-  final Function(int overallSatisfaction, String? textNotes) onComplete;
+  const _CompletionDialog({required this.onComplete});
 
   @override
-  State<_CompleteWorkoutBottomSheet> createState() => _CompleteWorkoutBottomSheetState();
+  State<_CompletionDialog> createState() => _CompletionDialogState();
 }
 
-class _CompleteWorkoutBottomSheetState extends State<_CompleteWorkoutBottomSheet> {
-  int _overallSatisfaction = 3;
-  final TextEditingController _notesController = TextEditingController();
+class _CompletionDialogState extends State<_CompletionDialog> {
+  int _rating = 3;
+  final _notesController = TextEditingController();
 
   @override
   void dispose() {
@@ -910,129 +1072,754 @@ class _CompleteWorkoutBottomSheetState extends State<_CompleteWorkoutBottomSheet
     super.dispose();
   }
 
-  String _getEmojiForRating(int rating) {
-    switch (rating) {
-      case 1:
-        return '😞';
-      case 2:
-        return '😕';
-      case 3:
-        return '😐';
-      case 4:
-        return '🙂';
-      case 5:
-        return '😄';
-      default:
-        return '😐';
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: AppRadius.lgRadius,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Success icon
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.electrolyte.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                FontAwesomeIcons.check,
+                size: AppIconSizes.xl,
+                color: AppColors.electrolyte,
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Success message
+            Text(
+              'Complete Workout',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Rating
+            Text(
+              'How did it go?',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                final rating = index + 1;
+                return IconButton(
+                  icon: Icon(
+                    rating <= _rating ? FontAwesomeIcons.solidStar : FontAwesomeIcons.star,
+                    color: AppColors.orange,
+                    size: AppIconSizes.md,
+                  ),
+                  onPressed: () => setState(() => _rating = rating),
+                );
+              }),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Notes field
+            TextField(
+              controller: _notesController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Add notes (optional)',
+                border: OutlineInputBorder(
+                  borderRadius: AppRadius.inputRadius,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Complete button
+            KylePrimaryButton(
+              text: 'Complete',
+              onPressed: () {
+                widget.onComplete(
+                  _rating,
+                  _notesController.text.isEmpty ? null : _notesController.text,
+                );
+              },
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            // Cancel button
+            KyleTertiaryButton(
+              text: 'Cancel',
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FoodDetailsDialog extends StatelessWidget {
+  final FoodItemData food;
+  final VoidCallback onSwap;
+  final VoidCallback onDelete;
+
+  const _FoodDetailsDialog({
+    required this.food,
+    required this.onSwap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: AppRadius.lgRadius,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Food icon and name
+            Row(
+              children: [
+                KyleFoodIcon(
+                  foodType: _mapFoodType(food.name),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        food.name,
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        food.quantity,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Nutrition facts
+            if (food.nutritionalInfo != null)
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: AppRadius.cardRadius,
+                ),
+                child: Column(
+                  children: [
+                    _buildNutritionRow(
+                      context,
+                      'Calories',
+                      '${food.nutritionalInfo!.calories ?? 0} kcal',
+                      AppColors.orange,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _buildNutritionRow(
+                      context,
+                      'Carbohydrates',
+                      '${food.nutritionalInfo!.carbs ?? 0}g',
+                      AppColors.electrolyte,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _buildNutritionRow(
+                      context,
+                      'Protein',
+                      '${food.nutritionalInfo!.protein ?? 0}g',
+                      AppColors.dragonfruit,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _buildNutritionRow(
+                      context,
+                      'Fat',
+                      '${food.nutritionalInfo!.fat ?? 0}g',
+                      Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: KyleSecondaryButton(
+                    text: 'Swap',
+                    onPressed: onSwap,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: KyleSecondaryButton(
+                    text: 'Remove',
+                    onPressed: onDelete,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            // Close button
+            KyleTertiaryButton(
+              text: 'Close',
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNutritionRow(BuildContext context, String label, String value, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          value,
+          style: AppTextStyles.dataNumber.copyWith(
+            color: color,
+            fontSize: 16,
+          ),
+        ),
+      ],
+    );
+  }
+
+  KyleFoodType _mapFoodType(String foodName) {
+    final name = foodName.toLowerCase();
+
+    if (name.contains('banana') || name.contains('fruit')) {
+      return KyleFoodType.fruit;
+    } else if (name.contains('bread') || name.contains('sandwich')) {
+      return KyleFoodType.sandwich;
+    } else if (name.contains('pasta')) {
+      return KyleFoodType.pasta;
+    } else if (name.contains('rice')) {
+      return KyleFoodType.rice;
+    } else if (name.contains('gel') || name.contains('gummy')) {
+      return KyleFoodType.gel;
+    } else if (name.contains('bar') || name.contains('energy')) {
+      return KyleFoodType.energyBar;
+    } else if (name.contains('drink') || name.contains('water') || name.contains('fluid')) {
+      return KyleFoodType.drink;
+    } else if (name.contains('protein') || name.contains('meat') || name.contains('chicken')) {
+      return KyleFoodType.protein;
+    } else if (name.contains('vegetable') || name.contains('carrot') || name.contains('salad')) {
+      return KyleFoodType.vegetable;
+    } else if (name.contains('snack') || name.contains('cookie') || name.contains('cracker')) {
+      return KyleFoodType.snack;
+    } else if (name.contains('supplement') || name.contains('pill') || name.contains('vitamin')) {
+      return KyleFoodType.supplement;
+    } else {
+      return KyleFoodType.other;
     }
+  }
+}
+
+// Expandable Food Item Widget with Quantity Controls
+class _ExpandableFoodItem extends StatefulWidget {
+  final FoodItemData food;
+  final VoidCallback? onSwap;
+  final VoidCallback? onRemove;
+  final Function(double)? onQuantityChange;
+
+  const _ExpandableFoodItem({
+    required this.food,
+    this.onSwap,
+    this.onRemove,
+    this.onQuantityChange,
+  });
+
+  @override
+  State<_ExpandableFoodItem> createState() => _ExpandableFoodItemState();
+}
+
+class _ExpandableFoodItemState extends State<_ExpandableFoodItem> {
+  bool _isExpanded = false;
+  double _quantity = 1.0;
+
+  /// Get the appropriate icon for a food based on its name
+  IconData _getFoodIcon(String foodName) {
+    final name = foodName.toLowerCase();
+
+    // Map generic foods to specific icons
+    if (name.contains('apple') && !name.contains('applesauce')) {
+      return FontAwesomeIcons.appleWhole;
+    } else if (name.contains('applesauce') || name.contains('purée')) {
+      return FontAwesomeIcons.bottleDroplet;
+    } else if (name.contains('bagel')) {
+      return FontAwesomeIcons.breadSlice;
+    } else if (name.contains('banana')) {
+      return FontAwesomeIcons.appleWhole; // Use apple as generic fruit
+    } else if (name.contains('berr')) { // matches berry/berries
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('chocolate milk')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('coconut water')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('coffee')) {
+      return FontAwesomeIcons.mugHot;
+    } else if (name.contains('date')) {
+      return FontAwesomeIcons.appleWhole; // Use apple as generic fruit
+    } else if (name.contains('electrolyte drink mix')) {
+      return FontAwesomeIcons.flask;
+    } else if (name.contains('electrolyte tablet')) {
+      return FontAwesomeIcons.pills;
+    } else if (name.contains('energy bar')) {
+      return FontAwesomeIcons.bars;
+    } else if (name.contains('energy chew')) {
+      return FontAwesomeIcons.candyCane;
+    } else if (name.contains('energy waffle') || name.contains('stroopwafel')) {
+      return FontAwesomeIcons.cookie;
+    } else if (name.contains('fig bar')) {
+      return FontAwesomeIcons.bars;
+    } else if (name.contains('gel')) {
+      return FontAwesomeIcons.droplet;
+    } else if (name.contains('oatmeal')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('orange juice')) {
+      return FontAwesomeIcons.glassWater;
+    } else if (name.contains('peanut butter')) {
+      return FontAwesomeIcons.jar;
+    } else if (name.contains('pickle juice')) {
+      return FontAwesomeIcons.vial;
+    } else if (name.contains('pretzel')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('protein bar')) {
+      return FontAwesomeIcons.bars;
+    } else if (name.contains('protein powder')) {
+      return FontAwesomeIcons.jar;
+    } else if (name.contains('protein shake')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('salt packet')) {
+      return FontAwesomeIcons.bagShopping;
+    } else if (name.contains('sports drink mix')) {
+      return FontAwesomeIcons.flask;
+    } else if (name.contains('sports drink')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('toast')) {
+      return FontAwesomeIcons.breadSlice;
+    } else if (name.contains('trail mix')) {
+      return FontAwesomeIcons.bowlFood;
+    } else if (name.contains('water')) {
+      return FontAwesomeIcons.bottleWater;
+    } else if (name.contains('yogurt')) {
+      return FontAwesomeIcons.bowlFood;
+    }
+
+    // Check if this is a user-imported food
+    if (_isUserImportedFood(widget.food)) {
+      return FontAwesomeIcons.userPen;
+    }
+
+    // Default fallback icon
+    return FontAwesomeIcons.utensils;
+  }
+
+  /// Determine if a food is user-imported (vs generic system food)
+  /// User-imported foods come from barcode scanning or manual entry
+  bool _isUserImportedFood(FoodItemData food) {
+    // Check if the ID indicates it's from user_foods table
+    // User-imported foods typically have UUIDs from user_foods table
+    // Generic foods have UUIDs from foods table
+
+    // We can add more sophisticated logic here if needed, such as:
+    // - Checking against a list of known generic food IDs
+    // - Checking if the food has a barcode (from Open Food Facts)
+    // - Using a flag from the repository layer
+
+    // For now, use a simple heuristic: if the food name doesn't match
+    // any of the known generic foods, it's likely user-imported
+    final name = food.name.toLowerCase();
+
+    final knownGenericFoods = [
+      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
+      'chocolate milk', 'coconut water', 'coffee', 'date',
+      'electrolyte drink', 'electrolyte tablet', 'energy bar',
+      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
+      'gel', 'oatmeal', 'orange juice', 'peanut butter',
+      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
+      'protein shake', 'salt packet', 'sports drink', 'toast',
+      'trail mix', 'water', 'yogurt',
+    ];
+
+    // If none of the generic food keywords are in the name, it's likely user-imported
+    return !knownGenericFoods.any((keyword) => name.contains(keyword));
+  }
+
+  /// Get the background color for the food icon
+  Color _getFoodIconColor() {
+    // Use different color for user-imported foods
+    if (_isUserImportedFood(widget.food)) {
+      return AppColors.orange;
+    }
+    return AppColors.electrolyte;
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.baseWhite,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      padding: EdgeInsets.only(
-        left: 20.w,
-        right: 20.w,
-        top: 20.h,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20.h,
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AppRadius.smRadius,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Complete Workout',
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.primary900,
-                ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(Icons.close, size: 24.w),
-              ),
-            ],
-          ),
+          // Main row - always visible
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: AppRadius.smRadius,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: Row(
+                children: [
+                  // Food icon
+                  Container(
+                    width: AppIconSizes.foodIcon,
+                    height: AppIconSizes.foodIcon,
+                    decoration: BoxDecoration(
+                      color: _getFoodIconColor(),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _getFoodIcon(widget.food.name),
+                      size: AppIconSizes.controlIcon,
+                      color: Colors.white,
+                    ),
+                  ),
 
-          SizedBox(height: 24.h),
+                  const SizedBox(width: AppSpacing.md),
 
-          // Emoji Slider
-          Text(
-            'How was it?',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.baseBlack,
-            ),
-          ),
-          SizedBox(height: 16.h),
+                  // Food name and quantity
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.food.name,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          widget.food.quantity,
+                          style: AppTextStyles.smallLabel.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-          // Emoji display
-          Center(
-            child: Text(
-              _getEmojiForRating(_overallSatisfaction),
-              style: TextStyle(fontSize: 48.sp),
-            ),
-          ),
-
-          SizedBox(height: 8.h),
-
-          // Slider
-          Slider(
-            value: _overallSatisfaction.toDouble(),
-            min: 1,
-            max: 5,
-            divisions: 4,
-            activeColor: AppTheme.primary600,
-            onChanged: (value) {
-              setState(() => _overallSatisfaction = value.round());
-            },
-          ),
-
-          SizedBox(height: 20.h),
-
-          // Notes TextField
-          TextField(
-            controller: _notesController,
-            maxLines: 4,
-            decoration: InputDecoration(
-              labelText: 'Workout Notes (optional)',
-              hintText: 'How did it go? Any observations?',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
-                borderSide: BorderSide(color: AppTheme.primary600, width: 2),
+                  // Chevron icon
+                  Icon(
+                    _isExpanded ? FontAwesomeIcons.chevronUp : FontAwesomeIcons.chevronDown,
+                    size: AppIconSizes.controlIcon,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
               ),
             ),
           ),
 
-          SizedBox(height: 20.h),
+          // Expanded content
+          if (_isExpanded) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Quantity controls
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Quantity',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: AppColors.orange,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Decrease button
+                            IconButton(
+                              icon: Icon(
+                                FontAwesomeIcons.minus,
+                                size: AppIconSizes.controlIcon,
+                                color: AppColors.orange,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  if (_quantity > 0.5) {
+                                    _quantity -= 0.5;
+                                    // Call the callback to persist the change
+                                    widget.onQuantityChange?.call(_quantity);
+                                  }
+                                });
+                              },
+                            ),
 
-          // Save Button
-          PrimaryButton(
-            text: 'Save Completion',
-            onPressed: () {
-              widget.onComplete(
-                _overallSatisfaction,
-                _notesController.text.isEmpty ? null : _notesController.text,
-              );
-            },
-            width: double.infinity,
-            height: 56.h,
-          ),
+                            // Quantity display
+                            Text(
+                              _quantity.toStringAsFixed(1),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            // Increase button
+                            IconButton(
+                              icon: Icon(
+                                FontAwesomeIcons.plus,
+                                size: AppIconSizes.controlIcon,
+                                color: AppColors.orange,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _quantity += 0.5;
+                                  // Call the callback to persist the change
+                                  widget.onQuantityChange?.call(_quantity);
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Nutritional Facts
+                  Text(
+                    'Nutritional Fact',
+                    style: AppTextStyles.smallLabel.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: AppRadius.smRadius,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildNutritionItem(
+                          context: context,
+                          value: '${widget.food.nutritionalInfo?.calories?.toInt() ?? 0}',
+                          label: 'CALORIES',
+                        ),
+                        _buildNutritionItem(
+                          context: context,
+                          value: '${widget.food.nutritionalInfo?.carbs ?? 0}g',
+                          label: 'CARBS',
+                        ),
+                        _buildNutritionItem(
+                          context: context,
+                          value: '${widget.food.nutritionalInfo?.protein ?? 0}g',
+                          label: 'PROTEIN',
+                        ),
+                        _buildNutritionItem(
+                          context: context,
+                          value: '${widget.food.nutritionalInfo?.fat ?? 0}%',
+                          label: 'FAT',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Remove food item button
+                  if (widget.onRemove != null)
+                    InkWell(
+                      onTap: widget.onRemove,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            FontAwesomeIcons.trash,
+                            size: AppIconSizes.controlIcon,
+                            color: AppColors.dragonfruit,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            'Remove food item',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.dragonfruit,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  Widget _buildNutritionItem({
+    required BuildContext context,
+    required String value,
+    required String label,
+  }) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.dataNumber.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(
+          label,
+          style: AppTextStyles.smallLabel.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 9,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Geometric Pattern Painter for Hero Section
+class _GeometricPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.blackberry.withValues(alpha: 0.1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    // Draw geometric star/polygon pattern similar to Kyle's design
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = 120.0;
+
+    // Draw multiple polygons at different sizes
+    for (int i = 0; i < 3; i++) {
+      final currentRadius = radius + (i * 30);
+      final path = Path();
+      const sides = 12; // 12-sided polygon for star effect
+
+      for (int j = 0; j <= sides; j++) {
+        final angle = (j * 2 * 3.14159) / sides;
+        final x = center.dx + currentRadius * cos(angle);
+        final y = center.dy + currentRadius * sin(angle);
+
+        if (j == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+
+      canvas.drawPath(path, paint);
+    }
+
+    // Draw connecting lines for star effect
+    paint.color = AppColors.electrolyte.withValues(alpha: 0.15);
+    for (int i = 0; i < 12; i++) {
+      final angle = (i * 2 * 3.14159) / 12;
+      final x = center.dx + radius * cos(angle);
+      final y = center.dy + radius * sin(angle);
+      canvas.drawLine(center, Offset(x, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Extension for ActivityType display name
+extension ActivityTypeExtension on ActivityType {
+  String get displayName {
+    switch (this) {
+      case ActivityType.running:
+        return 'Running';
+      case ActivityType.cycling:
+        return 'Cycling';
+      case ActivityType.swimming:
+        return 'Swimming';
+      case ActivityType.triathlon:
+        return 'Triathlon';
+      case ActivityType.duathlon:
+        return 'Duathlon';
+      case ActivityType.multisport:
+        return 'Multisport';
+    }
   }
 }

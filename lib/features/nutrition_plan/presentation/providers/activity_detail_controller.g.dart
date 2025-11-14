@@ -25,7 +25,7 @@ final class ActivityDetailControllerProvider
     required ActivityDetailControllerFamily super.from,
     required ({
       String mode,
-      String? activityId,
+      int? activityId,
       PendingActivityData? pendingActivityData,
       MacroTargets? macroTargets,
     })
@@ -65,7 +65,7 @@ final class ActivityDetailControllerProvider
 }
 
 String _$activityDetailControllerHash() =>
-    r'341a47f09a725f255953f883baad52a86e51e669';
+    r'263e3ce449a28f5ed71de28a462ccaa083ffce2c';
 
 /// Activity Detail Controller
 /// Manages activity creation, updates, and completion
@@ -79,7 +79,7 @@ final class ActivityDetailControllerFamily extends $Family
           FutureOr<ActivityDetailState>,
           ({
             String mode,
-            String? activityId,
+            int? activityId,
             PendingActivityData? pendingActivityData,
             MacroTargets? macroTargets,
           })
@@ -98,7 +98,7 @@ final class ActivityDetailControllerFamily extends $Family
 
   ActivityDetailControllerProvider call({
     required String mode,
-    String? activityId,
+    int? activityId,
     PendingActivityData? pendingActivityData,
     MacroTargets? macroTargets,
   }) => ActivityDetailControllerProvider._(
@@ -124,18 +124,18 @@ abstract class _$ActivityDetailController
       ref.$arg
           as ({
             String mode,
-            String? activityId,
+            int? activityId,
             PendingActivityData? pendingActivityData,
             MacroTargets? macroTargets,
           });
   String get mode => _$args.mode;
-  String? get activityId => _$args.activityId;
+  int? get activityId => _$args.activityId;
   PendingActivityData? get pendingActivityData => _$args.pendingActivityData;
   MacroTargets? get macroTargets => _$args.macroTargets;
 
   FutureOr<ActivityDetailState> build({
     required String mode,
-    String? activityId,
+    int? activityId,
     PendingActivityData? pendingActivityData,
     MacroTargets? macroTargets,
   });

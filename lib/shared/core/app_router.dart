@@ -1,27 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/distance_pace_gut_entry_screen.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 
 // Import all screens
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
+import '../../features/nutrition_plan/presentation/screens/new_activity_screen.dart';
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/sport_preferences_screen.dart';
-import '../../features/onboarding/presentation/screens/food_preferences_screen.dart';
+import '../../features/onboarding/presentation/screens/food_preferences_screen.dart' as onboarding;
 import '../../features/nutrition_plan/presentation/screens/activity_detail_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart';
 import '../../features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart';
-import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/sport_settings_screen.dart';
-import '../../features/settings/presentation/screens/food_preferences_edit_screen.dart';
+import '../../features/settings/presentation/screens/food_preferences_screen.dart' as settings;
+import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
 import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
 import '../../features/user_journal/presentation/screens/voice_notes_list_screen.dart';
+import '../../features/user_journal/presentation/screens/voice_memo_screen.dart';
 import '../../features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart';
 import '../../features/carb_loading/presentation/screens/create_custom_carb_loading_food_screen.dart';
 import '../../features/carb_loading/domain/meal_type.dart';
+import '../../features/nutrition_plan/domain/pending_activity_data.dart';
+import '../../features/nutrition_plan/domain/macro_targets.dart';
 import '../widgets/tabs_screen.dart';
+import '../../features/events/presentation/screens/events_list_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 class AppRouter {
@@ -69,35 +74,29 @@ class AppRouter {
       GoRoute(
         path: '/onboarding/food-preferences',
         name: 'onboarding-food-preferences',
-        builder: (context, state) => const FoodPreferencesScreen(),
+        builder: (context, state) => const onboarding.FoodPreferencesScreen(),
       ),
+      // REDIRECTED: Old routes now point to NewActivityScreen (multi-sport Kyle design)
       GoRoute(
         path: '/distancepacegut',
         name: 'distancepacegut',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return DistancePaceGutEntryScreen(
+          return NewActivityScreen(
             initialDate: extra?['initialDate'] as DateTime?,
-            initialDistance: extra?['distance'] as double?,
-            initialGoalPace: extra?['goalPace'] as double?,
-            activityId: extra?['activityId'] as String?,
-            eventId: extra?['eventId'] as String?,
           );
         },
       ),
 
       // Alias for distance-pace-gut-entry (for consistency)
+      // REDIRECTED: Now points to NewActivityScreen instead of old DistancePaceGutEntryScreen
       GoRoute(
         path: '/distance-pace-gut-entry',
         name: 'distance-pace-gut-entry',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return DistancePaceGutEntryScreen(
+          return NewActivityScreen(
             initialDate: extra?['initialDate'] as DateTime?,
-            initialDistance: extra?['distance'] as double?,
-            initialGoalPace: extra?['goalPace'] as double?,
-            activityId: extra?['activityId'] as String?,
-            eventId: extra?['eventId'] as String?,
           );
         },
       ),
@@ -115,8 +114,11 @@ class AppRouter {
             case 'workout-notes':
               initialTab = 1;
               break;
-            case 'settings':
+            case 'survey':
               initialTab = 2;
+              break;
+            case 'settings':
+              initialTab = 3;
               break;
             default:
               initialTab = 0;
@@ -133,8 +135,8 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return ActivityDetailScreen(
-            mode: extra?['mode'] ?? 'view',
-            activityId: extra?['activityId'],
+            mode: extra?['mode'] as String? ?? 'view',
+            activityId: extra?['activityId'] as int?,
             pendingActivityData: extra?['pendingActivityData'],
             macroTargets: extra?['macroTargets'],
           );
@@ -148,8 +150,8 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return ActivityDetailScreen(
-            mode: extra?['mode'] ?? 'view',
-            activityId: extra?['activityId'],
+            mode: extra?['mode'] as String? ?? 'view',
+            activityId: extra?['activityId'] as int?,
             pendingActivityData: extra?['pendingActivityData'],
             macroTargets: extra?['macroTargets'],
           );
@@ -161,6 +163,13 @@ class AppRouter {
         path: '/adjust-macros',
         name: 'adjust-macros',
         builder: (context, state) => const AdjustMacrosScreen(),
+      ),
+
+      // Events list
+      GoRoute(
+        path: '/events',
+        name: 'events-list',
+        builder: (context, state) => const EventsListScreen(),
       ),
       
       // Settings Screen - User profile and preferences
@@ -177,11 +186,11 @@ class AppRouter {
         builder: (context, state) => const SportSettingsScreen(),
       ),
 
-      // Food Preferences Edit Screen - Edit food preferences from settings
+      // Food Preferences Screen - Edit food preferences from settings
       GoRoute(
         path: '/settings/food-preferences',
         name: 'settings-food-preferences',
-        builder: (context, state) => const FoodPreferencesEditScreen(),
+        builder: (context, state) => const settings.FoodPreferencesScreen(),
       ),
 
       // Add Food Screen - Add foods from settings food preferences
@@ -190,6 +199,13 @@ class AppRouter {
         name: 'settings-add-food',
         builder: (context, state) => const AddFoodScreen(),
       ),
+
+      // Help & Feedback Screen - Support and feedback collection
+      GoRoute(
+        path: '/help',
+        name: 'help-feedback',
+        builder: (context, state) => const HelpFeedbackScreen(),
+      ),
       
       // Swap/Add Food Screen - Add or swap foods in nutrition plan
       GoRoute(
@@ -197,10 +213,22 @@ class AppRouter {
         name: 'swap-food',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
+          final activityId = extra?['activityId'] as int?;
+          if (activityId == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text('Missing activity'),
+              ),
+            );
+          }
           return SwapFoodScreen(
             foodToSwapId: extra?['foodToSwapId'] as String?,
             foodToSwapName: extra?['foodToSwapName'] as String?,
             category: extra?['category'] as String? ?? 'before_run',
+            activityId: activityId,
+            mode: extra?['mode'] as String? ?? 'view', // Pass mode to ensure correct provider instance
+            pendingActivityData: extra?['pendingActivityData'] as PendingActivityData?, // Pass to match ActivityDetailController instance
+            macroTargets: extra?['macroTargets'] as MacroTargets?, // Pass to match ActivityDetailController instance
           );
         },
       ),
@@ -226,7 +254,7 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return CarbLoadingFoodSelectionScreen(
-            dayId: extra?['dayId'] as String,
+            dayId: extra?['dayId'] as int,
             mealType: extra?['mealType'] as MealType,
           );
         },
@@ -239,7 +267,7 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return CreateCustomCarbLoadingFoodScreen(
-            dayId: extra?['dayId'] as String,
+            dayId: extra?['dayId'] as int,
             mealType: extra?['mealType'] as MealType,
           );
         },
@@ -249,11 +277,17 @@ class AppRouter {
       
       // Plan Rating Screen - Rate how well a nutrition plan worked
       GoRoute(
-        path: '/plan-how-well/:planId',
+        path: '/plan-how-well/:activityId',
         name: 'plan-how-well',
         builder: (context, state) {
-          final planId = state.pathParameters['planId']!;
-          return PlanHowWellScreen(planId: planId);
+          final activityIdParam = state.pathParameters['activityId']!;
+          final activityId = int.tryParse(activityIdParam);
+          if (activityId == null) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid activity ID')),
+            );
+          }
+          return PlanHowWellScreen(activityId: activityId);
         },
       ),
       
@@ -267,11 +301,28 @@ class AppRouter {
       // Voice Memo Screen - Redirect to workout notes tab
       // Keeping for backward compatibility but redirects to tabs
       GoRoute(
-        path: '/voice-memo/:planId',
+        path: '/voice-memo/:activityId',
         name: 'voice-memo',
-        redirect: (context, state) {
-          // Redirect to main tabs with notes tab selected
-          return '/main?tab=workout-notes';
+        builder: (context, state) {
+          final activityIdParam = state.pathParameters['activityId']!;
+          final activityId = int.tryParse(activityIdParam);
+          if (activityId == null) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid activity ID')),
+            );
+          }
+          int? rating;
+          final extra = state.extra;
+          if (extra is Map<String, dynamic>) {
+            rating = extra['rating'] as int?;
+          } else {
+            final ratingParam = state.uri.queryParameters['rating'];
+            rating = ratingParam != null ? int.tryParse(ratingParam) : null;
+          }
+          return VoiceMemoScreen(
+            activityId: activityId,
+            rating: rating,
+          );
         },
       ),
     ],

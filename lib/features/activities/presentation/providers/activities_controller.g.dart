@@ -40,7 +40,7 @@ final class ActivitiesControllerProvider
 }
 
 String _$activitiesControllerHash() =>
-    r'feb58f4d2d859bb514017e0af45873d826ef550b';
+    r'9aa2d4e2bad3650b34b36203bb7139d9e193a8ab';
 
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)
@@ -82,7 +82,7 @@ final class ActivityDetailProvider
   /// Provider for getting a specific activity by ID
   const ActivityDetailProvider._({
     required ActivityDetailFamily super.from,
-    required String super.argument,
+    required int super.argument,
   }) : super(
          retry: null,
          name: r'activityDetailProvider',
@@ -108,7 +108,7 @@ final class ActivityDetailProvider
 
   @override
   FutureOr<Activity?> create(Ref ref) {
-    final argument = this.argument as String;
+    final argument = this.argument as int;
     return activityDetail(ref, argument);
   }
 
@@ -123,12 +123,12 @@ final class ActivityDetailProvider
   }
 }
 
-String _$activityDetailHash() => r'6ce2885023ebe56af134af147ba8a146c1a0bf46';
+String _$activityDetailHash() => r'4dab33f82f149b1719f885dd8d514b2aa660ee45';
 
 /// Provider for getting a specific activity by ID
 
 final class ActivityDetailFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<Activity?>, String> {
+    with $FunctionalFamilyOverride<FutureOr<Activity?>, int> {
   const ActivityDetailFamily._()
     : super(
         retry: null,
@@ -140,7 +140,7 @@ final class ActivityDetailFamily extends $Family
 
   /// Provider for getting a specific activity by ID
 
-  ActivityDetailProvider call(String activityId) =>
+  ActivityDetailProvider call(int activityId) =>
       ActivityDetailProvider._(argument: activityId, from: this);
 
   @override

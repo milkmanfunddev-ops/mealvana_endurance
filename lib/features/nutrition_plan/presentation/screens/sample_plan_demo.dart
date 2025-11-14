@@ -163,7 +163,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
       name: 'Long Run Nutrition Plan',
       totalCalories: 800,
       notes: 'This plan is optimized for your 10-mile training run. Remember to hydrate well before, during, and after your run.',
-      macroTargets: const MacroTargets(
+      macroTargets: const PlanMacroSummary(
         calories: 800,
         carbs: 180,
         protein: 20,

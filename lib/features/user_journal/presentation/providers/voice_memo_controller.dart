@@ -5,7 +5,6 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../data/workout_notes_repository.dart';
 import '../../domain/workout_note.dart';
-import '../../../auth/data/user_repository.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'voice_memo_controller.g.dart';
@@ -175,29 +174,21 @@ class VoiceMemoController extends _$VoiceMemoController {
   }
 
   /// Save notes using the proper workout notes repository
-  Future<void> saveNotes(String? planId, String notes) async {
+  Future<void> saveNotes(int activityId, String notes) async {
     final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(isSaving: true));
 
     try {
-      // Get current user ID
-      final userRepository = await ref.read(userRepositoryProvider.future);
-      final currentUser = await userRepository.getCurrentUser();
-      final userId = currentUser?.id ?? 'current-user';
-      
-      // Save the note using the workout notes repository
       final repository = await _notesRepository;
       final savedNote = await repository.saveNote(
-        userId: userId,
-        planId: planId,
+        activityId: activityId,
         noteText: notes,
       );
-      
-      // Add to cached notes and refresh the list
+
       _cachedNotes = [savedNote, ..._cachedNotes];
-      
+
       state = AsyncData(currentState.copyWith(
         isSaving: false,
         error: null,
@@ -217,14 +208,8 @@ class VoiceMemoController extends _$VoiceMemoController {
   /// Get all workout notes for the current user
   Future<List<WorkoutNote>> getNotes() async {
     try {
-      // Get current user ID
-      final userRepository = await ref.read(userRepositoryProvider.future);
-      final currentUser = await userRepository.getCurrentUser();
-      final userId = currentUser?.id ?? 'current-user';
-      
-      // Get notes from repository
       final repository = await _notesRepository;
-      final notes = await repository.getAllNotesForUser(userId);
+      final notes = await repository.getAllNotes();
       _cachedNotes = notes;
       return notes;
     } catch (error) {

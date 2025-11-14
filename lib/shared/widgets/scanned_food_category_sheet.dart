@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
-import '../../theme/app_theme.dart';
-import '../widgets/primary_button.dart';
+import 'kyle_design/kyle_design.dart';
 
 /// Shared full-screen bottom modal sheet for category selection
 /// Used by both onboarding and swap food screens when scanning products
@@ -125,70 +124,73 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: BoxDecoration(
-        color: AppTheme.baseCream,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
           // Handle bar
           Container(
-            margin: EdgeInsets.only(top: 8.h),
-            width: 40.w,
-            height: 4.h,
+            margin: const EdgeInsets.only(top: AppSpacing.sm),
+            width: 40,
+            height: 4,
             decoration: BoxDecoration(
-              color: AppTheme.baseGrey.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2.r),
+              color: isDark ? AppColors.cream.withValues(alpha: 0.3) : AppColors.blackberry.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
 
           // Header
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+            padding: AppSpacing.screenPadding,
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     widget.context == 'swap_food' ? 'Swap Food' : 'Add Food',
-                    style: AppTheme.textStyle.copyWith(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.baseBlack,
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: Icon(
-                    Icons.close,
-                    color: AppTheme.baseGrey,
-                    size: 24.sp,
+                    FontAwesomeIcons.xmark,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    size: AppIconSizes.md,
                   ),
                 ),
               ],
             ),
           ),
 
-          Divider(color: AppTheme.baseGrey.withValues(alpha: 0.2), height: 1),
+          Divider(
+            color: isDark ? AppColors.cream.withValues(alpha: 0.2) : AppColors.blackberry.withValues(alpha: 0.2),
+            height: 1,
+          ),
 
           // Content
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(16.w),
+              padding: AppSpacing.screenPadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Scanned food details
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(16.w),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppTheme.baseWhite,
-                      borderRadius: BorderRadius.circular(12.r),
+                      color: isDark ? AppColors.blackberry.withValues(alpha: 0.3) : Theme.of(context).colorScheme.surface,
+                      borderRadius: AppRadius.cardRadius,
                       border: Border.all(
-                        color: AppTheme.primary100.withValues(alpha: 0.3),
+                        color: AppColors.electrolyte.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -198,24 +200,20 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
                         // Food name
                         Text(
                           widget.scannedFood.name,
-                          style: AppTheme.textStyle.copyWith(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.baseBlack,
+                          style: AppTextStyles.foodTitle.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
-                        SizedBox(height: 16.h),
+                        const SizedBox(height: AppSpacing.md),
 
                         // Editable nutrition fields
                         Text(
                           'Nutrition Information',
-                          style: AppTheme.textStyle.copyWith(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.baseBlack,
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
-                        SizedBox(height: 12.h),
+                        const SizedBox(height: AppSpacing.sm),
 
                         // Carbs and Protein row
                         Row(
@@ -225,19 +223,21 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
                                 controller: _carbsController,
                                 label: 'Carbs',
                                 suffix: 'g',
+                                isDark: isDark,
                               ),
                             ),
-                            SizedBox(width: 12.w),
+                            const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: _buildNutritionField(
                                 controller: _proteinController,
                                 label: 'Protein',
                                 suffix: 'g',
+                                isDark: isDark,
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 12.h),
+                        const SizedBox(height: AppSpacing.sm),
 
                         // Fat and Sodium row
                         Row(
@@ -247,14 +247,16 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
                                 controller: _fatController,
                                 label: 'Fat',
                                 suffix: 'g',
+                                isDark: isDark,
                               ),
                             ),
-                            SizedBox(width: 12.w),
+                            const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: _buildNutritionField(
                                 controller: _sodiumController,
                                 label: 'Sodium',
                                 suffix: 'mg',
+                                isDark: isDark,
                               ),
                             ),
                           ],
@@ -262,69 +264,42 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
 
                         // Fluid amount field for beverages
                         if (_isBeverage) ...[
-                          SizedBox(height: 16.h),
-                          Text(
-                            'Fluid Amount (ml)',
-                            style: AppTheme.textStyle.copyWith(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w500,
-                              color: AppTheme.baseBlack,
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-                          TextFormField(
+                          const SizedBox(height: AppSpacing.md),
+                          _buildNutritionField(
                             controller: _fluidController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              hintText: 'Enter fluid amount',
-                              suffixText: 'ml',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.r),
-                                borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.r),
-                                borderSide: BorderSide(color: AppTheme.primary600),
-                              ),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-                            ),
-                            style: AppTheme.textStyle.copyWith(
-                              fontSize: 16.sp,
-                              color: AppTheme.baseBlack,
-                            ),
+                            label: 'Fluid Amount',
+                            suffix: 'ml',
+                            isDark: isDark,
                           ),
                         ],
                       ],
                     ),
                   ),
 
-                  SizedBox(height: 24.h),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Category selection
                   Text(
                     'When would you eat this?',
-                    style: AppTheme.textStyle.copyWith(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.baseBlack,
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  SizedBox(height: 8.h),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Select one or more categories (at least one required)',
-                    style: AppTheme.textStyle.copyWith(
-                      fontSize: 14.sp,
-                      color: AppTheme.baseGrey,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  SizedBox(height: 16.h),
+                  const SizedBox(height: AppSpacing.md),
 
                   // Category checkboxes
-                  _buildCategoryCheckbox(1, 'Before Run', 'Fuel up before your workout'),
-                  SizedBox(height: 12.h),
-                  _buildCategoryCheckbox(2, 'During Run', 'Energy during long workouts'),
-                  SizedBox(height: 12.h),
-                  _buildCategoryCheckbox(3, 'After Run', 'Recovery after your workout'),
+                  _buildCategoryCheckbox(1, 'Before Run', 'Fuel up before your workout', isDark),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildCategoryCheckbox(2, 'During Run', 'Energy during long workouts', isDark),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildCategoryCheckbox(3, 'After Run', 'Recovery after your workout', isDark),
                 ],
               ),
             ),
@@ -332,9 +307,14 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
 
           // Bottom action area
           Container(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 34.h),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xl,
+            ),
             decoration: BoxDecoration(
-              color: AppTheme.baseWhite,
+              color: Theme.of(context).colorScheme.surface,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.1),
@@ -343,16 +323,14 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
                 ),
               ],
             ),
-            child: SizedBox(
-              width: double.infinity,
-              child: PrimaryButton(
-                onPressed: _hasValidSelection ? _handleSave : null,
-                text: widget.context == 'onboarding'
-                    ? 'Add to My Foods'
-                    : widget.context == 'swap_food'
-                        ? 'Swap Food'
-                        : 'Add Food',
-              ),
+            child: KylePrimaryButton(
+              onPressed: _hasValidSelection ? _handleSave : null,
+              text: widget.context == 'onboarding'
+                  ? 'Add to My Foods'
+                  : widget.context == 'swap_food'
+                      ? 'Swap Food'
+                      : 'Add Food',
+              isFullWidth: true,
             ),
           ),
         ],
@@ -364,45 +342,59 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
     required TextEditingController controller,
     required String label,
     required String suffix,
+    required bool isDark,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: AppTheme.textStyle.copyWith(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.baseGrey,
+          style: AppTextStyles.smallLabel.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        SizedBox(height: 4.h),
-        TextFormField(
+        const SizedBox(height: AppSpacing.xs),
+        TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             suffixText: suffix,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+              borderRadius: AppRadius.inputRadius,
+              borderSide: BorderSide(
+                color: isDark ? AppColors.cream.withValues(alpha: 0.3) : AppColors.blackberry.withValues(alpha: 0.3),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: AppRadius.inputRadius,
+              borderSide: BorderSide(
+                color: isDark ? AppColors.cream.withValues(alpha: 0.3) : AppColors.blackberry.withValues(alpha: 0.3),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.primary600),
+              borderRadius: AppRadius.inputRadius,
+              borderSide: const BorderSide(
+                color: AppColors.electrolyte,
+                width: 2,
+              ),
             ),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.sm,
+            ),
             isDense: true,
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surface,
           ),
-          style: AppTheme.textStyle.copyWith(
-            fontSize: 14.sp,
-            color: AppTheme.baseBlack,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCategoryCheckbox(int categoryId, String title, String subtitle) {
+  Widget _buildCategoryCheckbox(int categoryId, String title, String subtitle, bool isDark) {
     final isSelected = _selectedCategories[categoryId] ?? false;
 
     return GestureDetector(
@@ -412,61 +404,58 @@ class _ScannedFoodCategorySheetState extends ConsumerState<ScannedFoodCategorySh
         });
       },
       child: Container(
-        padding: EdgeInsets.all(16.w),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppTheme.primary50
-              : AppTheme.baseWhite,
-          borderRadius: BorderRadius.circular(12.r),
+              ? AppColors.electrolyte.withValues(alpha: 0.1)
+              : Theme.of(context).colorScheme.surface,
+          borderRadius: AppRadius.cardRadius,
           border: Border.all(
             color: isSelected
-                ? AppTheme.primary600
-                : AppTheme.baseGrey.withValues(alpha: 0.3),
+                ? AppColors.electrolyte
+                : isDark ? AppColors.cream.withValues(alpha: 0.3) : AppColors.blackberry.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
             Container(
-              width: 24.w,
-              height: 24.w,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primary600 : Colors.transparent,
-                borderRadius: BorderRadius.circular(4.r),
+                color: isSelected ? AppColors.electrolyte : Colors.transparent,
+                borderRadius: BorderRadius.circular(4),
                 border: Border.all(
                   color: isSelected
-                      ? AppTheme.primary600
-                      : AppTheme.baseGrey.withValues(alpha: 0.5),
+                      ? AppColors.electrolyte
+                      : isDark ? AppColors.cream.withValues(alpha: 0.5) : AppColors.blackberry.withValues(alpha: 0.5),
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 16.sp,
+                  ? const Icon(
+                      FontAwesomeIcons.check,
+                      color: AppColors.blackberry,
+                      size: 14,
                     )
                   : null,
             ),
-            SizedBox(width: 12.w),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: AppTheme.textStyle.copyWith(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.baseBlack,
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  SizedBox(height: 2.h),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     subtitle,
-                    style: AppTheme.textStyle.copyWith(
-                      fontSize: 14.sp,
-                      color: AppTheme.baseGrey,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],

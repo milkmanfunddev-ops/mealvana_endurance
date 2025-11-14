@@ -43,7 +43,7 @@ class NutritionPlanService {
       throw Exception('No user found. Please complete onboarding first.');
     }
 
-    // Analytics tracking will be done at the controller level with proper plan_id threading
+    // Analytics tracking is handled by the controllers with activity-level context
 
     final startTime = DateTime.now();
     
@@ -64,7 +64,7 @@ class NutritionPlanService {
         final planRepository = await _planRepository;
         await planRepository.cachePlanLocally(user.id, llmPlan);
         
-        // Analytics tracking moved to controller level
+        // Analytics tracking moved to controller level (activity-scoped)
         
         // Track LLM success
         _sentry.addBreadcrumb(
@@ -118,7 +118,7 @@ class NutritionPlanService {
         final plan = result.plan!;
         
         // Track successful plan generation
-        // Analytics tracking moved to controller level
+        // Analytics tracking moved to controller level (activity-scoped)
 
         // Plan is already cached locally in the repository
         
@@ -128,7 +128,7 @@ class NutritionPlanService {
         throw Exception(result.message ?? 'Failed to generate nutrition plan');
       }
     } catch (e) {
-      // Analytics tracking moved to controller level
+      // Analytics tracking moved to controller level (activity-scoped)
       rethrow;
     }
   }
@@ -161,34 +161,20 @@ class NutritionPlanService {
     double timeBeforeRunHours = 2.0,
     String? gutTrainingLevel,
   }) async {
-    final user = await _authService.getCurrentUser();
-    if (user == null) {
-      throw Exception('No user found. Please complete onboarding first.');
-    }
-
-    final planRepository = await _planRepository;
-    final result = await planRepository.updateNutritionPlan(
-      deviceId: user.id,
+    // Updates now follow the exact same flow as fresh generations:
+    // try LLM first, fall back to algorithmic run-plan, and cache on the activity.
+    return await generateNutritionPlan(
       distanceMiles: distanceMiles,
       paceMinutesPerMile: paceMinutesPerMile,
       timeBeforeRunHours: timeBeforeRunHours,
       gutTrainingLevel: gutTrainingLevel,
     );
-
-    if (result.success && result.plan != null) {
-      return result.plan!;
-    } else {
-      throw Exception(result.message ?? 'Failed to update nutrition plan');
-    }
   }
 
-  /// Delete a nutrition plan
-  Future<bool> deleteNutritionPlan(String planId) async {
-    final user = await _authService.getCurrentUser();
-    if (user == null) return false;
-    
+  /// Delete a nutrition plan for a specific activity
+  Future<bool> deleteNutritionPlan(int activityId) async {
     final planRepository = await _planRepository;
-    return await planRepository.deleteNutritionPlan(user.id, planId);
+    return await planRepository.deleteNutritionPlanForActivity(activityId);
   }
 
   // deleteNutritionPlan method defined above

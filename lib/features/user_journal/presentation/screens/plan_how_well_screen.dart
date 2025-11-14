@@ -12,10 +12,10 @@ import '../providers/plan_rating_controller.dart';
 class PlanHowWellScreen extends ConsumerStatefulWidget {
   const PlanHowWellScreen({
     super.key,
-    required this.planId,
+    required this.activityId,
   });
 
-  final String planId;
+  final int activityId;
 
   @override
   ConsumerState<PlanHowWellScreen> createState() => _PlanHowWellScreenState();
@@ -235,12 +235,18 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
     
     try {
       await ref.read(planRatingControllerProvider.notifier)
-          .submitRating(widget.planId, selectedRating!);
+          .submitRating(widget.activityId, selectedRating!);
       
-      if (mounted) {
-        // Navigate to main screen with Notes tab selected
-        context.go('/main?tab=workout-notes');
-      }
+      if (!mounted) return;
+
+      await context.pushNamed(
+        'voice-memo',
+        pathParameters: {'activityId': widget.activityId.toString()},
+        extra: {'rating': selectedRating},
+      );
+
+      if (!mounted) return;
+      context.go('/main?tab=workout-notes');
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -257,7 +263,7 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
     try {
       // Mark plan as skipped so it won't show this screen again
       await ref.read(planRatingControllerProvider.notifier)
-          .skipFeedback(widget.planId);
+          .skipFeedback(widget.activityId);
       
       if (mounted) {
         // Navigate to main tabs

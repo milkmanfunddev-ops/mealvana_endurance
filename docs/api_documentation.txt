@@ -1,0 +1,753 @@
+ACTIVE Network API
+APIS
+Affiliates
+Forum
+Blog
+Apply For Keys
+Affiliate LoginDeveloper Login
+Activity Search API v2
+TYPES OF DATA AVAILABLE
+ Endurance:  Running, cycling, swimming, triathlons, duathlons, walking, mountain biking.
+
+Team Sports: Baseball, basketball, soccer, football, hockey, lacrosse, softball.
+
+Youth Camps:  Day camps, overnight camps, youth sports camps.
+
+Tennis Leagues:  USTA sanctioned leagues, tournaments, clinics.
+
+Parks & Recreation: City & county parks, recreational activities, YMCAs, JCCs, Boys and Girls Clubs.
+
+Fitness:  Aerobics, dance, zumba, yoga, Pilates, ballet.
+
+Classes: Crafts, painting, drawing, ceramics, performing arts, photography, theater.
+
+Outdoor Adventure:  Sailing, hiking, climbing, kayaking, rafting, fishing, hunting.
+
+Request Limits
+ Search API Key  APPLY FOR A KEY
+
+·       Active - Upon registration
+
+·       Throttle Rate - 2 calls per second
+
+·       Quota Limit – 500,000 calls per day
+
+ 
+
+The V2 Activity Search API processes simple HTTP GET requests.  The results are returned in JSON.  This API supports keyword search against ACTIVE.com assets, result restriction to a particular location, result filtering based on asset metadata, and a variety of other parameters.
+
+Interact with the Active APIs -- discover, test, debug live calls all in one place. Test out I/O Docs here
+
+
+URL: http://api.amp.active.com/v2/search?{queryString params}&api_key={key}
+Method: GET
+
+Sample Request
+Return search results for the query on the topic of Running near San Diego within 50 miles
+
+http://api.amp.active.com/v2/search?query=running&category=event&start_date=2013-07-04..&near=San%20Diego,CA,US&radius=50&api_key=sqq35zvx6a8rgmxhy9csm8qj  *
+
+*NOTE - The API key used in the sample API calls on this page is for demo purposes only. Do not use this API key in your application(s).
+
+Sample Response
+{
+    total_results: 240,
+    items_per_page: 25,
+    start_index: 0,
+    facets: [],
+    facet_values: [],
+    suggestions: [],
+    results: [{
+            detailPageTemplateId: "",
+            salesStartDate: "2013-07-22T12:09:21",
+            assetChannels: [{
+                sequence: "1",
+                channel: {
+                    channelName: "Running",
+                    channelId: "1020",
+                    channelDsc: "Running"
+                }
+            }],
+            assetDsc: "",
+            salesEndDate: "2013-11-27T23:59:00",
+            sorId: "",
+            assetDescriptions: [{
+                description: " ",
+                descriptionType: {
+                    descriptionTypeName: "Standard",
+                    descriptionTypeId: "6"
+                }
+            }],
+            alternateName: "",
+            currencyCd: "",
+            teamUrlAdr: "",
+            localTimeZoneId: "",
+            timezone: "",
+            evergreenAssetFlag: "false",
+            assetImages: [{
+                linkUrl: "",
+                imageCaptionTxt: "",
+                imageName: "image1",
+                linkTarget: "",
+                imageUrlAdr: "http://www.active.com/images/events/hotrace.gif"
+            }],
+            assetLegacyData: {
+                participationCriteriaTxt: "Family",
+                trackbackUrl: "http://www.active.com/page/Event_Details.htm?event_id=2106249&assetId=7E6CB77E-6FBA-4231-95B0-1563CD6988AC",
+                userCommentTxt: "",
+                onlineMembershipCostAmt: "",
+                estParticipantNb: "5000",
+                isSearchable: "false",
+                priceExtensionTxt: "",
+                eventCategories: "",
+                onlineMembership: "false",
+                costAmt: "",
+                uploadSearchUrlAdr: "",
+                createdDate: "2013-07-22T19:33:21",
+                substitutionUrl: "2106249",
+                minGuaranteedGameNb: "",
+                genderRequirementTxt: "",
+                onlineRegistration: "true",
+                modifiedDate: "2013-09-17T07:27:25",
+                searchWeight: "1",
+                typeName: "",
+                avgUserRatingTxt: "",
+                onlineDonation: "false",
+                maxTeamNb: "",
+                assetTypeId: "EA4E860A-9DCD-4DAA-A7CA-4A77AD194F65",
+                seoUrl: "http://www.active.com/running/san-diego-ca/running-event---runforthehungry-2013",
+                authorName: "",
+                multipleStartDate: "false"
+            },
+            registrationUrlAdr: "https://www.active.com/register/index.cfm?EVENT_ID=2106249",
+            overrideSeourlFlag: "false",
+            place: {
+                timezoneDST: 1,
+                localityName: "",
+                countryName: "United States",
+                dma: {
+                    dmaName: "San Diego",
+                    dmaId: "825"
+                },
+                cityName: "San Diego",
+                countryCode: "",
+                timezoneOffset: -8,
+                placeName: "Downtown San Diego",
+                addressLine1Txt: "Westfield Horton Plaza",
+                directionsTxt: "",
+                placeGuid: "022fb10c-128b-43f4-87ed-12f7df6f1be3",
+                placeDsc: "",
+                geoPoint: {
+                    lon: "-117.1597",
+                    lat: "32.7229"
+                },
+                timezone: "America/Los_Angeles",
+                postalCode: "92101",
+                stateProvinceCode: "CA",
+                placeUrlAdr: "",
+                longitude: "-117.1597",
+                latitude: "32.7229",
+                addressLine2Txt: ""
+            },
+            activityEndDate: "2013-11-28T07:00:00",
+            createdDate: "2013-07-22T19:33:21",
+            publishDate: null,
+            activenetTopGraphic: {},
+            resultsUrlAdr: "",
+            assetCategories: [{
+                category: {
+                    categoryName: "Event",
+                    categoryId: "2",
+                    categoryTaxonomy: "Event"
+                },
+                sequence: "1"
+            }, {
+                category: {
+                    categoryName: "Races",
+                    categoryId: "22",
+                    categoryTaxonomy: "Event/Races"
+                },
+                sequence: "2"
+            }],
+            contactEmailAdr: "mark@purefitness.cc",
+            assetSeoUrls: [{
+                statusCode: "true",
+                seoSystemName: "as3",
+                urlAdr: "http://www.active.com/san-diego-ca/running/races/running-event-runforthehungry-2013"
+            }],
+            homePageUrlAdr: "http://unitedrunforthehungry.org",
+            assetDeals: [],
+            assetStatus: {
+                assetStatusName: "VISIBLE",
+                createdDate: "2012-05-22T17:57:06",
+                modifiedDate: "2012-05-22T17:57:06",
+                assetStatusId: "2"
+            },
+            market: {
+                marketId: "8",
+                marketName: "endurance-running"
+            },
+            assetInterests: [],
+            sourceSystem: {
+                affiliate: "true",
+                legacyGuid: "EA4E860A-9DCD-4DAA-A7CA-4A77AD194F65",
+                sourceSystemName: "RegCenter"
+            },
+            contactName: "Mark Leisinger",
+            assetMediaTypes: [{
+                sequence: "1",
+                mediaType: {
+                    mediaTypeId: "2",
+                    mediaTypeDsc: "",
+                    mediaTypeName: "Event"
+                }
+            }, {
+                sequence: "2",
+                mediaType: {
+                    mediaTypeId: "126",
+                    mediaTypeDsc: "",
+                    mediaTypeName: "Event\10K"
+                }
+            }, {
+                sequence: "3",
+                mediaType: {
+                    mediaTypeId: "95",
+                    mediaTypeDsc: "",
+                    mediaTypeName: "Event\5K"
+                }
+            }, {
+                sequence: "4",
+                mediaType: {
+                    mediaTypeId: "116",
+                    mediaTypeDsc: "",
+                    mediaTypeName: "=difficulty:Advanced"
+                }
+            }, {
+                sequence: "5",
+                mediaType: {
+                    mediaTypeId: "48",
+                    mediaTypeDsc: "",
+                    mediaTypeName: "=difficulty:Beginner"
+                }
+            }, {
+                sequence: "6",
+                mediaType: {
+                    mediaTypeId: "224",
+                    mediaTypeDsc: "",
+                    mediaTypeName: "=difficulty:Intermediate"
+                }
+            }],
+            showContact: "false",
+            authorName: "",
+            assetAttributes: [{
+                attribute: {
+                    attributeValue: "Intermediate",
+                    attributeType: "Skill level",
+                    tagId: "58739"
+                }
+            }, {
+                attribute: {
+                    attributeValue: "Beginner",
+                    attributeType: "Skill level",
+                    tagId: "58738"
+                }
+            }, {
+                attribute: {
+                    attributeValue: "Advanced",
+                    attributeType: "Skill level",
+                    tagId: "58740"
+                }
+            }, {
+                attribute: {
+                    attributeValue: "5K",
+                    attributeType: "Distance (running)",
+                    tagId: "58705"
+                }
+            }, {
+                attribute: {
+                    attributeValue: "10K",
+                    attributeType: "Distance (running)",
+                    tagId: "58707"
+                }
+            }],
+            localeCd: "",
+            assetComponents: [],
+            assetPopularity: {
+                rank: 321,
+                results: 195,
+                views: 19,
+                createdAt: 1379635207,
+                clicks: 25,
+                searches: 5,
+                A3Rank: 142,
+                clickTypes: {
+                    otherActive: 15,
+                    nonActive: 9,
+                    registration: 1
+                }
+            },
+            contactTxt: "",
+            sorCreateUserId: "",
+            evergreenAssets: [],
+            regReqMinAge: "",
+            assetRootAsset: {},
+            preferredUrlAdr: "",
+            registrantSearchUrlAdr: "",
+            organization: {
+                organizationGuid: "d8a0de32-091b-45a9-8e18-5a9e90c2aeb1",
+                organizationDsc: "",
+                addressCityName: "",
+                fax: "",
+                addressPostalCd: "",
+                organizationName: "N/A",
+                addressStateProvinceCode: "",
+                addressCountryCd: " ",
+                primaryContactPhone: "",
+                addressLine1Txt: "",
+                primaryContactEmailAdr: "",
+                organizationUrlAdr: "",
+                hideOrganizationContact: "false",
+                addressLocalityName: "",
+                showOrganizationName: "false",
+                primaryContactName: "",
+                addressLine2Txt: ""
+            },
+            regReqGenderCd: "",
+            evergreenParentAsset: {},
+            assetQuantity: {},
+            assetName: "Running Event - RunForTheHungry",
+            contactPhone: "619-865-9903",
+            assetMetaInterests: [],
+            componentInUrlAdr: {},
+            assetServiceHostName: "as-app03.active.tan",
+            modifiedDate: "2013-09-10T19:41:13",
+            assetTopics: [{
+                topic: {
+                    topicId: "27",
+                    topicTaxonomy: "Endurance/Running",
+                    topicName: "Running"
+                },
+                sequence: "4"
+            }],
+            assetPrices: [],
+            assetGuid: "7e6cb77e-6fba-4231-95b0-1563cd6988ac",
+            regReqMaxAge: "",
+            donationUrlAdr: "",
+            timezoneAbb: "",
+            assetTags: [{
+                tag: {
+                    tagDescription: "Skill level",
+                    tagName: "Advanced",
+                    tagId: "58740"
+                }
+            }, {
+                tag: {
+                    tagDescription: "Distance (running)",
+                    tagName: "10K",
+                    tagId: "58707"
+                }
+            }, {
+                tag: {
+                    tagDescription: "Distance (running)",
+                    tagName: "5K",
+                    tagId: "58705"
+                }
+            }, {
+                tag: {
+                    tagDescription: "Skill level",
+                    tagName: "Intermediate",
+                    tagId: "58739"
+                }
+            }, {
+                tag: {
+                    tagDescription: "Skill level",
+                    tagName: "Beginner",
+                    tagId: "58738"
+                }
+            }],
+            activityRecurrences: [],
+            activityStartDate: "2013-11-28T07:00:00",
+            urlAdr: "http://www.active.com/running/san-diego-ca/runforthehungry-2013",
+            assetParentAsset: {},
+            childIndex: "",
+            logoUrlAdr: "http://www.active.com/images/events/hotrace.gif",
+            timezoneName: "",
+            sorCreateDtm: null,
+            salesStatus: "registration-open"
+        }, {
+            detailPageTemplateId: "",
+            salesStartDate: "2013-08-12T23:25:00",
+            assetChannels: [{
+                sequence: "1",
+                channel: {
+                    channelName: "Running",
+                    channelId: "1020",
+                    channelDsc: "Running"
+                }
+            }],
+ 
+
+Parameters
+near
+
+Optional string - A string naming a place that can be geocoded. If the near string is not geocodable, returns a failed geocoded error. (e.g.  City,State,Country)
+near=San%20Diego,CA,US
+lat_lon
+
+Optional string - A location specified as a latitude and longitude separated by a comma.
+http://api.amp.active.com/v2/search?lat_lon=45.49428,-122.86705&api_key=SQQ35ZVX6A8RGMXHY9CSM8QJ
+lat_lon=45.49428,-122.86705
+ bbox
+
+Optional string - A bounding box specified by the lat/lng of the northwest and southeast corners separated by a semi-colon.
+http://api.amp.active.com/v2/search?bbox=40.73,-74.1%3b40.717,-73.99&api_key=SQQ35ZVX6A8RGMXHY9CSM8QJ
+bbox=40.73,-74.1;40.717,-73.-99
+ geo_points
+
+Optional string - A list of lat/long pairs separated by a url encoded semi-colon. This limits the result list to assets that fall within the polygon of points.
+geo_points=40,-70%3B30,-80%3B20,-90
+ radius
+
+Optional integer - The search radius as specified in miles.
+radius=50
+show_distance
+
+Optional string - If set to true, returns the distance from the asset to the given centerpoint specified by either the lat_lon or near parameter. You must provide either the lat_lon parameter or a valid location in the near parameter. The values will be in the asset.distanceFromCenterpoint in the JSON document.
+city
+
+Optional string - Matches assets by city name. Be sure to encode any spaces. E.g. %20 = space
+city=san%20diego
+state
+
+Optional string - Matches assets by state or province code.
+state=CA
+zip
+
+Optional string - Matches assets by zip or postal code.
+zip=92101
+country
+
+Optional string - Matches assets by country name.
+country=US
+query
+
+Optional string - Search term
+query=half%20marathon
+kids
+
+Optional string - Returns assets from ACTIVEkids.com.
+kids=true
+current_page
+
+Optional integer - The current page of results. Defaults to 1.
+current_page=3
+per_page
+
+Optional integer - The number of results to return. Defaults to 10.
+per_page=50
+sort
+
+Optional string - The sort order of the results. The possible values are date_asc, date_desc, and distance. If sort is not specified, results are sort by relevance to the query param. Distance can only be used when either the near or lat_lon parameters are specified and sorts the results according to distance from the specified location smallest to largest.
+sort=date_asc
+facets
+
+Optional string - A comma delimited string containing the facet counts to return.
+facets=topicName
+facet_values
+
+Optional string - Returns facet counts for the specified field values. The value of the param is the field name followed by a comma delimited list of values. The field name and values are separated by a pipe.
+facet_values=topicName:Running,Cycling
+ category
+
+Optional string - Matches assets by category name.
+Events: category=event
+Articles: category=articles
+All Events: facets=categoryName&per_page=0
+category_name
+
+Optional string - Matches assets by category name. For example, if you search for ‘event’ category, you will get assets that are only tagged as ‘event’. Assets tagged as ‘event/races’, ‘event/camps’, etc. will not be returned. See category parameter if you need all subcategories returned.
+topic
+
+Optional string - Matches assets by topic name.
+topic=running
+All Topics: facets=topicName&per_page=0
+topic_name
+
+Optional string - Matches assets by topic name. For example, if you search for ‘endurance’ topic, you will get assets that are only tagged as ‘endurance’. Assets tagged as ‘endurance/running’, ‘endurance/cycling’, etc. will not be returned. See topic parameter if you need all subtopics returned.
+meta_interest
+
+Optional string - Matches assets by meta interest in the meta interest taxonomy. For example, if you search for ‘MOB’, you will get assets that are tagged ‘MOB’, ‘MOB/Color Run’, ‘MOB/Mud’, etc.
+meta_interest_name
+
+Optional string - Matches asset by meta interest name. For example, if you search for ‘MOB’, you will get assets that are only tagged as ‘MOB’. Assets tagged as ‘MOB/Color Run’, ‘MOB/Mud’, etc. will not be returned. See metaInterest parameter if you need all sub meta interests returned.
+attributes
+
+Optional string - Matches assets by attribute type and value. The value of the parameter is the attributeType and attributeValue separated by a colon. You can use NOT, AND, and OR in the value. See those respective sections below.    
+attributes=gender:male attributes=gender:male AND age group:junior
+tags
+
+Optional string - Matches assets by tag name and description. The value of the parameter is the tagDescription and tagName separated by a colon. You can use NOT, AND, and OR in the value. See those respective sections below.   
+tag=activeadvantage:true tag=activeadvantage:true OR usatsanctioned:false
+start_date
+
+Optional string - Limits results to assets with a start date in the given range.
+See section on Ranges below for value format.
+end_date
+
+Optional string - Limits results to assets with an end date in the given range.
+See section on Ranges below for value format.
+cb
+
+Optional string - JSONP callback parameter.
+Callback: cb=displayResults
+Explanation: http://en.wikipedia.org/wiki/JSONP
+exclude_children
+
+Optional string - Removes children assets from the results list. Valid values are true or false. If the parameter is not present, all assets will be returned in the results list.
+exclude_children=true
+One of the commonly misunderstood attributes is the "exclude_children" parameter.  To explain, our details pages are constructed based on a parent asset and a group of components, or children assets.  For example, the following event has a parent asset for the event and one child asset for the "Spartan Army 5k Challenge" category.
+
+Event on ACTIVE.com: http://www.active.com/running/las-vegas-nv/spartan-army-5k-challenge-2013
+API call for this event: http://api.amp.active.com/v2/search?asset.assetGuid=88cf65e8-d913-4c2b-a6f5-8da571ce0de0&api_key=sqq35zvx6a8rgmxhy9csm8qj
+Spartan Army 5k Challenge: http://api.amp.active.com/v2/search?asset.assetGuid=88cf65e8-d913-4c2b-a6f5-8da571ce0de0&api_key=sqq35zvx6a8rgmxhy9csm8qj
+To prevent the Spartan Army 5k Challenge from coming up in searches, the exclude_children=true flag should be included in the query string.  I have include it in To include the Spartan Army 5k Challenge as an asset in the API results, the exclude_children flag should be dropped from the querystring.
+
+include_evergreen_children
+
+Optional boolean - Includes children of evergreen assets in the results list. Valid values are true or false. If the parameter is not present, evergreen children will be filtered out of search results.
+registerable_only
+
+Optional boolean - Filters results to assets that offer Active.com online registration and the registration close date is at least one day in the future. This flag will only apply if the value is true. If the parameter is not present, all assets will be returned in the results list.
+exists
+
+Optional string - Filters results to assets that have a value for the specified field(s). The value of the param is a comma-delimited of fields.
+E.g. All assets with a populated AuthorName field: exists=asset.authorName
+not_exists
+
+Optional string - Filters results to assets that do not have a value for the specified field(s). The value of the param is a comma-delimited of fields.
+E.g. All assets without a populated AuthorName field: not_exists=asset.authorName
+Search by Asset ID
+
+Optional string - Searches for the specific asset ID - The asset id is found in asset.assetGuid in the JSON returned.
+http://api.amp.active.com/v2/search?asset.assetGuid=88cf65e8-d913-4c2b-a6f5-8da571ce0de0&api_key=sqq35zvx6a8rgmxhy9csm8qj
+http://api.amp.active.com/v2/search?asset.assetGuid=db5146ee-92bd-4e11-80d0-e34fce48d48e OR e418218a-1b7a-428c-af29-6c1bc5a02eed&api_key=sqq35zvx6a8rgmxhy9csm8qj
+Search by Event ID
+
+Optional string - Searches for the specific event ID - uses assetLegacyData.substitutionURL 
+assetLegacyData.substitutionURL:  http://api.amp.active.com/v2/search?asset.assetLegacyData.substitutionUrl=1696272
+asset_name
+
+Optional string - Searches for an asset by its name. The asset name is found in asset.assetName in the JSON document. This must be an exact match.
+org_id
+
+Optional string - Limits results to assets that have the given organization id. The organization id is found in the asset.organization.organizationGuid in the JSON returned.
+place_id
+
+Optional string - Limits results to assets that have the given place id. The place id is found in the asset.place.placeGuid in the JSON returned.
+source_system_id
+
+Optional string - Limits results to assets that have the given source system id. The source system id is found in the asset.sourceSystem.legacyGuid in the JSON returned.
+source_system_name
+
+Optional string - Limits results to assets that have the given source system name. The source system name is found in the asset.sourceSystem.sourceSystemName in the JSON returned.
+show_suggest
+
+Optional boolean - Returns alternate spelling suggestions for terms in your query. Valid values are true or false.
+search_again
+
+Optional boolean - Will perform a second search if there are misspellings in the given query which returns zero results. It will replace misspelled words with the top altnerate suggestions. There will be an original_query and actual_query properties in the return JSON.
+fields
+
+Optional string - A comma separated list of fields to return instead of the whole asset document.
+Other attributes
+Besides the parameters listed above, you can use any of the asset attributes as parameters to filter your results. For the key, pass the complete path to the attribute e.g. asset.place.cityName. For the value, you can pass a term with some boolean logic (see NOT, AND, and OR below) or a range value (see Ranges below). Be sure to URL encode any spaces. E.g. %20 = space
+
+asset.authorName=John%20Doe
+asset.reqMinAge=10..20
+asset.place.cityName=San Diego%20OR%20Los Angeles OR Oceanside
+asset.assetTopics.topic.topicName=NOT Running
+Ranges
+
+For fields that have either integer or date values, you can search for a given range.
+Limits the results to the given date range specified in the following format: start_date..end_date
+
+To search from a particular date forward, leave off the end date. To search until a particular date, leave off the start date.
+
+Date format should be in yyyy-mm-dd format.
+
+start_date=2013-01-15..    # search from January 15, 2011 forward
+start_date=..2013-01-15    # search up to January 15, 2011
+start_date=2013-01-15..2013-01-20    # search from January 15, 2011 until January 20, 2011
+regReqMinAge=20..40        # search for the required minimum age between 10 and 20
+regReqMinAge=10..          # search for assets with required minimum age 10 or greater
+regReqMinAge=..10          # search for assets with required minimum age up to 10
+NOT
+To negate the value of the parameter, precede it with NOT (all uppercase).
+
+topicName=NOT%20running     # return results that do not have the topic name of Running
+AND
+To return results that have multiple values, put AND (all uppercase) between the terms.
+
+topicName=running%20AND%20cycling     # return results that have running, triathlon, and cycling as a topic name
+OR
+To return results that have any value, put an OR (all uppercase) between the terms.
+
+topicName=running%20OR triathlon%20OR%20cycling       # return results that have either running, triathlon, and cycling as a topic name
+ 
+
+Frequently Asked Questions
+
+ How do I find math classes in Fremont, CA (94539)?
+
+http://api.amp.active.com/v2/search?near=Fremont,CA,US&api_key=sqq35zvx6a8rgmxhy9csm8qj&category=Classes&query=math
+or
+http://api.amp.active.com/v2/search?near=Fremont,CA,US&api_key=sqq35zvx6a8rgmxhy9csm8qj&category=Classes&topicName=Mathematics
+How do I get all running and triathlon events, between now and Aug 31, 2014 in New Hampshire.:
+
+http://api.amp.active.com/v2/search?near=New%20Hampshire&api_key=sqq35zvx6a8rgmxhy9csm8qj&topicName=Running%20OR%20topicName=Triathlon&category=Event&asset.activityStartDate=2013-09-12..2014-08-31
+Is there a way to get a list of all of the categories?
+
+http://api.amp.active.com/v2/search?facets=categoryName&per_page=0&api_key=sqq35zvx6a8rgmxhy9csm8qj
+Is there a way to query on multiple categories in a single API call?
+
+http://api.amp.active.com/v2/search?categoryName=Classes%20OR%20categoryName=Event&api_key=sqq35zvx6a8rgmxhy9csm8qj
+Is it possible to get structured pricing data for an activity/event?  The only field I see that contains this data is in assetDescriptions.descriptionType.descriptionTypeName.eventFees. This field only seems to be present occasionally. 
+
+It’s contained in the assetPrices of assetComponents. 
+E.g. this event: http://api.amp.active.com/v2/search?asset.assetGuid=43727359-e865-4683-a1a1-1b1592306ac7&api_key=sqq35zvx6a8rgmxhy9csm8qj 
+Has a component with assetPrices:
+http://api.amp.active.com/v2/search?asset.assetGuid=80cffca1-5844-497f-8139-0adb5740c137&api_key=sqq35zvx6a8rgmxhy9csm8qj
+version 48 as of 2 years ago by mzhang
+
+21 Comments
+hoangle – 12 years ago
+
+Is it possible to query date time instead of date in "range"? It means the query is more specific to a period of time, not just between days.
+
+Kelly Pace – 12 years ago
+
+http://a3pi.active.com/v2/search?asset.activityStartDate=2014-04-29T10:00..2014-04-29T20:00&exclude_children=true
+
+T parameter followed by 24-hour time.
+
+Finihser – 12 years ago
+
+http://api.amp.active.com/v2/search/?lat_lon=0.000000,0.000000&radius=100&query=triathlon//half-ironman//&current_page=1&per_page=50&sort=date_asc&start_date=2014-05-06..2014-11-06&exclude_children=true&api_key=xxxxxx..how i will fetch half-iron man(70.4) results...
+
+Finihser – 12 years ago
+
+http://api.amp.active.com/v2/search/?lat_lon=0.000000,0.000000&radius=1000&query=cycling//organized/&current_page=1&per_page=50&sort=date_asc&start_date=2014-05-06..2014-11-06&exclude_children=true&api_key=xxxxxxx how i will fetch organized events.i want know about i am using correct format api or not?
+
+MaryF – 11 years ago
+
+Is salesEndDate the same as Registration Close Date that I see on the Active.com event page?
+
+racedingo – 11 years ago
+
+I am trying to find the race start times and grabbing it from the activityStartDate doesn't give the correct. one. Does anyone know where to find the correct race start times. Please help, thank you.
+
+Looptivity – 11 years ago
+
+What is the data format of "activityRecurrences" if the event is recurring?
+
+narasimhasesetti – 11 years ago
+
+I want to get the activities which were created today. please provide the tag and sample url
+
+Sy Fountaine – 11 years ago
+
+How can I get a listing of all major category events, such as all endurance events?
+
+mark.wang2 – 11 years ago
+
+@racedingo You need use the place: { timezone: "America/Los_Angeles", and activityStartDate togerther to get the right time.
+
+mark.wang2 – 11 years ago
+
+@Looptivity #7 like this "activityRecurrences":[ { "activityStartDate":"2014-09-16T08:30:00", "startTime":"08:30:00", "activityEndDate":"2014-11-16T15:30:00", "endTime":"15:30:00", "frequencyInterval":"2", "frequency":{ "frequencyName":"Weekly" }, "days":"Monday, Wednesday, Friday", "monthWeekInterval":"3", "activityExclusions":[ { "exclusionStartDate":"2012-06-07T00:00:00", "exclusionEndDate":"2012-06-10T00:00:00" } ] } ],
+
+mark.wang2 – 11 years ago
+
+Hi MaryF,#5 Yes it is ,it can be calculate with time zone.
+
+mark.wang2 – 11 years ago
+
+Hi narasimhasesetti ,8# http://api.amp.active.com/v2/search?start_date=2014-10-10..2014-10-10&api_key=sqq35zvx6a8rgmxhy9csm8qj
+
+mark.wang2 – 11 years ago
+
+Hi Sy Fountaine ,9# you can use the topic name to get it.
+
+Sy Fountaine – 11 years ago
+
+Where can I find all of the country codes?
+
+mark.wang2 – 11 years ago
+
+Hi Fountaine :
+
+This web sitehttp://countrycode.org/ may be can help you,we use the stand countrycode.
+
+Ryan Waite – 10 years ago
+
+my ajax call throws cross origin error. why?
+
+Pablo Luis – 8 years ago
+
+how i get the end score of my event?
+
+Lynque – 8 years ago
+
+We are relatively new to ActiveNet and I would like to use this API, I have an api_key and get a 200 response but no results. is there something I need to configure on our end in ActiveNet to allow our information to be indexed and thus accessible via this API?
+
+dindar – 7 years ago
+
+i want to make a country code instructions tool like this one https://codemycountry.com/ but can not find any codes for this.
+
+SaraP – 6 years ago
+
+?What parameter is used for pricing or the cost of each activity?
+
+New comments are not being accepted at this time.
+
+Docs Navigation
+API Documentation
+Activity API
+Activity Search API v2
+Activity Search API v2 - Kids
+Campground API
+Campground Search API
+Campground Details API
+Campsite Search API
+ 
+
+Follow Active
+ Facebook
+ Twitter
+ Pinterest
+ LinkedIn
+Other Resources
+Race Management
+Camp & Class Management
+Sports League Management
+Active Network
+API Terms of Use
+Widgets License Agreement
+Brand Guidelines
+Affiliate Agreement
+Visit Active.com
+ 
+
+Active Network
+Terms of Use
+Copyright Policy
+Your Privacy Rights
+Cookie Policy
+Security
+Advertising
+Careers
+© 2017 Active Network, LLC and/or its affiliates and licensors. All rights reserved.
+ACTIVE Network, LLC
+717 North Harwood Street
+Suite 2500
+Dallas, TX 75201

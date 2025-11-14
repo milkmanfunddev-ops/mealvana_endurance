@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/calendar_controller.dart';
-import '../../domain/activity.dart';
+import '../../../activities/domain/activity.dart';
 
 /// Calendar week view widget
 class CalendarWeekView extends ConsumerStatefulWidget {

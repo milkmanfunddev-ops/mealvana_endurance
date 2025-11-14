@@ -1,7 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/carb_loading_food_repository.dart';
 import '../data/carb_loading_user_food_repository.dart';
-import '../data/meal_type_repository.dart';
 import '../domain/carb_loading_food.dart';
 import '../domain/carb_loading_user_food.dart' as domain;
 import '../domain/meal_type.dart' as domain;
@@ -14,14 +13,11 @@ class CarbLoadingFoodService {
   const CarbLoadingFoodService({
     required CarbLoadingFoodRepository foodRepository,
     required CarbLoadingUserFoodRepository userFoodRepository,
-    required MealTypeRepository mealTypeRepository,
   })  : _foodRepository = foodRepository,
-        _userFoodRepository = userFoodRepository,
-        _mealTypeRepository = mealTypeRepository;
+        _userFoodRepository = userFoodRepository;
 
   final CarbLoadingFoodRepository _foodRepository;
   final CarbLoadingUserFoodRepository _userFoodRepository;
-  final MealTypeRepository _mealTypeRepository;
 
   /// Get all foods suitable for a specific meal type (default + user foods)
   Future<List<dynamic>> getAllFoodsForMealType({
@@ -64,13 +60,15 @@ class CarbLoadingFoodService {
   }
 
   /// Get all meal types
+  /// Returns all meal types from the MealType enum
   Future<List<domain.MealType>> getAllMealTypes() async {
-    return _mealTypeRepository.getAllMealTypes();
+    return domain.MealType.values;
   }
 
   /// Create a new user food
   Future<domain.CarbLoadingUserFood> createUserFood({
     required String deviceId,
+    required String userId,
     required String name,
     required String displayName,
     String? displayNamePlural,
@@ -80,6 +78,7 @@ class CarbLoadingFoodService {
   }) async {
     return _userFoodRepository.createUserFood(
       deviceId: deviceId,
+      userId: userId,
       name: name,
       displayName: displayName,
       displayNamePlural: displayNamePlural,
@@ -179,11 +178,12 @@ class CarbLoadingFoodService {
   }
 
   /// Get food ID for any food
-  String getFoodId(dynamic food) {
+  /// Returns String for global foods, int for user foods
+  dynamic getFoodId(dynamic food) {
     if (food is CarbLoadingFood) {
-      return food.id;
+      return food.id; // String (UUID)
     } else if (food is domain.CarbLoadingUserFood) {
-      return food.id;
+      return food.id; // int
     }
     throw ArgumentError('Invalid food type');
   }
@@ -204,6 +204,5 @@ CarbLoadingFoodService carbLoadingFoodService(Ref ref) {
   return CarbLoadingFoodService(
     foodRepository: ref.watch(carbLoadingFoodRepositoryProvider),
     userFoodRepository: ref.watch(carbLoadingUserFoodRepositoryProvider),
-    mealTypeRepository: ref.watch(mealTypeRepositoryProvider),
   );
 }

@@ -16,6 +16,7 @@ class PlanSectionWidget extends StatelessWidget {
     this.isEditMode = false,
     this.onSwapFood,
     this.onDeleteFood,
+    this.activityId,
   });
 
   final PlanSection section;
@@ -23,6 +24,7 @@ class PlanSectionWidget extends StatelessWidget {
   final bool isEditMode;
   final Function(String foodItemId, String foodName)? onSwapFood;
   final Function(String foodItemId)? onDeleteFood;
+  final int? activityId;
   
   String get _sectionCategory {
     switch (section.title) {
@@ -161,9 +163,13 @@ class PlanSectionWidget extends StatelessWidget {
         Center(
           child: AddFoodButton(
             onPressed: () {
+              if (activityId == null) {
+                return;
+              }
               // Navigate to swap/add screen
               context.push('/swap-food', extra: {
                 'category': _sectionCategory,
+                'activityId': activityId,
               });
             },
           ),

@@ -11,7 +11,7 @@ part 'weather_repository.g.dart';
 @riverpod
 WeatherRepository weatherRepository(Ref ref) {
   return WeatherRepository(
-    database: ref.watch(databaseProvider).value!,
+    database: ref.watch(appDatabaseProvider),
     logger: ref.watch(appLoggerProvider),
   );
 }

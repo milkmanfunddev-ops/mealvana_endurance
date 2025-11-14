@@ -2,28 +2,29 @@
 
 ## Overview
 
-This directory contains the **official v1 schema** for Mealvana Endurance's database. This schema represents the production baseline with 100% parity between Drift SQLite (local) and Supabase PostgreSQL (cloud).
+This directory contains the **official v1 schema** for Mealvana Endurance's database. This schema represents the development baseline with full multi-sport support.
 
 **Schema Version**: v1
-**Total Tables**: 26
-**Last Generated**: 2025-10-09
-**Status**: Production baseline (living v1 - grows until v2 migration needed)
+**Total Tables**: 27
+**Last Generated**: 2025-11-06
+**Status**: Development baseline (living v1 - grows until v2 migration needed)
+**⚠️ Note**: Production environment is missing multi-sport columns in `users` and `activities` tables
 
 ## V1 Schema Philosophy
 
 This is a **living v1 schema** that grows with new features until we need breaking changes (which will trigger v2). We are NOT freezing v1 - it will continue to evolve as we add new non-breaking features.
 
-## Current Schema (26 Tables)
+## Current Schema (27 Tables)
 
 ### Core Tables (5)
-1. **users** (user_profiles_table) - User biometric data and device authentication
+1. **users** (user_profiles_table) - User biometric data, device authentication, multi-sport preferences
 2. **nutrition_plans** - Generated nutrition plans with JSON data
 3. **food_preferences_table** - User's liked/disliked/willing-to-try foods
 4. **feedback** - User feedback and survey responses
 5. **macro_targets_table** - Complete nutrition target calculations (26 columns)
 
-### Food System Tables (8)
-6. **foods_table** - Global food database with nutritional information
+### Food System Tables (9)
+6. **foods_table** - Global food database with nutritional information and sport suitability
 7. **product_types_table** - Food product categories (gel, bar, drink mix)
 8. **categories_table** - Timing categories (before/during/after run)
 9. **food_categories_table** - Many-to-many food-to-category mappings
@@ -31,33 +32,41 @@ This is a **living v1 schema** that grows with new features until we need breaki
 11. **user_food_categories_table** - User food timing associations
 12. **user_hidden_foods_table** - Foods hidden by users
 13. **edge_functions_table** - Edge function code storage
+14. **feature_survey_responses** - User feature request votes
 
 ### Content Management (2)
-14. **app_content_table** - Dynamic UI text and algorithm parameters
-15. **workout_notes** - User workout journal entries
+15. **app_content_table** - Dynamic UI text and algorithm parameters
+16. **workout_notes** - User workout journal entries
 
 ### Calendar Feature Tables (5)
-16. **activities** - Scheduled runs and events
-17. **events** - Race event details (marathon, half, 10K, etc.)
-18. **activity_completions** - Post-workout data and ratings
-19. **carb_loading_plans** - Multi-day carb loading plans for races
-20. **carb_loading_days** - Daily carb targets and meal breakdowns
+17. **activities** - Scheduled workouts and events (running, cycling, swimming)
+18. **events** - Race event details (marathon, half, 10K, etc.)
+19. **activity_completions** - Post-workout data and ratings
+20. **carb_loading_plans** - Multi-day carb loading plans for races
+21. **carb_loading_days** - Daily carb targets and meal breakdowns
 
 ### Carb Loading Food System (6)
-21. **meal_types** - Meal categories (breakfast, lunch, dinner, snacks)
-22. **carb_loading_foods** - Global default carb loading foods
-23. **carb_loading_user_foods** - User-created carb loading foods
-24. **carb_loading_food_meal_types** - Links default foods to meal types
-25. **carb_loading_user_food_meal_types** - Links user foods to meal types
-26. **carb_loading_day_meals** - Actual food selections per meal per day
+22. **meal_types** - Meal categories (breakfast, lunch, dinner, snacks)
+23. **carb_loading_foods** - Global default carb loading foods
+24. **carb_loading_user_foods** - User-created carb loading foods
+25. **carb_loading_food_meal_types** - Links default foods to meal types
+26. **carb_loading_user_food_meal_types** - Links user foods to meal types
+27. **carb_loading_day_meals** - Actual food selections per meal per day
 
 ## Schema Parity: Drift ↔ Supabase
 
-**100% schema parity** between local and cloud:
-- All 26 tables exist in both Drift SQLite and Supabase PostgreSQL
+**Development Environment**:
+- All 27 tables exist in both Drift SQLite and Supabase PostgreSQL Dev
+- Full multi-sport support (cycling/swimming columns in users, activities, foods)
 - Type mappings: TEXT ↔ UUID, REAL ↔ numeric, INTEGER ↔ integer
 - Foreign key constraints preserved in both systems
 - Row Level Security (RLS) policies in Supabase only
+
+**⚠️ Production Environment**:
+- All 27 tables exist but schemas differ between local and cloud
+- Production Supabase is missing multi-sport columns in `users` and `activities` tables
+- `foods` table has multi-sport columns in both dev and prod
+- See `/docs/prod_schema.txt` for current production schema state
 
 ## Key Design Decisions
 
@@ -80,8 +89,8 @@ This is a **living v1 schema** that grows with new features until we need breaki
 ## Files in this Directory
 
 - **README.md** - This documentation file
-- **schema.sql** (82KB) - Complete SQL DDL dump from Supabase (all 26 tables with RLS policies, functions, triggers)
-- **drift_schema_v1.json** (77KB) - Drift-specific schema snapshot for migration testing (auto-generated)
+- **schema.sql** - Complete SQL DDL dump from Supabase Dev (all 27 tables with multi-sport support, RLS policies, functions, triggers)
+- **drift_schema_v1.json** - Drift-specific schema snapshot for migration testing (auto-generated)
 
 ## Generating New Schema Snapshots
 
@@ -123,13 +132,15 @@ When we need **breaking changes** (table drops, column renames, etc.):
 
 To validate v1 schema correctness:
 
-- [x] Table count: 26 tables total
-- [x] Brands table removed (documented as dropped)
+- [x] Table count: 27 tables total
+- [x] Multi-sport support in development (cycling/swimming columns)
+- [x] feature_survey_responses table added
 - [x] All calendar tables present (5 tables)
 - [x] All carb loading food tables present (6 tables)
 - [x] Foreign keys reference correct tables
 - [x] Check constraints enforced
 - [x] Schema snapshot generated successfully
+- [ ] Production schema needs multi-sport migration for users/activities tables
 
 ## Related Documentation
 

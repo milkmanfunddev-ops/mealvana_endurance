@@ -4,7 +4,10 @@ import '../../domain/feature_survey_data.dart';
 import '../providers/feature_survey_controller.dart';
 import '../widgets/feature_checkbox_card.dart';
 import '../widgets/already_voted_view.dart';
-import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../../../theme/kyle_design/app_spacing.dart';
 import 'feature_survey_success_screen.dart';
 
 /// Main feature survey screen
@@ -15,11 +18,24 @@ class FeatureSurveyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final surveyState = ref.watch(featureSurveyControllerProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
-        title: const Text('Feature Survey'),
+        title: Text(
+          'Feature Survey',
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: isDark ? AppColors.cream : AppColors.blackberry,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+        elevation: 0,
+        iconTheme: IconThemeData(
+          color: isDark ? AppColors.cream : AppColors.blackberry,
+        ),
       ),
       body: surveyState.when(
         data: (state) {
@@ -31,31 +47,44 @@ class FeatureSurveyScreen extends ConsumerWidget {
             return _VotingView(state: state);
           }
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.electrolyte),
+          ),
+        ),
         error: (error, stack) => Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: AppSpacing.screenPadding,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: AppColors.dragonfruit,
+                ),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   'Something went wrong',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: AppColors.dragonfruit,
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   error.toString(),
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.textDark : AppColors.textLight,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                ElevatedButton(
+                const SizedBox(height: AppSpacing.md),
+                KylePrimaryButton(
+                  text: 'Retry',
                   onPressed: () {
                     ref.invalidate(featureSurveyControllerProvider);
                   },
-                  child: const Text('Retry'),
+                  isFullWidth: false,
                 ),
               ],
             ),
@@ -75,17 +104,23 @@ class _VotingView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final controller = ref.read(featureSurveyControllerProvider.notifier);
 
     return Column(
       children: [
         // Header section
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.xs,
+          ),
           child: Text(
             'Select up to 3 features',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: isDark ? AppColors.cream : AppColors.blackberry,
             ),
             textAlign: TextAlign.center,
           ),
@@ -93,7 +128,7 @@ class _VotingView extends ConsumerWidget {
         // Features list
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
             itemCount: state.availableFeatures.length,
             itemBuilder: (context, index) {
               final feature = state.availableFeatures[index];
@@ -114,9 +149,14 @@ class _VotingView extends ConsumerWidget {
         // Submit button
         SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: PrimaryButton(
-              text: 'Submit',
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xs,
+              AppSpacing.md,
+              AppSpacing.xl,
+            ),
+            child: KylePrimaryButton(
+              text: 'Submit Survey',
               onPressed: state.canSubmit && !state.isSubmitting
                   ? () => _handleSubmit(context, ref)
                   : null,

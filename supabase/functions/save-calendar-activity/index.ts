@@ -52,7 +52,6 @@ serve(async (req) => {
         .from('activities')
         .insert({
           id: activity.id,
-          device_id: device_id,
           user_id: deviceData.id,
           activity_type: activity.activityType,
           title: activity.title,
@@ -75,6 +74,8 @@ serve(async (req) => {
           swimming_pace_per_100m_seconds: activity.swimmingPacePer100mSeconds,
           swimming_pool_or_open_water: activity.swimmingPoolOrOpenWater,
           swimming_water_temp_c: activity.swimmingWaterTempC,
+          // Nutrition plan data (embedded JSON)
+          nutrition_plan_data: activity.nutritionPlanData || null,
           // Sync tracking
           needs_upload: false,
           local_updated_at: new Date().toISOString(),
@@ -114,6 +115,8 @@ serve(async (req) => {
           swimming_pace_per_100m_seconds: activity.swimmingPacePer100mSeconds,
           swimming_pool_or_open_water: activity.swimmingPoolOrOpenWater,
           swimming_water_temp_c: activity.swimmingWaterTempC,
+          // Nutrition plan data (embedded JSON)
+          nutrition_plan_data: activity.nutritionPlanData !== undefined ? activity.nutritionPlanData : undefined,
           // Completion data (if provided)
           completed_at: activity.completedAt,
           actual_distance_miles: activity.actualDistanceMiles,

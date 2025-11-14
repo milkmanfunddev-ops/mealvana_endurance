@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../domain/run_parameters.dart';
-import 'distance_page_gut_entry_controller.dart';
+import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
+import '../../../../core/utils/debug_logger.dart';
 
 part 'running_input_controller.g.dart';
 
@@ -230,18 +231,23 @@ class RunningInputController extends _$RunningInputController {
 
   /// Delegate to the main controller for macro generation
   Future<void> generateMacros({
-    String? activityId,
-    String? eventId,
+    int? activityId,
+    int? eventId,
   }) async {
     final currentState = state;
+
+    DebugLogger.info('🏃 RUNNING CONTROLLER: generateMacros called');
+    DebugLogger.info('📍 RUNNING CONTROLLER: Current state - distance: ${currentState.distance}, pace: ${currentState.paceMinutes}');
 
     // Convert pace to M:SS format
     final paceMinutePart = currentState.paceMinutes.floor();
     final paceSecondPart = ((currentState.paceMinutes - paceMinutePart) * 60).round();
     final paceText = '$paceMinutePart:${paceSecondPart.toString().padLeft(2, '0')}';
 
+    DebugLogger.info('⏩ RUNNING CONTROLLER: Delegating to distancePageGutEntryController.generateRunningMacros...');
+
     // Delegate to the main controller
-    await ref.read(distancePageGutEntryControllerProvider.notifier).generateRunningMacros(
+    await ref.read(macroTargetsControllerProvider.notifier).generateRunningMacros(
       distanceText: currentState.distance.toString(),
       paceText: paceText,
       timeBeforeRunMinutes: currentState.preRunMinutes,
@@ -256,5 +262,7 @@ class RunningInputController extends _$RunningInputController {
       activityId: activityId,
       eventId: eventId,
     );
+
+    DebugLogger.info('✅ RUNNING CONTROLLER: generateRunningMacros completed successfully');
   }
 }

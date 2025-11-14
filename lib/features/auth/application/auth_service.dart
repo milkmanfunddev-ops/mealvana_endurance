@@ -3,7 +3,6 @@ import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import '../data/auth_repository_edge.dart';
 import '../domain/user_preferences.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
@@ -21,7 +20,6 @@ class AuthService {
   AuthRepositoryEdge get _authRepositoryEdge => ref.read(authRepositoryEdgeProvider);
 
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
   /// Create a new user profile during onboarding using Edge Function
   Future<UserProfile> createUser({

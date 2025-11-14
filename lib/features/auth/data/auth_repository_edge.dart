@@ -262,7 +262,7 @@ class AuthRepositoryEdge {
   /// Delete user and all associated data
   Future<bool> deleteUser(String deviceId) async {
     try {
-      // Delete user (cascade will handle food_preferences and nutrition_plans)
+      // Delete user (cascade will handle food_preferences and activity-linked nutrition data)
       await _supabase
           .from('users')
           .delete()

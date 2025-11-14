@@ -23,7 +23,7 @@ class ActivitiesController extends _$ActivitiesController {
   }
 
   /// Create a new activity
-  Future<String> createActivity({
+  Future<int> createActivity({
     required String title,
     required DateTime scheduledDateTime,
     ActivityType activityType = ActivityType.running,
@@ -45,6 +45,8 @@ class ActivitiesController extends _$ActivitiesController {
     // Shared parameters
     String? intensityTarget,
     int? timeBeforeMinutes,
+    // Nutrition plan data (embedded JSON)
+    Map<String, dynamic>? nutritionPlanData,
   }) async {
     try {
       final deviceIdValue = await ref.read(deviceIdProvider.future);
@@ -70,6 +72,7 @@ class ActivitiesController extends _$ActivitiesController {
         swimmingWaterTempC: swimmingWaterTempC,
         intensityTarget: intensityTarget,
         timeBeforeMinutes: timeBeforeMinutes,
+        nutritionPlanData: nutritionPlanData,
       );
 
       // Refresh activities list
@@ -101,7 +104,7 @@ class ActivitiesController extends _$ActivitiesController {
   }
 
   /// Delete an activity (soft delete)
-  Future<void> deleteActivity(String activityId) async {
+  Future<void> deleteActivity(int activityId) async {
     try {
       final deviceIdValue = await ref.read(deviceIdProvider.future);
 
@@ -133,7 +136,7 @@ class ActivitiesController extends _$ActivitiesController {
   }
 
   /// Get activity by ID
-  Future<Activity?> getActivityById(String activityId) async {
+  Future<Activity?> getActivityById(int activityId) async {
     try {
       final userId = await ref.read(deviceIdProvider.future);
       return await _service.getActivityById(userId, activityId);
@@ -151,7 +154,7 @@ class ActivitiesController extends _$ActivitiesController {
 
 /// Provider for getting a specific activity by ID
 @riverpod
-Future<Activity?> activityDetail(Ref ref, String activityId) async {
+Future<Activity?> activityDetail(Ref ref, int activityId) async {
   final userId = await ref.read(deviceIdProvider.future);
   final service = ref.read(activitiesServiceProvider);
   return await service.getActivityById(userId, activityId);

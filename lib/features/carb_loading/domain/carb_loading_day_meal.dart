@@ -16,8 +16,8 @@ class CarbLoadingDayMeal {
     this.updatedAt,
   });
 
-  final String id;
-  final String carbLoadingDayId; // FK to carb_loading_days
+  final int id;
+  final int carbLoadingDayId; // FK to carb_loading_days
   final MealType mealType;
   final String? carbLoadingFoodId; // FK to carb_loading_foods (null if user food)
   final String? carbLoadingUserFoodId; // FK to carb_loading_user_foods (null if default food)
@@ -48,8 +48,8 @@ class CarbLoadingDayMeal {
 
   /// Create from Drift database row
   factory CarbLoadingDayMeal.fromDatabase({
-    required String id,
-    required String carbLoadingDayId,
+    required int id,
+    required int carbLoadingDayId,
     required int mealTypeId,
     String? carbLoadingFoodId,
     String? carbLoadingUserFoodId,
@@ -76,8 +76,8 @@ class CarbLoadingDayMeal {
   /// Create from JSON
   factory CarbLoadingDayMeal.fromJson(Map<String, dynamic> json) {
     return CarbLoadingDayMeal(
-      id: json['id'] as String,
-      carbLoadingDayId: json['carb_loading_day_id'] as String,
+      id: json['id'] as int,
+      carbLoadingDayId: json['carb_loading_day_id'] as int,
       mealType: MealType.fromId(json['meal_type_id'] as int),
       carbLoadingFoodId: json['carb_loading_food_id'] as String?,
       carbLoadingUserFoodId: json['carb_loading_user_food_id'] as String?,
@@ -111,8 +111,8 @@ class CarbLoadingDayMeal {
 
   /// Create a copy with updated fields
   CarbLoadingDayMeal copyWith({
-    String? id,
-    String? carbLoadingDayId,
+    int? id,
+    int? carbLoadingDayId,
     MealType? mealType,
     String? carbLoadingFoodId,
     String? carbLoadingUserFoodId,

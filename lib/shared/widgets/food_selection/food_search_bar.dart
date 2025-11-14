@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../theme/app_theme.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 /// Unified search bar for food selection across different screens
+/// Uses Kyle's design system for consistent styling
 /// Configurable to show/hide filter button based on context
 class FoodSearchBar extends StatelessWidget {
   const FoodSearchBar({
@@ -32,146 +33,131 @@ class FoodSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
-      color: AppTheme.baseCream,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Search input field
-              Expanded(
-                child: Container(
-                  height: 48.h,
-                  decoration: BoxDecoration(
-                    color: AppTheme.baseWhite,
-                    borderRadius: BorderRadius.circular(24.r),
-                    border: Border.all(color: AppTheme.primary100),
+    return Column(
+      children: [
+        Row(
+          children: [
+            // Search input field
+            Expanded(
+              child: SizedBox(
+                height: AppSizes.inputHeight,
+                child: TextField(
+                  controller: controller,
+                  onChanged: (value) {
+                    // For real-time search filtering (not API search)
+                    if (onChanged != null) {
+                      onChanged!(value);
+                    } else {
+                      // Fallback: clear search when empty
+                      if (value.isEmpty) {
+                        onSearch('');
+                      }
+                    }
+                  },
+                  onSubmitted: (_) => onSearch(controller.text),
+                  style: AppTextStyles.inputText.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            errorBorder: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            fillColor: Colors.transparent,
-                            filled: false,
-                            hintText: hintText,
-                            contentPadding: EdgeInsets.fromLTRB(16.w, 12.h, 8.w, 12.h),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    contentPadding: AppSpacing.inputPadding,
+                    hintText: hintText,
+                    hintStyle: AppTextStyles.inputText.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                    prefixIcon: Icon(
+                      FontAwesomeIcons.magnifyingGlass,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      size: AppIconSizes.controlIcon,
+                    ),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Barcode button
+                        IconButton(
+                          icon: Icon(
+                            FontAwesomeIcons.barcode,
+                            color: AppColors.orange,
+                            size: AppIconSizes.controlIcon,
                           ),
-                          onSubmitted: (_) => onSearch(controller.text),
-                          onChanged: (value) {
-                            // For real-time search filtering (not API search)
-                            if (onChanged != null) {
-                              onChanged!(value);
-                            } else {
-                              // Fallback: clear search when empty
-                              if (value.isEmpty) {
-                                onSearch('');
-                              }
-                            }
-                          },
+                          onPressed: onBarcodeScan,
                         ),
-                      ),
 
-                      // Barcode button
-                      GestureDetector(
-                        onTap: onBarcodeScan,
-                        child: Container(
-                          padding: EdgeInsets.fromLTRB(6.w, 12.h, 0.w, 12.h),
-                          child: Icon(
-                            Icons.qr_code_scanner,
-                            color: AppTheme.primary600,
-                            size: 20.sp,
-                          ),
-                        ),
-                      ),
-
-                      // Filter button (only show for preferences screen)
-                      if (showFilters) ...[
-                        GestureDetector(
-                          onTap: onFilterToggle,
-                          child: Container(
-                            padding: EdgeInsets.fromLTRB(6.w, 12.h, 8.w, 12.h),
-                            child: Icon(
-                              Icons.filter_list,
-                              color: filtersEnabled ? AppTheme.primary600 : AppTheme.primary100,
-                              size: 20.sp,
+                        // Filter button (only show for preferences screen)
+                        if (showFilters)
+                          IconButton(
+                            icon: Icon(
+                              FontAwesomeIcons.filter,
+                              color: filtersEnabled
+                                ? AppColors.orange
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                              size: AppIconSizes.controlIcon,
                             ),
+                            onPressed: onFilterToggle,
                           ),
-                        ),
-                      ] else ...[
-                        // Add padding to match when no filter button
-                        SizedBox(width: 8.w),
                       ],
-                    ],
-                  ),
-                ),
-              ),
-
-              SizedBox(width: 8.w),
-
-              // Search button
-              GestureDetector(
-                onTap: () => onSearch(controller.text),
-                child: Container(
-                  height: 48.h,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary600,
-                    borderRadius: BorderRadius.circular(24.r),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Search',
-                      style: TextStyle(
-                        color: AppTheme.baseWhite,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14.sp,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: AppRadius.inputRadius,
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: AppRadius.inputRadius,
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: AppRadius.inputRadius,
+                      borderSide: const BorderSide(
+                        color: AppColors.orange,
+                        width: 2,
                       ),
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
-
-          // Clear search button (when showing results)
-          if (showClearButton) ...[
-            SizedBox(height: 8.h),
-            GestureDetector(
-              onTap: onClear,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary100,
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.clear, size: 16.sp, color: AppTheme.primary600),
-                    SizedBox(width: 4.w),
-                    Text(
-                      'Clear Search',
-                      style: TextStyle(
-                        color: AppTheme.primary600,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),
+
+            const SizedBox(width: AppSpacing.sm),
+
+            // Search button
+            SizedBox(
+              height: AppSizes.inputHeight,
+              child: KylePrimaryButton(
+                text: 'SEARCH',
+                onPressed: () => onSearch(controller.text),
+                isFullWidth: false,
+              ),
+            ),
           ],
+        ),
+
+        // Clear search button (when showing results)
+        if (showClearButton) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Center(
+            child: TextButton.icon(
+              onPressed: onClear,
+              icon: Icon(
+                FontAwesomeIcons.xmark,
+                size: AppIconSizes.sm,
+                color: AppColors.orange,
+              ),
+              label: Text(
+                'Clear Search',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.orange,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         ],
-      ),
+      ],
     );
   }
 }

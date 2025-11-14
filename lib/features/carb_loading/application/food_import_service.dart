@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/database/app_database.dart';
@@ -23,6 +24,7 @@ class FoodImportService {
   /// Import a food from the foods table
   Future<domain.CarbLoadingUserFood> importFromFoodsTable({
     required String deviceId,
+    required String userId,
     required String sourceFoodId,
     required List<domain.MealType> mealTypes,
   }) async {
@@ -43,8 +45,9 @@ class FoodImportService {
         ? sourceFood.displayName!
         : (sourceFood.name ?? '');
 
-    return _userFoodRepository.importFromFoodsTable(
+    return _userFoodRepository.createUserFood(
       deviceId: deviceId,
+      userId: userId,
       sourceFoodId: sourceFoodId,
       name: sourceFood.name ?? '',
       displayName: displayName,
@@ -57,6 +60,7 @@ class FoodImportService {
   /// Import a food from the user_foods table
   Future<domain.CarbLoadingUserFood> importFromUserFoodsTable({
     required String deviceId,
+    required String userId,
     required String sourceUserFoodId,
     required List<domain.MealType> mealTypes,
   }) async {
@@ -77,8 +81,9 @@ class FoodImportService {
         ? sourceUserFood.displayName!
         : (sourceUserFood.name ?? '');
 
-    return _userFoodRepository.importFromUserFoodsTable(
+    return _userFoodRepository.createUserFood(
       deviceId: deviceId,
+      userId: userId,
       sourceUserFoodId: sourceUserFoodId,
       name: sourceUserFood.name ?? '',
       displayName: displayName,
@@ -92,6 +97,7 @@ class FoodImportService {
   /// This assumes barcode data has already been fetched via barcode scanning service
   Future<domain.CarbLoadingUserFood> createFromBarcodeScan({
     required String deviceId,
+    required String userId,
     required String barcode,
     required String productName,
     required double carbsPerServing,
@@ -104,8 +110,9 @@ class FoodImportService {
     // Use product name as internal name (lowercase, no spaces)
     final name = productName.toLowerCase().replaceAll(' ', '_');
 
-    return _userFoodRepository.createFromBarcodeScan(
+    return _userFoodRepository.createUserFood(
       deviceId: deviceId,
+      userId: userId,
       barcode: barcode,
       name: name,
       displayName: displayName,
@@ -118,6 +125,7 @@ class FoodImportService {
   /// Create a custom carb loading food from manual entry
   Future<domain.CarbLoadingUserFood> createCustomFood({
     required String deviceId,
+    required String userId,
     required String name,
     required String displayName,
     String? displayNamePlural,
@@ -128,6 +136,7 @@ class FoodImportService {
   }) async {
     return _userFoodRepository.createUserFood(
       deviceId: deviceId,
+      userId: userId,
       name: name,
       displayName: displayName,
       displayNamePlural: displayNamePlural,
@@ -143,27 +152,22 @@ class FoodImportService {
     required String searchTerm,
     int? categoryId,
   }) async {
-    if (categoryId != null) {
-      // Join with food_categories to filter by category
-      final joinQuery = _database.select(_database.foodsTable).join([
-        innerJoin(
-          _database.foodCategoriesTable,
-          _database.foodCategoriesTable.foodId.equalsExp(_database.foodsTable.id),
-        ),
-      ])
-        ..where(
-          _database.foodsTable.displayName.contains(searchTerm) &
-              _database.foodCategoriesTable.categoryId.equals(categoryId),
-        );
-
-      final results = await joinQuery.get();
-      return results.map((row) => row.readTable(_database.foodsTable)).toList();
-    }
-
+    // Get all matching foods by search term
     final query = _database.select(_database.foodsTable)
       ..where((tbl) => tbl.displayName.contains(searchTerm));
 
-    return query.get();
+    final foods = await query.get();
+
+    // If category filter is provided, filter by categories array column
+    if (categoryId != null) {
+      return foods.where((food) {
+        if (food.categories == null) return false;
+        final categories = _parseCategoriesArray(food.categories);
+        return categories.contains(categoryId);
+      }).toList();
+    }
+
+    return foods;
   }
 
   /// Search user_foods table for foods to import
@@ -234,14 +238,7 @@ class FoodImportService {
           tbl.isDeleted.equals(false));
 
     final foods = await query.get();
-    final foodsWithMealTypes = <domain.CarbLoadingUserFood>[];
-
-    for (final food in foods) {
-      final mealTypes = await _getMealTypesForUserFood(food.id);
-      foodsWithMealTypes.add(_convertToUserFoodDomain(food, mealTypes));
-    }
-
-    return foodsWithMealTypes;
+    return foods.map((food) => _convertToUserFoodDomain(food)).toList();
   }
 
   /// Get all foods imported from user_foods table
@@ -253,14 +250,7 @@ class FoodImportService {
           tbl.isDeleted.equals(false));
 
     final foods = await query.get();
-    final foodsWithMealTypes = <domain.CarbLoadingUserFood>[];
-
-    for (final food in foods) {
-      final mealTypes = await _getMealTypesForUserFood(food.id);
-      foodsWithMealTypes.add(_convertToUserFoodDomain(food, mealTypes));
-    }
-
-    return foodsWithMealTypes;
+    return foods.map((food) => _convertToUserFoodDomain(food)).toList();
   }
 
   /// Get all foods created from barcode scans
@@ -272,34 +262,64 @@ class FoodImportService {
           tbl.isDeleted.equals(false));
 
     final foods = await query.get();
-    final foodsWithMealTypes = <domain.CarbLoadingUserFood>[];
-
-    for (final food in foods) {
-      final mealTypes = await _getMealTypesForUserFood(food.id);
-      foodsWithMealTypes.add(_convertToUserFoodDomain(food, mealTypes));
-    }
-
-    return foodsWithMealTypes;
+    return foods.map((food) => _convertToUserFoodDomain(food)).toList();
   }
 
-  /// Helper: Get meal types for a user food
-  Future<List<int>> _getMealTypesForUserFood(String foodId) async {
-    final query =
-        _database.select(_database.carbLoadingUserFoodMealTypesTable)
-          ..where((tbl) => tbl.carbLoadingUserFoodId.equals(foodId));
+  /// Parse categories from array column (PostgreSQL array format: {1,2,3})
+  List<int> _parseCategoriesArray(String? categoriesStr) {
+    if (categoriesStr == null || categoriesStr.isEmpty) return [];
 
-    final associations = await query.get();
-    return associations.map((a) => a.mealTypeId).toList();
+    try {
+      // Handle PostgreSQL array format: {1,2,3}
+      if (categoriesStr.startsWith('{') && categoriesStr.endsWith('}')) {
+        final content = categoriesStr.substring(1, categoriesStr.length - 1);
+        if (content.isEmpty) return [];
+        return content.split(',').map((s) => int.parse(s.trim())).toList();
+      }
+
+      // Handle JSON array format: [1,2,3]
+      if (categoriesStr.startsWith('[') && categoriesStr.endsWith(']')) {
+        final List<dynamic> parsed = jsonDecode(categoriesStr);
+        return parsed.map((e) => e as int).toList();
+      }
+
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Parse meal types from array column (PostgreSQL array format: {1,2,3})
+  List<int> _parseMealTypesArray(String? mealTypesStr) {
+    if (mealTypesStr == null || mealTypesStr.isEmpty) return [];
+
+    try {
+      // Handle PostgreSQL array format: {1,2,3}
+      if (mealTypesStr.startsWith('{') && mealTypesStr.endsWith('}')) {
+        final content = mealTypesStr.substring(1, mealTypesStr.length - 1);
+        if (content.isEmpty) return [];
+        return content.split(',').map((s) => int.parse(s.trim())).toList();
+      }
+
+      // Handle JSON array format: [1,2,3]
+      if (mealTypesStr.startsWith('[') && mealTypesStr.endsWith(']')) {
+        final List<dynamic> parsed = jsonDecode(mealTypesStr);
+        return parsed.map((e) => e as int).toList();
+      }
+
+      return [];
+    } catch (e) {
+      return [];
+    }
   }
 
   /// Helper: Convert Drift entity to domain model
-  domain.CarbLoadingUserFood _convertToUserFoodDomain(
-    CarbLoadingUserFood food,
-    List<int> mealTypeIds,
-  ) {
+  domain.CarbLoadingUserFood _convertToUserFoodDomain(CarbLoadingUserFood food) {
+    final mealTypeIds = _parseMealTypesArray(food.mealTypes);
+
     return domain.CarbLoadingUserFood.fromDatabase(
       id: food.id,
-      deviceId: food.deviceId,
+      userId: food.userId,
       clientFoodId: food.clientFoodId,
       name: food.name,
       displayName: food.displayName,

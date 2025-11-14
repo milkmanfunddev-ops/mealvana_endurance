@@ -22,7 +22,7 @@ class CarbLoadingDayCard extends ConsumerWidget {
     final isCompleted = carbDay.completed;
 
     return Dismissible(
-      key: Key(carbDay.id),
+      key: Key(carbDay.id.toString()),
       direction: DismissDirection.endToStart,
       background: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -99,28 +99,31 @@ class CarbLoadingDayCard extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Text(
-              'Carb Loading Day $dayNumber',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF9800),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Text(
-                'RACE PREP',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
+            Flexible(
+              child: Text(
+                'Carb Loading Day $dayNumber',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            // const SizedBox(width: 8),
+            // Container(
+            //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            //   decoration: BoxDecoration(
+            //     color: const Color(0xFFFF9800),
+            //     borderRadius: BorderRadius.circular(10),
+            //   ),
+            //   child: const Text(
+            //     'RACE PREP',
+            //     style: TextStyle(
+            //       color: Colors.white,
+            //       fontSize: 10,
+            //       fontWeight: FontWeight.bold,
+            //     ),
+            //   ),
+            // ),
           ],
         ),
         const SizedBox(height: 4),

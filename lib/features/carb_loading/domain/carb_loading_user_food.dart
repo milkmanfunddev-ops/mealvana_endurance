@@ -5,7 +5,7 @@ import 'meal_type.dart';
 class CarbLoadingUserFood {
   const CarbLoadingUserFood({
     required this.id,
-    required this.deviceId,
+    required this.userId,
     this.clientFoodId,
     required this.name,
     required this.displayName,
@@ -21,8 +21,8 @@ class CarbLoadingUserFood {
     this.updatedAt,
   });
 
-  final String id;
-  final String deviceId;
+  final String id; // UUID from database
+  final String userId;
   final String? clientFoodId; // For sync tracking
   final String name;
   final String displayName;
@@ -69,7 +69,7 @@ class CarbLoadingUserFood {
   /// Create from Drift database row
   factory CarbLoadingUserFood.fromDatabase({
     required String id,
-    required String deviceId,
+    required String userId,
     String? clientFoodId,
     required String name,
     required String displayName,
@@ -86,7 +86,7 @@ class CarbLoadingUserFood {
   }) {
     return CarbLoadingUserFood(
       id: id,
-      deviceId: deviceId,
+      userId: userId,
       clientFoodId: clientFoodId,
       name: name,
       displayName: displayName,
@@ -107,7 +107,7 @@ class CarbLoadingUserFood {
   factory CarbLoadingUserFood.fromJson(Map<String, dynamic> json) {
     return CarbLoadingUserFood(
       id: json['id'] as String,
-      deviceId: json['device_id'] as String,
+      userId: json['user_id'] as String,
       clientFoodId: json['client_food_id'] as String?,
       name: json['name'] as String,
       displayName: json['display_name'] as String,
@@ -135,7 +135,7 @@ class CarbLoadingUserFood {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'device_id': deviceId,
+      'user_id': userId,
       'client_food_id': clientFoodId,
       'name': name,
       'display_name': displayName,
@@ -155,7 +155,7 @@ class CarbLoadingUserFood {
   /// Create a copy with updated fields
   CarbLoadingUserFood copyWith({
     String? id,
-    String? deviceId,
+    String? userId,
     String? clientFoodId,
     String? name,
     String? displayName,
@@ -172,7 +172,7 @@ class CarbLoadingUserFood {
   }) {
     return CarbLoadingUserFood(
       id: id ?? this.id,
-      deviceId: deviceId ?? this.deviceId,
+      userId: userId ?? this.userId,
       clientFoodId: clientFoodId ?? this.clientFoodId,
       name: name ?? this.name,
       displayName: displayName ?? this.displayName,

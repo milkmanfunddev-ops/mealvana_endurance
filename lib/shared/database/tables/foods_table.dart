@@ -23,12 +23,12 @@ class FoodsTable extends Table {
   IntColumn get maxServingsDuring => integer().nullable().named('max_servings_during')();
   IntColumn get maxServingsAfter => integer().nullable().named('max_servings_after')();
 
-  // Food suitability fields (matches Supabase schema)
-  BoolColumn get beforeRunSuitable => boolean().withDefault(const Constant(false)).named('before_run_suitable')();
-  BoolColumn get duringRunSuitable => boolean().withDefault(const Constant(false)).named('during_run_suitable')();
-  BoolColumn get runPortable => boolean().withDefault(const Constant(false)).named('run_portable')();
-  BoolColumn get requiresPreparation => boolean().withDefault(const Constant(false)).named('requires_preparation')();
-  BoolColumn get aidStationAvailable => boolean().withDefault(const Constant(false)).named('aid_station_available')();
+  // Array-based columns (stored as JSON strings in SQLite, arrays in Postgres)
+  /// Categories: array of category_enum values (e.g., ['before_run', 'during_run'])
+  TextColumn get categories => text().nullable()();
+
+  /// Activity types: array of activity_type_enum values (e.g., ['running', 'cycling'])
+  TextColumn get activityTypes => text().nullable().named('activity_types')();
 
   // Nutritional values per serving (matches Supabase schema)
   IntColumn get sodiumMg => integer().nullable().named('sodium_mg')();
@@ -45,6 +45,7 @@ class FoodsTable extends Table {
   BoolColumn get showInPreferences => boolean().withDefault(const Constant(false)).named('show_in_preferences')();
   BoolColumn get isElectrolyte => boolean().withDefault(const Constant(false)).named('is_electrolyte')();
   BoolColumn get toExcludeFromSolver => boolean().withDefault(const Constant(false)).named('to_exclude_from_solver')();
+  BoolColumn get isEssential => boolean().withDefault(const Constant(false)).named('is_essential')();
 
   // Display name (matches Supabase schema)
   TextColumn get displayName => text().nullable().withLength(max: 100).named('display_name')(); // e.g., "gel", "banana"
@@ -65,9 +66,6 @@ class FoodsTable extends Table {
   TextColumn get servingUnitPlural => text().nullable().named('serving_unit_plural')();
   TextColumn get servingQualifier => text().nullable().named('serving_qualifier')();
   TextColumn get servingSize => text().nullable().named('serving_size')();
-
-  // Phase suitability fields (matching Supabase schema)
-  BoolColumn get afterRunSuitable => boolean().nullable().named('after_run_suitable')();
 
   // Product type ID - References product_types.id (matches Supabase foods.product_type_id)
   TextColumn get productTypeId => text().nullable().named('product_type_id')();

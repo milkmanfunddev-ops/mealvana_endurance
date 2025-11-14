@@ -5,14 +5,14 @@ class FeedbackData {
     required this.satisfactionLevel,
     this.comment,
     this.timestamp,
-    this.planId,
+    required this.activityId,
   });
 
   final String sessionId;
   final SatisfactionLevel satisfactionLevel;
   final String? comment;
   final DateTime? timestamp;
-  final String? planId; // Associated nutrition plan
+  final int activityId; // Associated activity (nutrition data embedded on activity row)
 
   @override
   String toString() => 'FeedbackData(sessionId: $sessionId, level: $satisfactionLevel)';

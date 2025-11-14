@@ -1,197 +1,56 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
-import '../domain/activity.dart' as domain;
-import '../domain/event.dart' as domain;
-import '../domain/activity_completion.dart' as domain;
-import '../../activities/domain/activity_reminder.dart';
+import '../../activities/domain/activity.dart' as domain;
+import '../../events/domain/event.dart' as domain;
+import '../../activities/application/activities_service.dart';
+import '../../../shared/domain/activity_type.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/notification_service.dart';
 
-/// Service for managing calendar activities and events
+/// Service for managing calendar views, events, and carb loading plans
+/// Delegates activity CRUD operations to ActivitiesService
 class CalendarService {
   final AppDatabase _database;
   final AppLogger _logger;
-  final Uuid _uuid = const Uuid();
+  final ActivitiesService _activitiesService;
 
-  CalendarService(this._database, this._logger);
+  CalendarService(
+    this._database,
+    this._logger,
+    this._activitiesService,
+  );
 
-  /// Get activities for a specific date range
+  /// Get activities for a specific date range - delegates to ActivitiesService
   Future<List<domain.Activity>> getActivitiesForDateRange(
     String userId,
     DateTime startDate,
     DateTime endDate,
   ) async {
-    try {
-      final query = _database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.userId.equals(userId) &
-                              tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
-                              tbl.deletedAt.isNull())
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]);
-      
-      final activities = await query.get();
-
-      return activities.map(_mapToActivityDomain).cast<domain.Activity>().toList();
-    } catch (e) {
-      _logger.error('Error getting activities for date range', error: e);
-      rethrow;
-    }
+    return _activitiesService.getActivitiesForDateRange(userId, startDate, endDate);
   }
 
-  /// Get activities for a specific week
+  /// Get activities for a specific week - delegates to ActivitiesService
   Future<List<domain.Activity>> getActivitiesForWeek(String userId, DateTime weekStart) async {
-    final weekEnd = weekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
-    return getActivitiesForDateRange(userId, weekStart, weekEnd);
+    return _activitiesService.getActivitiesForWeek(userId, weekStart);
   }
 
-  /// Get all activities for a user (no date filter)
+  /// Get all activities for a user - delegates to ActivitiesService
   Future<List<domain.Activity>> getAllActivities(String userId) async {
-    try {
-      final query = _database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.userId.equals(userId) &
-                              tbl.deletedAt.isNull())
-            ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
-
-      final activities = await query.get();
-
-      return activities.map(_mapToActivityDomain).cast<domain.Activity>().toList();
-    } catch (e) {
-      _logger.error('Error getting all activities', error: e);
-      rethrow;
-    }
+    return _activitiesService.getAllActivities(userId);
   }
 
-  /// Get a specific activity by ID
-  Future<domain.Activity?> getActivityById(String userId, String activityId) async {
-    try {
-      final query = _database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.userId.equals(userId) &
-                              tbl.id.equals(activityId) &
-                              tbl.deletedAt.isNull());
-      
-      final activity = await query.getSingleOrNull();
-
-      return activity != null ? _mapToActivityDomain(activity) : null;
-    } catch (e) {
-      _logger.error('Error getting activity by ID: $activityId', error: e);
-      rethrow;
-    }
+  /// Get a specific activity by ID - delegates to ActivitiesService
+  Future<domain.Activity?> getActivityById(String userId, int activityId) async {
+    return _activitiesService.getActivityById(userId, activityId);
   }
 
-  /// Create a new activity
-  Future<domain.Activity> createActivity({
-    required String userId,
-    required domain.ActivityType activityType,
-    required String title,
-    required DateTime scheduledDateTime,
-    double? distanceMiles,
-    int? durationMinutes,
-    double? paceTargetMinutesPerMile,
-    domain.IntensityLevel? intensityLevel,
-    String? notes,
-    bool reminderEnabled = false,
-    int? reminderDaysBefore,
-    String? reminderTimeOfDay,
-    bool reminderRecurring = false,
+  /// Soft delete an activity and its associated event, carb loading plan, and carb loading days
+  /// Orchestrates the deletion of related entities before delegating activity deletion
+  Future<void> deleteActivity({
+    required String deviceId,
+    required int activityId,
   }) async {
-    try {
-      final id = _generateId();
-      final companion = ActivitiesTableCompanion.insert(
-        id: id,
-        userId: userId,
-        activityType: activityType.name,
-        title: title,
-        scheduledDateTime: scheduledDateTime,
-        distanceMiles: Value(distanceMiles),
-        durationMinutes: Value(durationMinutes),
-        paceTargetMinutesPerMile: Value(paceTargetMinutesPerMile),
-        intensityLevel: Value(intensityLevel?.name),
-        notes: Value(notes),
-        reminderEnabled: Value(reminderEnabled),
-        reminderDaysBefore: Value(reminderDaysBefore),
-        reminderTimeOfDay: Value(reminderTimeOfDay),
-        reminderRecurring: Value(reminderRecurring),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      await _database.into(_database.activitiesTable).insert(companion);
-
-      // Get the created activity
-      final createdActivity = await getActivityById(userId, id);
-      if (createdActivity == null) {
-        throw Exception('Failed to retrieve created activity');
-      }
-
-      // Schedule notification if reminder is enabled
-      if (reminderEnabled && reminderDaysBefore != null && reminderTimeOfDay != null) {
-        await _scheduleActivityReminder(
-          activityId: id,
-          activityTitle: title,
-          scheduledDateTime: scheduledDateTime,
-          daysBefore: reminderDaysBefore,
-          timeOfDay: reminderTimeOfDay,
-          recurring: reminderRecurring,
-        );
-      }
-
-      return createdActivity;
-    } catch (e) {
-      _logger.error('Error creating activity', error: e);
-      rethrow;
-    }
-  }
-
-  /// Update an existing activity
-  Future<domain.Activity> updateActivity(domain.Activity activity) async {
-    try {
-      final companion = ActivitiesTableCompanion(
-        title: Value(activity.title),
-        scheduledDateTime: Value(activity.scheduledDateTime),
-        distanceMiles: Value(activity.distanceMiles),
-        durationMinutes: Value(activity.durationMinutes),
-        paceTargetMinutesPerMile: Value(activity.paceTargetMinutesPerMile),
-        intensityLevel: Value(activity.intensityLevel?.name),
-        notes: Value(activity.notes),
-        reminderEnabled: Value(activity.reminderEnabled),
-        reminderDaysBefore: Value(activity.reminderDaysBefore),
-        reminderTimeOfDay: Value(activity.reminderTimeOfDay),
-        reminderRecurring: Value(activity.reminderRecurring),
-        updatedAt: Value(DateTime.now()),
-      );
-
-      await (_database.update(_database.activitiesTable)..where((tbl) => tbl.id.equals(activity.id)))
-          .write(companion);
-
-      // Cancel any existing reminders for this activity
-      await NotificationService.cancelAllReminders();
-
-      // Schedule new notification if reminder is enabled
-      if (activity.reminderEnabled &&
-          activity.reminderDaysBefore != null &&
-          activity.reminderTimeOfDay != null) {
-        await _scheduleActivityReminder(
-          activityId: activity.id,
-          activityTitle: activity.title,
-          scheduledDateTime: activity.scheduledDateTime,
-          daysBefore: activity.reminderDaysBefore!,
-          timeOfDay: activity.reminderTimeOfDay!,
-          recurring: activity.reminderRecurring,
-        );
-      }
-
-      return activity;
-    } catch (e) {
-      _logger.error('Error updating activity: ${activity.id}', error: e);
-      rethrow;
-    }
-  }
-
-  /// Soft delete an activity
-  /// Also deletes associated event, carb loading plan, and carb loading days
-  Future<void> deleteActivity(String activityId) async {
     try {
       // First, check if this activity has an event
       final event = await getEventForActivity(activityId);
@@ -230,12 +89,11 @@ class CalendarService {
             .go();
       }
 
-      // Finally, soft delete the activity
-      await (_database.update(_database.activitiesTable)..where((tbl) => tbl.id.equals(activityId)))
-          .write(ActivitiesTableCompanion(
-            deletedAt: Value(DateTime.now()),
-            updatedAt: Value(DateTime.now()),
-          ));
+      // Finally, delegate activity deletion to ActivitiesService
+      await _activitiesService.deleteActivity(
+        deviceId: deviceId,
+        activityId: activityId,
+      );
 
     } catch (e) {
       _logger.error('Error deleting activity: $activityId', error: e);
@@ -244,7 +102,7 @@ class CalendarService {
   }
 
   /// Get event for a specific activity
-  Future<domain.Event?> getEventForActivity(String activityId) async {
+  Future<domain.Event?> getEventForActivity(int activityId) async {
     try {
       final query = _database.select(_database.eventsTable)
             ..where((tbl) => tbl.activityId.equals(activityId));
@@ -264,7 +122,7 @@ class CalendarService {
   }
 
   /// Get a specific event by ID
-  Future<domain.Event?> getEventById(String userId, String eventId) async {
+  Future<domain.Event?> getEventById(String userId, int eventId) async {
     try {
       final query = _database.select(_database.eventsTable)
             ..where((tbl) => tbl.id.equals(eventId));
@@ -326,8 +184,8 @@ class CalendarService {
   /// Create an event (optionally linked to an activity)
   Future<domain.Event> createEvent({
     required String userId,
-    String? activityId, // Now nullable - events can exist without activities
-    required domain.EventType eventType,
+    int? activityId, // Now nullable - events can exist without activities
+    required ActivityType eventType, // Event type: running, cycling, swimming, triathlon, duathlon, multisport
     String? eventSubtype,
     String? eventName,
     String? location,
@@ -344,11 +202,9 @@ class CalendarService {
     String? packetPickupInfo,
   }) async {
     try {
-      final id = _generateId();
       final companion = EventsTableCompanion.insert(
         userId: userId,
-        id: id,
-        activityId: Value(activityId), // Now nullable
+        activityId: activityId != null ? Value(activityId) : const Value.absent(),
         eventType: eventType.dbValue,
         eventSubtype: Value(eventSubtype),
         eventName: Value(eventName),
@@ -368,10 +224,10 @@ class CalendarService {
         updatedAt: DateTime.now(),
       );
 
-      await _database.into(_database.eventsTable).insert(companion);
+      final eventId = await _database.into(_database.eventsTable).insert(companion);
 
       // Get the created event by ID
-      final createdEvent = await getEventById('current-user', id);
+      final createdEvent = await getEventById(userId, eventId);
       if (createdEvent == null) {
         throw Exception('Failed to retrieve created event');
       }
@@ -387,7 +243,6 @@ class CalendarService {
   Future<void> updateEvent(domain.Event event) async {
     try {
       final companion = EventsTableCompanion(
-        id: Value(event.id),
         eventType: Value(event.eventType.dbValue),
         eventSubtype: Value(event.eventSubtype),
         eventName: Value(event.eventName),
@@ -419,7 +274,7 @@ class CalendarService {
 
   /// Update event's nutrition plan flag
   Future<void> updateEventNutritionPlanFlag({
-    required String activityId,
+    required int activityId,
     required bool hasNutritionPlan,
   }) async {
     try {
@@ -430,16 +285,12 @@ class CalendarService {
         return;
       }
 
-      // Update the event with the new nutrition plan flag
-      final companion = EventsTableCompanion(
-        id: Value(event.id),
-        hasNutritionPlan: Value(hasNutritionPlan),
-        updatedAt: Value(DateTime.now()),
-      );
-
       await (_database.update(_database.eventsTable)
             ..where((tbl) => tbl.id.equals(event.id)))
-          .write(companion);
+          .write(EventsTableCompanion(
+            hasNutritionPlan: Value(hasNutritionPlan),
+            updatedAt: Value(DateTime.now()),
+          ));
 
     } catch (e) {
       _logger.error('Error updating event nutrition plan flag for activity $activityId', error: e);
@@ -447,120 +298,12 @@ class CalendarService {
     }
   }
 
-  /// Complete an activity with detailed completion data
-  Future<domain.ActivityCompletion> completeActivity({
-    required String activityId,
-    required String userId,
-    required DateTime completedAt,
-    domain.CompletionType completionType = domain.CompletionType.manual,
-    double? actualDistanceMiles,
-    int? actualDurationMinutes,
-    double? averagePaceMinutesPerMile,
-    int? maxHeartRate,
-    int? averageHeartRate,
-    int? caloriesBurned,
-    int? effortRating,
-    int? nutritionRating,
-    int? overallSatisfaction,
-    String? textNotes,
-    String? voiceNoteId,
-    bool? hasVoiceRecording,
-    String? weatherConditions,
-    int? temperatureFahrenheit,
-    int? humidityPercent,
-  }) async {
-    try {
-      // Update activity status to completed
-      await (_database.update(_database.activitiesTable)
-            ..where((tbl) => tbl.id.equals(activityId)))
-          .write(ActivitiesTableCompanion(
-            status: const Value('completed'),
-            completedAt: Value(completedAt),
-            actualDistanceMiles: Value(actualDistanceMiles),
-            actualDurationMinutes: Value(actualDurationMinutes),
-            updatedAt: Value(DateTime.now()),
-          ));
-
-      // Create completion record
-      final id = _generateId();
-      final companion = ActivityCompletionsTableCompanion.insert(
-        id: id,
-        activityId: activityId,
-        userId: userId,
-        completedAt: completedAt,
-        completionType: Value(completionType.name),
-        actualDistanceMiles: Value(actualDistanceMiles),
-        actualDurationMinutes: Value(actualDurationMinutes),
-        averagePaceMinutesPerMile: Value(averagePaceMinutesPerMile),
-        maxHeartRate: Value(maxHeartRate),
-        averageHeartRate: Value(averageHeartRate),
-        caloriesBurned: Value(caloriesBurned),
-        effortRating: Value(effortRating),
-        nutritionRating: Value(nutritionRating),
-        overallSatisfaction: Value(overallSatisfaction),
-        textNotes: Value(textNotes),
-        voiceNoteId: Value(voiceNoteId),
-        hasVoiceRecording: Value(hasVoiceRecording ?? false),
-        weatherConditions: Value(weatherConditions),
-        temperatureFahrenheit: Value(temperatureFahrenheit),
-        humidityPercent: Value(humidityPercent),
-      );
-
-      await _database.into(_database.activityCompletionsTable).insert(companion);
-      
-      // Get the created completion
-      final completion = await getCompletionForActivity(activityId);
-      if (completion == null) {
-        throw Exception('Failed to retrieve created completion');
-      }
-
-      return completion;
-    } catch (e) {
-      _logger.error('Error completing activity: $activityId', error: e);
-      rethrow;
-    }
-  }
-
-  /// Get completion data for an activity
-  Future<domain.ActivityCompletion?> getCompletionForActivity(String activityId) async {
-    try {
-      final query = _database.select(_database.activityCompletionsTable)
-            ..where((tbl) => tbl.activityId.equals(activityId));
-
-      final completion = await query.getSingleOrNull();
-
-      return completion != null ? _mapToCompletionDomain(completion) : null;
-    } catch (e) {
-      _logger.error('Error getting completion for activity: $activityId', error: e);
-      rethrow;
-    }
-  }
-
-  /// Update activity completion notes
-  Future<void> updateActivityCompletion({
-    required String activityId,
-    String? textNotes,
-  }) async {
-    try {
-      final companion = ActivityCompletionsTableCompanion(
-        textNotes: Value(textNotes),
-      );
-
-      await (_database.update(_database.activityCompletionsTable)
-            ..where((tbl) => tbl.activityId.equals(activityId)))
-          .write(companion);
-
-    } catch (e) {
-      _logger.error('Error updating activity completion: $activityId', error: e);
-      rethrow;
-    }
-  }
 
   /// Create a carb loading plan for an event
   /// This generates day records for each carb loading day based on the protocol
   Future<void> createCarbLoadingPlan({
     required String userId,
-    String? eventId, // Made nullable to support standalone carb loading plans
+    int? eventId, // Made nullable to support standalone carb loading plans
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -588,10 +331,8 @@ class CalendarService {
       final avgDailyCarbs = (totalCarbs / protocolDays).round();
 
       // Create the carb loading plan record
-      final planId = _generateId();
       final planCompanion = CarbLoadingPlansTableCompanion.insert(
-        id: planId,
-        eventId: eventId != null && eventId.isNotEmpty ? Value(eventId) : const Value.absent(),
+        eventId: eventId != null ? Value(eventId) : const Value.absent(),
         userId: userId,
         totalDays: protocolDays,
         startDate: startDate,
@@ -600,7 +341,7 @@ class CalendarService {
         generatedAt: DateTime.now(),
       );
 
-      await _database.into(_database.carbLoadingPlansTable).insert(planCompanion);
+      final planId = await _database.into(_database.carbLoadingPlansTable).insert(planCompanion);
 
       // Generate carb loading day records
       for (int dayOffset = 0; dayOffset < protocolDays; dayOffset++) {
@@ -617,9 +358,7 @@ class CalendarService {
         final targetCarbsGrams = carbProtocolGPerKg * bodyWeightKg;
 
         // Create carb loading day record
-        final carbDayId = _generateId();
         final carbDayCompanion = CarbLoadingDaysTableCompanion.insert(
-          id: carbDayId,
           carbLoadingPlanId: planId,
           planDate: dayDate,
           dayNumber: dayOffset + 1,
@@ -631,7 +370,7 @@ class CalendarService {
       }
 
       // Update event with carb loading info (only if eventId is provided)
-      if (eventId != null && eventId.isNotEmpty) {
+      if (eventId != null) {
         await (_database.update(_database.eventsTable)..where((tbl) => tbl.id.equals(eventId)))
             .write(EventsTableCompanion(
               hasCarbLoading: const Value(true),
@@ -677,7 +416,7 @@ class CalendarService {
 
   /// Delete carb loading plan and associated day records
   Future<void> deleteCarbLoadingPlan({
-    required String eventId,
+    required int eventId,
   }) async {
     try {
       // Get the carb loading plan
@@ -727,7 +466,7 @@ class CalendarService {
   }
 
   /// Delete a single carb loading day and its associated meals
-  Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
+  Future<void> deleteCarbLoadingDay(int carbLoadingDayId) async {
     try {
       // Delete all meals for this day
       await (_database.delete(_database.carbLoadingDayMealsTable)
@@ -748,7 +487,7 @@ class CalendarService {
   /// Update carb loading protocol (delete old plan and create new one)
   Future<void> updateCarbLoadingProtocol({
     required String userId,
-    required String eventId,
+    required int eventId,
     required int newProtocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -773,7 +512,7 @@ class CalendarService {
   }
 
   /// Get carb loading plan for an event
-  Future<CarbLoadingPlan?> getCarbLoadingPlan(String eventId) async {
+  Future<CarbLoadingPlan?> getCarbLoadingPlan(int eventId) async {
     try {
       final query = _database.select(_database.carbLoadingPlansTable)
             ..where((tbl) => tbl.eventId.equals(eventId));
@@ -786,7 +525,7 @@ class CalendarService {
   }
 
   /// Get carb loading days for a plan
-  Future<List<CarbLoadingDay>> getCarbLoadingDays(String planId) async {
+  Future<List<CarbLoadingDay>> getCarbLoadingDays(int planId) async {
     try {
       final query = _database.select(_database.carbLoadingDaysTable)
             ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))
@@ -818,87 +557,14 @@ class CalendarService {
     }
   }
 
-  /// Helper method to generate UUID
-  /// Schedule activity reminder notification
-  Future<void> _scheduleActivityReminder({
-    required String activityId,
-    required String activityTitle,
-    required DateTime scheduledDateTime,
-    required int daysBefore,
-    required String timeOfDay,
-    required bool recurring,
-  }) async {
-    try {
-      final reminder = ActivityReminder(
-        enabled: true,
-        daysBefore: daysBefore,
-        timeOfDay: timeOfDay,
-        recurring: recurring,
-      );
-
-      final reminderDateTime = reminder.calculateReminderDateTime(scheduledDateTime);
-
-      await NotificationService.scheduleReminder(
-        scheduledDate: reminderDateTime,
-        recurring: recurring,
-        title: 'Upcoming Activity Reminder',
-        body: 'Your activity "$activityTitle" is in $daysBefore ${daysBefore == 1 ? "day" : "days"}!',
-        planId: activityId,
-      );
-
-      _logger.info('Scheduled reminder for activity $activityId at $reminderDateTime');
-    } catch (e) {
-      _logger.error('Error scheduling activity reminder', error: e);
-      // Don't rethrow - reminder scheduling failure shouldn't block activity creation
-    }
-  }
-
-  String _generateId() {
-    return _uuid.v4();
-  }
-
-  /// Map database Activity to domain Activity
-  domain.Activity _mapToActivityDomain(Activity activity) {
-    return domain.Activity(
-      id: activity.id,
-      userId: activity.userId,
-      activityType: domain.ActivityType.values.firstWhere(
-        (type) => type.name == activity.activityType,
-        orElse: () => domain.ActivityType.running,
-      ),
-      title: activity.title,
-      scheduledDateTime: activity.scheduledDateTime,
-      status: domain.ActivityStatus.values.firstWhere(
-        (status) => status.name == activity.status,
-        orElse: () => domain.ActivityStatus.planned,
-      ),
-      distanceMiles: activity.distanceMiles,
-      durationMinutes: activity.durationMinutes,
-      paceTargetMinutesPerMile: activity.paceTargetMinutesPerMile,
-      intensityLevel: activity.intensityLevel != null
-          ? domain.IntensityLevel.values.firstWhere(
-              (level) => level.name == activity.intensityLevel,
-              orElse: () => domain.IntensityLevel.moderate,
-            )
-          : null,
-      completedAt: activity.completedAt,
-      completionRating: activity.completionRating,
-      completionNotes: activity.completionNotes,
-      actualDistanceMiles: activity.actualDistanceMiles,
-      actualDurationMinutes: activity.actualDurationMinutes,
-      notes: activity.notes,
-      createdAt: activity.createdAt,
-      updatedAt: activity.updatedAt,
-      deletedAt: activity.deletedAt,
-    );
-  }
 
   /// Map database Event to domain Event
   domain.Event _mapToEventDomain(Event event) {
     return domain.Event(
       id: event.id,
+      userId: event.userId,
       activityId: event.activityId,
-      eventType: domain.EventTypeExtension.fromDbValue(event.eventType),
+      eventType: _parseActivityType(event.eventType),
       eventSubtype: event.eventSubtype,
       eventName: event.eventName,
       location: event.location,
@@ -922,35 +588,23 @@ class CalendarService {
     );
   }
 
-  /// Map database ActivityCompletion to domain ActivityCompletion
-  domain.ActivityCompletion _mapToCompletionDomain(ActivityCompletion completion) {
-    return domain.ActivityCompletion(
-      id: completion.id,
-      activityId: completion.activityId,
-      userId: completion.userId,
-      completedAt: completion.completedAt,
-      completionType: domain.CompletionType.values.firstWhere(
-        (type) => type.name == completion.completionType,
-        orElse: () => domain.CompletionType.manual,
-      ),
-      actualDistanceMiles: completion.actualDistanceMiles,
-      actualDurationMinutes: completion.actualDurationMinutes,
-      averagePaceMinutesPerMile: completion.averagePaceMinutesPerMile,
-      maxHeartRate: completion.maxHeartRate,
-      averageHeartRate: completion.averageHeartRate,
-      caloriesBurned: completion.caloriesBurned,
-      effortRating: completion.effortRating,
-      nutritionRating: completion.nutritionRating,
-      overallSatisfaction: completion.overallSatisfaction,
-      textNotes: completion.textNotes,
-      voiceNoteId: completion.voiceNoteId,
-      hasVoiceRecording: completion.hasVoiceRecording,
-      weatherConditions: completion.weatherConditions,
-      temperatureFahrenheit: completion.temperatureFahrenheit,
-      humidityPercent: completion.humidityPercent,
-      nutritionAdherenceScore: completion.nutritionAdherenceScore,
-      performanceVsTarget: completion.performanceVsTarget,
-    );
+  /// Parse database event_type string to ActivityType enum
+  ActivityType _parseActivityType(String eventType) {
+    switch (eventType.toLowerCase()) {
+      case 'running':
+        return ActivityType.running;
+      case 'cycling':
+        return ActivityType.cycling;
+      case 'swimming':
+        return ActivityType.swimming;
+      case 'triathlon':
+      case 'duathlon':
+      case 'multisport':
+        // For multi-sport events, default to running for now
+        return ActivityType.running;
+      default:
+        return ActivityType.running;
+    }
   }
 }
 
@@ -958,5 +612,6 @@ class CalendarService {
 final calendarServiceProvider = Provider<CalendarService>((ref) {
   final database = ref.watch(appDatabaseProvider);
   final appLogger = ref.watch(appLoggerProvider);
-  return CalendarService(database, appLogger);
+  final activitiesService = ref.watch(activitiesServiceProvider);
+  return CalendarService(database, appLogger, activitiesService);
 });

@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
@@ -29,7 +28,7 @@ AppExternalDeps buildTestExternalDeps({
 
 /// Riverpod override helper so tests can swap the production [appExternalDepsProvider]
 /// with the fake bundle produced by [buildTestExternalDeps].
-Override overrideAppExternalDeps({
+overrideAppExternalDeps({
   AnalyticsTracker? analytics,
   SupabaseClient? supabaseClient,
   SentryReporter? sentry,

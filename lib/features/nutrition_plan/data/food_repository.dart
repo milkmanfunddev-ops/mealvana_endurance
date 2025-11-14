@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:drift/drift.dart';
@@ -78,7 +79,7 @@ class FoodRepository {
             sodium_mg,
             caffeine_mg,
             potassium_mg,
-            product_type_id,
+            product_type,
             show_in_preferences,
             is_electrolyte,
             to_exclude_from_solver,
@@ -122,7 +123,7 @@ class FoodRepository {
             sodium_mg,
             caffeine_mg,
             potassium_mg,
-            product_type_id,
+            product_type,
             show_in_preferences,
             is_electrolyte,
             to_exclude_from_solver,
@@ -361,7 +362,7 @@ class FoodRepository {
       sodiumMg: json['sodium_mg'] as int?,
       caffeineMg: json['caffeine_mg'] as int?,
       potassiumMg: json['potassium_mg'] as int?,
-      productTypeId: json['product_type_id'] as String?,
+      productTypeId: json['product_type']?.toString(),
       nutrition: NutritionInfo(
         calories: calories,
         carbs: carbs,
@@ -436,7 +437,7 @@ class FoodRepository {
       sodiumMg: json['sodium_mg'] as int?,
       caffeineMg: json['caffeine_mg'] as int?,
       potassiumMg: json['potassium_mg'] as int?,
-      productTypeId: json['product_type_id'] as String?,
+      productTypeId: json['product_type']?.toString(),
       nutrition: NutritionInfo(
         calories: calories,
         carbs: carbs,
@@ -465,6 +466,15 @@ class FoodRepository {
     final sodium = entry.sodiumMg?.toDouble();
     final fluids = entry.fluidMlPerServing?.toDouble();
 
+    // Parse categories array to determine suitability
+    final categoryStrings = _parseCategoriesArray(entry.categories);
+
+    final beforeRunSuitable = categoryStrings.contains('before_run');
+    final duringRunSuitable = categoryStrings.contains('during_run');
+    final mappedCategories = categoryStrings
+        .map((value) => FoodCategory.fromDbValue(value))
+        .toList();
+
     return FoodItem(
       id: entry.id,
       name: entry.name ?? '',
@@ -475,11 +485,11 @@ class FoodRepository {
       servingUnit: null, // Deprecated - use displayName instead
       servingUnitPlural: null, // Deprecated - use displayNamePlural instead
       servingQualifier: null, // Deprecated - included in displayName
-      beforeRunSuitable: entry.beforeRunSuitable,
-      duringRunSuitable: entry.duringRunSuitable,
-      runPortable: entry.runPortable,
-      requiresPreparation: entry.requiresPreparation,
-      aidStationAvailable: entry.aidStationAvailable,
+      beforeRunSuitable: beforeRunSuitable,
+      duringRunSuitable: duringRunSuitable,
+      runPortable: true, // Default to true (no longer stored in schema)
+      requiresPreparation: false, // Default to false (no longer stored in schema)
+      aidStationAvailable: false, // Default to false (no longer stored in schema)
       maxServingsBefore: entry.maxServingsBefore,
       maxServingsDuring: entry.maxServingsDuring,
       carbsPerServing: carbs,
@@ -505,8 +515,8 @@ class FoodRepository {
       displayName: entry.displayName,
       displayNamePlural: entry.displayNamePlural,
       displayOverride: null, // Removed - no longer needed in simplified approach
-      categories: [], // Categories would need to be fetched separately if needed
-      toExcludeFromSolver: false, // Field removed from schema, default to false
+      categories: mappedCategories,
+      toExcludeFromSolver: entry.toExcludeFromSolver,
     );
   }
 
@@ -641,13 +651,17 @@ class FoodRepository {
   }
 
   /// Get categories for a regular food
-  Future<List<int>> getFoodCategories(String foodId) async {
+  /// Categories are now stored as array column in the foods table
+  /// Returns category strings: "before_run", "during_run", "after_run"
+  Future<List<String>> getFoodCategories(String foodId) async {
     try {
-      final categories = await (_database.select(_database.foodCategoriesTable)
-        ..where((fc) => fc.foodId.equals(foodId)))
-        .get();
+      final food = await (_database.select(_database.foodsTable)
+        ..where((f) => f.id.equals(foodId)))
+        .getSingleOrNull();
 
-      return categories.map((c) => c.categoryId).toList();
+      if (food == null || food.categories == null) return [];
+
+      return _parseCategoriesArray(food.categories);
     } catch (e) {
       _logger.error('Error fetching food categories',
         context: 'FoodRepository',
@@ -659,13 +673,17 @@ class FoodRepository {
   }
 
   /// Get categories for a user food
-  Future<List<int>> getUserFoodCategories(String userFoodId) async {
+  /// Categories are now stored as array column in the user_foods table
+  /// Returns category strings: "before_run", "during_run", "after_run"
+  Future<List<String>> getUserFoodCategories(String userFoodId) async {
     try {
-      final categories = await (_database.select(_database.userFoodCategoriesTable)
-        ..where((ufc) => ufc.userFoodId.equals(userFoodId)))
-        .get();
+      final userFood = await (_database.select(_database.userFoodsTable)
+        ..where((uf) => uf.id.equals(userFoodId)))
+        .getSingleOrNull();
 
-      return categories.map((c) => c.categoryId).toList();
+      if (userFood == null || userFood.categories == null) return [];
+
+      return _parseCategoriesArray(userFood.categories);
     } catch (e) {
       _logger.error('Error fetching user food categories',
         context: 'FoodRepository',
@@ -689,6 +707,73 @@ class FoodRepository {
     return tags;
   }
 
+  /// Parse categories from array column - supports both old integer format and new string format
+  /// Old format: {1,2,3} or [1,2,3] where 1=before_run, 2=during_run, 3=after_run
+  /// New format: {"before_run","during_run"} or ["before_run","during_run"]
+  List<String> _parseCategoriesArray(String? categoriesStr) {
+    if (categoriesStr == null || categoriesStr.isEmpty) return [];
+
+    try {
+      // Handle PostgreSQL array format: {"before_run","during_run"} or {1,2,3}
+      if (categoriesStr.startsWith('{') && categoriesStr.endsWith('}')) {
+        final content = categoriesStr.substring(1, categoriesStr.length - 1);
+        if (content.isEmpty) return [];
+
+        return content.split(',').map((s) {
+          final trimmed = s.trim().replaceAll('"', '');
+          // Try to parse as int for backward compatibility
+          final intValue = int.tryParse(trimmed);
+          if (intValue != null) {
+            // Convert old integer IDs to new string format
+            switch (intValue) {
+              case 1:
+                return 'before_run';
+              case 2:
+                return 'during_run';
+              case 3:
+                return 'after_run';
+              default:
+                return 'before_run';
+            }
+          }
+          return trimmed; // Already a string
+        }).toList();
+      }
+
+      // Handle JSON array format: ["before_run","during_run"] or [1,2,3]
+      if (categoriesStr.startsWith('[') && categoriesStr.endsWith(']')) {
+        final List<dynamic> parsed = jsonDecode(categoriesStr);
+        return parsed.map((e) {
+          if (e is String) {
+            return e; // Already a string
+          } else if (e is int) {
+            // Convert old integer IDs to new string format
+            switch (e) {
+              case 1:
+                return 'before_run';
+              case 2:
+                return 'during_run';
+              case 3:
+                return 'after_run';
+              default:
+                return 'before_run';
+            }
+          }
+          return 'before_run'; // Fallback
+        }).toList();
+      }
+
+      return [];
+    } catch (e) {
+      _logger.error('Error parsing categories array',
+        context: 'FoodRepository',
+        data: {'categoriesStr': categoriesStr},
+        error: e,
+      );
+      return [];
+    }
+  }
+
   /// Sync foods from Supabase response to local database
   /// This ensures that food IDs returned by edge functions can be resolved locally
   Future<void> _syncFoodsToLocalDatabase(List<dynamic> supabaseFoodsData) async {
@@ -703,6 +788,14 @@ class FoodRepository {
 
       // Convert Supabase data to FoodsTableCompanion objects for insertion
       final foodsToInsert = supabaseFoodsData.map((json) {
+        // Helper function to convert array columns to JSON strings for SQLite storage
+        String? arrayToJsonString(dynamic value) {
+          if (value == null) return null;
+          if (value is String) return value;
+          if (value is List) return jsonEncode(value);
+          return null;
+        }
+
         return FoodsTableCompanion.insert(
           id: json['id'] as String,
           name: Value(json['name'] as String?),
@@ -711,11 +804,9 @@ class FoodRepository {
           instructions: Value(null), // Not available in Supabase schema
           servingAmount: Value((json['serving_amount'] as num?)?.toDouble() ?? 1.0),
           // Deprecated fields removed: servingUnit, servingUnitPlural, servingQualifier
-          beforeRunSuitable: Value(true), // Default since not in Supabase schema
-          duringRunSuitable: Value(false), // Default since not in Supabase schema
-          runPortable: Value(true), // Default since not in Supabase schema
-          requiresPreparation: Value(false), // Default since not in Supabase schema
-          aidStationAvailable: Value(false), // Default since not in Supabase schema
+          // Boolean suitability fields replaced with categories array
+          categories: Value(arrayToJsonString(json['categories'])), // Array column - convert to JSON string
+          activityTypes: Value(arrayToJsonString(json['activity_types'])), // Array column - convert to JSON string
           maxServingsBefore: Value(json['max_servings_before'] as int?),
           maxServingsDuring: Value(json['max_servings_during'] as int?),
           carbsPerServing: Value((json['carbs_per_serving'] as num?)?.toDouble()),
@@ -732,6 +823,7 @@ class FoodRepository {
           displayName: Value(json['display_name'] as String?),
           displayNamePlural: Value(json['display_name_plural'] as String?),
           isElectrolyte: Value(json['is_electrolyte'] == true),
+          toExcludeFromSolver: Value(json['to_exclude_from_solver'] == true),
           createdAt: Value(DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now()),
         );
       }).toList();

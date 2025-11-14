@@ -136,7 +136,7 @@ default_reminder_hour INTEGER DEFAULT 17,  -- 5 PM
 // lib/features/app_startup/application/app_startup_service.dart
 Future<String?> checkForPendingFeedback() async {
   // First check if user tapped a notification
-  final notificationPlanId = NotificationService.getPendingNavigationPlanId();
+  final notificationActivityId = NotificationService.getPendingNavigationActivityId();
   if (notificationPlanId != null) {
     return notificationPlanId; // Navigate to plan rating screen
   }
@@ -156,8 +156,8 @@ Implementation details:
 
 - `NotificationService.configure(analytics)` is called during startup once the `AnalyticsTracker` is ready (see `AppStartupService.initializeAnalytics`).
 - `NotificationService.scheduleReminder` invokes `analytics.trackReminderSet` via the helper in `lib/shared/services/analytics/analytics_events.dart`.
-- `NotificationService.trackReminderFired(planId)` should be called when the app confirms delivery and uses the same helper extension.
-- `_onNotificationTapped` calls `analytics.trackPlanOpenedFromReminder` before storing the pending navigation plan ID.
+- `NotificationService.trackReminderFired(activityId)` should be called when the app confirms delivery and uses the same helper extension.
+- `_onNotificationTapped` calls `analytics.trackPlanOpenedFromReminder` before storing the pending navigation activity ID.
 
 All helper methods live in `lib/shared/services/analytics/analytics_events.dart` and operate on the provider-injected tracker, so tests can swap in `RecordingAnalyticsTracker` without touching Mixpanel.
 
@@ -196,7 +196,7 @@ NotificationService._onNotificationTapped()
     ↓
 Analytics: trackPlanOpenedFromReminder()
     ↓
-Store planId for navigation
+Store activityId for navigation
     ↓
 App Startup Service Checks Pending Navigation
     ↓
@@ -223,7 +223,7 @@ Navigate to Plan Rating Screen
 
 **North-Star Metric Tracking**:
 - Tracks complete reminder lifecycle for business metrics
-- Associates all events with specific planId for funnel analysis
+- Associates all events with specific activityId for funnel analysis
 - Integrates with Mixpanel via RudderStack pipeline
 
 ### Cross-Platform Considerations

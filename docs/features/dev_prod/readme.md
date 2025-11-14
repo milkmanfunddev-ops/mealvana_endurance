@@ -97,12 +97,11 @@ All 26 tables exist in both databases with identical structure:
 14. **app_content_table** - Dynamic UI text and algorithm parameters
 15. **workout_notes** - User workout journal
 
-#### Calendar Feature Tables (5)
-16. **activities** - Scheduled runs and events
+#### Calendar Feature Tables (4)
+16. **activities** - Scheduled runs/events + embedded completion metadata (ratings, notes, biometrics)
 17. **events** - Race event details (marathon, half, 10K, etc.)
-18. **activity_completions** - Post-workout data and ratings
-19. **carb_loading_plans** - Multi-day carb loading plans for races
-20. **carb_loading_days** - Daily carb targets and meal breakdowns
+18. **carb_loading_plans** - Multi-day carb loading plans for races
+19. **carb_loading_days** - Daily carb targets and meal breakdowns
 
 #### Carb Loading Food System (6)
 21. **meal_types** - Meal categories (breakfast, lunch, dinner, snacks)

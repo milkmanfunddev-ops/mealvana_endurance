@@ -8,8 +8,8 @@ import '../../domain/pending_activity_data.dart';
 /// - Loading/error states
 /// - Generated macro targets
 /// - Activity/event linking data
-class DistancePageGutEntryState {
-  const DistancePageGutEntryState({
+class MacroTargetsState {
+  const MacroTargetsState({
     // Distance page fields
     required this.title,
     required this.distanceLabel,
@@ -46,7 +46,6 @@ class DistancePageGutEntryState {
     this.validationMessages = const {},
     // Shared fields
     this.errorMessage,
-    this.planId,
     this.activityId,
     this.eventId,
     this.pendingActivityData,
@@ -90,12 +89,11 @@ class DistancePageGutEntryState {
 
   // Shared fields
   final String? errorMessage;
-  final String? planId; // UUID v4 for threading North-Star metric events
-  final String? activityId; // Calendar activity ID (links nutrition plan to activity)
-  final String? eventId; // Calendar event ID (for provider invalidation after plan creation)
+  final int? activityId; // Calendar activity ID (links nutrition plan to activity)
+  final int? eventId; // Calendar event ID (for provider invalidation after plan creation)
   final PendingActivityData? pendingActivityData; // Activity data (not yet created)
 
-  DistancePageGutEntryState copyWith({
+  MacroTargetsState copyWith({
     // Distance page fields
     String? title,
     String? distanceLabel,
@@ -132,12 +130,11 @@ class DistancePageGutEntryState {
     Map<String, String>? validationMessages,
     // Shared fields
     String? errorMessage,
-    String? planId,
-    String? activityId,
-    String? eventId,
+    int? activityId,
+    int? eventId,
     PendingActivityData? pendingActivityData,
   }) {
-    return DistancePageGutEntryState(
+    return MacroTargetsState(
       title: title ?? this.title,
       distanceLabel: distanceLabel ?? this.distanceLabel,
       paceLabel: paceLabel ?? this.paceLabel,
@@ -171,7 +168,6 @@ class DistancePageGutEntryState {
       macroTargets: macroTargets ?? this.macroTargets,
       validationMessages: validationMessages ?? this.validationMessages,
       errorMessage: errorMessage ?? this.errorMessage,
-      planId: planId ?? this.planId,
       activityId: activityId ?? this.activityId,
       eventId: eventId ?? this.eventId,
       pendingActivityData: pendingActivityData ?? this.pendingActivityData,

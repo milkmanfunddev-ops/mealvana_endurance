@@ -40,7 +40,7 @@ final class VoiceMemoControllerProvider
 }
 
 String _$voiceMemoControllerHash() =>
-    r'674821b66fc7477f0828aca27c20bfaffee37f9e';
+    r'9630f2533038f763fafa89b167d6ad6b3c86835f';
 
 /// Controller for voice memo functionality
 /// Handles speech-to-text and note saving using proper repository

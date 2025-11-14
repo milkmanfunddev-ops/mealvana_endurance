@@ -40,7 +40,7 @@ final class PlanRatingControllerProvider
 }
 
 String _$planRatingControllerHash() =>
-    r'b503bbc7e8d8814d42b4b397eb95575d5bb80987';
+    r'05fd27dd215cbe30ef5c26eb384c478cb0d89f12';
 
 /// Controller for handling nutrition plan ratings
 /// Following Andrea Bizzotto's FOA AsyncNotifier pattern

@@ -14,7 +14,7 @@
 - **Events & Carb Loading**: Events are specialized activities. Carb loading plans (1/2/3/7 days) attach to events, generate day-level entries, and stay in sync when events change.
 - **Activity Creation**: Activities cannot target past dates, carry a single nutrition plan, and default to the visible day/time in the calendar.
 - **Completion Flow**: Users mark workouts complete, rate nutrition via 5 emojis, optionally attach a voice note or text note, and cannot complete workouts early.
-- **Data Model**: New `activities`, `events`, `activity_completions`, `carb_loading_plans`, and `carb_loading_days` tables power the feature. Nutrition plans reference activities; completions can point to existing voice note records.
+- **Data Model**: New `activities`, `events`, `carb_loading_plans`, and `carb_loading_days` tables power the feature. Completion metadata now lives directly on each `activities` row (no standalone `activity_completions` table). Nutrition plans reference activities; completions can point to existing voice note records.
 - **Navigation Updates**: "Current Plan" becomes "Activity Detail"; the entry form becomes "Create Activity". Calendar + Settings are the two bottom tabs.
 - **Editing Rules**: Deleting or editing events cascades to carb loading days and linked nutrition plans. Past activities are immutable.
 

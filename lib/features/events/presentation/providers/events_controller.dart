@@ -6,6 +6,7 @@ import '../../domain/event.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/providers/device_id_provider.dart';
+import '../../../../shared/domain/activity_type.dart';
 
 part 'events_controller.g.dart';
 
@@ -13,6 +14,7 @@ part 'events_controller.g.dart';
 /// Handles event CRUD operations (create, read, update, delete)
 @riverpod
 class EventsController extends _$EventsController {
+  // Use getters to access services (avoids late initialization errors on rebuild)
   EventsService get _service => ref.read(eventsServiceProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
 
@@ -24,9 +26,10 @@ class EventsController extends _$EventsController {
   }
 
   /// Create a new event
-  Future<String> createEvent({
-    String? activityId,
-    required EventType eventType,
+  /// Note: Does NOT invalidate the provider - calling code should handle refresh
+  Future<int> createEvent({
+    int? activityId,
+    required ActivityType eventType,
     String? eventSubtype,
     String? eventName,
     String? location,
@@ -43,8 +46,10 @@ class EventsController extends _$EventsController {
     String? packetPickupInfo,
   }) async {
     try {
+      // Read deviceId BEFORE async operations
       final deviceIdValue = await ref.read(deviceIdProvider.future);
 
+      // Use cached service reference (no ref access)
       final createdEvent = await _service.createEvent(
         deviceId: deviceIdValue,
         activityId: activityId,
@@ -65,18 +70,16 @@ class EventsController extends _$EventsController {
         packetPickupInfo: packetPickupInfo,
       );
 
-      // Refresh events list and upcoming event widget
-      ref.invalidateSelf();
-      ref.invalidate(nextUpcomingEventProvider);
-
       return createdEvent.id;
     } catch (e) {
+      // Use cached logger (no ref access)
       _logger.error('Error creating event', error: e);
       rethrow;
     }
   }
 
   /// Update an existing event
+  /// Note: Does NOT invalidate the provider - calling code should handle refresh
   Future<void> updateEvent(Event event) async {
     try {
       final deviceIdValue = await ref.read(deviceIdProvider.future);
@@ -85,10 +88,6 @@ class EventsController extends _$EventsController {
         deviceId: deviceIdValue,
         event: event,
       );
-
-      // Refresh events list and upcoming event widget
-      ref.invalidateSelf();
-      ref.invalidate(nextUpcomingEventProvider);
     } catch (e) {
       _logger.error('Error updating event', error: e);
       rethrow;
@@ -96,7 +95,8 @@ class EventsController extends _$EventsController {
   }
 
   /// Delete an event
-  Future<void> deleteEvent(String eventId) async {
+  /// Note: Does NOT invalidate the provider - calling code should handle refresh
+  Future<void> deleteEvent(int eventId) async {
     try {
       final deviceIdValue = await ref.read(deviceIdProvider.future);
 
@@ -104,10 +104,6 @@ class EventsController extends _$EventsController {
         deviceId: deviceIdValue,
         eventId: eventId,
       );
-
-      // Refresh events list and upcoming event widget
-      ref.invalidateSelf();
-      ref.invalidate(nextUpcomingEventProvider);
     } catch (e) {
       _logger.error('Error deleting event', error: e);
       rethrow;
@@ -115,7 +111,7 @@ class EventsController extends _$EventsController {
   }
 
   /// Get event by ID
-  Future<Event?> getEventById(String eventId) async {
+  Future<Event?> getEventById(int eventId) async {
     try {
       final userId = await ref.read(deviceIdProvider.future);
       return await _service.getEventById(userId, eventId);
@@ -126,7 +122,7 @@ class EventsController extends _$EventsController {
   }
 
   /// Get event for a specific activity
-  Future<Event?> getEventForActivity(String activityId) async {
+  Future<Event?> getEventForActivity(int activityId) async {
     try {
       return await _service.getEventForActivity(activityId);
     } catch (e) {
@@ -136,8 +132,9 @@ class EventsController extends _$EventsController {
   }
 
   /// Update event's nutrition plan flag
+  /// Note: Does NOT invalidate the provider - calling code should handle refresh
   Future<void> updateEventNutritionPlanFlag({
-    required String activityId,
+    required int activityId,
     required bool hasNutritionPlan,
   }) async {
     try {
@@ -145,9 +142,6 @@ class EventsController extends _$EventsController {
         activityId: activityId,
         hasNutritionPlan: hasNutritionPlan,
       );
-
-      // Refresh events list
-      ref.invalidateSelf();
     } catch (e) {
       _logger.error('Error updating event nutrition plan flag', error: e);
       rethrow;
@@ -162,7 +156,7 @@ class EventsController extends _$EventsController {
 
 /// Provider for getting event detail with associated activity
 @riverpod
-Future<({Activity? activity, Event event})> eventDetail(Ref ref, String eventId) async {
+Future<({Activity? activity, Event event})> eventDetail(Ref ref, int eventId) async {
   final userId = await ref.read(deviceIdProvider.future);
   final eventsService = ref.read(eventsServiceProvider);
   final activitiesService = ref.read(activitiesServiceProvider);

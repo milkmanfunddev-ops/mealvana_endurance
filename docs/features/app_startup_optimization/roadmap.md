@@ -19,7 +19,7 @@
 4. Direct query: `events` table
 5. Direct query: `carb_loading_plans` table
 6. Direct query: `carb_loading_days` table
-7. Direct query: `activity_completions` table
+7. Direct query: `activity_completions` table *(removed in Nov 2025; completion metadata now rides with each `activities` row. References to this query remain for historical context and will be cleaned up in the final doc pass.)*
 
 ### Logging Issues
 - **60+ log lines** during startup with excessive noise:

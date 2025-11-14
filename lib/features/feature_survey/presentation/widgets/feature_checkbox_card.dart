@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../domain/feature_survey_data.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../../../theme/kyle_design/app_spacing.dart';
 
 /// Card widget for displaying a feature with checkbox
 /// Tapping anywhere on the card toggles the checkbox
@@ -21,94 +23,97 @@ class FeatureCheckboxCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Card(
-      elevation: isSelected ? 3 : 1,
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        vertical: AppSpacing.xs,
+        horizontal: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(15.0), // 15px from Kyle's design
+        border: Border.all(
           color: isSelected
-              ? AppTheme.successColor
-              : (isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300),
+              ? AppColors.electrolyte // Electrolyte for selected state
+              : (isDark ? AppColors.borderDark : AppColors.borderLight),
           width: isSelected ? 2 : 1,
         ),
       ),
-      child: InkWell(
-        onTap: isEnabled ? onToggle : null,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppTheme.successColor.withValues(alpha: 0.1)
-                      : (isDarkMode
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade100),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  feature.icon,
-                  color: isSelected
-                      ? AppTheme.successColor
-                      : (isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Text content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      feature.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isEnabled
-                            ? null
-                            : (isDarkMode
-                                ? Colors.grey.shade600
-                                : Colors.grey.shade400),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      feature.description,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isEnabled
-                            ? (isDarkMode
-                                ? Colors.grey.shade400
-                                : Colors.grey.shade600)
-                            : (isDarkMode
-                                ? Colors.grey.shade700
-                                : Colors.grey.shade500),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Checkbox
-              Transform.scale(
-                scale: 0.9,
-                child: Checkbox(
-                  value: isSelected,
-                  onChanged: isEnabled ? (_) => onToggle() : null,
-                  activeColor: AppTheme.successColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isEnabled ? onToggle : null,
+          borderRadius: BorderRadius.circular(15.0),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon with circular background (36px circle per Kyle's design)
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.electrolyte
+                        : (isDark ? AppColors.inactive : AppColors.borderLightSecondary),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    feature.icon,
+                    color: isSelected
+                        ? AppColors.blackberry
+                        : (isDark ? AppColors.cream : AppColors.blackberry),
+                    size: 18, // ~50% of container size
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: AppSpacing.sm),
+                // Text content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        feature.name,
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: isEnabled
+                              ? (isDark ? AppColors.cream : AppColors.blackberry)
+                              : AppColors.disabled,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        feature.description,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isEnabled
+                              ? (isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary)
+                              : AppColors.disabled,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                // Checkbox
+                Transform.scale(
+                  scale: 0.9,
+                  child: Checkbox(
+                    value: isSelected,
+                    onChanged: isEnabled ? (_) => onToggle() : null,
+                    activeColor: AppColors.electrolyte,
+                    checkColor: AppColors.blackberry,
+                    side: BorderSide(
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

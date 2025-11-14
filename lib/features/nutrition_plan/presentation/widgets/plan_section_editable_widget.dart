@@ -128,9 +128,14 @@ class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
           alignment: Alignment.centerLeft,
           child: AddFoodButton(
             onPressed: () {
+              final activityId = widget.plan.activityId;
+              if (activityId == null) {
+                return;
+              }
               // Navigate to swap/add screen
               context.push('/swap-food', extra: {
                 'category': _sectionCategory,
+                'activityId': activityId,
               });
             },
           ),

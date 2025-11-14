@@ -2,15 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
-import 'package:mealvana_endurance/shared/widgets/secondary_button.dart';
-import 'package:mealvana_endurance/theme/app_theme.dart';
-import '../../../../shared/domain/activity_type.dart';
-import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/analytics/analytics_events.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/utils/location_formatter.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../calendar/domain/event_subtype.dart';
 import '../../domain/event.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../providers/events_controller.dart';
@@ -21,6 +17,12 @@ import 'event_form_screen.dart';
 
 /// Event Detail Screen showing event information and action buttons.
 ///
+/// Updated with Kyle's Design System:
+/// - AppColors for theme-aware colors
+/// - AppTextStyles for typography
+/// - BaseCard for consistent card styling
+/// - KylePrimaryButton for actions
+///
 /// Displays:
 /// - Event metadata (name, date, location, goal time, etc.)
 /// - Two primary action buttons:
@@ -30,7 +32,7 @@ import 'event_form_screen.dart';
 /// CRITICAL: This screen does NOT contain carb loading configuration.
 /// Carb loading is a separate action initiated from this screen.
 class EventDetailScreen extends ConsumerWidget {
-  final String eventId;
+  final int eventId;
 
   const EventDetailScreen({
     super.key,
@@ -47,13 +49,41 @@ class EventDetailScreen extends ConsumerWidget {
         final event = eventDetail.event;
 
         return Scaffold(
-          backgroundColor: AppTheme.baseCream,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            title: const Text('Event Details'),
-            leading: CustomAppBarBackButton(),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: IconButton(
+              icon: Icon(
+                FontAwesomeIcons.chevronLeft,
+                size: AppIconSizes.sm,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            title: Text(
+              'Event Details',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.edit),
+                icon: Icon(
+                  FontAwesomeIcons.house,
+                  size: AppIconSizes.sm,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                tooltip: 'Home',
+                onPressed: () => context.go('/main'),
+              ),
+              IconButton(
+                icon: Icon(
+                  FontAwesomeIcons.pen,
+                  size: AppIconSizes.sm,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 tooltip: 'Edit Event',
                 onPressed: () {
                   Navigator.push(
@@ -75,21 +105,82 @@ class EventDetailScreen extends ConsumerWidget {
         );
       },
       loading: () => Scaffold(
-        backgroundColor: AppTheme.baseCream,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: const Text('Event Details'),
-          leading: CustomAppBarBackButton(),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              FontAwesomeIcons.chevronLeft,
+              size: AppIconSizes.sm,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            'Event Details',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(
+          child: CircularProgressIndicator(
+            color: AppColors.electrolyte,
+          ),
+        ),
       ),
       error: (error, stack) => Scaffold(
-        backgroundColor: AppTheme.baseCream,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: const Text('Event Details'),
-          leading: CustomAppBarBackButton(),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              FontAwesomeIcons.chevronLeft,
+              size: AppIconSizes.sm,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            'Event Details',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
         ),
         body: Center(
-          child: Text('Error loading event: $error'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                FontAwesomeIcons.circleExclamation,
+                size: AppIconSizes.xl,
+                color: AppColors.dragonfruit,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Error loading event',
+                style: AppTextStyles.subtitle.copyWith(
+                  color: AppColors.dragonfruit,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Padding(
+                padding: AppSpacing.screenPaddingHorizontal,
+                child: Text(
+                  error.toString(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -103,85 +194,67 @@ class EventDetailScreen extends ConsumerWidget {
           // Event Header Card
           _buildEventHeaderCard(context, activity, event),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
 
           // Event Details Card
           _buildEventDetailsCard(context, activity, event),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
 
           // Action Buttons Card
           _buildActionButtonsCard(context, ref, activity, event),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.md),
+
+          // Text links for navigation
+          _buildFooterLinks(context),
+
+          const SizedBox(height: AppSpacing.xxl),
         ],
       ),
     );
   }
 
   Widget _buildEventHeaderCard(BuildContext context, Activity? activity, Event event) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.primary900,
-            AppTheme.primary900.withValues(alpha: 0.7),
-          ],
-        ),
-      ),
-      padding: const EdgeInsets.all(24),
+    return BaseCard(
+      margin: AppSpacing.screenPaddingHorizontal.copyWith(top: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Event icon
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.event,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
           // Event name/type
           Text(
             event.eventName ?? event.formattedEventType,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+            style: AppTextStyles.pageTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.md),
 
           // Date (from activity if exists, otherwise parse from event.startTime)
           if (activity?.scheduledDateTime != null || event.startTime != null)
             Row(
               children: [
-                const Icon(Icons.calendar_today, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
+                Icon(
+                  FontAwesomeIcons.calendar,
+                  color: AppColors.electrolyte,
+                  size: AppIconSizes.sm,
+                ),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
                   activity != null
                     ? DateFormat('EEEE, MMMM d, yyyy').format(activity.scheduledDateTime)
                     : event.startTime != null
                       ? DateFormat('EEEE, MMMM d, yyyy').format(DateTime.parse(event.startTime!))
                       : 'Date TBD',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white,
-                      ),
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
 
           // Countdown (from activity if exists, otherwise parse from event.startTime)
           if (activity?.scheduledDateTime != null)
@@ -219,98 +292,102 @@ class EventDetailScreen extends ConsumerWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.electrolyte.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: AppColors.electrolyte.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         countdownText,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.electrolyte,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 
   Widget _buildEventDetailsCard(BuildContext context, Activity? activity, Event event) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Event Information',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+    return BaseCard(
+      margin: AppSpacing.screenPaddingHorizontal,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Event Information',
+            style: AppTextStyles.subtitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            const SizedBox(height: 16),
+          ),
+          const SizedBox(height: AppSpacing.md),
 
-            // Distance
-            if (activity?.distanceMiles != null)
-              _buildDetailRow(
-                context,
-                icon: Icons.straighten,
-                label: 'Distance',
-                value: '${activity!.distanceMiles} miles',
-              ),
+          // Distance
+          if (activity?.distanceMiles != null)
+            _buildDetailRow(
+              context,
+              icon: FontAwesomeIcons.ruler,
+              label: 'Distance',
+              value: '${activity!.distanceMiles} miles',
+            ),
 
-            if (event.location != null) ...[
-              const Divider(height: 24),
-              _buildDetailRow(
-                context,
-                icon: Icons.location_on,
-                label: 'Location',
-                value: LocationFormatter.parseAndFormatCityState(event.location),
-              ),
-            ],
-
-            if (event.formattedGoalTime != null) ...[
-              const Divider(height: 24),
-              _buildDetailRow(
-                context,
-                icon: Icons.timer,
-                label: 'Goal Time',
-                value: event.formattedGoalTime!,
-              ),
-            ],
-
-            if (event.formattedGoalPace != null) ...[
-              const Divider(height: 24),
-              _buildDetailRow(
-                context,
-                icon: Icons.speed,
-                label: 'Goal Pace',
-                value: event.formattedGoalPace!,
-              ),
-            ],
-
-            if (event.registrationUrl != null) ...[
-              const Divider(height: 24),
-              _buildDetailRow(
-                context,
-                icon: Icons.link,
-                label: 'Registration',
-                value: 'View registration',
-                isLink: true,
-              ),
-            ],
-
-            if (event.bibNumber != null) ...[
-              const Divider(height: 24),
-              _buildDetailRow(
-                context,
-                icon: Icons.confirmation_number,
-                label: 'Bib Number',
-                value: event.bibNumber!,
-              ),
-            ],
+          if (event.location != null) ...[
+            const Divider(height: AppSpacing.xl),
+            _buildDetailRow(
+              context,
+              icon: FontAwesomeIcons.locationDot,
+              label: 'Location',
+              value: LocationFormatter.parseAndFormatCityState(event.location),
+            ),
           ],
-        ),
+
+          if (event.formattedGoalTime != null) ...[
+            const Divider(height: AppSpacing.xl),
+            _buildDetailRow(
+              context,
+              icon: FontAwesomeIcons.clock,
+              label: 'Goal Time',
+              value: event.formattedGoalTime!,
+            ),
+          ],
+
+          if (event.formattedGoalPace != null) ...[
+            const Divider(height: AppSpacing.xl),
+            _buildDetailRow(
+              context,
+              icon: FontAwesomeIcons.gaugeHigh,
+              label: 'Goal Pace',
+              value: event.formattedGoalPace!,
+            ),
+          ],
+
+          if (event.registrationUrl != null) ...[
+            const Divider(height: AppSpacing.xl),
+            _buildDetailRow(
+              context,
+              icon: FontAwesomeIcons.link,
+              label: 'Registration',
+              value: 'View registration',
+              isLink: true,
+            ),
+          ],
+
+          if (event.bibNumber != null) ...[
+            const Divider(height: AppSpacing.xl),
+            _buildDetailRow(
+              context,
+              icon: FontAwesomeIcons.hashtag,
+              label: 'Bib Number',
+              value: event.bibNumber!,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -324,25 +401,31 @@ class EventDetailScreen extends ConsumerWidget {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
-        const SizedBox(width: 12),
+        Icon(
+          icon,
+          size: AppIconSizes.sm,
+          color: AppColors.electrolyte,
+        ),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                style: AppTextStyles.smallLabel.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xxs),
               Text(
                 value,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: isLink ? AppTheme.primary900 : Colors.black,
-                      decoration: isLink ? TextDecoration.underline : null,
-                    ),
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isLink
+                      ? AppColors.electrolyte
+                      : Theme.of(context).colorScheme.onSurface,
+                  decoration: isLink ? TextDecoration.underline : null,
+                ),
               ),
             ],
           ),
@@ -351,27 +434,16 @@ class EventDetailScreen extends ConsumerWidget {
     );
   }
 
-  double _getEventDistanceMiles(EventType eventType) {
-    switch (eventType) {
-      case EventType.marathon:
-        return 26.2;
-      case EventType.halfMarathon:
-        return 13.1;
-      case EventType.tenK:
-        return 6.2;
-      case EventType.fiveK:
-        return 3.1;
-      case EventType.ultra50K:
-        return 31.0;
-      case EventType.ultra50M:
-        return 50.0;
-      case EventType.ultra100K:
-        return 62.0;
-      case EventType.ultra100M:
-        return 100.0;
-      case EventType.custom:
-        return 0.0;
-    }
+  double? _getEventDistanceMiles(Event event) {
+    if (event.eventSubtype == null) return null;
+
+    // Look up the EventSubtype to get distance information
+    final eventSubtype = EventSubtype.findByName(
+      event.eventType.dbValue,
+      event.eventSubtype!,
+    );
+
+    return eventSubtype?.totalDistanceMiles;
   }
 
   /// Handle carb loading plan creation or update
@@ -403,7 +475,6 @@ class EventDetailScreen extends ConsumerWidget {
       // This ensures we don't use disposed providers
       final carbLoadingController = ref.read(carbLoadingControllerProvider.notifier);
       final userRepository = await ref.read(userRepositoryProvider.future);
-      final analytics = ref.read(appExternalDepsProvider).analytics;
 
       // Get user profile for body weight
       final userProfile = await userRepository.getUserProfile();
@@ -411,9 +482,15 @@ class EventDetailScreen extends ConsumerWidget {
       if (userProfile == null) {
         if (context.mounted) {
           messenger.showSnackBar(
-            const SnackBar(
-              content: Text('Please complete your profile first'),
-              backgroundColor: Colors.red,
+            SnackBar(
+              content: Text(
+                'Please complete your profile first',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Colors.white,
+                ),
+              ),
+              backgroundColor: AppColors.dragonfruit,
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -442,8 +519,14 @@ class EventDetailScreen extends ConsumerWidget {
         if (context.mounted) {
           messenger.showSnackBar(
             SnackBar(
-              content: Text('Updated to $selectedProtocol-day carb loading plan!'),
-              backgroundColor: Colors.green,
+              content: Text(
+                'Updated to $selectedProtocol-day carb loading plan!',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Colors.white,
+                ),
+              ),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
             ),
           );
           // Refresh the event detail to show updated info
@@ -451,13 +534,6 @@ class EventDetailScreen extends ConsumerWidget {
         }
       } else {
         // Create new carb loading plan
-
-        // TODO: Track carb loading plan creation (analytics method needs to be implemented)
-        // await analytics.trackCarbLoadingPlanCreationStarted(
-        //   eventId: event.id,
-        //   activityType: activity?.activityType.name ?? 'unknown',
-        //   eventDate: raceDate,
-        // );
 
         await carbLoadingController.createCarbLoadingPlan(
           eventId: event.id,
@@ -469,8 +545,14 @@ class EventDetailScreen extends ConsumerWidget {
         if (context.mounted) {
           messenger.showSnackBar(
             SnackBar(
-              content: Text('Created $selectedProtocol-day carb loading plan!'),
-              backgroundColor: Colors.green,
+              content: Text(
+                'Created $selectedProtocol-day carb loading plan!',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Colors.white,
+                ),
+              ),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
             ),
           );
           // Refresh the event detail to show updated info
@@ -481,8 +563,14 @@ class EventDetailScreen extends ConsumerWidget {
       if (context.mounted) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text('Error creating plan: $e'),
-            backgroundColor: Colors.red,
+            content: Text(
+              'Error creating plan: $e',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: AppColors.dragonfruit,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -490,128 +578,189 @@ class EventDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildActionButtonsCard(BuildContext context, WidgetRef ref, Activity? activity, Event event) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Nutrition Planning',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+    return BaseCard(
+      margin: AppSpacing.screenPaddingHorizontal,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Nutrition Planning',
+            style: AppTextStyles.subtitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            const SizedBox(height: 16),
+          ),
+          const SizedBox(height: AppSpacing.md),
 
-            // Nutrition Plan Button (Create or View)
-            PrimaryButton(
-              onPressed: () async {
-                if (activity != null) {
-                  // Activity exists - check if nutrition plan exists
-                  if (event.hasNutritionPlan) {
-                    // Navigate to view/edit existing nutrition plan
-                    context.push(
-                      '/plan',
-                      extra: {
-                        'mode': 'view',
-                        'activityId': activity.id,
-                      },
-                    );
-                  } else {
-                    // Navigate to distance/pace/gut entry screen to create new plan
+          // Nutrition Plan Button (Create or View)
+          KylePrimaryButton(
+            onPressed: () async {
+              if (activity != null) {
+                // Activity exists - check if nutrition plan exists
+                if (event.hasNutritionPlan) {
+                  // Navigate to view/edit existing nutrition plan
+                  context.push(
+                    '/plan',
+                    extra: {
+                      'mode': 'view',
+                      'activityId': activity.id,
+                    },
+                  );
+                } else {
+                  // Navigate to distance/pace/gut entry screen to create new plan
+                  context.push(
+                    '/distance-pace-gut-entry',
+                    extra: {
+                      'initialDate': activity.scheduledDateTime,
+                      'distance': activity.distanceMiles,
+                      'goalPace': event.goalPaceMinutesPerMile,
+                      'activityId': activity.id, // Link plan to this activity
+                      'eventId': event.id, // Pass event ID to link back
+                    },
+                  );
+                }
+              } else {
+                // No activity yet - create one first, then navigate
+                try {
+                  // Get event date and calculate distance from event subtype
+                  final scheduledDateTime = event.startTime != null
+                      ? DateTime.parse(event.startTime!)
+                      : DateTime.now();
+                  final distanceMiles = _getEventDistanceMiles(event);
+
+                  // Create activity using ActivitiesController directly
+                  final activitiesController = ref.read(activitiesControllerProvider.notifier);
+                  final activityId = await activitiesController.createActivity(
+                    title: event.eventName ?? event.formattedEventType,
+                    scheduledDateTime: scheduledDateTime,
+                    activityType: event.eventType, // Use event's sport type
+                    distanceMiles: distanceMiles,
+                  );
+
+                  // Link activity to event using EventsController directly
+                  final eventsController = ref.read(eventsControllerProvider.notifier);
+                  await eventsController.updateEvent(
+                    event.copyWith(activityId: activityId),
+                  );
+
+                  // Refresh the event detail provider to get updated data
+                  ref.invalidate(eventDetailProvider(eventId));
+
+                  // Navigate to distance/pace/gut entry
+                  if (context.mounted) {
                     context.push(
                       '/distance-pace-gut-entry',
                       extra: {
-                        'initialDate': activity.scheduledDateTime,
-                        'distance': activity.distanceMiles,
+                        'initialDate': scheduledDateTime,
+                        'distance': distanceMiles,
                         'goalPace': event.goalPaceMinutesPerMile,
-                        'activityId': activity.id, // Link plan to this activity
+                        'activityId': activityId,
                         'eventId': event.id, // Pass event ID to link back
                       },
                     );
                   }
-                } else {
-                  // No activity yet - create one first, then navigate
-                  try {
-                    // Get event date and calculate distance from event type
-                    final scheduledDateTime = event.startTime != null
-                        ? DateTime.parse(event.startTime!)
-                        : DateTime.now();
-                    final distanceMiles = _getEventDistanceMiles(event.eventType);
-
-                    // Create activity using ActivitiesController directly
-                    final activitiesController = ref.read(activitiesControllerProvider.notifier);
-                    final activityId = await activitiesController.createActivity(
-                      title: event.eventName ?? event.formattedEventType,
-                      scheduledDateTime: scheduledDateTime,
-                      activityType: ActivityType.running,
-                      distanceMiles: distanceMiles,
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Error creating activity: $e',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                        backgroundColor: AppColors.dragonfruit,
+                        behavior: SnackBarBehavior.floating,
+                      ),
                     );
+                  }
+                }
+              }
+            },
+            text: event.hasNutritionPlan ? 'View Nutrition Plan' : 'Create Nutrition Plan',
+            icon: event.hasNutritionPlan ? FontAwesomeIcons.eye : FontAwesomeIcons.plus,
+          ),
 
-                    // Link activity to event using EventsController directly
-                    final eventsController = ref.read(eventsControllerProvider.notifier);
-                    await eventsController.updateEvent(
-                      event.copyWith(activityId: activityId),
-                    );
+          const SizedBox(height: AppSpacing.sm),
 
-                    // Refresh the event detail provider to get updated data
-                    ref.invalidate(eventDetailProvider(eventId));
+          // Create or Edit Carb Loading Plan Button
+          KyleSecondaryButton(
+            onPressed: () => _handleCarbLoadingPlanAction(
+              context,
+              ref,
+              activity,
+              event,
+            ),
+            text: event.hasCarbLoading ? 'Edit Carb Loading Plan' : 'Create Carb Loading Plan',
+            icon: event.hasCarbLoading ? FontAwesomeIcons.pen : FontAwesomeIcons.plus,
+          ),
 
-                    // Navigate to distance/pace/gut entry
-                    if (context.mounted) {
-                      context.push(
-                        '/distance-pace-gut-entry',
-                        extra: {
-                          'initialDate': scheduledDateTime,
-                          'distance': distanceMiles,
-                          'goalPace': event.goalPaceMinutesPerMile,
-                          'activityId': activityId,
-                          'eventId': event.id, // Pass event ID to link back
-                        },
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error creating activity: $e'),
-                          backgroundColor: Colors.red,
+          const SizedBox(height: AppSpacing.md),
+
+          // Info text
+          Text(
+            'Create a nutrition plan for race day, or set up a multi-day carb loading protocol to maximize your glycogen stores.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooterLinks(BuildContext context) {
+    return Padding(
+      padding: AppSpacing.screenPaddingHorizontal,
+      child: Column(
+        children: [
+          Divider(
+            height: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: AppSpacing.xl,
+            runSpacing: AppSpacing.xs,
+            children: [
+              TextButton(
+                onPressed: () => context.push('/events'),
+                child: Text(
+                  'View events list',
+                  style: AppTextStyles.buttonTertiary.copyWith(
+                    color: AppColors.electrolyte,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final result = await Navigator.of(context).push<Map<String, dynamic>>(
+                    MaterialPageRoute(
+                      builder: (_) => const EventFormScreen(),
+                    ),
+                  );
+                  if (result != null && result['success'] == true) {
+                    final newEventId = result['eventId'];
+                    if (newEventId is int && context.mounted) {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => EventDetailScreen(eventId: newEventId),
                         ),
                       );
                     }
                   }
-                }
-              },
-              text: event.hasNutritionPlan ? 'View Nutrition Plan' : 'Create Nutrition Plan',
-            ),
-
-            const SizedBox(height: 12),
-
-            // Create or Edit Carb Loading Plan Button
-            SecondaryButton(
-              onPressed: () => _handleCarbLoadingPlanAction(
-                context,
-                ref,
-                activity,
-                event,
-              ),
-              text: event.hasCarbLoading ? 'Edit Carb Loading Plan' : 'Create Carb Loading Plan',
-            ),
-
-            const SizedBox(height: 16),
-
-            // Info text
-            Text(
-              'Create a nutrition plan for race day, or set up a multi-day carb loading protocol to maximize your glycogen stores.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
+                },
+                child: Text(
+                  'Create new event',
+                  style: AppTextStyles.buttonTertiary.copyWith(
+                    color: AppColors.electrolyte,
                   ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

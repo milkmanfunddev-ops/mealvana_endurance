@@ -14,10 +14,22 @@ Future<void> main() async {
     // Initialize widgets binding for Sentry frame tracking BEFORE Sentry init
     SentryWidgetsFlutterBinding.ensureInitialized();
 
-    // Load environment variables from .env file
-    await dotenv.load(fileName: '.env');
+    // Load dev mode override from SharedPreferences BEFORE loading env
+    await AppConfig.loadDevModeOverride();
 
-    // Create app configuration from .env
+    // Determine which env file to load based on dev mode
+    final isDevMode = AppConfig.effectiveDevMode;
+    final envFileName = isDevMode ? '.env.dev.local' : '.env.prod.local';
+
+    if (kDebugMode) {
+      print('🔧 Loading environment from: $envFileName');
+      print('   Dev Mode: $isDevMode');
+    }
+
+    // Load environment variables from appropriate file
+    await dotenv.load(fileName: envFileName);
+
+    // Create app configuration from loaded env
     final config = AppConfig.fromEnv();
 
     // Initialize Sentry with configuration from .env

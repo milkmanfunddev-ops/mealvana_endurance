@@ -82,22 +82,30 @@ class AppConfig {
 
   /// Factory for loading configuration from .env file
   /// Must call dotenv.load() before using this factory
+  /// Now reads from .env.dev.local or .env.prod.local based on dev mode
   factory AppConfig.fromEnv() {
     final isDevMode = effectiveDevMode;
     final appEnv = isDevMode ? 'dev' : 'prod';
+
+    // Read all configuration from loaded .env file
+    final supabaseUrl = dotenv.get('SUPABASE_URL', fallback: '');
+    final supabaseAnonKey = dotenv.get('SUPABASE_ANON_KEY', fallback: '');
+
+    if (kDebugMode) {
+      print('🔧 AppConfig.fromEnv():');
+      print('   Dev Mode: $isDevMode');
+      print('   App Environment: $appEnv');
+      print('   Supabase URL: $supabaseUrl');
+    }
 
     return AppConfig(
       // Environment configuration
       devModeEnabled: isDevMode,
       appEnvironment: appEnv,
 
-      // Supabase configuration (conditional based on dev mode)
-      supabaseUrl: isDevMode
-          ? 'https://vlmtsdzpnjnavdgytcmi.supabase.co' // Dev
-          : 'https://wvmvsodrvbkxfydabqed.supabase.co', // Prod
-      supabaseAnonKey: isDevMode
-          ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbXRzZHpwbmpuYXZkZ3l0Y21pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4NTI3OTAsImV4cCI6MjA3NTQyODc5MH0._7t1pjG_1zk4xkfseu2ACqYXdwEJKcRUWyvY4ZXs35o' // Dev
-          : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2bXZzb2RydmJreGZ5ZGFicWVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTMxMDcsImV4cCI6MjA3MDg2OTEwN30.pG2IYdEIIFS8_zPxzr6pZplzWQqvD13dvslrpFMAPCk', // Prod
+      // Supabase configuration - read from loaded .env file
+      supabaseUrl: supabaseUrl,
+      supabaseAnonKey: supabaseAnonKey,
       supabasePublishableKey: dotenv.get(
         'SUPABASE_PUBLISHABLE_KEY',
         fallback: '',
@@ -107,14 +115,23 @@ class AppConfig {
         fallback: '',
       ),
 
-      // Sentry configuration (conditional based on dev mode)
-      sentryDsn: 'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
-      sentryEnvironment: isDevMode ? 'development' : 'production',
+      // Sentry configuration - read from loaded .env file
+      sentryDsn: dotenv.get(
+        'SENTRY_DSN',
+        fallback: 'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
+      ),
+      sentryEnvironment: dotenv.get(
+        'SENTRY_ENVIRONMENT',
+        fallback: isDevMode ? 'development' : 'production',
+      ),
 
-      // Analytics configuration (conditional based on dev mode)
-      mixpanelProjectToken: isDevMode
-          ? 'df6e8dd4f3dc1363fa194a156298b16c' // Dev token
-          : 'bd8fe50bb67b1dd0860351e6297347db', // Prod token
+      // Analytics configuration - read from loaded .env file
+      mixpanelProjectToken: dotenv.get(
+        'MIXPANEL_PROJECT_TOKEN',
+        fallback: isDevMode
+            ? 'df6e8dd4f3dc1363fa194a156298b16c' // Dev token
+            : 'bd8fe50bb67b1dd0860351e6297347db', // Prod token
+      ),
 
       // External API keys
       usdaApiKey: dotenv.get(

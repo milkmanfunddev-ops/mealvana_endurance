@@ -157,9 +157,9 @@ class DataSyncService {
       final response = await _supabase.functions
           .invoke('sync-all-data', body: {'user_id': userId})
           .timeout(
-            const Duration(seconds: 15),
+            const Duration(seconds: 30),  // Increased from 15s for large datasets
             onTimeout: () {
-              throw TimeoutException('Edge function timed out after 15 seconds');
+              throw TimeoutException('Edge function timed out after 30 seconds');
             },
           );
 
@@ -445,6 +445,21 @@ class DataSyncService {
 
       final supabaseUpdatedAt = DateTime.parse(data['updated_at'] as String);
 
+      // CRITICAL: Preserve local data if it has pending changes (needsUpload = true)
+      // Phone data is the source of truth - never overwrite local changes
+      if (existingActivity != null && (existingActivity.needsUpload ?? false)) {
+        _logger.info(
+          'Skipping activity update from Supabase - local has pending changes',
+          context: 'DATA_SYNC',
+          data: {
+            'activityId': activityId,
+            'localUpdatedAt': existingActivity.updatedAt.toIso8601String(),
+            'supabaseUpdatedAt': supabaseUpdatedAt.toIso8601String(),
+          },
+        );
+        return; // Keep local version with pending changes
+      }
+
       if (existingActivity == null || existingActivity.updatedAt.isBefore(supabaseUpdatedAt)) {
         final companion = ActivitiesTableCompanion.insert(
           id: Value(activityId),
@@ -483,6 +498,18 @@ class DataSyncService {
         await _database
             .into(_database.activitiesTable)
             .insert(companion, mode: InsertMode.insertOrReplace);
+
+        _logger.info(
+          existingActivity == null
+              ? 'Inserted new activity from Supabase'
+              : 'Updated activity from Supabase (remote version newer)',
+          context: 'DATA_SYNC',
+          data: {
+            'activityId': activityId,
+            'action': existingActivity == null ? 'insert' : 'update',
+            'hasNutritionPlan': data['nutrition_plan_data'] != null,
+          },
+        );
       }
     } catch (e, stackTrace) {
       _logger.error(
@@ -569,7 +596,20 @@ class DataSyncService {
             ..where((tbl) => tbl.id.equals(planId)))
           .getSingleOrNull();
 
-      final supabaseUpdatedAt = DateTime.parse(data['updated_at'] as String);
+      // Handle null updated_at from Supabase (common for legacy data)
+      // Skip sync silently - logging creates excessive overhead
+      final updatedAtStr = data['updated_at'] as String?;
+      if (updatedAtStr == null) {
+        // Reduced from warning to debug - this is expected for old records
+        // _logger.debug(
+        //   'Carb loading plan missing updated_at, skipping sync',
+        //   context: 'DATA_SYNC',
+        //   data: {'planId': planId},
+        // );
+        return;
+      }
+
+      final supabaseUpdatedAt = DateTime.parse(updatedAtStr);
 
       if (existingPlan == null || (existingPlan.localUpdatedAt != null && existingPlan.localUpdatedAt!.isBefore(supabaseUpdatedAt))) {
         final companion = CarbLoadingPlansTableCompanion.insert(
@@ -613,7 +653,20 @@ class DataSyncService {
             ..where((tbl) => tbl.id.equals(dayId)))
           .getSingleOrNull();
 
-      final supabaseUpdatedAt = DateTime.parse(data['updated_at'] as String);
+      // Handle null updated_at from Supabase (common for legacy data)
+      // Skip sync silently - logging creates excessive overhead
+      final updatedAtStr = data['updated_at'] as String?;
+      if (updatedAtStr == null) {
+        // Reduced from warning to debug - this is expected for old records
+        // _logger.debug(
+        //   'Carb loading day missing updated_at, skipping sync',
+        //   context: 'DATA_SYNC',
+        //   data: {'dayId': dayId},
+        // );
+        return;
+      }
+
+      final supabaseUpdatedAt = DateTime.parse(updatedAtStr);
 
       if (existingDay == null || (existingDay.localUpdatedAt != null && existingDay.localUpdatedAt!.isBefore(supabaseUpdatedAt))) {
         final companion = CarbLoadingDaysTableCompanion.insert(
@@ -786,12 +839,12 @@ class DataSyncService {
             'age_group_placement': event.ageGroupPlacement,
           });
 
-      // Check for error
-      if (response.error == null) {
+      // Check for error (handle null response safely)
+      if (response?.error == null) {
         await (_database.update(_database.eventsTable)
               ..where((tbl) => tbl.id.equals(event.id)))
             .write(const EventsTableCompanion(needsUpload: Value(false)));
-      } else {
+      } else if (response != null) {
         throw response.error!;
       }
     } catch (e) {

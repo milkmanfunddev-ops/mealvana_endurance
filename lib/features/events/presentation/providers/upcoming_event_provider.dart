@@ -1,6 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/event.dart';
-import '../../../activities/domain/activity.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../application/events_service.dart';
 import '../../../../shared/providers/device_id_provider.dart';

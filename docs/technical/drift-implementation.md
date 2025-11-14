@@ -1,5 +1,7 @@
 # Drift Database Implementation - Mealvana Endurance
 
+> **Note (2025‑11‑09):** Supabase dropped the `nutrition_plans` table via migration `20251109000000_embed_nutrition_plan_on_activities.sql`. The Flutter client now stores plan JSON directly on `activities_table` (`nutrition_plan_data`). References to the legacy table in this document are retained for historical context.
+
 ## Overview
 
 Drift-based SQLite database implementation for the Mealvana Endurance nutrition planning app, providing type-safe local data persistence with automatic schema migrations, compile-time query validation, and robust relationship management. The database layer supports the app's offline-first architecture with full ACID transaction support.
@@ -10,7 +12,7 @@ Drift-based SQLite database implementation for the Mealvana Endurance nutrition 
 
 The app organizes data into structured SQLite tables with proper relationships:
 
-**Core Tables**: Store user profiles, food preferences, and nutrition plans with foreign key constraints ensuring data integrity. All tables include automatic timestamp management and optimistic concurrency control.
+**Core Tables**: Store user profiles, food preferences, and activities (which now embed nutrition plan JSON) with foreign key constraints ensuring data integrity. All tables include automatic timestamp management and optimistic concurrency control.
 
 **Relationship Tables**: Enable complex many-to-many relationships between foods and categories, users and preferences, with proper indexing for fast queries.
 

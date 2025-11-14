@@ -3,7 +3,7 @@ import 'package:drift/drift.dart';
 /// Table for all calendar entries including workouts and events
 @DataClassName('Activity')
 class ActivitiesTable extends Table {
-  TextColumn get id => text()(); // PRIMARY KEY
+  IntColumn get id => integer().autoIncrement()(); // PRIMARY KEY (autoIncrement = BIGSERIAL)
   TextColumn get userId => text().named('user_id')(); // FOREIGN KEY to user_profiles.id
   
   TextColumn get activityType => text().named('activity_type')(); // 'running', 'cycling', 'swimming'
@@ -50,15 +50,17 @@ class ActivitiesTable extends Table {
   TextColumn get completionNotes => text().nullable().named('completion_notes')();
   RealColumn get actualDistanceMiles => real().nullable().named('actual_distance_miles')();
   IntColumn get actualDurationMinutes => integer().nullable().named('actual_duration_minutes')();
-  
+
+  // Embedded nutrition plan data (JSONB in Supabase, stored as TEXT in SQLite)
+  TextColumn get nutritionPlanData => text().nullable().named('nutrition_plan_data')();
+
   // Metadata
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().named('created_at')();
   DateTimeColumn get updatedAt => dateTime().named('updated_at')();
   DateTimeColumn get deletedAt => dateTime().nullable().named('deleted_at')();
   
-  @override
-  Set<Column> get primaryKey => {id};
+  // Primary key is handled by autoIncrement()
   
   @override
   String get tableName => 'activities';
