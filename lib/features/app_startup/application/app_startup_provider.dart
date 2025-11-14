@@ -13,12 +13,12 @@ class AppStartupData {
   const AppStartupData({
     required this.user,
     required this.hasCompletedOnboarding,
-    this.planIdNeedingFeedback,
+    this.activityIdNeedingFeedback,
   });
 
   final UserProfile? user;
   final bool hasCompletedOnboarding;
-  final String? planIdNeedingFeedback;
+  final int? activityIdNeedingFeedback;
 }
 
 /// AsyncNotifier for app startup initialization using Drift
@@ -32,17 +32,16 @@ class AppStartup extends _$AppStartup {
     try {
       final AppStartupService startupService = ref.read(appStartupServiceProvider);
       
-      // 1. Initialize Drift database
+      // 1. Initialize Drift database (must be first - other operations depend on it)
       await startupService.initializeDatabase();
-      
-      // 2. Initialize analytics with device ID
-      await startupService.initializeAnalytics();
-      
-      // 3. Set Sentry user context (Sentry already initialized in main.dart)
-      await startupService.setSentryUserContext();
-      
-      // 4. Check and restore user session if exists
-      await startupService.checkUserSession();
+
+      // 2-4. Run independent operations in parallel for faster startup
+      // These operations don't depend on each other, so we can run them concurrently
+      await Future.wait([
+        startupService.initializeAnalytics(),
+        startupService.setSentryUserContext(),
+        startupService.checkUserSession(),
+      ]);
 
       // 5. Unified data sync (single network call - calendar + foods + carb loading)
       // Note: Foods already loaded from seed DB on first launch, this updates them
@@ -58,7 +57,7 @@ class AppStartup extends _$AppStartup {
       }
 
       // 8. Check for plans needing feedback
-      final planIdNeedingFeedback = await startupService.checkForPendingFeedback();
+      final activityIdNeedingFeedback = await startupService.checkForPendingFeedback();
 
       // 9. Track startup completion in Sentry
       final sentry = ref.read(appExternalDepsProvider).sentry;
@@ -87,7 +86,7 @@ class AppStartup extends _$AppStartup {
       return AppStartupData(
         user: user,
         hasCompletedOnboarding: hasCompletedOnboarding,
-        planIdNeedingFeedback: planIdNeedingFeedback,
+        activityIdNeedingFeedback: activityIdNeedingFeedback,
       );
     } catch (e, stackTrace) {
       _logger.error('App startup initialization failed', 

@@ -34,65 +34,59 @@ serve(async (req) => {
 
     console.log(`Starting unified sync for user: ${user_id}`);
 
-    // Parallel fetch all data
+    // Parallel fetch all data (PHASE 1: Added user profile to prevent FK violations)
     const [
+      userProfileResult,
       nutritionFoodsResult,
       carbLoadingFoodsResult,
-      mealTypesResult,
       activitiesResult,
       eventsResult,
       carbLoadingPlansResult,
       carbLoadingDaysResult,
-      activityCompletionsResult,
     ] = await Promise.allSettled([
-      // 1. Nutrition Plan Foods (all foods, with or without categories)
-      // Using left join (no !inner) to include uncategorized foods
+      // 0. User Profile (PHASE 1: Added to ensure user exists before dependent records)
+      // FIXED: Query by 'id' instead of 'device_id' (user_id is now the auth UUID)
+      supabaseClient
+        .from('users')
+        .select('*')
+        .eq('id', user_id)
+        .maybeSingle(),
+
+      // 1. Nutrition Plan Foods (all foods with categories and activity_types as arrays)
       supabaseClient
         .from('foods')
-        .select(`
-          *,
-          food_categories(category_id),
-          categories(*)
-        `),
-
-      // 2. Carb Loading Foods
-      supabaseClient
-        .from('carb_loading_foods')
-        .select(`
-          *,
-          carb_loading_food_meal_types!inner(
-            meal_type_id,
-            meal_types(*)
-          )
-        `),
-
-      // 3. Meal Types
-      supabaseClient
-        .from('meal_types')
         .select('*'),
 
-      // 4. Activities (exclude soft-deleted)
+      // 2. Carb Loading Foods (meal_types is now a text[] column)
+      supabaseClient
+        .from('carb_loading_foods')
+        .select('*'),
+
+      // 3. Activities (exclude soft-deleted, explicitly include nutrition_plan_data)
       supabaseClient
         .from('activities')
-        .select('*')
+        .select(`
+          *,
+          nutrition_plan_data
+        `)
         .eq('user_id', user_id)
         .is('deleted_at', null)
         .order('scheduled_date_time', { ascending: false }),
 
-      // 5. Events
+      // 4. Events
       supabaseClient
         .from('events')
         .select('*')
         .eq('user_id', user_id)
         .order('created_at', { ascending: false }),
 
-      // 6. Carb Loading Plans
+      // 5. Carb Loading Plans
       supabaseClient
         .from('carb_loading_plans')
         .select('*')
         .eq('user_id', user_id),
 
-      // 7. Carb Loading Days
+      // 6. Carb Loading Days
       supabaseClient
         .from('carb_loading_days')
         .select(`
@@ -100,12 +94,6 @@ serve(async (req) => {
           carb_loading_plans!inner(user_id)
         `)
         .eq('carb_loading_plans.user_id', user_id),
-
-      // 8. Activity Completions
-      supabaseClient
-        .from('activity_completions')
-        .select('*')
-        .eq('user_id', user_id),
     ]);
 
     // Process results and handle errors gracefully
@@ -129,33 +117,27 @@ serve(async (req) => {
       }
     };
 
-    // Extract all data
+    // Extract all data (PHASE 1: User profile added first)
+    // Note: User profile is a single object, not an array
+    if (userProfileResult.status === 'fulfilled' && !userProfileResult.value.error) {
+      response.data.user_profile = userProfileResult.value.data || null;
+      console.log(`✓ user_profile: ${response.data.user_profile ? '1 record' : 'not found'}`);
+    } else {
+      const error = userProfileResult.status === 'fulfilled' ? userProfileResult.value.error : userProfileResult.reason;
+      response.errors.user_profile = error?.message || 'Unknown error';
+      response.data.user_profile = null;
+      console.error(`✗ user_profile: ${response.errors.user_profile}`);
+    }
+
     extractData(nutritionFoodsResult, 'nutrition_foods');
     extractData(carbLoadingFoodsResult, 'carb_loading_foods');
-    extractData(mealTypesResult, 'meal_types');
     extractData(activitiesResult, 'activities');
     extractData(eventsResult, 'events');
     extractData(carbLoadingPlansResult, 'carb_loading_plans');
     extractData(carbLoadingDaysResult, 'carb_loading_days');
-    extractData(activityCompletionsResult, 'activity_completions');
 
-    // Transform carb loading foods to include meal_type_ids array
-    // The query returns nested carb_loading_food_meal_types objects,
-    // but the Flutter app expects a flat meal_type_ids array
-    if (response.data.carb_loading_foods && Array.isArray(response.data.carb_loading_foods)) {
-      response.data.carb_loading_foods = response.data.carb_loading_foods.map((food: any) => {
-        const mealTypeIds = food.carb_loading_food_meal_types?.map((mt: any) => mt.meal_type_id) || [];
-
-        // Return food without the nested junction table data
-        const { carb_loading_food_meal_types, ...foodData } = food;
-
-        return {
-          ...foodData,
-          meal_type_ids: mealTypeIds
-        };
-      });
-      console.log(`✓ Transformed ${response.data.carb_loading_foods.length} carb loading foods with meal_type_ids`);
-    }
+    // Note: carb_loading_foods now has meal_types as a text[] column
+    // No transformation needed - the array is already in the correct format
 
     // Also get essential foods (Water, Salt, etc.)
     const { data: essentialFoods, error: essentialError } = await supabaseClient
