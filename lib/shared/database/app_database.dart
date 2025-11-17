@@ -34,7 +34,7 @@ import '../../features/nutrition_plan/domain/food_item.dart';
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
-/// V1 schema with 19 tables including auth_sessions for Supabase authentication
+/// V1 schema with 17 tables (added auth_sessions and auth columns to users)
 @DriftDatabase(tables: [
   // Core tables aligned with Supabase
   UserProfilesTable,

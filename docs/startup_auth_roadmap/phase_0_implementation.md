@@ -3,7 +3,7 @@
 
 **Status**: ✅ **COMPLETE**
 **Date Completed**: 2025-11-17
-**Version**: Database Schema V2
+**Version**: Database Schema V1 (Living v1 - no version bump)
 
 ---
 
@@ -16,7 +16,7 @@ Phase 0 established the foundational infrastructure for Supabase authentication 
 - ✅ Created `auth_sessions` table for offline-first session persistence
 - ✅ Added auth columns to `users` table for OAuth support
 - ✅ Implemented FOA-compliant `SessionRepository`
-- ✅ Generated Drift schema snapshot for v2 migration (19 tables)
+- ✅ Generated Drift schema snapshot for v1 (17 tables - updated with auth changes)
 
 ---
 
@@ -535,13 +535,13 @@ Create a complete schema snapshot for future migrations and version control.
 
 ### Generated File
 
-**Location**: `/Users/leemartin/development/mealvana_endurance/database_schemas/v2/drift_schema_v1.json`
+**Location**: `/Users/leemartin/development/mealvana_endurance/database_schemas/v1/drift_schema_v1.json`
 
 **Command Used**:
 ```bash
 dart run drift_dev schema dump \
   lib/shared/database/app_database.dart \
-  database_schemas/v2/
+  database_schemas/v1/
 ```
 
 ### Schema Statistics
@@ -617,8 +617,8 @@ int get schemaVersion => 1; // v1: Clean baseline schema
 ```
 
 **Future Migrations**:
-When moving to v2, Drift will:
-1. Compare `database_schemas/v2/drift_schema_v1.json` with new schema
+For future schema updates, Drift will:
+1. Compare `database_schemas/v1/drift_schema_v1.json` with new schema
 2. Generate migration code automatically
 3. Require manual `onUpgrade()` implementation for data transformations
 
@@ -899,7 +899,8 @@ group('24-hour grace period', () {
 
 **Generated Files**:
 - `/lib/shared/database/app_database.g.dart` - Drift generated code (auto-regenerated)
-- `/database_schemas/v2/drift_schema_v1.json` - Schema snapshot
+- `/database_schemas/v1/drift_schema_v1.json` - Schema snapshot (updated)
+- `/database_schemas/v1/migration_auth_phase0.sql` - Production migration SQL
 
 **Dependencies**:
 - `uuid: ^4.5.1` - RFC 4122 UUID generation
@@ -1005,7 +1006,9 @@ class AuthSessionsTable extends Table {
 
 - [x] `/lib/shared/database/tables/auth_sessions_table.dart` - Session persistence table
 - [x] `/lib/features/auth/data/session_repository.dart` - FOA-compliant repository
-- [x] `/database_schemas/v2/drift_schema_v1.json` - Schema snapshot
+- [x] `/database_schemas/v1/drift_schema_v1.json` - Schema snapshot (17 tables)
+- [x] `/database_schemas/v1/migration_auth_phase0.sql` - Production migration SQL
+- [x] `/database_schemas/v1/README.md` - Updated schema documentation
 
 ### Files Modified 📝
 
