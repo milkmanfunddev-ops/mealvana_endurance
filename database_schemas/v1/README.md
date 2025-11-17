@@ -58,8 +58,8 @@ This is a **living v1 schema** that grows with new features until we need breaki
 **Production Environment (Requires Migration)**:
 - ⚠️ Production Supabase DOES NOT have `auth_sessions` table yet
 - ⚠️ Production Supabase DOES NOT have auth columns in `users` table yet
-- **Action Required**: Run `migration_auth_phase0.sql` to update production
-- Migration is NON-DESTRUCTIVE - all existing data remains intact
+- **Action Required**: Run `migration_auth_phase0_complete.sql` to update production
+- Migration is NON-DESTRUCTIVE and IDEMPOTENT - safe to run multiple times
 
 ## Key Design Decisions (Phase 0 - Authentication Prerequisites)
 
@@ -88,7 +88,7 @@ This is a **living v1 schema** that grows with new features until we need breaki
 - **README.md** - This documentation file
 - **schema.sql** - Complete SQL DDL dump from Supabase (needs regeneration to include auth_sessions)
 - **drift_schema_v1.json** - Drift-specific schema snapshot (17 tables, includes auth changes)
-- **migration_auth_phase0.sql** - PostgreSQL migration for Phase 0 auth prerequisites
+- **migration_auth_phase0_complete.sql** - Idempotent PostgreSQL migration for Phase 0 auth prerequisites
 
 ## Generating New Schema Snapshots
 
