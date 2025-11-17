@@ -27,6 +27,7 @@ import '../../features/nutrition_plan/domain/pending_activity_data.dart';
 import '../../features/nutrition_plan/domain/macro_targets.dart';
 import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
+import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 class AppRouter {
@@ -171,7 +172,14 @@ class AppRouter {
         name: 'events-list',
         builder: (context, state) => const EventsListScreen(),
       ),
-      
+
+      // Pro Version Screen - Premium features showcase
+      GoRoute(
+        path: '/pro',
+        name: 'pro-version',
+        builder: (context, state) => const ProVersionScreen(),
+      ),
+
       // Settings Screen - User profile and preferences
       GoRoute(
         path: '/settings',

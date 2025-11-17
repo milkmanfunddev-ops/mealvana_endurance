@@ -1,11 +1,13 @@
 -- =====================================================
--- Phase 0 Authentication Migration Script
+-- Phase 0 Authentication Migration - Complete
 -- =====================================================
 -- Purpose: Add Supabase authentication support to v1 schema
+--          Safe to run multiple times (idempotent)
 --
 -- Changes:
--- 1. Create auth_sessions table for offline session persistence
--- 2. Add auth columns to users table for authentication integration
+-- 1. Create auth_provider_enum type
+-- 2. Create auth_sessions table for offline session persistence
+-- 3. Add auth columns to users table
 --
 -- Environment: Production (Supabase PostgreSQL)
 -- Schema Version: v1 (staying on v1, not bumping to v2)
@@ -13,8 +15,6 @@
 
 -- =====================================================
 -- 1. CREATE auth_provider_enum TYPE
--- =====================================================
--- Purpose: Proper enum type for OAuth providers
 -- =====================================================
 
 DO $$
@@ -26,9 +26,6 @@ END $$;
 
 -- =====================================================
 -- 2. CREATE auth_sessions TABLE
--- =====================================================
--- Purpose: Custom session persistence to work around Supabase offline
---          limitations (Issue #716). Enables 24-hour offline grace period.
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS auth_sessions (
@@ -67,7 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_provider
   ON auth_sessions(provider);
 
--- Add updated_at trigger
+-- Create updated_at trigger function (idempotent)
 CREATE OR REPLACE FUNCTION update_auth_sessions_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -76,6 +73,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop and recreate trigger (idempotent)
+DROP TRIGGER IF EXISTS auth_sessions_updated_at_trigger ON auth_sessions;
 CREATE TRIGGER auth_sessions_updated_at_trigger
   BEFORE UPDATE ON auth_sessions
   FOR EACH ROW
@@ -83,9 +82,6 @@ CREATE TRIGGER auth_sessions_updated_at_trigger
 
 -- =====================================================
 -- 3. ADD AUTH COLUMNS TO users TABLE
--- =====================================================
--- Purpose: Add authentication columns to support Supabase auth integration
---          while maintaining backward compatibility with device_id
 -- =====================================================
 
 -- Add auth_user_id column (nullable for gradual migration)
@@ -127,32 +123,53 @@ BEGIN
   END IF;
 END $$;
 
--- Create auth_provider_enum type (proper enum instead of CHECK constraint)
+-- Convert auth_provider column to use enum type if it's currently TEXT
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'auth_provider_enum') THEN
-    CREATE TYPE auth_provider_enum AS ENUM ('anonymous', 'email', 'google', 'apple');
-  END IF;
-END $$;
-
--- Convert auth_provider column to use enum type
-DO $$
-BEGIN
-  -- Check if column is already enum type
+  -- Check if column exists and is TEXT type
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'users'
     AND column_name = 'auth_provider'
-    AND data_type = 'USER-DEFINED'
-    AND udt_name = 'auth_provider_enum'
+    AND data_type = 'text'
   ) THEN
-    -- Already using enum, skip
-    NULL;
-  ELSE
+    -- Drop any CHECK constraint if it exists
+    IF EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conname = 'users_auth_provider_check'
+    ) THEN
+      ALTER TABLE users DROP CONSTRAINT users_auth_provider_check;
+    END IF;
+
     -- Convert TEXT to ENUM
     ALTER TABLE users
       ALTER COLUMN auth_provider TYPE auth_provider_enum
       USING auth_provider::auth_provider_enum;
+  END IF;
+END $$;
+
+-- Convert auth_sessions.provider to enum if needed
+DO $$
+BEGIN
+  -- Check if column exists and is TEXT type
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'auth_sessions'
+    AND column_name = 'provider'
+    AND data_type = 'text'
+  ) THEN
+    -- Drop any CHECK constraint if it exists
+    IF EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conname = 'auth_sessions_provider_check'
+    ) THEN
+      ALTER TABLE auth_sessions DROP CONSTRAINT auth_sessions_provider_check;
+    END IF;
+
+    -- Convert TEXT to ENUM
+    ALTER TABLE auth_sessions
+      ALTER COLUMN provider TYPE auth_provider_enum
+      USING provider::auth_provider_enum;
   END IF;
 END $$;
 
@@ -165,15 +182,49 @@ CREATE INDEX IF NOT EXISTS idx_users_auth_provider
   ON users(auth_provider);
 
 -- =====================================================
+-- VALIDATION QUERIES
+-- =====================================================
+
+-- Check enum type exists
+SELECT 'auth_provider_enum values:' as info;
+SELECT enumlabel as value
+FROM pg_type t
+JOIN pg_enum e ON t.oid = e.enumtypid
+WHERE typname = 'auth_provider_enum'
+ORDER BY enumlabel;
+
+-- Verify users.auth_provider is using enum
+SELECT 'users.auth_provider column info:' as info;
+SELECT
+  table_name,
+  column_name,
+  data_type,
+  udt_name
+FROM information_schema.columns
+WHERE table_name = 'users'
+  AND column_name = 'auth_provider';
+
+-- Verify auth_sessions.provider is using enum
+SELECT 'auth_sessions.provider column info:' as info;
+SELECT
+  table_name,
+  column_name,
+  data_type,
+  udt_name
+FROM information_schema.columns
+WHERE table_name = 'auth_sessions'
+  AND column_name = 'provider';
+
+-- =====================================================
 -- MIGRATION NOTES
 -- =====================================================
 --
--- IMPORTANT: This migration is NON-DESTRUCTIVE
+-- IMPORTANT: This migration is NON-DESTRUCTIVE and IDEMPOTENT
+-- - Safe to run multiple times
 -- - All existing data remains intact
 -- - device_id remains the primary identifier during transition
 -- - auth_user_id is nullable to support gradual migration
--- - New users will use auth_user_id as canonical ID
--- - Old users will be migrated in Phase 1 (anonymous auth implementation)
+-- - Handles TEXT to ENUM conversion if needed
 --
 -- ROLLBACK PLAN (if needed):
 -- DROP TABLE IF EXISTS auth_sessions CASCADE;
@@ -182,13 +233,7 @@ CREATE INDEX IF NOT EXISTS idx_users_auth_provider
 -- ALTER TABLE users DROP COLUMN IF EXISTS is_anonymous;
 -- DROP INDEX IF EXISTS idx_users_auth_user_id;
 -- DROP INDEX IF EXISTS idx_users_auth_provider;
---
--- POST-MIGRATION VALIDATION:
--- 1. Verify auth_sessions table exists: \d auth_sessions
--- 2. Verify users table has new columns: \d users
--- 3. Check constraint: SELECT conname FROM pg_constraint WHERE conrelid = 'users'::regclass;
--- 4. Test session insert/update operations
--- 5. Test anonymous user creation
+-- DROP TYPE IF EXISTS auth_provider_enum;
 --
 -- NEXT STEPS (Phase 1):
 -- 1. Update AuthService to use auth_sessions table

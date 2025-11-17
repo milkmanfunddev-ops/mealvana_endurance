@@ -105,10 +105,11 @@ The app implements a "fat backend" strategy where business logic and content are
 📚 **Full Documentation**: [/docs/technical/fat-backend-architecture.md](/docs/technical/fat-backend-architecture.md)
 
 ## Agents Available
-- docs-manager.  Please use for creating, amanging or updating our documentation.
-- code-researcher.  Please use for searching through the codebase for information.
-- web-research-specialist.  Use this for doing research on the web or using context7.
-- git-commit-helper.  Please commit often using this agent whenever you finish a major task.
+- **task-checker**: Run comprehensive quality checks (CodeRabbit + Flutter analyze + tests). Use after completing significant work and before committing.
+- **docs-manager**: Please use for creating, managing or updating our documentation.
+- **code-researcher**: Please use for searching through the codebase for information.
+- **web-research-specialist**: Use this for doing research on the web or using context7.
+- **git-commit-helper**: Please commit often using this agent whenever you finish a major task.
 
 ## Project Structure
 
@@ -298,14 +299,14 @@ class ScreenController extends _$ScreenController {
 
 **🚨 IMPORTANT FOR AI ASSISTANTS:**
 - **NEVER run `flutter build` commands** - These take 5-10+ minutes and should only be run by the human developer
-- **DO run `flutter analyze`** - This is fast and helps catch issues
+- **DO use `/task-checker` agent** - Runs comprehensive quality checks (CodeRabbit + Flutter analyze + tests)
 - **Let the human handle builds** - They will run builds when ready for testing/deployment
 
 **Local Development**:
 ```bash
 flutter run                              # Run on connected device
-flutter analyze                          # Check for issues (AI assistants should use this)
-flutter test                            # Run tests
+/task-checker                            # Run quality checks (CodeRabbit + analyze + tests)
+flutter test                            # Run tests manually if needed
 ```
 
 **Release Builds (HUMAN ONLY)**:

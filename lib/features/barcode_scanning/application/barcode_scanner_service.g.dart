@@ -55,4 +55,4 @@ final class BarcodeScannerServiceProvider
 }
 
 String _$barcodeScannerServiceHash() =>
-    r'c93694e0c2e3a10bd805aafe36b6ad8e094f0cea';
+    r'eae39ae366035e2f3420f5cb42c25e1cfb251c97';

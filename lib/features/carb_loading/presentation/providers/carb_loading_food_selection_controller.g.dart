@@ -59,7 +59,7 @@ final class CarbLoadingFoodSelectionControllerProvider
 }
 
 String _$carbLoadingFoodSelectionControllerHash() =>
-    r'31b280725e6f54a041c50a13b8acd62f6c018915';
+    r'272c13079c55b2e42e9c8b9dcfcd365477416900';
 
 final class CarbLoadingFoodSelectionControllerFamily extends $Family
     with

@@ -474,35 +474,12 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [1, 2, 3].map((bottles) {
-                  final isSelected = _bikeBottles == bottles;
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _bikeBottles = bottles),
-                      child: Container(
-                        margin: EdgeInsets.only(right: bottles != 3 ? 8 : 0),
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.blackberry : Colors.transparent,
-                          border: Border.all(
-                            color: isSelected ? AppColors.blackberry : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                            width: 2,
-                          ),
-                          borderRadius: AppRadius.inputRadius,
-                        ),
-                        child: Text(
-                          bottles == 3 ? '3+' : '$bottles',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: isSelected ? AppColors.cream : Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+              KyleSelectionButtonGroup<int>(
+                values: const [1, 2, 3],
+                selectedValue: _bikeBottles,
+                onChanged: (value) => setState(() => _bikeBottles = value),
+                labelBuilder: (value) => value == 3 ? '3+' : '$value',
+                spacing: 8,
               ),
             ],
           ),
@@ -781,46 +758,43 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
               const SizedBox(height: AppSpacing.md),
               Column(
                 children: [
-                  _buildSwimCapOption('none', 'None'),
+                  KyleSelectionButton<String>(
+                    value: 'none',
+                    isSelected: _swimCapType == 'none',
+                    onTap: () => setState(() => _swimCapType = 'none'),
+                    label: 'None',
+                    width: double.infinity,
+                  ),
                   const SizedBox(height: AppSpacing.xs),
-                  _buildSwimCapOption('latex', 'Latex'),
+                  KyleSelectionButton<String>(
+                    value: 'latex',
+                    isSelected: _swimCapType == 'latex',
+                    onTap: () => setState(() => _swimCapType = 'latex'),
+                    label: 'Latex',
+                    width: double.infinity,
+                  ),
                   const SizedBox(height: AppSpacing.xs),
-                  _buildSwimCapOption('silicone', 'Silicone'),
+                  KyleSelectionButton<String>(
+                    value: 'silicone',
+                    isSelected: _swimCapType == 'silicone',
+                    onTap: () => setState(() => _swimCapType = 'silicone'),
+                    label: 'Silicone',
+                    width: double.infinity,
+                  ),
                   const SizedBox(height: AppSpacing.xs),
-                  _buildSwimCapOption('neoprene', 'Neoprene'),
+                  KyleSelectionButton<String>(
+                    value: 'neoprene',
+                    isSelected: _swimCapType == 'neoprene',
+                    onTap: () => setState(() => _swimCapType = 'neoprene'),
+                    label: 'Neoprene',
+                    width: double.infinity,
+                  ),
                 ],
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSwimCapOption(String value, String label) {
-    final isSelected = _swimCapType == value;
-    return GestureDetector(
-      onTap: () => setState(() => _swimCapType = value),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.blackberry : Colors.transparent,
-          border: Border.all(
-            color: isSelected ? AppColors.blackberry : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-            width: 2,
-          ),
-          borderRadius: AppRadius.inputRadius,
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: isSelected ? AppColors.cream : Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
     );
   }
 }

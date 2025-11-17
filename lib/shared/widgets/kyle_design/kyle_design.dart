@@ -5,6 +5,7 @@ export 'buttons/secondary_button.dart';
 export 'buttons/tertiary_button.dart';
 export 'buttons/segmented_control.dart';
 export 'buttons/add_food_button.dart';
+export 'buttons/selection_button.dart';
 export 'inputs/text_field.dart';
 export 'inputs/plus_minus_control.dart';
 export 'icons/activity_icon.dart';

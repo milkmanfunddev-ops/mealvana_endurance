@@ -1,0 +1,28 @@
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false  # No emojis per project instructions
+  auto_review:
+    enabled: true
+    drafts: false
+language: "en-US"
+custom_instructions: |
+  - Follow Andrea Bizzotto's Feature-Oriented Architecture (FOA)
+  - Use Riverpod @riverpod AsyncNotifier patterns (NEVER StateNotifier)
+  - All UI text must come from ContentService (no hardcoded strings)
+  - Controllers contain business logic only (no UI, no navigation)
+  - UI screens contain only UI logic (no underscore methods with business logic)
+  - Follow Flutter and Dart best practices
+  - Maintain Drift database schema patterns (v1 baseline)
+  - Use AsyncValue.guard for error handling in controllers
+  - Include part directive for code generation (@riverpod, @DriftDatabase)
+  - Follow offline-first architecture (write to Drift first)
+  - Use dependency injection via Riverpod (no static methods)
+  - Respect privacy-first design (device_id based auth)
+tools:
+  # Enable security scanning
+  gitleaks:
+    enabled: true
+  semgrep:
+    enabled: true
