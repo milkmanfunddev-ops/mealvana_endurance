@@ -12,7 +12,20 @@
 -- =====================================================
 
 -- =====================================================
--- 1. CREATE auth_sessions TABLE
+-- 1. CREATE auth_provider_enum TYPE
+-- =====================================================
+-- Purpose: Proper enum type for OAuth providers
+-- =====================================================
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'auth_provider_enum') THEN
+    CREATE TYPE auth_provider_enum AS ENUM ('anonymous', 'email', 'google', 'apple');
+  END IF;
+END $$;
+
+-- =====================================================
+-- 2. CREATE auth_sessions TABLE
 -- =====================================================
 -- Purpose: Custom session persistence to work around Supabase offline
 --          limitations (Issue #716). Enables 24-hour offline grace period.
@@ -36,7 +49,7 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
 
   -- User type and provider tracking
   is_anonymous BOOLEAN NOT NULL DEFAULT TRUE,
-  provider TEXT NOT NULL DEFAULT 'anonymous',
+  provider auth_provider_enum NOT NULL DEFAULT 'anonymous',
 
   -- User contact info (nullable for anonymous users)
   email TEXT,
@@ -44,11 +57,7 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
 
   -- Audit fields
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-  -- Constraints
-  CONSTRAINT auth_sessions_provider_check
-    CHECK (provider IN ('anonymous', 'email', 'google', 'apple'))
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Create indexes for common queries
@@ -73,7 +82,7 @@ CREATE TRIGGER auth_sessions_updated_at_trigger
   EXECUTE FUNCTION update_auth_sessions_updated_at();
 
 -- =====================================================
--- 2. ADD AUTH COLUMNS TO users TABLE
+-- 3. ADD AUTH COLUMNS TO users TABLE
 -- =====================================================
 -- Purpose: Add authentication columns to support Supabase auth integration
 --          while maintaining backward compatibility with device_id
@@ -92,7 +101,7 @@ BEGIN
   END IF;
 END $$;
 
--- Add auth_provider column with default 'anonymous'
+-- Add auth_provider column with enum type and default 'anonymous'
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -101,7 +110,7 @@ BEGIN
     AND table_name = 'users'
     AND column_name = 'auth_provider'
   ) THEN
-    ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'anonymous';
+    ALTER TABLE users ADD COLUMN auth_provider auth_provider_enum NOT NULL DEFAULT 'anonymous';
   END IF;
 END $$;
 
@@ -118,16 +127,32 @@ BEGIN
   END IF;
 END $$;
 
--- Add constraint to validate auth_provider values
+-- Create auth_provider_enum type (proper enum instead of CHECK constraint)
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'users_auth_provider_check'
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'auth_provider_enum') THEN
+    CREATE TYPE auth_provider_enum AS ENUM ('anonymous', 'email', 'google', 'apple');
+  END IF;
+END $$;
+
+-- Convert auth_provider column to use enum type
+DO $$
+BEGIN
+  -- Check if column is already enum type
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users'
+    AND column_name = 'auth_provider'
+    AND data_type = 'USER-DEFINED'
+    AND udt_name = 'auth_provider_enum'
   ) THEN
+    -- Already using enum, skip
+    NULL;
+  ELSE
+    -- Convert TEXT to ENUM
     ALTER TABLE users
-      ADD CONSTRAINT users_auth_provider_check
-        CHECK (auth_provider IN ('anonymous', 'email', 'google', 'apple'));
+      ALTER COLUMN auth_provider TYPE auth_provider_enum
+      USING auth_provider::auth_provider_enum;
   END IF;
 END $$;
 
