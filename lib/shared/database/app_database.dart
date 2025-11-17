@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 import 'package:sqlite3/sqlite3.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:io';
 import '../../features/auth/domain/user_preferences.dart' as domain;
 import 'tables/user_profiles.dart';
@@ -14,6 +15,7 @@ import 'tables/foods_table.dart';
 import 'tables/app_content_table.dart';
 import 'tables/edge_functions_table.dart';
 import 'tables/user_foods_table.dart';
+import 'tables/auth_sessions_table.dart';
 // NEW: Calendar tables
 import 'tables/activities_table.dart';
 import 'tables/events_table.dart';
@@ -32,12 +34,15 @@ import '../../features/nutrition_plan/domain/food_item.dart';
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
-/// V1 schema with 18 tables (Phase 3C.5 - embedded macros/notes on activities)
+/// V1 schema with 19 tables including auth_sessions for Supabase authentication
 @DriftDatabase(tables: [
   // Core tables aligned with Supabase
   UserProfilesTable,
   FoodPreferencesTable,
   FeedbackTable,
+
+  // Authentication
+  AuthSessionsTable,
 
   // Food system tables
   FoodsTable,
@@ -77,18 +82,11 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1; // v1: Clean baseline schema
 
-  /// Generate a UUID for new records
+  /// Generate a proper UUID v4 for new records
+  /// Uses the uuid package to ensure RFC 4122 compliance and exact 36-character length
   String _generateUuid() {
-    // Generate a proper UUID that meets the 36-character requirement
-    final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-    final random1 = (DateTime.now().microsecond % 10000).toString().padLeft(4, '0');
-    final random2 = (DateTime.now().millisecond % 10000).toString().padLeft(4, '0');
-    final random3 = ((DateTime.now().second * 1000 + DateTime.now().millisecond) % 100000).toString().padLeft(5, '0');
-
-    // Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 characters total)
-    final uuid = '${timestamp.substring(timestamp.length - 8)}-$random1-$random2-${random3.substring(0, 4)}-$random3${timestamp.substring(timestamp.length - 7)}';
-
-    return uuid;
+    const uuid = Uuid();
+    return uuid.v4();
   }
 
   // Note: product_types table has been dropped - now using product_type_enum

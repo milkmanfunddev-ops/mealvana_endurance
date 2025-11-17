@@ -34,6 +34,48 @@ class $UserProfilesTableTable extends UserProfilesTable
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
+  static const VerificationMeta _authUserIdMeta = const VerificationMeta(
+    'authUserId',
+  );
+  @override
+  late final GeneratedColumn<String> authUserId = GeneratedColumn<String>(
+    'auth_user_id',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 36,
+      maxTextLength: 36,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _authProviderMeta = const VerificationMeta(
+    'authProvider',
+  );
+  @override
+  late final GeneratedColumn<String> authProvider = GeneratedColumn<String>(
+    'auth_provider',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('anonymous'),
+  );
+  static const VerificationMeta _isAnonymousMeta = const VerificationMeta(
+    'isAnonymous',
+  );
+  @override
+  late final GeneratedColumn<bool> isAnonymous = GeneratedColumn<bool>(
+    'is_anonymous',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_anonymous" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -381,6 +423,9 @@ class $UserProfilesTableTable extends UserProfilesTable
   List<GeneratedColumn> get $columns => [
     id,
     deviceId,
+    authUserId,
+    authProvider,
+    isAnonymous,
     createdAt,
     updatedAt,
     gender,
@@ -434,6 +479,33 @@ class $UserProfilesTableTable extends UserProfilesTable
       );
     } else if (isInserting) {
       context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('auth_user_id')) {
+      context.handle(
+        _authUserIdMeta,
+        authUserId.isAcceptableOrUnknown(
+          data['auth_user_id']!,
+          _authUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('auth_provider')) {
+      context.handle(
+        _authProviderMeta,
+        authProvider.isAcceptableOrUnknown(
+          data['auth_provider']!,
+          _authProviderMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_anonymous')) {
+      context.handle(
+        _isAnonymousMeta,
+        isAnonymous.isAcceptableOrUnknown(
+          data['is_anonymous']!,
+          _isAnonymousMeta,
+        ),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -674,6 +746,18 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.string,
         data['${effectivePrefix}device_id'],
       )!,
+      authUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_user_id'],
+      ),
+      authProvider: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_provider'],
+      )!,
+      isAnonymous: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_anonymous'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -807,7 +891,18 @@ class UserProfileEntry extends DataClass
   final String id;
 
   /// Device ID used as unique identifier (matches Supabase users.device_id)
+  /// This will become nullable during auth migration (legacy field)
   final String deviceId;
+
+  /// Auth columns for Supabase authentication integration
+  /// Explicit reference to Supabase auth.uid() - this is the canonical user ID
+  final String? authUserId;
+
+  /// OAuth provider used: 'anonymous', 'google', 'apple', 'email'
+  final String authProvider;
+
+  /// Whether this user is anonymous (not linked to permanent account)
+  final bool isAnonymous;
 
   /// When the profile was created (matches Supabase users.created_at)
   final DateTime createdAt;
@@ -875,6 +970,9 @@ class UserProfileEntry extends DataClass
   const UserProfileEntry({
     required this.id,
     required this.deviceId,
+    this.authUserId,
+    required this.authProvider,
+    required this.isAnonymous,
     required this.createdAt,
     required this.updatedAt,
     this.gender,
@@ -909,6 +1007,11 @@ class UserProfileEntry extends DataClass
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['device_id'] = Variable<String>(deviceId);
+    if (!nullToAbsent || authUserId != null) {
+      map['auth_user_id'] = Variable<String>(authUserId);
+    }
+    map['auth_provider'] = Variable<String>(authProvider);
+    map['is_anonymous'] = Variable<bool>(isAnonymous);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || gender != null) {
@@ -968,6 +1071,11 @@ class UserProfileEntry extends DataClass
     return UserProfilesTableCompanion(
       id: Value(id),
       deviceId: Value(deviceId),
+      authUserId: authUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authUserId),
+      authProvider: Value(authProvider),
+      isAnonymous: Value(isAnonymous),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       gender: gender == null && nullToAbsent
@@ -1023,6 +1131,9 @@ class UserProfileEntry extends DataClass
     return UserProfileEntry(
       id: serializer.fromJson<String>(json['id']),
       deviceId: serializer.fromJson<String>(json['deviceId']),
+      authUserId: serializer.fromJson<String?>(json['authUserId']),
+      authProvider: serializer.fromJson<String>(json['authProvider']),
+      isAnonymous: serializer.fromJson<bool>(json['isAnonymous']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       gender: serializer.fromJson<String?>(json['gender']),
@@ -1083,6 +1194,9 @@ class UserProfileEntry extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'deviceId': serializer.toJson<String>(deviceId),
+      'authUserId': serializer.toJson<String?>(authUserId),
+      'authProvider': serializer.toJson<String>(authProvider),
+      'isAnonymous': serializer.toJson<bool>(isAnonymous),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'gender': serializer.toJson<String?>(gender),
@@ -1121,6 +1235,9 @@ class UserProfileEntry extends DataClass
   UserProfileEntry copyWith({
     String? id,
     String? deviceId,
+    Value<String?> authUserId = const Value.absent(),
+    String? authProvider,
+    bool? isAnonymous,
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<String?> gender = const Value.absent(),
@@ -1152,6 +1269,9 @@ class UserProfileEntry extends DataClass
   }) => UserProfileEntry(
     id: id ?? this.id,
     deviceId: deviceId ?? this.deviceId,
+    authUserId: authUserId.present ? authUserId.value : this.authUserId,
+    authProvider: authProvider ?? this.authProvider,
+    isAnonymous: isAnonymous ?? this.isAnonymous,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     gender: gender.present ? gender.value : this.gender,
@@ -1186,6 +1306,15 @@ class UserProfileEntry extends DataClass
     return UserProfileEntry(
       id: data.id.present ? data.id.value : this.id,
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      authUserId: data.authUserId.present
+          ? data.authUserId.value
+          : this.authUserId,
+      authProvider: data.authProvider.present
+          ? data.authProvider.value
+          : this.authProvider,
+      isAnonymous: data.isAnonymous.present
+          ? data.isAnonymous.value
+          : this.isAnonymous,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       gender: data.gender.present ? data.gender.value : this.gender,
@@ -1270,6 +1399,9 @@ class UserProfileEntry extends DataClass
     return (StringBuffer('UserProfileEntry(')
           ..write('id: $id, ')
           ..write('deviceId: $deviceId, ')
+          ..write('authUserId: $authUserId, ')
+          ..write('authProvider: $authProvider, ')
+          ..write('isAnonymous: $isAnonymous, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('gender: $gender, ')
@@ -1306,6 +1438,9 @@ class UserProfileEntry extends DataClass
   int get hashCode => Object.hashAll([
     id,
     deviceId,
+    authUserId,
+    authProvider,
+    isAnonymous,
     createdAt,
     updatedAt,
     gender,
@@ -1341,6 +1476,9 @@ class UserProfileEntry extends DataClass
       (other is UserProfileEntry &&
           other.id == this.id &&
           other.deviceId == this.deviceId &&
+          other.authUserId == this.authUserId &&
+          other.authProvider == this.authProvider &&
+          other.isAnonymous == this.isAnonymous &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.gender == this.gender &&
@@ -1374,6 +1512,9 @@ class UserProfileEntry extends DataClass
 class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<String> id;
   final Value<String> deviceId;
+  final Value<String?> authUserId;
+  final Value<String> authProvider;
+  final Value<bool> isAnonymous;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String?> gender;
@@ -1406,6 +1547,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   const UserProfilesTableCompanion({
     this.id = const Value.absent(),
     this.deviceId = const Value.absent(),
+    this.authUserId = const Value.absent(),
+    this.authProvider = const Value.absent(),
+    this.isAnonymous = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.gender = const Value.absent(),
@@ -1439,6 +1583,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   UserProfilesTableCompanion.insert({
     required String id,
     required String deviceId,
+    this.authUserId = const Value.absent(),
+    this.authProvider = const Value.absent(),
+    this.isAnonymous = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.gender = const Value.absent(),
@@ -1473,6 +1620,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   static Insertable<UserProfileEntry> custom({
     Expression<String>? id,
     Expression<String>? deviceId,
+    Expression<String>? authUserId,
+    Expression<String>? authProvider,
+    Expression<bool>? isAnonymous,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? gender,
@@ -1506,6 +1656,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (deviceId != null) 'device_id': deviceId,
+      if (authUserId != null) 'auth_user_id': authUserId,
+      if (authProvider != null) 'auth_provider': authProvider,
+      if (isAnonymous != null) 'is_anonymous': isAnonymous,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (gender != null) 'gender': gender,
@@ -1553,6 +1706,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   UserProfilesTableCompanion copyWith({
     Value<String>? id,
     Value<String>? deviceId,
+    Value<String?>? authUserId,
+    Value<String>? authProvider,
+    Value<bool>? isAnonymous,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String?>? gender,
@@ -1586,6 +1742,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     return UserProfilesTableCompanion(
       id: id ?? this.id,
       deviceId: deviceId ?? this.deviceId,
+      authUserId: authUserId ?? this.authUserId,
+      authProvider: authProvider ?? this.authProvider,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       gender: gender ?? this.gender,
@@ -1630,6 +1789,15 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     }
     if (deviceId.present) {
       map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (authUserId.present) {
+      map['auth_user_id'] = Variable<String>(authUserId.value);
+    }
+    if (authProvider.present) {
+      map['auth_provider'] = Variable<String>(authProvider.value);
+    }
+    if (isAnonymous.present) {
+      map['is_anonymous'] = Variable<bool>(isAnonymous.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -1740,6 +1908,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     return (StringBuffer('UserProfilesTableCompanion(')
           ..write('id: $id, ')
           ..write('deviceId: $deviceId, ')
+          ..write('authUserId: $authUserId, ')
+          ..write('authProvider: $authProvider, ')
+          ..write('isAnonymous: $isAnonymous, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('gender: $gender, ')
@@ -3433,6 +3604,813 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
           ..write('reminderMinute: $reminderMinute, ')
           ..write('reminderRecurring: $reminderRecurring, ')
           ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AuthSessionsTableTable extends AuthSessionsTable
+    with TableInfo<$AuthSessionsTableTable, AuthSessionEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AuthSessionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 36,
+      maxTextLength: 36,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accessTokenMeta = const VerificationMeta(
+    'accessToken',
+  );
+  @override
+  late final GeneratedColumn<String> accessToken = GeneratedColumn<String>(
+    'access_token',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _refreshTokenMeta = const VerificationMeta(
+    'refreshToken',
+  );
+  @override
+  late final GeneratedColumn<String> refreshToken = GeneratedColumn<String>(
+    'refresh_token',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userMetadataMeta = const VerificationMeta(
+    'userMetadata',
+  );
+  @override
+  late final GeneratedColumn<String> userMetadata = GeneratedColumn<String>(
+    'user_metadata',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _appMetadataMeta = const VerificationMeta(
+    'appMetadata',
+  );
+  @override
+  late final GeneratedColumn<String> appMetadata = GeneratedColumn<String>(
+    'app_metadata',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _lastSyncedAtMeta = const VerificationMeta(
+    'lastSyncedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+    'last_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isAnonymousMeta = const VerificationMeta(
+    'isAnonymous',
+  );
+  @override
+  late final GeneratedColumn<bool> isAnonymous = GeneratedColumn<bool>(
+    'is_anonymous',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_anonymous" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _providerMeta = const VerificationMeta(
+    'provider',
+  );
+  @override
+  late final GeneratedColumn<String> provider = GeneratedColumn<String>(
+    'provider',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('anonymous'),
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
+  @override
+  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
+    'phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    userId,
+    accessToken,
+    refreshToken,
+    expiresAt,
+    userMetadata,
+    appMetadata,
+    lastSyncedAt,
+    isAnonymous,
+    provider,
+    email,
+    phone,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'auth_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AuthSessionEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('access_token')) {
+      context.handle(
+        _accessTokenMeta,
+        accessToken.isAcceptableOrUnknown(
+          data['access_token']!,
+          _accessTokenMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_accessTokenMeta);
+    }
+    if (data.containsKey('refresh_token')) {
+      context.handle(
+        _refreshTokenMeta,
+        refreshToken.isAcceptableOrUnknown(
+          data['refresh_token']!,
+          _refreshTokenMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_refreshTokenMeta);
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expiresAtMeta);
+    }
+    if (data.containsKey('user_metadata')) {
+      context.handle(
+        _userMetadataMeta,
+        userMetadata.isAcceptableOrUnknown(
+          data['user_metadata']!,
+          _userMetadataMeta,
+        ),
+      );
+    }
+    if (data.containsKey('app_metadata')) {
+      context.handle(
+        _appMetadataMeta,
+        appMetadata.isAcceptableOrUnknown(
+          data['app_metadata']!,
+          _appMetadataMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+        _lastSyncedAtMeta,
+        lastSyncedAt.isAcceptableOrUnknown(
+          data['last_synced_at']!,
+          _lastSyncedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_anonymous')) {
+      context.handle(
+        _isAnonymousMeta,
+        isAnonymous.isAcceptableOrUnknown(
+          data['is_anonymous']!,
+          _isAnonymousMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider')) {
+      context.handle(
+        _providerMeta,
+        provider.isAcceptableOrUnknown(data['provider']!, _providerMeta),
+      );
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('phone')) {
+      context.handle(
+        _phoneMeta,
+        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId};
+  @override
+  AuthSessionEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AuthSessionEntry(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      accessToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}access_token'],
+      )!,
+      refreshToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}refresh_token'],
+      )!,
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      )!,
+      userMetadata: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_metadata'],
+      )!,
+      appMetadata: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}app_metadata'],
+      )!,
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_synced_at'],
+      ),
+      isAnonymous: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_anonymous'],
+      )!,
+      provider: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      ),
+      phone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phone'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AuthSessionsTableTable createAlias(String alias) {
+    return $AuthSessionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class AuthSessionEntry extends DataClass
+    implements Insertable<AuthSessionEntry> {
+  /// User ID from Supabase auth.uid() - this is the primary key
+  final String userId;
+
+  /// JWT access token (short-lived, default 1 hour)
+  final String accessToken;
+
+  /// JWT refresh token (long-lived, used once to get new access/refresh pair)
+  final String refreshToken;
+
+  /// When the access token expires (UTC timestamp)
+  final DateTime expiresAt;
+
+  /// User metadata from auth.user.user_metadata (stored as JSON string)
+  /// Contains device_id and other user-controlled metadata
+  final String userMetadata;
+
+  /// App metadata from auth.user.app_metadata (stored as JSON string)
+  /// Contains server-only metadata like roles, provider info
+  final String appMetadata;
+
+  /// When this session was last synced with Supabase
+  final DateTime? lastSyncedAt;
+
+  /// Whether this is an anonymous user session
+  final bool isAnonymous;
+
+  /// OAuth provider used (e.g., 'email', 'google', 'apple', 'anonymous')
+  final String provider;
+
+  /// Email address (nullable for anonymous users)
+  final String? email;
+
+  /// Phone number (nullable)
+  final String? phone;
+
+  /// When the session was created locally
+  final DateTime createdAt;
+
+  /// When the session was last updated locally
+  final DateTime updatedAt;
+  const AuthSessionEntry({
+    required this.userId,
+    required this.accessToken,
+    required this.refreshToken,
+    required this.expiresAt,
+    required this.userMetadata,
+    required this.appMetadata,
+    this.lastSyncedAt,
+    required this.isAnonymous,
+    required this.provider,
+    this.email,
+    this.phone,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<String>(userId);
+    map['access_token'] = Variable<String>(accessToken);
+    map['refresh_token'] = Variable<String>(refreshToken);
+    map['expires_at'] = Variable<DateTime>(expiresAt);
+    map['user_metadata'] = Variable<String>(userMetadata);
+    map['app_metadata'] = Variable<String>(appMetadata);
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    map['is_anonymous'] = Variable<bool>(isAnonymous);
+    map['provider'] = Variable<String>(provider);
+    if (!nullToAbsent || email != null) {
+      map['email'] = Variable<String>(email);
+    }
+    if (!nullToAbsent || phone != null) {
+      map['phone'] = Variable<String>(phone);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  AuthSessionsTableCompanion toCompanion(bool nullToAbsent) {
+    return AuthSessionsTableCompanion(
+      userId: Value(userId),
+      accessToken: Value(accessToken),
+      refreshToken: Value(refreshToken),
+      expiresAt: Value(expiresAt),
+      userMetadata: Value(userMetadata),
+      appMetadata: Value(appMetadata),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
+      isAnonymous: Value(isAnonymous),
+      provider: Value(provider),
+      email: email == null && nullToAbsent
+          ? const Value.absent()
+          : Value(email),
+      phone: phone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phone),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory AuthSessionEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AuthSessionEntry(
+      userId: serializer.fromJson<String>(json['userId']),
+      accessToken: serializer.fromJson<String>(json['accessToken']),
+      refreshToken: serializer.fromJson<String>(json['refreshToken']),
+      expiresAt: serializer.fromJson<DateTime>(json['expiresAt']),
+      userMetadata: serializer.fromJson<String>(json['userMetadata']),
+      appMetadata: serializer.fromJson<String>(json['appMetadata']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+      isAnonymous: serializer.fromJson<bool>(json['isAnonymous']),
+      provider: serializer.fromJson<String>(json['provider']),
+      email: serializer.fromJson<String?>(json['email']),
+      phone: serializer.fromJson<String?>(json['phone']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<String>(userId),
+      'accessToken': serializer.toJson<String>(accessToken),
+      'refreshToken': serializer.toJson<String>(refreshToken),
+      'expiresAt': serializer.toJson<DateTime>(expiresAt),
+      'userMetadata': serializer.toJson<String>(userMetadata),
+      'appMetadata': serializer.toJson<String>(appMetadata),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+      'isAnonymous': serializer.toJson<bool>(isAnonymous),
+      'provider': serializer.toJson<String>(provider),
+      'email': serializer.toJson<String?>(email),
+      'phone': serializer.toJson<String?>(phone),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  AuthSessionEntry copyWith({
+    String? userId,
+    String? accessToken,
+    String? refreshToken,
+    DateTime? expiresAt,
+    String? userMetadata,
+    String? appMetadata,
+    Value<DateTime?> lastSyncedAt = const Value.absent(),
+    bool? isAnonymous,
+    String? provider,
+    Value<String?> email = const Value.absent(),
+    Value<String?> phone = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => AuthSessionEntry(
+    userId: userId ?? this.userId,
+    accessToken: accessToken ?? this.accessToken,
+    refreshToken: refreshToken ?? this.refreshToken,
+    expiresAt: expiresAt ?? this.expiresAt,
+    userMetadata: userMetadata ?? this.userMetadata,
+    appMetadata: appMetadata ?? this.appMetadata,
+    lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+    isAnonymous: isAnonymous ?? this.isAnonymous,
+    provider: provider ?? this.provider,
+    email: email.present ? email.value : this.email,
+    phone: phone.present ? phone.value : this.phone,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  AuthSessionEntry copyWithCompanion(AuthSessionsTableCompanion data) {
+    return AuthSessionEntry(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      accessToken: data.accessToken.present
+          ? data.accessToken.value
+          : this.accessToken,
+      refreshToken: data.refreshToken.present
+          ? data.refreshToken.value
+          : this.refreshToken,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      userMetadata: data.userMetadata.present
+          ? data.userMetadata.value
+          : this.userMetadata,
+      appMetadata: data.appMetadata.present
+          ? data.appMetadata.value
+          : this.appMetadata,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
+      isAnonymous: data.isAnonymous.present
+          ? data.isAnonymous.value
+          : this.isAnonymous,
+      provider: data.provider.present ? data.provider.value : this.provider,
+      email: data.email.present ? data.email.value : this.email,
+      phone: data.phone.present ? data.phone.value : this.phone,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AuthSessionEntry(')
+          ..write('userId: $userId, ')
+          ..write('accessToken: $accessToken, ')
+          ..write('refreshToken: $refreshToken, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('userMetadata: $userMetadata, ')
+          ..write('appMetadata: $appMetadata, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('isAnonymous: $isAnonymous, ')
+          ..write('provider: $provider, ')
+          ..write('email: $email, ')
+          ..write('phone: $phone, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    userId,
+    accessToken,
+    refreshToken,
+    expiresAt,
+    userMetadata,
+    appMetadata,
+    lastSyncedAt,
+    isAnonymous,
+    provider,
+    email,
+    phone,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AuthSessionEntry &&
+          other.userId == this.userId &&
+          other.accessToken == this.accessToken &&
+          other.refreshToken == this.refreshToken &&
+          other.expiresAt == this.expiresAt &&
+          other.userMetadata == this.userMetadata &&
+          other.appMetadata == this.appMetadata &&
+          other.lastSyncedAt == this.lastSyncedAt &&
+          other.isAnonymous == this.isAnonymous &&
+          other.provider == this.provider &&
+          other.email == this.email &&
+          other.phone == this.phone &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class AuthSessionsTableCompanion extends UpdateCompanion<AuthSessionEntry> {
+  final Value<String> userId;
+  final Value<String> accessToken;
+  final Value<String> refreshToken;
+  final Value<DateTime> expiresAt;
+  final Value<String> userMetadata;
+  final Value<String> appMetadata;
+  final Value<DateTime?> lastSyncedAt;
+  final Value<bool> isAnonymous;
+  final Value<String> provider;
+  final Value<String?> email;
+  final Value<String?> phone;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const AuthSessionsTableCompanion({
+    this.userId = const Value.absent(),
+    this.accessToken = const Value.absent(),
+    this.refreshToken = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.userMetadata = const Value.absent(),
+    this.appMetadata = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.isAnonymous = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.email = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AuthSessionsTableCompanion.insert({
+    required String userId,
+    required String accessToken,
+    required String refreshToken,
+    required DateTime expiresAt,
+    this.userMetadata = const Value.absent(),
+    this.appMetadata = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.isAnonymous = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.email = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       accessToken = Value(accessToken),
+       refreshToken = Value(refreshToken),
+       expiresAt = Value(expiresAt);
+  static Insertable<AuthSessionEntry> custom({
+    Expression<String>? userId,
+    Expression<String>? accessToken,
+    Expression<String>? refreshToken,
+    Expression<DateTime>? expiresAt,
+    Expression<String>? userMetadata,
+    Expression<String>? appMetadata,
+    Expression<DateTime>? lastSyncedAt,
+    Expression<bool>? isAnonymous,
+    Expression<String>? provider,
+    Expression<String>? email,
+    Expression<String>? phone,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (accessToken != null) 'access_token': accessToken,
+      if (refreshToken != null) 'refresh_token': refreshToken,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (userMetadata != null) 'user_metadata': userMetadata,
+      if (appMetadata != null) 'app_metadata': appMetadata,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (isAnonymous != null) 'is_anonymous': isAnonymous,
+      if (provider != null) 'provider': provider,
+      if (email != null) 'email': email,
+      if (phone != null) 'phone': phone,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AuthSessionsTableCompanion copyWith({
+    Value<String>? userId,
+    Value<String>? accessToken,
+    Value<String>? refreshToken,
+    Value<DateTime>? expiresAt,
+    Value<String>? userMetadata,
+    Value<String>? appMetadata,
+    Value<DateTime?>? lastSyncedAt,
+    Value<bool>? isAnonymous,
+    Value<String>? provider,
+    Value<String?>? email,
+    Value<String?>? phone,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return AuthSessionsTableCompanion(
+      userId: userId ?? this.userId,
+      accessToken: accessToken ?? this.accessToken,
+      refreshToken: refreshToken ?? this.refreshToken,
+      expiresAt: expiresAt ?? this.expiresAt,
+      userMetadata: userMetadata ?? this.userMetadata,
+      appMetadata: appMetadata ?? this.appMetadata,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
+      provider: provider ?? this.provider,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (accessToken.present) {
+      map['access_token'] = Variable<String>(accessToken.value);
+    }
+    if (refreshToken.present) {
+      map['refresh_token'] = Variable<String>(refreshToken.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (userMetadata.present) {
+      map['user_metadata'] = Variable<String>(userMetadata.value);
+    }
+    if (appMetadata.present) {
+      map['app_metadata'] = Variable<String>(appMetadata.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
+    if (isAnonymous.present) {
+      map['is_anonymous'] = Variable<bool>(isAnonymous.value);
+    }
+    if (provider.present) {
+      map['provider'] = Variable<String>(provider.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (phone.present) {
+      map['phone'] = Variable<String>(phone.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AuthSessionsTableCompanion(')
+          ..write('userId: $userId, ')
+          ..write('accessToken: $accessToken, ')
+          ..write('refreshToken: $refreshToken, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('userMetadata: $userMetadata, ')
+          ..write('appMetadata: $appMetadata, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('isAnonymous: $isAnonymous, ')
+          ..write('provider: $provider, ')
+          ..write('email: $email, ')
+          ..write('phone: $phone, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -17160,6 +18138,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FoodPreferencesTableTable foodPreferencesTable =
       $FoodPreferencesTableTable(this);
   late final $FeedbackTableTable feedbackTable = $FeedbackTableTable(this);
+  late final $AuthSessionsTableTable authSessionsTable =
+      $AuthSessionsTableTable(this);
   late final $FoodsTableTable foodsTable = $FoodsTableTable(this);
   late final $UserFoodsTableTable userFoodsTable = $UserFoodsTableTable(this);
   late final $AppContentTableTable appContentTable = $AppContentTableTable(
@@ -17193,6 +18173,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userProfilesTable,
     foodPreferencesTable,
     feedbackTable,
+    authSessionsTable,
     foodsTable,
     userFoodsTable,
     appContentTable,
@@ -17213,6 +18194,9 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
     UserProfilesTableCompanion Function({
       required String id,
       required String deviceId,
+      Value<String?> authUserId,
+      Value<String> authProvider,
+      Value<bool> isAnonymous,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String?> gender,
@@ -17247,6 +18231,9 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
     UserProfilesTableCompanion Function({
       Value<String> id,
       Value<String> deviceId,
+      Value<String?> authUserId,
+      Value<String> authProvider,
+      Value<bool> isAnonymous,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String?> gender,
@@ -17294,6 +18281,21 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<String> get deviceId => $composableBuilder(
     column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authUserId => $composableBuilder(
+    column: $table.authUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authProvider => $composableBuilder(
+    column: $table.authProvider,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isAnonymous => $composableBuilder(
+    column: $table.isAnonymous,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17462,6 +18464,21 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get authUserId => $composableBuilder(
+    column: $table.authUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authProvider => $composableBuilder(
+    column: $table.authProvider,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isAnonymous => $composableBuilder(
+    column: $table.isAnonymous,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -17617,6 +18634,21 @@ class $$UserProfilesTableTableAnnotationComposer
 
   GeneratedColumn<String> get deviceId =>
       $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get authUserId => $composableBuilder(
+    column: $table.authUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get authProvider => $composableBuilder(
+    column: $table.authProvider,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isAnonymous => $composableBuilder(
+    column: $table.isAnonymous,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -17794,6 +18826,9 @@ class $$UserProfilesTableTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> deviceId = const Value.absent(),
+                Value<String?> authUserId = const Value.absent(),
+                Value<String> authProvider = const Value.absent(),
+                Value<bool> isAnonymous = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String?> gender = const Value.absent(),
@@ -17827,6 +18862,9 @@ class $$UserProfilesTableTableTableManager
               }) => UserProfilesTableCompanion(
                 id: id,
                 deviceId: deviceId,
+                authUserId: authUserId,
+                authProvider: authProvider,
+                isAnonymous: isAnonymous,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 gender: gender,
@@ -17861,6 +18899,9 @@ class $$UserProfilesTableTableTableManager
               ({
                 required String id,
                 required String deviceId,
+                Value<String?> authUserId = const Value.absent(),
+                Value<String> authProvider = const Value.absent(),
+                Value<bool> isAnonymous = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String?> gender = const Value.absent(),
@@ -17894,6 +18935,9 @@ class $$UserProfilesTableTableTableManager
               }) => UserProfilesTableCompanion.insert(
                 id: id,
                 deviceId: deviceId,
+                authUserId: authUserId,
+                authProvider: authProvider,
+                isAnonymous: isAnonymous,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 gender: gender,
@@ -18722,6 +19766,383 @@ typedef $$FeedbackTableTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $FeedbackTableTable, FeedbackEntry>,
       ),
       FeedbackEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$AuthSessionsTableTableCreateCompanionBuilder =
+    AuthSessionsTableCompanion Function({
+      required String userId,
+      required String accessToken,
+      required String refreshToken,
+      required DateTime expiresAt,
+      Value<String> userMetadata,
+      Value<String> appMetadata,
+      Value<DateTime?> lastSyncedAt,
+      Value<bool> isAnonymous,
+      Value<String> provider,
+      Value<String?> email,
+      Value<String?> phone,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$AuthSessionsTableTableUpdateCompanionBuilder =
+    AuthSessionsTableCompanion Function({
+      Value<String> userId,
+      Value<String> accessToken,
+      Value<String> refreshToken,
+      Value<DateTime> expiresAt,
+      Value<String> userMetadata,
+      Value<String> appMetadata,
+      Value<DateTime?> lastSyncedAt,
+      Value<bool> isAnonymous,
+      Value<String> provider,
+      Value<String?> email,
+      Value<String?> phone,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$AuthSessionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $AuthSessionsTableTable> {
+  $$AuthSessionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userMetadata => $composableBuilder(
+    column: $table.userMetadata,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get appMetadata => $composableBuilder(
+    column: $table.appMetadata,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isAnonymous => $composableBuilder(
+    column: $table.isAnonymous,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get provider => $composableBuilder(
+    column: $table.provider,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AuthSessionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $AuthSessionsTableTable> {
+  $$AuthSessionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userMetadata => $composableBuilder(
+    column: $table.userMetadata,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get appMetadata => $composableBuilder(
+    column: $table.appMetadata,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isAnonymous => $composableBuilder(
+    column: $table.isAnonymous,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get provider => $composableBuilder(
+    column: $table.provider,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AuthSessionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AuthSessionsTableTable> {
+  $$AuthSessionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<String> get userMetadata => $composableBuilder(
+    column: $table.userMetadata,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get appMetadata => $composableBuilder(
+    column: $table.appMetadata,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isAnonymous => $composableBuilder(
+    column: $table.isAnonymous,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get phone =>
+      $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$AuthSessionsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AuthSessionsTableTable,
+          AuthSessionEntry,
+          $$AuthSessionsTableTableFilterComposer,
+          $$AuthSessionsTableTableOrderingComposer,
+          $$AuthSessionsTableTableAnnotationComposer,
+          $$AuthSessionsTableTableCreateCompanionBuilder,
+          $$AuthSessionsTableTableUpdateCompanionBuilder,
+          (
+            AuthSessionEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $AuthSessionsTableTable,
+              AuthSessionEntry
+            >,
+          ),
+          AuthSessionEntry,
+          PrefetchHooks Function()
+        > {
+  $$AuthSessionsTableTableTableManager(
+    _$AppDatabase db,
+    $AuthSessionsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AuthSessionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AuthSessionsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AuthSessionsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> userId = const Value.absent(),
+                Value<String> accessToken = const Value.absent(),
+                Value<String> refreshToken = const Value.absent(),
+                Value<DateTime> expiresAt = const Value.absent(),
+                Value<String> userMetadata = const Value.absent(),
+                Value<String> appMetadata = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<bool> isAnonymous = const Value.absent(),
+                Value<String> provider = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AuthSessionsTableCompanion(
+                userId: userId,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                expiresAt: expiresAt,
+                userMetadata: userMetadata,
+                appMetadata: appMetadata,
+                lastSyncedAt: lastSyncedAt,
+                isAnonymous: isAnonymous,
+                provider: provider,
+                email: email,
+                phone: phone,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String userId,
+                required String accessToken,
+                required String refreshToken,
+                required DateTime expiresAt,
+                Value<String> userMetadata = const Value.absent(),
+                Value<String> appMetadata = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<bool> isAnonymous = const Value.absent(),
+                Value<String> provider = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AuthSessionsTableCompanion.insert(
+                userId: userId,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                expiresAt: expiresAt,
+                userMetadata: userMetadata,
+                appMetadata: appMetadata,
+                lastSyncedAt: lastSyncedAt,
+                isAnonymous: isAnonymous,
+                provider: provider,
+                email: email,
+                phone: phone,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AuthSessionsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AuthSessionsTableTable,
+      AuthSessionEntry,
+      $$AuthSessionsTableTableFilterComposer,
+      $$AuthSessionsTableTableOrderingComposer,
+      $$AuthSessionsTableTableAnnotationComposer,
+      $$AuthSessionsTableTableCreateCompanionBuilder,
+      $$AuthSessionsTableTableUpdateCompanionBuilder,
+      (
+        AuthSessionEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $AuthSessionsTableTable,
+          AuthSessionEntry
+        >,
+      ),
+      AuthSessionEntry,
       PrefetchHooks Function()
     >;
 typedef $$FoodsTableTableCreateCompanionBuilder =
@@ -24818,6 +26239,8 @@ class $AppDatabaseManager {
       $$FoodPreferencesTableTableTableManager(_db, _db.foodPreferencesTable);
   $$FeedbackTableTableTableManager get feedbackTable =>
       $$FeedbackTableTableTableManager(_db, _db.feedbackTable);
+  $$AuthSessionsTableTableTableManager get authSessionsTable =>
+      $$AuthSessionsTableTableTableManager(_db, _db.authSessionsTable);
   $$FoodsTableTableTableManager get foodsTable =>
       $$FoodsTableTableTableManager(_db, _db.foodsTable);
   $$UserFoodsTableTableTableManager get userFoodsTable =>

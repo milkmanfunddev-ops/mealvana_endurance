@@ -9,7 +9,18 @@ class UserProfilesTable extends Table {
   TextColumn get id => text().withLength(min: 36, max: 36)();
 
   /// Device ID used as unique identifier (matches Supabase users.device_id)
+  /// This will become nullable during auth migration (legacy field)
   TextColumn get deviceId => text().unique().named('device_id')();
+
+  /// Auth columns for Supabase authentication integration
+  /// Explicit reference to Supabase auth.uid() - this is the canonical user ID
+  TextColumn get authUserId => text().withLength(min: 36, max: 36).nullable().named('auth_user_id')();
+
+  /// OAuth provider used: 'anonymous', 'google', 'apple', 'email'
+  TextColumn get authProvider => text().withDefault(const Constant('anonymous')).named('auth_provider')();
+
+  /// Whether this user is anonymous (not linked to permanent account)
+  BoolColumn get isAnonymous => boolean().withDefault(const Constant(true)).named('is_anonymous')();
 
   /// When the profile was created (matches Supabase users.created_at)
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
@@ -94,6 +105,7 @@ class UserProfilesTable extends Table {
     "CHECK (preferred_pace_unit IN ('min_per_mile', 'min_per_km'))",
     "CHECK (calendar_week_start IN ('sunday', 'monday'))",
     "CHECK (default_activity_day IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'))",
+    "CHECK (auth_provider IN ('anonymous', 'email', 'google', 'apple'))",
   ];
 }
 
