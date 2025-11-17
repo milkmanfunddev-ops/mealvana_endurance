@@ -80,21 +80,56 @@ CREATE TRIGGER auth_sessions_updated_at_trigger
 -- =====================================================
 
 -- Add auth_user_id column (nullable for gradual migration)
-ALTER TABLE users
-  ADD COLUMN IF NOT EXISTS auth_user_id UUID;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'users'
+    AND column_name = 'auth_user_id'
+  ) THEN
+    ALTER TABLE users ADD COLUMN auth_user_id UUID;
+  END IF;
+END $$;
 
 -- Add auth_provider column with default 'anonymous'
-ALTER TABLE users
-  ADD COLUMN IF NOT EXISTS auth_provider TEXT NOT NULL DEFAULT 'anonymous';
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'users'
+    AND column_name = 'auth_provider'
+  ) THEN
+    ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'anonymous';
+  END IF;
+END $$;
 
 -- Add is_anonymous column with default TRUE
-ALTER TABLE users
-  ADD COLUMN IF NOT EXISTS is_anonymous BOOLEAN NOT NULL DEFAULT TRUE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'users'
+    AND column_name = 'is_anonymous'
+  ) THEN
+    ALTER TABLE users ADD COLUMN is_anonymous BOOLEAN NOT NULL DEFAULT TRUE;
+  END IF;
+END $$;
 
 -- Add constraint to validate auth_provider values
-ALTER TABLE users
-  ADD CONSTRAINT IF NOT EXISTS users_auth_provider_check
-    CHECK (auth_provider IN ('anonymous', 'email', 'google', 'apple'));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'users_auth_provider_check'
+  ) THEN
+    ALTER TABLE users
+      ADD CONSTRAINT users_auth_provider_check
+        CHECK (auth_provider IN ('anonymous', 'email', 'google', 'apple'));
+  END IF;
+END $$;
 
 -- Create index on auth_user_id for lookups
 CREATE INDEX IF NOT EXISTS idx_users_auth_user_id
