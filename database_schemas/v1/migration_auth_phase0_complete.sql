@@ -97,7 +97,7 @@ BEGIN
   END IF;
 END $$;
 
--- Add auth_provider column with enum type and default 'anonymous'
+-- Add auth_provider column with TEXT type first (will convert to ENUM later)
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -106,7 +106,7 @@ BEGIN
     AND table_name = 'users'
     AND column_name = 'auth_provider'
   ) THEN
-    ALTER TABLE users ADD COLUMN auth_provider auth_provider_enum NOT NULL DEFAULT 'anonymous';
+    ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'anonymous';
   END IF;
 END $$;
 
@@ -123,17 +123,17 @@ BEGIN
   END IF;
 END $$;
 
--- Convert auth_provider column to use enum type if it's currently TEXT
+-- Convert auth_provider column from TEXT to ENUM type
 DO $$
 BEGIN
-  -- Check if column exists and is TEXT type
+  -- Check if column is TEXT type (needs conversion)
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'users'
     AND column_name = 'auth_provider'
     AND data_type = 'text'
   ) THEN
-    -- Drop any CHECK constraint if it exists
+    -- Step 1: Drop any CHECK constraint if it exists
     IF EXISTS (
       SELECT 1 FROM pg_constraint
       WHERE conname = 'users_auth_provider_check'
@@ -141,10 +141,16 @@ BEGIN
       ALTER TABLE users DROP CONSTRAINT users_auth_provider_check;
     END IF;
 
-    -- Convert TEXT to ENUM
+    -- Step 2: Drop the default (can't cast TEXT default to ENUM)
+    ALTER TABLE users ALTER COLUMN auth_provider DROP DEFAULT;
+
+    -- Step 3: Convert TEXT to ENUM
     ALTER TABLE users
       ALTER COLUMN auth_provider TYPE auth_provider_enum
       USING auth_provider::auth_provider_enum;
+
+    -- Step 4: Set new ENUM default
+    ALTER TABLE users ALTER COLUMN auth_provider SET DEFAULT 'anonymous'::auth_provider_enum;
   END IF;
 END $$;
 
@@ -166,10 +172,12 @@ BEGIN
       ALTER TABLE auth_sessions DROP CONSTRAINT auth_sessions_provider_check;
     END IF;
 
-    -- Convert TEXT to ENUM
+    -- Drop default, convert type, set new default
+    ALTER TABLE auth_sessions ALTER COLUMN provider DROP DEFAULT;
     ALTER TABLE auth_sessions
       ALTER COLUMN provider TYPE auth_provider_enum
       USING provider::auth_provider_enum;
+    ALTER TABLE auth_sessions ALTER COLUMN provider SET DEFAULT 'anonymous'::auth_provider_enum;
   END IF;
 END $$;
 
@@ -199,7 +207,8 @@ SELECT
   table_name,
   column_name,
   data_type,
-  udt_name
+  udt_name,
+  column_default
 FROM information_schema.columns
 WHERE table_name = 'users'
   AND column_name = 'auth_provider';
@@ -210,7 +219,8 @@ SELECT
   table_name,
   column_name,
   data_type,
-  udt_name
+  udt_name,
+  column_default
 FROM information_schema.columns
 WHERE table_name = 'auth_sessions'
   AND column_name = 'provider';
@@ -224,7 +234,7 @@ WHERE table_name = 'auth_sessions'
 -- - All existing data remains intact
 -- - device_id remains the primary identifier during transition
 -- - auth_user_id is nullable to support gradual migration
--- - Handles TEXT to ENUM conversion if needed
+-- - Handles TEXT to ENUM conversion by dropping/recreating default
 --
 -- ROLLBACK PLAN (if needed):
 -- DROP TABLE IF EXISTS auth_sessions CASCADE;
