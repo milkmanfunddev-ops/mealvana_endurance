@@ -10,15 +10,23 @@
 -- - Sessions: Managed by Supabase SDK (stored in platform secure storage)
 --
 -- Changes:
--- 1. Create auth_provider_enum type
--- 2. Add auth columns to public.users table
+-- 1. Drop auth_sessions table (no longer needed - SDK handles this)
+-- 2. Create auth_provider_enum type
+-- 3. Add auth columns to public.users table
 --
 -- Environment: Production (Supabase PostgreSQL)
 -- Schema Version: v1 (staying on v1, not bumping to v2)
 -- =====================================================
 
 -- =====================================================
--- 1. CREATE auth_provider_enum TYPE
+-- 1. DROP auth_sessions TABLE (if exists)
+-- =====================================================
+-- We no longer need this table - Supabase SDK handles session persistence
+
+DROP TABLE IF EXISTS auth_sessions CASCADE;
+
+-- =====================================================
+-- 2. CREATE auth_provider_enum TYPE
 -- =====================================================
 
 DO $$
@@ -29,7 +37,7 @@ BEGIN
 END $$;
 
 -- =====================================================
--- 2. ADD AUTH COLUMNS TO public.users TABLE
+-- 3. ADD AUTH COLUMNS TO public.users TABLE
 -- =====================================================
 
 -- Add auth_user_id column - links to auth.users.id
@@ -113,7 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_users_auth_provider
   ON users(auth_provider);
 
 -- =====================================================
--- 3. ADD FOREIGN KEY TO auth.users (Optional)
+-- 4. ADD FOREIGN KEY TO auth.users (Optional)
 -- =====================================================
 -- Uncomment if you want to enforce referential integrity
 -- This requires auth.users to exist (it's created by Supabase)
@@ -191,6 +199,9 @@ ORDER BY column_name;
 -- - No custom auth_sessions table needed
 --
 -- ROLLBACK PLAN (if needed):
+-- -- Restore auth_sessions table (if you really want to go back)
+-- -- But we don't recommend this - Supabase SDK is better!
+--
 -- ALTER TABLE users DROP COLUMN IF EXISTS auth_user_id;
 -- ALTER TABLE users DROP COLUMN IF EXISTS auth_provider;
 -- ALTER TABLE users DROP COLUMN IF EXISTS is_anonymous;
