@@ -6,7 +6,9 @@ import 'dart:convert';
 @DataClassName('UserProfileEntry')
 class UserProfilesTable extends Table {
   /// UUID primary key (matches Supabase users.id)
-  TextColumn get id => text().withLength(min: 36, max: 36)();
+  /// Note: During migration from device_id, this accepts any string length
+  /// Will eventually be UUID-only after full migration to Supabase Auth
+  TextColumn get id => text()();
 
   /// Device ID used as unique identifier (matches Supabase users.device_id)
   /// This will become nullable during auth migration (legacy field)

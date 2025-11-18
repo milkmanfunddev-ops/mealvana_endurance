@@ -272,7 +272,10 @@ class AppDatabase extends _$AppDatabase {
     await into(userProfilesTable).insertOnConflictUpdate(
       UserProfilesTableCompanion.insert(
         id: profile.id,
-        deviceId: profile.id, // Use profile.id as deviceId for device-based auth
+        deviceId: profile.deviceId,
+        authUserId: Value(profile.authUserId),
+        authProvider: Value(profile.authProvider),
+        isAnonymous: Value(profile.isAnonymous),
         gender: Value(profile.gender.name),
         birthday: Value(profile.birthday),
         heightFeet: Value(profile.heightFeet),
@@ -292,6 +295,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateUserProfile(domain.UserProfile profile) async {
     await (update(userProfilesTable)..where((u) => u.id.equals(profile.id))).write(
       UserProfilesTableCompanion(
+        deviceId: Value(profile.deviceId),
+        authUserId: Value(profile.authUserId),
+        authProvider: Value(profile.authProvider),
+        isAnonymous: Value(profile.isAnonymous),
         gender: Value(profile.gender.name),
         birthday: Value(profile.birthday),
         heightFeet: Value(profile.heightFeet),
@@ -774,6 +781,10 @@ class AppDatabase extends _$AppDatabase {
   domain.UserProfile _convertToDomainUserProfile(UserProfileEntry dbUser) {
     return domain.UserProfile(
       id: dbUser.id,
+      deviceId: dbUser.deviceId,
+      authUserId: dbUser.authUserId,
+      authProvider: dbUser.authProvider,
+      isAnonymous: dbUser.isAnonymous,
       gender: domain.Gender.values.firstWhere(
         (g) => g.name == dbUser.gender,
         orElse: () => domain.Gender.other,

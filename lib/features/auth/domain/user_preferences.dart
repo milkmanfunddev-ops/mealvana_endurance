@@ -2,6 +2,13 @@
 /// Removed Hive dependencies as part of migration to Drift database
 class UserProfile {
   final String id;
+
+  // Auth fields for Supabase authentication migration
+  final String deviceId; // Legacy device identifier
+  final String? authUserId; // Supabase auth.uid() - canonical user ID
+  final String authProvider; // 'anonymous', 'email', 'google', 'apple'
+  final bool isAnonymous; // True until account is linked
+
   final Gender gender;
   final DateTime birthday;
   final int heightFeet;
@@ -27,6 +34,10 @@ class UserProfile {
 
   UserProfile({
     required this.id,
+    required this.deviceId,
+    this.authUserId,
+    this.authProvider = 'anonymous',
+    this.isAnonymous = true,
     required this.gender,
     required this.birthday,
     required this.heightFeet,
@@ -79,7 +90,11 @@ class UserProfile {
   /// Create UserProfile from JSON (from Supabase)
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['device_id'] as String,
+      id: json['id'] as String? ?? json['device_id'] as String, // Support both id and device_id
+      deviceId: json['device_id'] as String,
+      authUserId: json['auth_user_id'] as String?,
+      authProvider: json['auth_provider'] as String? ?? 'anonymous',
+      isAnonymous: json['is_anonymous'] as bool? ?? true,
       gender: Gender.values.firstWhere(
         (g) => g.name == json['gender'],
         orElse: () => Gender.other,
@@ -113,7 +128,11 @@ class UserProfile {
   /// Convert UserProfile to JSON (for Supabase)
   Map<String, dynamic> toJson() {
     return {
-      'device_id': id,
+      'id': id,
+      'device_id': deviceId,
+      'auth_user_id': authUserId,
+      'auth_provider': authProvider,
+      'is_anonymous': isAnonymous,
       'gender': gender.name,
       'birthday': birthday.toIso8601String().split('T')[0],
       'height_feet': heightFeet,
@@ -141,6 +160,10 @@ class UserProfile {
   /// Copy with method for updates
   UserProfile copyWith({
     String? id,
+    String? deviceId,
+    String? authUserId,
+    String? authProvider,
+    bool? isAnonymous,
     Gender? gender,
     DateTime? birthday,
     int? heightFeet,
@@ -163,6 +186,10 @@ class UserProfile {
   }) {
     return UserProfile(
       id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
+      authUserId: authUserId ?? this.authUserId,
+      authProvider: authProvider ?? this.authProvider,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
       gender: gender ?? this.gender,
       birthday: birthday ?? this.birthday,
       heightFeet: heightFeet ?? this.heightFeet,

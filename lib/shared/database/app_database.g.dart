@@ -15,10 +15,6 @@ class $UserProfilesTableTable extends UserProfilesTable
     'id',
     aliasedName,
     false,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 36,
-      maxTextLength: 36,
-    ),
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
@@ -888,6 +884,8 @@ class $UserProfilesTableTable extends UserProfilesTable
 class UserProfileEntry extends DataClass
     implements Insertable<UserProfileEntry> {
   /// UUID primary key (matches Supabase users.id)
+  /// Note: During migration from device_id, this accepts any string length
+  /// Will eventually be UUID-only after full migration to Supabase Auth
   final String id;
 
   /// Device ID used as unique identifier (matches Supabase users.device_id)

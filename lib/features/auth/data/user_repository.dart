@@ -253,9 +253,13 @@ class UserRepository {
   UserProfile _parseUserFromSupabase(dynamic response, String deviceId) {
     // Handle both single object and array responses
     final userData = response is List ? response.first : response;
-    
+
     return UserProfile(
-      id: deviceId, // Use device ID as the local user ID
+      id: userData['id'] ?? deviceId, // Prefer Supabase id, fallback to device ID
+      deviceId: deviceId,
+      authUserId: userData['auth_user_id'] as String?,
+      authProvider: userData['auth_provider'] as String? ?? 'anonymous',
+      isAnonymous: userData['is_anonymous'] as bool? ?? true,
       gender: Gender.values.firstWhere(
         (e) => e.name == userData['gender'],
         orElse: () => Gender.other,
