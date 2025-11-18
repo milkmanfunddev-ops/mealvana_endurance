@@ -151,15 +151,15 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     DebugLogger.debug('📋 Food preferences screen - Save result: $success');
 
     if (success && mounted) {
-      DebugLogger.info('🎯 Food preferences screen - Success! Navigating to /main');
+      DebugLogger.info('🎯 Food preferences screen - Success! Navigating to auth screen');
 
       await analytics.track('navigation', properties: {
-        'destination': 'Main App',
+        'destination': 'Post-Onboarding Auth',
         'source': 'Food Preferences Complete',
       });
 
       if (mounted) {
-        context.go('/main');
+        context.go('/auth/post-onboarding');
       }
     } else {
       DebugLogger.error('❌ Food preferences screen - Failed to save or not mounted. Success: $success, Mounted: $mounted');

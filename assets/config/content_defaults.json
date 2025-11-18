@@ -222,5 +222,71 @@
     "pdf_activity_label": "Activity Date",
     "pdf_sent_label": "Sent",
     "pdf_from_label": "From"
+  },
+  "auth": {
+    "post_onboarding": {
+      "title": "Create Your Account",
+      "subtitle": "Secure your data and sync across devices",
+      "hero_text": "Save your nutrition plans, training progress, and preferences with a free account.",
+      "benefits_card_title": "Account Benefits",
+      "benefits": [
+        "Sync your data across all your devices",
+        "Never lose your nutrition plans and training history",
+        "Get personalized recommendations based on your progress",
+        "Share plans with coaches and training partners"
+      ],
+      "apple_button": "Continue with Apple",
+      "google_button": "Continue with Google",
+      "email_button": "Sign up with Email",
+      "skip_button": "Continue without signing in",
+      "skip_reminder": "You can always create an account later in Settings",
+      "loading_apple": "Connecting to Apple...",
+      "loading_google": "Connecting to Google...",
+      "loading_email": "Creating account...",
+      "error_oauth_cancelled": "Sign in was cancelled",
+      "error_oauth_failed": "Sign in failed. Please try again.",
+      "error_email_failed": "Account creation failed. Please try again.",
+      "success_linked": "Account created successfully!"
+    },
+    "email_signup": {
+      "title": "Sign Up with Email",
+      "subtitle": "Create your account to get started",
+      "email_label": "Email Address",
+      "email_hint": "you@example.com",
+      "email_required": "Email is required",
+      "email_invalid": "Please enter a valid email address",
+      "password_label": "Password",
+      "password_hint": "At least 8 characters",
+      "password_required": "Password is required",
+      "password_too_short": "Password must be at least 8 characters",
+      "password_confirm_label": "Confirm Password",
+      "password_confirm_hint": "Re-enter your password",
+      "password_mismatch": "Passwords do not match",
+      "create_button": "Create Account",
+      "creating_button": "Creating Account...",
+      "back_button": "Back",
+      "email_verification_notice": "We'll send a confirmation email to verify your address",
+      "email_verification_optional": "(Optional - you can use the app immediately)"
+    },
+    "settings": {
+      "account_section_title": "Account",
+      "status_anonymous": "Not signed in",
+      "status_email": "Signed in with Email",
+      "status_apple": "Signed in with Apple",
+      "status_google": "Signed in with Google",
+      "sign_in_button": "Create Account",
+      "sign_out_button": "Sign Out",
+      "reminder_badge": "Create account to save your data",
+      "sign_out_confirm_title": "Sign Out?",
+      "sign_out_confirm_message": "Your data is only stored locally. Are you sure you want to sign out?",
+      "sign_out_confirm_yes": "Sign Out",
+      "sign_out_confirm_no": "Cancel"
+    },
+    "errors": {
+      "no_session": "No active session - please restart the app",
+      "network_error": "Network error. Please check your connection.",
+      "user_id_mismatch": "Account linking failed - data preservation error",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

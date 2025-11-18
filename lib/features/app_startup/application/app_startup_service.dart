@@ -3,6 +3,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
@@ -13,6 +14,7 @@ import '../../../shared/services/notification_service.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/sync/data_sync_service.dart';
 import '../../nutrition_plan/data/food_repository.dart';
+import '../../auth/application/oauth_service.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -164,6 +166,9 @@ class AppStartupService {
           },
         );
 
+        // Setup auth state listener for OAuth callbacks
+        setupAuthStateListener();
+
         return;
       }
 
@@ -206,6 +211,9 @@ class AppStartupService {
         },
       );
 
+      // Setup auth state listener for OAuth callbacks
+      setupAuthStateListener();
+
     } catch (e, stackTrace) {
       _logger.error(
         'Supabase Auth initialization failed',
@@ -229,6 +237,119 @@ class AppStartupService {
       // User will see error screen with retry option
       rethrow;
     }
+  }
+
+  /// Setup auth state change listener for OAuth callbacks
+  /// This is critical for OAuth deep link flow to work correctly
+  ///
+  /// Flow:
+  /// 1. User taps "Sign in with Google" → Opens browser
+  /// 2. User signs in → Redirects to: com.milkman.mealvanaendurance://auth-callback
+  /// 3. Supabase SDK intercepts deep link and completes OAuth
+  /// 4. Supabase fires `onAuthStateChange` event
+  /// 5. This listener detects the change and calls OAuthService.handleOAuthCallback()
+  /// 6. Local profile is updated with new auth provider
+  void setupAuthStateListener() {
+    _logger.info('🔄 Setting up auth state change listener...', context: 'AUTH');
+
+    _supabase.auth.onAuthStateChange.listen((data) async {
+      final event = data.event;
+      final session = data.session;
+
+      _logger.info(
+        'Auth state changed',
+        context: 'AUTH',
+        data: {
+          'event': event.name,
+          'user_id': session?.user.id,
+          'is_anonymous': session?.user.isAnonymous,
+        },
+      );
+
+      // Handle OAuth sign-in events (when user goes from anonymous → authenticated)
+      if (event == AuthChangeEvent.signedIn && session != null) {
+        final user = session.user;
+        final wasAnonymous = user.isAnonymous ?? false;
+
+        // If user is no longer anonymous, they've linked an OAuth account
+        if (!wasAnonymous) {
+          _logger.info(
+            'OAuth account linking detected',
+            context: 'AUTH',
+            data: {
+              'user_id': user.id,
+              'provider': user.appMetadata['provider'],
+            },
+          );
+
+          try {
+            // Get OAuth provider from user metadata
+            final provider = user.appMetadata['provider'] as String? ?? 'unknown';
+
+            // Call OAuth service to handle the callback
+            final oauthService = ref.read(oAuthServiceProvider.notifier);
+            await oauthService.handleOAuthCallback(
+              userId: user.id,
+              provider: provider,
+            );
+
+            _logger.info(
+              'OAuth callback handled successfully',
+              context: 'AUTH',
+              data: {'user_id': user.id, 'provider': provider},
+            );
+
+            // Track successful OAuth linking
+            await _analytics.track(
+              'oauth_linking_completed',
+              properties: {
+                'user_id': user.id,
+                'provider': provider,
+                'timestamp': DateTime.now().toIso8601String(),
+              },
+            );
+
+          } catch (e, stackTrace) {
+            _logger.error(
+              'Failed to handle OAuth callback',
+              context: 'AUTH',
+              error: e,
+              stackTrace: stackTrace,
+            );
+
+            // Report to Sentry but don't crash the app
+            await _sentry.reportCriticalError(
+              e,
+              stackTrace: stackTrace,
+              context: 'oauth_callback_failure',
+              tags: {
+                'error_type': 'oauth_callback_error',
+                'user_id': user.id,
+              },
+            );
+          }
+        }
+      }
+
+      // Handle token refresh events
+      if (event == AuthChangeEvent.tokenRefreshed) {
+        _logger.info('Auth token refreshed', context: 'AUTH');
+        await _analytics.track('auth_token_refreshed', properties: {
+          'user_id': session?.user.id,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+      }
+
+      // Handle sign-out events
+      if (event == AuthChangeEvent.signedOut) {
+        _logger.info('User signed out', context: 'AUTH');
+        await _analytics.track('user_signed_out', properties: {
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+      }
+    });
+
+    _logger.info('✅ Auth state listener setup complete', context: 'AUTH');
   }
 
   /// Check if user has existing session and restore it

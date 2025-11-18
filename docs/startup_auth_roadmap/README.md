@@ -1,6 +1,41 @@
 # App Startup, Identity & Authentication Roadmap
 
-_Last updated: 2025-11-17_
+_Last updated: 2025-11-18_
+
+## Implementation Status
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| Phase 0: Hotfix & Schema Prep | ✅ Complete | Auth fields added, migration ready |
+| Phase 1: Canonical UUID Adoption | ✅ Complete | Anonymous auth implemented |
+| Phase 2: Authentication UX + Social Login | 🚧 In Progress (9/14) | UI complete, Platform config pending |
+| Phase 3: Environment & Telemetry | ⏸️ Deferred | Low priority |
+| Phase 4: Observability | ⏸️ Deferred | Pre-launch only |
+
+**Current Focus:** Phase 2 - Account Linking (Apple Sign-In, Google Sign-In, Email/Password)
+
+## ⚠️ CRITICAL: App Initialization Architecture Required
+
+**Before Phase 2 OAuth can work**, the app initialization pattern must be refactored to support OAuth deep links.
+
+**The Problem:**
+- OAuth redirects arrive as deep links: `com.milkman.mealvanaendurance://auth-callback`
+- Current architecture: AppStartupWidget is a GoRouter route, blocking deep link processing
+- Without refactor: OAuth will fail silently (deep links ignored, auth callbacks never trigger)
+
+**The Solution:**
+- Implement Andrea Bizzotto's `MaterialApp.builder` pattern
+- AppStartupWidget becomes a wrapper widget (not a route)
+- GoRouter initializes immediately and handles deep links during app startup
+
+**📚 Complete Implementation Guide:**
+- **Architecture Documentation:** `/docs/technical/app-initialization-deep-linking.md`
+- **Phase 2 Status:** `/docs/startup_auth_roadmap/PHASE_2_STATUS.md` (see "Step 0: Refactor App Initialization")
+- **Phase 2 Implementation:** `/docs/startup_auth_roadmap/phase_2_implementation.md` (see "Architecture Refactor" section)
+
+**Estimated Time:** 1 hour (BLOCKING for all OAuth features)
+
+---
 
 ## 1. Guiding Decisions
 1. **Canonical identifier** – Every user is represented by the Supabase Auth UUID. Device IDs are treated purely as metadata (`users.device_id`) and never used as a primary key in Drift or Supabase.
@@ -81,31 +116,43 @@ Authentication screen (post-onboarding)
 - Any table that references a user must continue referencing `users.id` (already UUID). When inserting, pass the canonical UUID rather than the device id.
 - Analytics, notifications, Mixpanel distinct IDs, and Sentry user context should use the same UUID so cross-system correlation works.
 
-### Phase 2 – Authentication UX + Social Login
+### Phase 2 – Authentication UX + Social Login (Web OAuth)
 1. **Anonymous session UX**
-   - After food preferences, show a “Create your account” screen.
+   - After food preferences, show a "Create your account" screen.
    - Buttons:
-     - “Continue with Email” → collect email/password, call `supabase.auth.updateUser({ email })`, wait for verification, then `updateUser({ password })`.
-     - “Continue with Google/Apple” → call `supabase.auth.linkIdentity({ provider })`.
-     - “Skip for now” → dismiss, but show reminders in settings/home.
-   - The screen lives at `/onboarding/auth` and blocks navigation to `/main` until the user links or taps Skip. Persist `authSkippedAt` in Drift so settings can show a “Finish sign-in” prompt when the user revisits the app.
-   - UI spec: hero copy, benefits list, primary CTA stack, plus a “Continue without signing in” text button; reuse Kyle components (`SectionHeaderText`, `PrimaryButton`, `SecondaryButton`, icon buttons).
-2. **Linking flow**
-   - Supabase anonymous sessions persist until we link an identity; once linked, the Supabase `user.id` stays the same, so local data remains valid.
-   - Update local profile fields (`isAnonymous`, `authProvider`) and send analytics events to Mixpanel.
-3. **Provider setup**
+     - "Continue with Apple" → `supabase.auth.signInWithOAuth(OAuthProvider.apple)` - opens browser
+     - "Continue with Google" → `supabase.auth.signInWithOAuth(OAuthProvider.google)` - opens browser
+     - "Sign up with Email" → collect email/password, call `supabase.auth.updateUser({ email, password })`
+     - "Skip for now" → dismiss, but show reminders in settings/home.
+   - The screen lives at `/onboarding/auth` and blocks navigation to `/main` until the user links or taps Skip. Persist `authSkippedAt` in Drift so settings can show a "Finish sign-in" prompt when the user revisits the app.
+   - UI spec: hero copy, benefits list, primary CTA stack, plus a "Continue without signing in" text button; reuse Kyle components (`SectionHeaderText`, `PrimaryButton`, `SecondaryButton`, icon buttons).
+2. **Web OAuth flow (Apple/Google)**
+   - Uses Supabase's hosted OAuth (NO native packages needed)
+   - Opens browser/web view for authentication
+   - User signs in on web, Supabase handles OAuth
+   - Redirects back to app via deep link: `com.milkman.mealvanaendurance://auth-callback`
+   - Auth state change listener detects new session
+   - Updates local profile: `isAnonymous = false`, `authProvider = 'apple'/'google'`
+   - User ID stays the same (data preserved)
+3. **Provider setup (Supabase Dashboard)**
    - In Supabase Dashboard → Authentication → Providers, enable Google & Apple.
    - Supply OAuth credentials:
-     - **Google**: create a **Web application** OAuth client in Google Cloud, copy the client ID/secret, and paste them into the Supabase dashboard. Add the Supabase-provided redirect URI (e.g., `https://<project>.supabase.co/auth/v1/callback`). No iOS/Android native credentials, plist files, or SHA‑1 fingerprints are required because Supabase hosts the OAuth flow.
-     - **Apple**: create a Service ID + private key in Apple Developer, enable “Sign in with Apple” in Xcode capabilities, and register the Supabase redirect URL. The `.p8` key (currently stored at `docs/AuthKey_Z875MDK9BR.p8`) stays on our side; paste its contents, key ID, and team ID into the Supabase dashboard.
-   - **Flutter configuration**
-     - Supabase still needs its HTTPS callback (`https://wvmvsodrvbkxfydabqed.supabase.co/auth/v1/callback`) for server-side validation, but the app also needs its own deep-link scheme so it can resume after the browser-based OAuth completes. Use `com.milkman.mealvanaendurance://auth-callback` and:
-       - iOS/macOS: add a matching `CFBundleURLTypes` entry to `ios/Runner/Info.plist` and `macos/Runner/Info.plist`.
-       - Android: add an `<intent-filter>` for the scheme in `android/app/src/main/AndroidManifest.xml`.
-     - When calling Supabase, pass `redirectTo: 'com.milkman.mealvanaendurance://auth-callback'` in `signInWithOAuth(...)`. Supabase will redirect to the HTTPS callback, issue the session, then forward to the custom scheme so the app regains focus.
-4. **Email/password**
-   - Enable manual linking in Supabase settings so anonymous users can add an email.
-   - Use OTP/email verification to confirm before allowing password creation.
+     - **Google**: create a **Web application** OAuth client in Google Cloud, copy the client ID/secret, and paste them into the Supabase dashboard. Add the Supabase-provided redirect URI: `https://wvmvsodrvbkxfydabqed.supabase.co/auth/v1/callback`. **No iOS/Android native credentials needed** - web flow only.
+     - **Apple**: create a Service ID + private key in Apple Developer, register the Supabase redirect URL: `https://wvmvsodrvbkxfydabqed.supabase.co/auth/v1/callback`. **Store `.p8` key securely** (GitHub Secrets, NOT in repo); paste its contents, key ID, and team ID into the Supabase dashboard.
+   - **No Xcode capabilities needed** - web OAuth doesn't require native Apple Sign-In capability
+4. **Flutter configuration**
+   - **Deep link scheme** (for OAuth redirect back to app):
+     - iOS: add `CFBundleURLTypes` entry to `ios/Runner/Info.plist` with scheme `com.milkman.mealvanaendurance`
+     - Android: add `<intent-filter>` to `android/app/src/main/AndroidManifest.xml` with scheme `com.milkman.mealvanaendurance`
+   - **Auth state listener** (in AppStartupService):
+     - Listen to `supabase.auth.onAuthStateChange`
+     - Detect OAuth sign-in events
+     - Update local profile automatically
+   - **No native dependencies**: Just `supabase_flutter` (already installed)
+5. **Email/password**
+   - Direct `supabase.auth.updateUser(email, password)` call
+   - Links email to existing anonymous account
+   - Optional email verification (can be disabled for faster signup)
 
 ### Phase 3 – Environment & Telemetry Automation
 1. **Automatic `.env` selection**

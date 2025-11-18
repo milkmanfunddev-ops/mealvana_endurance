@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/app_startup/application/app_startup_provider.dart';
 
 // Import all screens
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
@@ -8,6 +9,8 @@ import '../../features/nutrition_plan/presentation/screens/new_activity_screen.d
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/sport_preferences_screen.dart';
 import '../../features/onboarding/presentation/screens/food_preferences_screen.dart' as onboarding;
+import '../../features/auth/presentation/screens/post_onboarding_auth_screen.dart';
+import '../../features/auth/presentation/screens/email_signup_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/activity_detail_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -30,23 +33,46 @@ import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
+/// Following Andrea Bizzotto's deep link pattern
 class AppRouter {
-  // Static router instance - no Ref dependency
-  static final GoRouter router = GoRouter(
-    initialLocation: '/',
-    // Clean router with no startup logic - just handles routing
-    redirect: (context, state) {
-      // No redirect logic needed - AppStartupWidget will handle initial navigation
-      return null;
-    },
+  // Router provider with ref access for redirect logic
+  static final routerProvider = Provider<GoRouter>((ref) {
+    return GoRouter(
+      initialLocation: '/',
+      // Redirect logic based on app startup state
+      redirect: (context, state) {
+        // Allow navigation to any route - don't block
+        // The initial '/' will be redirected based on app state
+        if (state.uri.path != '/') {
+          return null; // Allow navigation to specific routes
+        }
+
+        // For root path, check app startup state and redirect appropriately
+        final appStartupState = ref.read(appStartupProvider);
+
+        return appStartupState.maybeWhen(
+          data: (appStartupData) {
+            // User not created yet - go to welcome
+            if (appStartupData.user == null) {
+              return '/welcome';
+            }
+            // User exists but hasn't completed onboarding
+            if (!appStartupData.hasCompletedOnboarding) {
+              return '/onboarding/food-preferences';
+            }
+            // User has pending feedback to provide
+            if (appStartupData.activityIdNeedingFeedback != null) {
+              return '/plan-how-well/${appStartupData.activityIdNeedingFeedback}';
+            }
+            // User is fully onboarded - go to main app
+            return '/main';
+          },
+          // While loading or on error, stay on root (AppStartupWidget handles UI)
+          orElse: () => null,
+        );
+      },
       routes: [
-      // Root - AppStartupWidget handles initialization and navigation
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const AppStartupWidget(),
-      ),
-      
-      // Welcome Screen
+        // Welcome Screen
       GoRoute(
         path: '/welcome',
         name: 'welcome',
@@ -77,6 +103,20 @@ class AppRouter {
         name: 'onboarding-food-preferences',
         builder: (context, state) => const onboarding.FoodPreferencesScreen(),
       ),
+
+      // Authentication Flow (Post-Onboarding)
+      GoRoute(
+        path: '/auth/post-onboarding',
+        name: 'auth-post-onboarding',
+        builder: (context, state) => const PostOnboardingAuthScreen(),
+      ),
+
+      GoRoute(
+        path: '/auth/email-signup',
+        name: 'auth-email-signup',
+        builder: (context, state) => const EmailSignupScreen(),
+      ),
+
       // REDIRECTED: Old routes now point to NewActivityScreen (multi-sport Kyle design)
       GoRoute(
         path: '/distancepacegut',
@@ -368,4 +408,8 @@ class AppRouter {
       ),
     ),
     );
+  });
+
+  // Convenience getter for accessing the router
+  static GoRouter router(WidgetRef ref) => ref.watch(routerProvider);
 }

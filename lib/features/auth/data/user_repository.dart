@@ -92,6 +92,66 @@ class UserRepository {
     }
   }
 
+  /// Update auth provider after account linking
+  /// Called when user links Apple, Google, or Email account
+  Future<void> updateAuthProvider({
+    required String authProvider,
+    required bool isAnonymous,
+  }) async {
+    try {
+      // Get current user profile
+      final currentUser = await getCurrentUser();
+      if (currentUser == null) {
+        throw Exception('No current user found to update auth provider');
+      }
+
+      // Update auth fields
+      final updatedProfile = currentUser.copyWith(
+        authProvider: authProvider,
+        isAnonymous: isAnonymous,
+        updatedAt: DateTime.now(),
+      );
+
+      // Save to local database
+      await updateUserProfile(updatedProfile);
+
+      // Sync to Supabase
+      try {
+        await supabase.from('users').update({
+          'auth_provider': authProvider,
+          'is_anonymous': isAnonymous,
+          'updated_at': updatedProfile.updatedAt.toIso8601String(),
+        }).eq('id', currentUser.id);
+
+        sentry.addBreadcrumb(
+          message: 'Auth provider updated successfully',
+          category: 'auth',
+          data: {
+            'user_id': currentUser.id,
+            'auth_provider': authProvider,
+            'is_anonymous': isAnonymous,
+          },
+        );
+      } catch (e, stackTrace) {
+        // Log but don't throw - local update succeeded
+        await sentry.reportNetworkError(
+          e,
+          url: 'supabase:users:update',
+          method: 'UPDATE',
+          stackTrace: stackTrace,
+        );
+      }
+    } catch (e, stackTrace) {
+      await sentry.reportDatabaseError(
+        e,
+        operation: 'updateAuthProvider',
+        table: 'user_profiles',
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   /// Delete user profile
   Future<bool> deleteUserProfile(String userId) async {
     return await database.deleteUserProfile(userId);

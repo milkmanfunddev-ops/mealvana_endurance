@@ -1,9 +1,9 @@
 # Supabase Authentication Implementation Roadmap
 
-**Last Updated:** 2025-11-17
-**Status:** Planning Phase
-**Estimated Duration:** 6-8 weeks
-**Risk Level:** Medium-High (Offline session management critical)
+**Last Updated:** 2025-11-18
+**Status:** Phase 0 & 1 Complete, Phase 2 Next, Phase 3 Deferred
+**Estimated Duration:** 3-4 weeks (Phase 2 only, RLS deferred)
+**Risk Level:** Medium (Offline session critical, RLS deferred)
 
 ---
 
@@ -1015,6 +1015,32 @@ testWidgets('Session persists offline for 24 hours', (tester) async {
 
 **Goal:** Add optional authentication screen after onboarding
 
+**⚠️ CRITICAL PREREQUISITE: App Initialization Refactor**
+
+Before implementing OAuth features, the app initialization pattern MUST be refactored to support deep links. This is a BLOCKING requirement for OAuth to function.
+
+**Required Architectural Changes:**
+1. **Refactor AppStartupWidget** - Use `onLoaded` callback pattern instead of being a GoRouter route
+2. **Add MaterialApp.builder** - Wrap router child with AppStartupWidget in RootAppWidget
+3. **Update GoRouter redirect** - Handle initial navigation via redirect logic, not AppStartupWidget
+4. **Remove '/' route** - AppStartupWidget should be a wrapper widget, not a route
+
+**Why This is Critical for OAuth:**
+- OAuth redirects arrive as deep links: `com.milkman.mealvanaendurance://auth-callback`
+- Current architecture: AppStartupWidget is a route, blocking GoRouter's deep link processing
+- Andrea Bizzotto's pattern: AppStartupWidget wraps router child via MaterialApp.builder
+- Result: GoRouter initializes immediately and handles OAuth deep links during app startup
+
+**Implementation Details:**
+- Full guide: `/docs/startup_auth_roadmap/phase_2_implementation.md` → "Architecture Refactor" section
+- Andrea's documentation: `/docs/technical/andrea/andrea_initialization.txt` (lines 395-465)
+- Estimated time: 1 hour (must be completed before auth state listener)
+
+**Key Quote from Andrea:**
+> "MaterialApp.builder allows us to wrap the router's child widget with the AppStartupWidget without interfering with the routing logic. This ensures that the app startup logic runs before the main app UI loads, while deep links and URL-based navigation are processed correctly from the start."
+
+---
+
 #### Tasks
 
 **2.1 Create Authentication Screen UI**
@@ -1503,9 +1529,17 @@ testWidgets('Google Sign-In links to anonymous account', (tester) async {
 
 ---
 
-### Phase 3: Security & RLS (Week 5)
+### Phase 3: Security & RLS (DEFERRED)
+
+**Status:** ⏸️ **DEFERRED** - Not implementing RLS policies at this time
 
 **Goal:** Implement proper JWT-based security policies
+
+**Deferral Decision (2025-11-18):**
+- RLS implementation is being postponed to focus on core features
+- Current permissive policies (`WITH CHECK true`) remain in place
+- Security hardening will be addressed in a future phase when closer to production launch
+- **Note:** This means the app should NOT be used with sensitive production data until RLS is implemented
 
 #### Tasks
 
@@ -2166,15 +2200,15 @@ flutter test integration_test/offline_session_test.dart
 
 ## Timeline Summary
 
-| Phase | Duration | Key Deliverables |
-|-------|----------|------------------|
-| Phase 0: Prerequisites | Week 1 | Fix onboarding, add auth_sessions table, environment routing |
-| Phase 1: Anonymous Auth | Week 2 | Replace device_id, migration service, offline persistence |
-| Phase 2: Account Linking | Weeks 3-4 | Apple/Google/Email sign-in, UI flows |
-| Phase 3: Security | Week 5 | RLS policies, edge function auth, security audit |
-| Phase 4: Launch | Week 6 | Privacy policy, monitoring, phased rollout |
+| Phase | Duration | Status | Key Deliverables |
+|-------|----------|--------|------------------|
+| Phase 0: Prerequisites | Week 1 | ✅ **COMPLETE** | Fix onboarding, add auth_sessions table, environment routing |
+| Phase 1: Anonymous Auth | Week 2 | ✅ **COMPLETE** | Replace device_id, migration service, offline persistence |
+| Phase 2: Account Linking | Weeks 3-4 | 🎯 **NEXT** | Apple/Google/Email sign-in, UI flows |
+| Phase 3: Security & RLS | Week 5 | ⏸️ **DEFERRED** | RLS policies, edge function auth, security audit |
+| Phase 4: Launch | Week 6 | ⏸️ **DEFERRED** | Privacy policy, monitoring, phased rollout |
 
-**Total: 6 weeks** (assumes no major blockers)
+**Current Timeline: 3-4 weeks** (Phase 2 only, security phases deferred)
 
 ---
 

@@ -63,5 +63,19 @@
 		<string>This app uses your location to provide accurate weather forecasts for your upcoming activities, helping you plan your nutrition and hydration needs based on local conditions.</string>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<!-- Deep linking configuration for OAuth callbacks -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>com.milkman.mealvanaendurance</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.milkman.mealvanaendurance</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>
