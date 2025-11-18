@@ -61,6 +61,11 @@ class ContentKeys {
 
   // Settings Screen
   static const String settingsTitle = 'settings.title';
+  static const String settingsAccountSection = 'settings.account_section';
+  static const String settingsAccountStatusAnonymous = 'settings.account_status_anonymous';
+  static const String settingsAccountStatusAuthenticated = 'settings.account_status_authenticated';
+  static const String settingsCreateAccountButton = 'settings.create_account_button';
+  static const String settingsSignOutButton = 'settings.sign_out_button';
   static const String settingsProfileSection = 'settings.profile_section';
   static const String settingsPreferencesSection = 'settings.preferences_section';
   static const String settingsGenderLabel = 'settings.gender_label';

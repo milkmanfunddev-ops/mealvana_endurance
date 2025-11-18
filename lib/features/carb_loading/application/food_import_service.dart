@@ -79,13 +79,13 @@ class FoodImportService {
     // Use the food's existing display name or generate one
     final displayName = sourceUserFood.displayName != null && sourceUserFood.displayName!.isNotEmpty
         ? sourceUserFood.displayName!
-        : (sourceUserFood.name ?? '');
+        : sourceUserFood.name;
 
     return _userFoodRepository.createUserFood(
       deviceId: deviceId,
       userId: userId,
       sourceUserFoodId: sourceUserFoodId,
-      name: sourceUserFood.name ?? '',
+      name: sourceUserFood.name,
       displayName: displayName,
       carbsPerServing: carbsPerServing,
       imageAddress: sourceUserFood.imageAddress,

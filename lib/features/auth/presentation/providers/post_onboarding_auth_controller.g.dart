@@ -9,18 +9,18 @@ part of 'post_onboarding_auth_controller.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Controller for managing post-onboarding authentication flow
-/// Handles Apple Sign-In, Google Sign-In, and Email/Password signup
+/// Handles native Apple Sign-In, native Google Sign-In, and Email/Password signup
 
 @ProviderFor(PostOnboardingAuthController)
 const postOnboardingAuthControllerProvider =
     PostOnboardingAuthControllerProvider._();
 
 /// Controller for managing post-onboarding authentication flow
-/// Handles Apple Sign-In, Google Sign-In, and Email/Password signup
+/// Handles native Apple Sign-In, native Google Sign-In, and Email/Password signup
 final class PostOnboardingAuthControllerProvider
     extends $AsyncNotifierProvider<PostOnboardingAuthController, void> {
   /// Controller for managing post-onboarding authentication flow
-  /// Handles Apple Sign-In, Google Sign-In, and Email/Password signup
+  /// Handles native Apple Sign-In, native Google Sign-In, and Email/Password signup
   const PostOnboardingAuthControllerProvider._()
     : super(
         from: null,
@@ -41,10 +41,10 @@ final class PostOnboardingAuthControllerProvider
 }
 
 String _$postOnboardingAuthControllerHash() =>
-    r'abac4cc51a9f9bc05162737885273db223895698';
+    r'c6ff54b1ba3c6f7dffc58187d0cfbf5760af6abb';
 
 /// Controller for managing post-onboarding authentication flow
-/// Handles Apple Sign-In, Google Sign-In, and Email/Password signup
+/// Handles native Apple Sign-In, native Google Sign-In, and Email/Password signup
 
 abstract class _$PostOnboardingAuthController extends $AsyncNotifier<void> {
   FutureOr<void> build();

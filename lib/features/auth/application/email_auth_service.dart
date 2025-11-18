@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/analytics/analytics_service.dart';
+import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../data/user_repository.dart';
 
@@ -15,7 +15,7 @@ part 'email_auth_service.g.dart';
 class EmailAuthService extends _$EmailAuthService {
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
-  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
+  AnalyticsTracker get _analytics => ref.read(analyticsTrackerProvider);
 
   @override
   FutureOr<void> build() {

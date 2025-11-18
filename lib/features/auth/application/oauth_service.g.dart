@@ -8,20 +8,23 @@ part of 'oauth_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Service for handling OAuth account linking via Supabase web flow
-/// Uses Supabase's hosted OAuth (no native dependencies required)
+/// Service for handling OAuth account linking via native SDKs
+/// Uses native Google Sign-In and Apple Sign-In packages
+/// Exchanges native tokens with Supabase via signInWithIdToken
 /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
 
 @ProviderFor(OAuthService)
 const oAuthServiceProvider = OAuthServiceProvider._();
 
-/// Service for handling OAuth account linking via Supabase web flow
-/// Uses Supabase's hosted OAuth (no native dependencies required)
+/// Service for handling OAuth account linking via native SDKs
+/// Uses native Google Sign-In and Apple Sign-In packages
+/// Exchanges native tokens with Supabase via signInWithIdToken
 /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
 final class OAuthServiceProvider
     extends $AsyncNotifierProvider<OAuthService, void> {
-  /// Service for handling OAuth account linking via Supabase web flow
-  /// Uses Supabase's hosted OAuth (no native dependencies required)
+  /// Service for handling OAuth account linking via native SDKs
+  /// Uses native Google Sign-In and Apple Sign-In packages
+  /// Exchanges native tokens with Supabase via signInWithIdToken
   /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
   const OAuthServiceProvider._()
     : super(
@@ -42,10 +45,11 @@ final class OAuthServiceProvider
   OAuthService create() => OAuthService();
 }
 
-String _$oAuthServiceHash() => r'4249ec7dd1d41d97834d96dd220a6d844a612fc2';
+String _$oAuthServiceHash() => r'00a048ebc9c6275cb82e20c424741c14cfe63a1c';
 
-/// Service for handling OAuth account linking via Supabase web flow
-/// Uses Supabase's hosted OAuth (no native dependencies required)
+/// Service for handling OAuth account linking via native SDKs
+/// Uses native Google Sign-In and Apple Sign-In packages
+/// Exchanges native tokens with Supabase via signInWithIdToken
 /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
 
 abstract class _$OAuthService extends $AsyncNotifier<void> {

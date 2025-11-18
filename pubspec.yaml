@@ -62,6 +62,9 @@ dependencies:
   
   # Backend & Auth
   supabase_flutter: ^2.8.5
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.0
+  crypto: ^3.0.3
 
   # Environment Variables
   flutter_dotenv: ^5.1.0

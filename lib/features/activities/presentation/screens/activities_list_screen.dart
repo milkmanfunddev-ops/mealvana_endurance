@@ -112,7 +112,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
     // Add activity indicators
     activitiesState.whenData((activities) {
-      print('📊 Building indicators: Found ${activities.length} activities');
       for (final activity in activities) {
         final date = DateTime(
           activity.scheduledDateTime.year,
@@ -120,13 +119,11 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           activity.scheduledDateTime.day,
         );
         map.putIfAbsent(date, () => {}).add(DayIndicatorType.activity);
-        print('  ✅ Activity on ${date.toString().split(' ')[0]}');
       }
     });
 
     // Add event indicators
     allEventsState.whenData((events) {
-      print('📊 Building indicators: Found ${events.length} events');
       for (final event in events) {
         // Use the dedicated eventDate field
         if (event.eventDate != null) {
@@ -136,9 +133,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
             event.eventDate!.day,
           );
           map.putIfAbsent(date, () => {}).add(DayIndicatorType.event);
-          print('  🟠 Event on ${date.toString().split(' ')[0]}');
-        } else {
-          print('  ⚠️  Event "${event.eventName ?? 'Unnamed'}" has no eventDate');
         }
       }
     });
@@ -146,7 +140,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     // Add carb loading indicators
     carbLoadingState.whenData((carbDays) {
       final carbLoadingDays = carbDays.cast<db.CarbLoadingDay>();
-      print('📊 Building indicators: Found ${carbLoadingDays.length} carb loading days');
       for (final carbDay in carbLoadingDays) {
         final date = DateTime(
           carbDay.planDate.year,
@@ -154,11 +147,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           carbDay.planDate.day,
         );
         map.putIfAbsent(date, () => {}).add(DayIndicatorType.carbLoading);
-        print('  🌸 Carb loading on ${date.toString().split(' ')[0]}');
       }
     });
 
-    print('📊 Final indicator map has ${map.length} dates with indicators');
     return map;
   }
 

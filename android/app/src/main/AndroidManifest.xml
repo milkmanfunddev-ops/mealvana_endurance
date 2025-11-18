@@ -43,6 +43,11 @@
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
     <meta-data android:name="flutterEmbedding" android:value="2"/>
 
+    <!-- Google Sign-In Configuration -->
+    <meta-data
+        android:name="com.google.android.gms.auth.api.signin.GoogleSignInOptions$SERVER_CLIENT_ID"
+        android:value="@string/default_web_client_id"/>
+
     <!-- Notification receivers for flutter_local_notifications -->
     <receiver
         android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"

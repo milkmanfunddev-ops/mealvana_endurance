@@ -6,7 +6,6 @@ import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
 import '../icons/food_icon.dart';
-import '../buttons/primary_button.dart';
 import '../buttons/secondary_button.dart';
 import '../buttons/tertiary_button.dart';
 import 'base_card.dart';

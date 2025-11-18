@@ -125,6 +125,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           const SizedBox(height: AppSpacing.lg),
 
+          // Account section (new for Phase 2)
+          _buildAccountSection(context, state),
+
+          const SizedBox(height: AppSpacing.lg),
+
           // Theme toggle section
           _buildThemeSection(context),
 
@@ -148,6 +153,145 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLinksSection(context),
 
           const SizedBox(height: AppSpacing.xxxl),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountSection(BuildContext context, dynamic state) {
+    final isAnonymous = state.isAnonymous ?? true;
+    final authProvider = state.authProvider ?? 'anonymous';
+    final email = state.email;
+
+    // Format provider name for display
+    String providerName = authProvider;
+    switch (authProvider) {
+      case 'apple':
+        providerName = 'Apple';
+        break;
+      case 'google':
+        providerName = 'Google';
+        break;
+      case 'email':
+        providerName = 'Email';
+        break;
+      default:
+        providerName = 'Anonymous';
+    }
+
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            state.accountSectionTitle ?? 'Account',
+            style: AppTextStyles.subtitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          if (isAnonymous) ...[
+            // Anonymous user - show "Create Account" CTA
+            Row(
+              children: [
+                Icon(
+                  FontAwesomeIcons.userLarge,
+                  size: AppIconSizes.md,
+                  color: AppColors.orange.withOpacity(0.7),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        state.accountStatusAnonymous ?? 'Not signed in',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Create an account to sync your data across devices',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Create Account button
+            SizedBox(
+              width: double.infinity,
+              child: PrimaryButton(
+                text: state.createAccountButton ?? 'Create Account',
+                onPressed: () {
+                  final analytics = ref.read(appExternalDepsProvider);
+                  analytics.analytics.track('settings_create_account_tapped');
+                  context.push('/auth/post-onboarding');
+                },
+              ),
+            ),
+          ] else ...[
+            // Authenticated user - show provider and sign out
+            Row(
+              children: [
+                Icon(
+                  authProvider == 'apple' ? FontAwesomeIcons.apple :
+                  authProvider == 'google' ? FontAwesomeIcons.google :
+                  FontAwesomeIcons.envelope,
+                  size: AppIconSizes.md,
+                  color: AppColors.electrolyte,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Signed in with $providerName',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (email != null) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          email,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Sign Out button
+            SizedBox(
+              width: double.infinity,
+              child: SecondaryButton(
+                text: state.signOutButton ?? 'Sign Out',
+                onPressed: () async {
+                  await ref.read(settingsControllerProvider.notifier).signOut();
+                },
+              ),
+            ),
+          ],
         ],
       ),
     );

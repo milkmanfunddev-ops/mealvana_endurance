@@ -76,6 +76,24 @@
 					<string>com.milkman.mealvanaendurance</string>
 				</array>
 			</dict>
+			<!-- Google Sign-In URL Scheme -->
+			<!-- TODO: Replace with reversed iOS client ID from Google Cloud Console -->
+			<!-- Get from: https://console.cloud.google.com/apis/credentials -->
+			<!-- Format: com.googleusercontent.apps.YOUR_IOS_CLIENT_ID_HERE -->
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.171527646530-g0u0p8e6vuipqbc5j4svl3j9149u597n</string>
+				</array>
+			</dict>
 		</array>
+		<!-- Google Sign-In Client ID -->
+		<!-- TODO: Replace with iOS client ID from Google Cloud Console -->
+		<!-- Get from: https://console.cloud.google.com/apis/credentials -->
+		<!-- Format: YOUR_IOS_CLIENT_ID_HERE.apps.googleusercontent.com -->
+		<key>GIDClientID</key>
+		<string>171527646530-g0u0p8e6vuipqbc5j4svl3j9149u597n.apps.googleusercontent.com</string>
 	</dict>
 </plist>

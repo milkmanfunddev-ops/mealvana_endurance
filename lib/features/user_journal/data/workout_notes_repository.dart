@@ -173,9 +173,8 @@ class WorkoutNotesRepository {
   }
 
   WorkoutNote _mapActivityToNote(calendar_activity.Activity activity) {
-    final created =
-        activity.completedAt ?? activity.updatedAt ?? DateTime.now();
-    final updated = activity.updatedAt ?? created;
+    final created = activity.completedAt ?? DateTime.now();
+    final updated = activity.updatedAt;
 
     return WorkoutNote(
       id: activity.id,

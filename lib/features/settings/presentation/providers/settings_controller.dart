@@ -19,6 +19,11 @@ class SettingsController extends _$SettingsController {
   FutureOr<SettingsState> build() async {
     // Load content synchronously from in-memory cache
     final title = _contentService.getValue(ContentKeys.settingsTitle, defaultValue: 'Settings');
+    final accountSectionTitle = _contentService.getValue(ContentKeys.settingsAccountSection, defaultValue: 'Account');
+    final accountStatusAnonymous = _contentService.getValue(ContentKeys.settingsAccountStatusAnonymous, defaultValue: 'Not signed in');
+    final accountStatusAuthenticated = _contentService.getValue(ContentKeys.settingsAccountStatusAuthenticated, defaultValue: 'Signed in');
+    final createAccountButton = _contentService.getValue(ContentKeys.settingsCreateAccountButton, defaultValue: 'Create Account');
+    final signOutButton = _contentService.getValue(ContentKeys.settingsSignOutButton, defaultValue: 'Sign Out');
     final profileSectionTitle = _contentService.getValue(ContentKeys.settingsProfileSection, defaultValue: 'Profile');
     final preferenceSectionTitle = _contentService.getValue(ContentKeys.settingsPreferencesSection, defaultValue: 'Preferences');
     final genderLabel = _contentService.getValue(ContentKeys.settingsGenderLabel, defaultValue: 'Gender');
@@ -35,8 +40,17 @@ class SettingsController extends _$SettingsController {
     final userRepository = await _userRepository;
     final userProfile = await userRepository.getCurrentUser();
 
+    // Get Supabase user for email
+    final supabase = ref.read(appExternalDepsProvider).supabase;
+    final supabaseUser = supabase.auth.currentUser;
+
     return SettingsState(
       title: title,
+      accountSectionTitle: accountSectionTitle,
+      accountStatusAnonymous: accountStatusAnonymous,
+      accountStatusAuthenticated: accountStatusAuthenticated,
+      createAccountButton: createAccountButton,
+      signOutButton: signOutButton,
       profileSectionTitle: profileSectionTitle,
       preferenceSectionTitle: preferenceSectionTitle,
       genderLabel: genderLabel,
@@ -72,6 +86,11 @@ class SettingsController extends _$SettingsController {
       userId: userProfile?.id,
       createdAt: userProfile?.createdAt,
       updatedAt: userProfile?.updatedAt,
+      // Auth fields
+      isAnonymous: userProfile?.isAnonymous ?? true,
+      authProvider: userProfile?.authProvider ?? 'anonymous',
+      authUserId: userProfile?.authUserId,
+      email: supabaseUser?.email,
     );
   }
 
@@ -241,6 +260,7 @@ class SettingsController extends _$SettingsController {
     state = await AsyncValue.guard(() async {
       final updatedProfile = UserProfile(
         id: currentState.userId ?? '', // Use stored user ID (which is the device_id)
+        deviceId: currentState.userId ?? '',
         gender: currentState.gender ?? Gender.other,
         birthday: currentState.birthday ?? DateTime.now(),
         heightFeet: currentState.heightFeet ?? 5,
@@ -284,7 +304,26 @@ class SettingsController extends _$SettingsController {
 
   /// Get content-driven error message
   String getErrorMessage(String? error) {
-    return _contentService.getValue(ContentKeys.errorGeneric, 
+    return _contentService.getValue(ContentKeys.errorGeneric,
         defaultValue: error ?? 'Something went wrong. Please try again.');
+  }
+
+  /// Sign out the current user
+  Future<void> signOut() async {
+    state = await AsyncValue.guard(() async {
+      final supabase = ref.read(appExternalDepsProvider).supabase;
+      final analytics = ref.read(appExternalDepsProvider).analytics;
+
+      // Track sign out event
+      analytics.track('settings_sign_out_tapped');
+
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+
+      // The auth state listener in app_startup_service will handle
+      // navigation and creating a new anonymous session
+
+      return state.requireValue;
+    });
   }
 }

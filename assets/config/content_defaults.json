@@ -151,6 +151,11 @@
   },
   "settings": {
     "title": "Settings",
+    "account_section": "Account",
+    "account_status_anonymous": "Not signed in",
+    "account_status_authenticated": "Signed in with {provider}",
+    "create_account_button": "Create Account",
+    "sign_out_button": "Sign Out",
     "profile_section_title": "Your Profile",
     "preferences_section_title": "Preferences",
     "sport_settings_section_title": "Sport Settings",

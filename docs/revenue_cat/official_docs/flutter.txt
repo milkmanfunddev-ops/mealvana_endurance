@@ -1,0 +1,90 @@
+Flutter
+Instructions for installing Purchases SDK for Flutter
+
+AI
+Ask AI
+ChatGPT
+Claude
+👍Flutter Web Support in Beta
+We're excited to announce that Flutter Web support is now in beta! This means you can now use RevenueCat to manage subscriptions across your Flutter web, mobile, and desktop apps.
+
+Learn more about the Flutter Web beta here.
+
+What is RevenueCat?
+RevenueCat provides a backend and SDKs that wrap StoreKit, Google Play Billing, and RevenueCat Web Billing to make implementing in-app and web purchases and subscriptions easy. With our SDK, you can build and manage your app business on any platform without having to maintain IAP infrastructure. You can read more about how RevenueCat fits into your app or you can sign up free to start building.
+
+Requirements
+Xcode 13.3.1+ Minimum target: iOS 11.0+
+
+Installation
+Release
+
+To use this plugin, add purchases_flutter as a dependency in your pubspec.yaml file (and run an implicit dart pub get):
+
+YAML
+dependencies:
+  purchases_flutter: <latest version> // or 9.0.0-beta.3 for Flutter Web
+
+
+Alternatively run this command:
+
+ $ flutter pub add purchases_flutter
+
+iOS Deployment Target
+RevenueCat is compatible with iOS 11.0 or higher. Flutter does not automatically set the iOS deployment target for your project. You need to make sure that the deployment target is set to 11.0 or higher. To do that, simply edit ios/Podfile and add the following line if it's not already there:
+
+platform :ios, '11.0'
+
+Set it to 11.0 or a higher version for RevenueCat to work.
+
+iOS Swift Version
+RevenueCat requires Swift >= 5.0 to work. If the Podfile in your project's ios folder specifies a Swift version, make sure that it's at least 5.0, otherwise you may run into build issues.
+
+Set the correct launchMode for Android
+Depending on your user's payment method, they may be asked by Google Play to verify their purchase in their (banking) app. This means they will have to background your app and go to another app to verify the purchase. If your Activity's launchMode is set to anything other than standard or singleTop, backgrounding your app can cause the purchase to get cancelled. To avoid this, set the launchMode of your Activity to standard or singleTop in your Android app's android/app/src/main/AndroidManifest.xml file:
+
+AndroidManifest.xml
+<activity 
+    android:name="com.your.Activity"
+    android:launchMode="standard" />  <!-- or singleTop -->
+
+
+You can find Android's documentation on the various launchMode options here.
+
+Optional: Change MainActivity subclass
+If you plan to use RevenueCat Paywalls, your MainActivity needs to subclass FlutterFragmentActivity instead of FlutterActivity.
+
+MainActivity.kt
+package com.your.package.name
+
+import io.flutter.embedding.android.FlutterFragmentActivity
+
+class MainActivity: FlutterFragmentActivity()
+
+
+Import Purchases
+You should now be able to import purchases_flutter.
+
+Dart
+import 'package:purchases_flutter/purchases_flutter.dart';
+
+
+📘Enable In-App Purchase capability for iOS projects in Xcode
+Don't forget to enable the In-App Purchase capability for your iOS project under Project Target -> Capabilities -> In-App Purchase
+
+📘Include BILLING permission for Android projects
+Don't forget to include the BILLING permission in your AndroidManifest.xml file
+
+AndroidManifest.xml
+<uses-permission android:name="com.android.vending.BILLING" />
+
+
+If you're using other plugins like mobx, you may run into conflicts with types from other plugins having the same name as those defined in purchases_flutter.
+If this happens, you can resolve the ambiguity in the types by adding an import alias, for example:
+
+import 'package:purchases_flutter/purchases_flutter.dart' as purchases;
+
+After that, you can reference the types from purchases_flutter as purchases.Foo, like purchases.CustomerInfo.
+
+Next Steps
+Now that you've installed the Purchases SDK in Flutter, get started by configuring an instance of Purchases →

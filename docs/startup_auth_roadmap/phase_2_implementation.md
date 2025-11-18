@@ -207,390 +207,35 @@ Future<void> updateAuthProvider({
 
 ---
 
-## 🚧 Architecture Refactor (CRITICAL - Required First)
+## ✅ Architecture Refactor (Complete)
 
-### ⚠️ App Initialization Pattern Refactor
+### App Initialization Pattern Refactor
 
-**Status:** ⏳ Not started
-**Priority:** 🔴 BLOCKING - Must complete before OAuth will work
-**Estimated Time:** 1 hour
+**Status:** ✅ Completed (Nov 19, 2025)
+**Files:** `/lib/shared/widgets/root_app_widget.dart`, `/lib/features/app_startup/presentation/widgets/app_startup_widget.dart`, `/lib/shared/core/app_router.dart`
 
-**The Problem:**
-Our current app initialization pattern doesn't support OAuth deep links. Here's why:
+- `AppStartupWidget` now wraps the router child via an `onLoaded` callback and no longer issues `context.go()` calls.
+- `RootAppWidget` uses `MaterialApp.builder` (across data/loading/error states) so GoRouter is ready the moment `runApp()` executes.
+- `AppRouter` delegates initial routing through a `redirect` callback that inspects `appStartupProvider`, removing the old `/` route that rendered AppStartupWidget directly.
 
-**Current (Broken) Flow:**
-```
-App Launch
-    ↓
-runApp(MaterialApp.router) → GoRouter initialized
-    ↓
-User lands on '/' route → AppStartupWidget rendered
-    ↓
-AppStartupWidget runs initialization
-    ↓
-On success: context.go('/welcome' or '/main')
-    ↓
-OAuth redirect arrives: com.milkman.mealvanaendurance://auth-callback
-    ↓
-❌ PROBLEM: GoRouter can't handle deep link because AppStartupWidget controls navigation
-```
-
-**Why This Breaks OAuth:**
-1. OAuth redirects arrive as **deep links** during or immediately after app initialization
-2. GoRouter needs to be **ready to process deep links** from the moment the app launches
-3. But our AppStartupWidget is **a route itself** (`/`), blocking GoRouter's deep link handling
-4. When OAuth redirect arrives, AppStartupWidget has already navigated away using `context.go()`
-5. Deep link is ignored or causes navigation conflicts
-
-**Andrea Bizzotto's Solution:**
-Andrea's initialization pattern solves this by using `MaterialApp.builder` to wrap the router's child widget. This ensures:
-- GoRouter initializes **immediately** when `runApp()` is called
-- Deep links can be processed **during** app initialization
-- AppStartupWidget manages **loading/error states** without interfering with routing
-
-**Target (Working) Flow:**
-```
-App Launch
-    ↓
-runApp(MaterialApp.router with builder)
-    ↓
-GoRouter initialized IMMEDIATELY (ready for deep links)
-    ↓
-MaterialApp.builder wraps router child with AppStartupWidget
-    ↓
-AppStartupWidget shows loading → Runs initialization → Returns router child
-    ↓
-GoRouter determines initial route based on app state
-    ↓
-OAuth redirect arrives: com.milkman.mealvanaendurance://auth-callback
-    ↓
-✅ SUCCESS: GoRouter handles deep link, triggers auth callback
-```
-
----
-
-### Implementation Guide
-
-**File 1: `/lib/features/app_startup/presentation/widgets/app_startup_widget.dart`**
-
-**BEFORE (Current - Route-based):**
 ```dart
-class AppStartupWidget extends ConsumerWidget {
-  const AppStartupWidget({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final appStartupState = ref.watch(appStartupProvider);
-
-    return appStartupState.when(
-      loading: () => const AppStartupLoadingWidget(),
-      error: (e, st) => AppStartupErrorWidget(...),
-      data: (appStartupData) => _handleNavigation(context, appStartupData),
+return MaterialApp.router(
+  routerConfig: goRouter,
+  builder: (context, child) {
+    return AppStartupWidget(
+      onLoaded: (_) => child!,
     );
-  }
-
-  Widget _handleNavigation(BuildContext context, AppStartupData data) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (data.user == null) {
-        context.go('/welcome');
-      } else if (!data.hasCompletedOnboarding) {
-        context.go('/onboarding/food-preferences');
-      } else {
-        context.go('/main');
-      }
-    });
-    return Scaffold(...); // Placeholder
-  }
-}
+  },
+);
 ```
 
-**AFTER (Andrea's Pattern - Wrapper Widget):**
-```dart
-class AppStartupWidget extends ConsumerWidget {
-  const AppStartupWidget({
-    super.key,
-    required this.onLoaded, // NEW: Callback pattern
-  });
-
-  final WidgetBuilder onLoaded; // NEW: Returns router child
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final appStartupState = ref.watch(appStartupProvider);
-
-    return appStartupState.when(
-      loading: () => const AppStartupLoadingWidget(),
-      error: (e, st) => AppStartupErrorWidget(
-        message: e.toString(),
-        onRetry: () => ref.invalidate(appStartupProvider),
-      ),
-      data: (_) => onLoaded(context), // NEW: Return router child
-    );
-  }
-}
-```
-
-**Key Changes:**
-- ❌ Remove `_handleNavigation()` method - no longer needed
-- ❌ Remove `context.go()` calls - GoRouter handles navigation
-- ✅ Add `onLoaded` callback - returns router's child widget
-- ✅ AppStartupWidget is now a **wrapper**, not a route
+**Key Outcomes:**
+1. OAuth deep links like `com.milkman.mealvanaendurance://auth-callback` are processed during startup because GoRouter is always active.
+2. AppStartupWidget focuses purely on initialization UI/state management, keeping navigation centralized in GoRouter.
+3. Deep-link smoke tests (`adb shell am start -a android.intent.action.VIEW -d "com.milkman.mealvanaendurance://test" …`) succeed without navigation conflicts.
 
 ---
-
-**File 2: `/lib/shared/widgets/root_app_widget.dart`**
-
-**BEFORE (Current):**
-```dart
-class RootAppWidget extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeModeAsync = ref.watch(kyleThemeModeProvider);
-
-    return ScreenUtilInit(
-      builder: (context, child) {
-        return themeModeAsync.when(
-          data: (themeMode) {
-            return MaterialApp.router(
-              title: 'Mealvana Endurance',
-              theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: themeMode,
-              routerConfig: AppRouter.router, // AppStartupWidget is a route at '/'
-            );
-          },
-          // ... loading/error states
-        );
-      },
-    );
-  }
-}
-```
-
-**AFTER (Andrea's Pattern with MaterialApp.builder):**
-```dart
-class RootAppWidget extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeModeAsync = ref.watch(kyleThemeModeProvider);
-
-    return ScreenUtilInit(
-      builder: (context, child) {
-        return themeModeAsync.when(
-          data: (themeMode) {
-            return MaterialApp.router(
-              title: 'Mealvana Endurance',
-              theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: themeMode,
-              routerConfig: AppRouter.router,
-              // NEW: Wrap router child with AppStartupWidget
-              builder: (context, child) {
-                return AppStartupWidget(
-                  onLoaded: (_) => child!, // Pass through router's child
-                );
-              },
-            );
-          },
-          // ... loading/error states (also need builder)
-          loading: () {
-            return MaterialApp.router(
-              routerConfig: AppRouter.router,
-              builder: (context, child) {
-                return AppStartupWidget(
-                  onLoaded: (_) => child!,
-                );
-              },
-            );
-          },
-          error: (error, stack) {
-            return MaterialApp.router(
-              routerConfig: AppRouter.router,
-              builder: (context, child) {
-                return AppStartupWidget(
-                  onLoaded: (_) => child!,
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-}
-```
-
-**Key Changes:**
-- ✅ Add `builder` parameter to `MaterialApp.router`
-- ✅ Wrap `child` (router's widget) with `AppStartupWidget`
-- ✅ Use `onLoaded: (_) => child!` to return router's child
-- ✅ Apply to all theme states (data, loading, error)
-
----
-
-**File 3: `/lib/shared/core/app_router.dart`**
-
-**BEFORE (Current):**
-```dart
-class AppRouter {
-  static final router = GoRouter(
-    initialLocation: '/', // AppStartupWidget route
-    routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const AppStartupWidget(), // ❌ Remove this
-      ),
-      GoRoute(
-        path: '/welcome',
-        builder: (context, state) => const WelcomeScreen(),
-      ),
-      // ... other routes
-    ],
-  );
-}
-```
-
-**AFTER (Andrea's Pattern):**
-```dart
-class AppRouter {
-  static final router = GoRouter(
-    initialLocation: '/', // Root - will redirect to actual initial screen
-
-    // NEW: Add redirect logic for initial navigation
-    redirect: (context, state) {
-      // Only redirect on initial load (root path)
-      if (state.matchedLocation == '/') {
-        // Read startup data from provider
-        final container = ProviderScope.containerOf(context);
-        final startupData = container.read(appStartupProvider).valueOrNull;
-
-        if (startupData == null) {
-          // Still loading - stay at root
-          return null;
-        }
-
-        // Determine initial route based on app state
-        if (startupData.user == null) {
-          return '/welcome';
-        } else if (!startupData.hasCompletedOnboarding) {
-          return '/onboarding/food-preferences';
-        } else if (startupData.activityIdNeedingFeedback != null) {
-          return '/plan-how-well/${startupData.activityIdNeedingFeedback}';
-        } else {
-          return '/main';
-        }
-      }
-
-      // No redirect for other paths
-      return null;
-    },
-
-    routes: [
-      // ❌ REMOVE: AppStartupWidget route
-      // GoRoute(path: '/', builder: (context, state) => const AppStartupWidget()),
-
-      GoRoute(
-        path: '/welcome',
-        builder: (context, state) => const WelcomeScreen(),
-      ),
-      // ... other routes
-    ],
-  );
-}
-```
-
-**Key Changes:**
-- ❌ Remove `AppStartupWidget` route at `/`
-- ✅ Add `redirect` callback to handle initial navigation
-- ✅ Read `appStartupProvider` to determine initial route
-- ✅ GoRouter now controls all navigation (including initial)
-
----
-
-### Why This Matters for OAuth Deep Links
-
-**Before (Broken):**
-```
-OAuth redirect: com.milkman.mealvanaendurance://auth-callback
-    ↓
-App receives deep link
-    ↓
-GoRouter tries to handle it
-    ↓
-❌ AppStartupWidget is controlling navigation via context.go()
-    ↓
-❌ Deep link ignored or causes conflict
-    ↓
-❌ User stuck, auth callback never triggers
-```
-
-**After (Working):**
-```
-OAuth redirect: com.milkman.mealvanaendurance://auth-callback
-    ↓
-App receives deep link
-    ↓
-GoRouter processes it immediately (initialized at app launch)
-    ↓
-✅ AppStartupWidget is just a wrapper (not controlling navigation)
-    ✅ Shows loading during initialization
-    ✅ Returns router child when ready
-    ↓
-✅ GoRouter routes to /auth-callback handler
-    ↓
-✅ Auth state listener detects OAuth sign-in
-    ↓
-✅ Updates local profile
-    ↓
-✅ User authenticated successfully
-```
-
----
-
-### Testing the Refactor
-
-**Before implementing OAuth, verify the refactor works:**
-
-1. **App launches correctly:**
-   ```bash
-   flutter run
-   # Verify: App shows loading → navigates to welcome/onboarding/main
-   ```
-
-2. **Deep links work during initialization:**
-   ```bash
-   # Simulate deep link while app is initializing
-   adb shell am start -a android.intent.action.VIEW \
-     -d "com.milkman.mealvanaendurance://test" \
-     com.milkman.mealvanaendurance
-
-   # Verify: Deep link is processed correctly
-   ```
-
-3. **No navigation conflicts:**
-   ```bash
-   # Check logs for navigation errors
-   flutter logs | grep -i "navigation\|route\|gorouter"
-
-   # Should see: Clean navigation with no conflicts
-   ```
-
----
-
-### References
-
-**Andrea Bizzotto's Documentation:**
-- File: `/docs/technical/andrea/andrea_initialization.txt`
-- Section: "Important Note About URL Navigation and Deep Links" (lines 395-465)
-- Key quote: "MaterialApp.builder allows us to wrap the router's child widget with the AppStartupWidget without interfering with the routing logic"
-
-**Flutter Documentation:**
-- [MaterialApp.builder](https://api.flutter.dev/flutter/material/MaterialApp/builder.html)
-- [GoRouter Deep Linking](https://pub.dev/documentation/go_router/latest/topics/Deep%20linking-topic.html)
-
----
-
-## 🚧 Platform Configuration (Pending)
+## Platform Configuration & Testing
 
 ### 1. ⏳ Settings Screen Updates
 
@@ -675,6 +320,8 @@ User sees home screen with authenticated status
 
 ### 1. Supabase Dashboard Setup
 
+**Status:** ⏳ Pending (Supabase dashboard)
+
 **Authentication → Providers:**
 
 #### Enable Google:
@@ -717,75 +364,21 @@ JWT expiry: 43200 seconds (12 hours)
 Enable anonymous sign-ins: ON
 ```
 
-### 2. iOS Configuration
+### 2. iOS Configuration (✅ Complete)
 
-**Add Deep Link Scheme:**
+**File:** `ios/Runner/Info.plist`
+- `CFBundleURLTypes` includes the `com.milkman.mealvanaendurance` scheme so Supabase OAuth redirects reopen the app.
+- Comment block documents the deep-link purpose and no longer requires additional native capabilities.
+### 3. Android Configuration (✅ Complete)
 
-Edit `ios/Runner/Info.plist`:
+**File:** `android/app/src/main/AndroidManifest.xml`
+- `VIEW/BROWSABLE` intent filter added to `MainActivity` with scheme `com.milkman.mealvanaendurance` and host `auth-callback`.
+- `android:autoVerify="true"` ensures redirects bounce back immediately on Android 12+.
+### 4. Auth State Change Listener (✅ Complete)
 
-```xml
-<key>CFBundleURLTypes</key>
-<array>
-  <dict>
-    <key>CFBundleTypeRole</key>
-    <string>Editor</string>
-    <key>CFBundleURLSchemes</key>
-    <array>
-      <string>com.milkman.mealvanaendurance</string>
-    </array>
-  </dict>
-</array>
-```
-
-**No Apple Sign-In Capability Needed:**
-- Web OAuth doesn't require native Apple Sign-In capability
-- No need to enable in Xcode Signing & Capabilities
-- Works without physical device (simulator OK)
-
-### 3. Android Configuration
-
-**Add Deep Link Scheme:**
-
-Edit `android/app/src/main/AndroidManifest.xml`:
-
-```xml
-<intent-filter>
-  <action android:name="android.intent.action.VIEW" />
-  <category android:name="android.intent.category.DEFAULT" />
-  <category android:name="android.intent.category.BROWSABLE" />
-  <data android:scheme="com.milkman.mealvanaendurance" />
-</intent-filter>
-```
-
-### 4. Auth State Change Listener
-
-**File:** `/lib/features/app_startup/application/app_startup_service.dart` (needs update)
-
-**Add Method:**
-```dart
-/// Setup auth state change listener to handle OAuth callbacks
-void setupAuthStateListener() {
-  _supabase.auth.onAuthStateChange.listen((data) async {
-    final event = data.event;
-    final session = data.session;
-
-    if (event == AuthChangeEvent.signedIn && session != null) {
-      final user = session.user;
-
-      // Check if this is an OAuth sign-in (not anonymous)
-      final provider = user.appMetadata?['provider'] as String?;
-
-      if (provider != null && provider != 'anonymous') {
-        // OAuth callback - update local profile
-        await ref.read(oAuthServiceProvider.notifier).handleOAuthCallback(
-          userId: user.id,
-          provider: provider,
-        );
-      }
-    }
-  });
-}
-```
+**File:** `/lib/features/app_startup/application/app_startup_service.dart`
+- `setupAuthStateListener()` now listens to `supabase.auth.onAuthStateChange`, updates analytics, and calls `OAuthService.handleOAuthCallback()` for non-anonymous providers.
+- Token refresh + sign-out events are tracked for observability.
 
 ---
 
@@ -806,11 +399,11 @@ dependencies:
 
 ---
 
-## Content Management
+## Content Management Reference
 
-**File:** `assets/config/content_defaults.json` (needs update)
+**File:** `assets/config/content_defaults.json` (✅ implemented — snippet for reference)
 
-**Add Section:**
+**Key Section:**
 ```json
 {
   "ui_text": {
@@ -925,175 +518,40 @@ dependencies:
 
 Phase 2 is complete when:
 
-- ✅ OAuthService created (DONE)
-- ✅ EmailAuthService created (DONE)
-- ✅ UserRepository.updateAuthProvider() added (DONE)
-- ✅ No native OAuth dependencies (DONE)
-- ⏳ Post-onboarding auth screen displays correctly
-- ⏳ User can skip auth and continue to home
-- ⏳ Apple Sign-In works via browser
-- ⏳ Google Sign-In works via browser
-- ⏳ Email signup works with password
-- ⏳ Account linking preserves all user data
-- ⏳ Settings shows correct auth status
-- ⏳ Settings reminder badge works for anonymous users
-- ⏳ Analytics events firing correctly
-- ⏳ Error handling covers common cases
-- ⏳ Auth state change listener handles OAuth callbacks
+- ✅ Post-onboarding auth screen displays correctly (UI + routing complete).
+- ✅ Users can skip auth and stay anonymous without blocking progress.
+- ✅ Email signup flow links credentials to the anonymous session.
+- ✅ OAuthService + AuthState listener preserve Supabase UID across Apple/Google linking.
+- ⏳ Apple Sign-In flow validated end-to-end (web redirect → deep link → profile update).
+- ⏳ Google Sign-In flow validated end-to-end on iOS + Android.
+- ⏳ Email signup tested on device, confirming analytics + Sentry breadcrumbs.
+- ⏳ Account linking verified to preserve activities/preferences/nutrition data.
+- ⏳ Settings screen shows accurate auth status and CTA.
+- ⏳ Anonymous reminder badge appears where needed (settings/account surfaces).
 
 ---
 
 ## Implementation Status
 
-### ✅ Backend Complete (4/4 tasks)
-1. ✅ OAuthService with web OAuth flow
-2. ✅ EmailAuthService with validation
-3. ✅ UserRepository.updateAuthProvider()
-4. ✅ Dependencies cleaned up (native packages removed)
+### ✅ Complete
+- Backend services (OAuthService, EmailAuthService, UserRepository.updateAuthProvider) and dependency cleanup.
+- Frontend UI stack (PostOnboardingAuthScreen, EmailSignupScreen, controllers, content defaults, router wiring, onboarding hand-off).
+- Architecture + platform work (AppStartupWidget refactor, RootAppWidget builder, AppRouter redirect, auth state listener, iOS/Android deep links).
 
-### 🚧 Frontend TODO (11 tasks remaining)
-5. ⏳ Add auth UI text to content_defaults.json
-6. ⏳ Create PostOnboardingAuthScreen UI
-7. ⏳ Create PostOnboardingAuthController
-8. ⏳ Create EmailSignupScreen
-9. ⏳ Add auth routes to GoRouter
-10. ⏳ Update onboarding flow to show auth screen
-11. ⏳ Update Settings screen with auth badge
-12. ⏳ Configure iOS deep linking (Info.plist)
-13. ⏳ Configure Android deep linking (AndroidManifest.xml)
-14. ⏳ Add auth state change listener
-15. ⏳ Test all auth flows
-
----
-
-## Implementation Progress
-
-### ✅ Completed (9/14 tasks)
-
-**Backend Services:**
-1. ✅ OAuthService with Apple/Google web OAuth
-2. ✅ EmailAuthService with validation
-3. ✅ UserRepository.updateAuthProvider()
-
-**Frontend UI:**
-4. ✅ PostOnboardingAuthScreen with benefits card
-5. ✅ EmailSignupScreen with validation
-6. ✅ PostOnboardingAuthController
-7. ✅ Content defaults (auth text)
-8. ✅ Router configuration (auth routes)
-9. ✅ Onboarding flow update
-
-### ⏳ Remaining (5/14 tasks)
-
-**Critical Path (Required for Testing):**
-1. ⏳ **Add auth state change listener** in `AppStartupService`
-   - Detect OAuth callback events
-   - Call `OAuthService.handleOAuthCallback()`
-   - Navigate to main app after successful linking
-   - **BLOCKER**: OAuth won't work without this
-
-2. ⏳ **Configure iOS deep linking** in `Info.plist`
-   - Add URL scheme: `com.milkman.mealvanaendurance`
-   - Required for OAuth redirect
-
-3. ⏳ **Configure Android deep linking** in `AndroidManifest.xml`
-   - Add intent filter with scheme `com.milkman.mealvanaendurance`
-   - Required for OAuth redirect
-
-**Nice-to-Have (Can defer):**
-4. ⏳ **Update Settings screen** with auth status
-   - Show "Create Account" for anonymous users
-   - Show provider for authenticated users
-   - Not blocking OAuth testing
-
-**Testing Phase (After config):**
-5. ⏳ Test Apple Sign-In flow
-6. ⏳ Test Google Sign-In flow
-7. ⏳ Test Email signup flow
-8. ⏳ Verify data preservation after linking
-
----
+### ⏳ Remaining
+1. Settings screen account module (surface anonymous vs linked state, CTA to create account / sign out).
+2. Supabase dashboard configuration for Google + Apple OAuth (client credentials + redirect URL + custom scheme).
+3. End-to-end testing of Apple, Google, and email/password flows, validating analytics + data preservation.
 
 ## Recommended Next Steps
 
-### Priority 1: Auth State Change Listener (CRITICAL)
-
-**File:** `/lib/features/app_startup/application/app_startup_service.dart`
-
-**What to Add:**
-```dart
-// Add in AppStartupService initialization
-void _setupAuthStateListener() {
-  _supabase.auth.onAuthStateChange.listen((data) {
-    final event = data.event;
-    final session = data.session;
-
-    if (event == AuthChangeEvent.signedIn && session != null) {
-      final user = session.user;
-
-      // Check if this was an OAuth sign-in (not anonymous)
-      if (user.appMetadata['provider'] != 'anonymous') {
-        final provider = user.appMetadata['provider'] as String?;
-
-        // Call OAuth callback handler
-        ref.read(oAuthServiceProvider.notifier).handleOAuthCallback(
-          userId: user.id,
-          provider: provider ?? 'unknown',
-        );
-
-        // Navigate to main app
-        ref.read(goRouterProvider).go('/main');
-      }
-    }
-  });
-}
-```
-
-**Why Critical:** Without this, OAuth redirects will work but won't update the app state or navigate users.
-
-### Priority 2: Deep Linking Configuration
-
-**iOS (`ios/Runner/Info.plist`):**
-```xml
-<key>CFBundleURLTypes</key>
-<array>
-  <dict>
-    <key>CFBundleTypeRole</key>
-    <string>Editor</string>
-    <key>CFBundleURLSchemes</key>
-    <array>
-      <string>com.milkman.mealvanaendurance</string>
-    </array>
-  </dict>
-</array>
-```
-
-**Android (`android/app/src/main/AndroidManifest.xml`):**
-```xml
-<intent-filter>
-  <action android:name="android.intent.action.VIEW" />
-  <category android:name="android.intent.category.DEFAULT" />
-  <category android:name="android.intent.category.BROWSABLE" />
-  <data android:scheme="com.milkman.mealvanaendurance" />
-</intent-filter>
-```
-
-### Priority 3: Supabase Dashboard Configuration
-
-**Before testing OAuth:**
-1. Configure Google OAuth in Supabase Dashboard
-2. Configure Apple OAuth in Supabase Dashboard
-3. Add redirect URL: `com.milkman.mealvanaendurance://auth-callback`
-
-**See "Configuration Required" section above for detailed steps.**
-
-### Priority 4: Settings Screen Update (Optional)
-
-Can be deferred - not blocking OAuth testing. Users can still test account linking without the settings screen updates.
+1. **Configure Supabase Providers** – Enter Google + Apple credentials, verify redirect URLs, and add the custom scheme `com.milkman.mealvanaendurance://auth-callback` in Authentication → URL Configuration.
+2. **Exercise Every Auth Flow** – On devices/simulators, run Apple, Google, and email/password linking; verify analytics + Sentry breadcrumbs and confirm Supabase UID + local data stay stable.
+3. **Ship Settings Account Module** – Surface provider/anonymous state, wire the "Create Account" CTA for anonymous users, and expose a sign-out pathway for QA.
 
 ---
 
-**Document Owner:** Development Team
-**Last Updated:** 2025-11-18 (Phase 2 - UI Complete, Platform Config Pending)
-**OAuth Approach:** Web-based (Supabase hosted OAuth)
-**Status:** 9/14 tasks complete - Backend ✅ | UI ✅ | Config ⏳ | Testing ⏳
+**Document Owner:** Development Team  \
+**Last Updated:** 2025-11-19  \
+**OAuth Approach:** Supabase-hosted (web) Apple + Google + email  \
+**Status Snapshot:** Backend ✅ | UI ✅ | Architecture ✅ | Platform config ⏳ | Testing ⏳

@@ -1,6 +1,6 @@
 # App Startup, Identity & Authentication Roadmap
 
-_Last updated: 2025-11-18_
+_Last updated: 2025-11-19_
 
 ## Implementation Status
 
@@ -8,32 +8,112 @@ _Last updated: 2025-11-18_
 |-------|--------|-------|
 | Phase 0: Hotfix & Schema Prep | ✅ Complete | Auth fields added, migration ready |
 | Phase 1: Canonical UUID Adoption | ✅ Complete | Anonymous auth implemented |
-| Phase 2: Authentication UX + Social Login | 🚧 In Progress (9/14) | UI complete, Platform config pending |
+| Phase 2: Authentication UX + Social Login | 🚧 In Progress (13/18) | Architecture done; Supabase config + testing remain |
 | Phase 3: Environment & Telemetry | ⏸️ Deferred | Low priority |
 | Phase 4: Observability | ⏸️ Deferred | Pre-launch only |
 
-**Current Focus:** Phase 2 - Account Linking (Apple Sign-In, Google Sign-In, Email/Password)
+**Current Focus:** Phase 2 - Provider configuration + OAuth testing (Apple, Google, email/password linking)
 
-## ⚠️ CRITICAL: App Initialization Architecture Required
+## ⚠️ CRITICAL: Supabase Provider Config + OAuth QA
 
-**Before Phase 2 OAuth can work**, the app initialization pattern must be refactored to support OAuth deep links.
+Phase 2 code is in place (AppStartupWidget refactor, auth state listener, deep links), but OAuth **still cannot be tested** until Supabase providers are configured and flows are exercised on devices.
 
-**The Problem:**
-- OAuth redirects arrive as deep links: `com.milkman.mealvanaendurance://auth-callback`
-- Current architecture: AppStartupWidget is a GoRouter route, blocking deep link processing
-- Without refactor: OAuth will fail silently (deep links ignored, auth callbacks never trigger)
+**Blocking Work:**
+- Configure Google + Apple providers inside the Supabase dashboard (client ID/secret or `.p8` key, redirect URL `https://wvmvsodrvbkxfydabqed.supabase.co/auth/v1/callback`, add `com.milkman.mealvanaendurance://auth-callback`).
+- Run Apple, Google, and email/password linking end-to-end to verify deep links, analytics, and data preservation.
+- Add the Settings account module so QA can see current auth status and trigger linking/sign-out flows.
 
-**The Solution:**
-- Implement Andrea Bizzotto's `MaterialApp.builder` pattern
-- AppStartupWidget becomes a wrapper widget (not a route)
-- GoRouter initializes immediately and handles deep links during app startup
+**References:**
+- Phase 2 status tracker: `/docs/startup_auth_roadmap/PHASE_2_STATUS.md` (see "What's Remaining")
+- Implementation details: `/docs/startup_auth_roadmap/phase_2_implementation.md` ("Platform Configuration & Testing" section)
+- Supabase dashboard checklist: see README §3
 
-**📚 Complete Implementation Guide:**
-- **Architecture Documentation:** `/docs/technical/app-initialization-deep-linking.md`
-- **Phase 2 Status:** `/docs/startup_auth_roadmap/PHASE_2_STATUS.md` (see "Step 0: Refactor App Initialization")
-- **Phase 2 Implementation:** `/docs/startup_auth_roadmap/phase_2_implementation.md` (see "Architecture Refactor" section)
+**Estimated Time:** ~2 hours once dashboard access is available (provider config + multi-device QA).
 
-**Estimated Time:** 1 hour (BLOCKING for all OAuth features)
+---
+
+## 🔀 OAuth Approach Decision Point
+
+**You have two options for implementing Google and Apple authentication:**
+
+### Option 1: Web OAuth (Current Implementation) ✅ Simpler
+
+**What it is:** Opens browser/web view for authentication, redirects back to app via deep link
+
+**Status:** Backend ✅ | UI ✅ | Architecture ✅ | Testing ⏳
+
+**Pros:**
+- ✅ Already implemented (code complete)
+- ✅ Simpler setup (just Supabase config)
+- ✅ Fewer dependencies (only `supabase_flutter`)
+- ✅ Less maintenance (no secret rotation)
+- ✅ Works on simulators
+
+**Cons:**
+- ❌ Opens browser (5-10 second redirect)
+- ❌ User sees Supabase URL briefly
+- ❌ Requires deep link configuration
+
+**Next Steps:**
+1. Configure Supabase providers (see section below)
+2. Test OAuth flows on devices
+3. Ship to production
+
+**Reference:** [phase_2_implementation.md](phase_2_implementation.md)
+
+---
+
+### Option 2: Native OAuth 🎯 Better UX
+
+**What it is:** Native Google/Apple Sign-In UI (no browser)
+
+**Status:** 📋 Planning phase (roadmap created)
+
+**Pros:**
+- ✅ Better UX (no browser redirect)
+- ✅ Native platform UI
+- ✅ Faster (no browser round-trip)
+- ✅ More reliable (fewer moving parts)
+
+**Cons:**
+- ⚠️ More setup (Google Cloud + Apple Developer consoles)
+- ⚠️ More dependencies (4 packages vs 1)
+- ⚠️ Apple secret rotation every 6 months
+- ⚠️ Requires physical iOS device for testing
+
+**Next Steps:**
+1. Review [NATIVE_OAUTH_ROADMAP.md](NATIVE_OAUTH_ROADMAP.md)
+2. Complete console configuration (2-3 hours)
+3. Update OAuthService code (2-3 hours)
+4. Test on physical devices
+
+**Reference:** [NATIVE_OAUTH_ROADMAP.md](NATIVE_OAUTH_ROADMAP.md) | [native-oauth-setup-guide.md](/docs/technical/native-oauth-setup-guide.md)
+
+---
+
+### Decision Matrix
+
+| Factor | Web OAuth | Native OAuth |
+|--------|-----------|--------------|
+| **Setup Time** | ✅ 2 hours | ⚠️ 6-10 hours |
+| **User Experience** | ⚠️ Browser redirect | ✅ Native UI |
+| **Dependencies** | ✅ 1 package | ⚠️ 4 packages |
+| **Maintenance** | ✅ Low | ⚠️ Medium |
+| **Testing** | ✅ Simulators OK | ⚠️ Physical device |
+| **Production Ready** | ✅ Yes (code done) | ⏳ Not yet |
+
+### Recommendation
+
+**For MVP/Quick Launch:** Use Web OAuth (current implementation)
+- Code is done, just needs Supabase config and testing
+- Ship faster, iterate on UX later
+
+**For Best UX:** Switch to Native OAuth
+- Worth the investment for professional feel
+- Users won't see browser redirect
+- More work upfront, better long-term
+
+**You can always switch later!** The Supabase backend stays the same regardless of which OAuth method you use.
 
 ---
 

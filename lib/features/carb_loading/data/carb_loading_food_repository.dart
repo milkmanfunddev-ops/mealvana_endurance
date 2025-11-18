@@ -30,27 +30,18 @@ class CarbLoadingFoodRepository {
     final query = _database.select(_database.carbLoadingFoodsTable);
     final allFoods = await query.get();
 
-    print('[CARB_LOADING_REPO] getFoodsByMealType($mealTypeId): Found ${allFoods.length} total foods');
-
     // Filter foods that have this meal type in their array
     final filteredFoods = allFoods.where((food) {
       // If meal_types is null or empty, include the food (works for all meal types)
       if (food.mealTypes == null || food.mealTypes!.isEmpty) {
-        print('[CARB_LOADING_REPO] Including ${food.displayName} (no meal_types restriction)');
         return true;  // Changed from false to true - more forgiving!
       }
 
       final mealTypes = _parseMealTypesArray(food.mealTypes);
       final matches = mealTypes.isEmpty || mealTypes.contains(mealTypeId);
 
-      if (matches) {
-        print('[CARB_LOADING_REPO] Including ${food.displayName} (meal_types: $mealTypes)');
-      }
-
       return matches;
     }).map((food) => _convertToFoodDomain(food)).toList();
-
-    print('[CARB_LOADING_REPO] Returning ${filteredFoods.length} foods for meal type $mealTypeId');
 
     return filteredFoods;
   }

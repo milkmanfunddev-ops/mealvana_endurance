@@ -1,21 +1,19 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/analytics/analytics_service.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/logging_service.dart';
-import '../../../content/application/content_service.dart';
 import '../../application/oauth_service.dart';
 import '../../application/email_auth_service.dart';
 
 part 'post_onboarding_auth_controller.g.dart';
 
 /// Controller for managing post-onboarding authentication flow
-/// Handles Apple Sign-In, Google Sign-In, and Email/Password signup
+/// Handles native Apple Sign-In, native Google Sign-In, and Email/Password signup
 @riverpod
 class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
-  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
-  ContentService get _contentService => ref.read(contentServiceProvider);
+  AnalyticsTracker get _analytics => ref.read(analyticsTrackerProvider);
   OAuthService get _oauthService => ref.read(oAuthServiceProvider.notifier);
   EmailAuthService get _emailAuthService => ref.read(emailAuthServiceProvider.notifier);
 
@@ -24,7 +22,7 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     // No initial state needed
   }
 
-  /// Link Apple account using web OAuth
+  /// Link Apple account using native Apple Sign-In
   Future<bool> linkAppleAccount() async {
     state = const AsyncLoading();
 
@@ -51,13 +49,18 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         'error': state.error.toString(),
       });
     } else {
-      _logger.info('Post-onboarding auth: Apple Sign-In initiated', context: 'AUTH');
+      _logger.info('Post-onboarding auth: Apple Sign-In completed successfully', context: 'AUTH');
+
+      await _analytics.track('auth_flow_completed', properties: {
+        'provider': 'apple',
+        'source': 'post_onboarding',
+      });
     }
 
     return !state.hasError;
   }
 
-  /// Link Google account using web OAuth
+  /// Link Google account using native Google Sign-In
   Future<bool> linkGoogleAccount() async {
     state = const AsyncLoading();
 
@@ -84,7 +87,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         'error': state.error.toString(),
       });
     } else {
-      _logger.info('Post-onboarding auth: Google Sign-In initiated', context: 'AUTH');
+      _logger.info('Post-onboarding auth: Google Sign-In completed successfully', context: 'AUTH');
+
+      await _analytics.track('auth_flow_completed', properties: {
+        'provider': 'google',
+        'source': 'post_onboarding',
+      });
     }
 
     return !state.hasError;

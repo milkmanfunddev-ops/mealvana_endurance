@@ -392,7 +392,7 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
             const SizedBox(width: AppSpacing.sm),
             Text(
               label,
-              style: AppTextStyles.buttonText.copyWith(
+              style: AppTextStyles.buttonPrimary.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),

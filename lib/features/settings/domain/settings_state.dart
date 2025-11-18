@@ -50,6 +50,19 @@ class SettingsState {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  // Auth fields for account section
+  final bool isAnonymous;
+  final String authProvider; // 'anonymous', 'email', 'google', 'apple'
+  final String? authUserId; // Supabase auth.uid()
+  final String? email; // User's email (if available)
+
+  // Account section labels
+  final String accountSectionTitle;
+  final String accountStatusAnonymous;
+  final String accountStatusAuthenticated;
+  final String createAccountButton;
+  final String signOutButton;
+
   const SettingsState({
     required this.title,
     required this.profileSectionTitle,
@@ -89,6 +102,15 @@ class SettingsState {
     this.userId,
     this.createdAt,
     this.updatedAt,
+    this.isAnonymous = true,
+    this.authProvider = 'anonymous',
+    this.authUserId,
+    this.email,
+    this.accountSectionTitle = 'Account',
+    this.accountStatusAnonymous = 'Not signed in',
+    this.accountStatusAuthenticated = 'Signed in',
+    this.createAccountButton = 'Create Account',
+    this.signOutButton = 'Sign Out',
   });
 
   SettingsState copyWith({
@@ -130,6 +152,15 @@ class SettingsState {
     String? userId,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isAnonymous,
+    String? authProvider,
+    String? authUserId,
+    String? email,
+    String? accountSectionTitle,
+    String? accountStatusAnonymous,
+    String? accountStatusAuthenticated,
+    String? createAccountButton,
+    String? signOutButton,
   }) {
     return SettingsState(
       title: title ?? this.title,
@@ -170,6 +201,15 @@ class SettingsState {
       userId: userId ?? this.userId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
+      authProvider: authProvider ?? this.authProvider,
+      authUserId: authUserId ?? this.authUserId,
+      email: email ?? this.email,
+      accountSectionTitle: accountSectionTitle ?? this.accountSectionTitle,
+      accountStatusAnonymous: accountStatusAnonymous ?? this.accountStatusAnonymous,
+      accountStatusAuthenticated: accountStatusAuthenticated ?? this.accountStatusAuthenticated,
+      createAccountButton: createAccountButton ?? this.createAccountButton,
+      signOutButton: signOutButton ?? this.signOutButton,
     );
   }
 }

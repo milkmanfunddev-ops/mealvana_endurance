@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Google OAuth Client IDs for Native Sign-In
+
+        ✅ Web Client ID configured
+        ⚠️  Android Client ID: MUST be created in Google Cloud Console first
+
+        To create Android Client ID:
+        1. Go to: https://console.cloud.google.com/apis/credentials
+        2. Click "Create Credentials" → "OAuth client ID"
+        3. Select "Android" application type
+        4. Package name: com.milkman.mealvanaendurance
+        5. SHA-1 fingerprint (DEBUG): BE:B9:37:51:39:7E:AE:C9:6A:D7:63:29:6E:34:5A:1D:CD:2A:CB:AA
+        6. Copy the generated client ID and replace PENDING_CREATE_IN_GOOGLE_CLOUD below
+        7. Also update .env file with the same value
+    -->
+
+    <!-- Web Client ID (OAuth 2.0 Client ID for Web Application) -->
+    <string name="default_web_client_id" translatable="false">171527646530-d1hr8a9ja4ucqk28cjpcfnlo288qhccn.apps.googleusercontent.com</string>
+
+    <!-- Android Client ID (OAuth 2.0 Client ID for Android Application) -->
+    <!-- ⚠️ PLACEHOLDER: Create in Google Cloud Console using SHA-1 above -->
+    <string name="default_android_client_id" translatable="false">PENDING_CREATE_IN_GOOGLE_CLOUD.apps.googleusercontent.com</string>
+</resources>

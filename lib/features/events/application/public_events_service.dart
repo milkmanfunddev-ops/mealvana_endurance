@@ -61,7 +61,7 @@ class PublicEventsService {
       return events;
     } catch (e) {
       // Log error and return empty list
-      print('Error searching public events: $e');
+      // TODO: Use AppLogger for proper error tracking
       return [];
     }
   }
