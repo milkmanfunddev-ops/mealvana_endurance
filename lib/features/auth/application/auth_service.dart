@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 import '../data/auth_repository_edge.dart';
 import '../domain/user_preferences.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -20,8 +21,10 @@ class AuthService {
   AuthRepositoryEdge get _authRepositoryEdge => ref.read(authRepositoryEdgeProvider);
 
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
+  SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
 
-  /// Create a new user profile during onboarding using Edge Function
+  /// Create a new user profile during onboarding using Supabase Auth
+  /// Uses anonymous auth session created during app startup
   Future<UserProfile> createUser({
     required Gender gender,
     required DateTime birthday,
@@ -32,106 +35,88 @@ class AuthService {
     GutTraining? gutTraining,
     Map<String, FoodPreference>? foodPreferences,
   }) async {
-    // Get device ID
-    final deviceId = await _getDeviceId();
+    try {
+      // Get Supabase auth session (should exist from app startup)
+      final authUser = _supabase.auth.currentUser;
+      if (authUser == null) {
+        throw Exception('No Supabase auth session found - app startup may have failed');
+      }
 
-    // Get app version (simplified for now)
-    const appVersion = '1.0.0';
-    
-    // Convert gut training to level
-    final gutTrainingLevel = _convertGutTrainingToLevel(gutTraining ?? GutTraining.high);
-    
-    // Call Edge Function to create user
-    final result = await _authRepositoryEdge.createUser(
-      deviceId: deviceId,
-      gender: gender,
-      birthday: birthday,
-      heightFeet: heightFeet,
-      heightInches: heightInches,
-      weightPounds: weightPounds,
-      runsWithWaterBottle: runsWithWaterBottle,
-      gutTrainingLevel: gutTrainingLevel,
-      appVersion: appVersion,
-      foodPreferences: foodPreferences,
-    );
-    
-    if (result.success && result.user != null) {
+      // Get device ID for backwards compatibility and analytics
+      final deviceId = await _getDeviceId();
+
+      // Get app version
+      const appVersion = '1.0.0';
+
+      // Create UserProfile with Supabase auth fields
+      final now = DateTime.now();
+      final userProfile = UserProfile(
+        id: authUser.id, // Use Supabase UUID as canonical ID
+        deviceId: deviceId, // Keep for backwards compatibility
+        authUserId: authUser.id, // Supabase auth user ID
+        authProvider: 'anonymous', // Anonymous auth
+        isAnonymous: true, // Anonymous until linked to email/social
+        gender: gender,
+        birthday: birthday,
+        heightFeet: heightFeet,
+        heightInches: heightInches,
+        weightPounds: weightPounds,
+        runsWithWaterBottle: runsWithWaterBottle,
+        gutTraining: gutTraining ?? GutTraining.high,
+        onboardingCompleted: false,
+        appVersion: appVersion,
+        createdAt: now,
+        updatedAt: now,
+        // Optional fields default to null
+        giSensitivity: null,
+        ftpWatts: null,
+        typicalBikeBottles: null,
+        hasAeroBottle: null,
+        hasBentoBox: null,
+        cssPacePer100mSeconds: null,
+        typicalWetsuit: null,
+        typicalSwimCapType: null,
+      );
+
+      // Save to Supabase (upsert to handle any edge cases)
+      await _supabase.from('users').upsert(userProfile.toJson());
+
       // Save locally for caching
       final userRepo = await _userRepository;
-      await userRepo.saveUserProfile(result.user!);
-      
+      await userRepo.saveUserProfile(userProfile);
+
       // Update Sentry user context with new user details
       await _sentry.setUserContext(
-        deviceId: deviceId,
+        deviceId: authUser.id, // Use auth ID for Sentry
         appVersion: appVersion,
-        onboardingCompleted: false, // User just created, onboarding in progress
-        gutTrainingLevel: gutTrainingLevel.name,
+        onboardingCompleted: false,
+        gutTrainingLevel: (gutTraining ?? GutTraining.high).name,
       );
-      
+
       _sentry.addBreadcrumb(
-        message: 'User created successfully',
+        message: 'User created successfully with Supabase Auth',
         category: 'user_lifecycle',
         data: {
-          'user_id': result.user!.id,
+          'user_id': authUser.id,
+          'auth_provider': 'anonymous',
           'gender': gender.name,
-          'gut_training': gutTrainingLevel.name,
+          'gut_training': (gutTraining ?? GutTraining.high).name,
         },
       );
-      
-      return result.user!;
-    } else if (result.message?.contains('already exists') == true) {
-      // User already exists - fetch existing user from Supabase
-      final existingUser = await _authRepositoryEdge.getUserByDeviceId(deviceId);
-      if (existingUser != null) {
-        // Save locally for caching
-        final userRepo = await _userRepository;
-        await userRepo.saveUserProfile(existingUser);
-        
-        // Update Sentry user context for existing user
-        await _sentry.setUserContext(
-          deviceId: deviceId,
-          appVersion: appVersion,
-          onboardingCompleted: existingUser.onboardingCompleted,
-          gutTrainingLevel: existingUser.gutTraining.name,
-        );
-        
-        _sentry.addBreadcrumb(
-          message: 'Existing user restored',
-          category: 'user_lifecycle',
-          data: {
-            'user_id': existingUser.id,
-            'onboarding_completed': existingUser.onboardingCompleted.toString(),
-          },
-        );
-        
-        return existingUser;
-      }
-      // Critical: User exists but couldn't be retrieved
-      final error = Exception('User already exists but could not retrieve existing user');
+
+      return userProfile;
+    } catch (e, stackTrace) {
+      // Critical: User creation failed
       await _sentry.reportCriticalError(
-        error,
-        context: 'user_creation_conflict',
-        tags: {
-          'device_id': deviceId,
-          'error_type': 'user_retrieval_failure',
-          'operation': 'create_user',
-        },
-      );
-      throw error;
-    } else {
-      // Critical: User creation failed completely
-      final error = Exception(result.message ?? 'Failed to create user');
-      await _sentry.reportCriticalError(
-        error,
+        e,
+        stackTrace: stackTrace,
         context: 'user_creation_failure',
         tags: {
-          'device_id': deviceId,
-          'error_type': 'edge_function_failure',
+          'error_type': 'supabase_auth_user_creation_failure',
           'operation': 'create_user',
-          'edge_function_message': result.message ?? 'unknown',
         },
       );
-      throw error;
+      rethrow;
     }
   }
 
@@ -217,18 +202,6 @@ class AuthService {
     }
   }
   
-  /// Convert GutTraining enum to GutTrainingLevel enum
-  GutTrainingLevel _convertGutTrainingToLevel(GutTraining gutTraining) {
-    switch (gutTraining) {
-      case GutTraining.low:
-        return GutTrainingLevel.low;
-      case GutTraining.moderate:
-        return GutTrainingLevel.moderate;
-      case GutTraining.high:
-        return GutTrainingLevel.high;
-    }
-  }
-
   /// Update user profile
   Future<void> updateUserProfile(UserProfile profile) async {
     final userRepo = await _userRepository;

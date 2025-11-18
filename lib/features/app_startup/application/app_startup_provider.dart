@@ -38,7 +38,12 @@ class AppStartup extends _$AppStartup {
       await startupService.initializeDatabase();
       _logger.info('✅ Database initialization complete', context: 'APP_STARTUP');
 
-      // 2-4. Run independent operations in parallel for faster startup
+      // 2. Initialize Supabase Anonymous Auth (must be early - user identity required for subsequent operations)
+      _logger.info('🔄 Initializing Supabase Anonymous Auth...', context: 'APP_STARTUP');
+      await startupService.initializeSupabaseAuth();
+      _logger.info('✅ Supabase Auth initialized', context: 'APP_STARTUP');
+
+      // 3-5. Run independent operations in parallel for faster startup
       // These operations don't depend on each other, so we can run them concurrently
       _logger.info('🔄 Starting parallel initialization (analytics, sentry, session)...', context: 'APP_STARTUP');
       await Future.wait([

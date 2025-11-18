@@ -3,6 +3,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
@@ -23,6 +24,7 @@ class AppStartupService {
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
+  SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
   
   /// Initialize Drift database with v2 migration support
   Future<void> initializeDatabase() async {
@@ -130,7 +132,105 @@ class AppStartupService {
   String _generateFallbackId() {
     return 'device_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (999 * DateTime.now().millisecond)).toString()}';
   }
-  
+
+  /// Initialize Supabase Anonymous Authentication
+  /// Creates or restores an anonymous auth session for the user
+  /// This is the foundation for all Supabase Auth-based operations
+  Future<void> initializeSupabaseAuth() async {
+    try {
+      _logger.info('🔄 Initializing Supabase Auth...', context: 'AUTH');
+
+      // Check if we already have a session (SDK auto-restores from secure storage)
+      final existingSession = _supabase.auth.currentSession;
+
+      if (existingSession != null) {
+        _logger.info(
+          '✅ Existing Supabase session restored',
+          context: 'AUTH',
+          data: {
+            'user_id': existingSession.user.id,
+            'expires_at': existingSession.expiresAt != null
+                ? DateTime.fromMillisecondsSinceEpoch(existingSession.expiresAt! * 1000).toIso8601String()
+                : null,
+          },
+        );
+
+        // Track session restoration
+        await _analytics.track(
+          'auth_session_restored',
+          properties: {
+            'user_id': existingSession.user.id,
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        );
+
+        return;
+      }
+
+      // No existing session - create anonymous user
+      _logger.info('🔄 No session found, creating anonymous user...', context: 'AUTH');
+
+      final response = await _supabase.auth.signInAnonymously();
+
+      if (response.session == null || response.user == null) {
+        throw Exception('Failed to create anonymous session - null response');
+      }
+
+      _logger.info(
+        '✅ Anonymous Supabase user created successfully',
+        context: 'AUTH',
+        data: {
+          'user_id': response.user!.id,
+          'session_expires_at': response.session!.expiresAt != null
+              ? DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000).toIso8601String()
+              : null,
+        },
+      );
+
+      // Track anonymous user creation
+      await _analytics.track(
+        'anonymous_auth_created',
+        properties: {
+          'user_id': response.user!.id,
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+
+      // Add Sentry breadcrumb for tracking
+      _sentry.addBreadcrumb(
+        message: 'Anonymous Supabase user created',
+        category: 'auth',
+        data: {
+          'user_id': response.user!.id,
+          'auth_provider': 'anonymous',
+        },
+      );
+
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Supabase Auth initialization failed',
+        context: 'AUTH',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
+      // Report critical error to Sentry
+      await _sentry.reportCriticalError(
+        e,
+        stackTrace: stackTrace,
+        context: 'supabase_auth_init_failure',
+        tags: {
+          'error_type': 'auth_initialization_failure',
+          'operation': 'sign_in_anonymously',
+        },
+      );
+
+      // Re-throw to trigger error handling in AppStartupWidget
+      // User will see error screen with retry option
+      rethrow;
+    }
+  }
+
   /// Check if user has existing session and restore it
   Future<void> checkUserSession() async {
     try {
