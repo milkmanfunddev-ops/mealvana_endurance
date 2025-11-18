@@ -67,3 +67,9 @@ test/local_edge_functions/*.log
 test/local_edge_functions/debug-*.js
 test/local_edge_functions/test-*.js
 test/local_edge_functions/.env*
+
+# Secrets and API keys (never commit!)
+secrets/
+*.p8
+*.p12
+*.mobileprovision
