@@ -2,7 +2,7 @@
 # Authentication Foundation & Android UUID Fix
 
 **Status**: ✅ **COMPLETE**
-**Date Completed**: 2025-11-17
+**Date Completed**: 2025-11-18 (updated with domain model integration)
 **Version**: Database Schema V1 (Living v1 - no version bump)
 
 ---
@@ -13,9 +13,11 @@ Phase 0 established the foundational infrastructure for Supabase authentication 
 
 **Key Achievements**:
 - ✅ Fixed Android UUID constraint violation (critical blocker)
-- ✅ Added auth columns to `users` table (`auth_user_id`, `auth_provider`, `is_anonymous`)
+- ✅ Added auth columns to Drift table schema (`auth_user_id`, `auth_provider`, `is_anonymous`)
+- ✅ Added auth fields to UserProfile domain model
+- ✅ Updated all Drift<->Domain converters to support auth fields
 - ✅ Simplified architecture: leveraging Supabase SDK session management
-- ✅ Generated Drift schema snapshot for v1 (16 tables)
+- ✅ Generated Drift schema snapshot for v1 (17 tables)
 - ✅ Created production-ready PostgreSQL migration script
 
 ---
@@ -171,7 +173,98 @@ String _generateUuid() {
 
 ---
 
-## 3. Database Schema Changes
+## 3. Domain Model Integration (2025-11-18)
+
+### UserProfile Domain Model Updates
+
+**File**: `lib/features/auth/domain/user_preferences.dart`
+
+**Added Fields**:
+```dart
+final String deviceId;           // Legacy device identifier
+final String? authUserId;        // Supabase auth.uid() - canonical user ID
+final String authProvider;       // 'anonymous', 'email', 'google', 'apple'
+final bool isAnonymous;          // True until account is linked
+```
+
+**Constructor Updates**:
+- Added `deviceId` as required parameter
+- Added `authUserId` as nullable parameter
+- Added `authProvider` with default 'anonymous'
+- Added `isAnonymous` with default `true`
+
+**Method Updates**:
+- `fromJson()`: Supports both 'id' and 'device_id' for backwards compatibility
+- `toJson()`: Includes all auth fields
+- `copyWith()`: Supports updating auth fields
+
+### Drift Converter Updates
+
+**File**: `lib/shared/database/app_database.dart`
+
+**Updated Methods**:
+
+1. **`saveUserProfile()`**:
+   ```dart
+   UserProfilesTableCompanion.insert(
+     id: profile.id,
+     deviceId: profile.deviceId,           // ← NEW
+     authUserId: Value(profile.authUserId), // ← NEW
+     authProvider: Value(profile.authProvider), // ← NEW
+     isAnonymous: Value(profile.isAnonymous),  // ← NEW
+     // ... existing fields
+   )
+   ```
+
+2. **`updateUserProfile()`**:
+   ```dart
+   UserProfilesTableCompanion(
+     deviceId: Value(profile.deviceId),    // ← NEW
+     authUserId: Value(profile.authUserId), // ← NEW
+     authProvider: Value(profile.authProvider), // ← NEW
+     isAnonymous: Value(profile.isAnonymous),  // ← NEW
+     // ... existing fields
+   )
+   ```
+
+3. **`_convertToDomainUserProfile()`**:
+   ```dart
+   return domain.UserProfile(
+     id: dbUser.id,
+     deviceId: dbUser.deviceId,          // ← NEW
+     authUserId: dbUser.authUserId,       // ← NEW
+     authProvider: dbUser.authProvider,   // ← NEW
+     isAnonymous: dbUser.isAnonymous,     // ← NEW
+     // ... existing fields
+   );
+   ```
+
+### Supabase Parser Updates
+
+**File**: `lib/features/auth/data/user_repository.dart`
+
+**Updated `_parseUserFromSupabase()`**:
+```dart
+return UserProfile(
+  id: userData['id'] ?? deviceId,       // Prefer Supabase id
+  deviceId: deviceId,                   // ← NEW
+  authUserId: userData['auth_user_id'], // ← NEW
+  authProvider: userData['auth_provider'] ?? 'anonymous', // ← NEW
+  isAnonymous: userData['is_anonymous'] ?? true,          // ← NEW
+  // ... existing fields
+);
+```
+
+### Code Generation
+
+**Command**: `dart run build_runner build --delete-conflicting-outputs`
+- Regenerated `app_database.g.dart` with new schema
+- Updated all generated Riverpod providers
+- Completed in 45 seconds, 434 outputs
+
+---
+
+## 4. Database Schema Changes
 
 ### Added to `public.users` Table
 
