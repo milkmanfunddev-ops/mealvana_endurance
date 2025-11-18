@@ -88,7 +88,7 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'No upcoming events',
+                        'Create an Event',
                         style: TextStyle(
                           fontFamily: 'Compadre',
                           fontSize: 16,
@@ -97,17 +97,17 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                           height: 1.3,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Tap to add a race event',
-                        style: TextStyle(
-                          fontFamily: 'Apercu',
-                          fontSize: 12,
-                          color: (isDark ? AppColors.cream : AppColors.blackberry)
-                              .withValues(alpha: 0.5),
-                          height: 1.3,
-                        ),
-                      ),
+                      // const SizedBox(height: 4),
+                      // Text(
+                      //   'Tap to add a race event',
+                      //   style: TextStyle(
+                      //     fontFamily: 'Apercu',
+                      //     fontSize: 12,
+                      //     color: (isDark ? AppColors.cream : AppColors.blackberry)
+                      //         .withValues(alpha: 0.5),
+                      //     height: 1.3,
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),

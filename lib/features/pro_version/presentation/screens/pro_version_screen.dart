@@ -56,7 +56,7 @@ class ProVersionScreen extends ConsumerWidget {
                         ? null
                         : [
                             BoxShadow(
-                              color: AppColors.orange.withOpacity(0.3),
+                              color: AppColors.orange.withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -167,7 +167,7 @@ class ProVersionScreen extends ConsumerWidget {
               // Pricing Section
               BaseCard(
                 backgroundColor: isDark
-                  ? AppColors.blackberryLight.withOpacity(0.5)
+                  ? AppColors.blackberryLight.withValues(alpha: 0.5)
                   : AppColors.surfaceLight,
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
@@ -277,7 +277,7 @@ class _FeatureCard extends ConsumerWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.2),
+              color: iconColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

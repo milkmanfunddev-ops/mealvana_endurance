@@ -15,7 +15,6 @@ import 'tables/foods_table.dart';
 import 'tables/app_content_table.dart';
 import 'tables/edge_functions_table.dart';
 import 'tables/user_foods_table.dart';
-import 'tables/auth_sessions_table.dart';
 // NEW: Calendar tables
 import 'tables/activities_table.dart';
 import 'tables/events_table.dart';
@@ -34,15 +33,12 @@ import '../../features/nutrition_plan/domain/food_item.dart';
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
-/// V1 schema with 17 tables (added auth_sessions and auth columns to users)
+/// V1 schema with 16 tables (added auth columns to users table)
 @DriftDatabase(tables: [
   // Core tables aligned with Supabase
   UserProfilesTable,
   FoodPreferencesTable,
   FeedbackTable,
-
-  // Authentication
-  AuthSessionsTable,
 
   // Food system tables
   FoodsTable,

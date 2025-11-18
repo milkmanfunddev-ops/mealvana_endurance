@@ -195,4 +195,29 @@ class AppTextStyles {
     height: 1.3,
     letterSpacing: 0.5,
   );
+
+  // === Marketing & Pro Screens (Traditional Heading Hierarchy) ===
+
+  // h1 - Main page title (28px) - alias for pageTitle
+  static const TextStyle h1 = pageTitle;
+
+  // h2 - Large heading (24px) - alias for dateTime
+  static const TextStyle h2 = dateTime;
+
+  // h3 - Section heading (20px) - alias for sectionTitle
+  static const TextStyle h3 = sectionTitle;
+
+  // h4 - Subsection heading (18px) - alias for activityTitle
+  static const TextStyle h4 = activityTitle;
+
+  // h5 - Small heading (16px) - alias for subtitle
+  static const TextStyle h5 = subtitle;
+
+  // bodySmall - Small body text (12px)
+  static const TextStyle bodySmall = TextStyle(
+    fontFamily: apercu,
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
 }

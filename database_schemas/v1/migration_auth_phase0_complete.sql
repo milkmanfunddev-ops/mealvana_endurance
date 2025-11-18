@@ -2,12 +2,16 @@
 -- Phase 0 Authentication Migration - Complete
 -- =====================================================
 -- Purpose: Add Supabase authentication support to v1 schema
---          Safe to run multiple times (idempotent)
+--          Links public.users to auth.users (Supabase-managed)
+--
+-- Architecture:
+-- - auth.users: Managed by Supabase Auth (don't touch)
+-- - public.users: Our app data, linked via auth_user_id
+-- - Sessions: Managed by Supabase SDK (stored in platform secure storage)
 --
 -- Changes:
 -- 1. Create auth_provider_enum type
--- 2. Create auth_sessions table for offline session persistence
--- 3. Add auth columns to users table
+-- 2. Add auth columns to public.users table
 --
 -- Environment: Production (Supabase PostgreSQL)
 -- Schema Version: v1 (staying on v1, not bumping to v2)
@@ -25,66 +29,11 @@ BEGIN
 END $$;
 
 -- =====================================================
--- 2. CREATE auth_sessions TABLE
+-- 2. ADD AUTH COLUMNS TO public.users TABLE
 -- =====================================================
 
-CREATE TABLE IF NOT EXISTS auth_sessions (
-  -- Primary key: User ID from Supabase auth.uid()
-  user_id UUID PRIMARY KEY,
-
-  -- JWT tokens for authentication
-  access_token TEXT NOT NULL,
-  refresh_token TEXT NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-
-  -- Metadata from Supabase auth
-  user_metadata JSONB NOT NULL DEFAULT '{}',
-  app_metadata JSONB NOT NULL DEFAULT '{}',
-
-  -- Sync tracking
-  last_synced_at TIMESTAMPTZ,
-
-  -- User type and provider tracking
-  is_anonymous BOOLEAN NOT NULL DEFAULT TRUE,
-  provider auth_provider_enum NOT NULL DEFAULT 'anonymous',
-
-  -- User contact info (nullable for anonymous users)
-  email TEXT,
-  phone TEXT,
-
-  -- Audit fields
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Create indexes for common queries
-CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at
-  ON auth_sessions(expires_at);
-
-CREATE INDEX IF NOT EXISTS idx_auth_sessions_provider
-  ON auth_sessions(provider);
-
--- Create updated_at trigger function (idempotent)
-CREATE OR REPLACE FUNCTION update_auth_sessions_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Drop and recreate trigger (idempotent)
-DROP TRIGGER IF EXISTS auth_sessions_updated_at_trigger ON auth_sessions;
-CREATE TRIGGER auth_sessions_updated_at_trigger
-  BEFORE UPDATE ON auth_sessions
-  FOR EACH ROW
-  EXECUTE FUNCTION update_auth_sessions_updated_at();
-
--- =====================================================
--- 3. ADD AUTH COLUMNS TO users TABLE
--- =====================================================
-
--- Add auth_user_id column (nullable for gradual migration)
+-- Add auth_user_id column - links to auth.users.id
+-- Nullable for gradual migration from device_id to auth_user_id
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -97,7 +46,8 @@ BEGIN
   END IF;
 END $$;
 
--- Add auth_provider column with TEXT type first (will convert to ENUM later)
+-- Add auth_provider column with enum type
+-- Tracks which OAuth provider the user authenticated with
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -110,7 +60,8 @@ BEGIN
   END IF;
 END $$;
 
--- Add is_anonymous column with default TRUE
+-- Add is_anonymous column
+-- TRUE for anonymous users, FALSE after linking to email/google/apple
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -124,6 +75,7 @@ BEGIN
 END $$;
 
 -- Convert auth_provider column from TEXT to ENUM type
+-- Handles case where column was already created as TEXT
 DO $$
 BEGIN
   -- Check if column is TEXT type (needs conversion)
@@ -133,7 +85,7 @@ BEGIN
     AND column_name = 'auth_provider'
     AND data_type = 'text'
   ) THEN
-    -- Step 1: Drop any CHECK constraint if it exists
+    -- Drop any CHECK constraint if it exists
     IF EXISTS (
       SELECT 1 FROM pg_constraint
       WHERE conname = 'users_auth_provider_check'
@@ -141,53 +93,43 @@ BEGIN
       ALTER TABLE users DROP CONSTRAINT users_auth_provider_check;
     END IF;
 
-    -- Step 2: Drop the default (can't cast TEXT default to ENUM)
+    -- Drop the default, convert type, set new default
     ALTER TABLE users ALTER COLUMN auth_provider DROP DEFAULT;
-
-    -- Step 3: Convert TEXT to ENUM
     ALTER TABLE users
       ALTER COLUMN auth_provider TYPE auth_provider_enum
       USING auth_provider::auth_provider_enum;
-
-    -- Step 4: Set new ENUM default
     ALTER TABLE users ALTER COLUMN auth_provider SET DEFAULT 'anonymous'::auth_provider_enum;
   END IF;
 END $$;
 
--- Convert auth_sessions.provider to enum if needed
-DO $$
-BEGIN
-  -- Check if column exists and is TEXT type
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'auth_sessions'
-    AND column_name = 'provider'
-    AND data_type = 'text'
-  ) THEN
-    -- Drop any CHECK constraint if it exists
-    IF EXISTS (
-      SELECT 1 FROM pg_constraint
-      WHERE conname = 'auth_sessions_provider_check'
-    ) THEN
-      ALTER TABLE auth_sessions DROP CONSTRAINT auth_sessions_provider_check;
-    END IF;
-
-    -- Drop default, convert type, set new default
-    ALTER TABLE auth_sessions ALTER COLUMN provider DROP DEFAULT;
-    ALTER TABLE auth_sessions
-      ALTER COLUMN provider TYPE auth_provider_enum
-      USING provider::auth_provider_enum;
-    ALTER TABLE auth_sessions ALTER COLUMN provider SET DEFAULT 'anonymous'::auth_provider_enum;
-  END IF;
-END $$;
-
--- Create index on auth_user_id for lookups
+-- Create index on auth_user_id for fast lookups
+-- Used to find user data by Supabase auth.users.id
 CREATE INDEX IF NOT EXISTS idx_users_auth_user_id
   ON users(auth_user_id);
 
 -- Create index on auth_provider for filtering
+-- Used for analytics and provider-specific queries
 CREATE INDEX IF NOT EXISTS idx_users_auth_provider
   ON users(auth_provider);
+
+-- =====================================================
+-- 3. ADD FOREIGN KEY TO auth.users (Optional)
+-- =====================================================
+-- Uncomment if you want to enforce referential integrity
+-- This requires auth.users to exist (it's created by Supabase)
+--
+-- DO $$
+-- BEGIN
+--   IF NOT EXISTS (
+--     SELECT 1 FROM pg_constraint
+--     WHERE conname = 'users_auth_user_id_fkey'
+--   ) THEN
+--     ALTER TABLE users
+--       ADD CONSTRAINT users_auth_user_id_fkey
+--       FOREIGN KEY (auth_user_id) REFERENCES auth.users(id)
+--       ON DELETE CASCADE;
+--   END IF;
+-- END $$;
 
 -- =====================================================
 -- VALIDATION QUERIES
@@ -202,7 +144,7 @@ WHERE typname = 'auth_provider_enum'
 ORDER BY enumlabel;
 
 -- Verify users.auth_provider is using enum
-SELECT 'users.auth_provider column info:' as info;
+SELECT 'public.users.auth_provider column info:' as info;
 SELECT
   table_name,
   column_name,
@@ -213,21 +155,26 @@ FROM information_schema.columns
 WHERE table_name = 'users'
   AND column_name = 'auth_provider';
 
--- Verify auth_sessions.provider is using enum
-SELECT 'auth_sessions.provider column info:' as info;
+-- Show auth columns in users table
+SELECT 'Auth columns in public.users:' as info;
 SELECT
-  table_name,
   column_name,
   data_type,
-  udt_name,
+  is_nullable,
   column_default
 FROM information_schema.columns
-WHERE table_name = 'auth_sessions'
-  AND column_name = 'provider';
+WHERE table_name = 'users'
+  AND column_name IN ('auth_user_id', 'auth_provider', 'is_anonymous')
+ORDER BY column_name;
 
 -- =====================================================
 -- MIGRATION NOTES
 -- =====================================================
+--
+-- ARCHITECTURE:
+-- - auth.users (Supabase-managed): Canonical authentication table
+-- - public.users (our table): App data linked via auth_user_id
+-- - Sessions: Handled by Supabase SDK (no custom table needed)
 --
 -- IMPORTANT: This migration is NON-DESTRUCTIVE and IDEMPOTENT
 -- - Safe to run multiple times
@@ -236,8 +183,14 @@ WHERE table_name = 'auth_sessions'
 -- - auth_user_id is nullable to support gradual migration
 -- - Handles TEXT to ENUM conversion by dropping/recreating default
 --
+-- SESSION MANAGEMENT:
+-- - Supabase SDK stores sessions in platform secure storage
+-- - iOS: Keychain, Android: KeyStore
+-- - Sessions persist across app restarts
+-- - Auto-refresh before expiry (access: 1hr, refresh: 7 days)
+-- - No custom auth_sessions table needed
+--
 -- ROLLBACK PLAN (if needed):
--- DROP TABLE IF EXISTS auth_sessions CASCADE;
 -- ALTER TABLE users DROP COLUMN IF EXISTS auth_user_id;
 -- ALTER TABLE users DROP COLUMN IF EXISTS auth_provider;
 -- ALTER TABLE users DROP COLUMN IF EXISTS is_anonymous;
@@ -246,8 +199,8 @@ WHERE table_name = 'auth_sessions'
 -- DROP TYPE IF EXISTS auth_provider_enum;
 --
 -- NEXT STEPS (Phase 1):
--- 1. Update AuthService to use auth_sessions table
--- 2. Create migration service (device_id → auth_user_id)
--- 3. Update AppStartupService to restore sessions
--- 4. Test 24-hour offline grace period
+-- 1. Implement anonymous auth as default onboarding
+-- 2. Create account linking flow (anonymous → email/OAuth)
+-- 3. Migrate existing device_id users to anonymous auth
+-- 4. Update RLS policies to use auth.uid()
 -- =====================================================
