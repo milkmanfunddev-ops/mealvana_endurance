@@ -5,8 +5,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/onboarding_controller.dart';
+import '../providers/food_preferences_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
-import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
@@ -32,11 +32,6 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   // Store slider levels (0-4) locally
   final Map<String, int> _sliderLevels = {};
 
-  List<FoodItem> _primaryFoods = [];
-  List<FoodItem> _additionalFoods = [];
-  List<FoodItem> _userFoods = []; // User-added foods (scanned/searched)
-  bool _isLoading = true;
-
   // Search functionality
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -53,7 +48,6 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFoods();
 
     ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
       'screen_name': 'Food Preferences Onboarding',
@@ -66,64 +60,27 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     super.dispose();
   }
 
-  Future<void> _loadFoods() async {
-    try {
-      final foodRepository = ref.read(foodRepositoryProvider);
-      final database = ref.read(appDatabaseProvider);
+  /// Initialize slider levels from loaded food data
+  void _initializeSliderLevels(FoodPreferencesState foodState) {
+    // Initialize primary foods with neutral (level 2) by default
+    for (final food in foodState.primaryFoods) {
+      if (!_sliderLevels.containsKey(food.name)) {
+        _sliderLevels[food.name] = 2; // Neutral
+      }
+    }
 
-      // Get current user's device ID
-      final userProfile = await database.getCurrentUserProfile();
-      final deviceId = userProfile?.id ?? 'unknown';
+    // Initialize additional foods with avoid (level 0) by default
+    for (final food in foodState.additionalFoods) {
+      if (!_sliderLevels.containsKey(food.name)) {
+        _sliderLevels[food.name] = 0; // Avoid
+      }
+    }
 
-      // Load primary foods, additional foods, and user foods in parallel
-      final results = await Future.wait([
-        foodRepository.getPrimaryFoodsForPreferences(),
-        foodRepository.getAdditionalFoodsForPreferences(),
-        database.getUserFoods(deviceId),
-      ]);
-
-      final primaryFoods = results[0] as List<FoodItem>;
-      final additionalFoods = results[1] as List<FoodItem>;
-      final userFoodsData = results[2] as List<dynamic>;
-
-      // Convert user foods to FoodItems
-      final userFoods = userFoodsData
-          .map((userFood) => database.convertUserFoodToFoodItem(userFood))
-          .cast<FoodItem>()
-          .toList();
-
-      setState(() {
-        _primaryFoods = primaryFoods;
-        _additionalFoods = additionalFoods;
-        _userFoods = userFoods;
-        _isLoading = false;
-
-        // Initialize primary foods with neutral (level 2) by default
-        for (final food in primaryFoods) {
-          if (!_sliderLevels.containsKey(food.name)) {
-            _sliderLevels[food.name] = 2; // Neutral
-          }
-        }
-
-        // Initialize additional foods with avoid (level 0) by default
-        for (final food in additionalFoods) {
-          if (!_sliderLevels.containsKey(food.name)) {
-            _sliderLevels[food.name] = 0; // Avoid
-          }
-        }
-
-        // Initialize user foods with neutral (level 2) by default
-        for (final food in userFoods) {
-          if (!_sliderLevels.containsKey(food.name)) {
-            _sliderLevels[food.name] = 2; // Neutral
-          }
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      DebugLogger.error('Error loading foods: $e');
+    // Initialize user foods with neutral (level 2) by default
+    for (final food in foodState.userFoods) {
+      if (!_sliderLevels.containsKey(food.name)) {
+        _sliderLevels[food.name] = 2; // Neutral
+      }
     }
   }
 
@@ -221,14 +178,60 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final foodPrefsAsync = ref.watch(foodPreferencesControllerProvider);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
-      body: _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : _showSearchResults
-            ? _buildSearchResultsView()
-            : _buildContent(context),
+      body: foodPrefsAsync.when(
+        data: (foodState) {
+          // Initialize slider levels when data is loaded
+          _initializeSliderLevels(foodState);
+
+          return _showSearchResults
+              ? _buildSearchResultsView()
+              : _buildContent(context, foodState);
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  FontAwesomeIcons.triangleExclamation,
+                  size: 48,
+                  color: AppColors.dragonfruit,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Failed to load food preferences',
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  error.toString(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                KylePrimaryButton(
+                  text: 'Retry',
+                  onPressed: () {
+                    ref.invalidate(foodPreferencesControllerProvider);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -269,21 +272,29 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context) {
+  Widget _buildContent(BuildContext context, FoodPreferencesState foodState) {
     final asyncState = ref.watch(onboardingControllerProvider);
 
     return Column(
       children: [
         // Food preferences list
+        //text saying taht you can edit your preferences later in settings
+
         Expanded(
           child: SingleChildScrollView(
             padding: AppSpacing.screenPaddingHorizontal,
             child: Column(
               children: [
                 const SizedBox(height: AppSpacing.md),
-
+                Text(
+                  'Set your food preferences to help us tailor your nutrition plan. You can edit these later in settings.',
+                  textAlign: TextAlign.start,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 // Primary foods list
-                ..._primaryFoods.map((food) {
+                ...foodState.primaryFoods.map((food) {
                   final sliderLevel = _sliderLevels[food.name] ?? 2;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -294,8 +305,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                 const SizedBox(height: AppSpacing.md),
 
                 // Expandable additional foods section
-                if (_additionalFoods.isNotEmpty)
-                  _buildExpandableAdditionalFoods(),
+                if (foodState.additionalFoods.isNotEmpty)
+                  _buildExpandableAdditionalFoods(foodState),
 
                 const SizedBox(height: AppSpacing.lg),
 
@@ -308,8 +319,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                 const SizedBox(height: AppSpacing.lg),
 
                 // Your Added Foods section (if any) - at bottom
-                if (_userFoods.isNotEmpty) ...[
-                  _buildUserFoodsSection(context),
+                if (foodState.userFoods.isNotEmpty) ...[
+                  _buildUserFoodsSection(context, foodState),
                   const SizedBox(height: AppSpacing.lg),
                 ],
 
@@ -680,7 +691,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     );
   }
 
-  Widget _buildExpandableAdditionalFoods() {
+  Widget _buildExpandableAdditionalFoods(FoodPreferencesState foodState) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -738,7 +749,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         // Expandable content
         if (_isAdditionalFoodsExpanded) ...[
           const SizedBox(height: AppSpacing.md),
-          ..._additionalFoods.map((food) {
+          ...foodState.additionalFoods.map((food) {
             final sliderLevel = _sliderLevels[food.name] ?? 0;
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -751,7 +762,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   }
 
   // User Foods Section
-  Widget _buildUserFoodsSection(BuildContext context) {
+  Widget _buildUserFoodsSection(BuildContext context, FoodPreferencesState foodState) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -798,7 +809,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${_userFoods.length}',
+                  '${foodState.userFoods.length}',
                   style: AppTextStyles.smallLabel.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -811,7 +822,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           const SizedBox(height: AppSpacing.md),
 
           // User foods list
-          ..._userFoods.map((food) {
+          ...foodState.userFoods.map((food) {
             final sliderLevel = _sliderLevels[food.name] ?? 2;
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -1144,7 +1155,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       });
 
       _clearSearch();
-      await _loadFoods();
+
+      // Refresh the controller to reload food data
+      await ref.read(foodPreferencesControllerProvider.notifier).refresh();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1192,9 +1205,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       }
 
       setState(() {
-        _userFoods.removeWhere((f) => f.id == food.id);
         _sliderLevels.remove(food.name);
       });
+
+      // Refresh the controller to reload food data
+      await ref.read(foodPreferencesControllerProvider.notifier).refresh();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

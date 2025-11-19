@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:drift/drift.dart';
@@ -59,6 +61,8 @@ class FoodRepository {
   /// Get primary foods for the preferences screen (curated foods with show_in_preferences=true)
   Future<List<FoodItem>> getPrimaryFoodsForPreferences() async {
     try {
+      _logger.info('[FOOD_REPO] Fetching primary foods from Supabase (show_in_preferences=true)...');
+
       final response = await _supabase
           .from('foods')
           .select('''
@@ -86,9 +90,17 @@ class FoodRepository {
             created_at
           ''')
           .eq('show_in_preferences', true)
-          .order('name', ascending: true);
+          .order('name', ascending: true)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              _logger.error('[FOOD_REPO] Supabase foods query timed out after 10 seconds');
+              throw TimeoutException('Failed to load foods from Supabase');
+            },
+          );
 
       final List<dynamic> data = response as List<dynamic>;
+      _logger.info('[FOOD_REPO] Successfully fetched ${data.length} primary foods from Supabase');
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
       _logger.error('Error fetching primary preference foods from Supabase',
@@ -103,6 +115,8 @@ class FoodRepository {
   /// Get additional foods for expanded options (show_in_preferences=false)
   Future<List<FoodItem>> getAdditionalFoodsForPreferences() async {
     try {
+      _logger.info('[FOOD_REPO] Fetching additional foods from Supabase (show_in_preferences=false)...');
+
       final response = await _supabase
           .from('foods')
           .select('''
@@ -130,12 +144,21 @@ class FoodRepository {
             created_at
           ''')
           .eq('show_in_preferences', false)
-          .order('name', ascending: true);
+          .order('name', ascending: true)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              _logger.error('[FOOD_REPO] Additional foods query timed out after 10 seconds');
+              throw TimeoutException('Failed to load additional foods from Supabase');
+            },
+          );
 
       final List<dynamic> data = response as List<dynamic>;
+      _logger.info('[FOOD_REPO] Successfully fetched ${data.length} additional foods from Supabase');
+
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
-      _logger.error('Error fetching additional preference foods from Supabase',
+      _logger.error('[FOOD_REPO] Error fetching additional preference foods from Supabase: $e',
         context: 'FoodRepository',
         error: e,
       );
