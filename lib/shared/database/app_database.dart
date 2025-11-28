@@ -1031,7 +1031,7 @@ class AppDatabase extends _$AppDatabase {
               fatPerServing: Value((food['fat_per_serving'] as num?)?.toDouble()),
               sodiumMg: Value(food['sodium_mg'] as int?),
               fluidMlPerServing: Value((food['fluid_ml_per_serving'] as num?)?.toDouble()),
-              productTypeId: Value(food['product_type_id'] as String?),
+              productTypeId: Value((food['product_type'] ?? food['product_type_id']) as String?),
               categories: Value(
                 categoriesJson is List
                     ? jsonEncode(categoriesJson)

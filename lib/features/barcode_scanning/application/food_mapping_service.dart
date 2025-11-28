@@ -65,8 +65,8 @@ class FoodMappingService {
       caffeineMg: null,
       potassiumMg: null,
 
-      // Product type - use from existing food or default to "imported"
-      productTypeId: existingByName?.productTypeId ?? 'cdd6a8f1-750c-4c78-93f7-ab706285ac7b',
+      // Product type - use from existing food or default to the "import" enum code
+      productTypeId: existingByName?.productTypeId ?? 'import',
 
       // Suitability based on database categories if we found the food
       beforeRunSuitable: await _getBeforeRunSuitability(existingByName),
@@ -133,7 +133,7 @@ class FoodMappingService {
       potassiumMg: existingFood.potassiumMg,
 
       // Use existing product type and suitability from database
-      productTypeId: existingFood.productTypeId ?? 'cdd6a8f1-750c-4c78-93f7-ab706285ac7b',
+      productTypeId: existingFood.productTypeId ?? 'import',
       beforeRunSuitable: existingFood.beforeRunSuitable,
       duringRunSuitable: existingFood.duringRunSuitable,
       runPortable: false, // Not in our schema

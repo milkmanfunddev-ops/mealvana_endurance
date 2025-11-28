@@ -8,6 +8,7 @@ import '../../database/database_provider.dart';
 import '../../database/app_database.dart';
 import '../app_external_deps.dart';
 import '../logging_service.dart';
+import 'product_type_mapper.dart';
 
 /// Provider for UserFoodCrudService
 final userFoodCrudServiceProvider = Provider<UserFoodCrudService>((ref) {
@@ -56,6 +57,10 @@ class UserFoodCrudService {
     String? barcode,
   }) async {
     try {
+      final normalizedProductType = normalizeProductType(
+        food.productTypeId,
+        logger: _logger,
+      );
       // Get current user's ID
       final userProfile = await _database.getCurrentUserProfile();
       final userId = userProfile?.id ?? 'unknown';
@@ -85,7 +90,7 @@ class UserFoodCrudService {
         fatPerServing: food.fatPerServing,
         sodiumMg: food.sodiumMg,
         fluidMlPerServing: food.fluidMlPerServing,
-        productTypeId: food.productTypeId,
+        productTypeId: normalizedProductType,
         categories: categoryNames,
         clientUpdatedAt: DateTime.now(),
       );
@@ -141,6 +146,11 @@ class UserFoodCrudService {
     String? barcode,
   }) async {
     try {
+      final normalizedProductType = normalizeProductType(
+        food.productTypeId,
+        logger: _logger,
+      );
+
       await _supabase.from('user_foods').upsert({
         'id': foodId,
         'device_id': deviceId,
@@ -160,7 +170,7 @@ class UserFoodCrudService {
         'fat_per_serving': food.fatPerServing,
         'sodium_mg': food.sodiumMg,
         'fluid_ml_per_serving': food.fluidMlPerServing,
-        'product_type': food.productTypeId,
+        'product_type': normalizedProductType,
         'categories': categoryNames,
         'activity_types': null,
         'is_electrolyte': false,

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../database/app_database.dart';
 import '../../database/database_provider.dart';
 import '../logging_service.dart';
+import '../food_management/product_type_mapper.dart';
 import '../../../features/nutrition_plan/data/food_repository.dart';
 import '../../../features/carb_loading/application/carb_loading_food_sync_service.dart';
 
@@ -1028,6 +1029,10 @@ class DataSyncService {
     try {
       final categories = _parsePgArray(row['categories'] as String?);
       final activityTypes = _parsePgArray(row['activity_types'] as String?);
+      final productType = normalizeProductType(
+        row['product_type'] ?? row['product_type_id'],
+        logger: _logger,
+      );
 
       await _supabase.from('user_foods').upsert({
         'id': row['id'],
@@ -1048,7 +1053,7 @@ class DataSyncService {
         'fat_per_serving': row['fat_per_serving'],
         'sodium_mg': row['sodium_mg'],
         'fluid_ml_per_serving': row['fluid_ml_per_serving'],
-        'product_type': row['product_type_id'],
+        'product_type': productType,
         'categories': categories,
         'activity_types': activityTypes,
         'is_electrolyte': row['is_electrolyte'] == 1 || row['is_electrolyte'] == true,
