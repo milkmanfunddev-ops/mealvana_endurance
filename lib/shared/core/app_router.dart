@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
+import '../../main.dart' show sentryNavigatorKey;
 
 // Import all screens
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
@@ -11,12 +12,14 @@ import '../../features/onboarding/presentation/screens/sport_preferences_screen.
 import '../../features/onboarding/presentation/screens/food_preferences_screen.dart' as onboarding;
 import '../../features/auth/presentation/screens/post_onboarding_auth_screen.dart';
 import '../../features/auth/presentation/screens/email_signup_screen.dart';
+import '../../features/auth/presentation/screens/email_login_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/activity_detail_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart';
 import '../../features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart';
 import '../../features/settings/presentation/screens/sport_settings_screen.dart';
+import '../../features/settings/presentation/screens/preferences_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_screen.dart' as settings;
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
@@ -26,8 +29,6 @@ import '../../features/user_journal/presentation/screens/voice_memo_screen.dart'
 import '../../features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart';
 import '../../features/carb_loading/presentation/screens/create_custom_carb_loading_food_screen.dart';
 import '../../features/carb_loading/domain/meal_type.dart';
-import '../../features/nutrition_plan/domain/pending_activity_data.dart';
-import '../../features/nutrition_plan/domain/macro_targets.dart';
 import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
@@ -39,6 +40,8 @@ class AppRouter {
   static final routerProvider = Provider<GoRouter>((ref) {
     return GoRouter(
       initialLocation: '/',
+      // Use Sentry navigator key for screenshot capture in feedback widget
+      navigatorKey: sentryNavigatorKey,
       // Redirect logic based on app startup state
       redirect: (context, state) {
         // Allow navigation to any route - don't block
@@ -108,13 +111,22 @@ class AppRouter {
       GoRoute(
         path: '/auth/post-onboarding',
         name: 'auth-post-onboarding',
-        builder: (context, state) => const PostOnboardingAuthScreen(),
+        builder: (context, state) {
+          final mode = state.uri.queryParameters['mode'] ?? 'signup';
+          return PostOnboardingAuthScreen(mode: mode);
+        },
       ),
 
       GoRoute(
         path: '/auth/email-signup',
         name: 'auth-email-signup',
         builder: (context, state) => const EmailSignupScreen(),
+      ),
+
+      GoRoute(
+        path: '/auth/email-login',
+        name: 'auth-email-login',
+        builder: (context, state) => const EmailLoginScreen(),
       ),
 
       // REDIRECTED: Old routes now point to NewActivityScreen (multi-sport Kyle design)
@@ -170,16 +182,23 @@ class AppRouter {
       ),
 
       // Activity Detail Screen - Shows nutrition plan and activity details
+      // SIMPLIFIED: Only activityId is required - all data loaded from database
       GoRoute(
         path: '/plan',
         name: 'plan',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
+          final activityId = extra?['activityId'] as int?;
+          if (activityId == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text('Missing activity ID'),
+              ),
+            );
+          }
           return ActivityDetailScreen(
-            mode: extra?['mode'] as String? ?? 'view',
-            activityId: extra?['activityId'] as int?,
-            pendingActivityData: extra?['pendingActivityData'],
-            macroTargets: extra?['macroTargets'],
+            activityId: activityId,
+            isNewActivity: extra?['isNewActivity'] as bool? ?? false,
           );
         },
       ),
@@ -190,11 +209,17 @@ class AppRouter {
         name: 'current-plan',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
+          final activityId = extra?['activityId'] as int?;
+          if (activityId == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text('Missing activity ID'),
+              ),
+            );
+          }
           return ActivityDetailScreen(
-            mode: extra?['mode'] as String? ?? 'view',
-            activityId: extra?['activityId'] as int?,
-            pendingActivityData: extra?['pendingActivityData'],
-            macroTargets: extra?['macroTargets'],
+            activityId: activityId,
+            isNewActivity: extra?['isNewActivity'] as bool? ?? false,
           );
         },
       ),
@@ -227,6 +252,13 @@ class AppRouter {
         builder: (context, state) => const SettingsScreen(),
       ),
 
+      // Preferences Screen - Edit profile and preferences with save button
+      GoRoute(
+        path: '/settings/preferences',
+        name: 'settings-preferences',
+        builder: (context, state) => const PreferencesScreen(),
+      ),
+
       // Sport Settings Screen - Cycling, swimming, and sport-specific preferences
       GoRoute(
         path: '/settings/sport-settings',
@@ -256,12 +288,14 @@ class AppRouter {
       ),
       
       // Swap/Add Food Screen - Add or swap foods in nutrition plan
+      // SIMPLIFIED: Only activityId is needed - eliminates provider instance mismatches
       GoRoute(
         path: '/swap-food',
         name: 'swap-food',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           final activityId = extra?['activityId'] as int?;
+          final isNewActivity = extra?['isNewActivity'] as bool? ?? false;
           if (activityId == null) {
             return const Scaffold(
               body: Center(
@@ -274,9 +308,7 @@ class AppRouter {
             foodToSwapName: extra?['foodToSwapName'] as String?,
             category: extra?['category'] as String? ?? 'before_run',
             activityId: activityId,
-            mode: extra?['mode'] as String? ?? 'view', // Pass mode to ensure correct provider instance
-            pendingActivityData: extra?['pendingActivityData'] as PendingActivityData?, // Pass to match ActivityDetailController instance
-            macroTargets: extra?['macroTargets'] as MacroTargets?, // Pass to match ActivityDetailController instance
+            isNewActivity: isNewActivity,
           );
         },
       ),

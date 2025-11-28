@@ -44,16 +44,31 @@ class AppConfig {
   final bool enableDebugLogging;
   final bool enableSentryProfiling;
 
-  // Environment control - CHANGE THIS TO false FOR PRODUCTION BUILDS
+  // Environment control - CHANGE THIS TO false FOR PRODUCTION RELEASE BUILDS
+  // When true: loads .env.dev.local (dev Supabase, dev Mixpanel)
+  // When false: loads .env.prod.local (prod Supabase, prod Mixpanel)
   // ignore: constant_identifier_names
   static const bool _DEFAULT_DEV_MODE = false;
 
   // Runtime override (persisted in SharedPreferences)
   static bool? _runtimeOverride;
 
-  /// Get the effective dev mode setting (runtime override takes precedence)
+  /// Get the effective dev mode setting
+  /// Priority order:
+  /// 1. Runtime override (if set via SharedPreferences)
+  /// 2. kDebugMode (debug builds always use dev environment as safety net)
+  /// 3. _DEFAULT_DEV_MODE (fallback for release builds)
   static bool get effectiveDevMode {
-    return _runtimeOverride ?? _DEFAULT_DEV_MODE;
+    // Runtime override takes highest priority
+    if (_runtimeOverride != null) {
+      return _runtimeOverride!;
+    }
+    // Debug builds always use dev environment (safety net)
+    // if (kDebugMode) {
+    //   return true;
+    // }
+    // Release builds use the configured default
+    return _DEFAULT_DEV_MODE;
   }
 
   /// Override dev mode at runtime (requires app restart to take effect)
@@ -90,13 +105,6 @@ class AppConfig {
     // Read all configuration from loaded .env file
     final supabaseUrl = dotenv.get('SUPABASE_URL', fallback: '');
     final supabaseAnonKey = dotenv.get('SUPABASE_ANON_KEY', fallback: '');
-
-    if (kDebugMode) {
-      print('🔧 AppConfig.fromEnv():');
-      print('   Dev Mode: $isDevMode');
-      print('   App Environment: $appEnv');
-      print('   Supabase URL: $supabaseUrl');
-    }
 
     return AppConfig(
       // Environment configuration

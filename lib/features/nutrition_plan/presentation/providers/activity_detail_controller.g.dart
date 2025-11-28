@@ -9,27 +9,33 @@ part of 'activity_detail_controller.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Activity Detail Controller
-/// Manages activity creation, updates, and completion
+/// Manages activity viewing, updates, and completion
+///
+/// SIMPLIFIED: Uses only activityId as the provider family parameter.
+/// All data is loaded from the database. This eliminates provider instance
+/// mismatches that caused food swap/add operations to not persist.
 
 @ProviderFor(ActivityDetailController)
 const activityDetailControllerProvider = ActivityDetailControllerFamily._();
 
 /// Activity Detail Controller
-/// Manages activity creation, updates, and completion
+/// Manages activity viewing, updates, and completion
+///
+/// SIMPLIFIED: Uses only activityId as the provider family parameter.
+/// All data is loaded from the database. This eliminates provider instance
+/// mismatches that caused food swap/add operations to not persist.
 final class ActivityDetailControllerProvider
     extends
         $AsyncNotifierProvider<ActivityDetailController, ActivityDetailState> {
   /// Activity Detail Controller
-  /// Manages activity creation, updates, and completion
+  /// Manages activity viewing, updates, and completion
+  ///
+  /// SIMPLIFIED: Uses only activityId as the provider family parameter.
+  /// All data is loaded from the database. This eliminates provider instance
+  /// mismatches that caused food swap/add operations to not persist.
   const ActivityDetailControllerProvider._({
     required ActivityDetailControllerFamily super.from,
-    required ({
-      String mode,
-      int? activityId,
-      PendingActivityData? pendingActivityData,
-      MacroTargets? macroTargets,
-    })
-    super.argument,
+    required ({int activityId, bool isNewActivity}) super.argument,
   }) : super(
          retry: null,
          name: r'activityDetailControllerProvider',
@@ -65,10 +71,14 @@ final class ActivityDetailControllerProvider
 }
 
 String _$activityDetailControllerHash() =>
-    r'36e62fea68680c65b792e7644432959615674586';
+    r'0bc9b013c01cd415bc24821f81c601bb4b965b74';
 
 /// Activity Detail Controller
-/// Manages activity creation, updates, and completion
+/// Manages activity viewing, updates, and completion
+///
+/// SIMPLIFIED: Uses only activityId as the provider family parameter.
+/// All data is loaded from the database. This eliminates provider instance
+/// mismatches that caused food swap/add operations to not persist.
 
 final class ActivityDetailControllerFamily extends $Family
     with
@@ -77,12 +87,7 @@ final class ActivityDetailControllerFamily extends $Family
           AsyncValue<ActivityDetailState>,
           ActivityDetailState,
           FutureOr<ActivityDetailState>,
-          ({
-            String mode,
-            int? activityId,
-            PendingActivityData? pendingActivityData,
-            MacroTargets? macroTargets,
-          })
+          ({int activityId, bool isNewActivity})
         > {
   const ActivityDetailControllerFamily._()
     : super(
@@ -94,20 +99,17 @@ final class ActivityDetailControllerFamily extends $Family
       );
 
   /// Activity Detail Controller
-  /// Manages activity creation, updates, and completion
+  /// Manages activity viewing, updates, and completion
+  ///
+  /// SIMPLIFIED: Uses only activityId as the provider family parameter.
+  /// All data is loaded from the database. This eliminates provider instance
+  /// mismatches that caused food swap/add operations to not persist.
 
   ActivityDetailControllerProvider call({
-    required String mode,
-    int? activityId,
-    PendingActivityData? pendingActivityData,
-    MacroTargets? macroTargets,
+    required int activityId,
+    bool isNewActivity = false,
   }) => ActivityDetailControllerProvider._(
-    argument: (
-      mode: mode,
-      activityId: activityId,
-      pendingActivityData: pendingActivityData,
-      macroTargets: macroTargets,
-    ),
+    argument: (activityId: activityId, isNewActivity: isNewActivity),
     from: this,
   );
 
@@ -116,37 +118,28 @@ final class ActivityDetailControllerFamily extends $Family
 }
 
 /// Activity Detail Controller
-/// Manages activity creation, updates, and completion
+/// Manages activity viewing, updates, and completion
+///
+/// SIMPLIFIED: Uses only activityId as the provider family parameter.
+/// All data is loaded from the database. This eliminates provider instance
+/// mismatches that caused food swap/add operations to not persist.
 
 abstract class _$ActivityDetailController
     extends $AsyncNotifier<ActivityDetailState> {
-  late final _$args =
-      ref.$arg
-          as ({
-            String mode,
-            int? activityId,
-            PendingActivityData? pendingActivityData,
-            MacroTargets? macroTargets,
-          });
-  String get mode => _$args.mode;
-  int? get activityId => _$args.activityId;
-  PendingActivityData? get pendingActivityData => _$args.pendingActivityData;
-  MacroTargets? get macroTargets => _$args.macroTargets;
+  late final _$args = ref.$arg as ({int activityId, bool isNewActivity});
+  int get activityId => _$args.activityId;
+  bool get isNewActivity => _$args.isNewActivity;
 
   FutureOr<ActivityDetailState> build({
-    required String mode,
-    int? activityId,
-    PendingActivityData? pendingActivityData,
-    MacroTargets? macroTargets,
+    required int activityId,
+    bool isNewActivity = false,
   });
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build(
-      mode: _$args.mode,
       activityId: _$args.activityId,
-      pendingActivityData: _$args.pendingActivityData,
-      macroTargets: _$args.macroTargets,
+      isNewActivity: _$args.isNewActivity,
     );
     final ref =
         this.ref as $Ref<AsyncValue<ActivityDetailState>, ActivityDetailState>;

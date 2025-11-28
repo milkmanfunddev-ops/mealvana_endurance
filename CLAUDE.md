@@ -201,10 +201,10 @@ Unified dual database architecture with local-first design and cloud synchroniza
 - Row Level Security based on device_id and user_id
 
 **Schema Management**:
-- **Current Version**: v1 (clean baseline, no migrations)
+- **Current Version**: v1 (clean baseline, no migrations).  Please stay on v1 as we are in active development and do not start a v2 migration.  
 - **Schema Location**: `/database_schemas/v1/`
 - **Snapshot Command**: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v1/`
-- **Future Migrations**: Will use Drift's built-in migration system when moving to v2
+- **Future Migrations**: Will use Drift's built-in migration system when moving to v2.
 
 **Development Environments**:
 - **Dev**: Automated deployment on `develop` branch push (tests run first)

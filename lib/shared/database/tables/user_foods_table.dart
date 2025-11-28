@@ -59,12 +59,19 @@ class UserFoodsTable extends Table {
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false)).named('is_deleted')();
 
   /// Timestamps (matches Supabase user_foods)
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
-  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
+  DateTimeColumn get createdAt => dateTime().clientDefault(() => DateTime.now()).named('created_at')();
+  DateTimeColumn get updatedAt => dateTime().clientDefault(() => DateTime.now()).named('updated_at')();
   DateTimeColumn get clientUpdatedAt => dateTime().nullable().named('client_updated_at')();
+
+  /// Sync tracking columns
+  BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();
+  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
 
   @override
   Set<Column> get primaryKey => {id};
+
+  @override
+  String get tableName => 'user_foods';
 
   @override
   List<String> get customConstraints => [

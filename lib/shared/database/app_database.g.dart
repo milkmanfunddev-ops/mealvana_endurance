@@ -1993,6 +1993,18 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _preferenceLevelMeta = const VerificationMeta(
+    'preferenceLevel',
+  );
+  @override
+  late final GeneratedColumn<int> preferenceLevel = GeneratedColumn<int>(
+    'preference_level',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(2),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2023,6 +2035,7 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
     userId,
     foodName,
     preference,
+    preferenceLevel,
     createdAt,
     updatedAt,
   ];
@@ -2067,6 +2080,15 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
     } else if (isInserting) {
       context.missing(_preferenceMeta);
     }
+    if (data.containsKey('preference_level')) {
+      context.handle(
+        _preferenceLevelMeta,
+        preferenceLevel.isAcceptableOrUnknown(
+          data['preference_level']!,
+          _preferenceLevelMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2104,6 +2126,10 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
         DriftSqlType.string,
         data['${effectivePrefix}preference'],
       )!,
+      preferenceLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}preference_level'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2135,6 +2161,9 @@ class FoodPreferenceEntry extends DataClass
   /// Preference type: 'like', 'dislike', 'willing_to_try' (matches Supabase constraint)
   final String preference;
 
+  /// Slider intensity level (0-4) representing the UI selection strength
+  final int preferenceLevel;
+
   /// When the preference was created (matches Supabase food_preferences.created_at)
   final DateTime createdAt;
 
@@ -2145,6 +2174,7 @@ class FoodPreferenceEntry extends DataClass
     required this.userId,
     required this.foodName,
     required this.preference,
+    required this.preferenceLevel,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -2155,6 +2185,7 @@ class FoodPreferenceEntry extends DataClass
     map['user_id'] = Variable<String>(userId);
     map['food_name'] = Variable<String>(foodName);
     map['preference'] = Variable<String>(preference);
+    map['preference_level'] = Variable<int>(preferenceLevel);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -2166,6 +2197,7 @@ class FoodPreferenceEntry extends DataClass
       userId: Value(userId),
       foodName: Value(foodName),
       preference: Value(preference),
+      preferenceLevel: Value(preferenceLevel),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2181,6 +2213,7 @@ class FoodPreferenceEntry extends DataClass
       userId: serializer.fromJson<String>(json['userId']),
       foodName: serializer.fromJson<String>(json['foodName']),
       preference: serializer.fromJson<String>(json['preference']),
+      preferenceLevel: serializer.fromJson<int>(json['preferenceLevel']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -2193,6 +2226,7 @@ class FoodPreferenceEntry extends DataClass
       'userId': serializer.toJson<String>(userId),
       'foodName': serializer.toJson<String>(foodName),
       'preference': serializer.toJson<String>(preference),
+      'preferenceLevel': serializer.toJson<int>(preferenceLevel),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -2203,6 +2237,7 @@ class FoodPreferenceEntry extends DataClass
     String? userId,
     String? foodName,
     String? preference,
+    int? preferenceLevel,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => FoodPreferenceEntry(
@@ -2210,6 +2245,7 @@ class FoodPreferenceEntry extends DataClass
     userId: userId ?? this.userId,
     foodName: foodName ?? this.foodName,
     preference: preference ?? this.preference,
+    preferenceLevel: preferenceLevel ?? this.preferenceLevel,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -2221,6 +2257,9 @@ class FoodPreferenceEntry extends DataClass
       preference: data.preference.present
           ? data.preference.value
           : this.preference,
+      preferenceLevel: data.preferenceLevel.present
+          ? data.preferenceLevel.value
+          : this.preferenceLevel,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2233,6 +2272,7 @@ class FoodPreferenceEntry extends DataClass
           ..write('userId: $userId, ')
           ..write('foodName: $foodName, ')
           ..write('preference: $preference, ')
+          ..write('preferenceLevel: $preferenceLevel, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2240,8 +2280,15 @@ class FoodPreferenceEntry extends DataClass
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, userId, foodName, preference, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    foodName,
+    preference,
+    preferenceLevel,
+    createdAt,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2250,6 +2297,7 @@ class FoodPreferenceEntry extends DataClass
           other.userId == this.userId &&
           other.foodName == this.foodName &&
           other.preference == this.preference &&
+          other.preferenceLevel == this.preferenceLevel &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -2260,6 +2308,7 @@ class FoodPreferencesTableCompanion
   final Value<String> userId;
   final Value<String> foodName;
   final Value<String> preference;
+  final Value<int> preferenceLevel;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -2268,6 +2317,7 @@ class FoodPreferencesTableCompanion
     this.userId = const Value.absent(),
     this.foodName = const Value.absent(),
     this.preference = const Value.absent(),
+    this.preferenceLevel = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2277,6 +2327,7 @@ class FoodPreferencesTableCompanion
     required String userId,
     required String foodName,
     required String preference,
+    this.preferenceLevel = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2289,6 +2340,7 @@ class FoodPreferencesTableCompanion
     Expression<String>? userId,
     Expression<String>? foodName,
     Expression<String>? preference,
+    Expression<int>? preferenceLevel,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -2298,6 +2350,7 @@ class FoodPreferencesTableCompanion
       if (userId != null) 'user_id': userId,
       if (foodName != null) 'food_name': foodName,
       if (preference != null) 'preference': preference,
+      if (preferenceLevel != null) 'preference_level': preferenceLevel,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2309,6 +2362,7 @@ class FoodPreferencesTableCompanion
     Value<String>? userId,
     Value<String>? foodName,
     Value<String>? preference,
+    Value<int>? preferenceLevel,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -2318,6 +2372,7 @@ class FoodPreferencesTableCompanion
       userId: userId ?? this.userId,
       foodName: foodName ?? this.foodName,
       preference: preference ?? this.preference,
+      preferenceLevel: preferenceLevel ?? this.preferenceLevel,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -2339,6 +2394,9 @@ class FoodPreferencesTableCompanion
     if (preference.present) {
       map['preference'] = Variable<String>(preference.value);
     }
+    if (preferenceLevel.present) {
+      map['preference_level'] = Variable<int>(preferenceLevel.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2358,6 +2416,7 @@ class FoodPreferencesTableCompanion
           ..write('userId: $userId, ')
           ..write('foodName: $foodName, ')
           ..write('preference: $preference, ')
+          ..write('preferenceLevel: $preferenceLevel, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -2614,6 +2673,33 @@ class $FeedbackTableTable extends FeedbackTable
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2637,6 +2723,8 @@ class $FeedbackTableTable extends FeedbackTable
     reminderMinute,
     reminderRecurring,
     createdAt,
+    needsUpload,
+    localUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2826,6 +2914,24 @@ class $FeedbackTableTable extends FeedbackTable
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2919,6 +3025,14 @@ class $FeedbackTableTable extends FeedbackTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      )!,
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
     );
   }
 
@@ -2963,6 +3077,10 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
 
   /// Audit fields
   final DateTime createdAt;
+
+  /// Sync tracking columns
+  final bool needsUpload;
+  final DateTime? localUpdatedAt;
   const FeedbackEntry({
     required this.id,
     this.deviceId,
@@ -2985,6 +3103,8 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     required this.reminderMinute,
     required this.reminderRecurring,
     required this.createdAt,
+    required this.needsUpload,
+    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3034,6 +3154,10 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     map['reminder_minute'] = Variable<int>(reminderMinute);
     map['reminder_recurring'] = Variable<bool>(reminderRecurring);
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['needs_upload'] = Variable<bool>(needsUpload);
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
     return map;
   }
 
@@ -3084,6 +3208,10 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
       reminderMinute: Value(reminderMinute),
       reminderRecurring: Value(reminderRecurring),
       createdAt: Value(createdAt),
+      needsUpload: Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
     );
   }
 
@@ -3114,6 +3242,8 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
       reminderMinute: serializer.fromJson<int>(json['reminderMinute']),
       reminderRecurring: serializer.fromJson<bool>(json['reminderRecurring']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      needsUpload: serializer.fromJson<bool>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -3141,6 +3271,8 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
       'reminderMinute': serializer.toJson<int>(reminderMinute),
       'reminderRecurring': serializer.toJson<bool>(reminderRecurring),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'needsUpload': serializer.toJson<bool>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
@@ -3166,6 +3298,8 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     int? reminderMinute,
     bool? reminderRecurring,
     DateTime? createdAt,
+    bool? needsUpload,
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => FeedbackEntry(
     id: id ?? this.id,
     deviceId: deviceId.present ? deviceId.value : this.deviceId,
@@ -3196,6 +3330,10 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     reminderMinute: reminderMinute ?? this.reminderMinute,
     reminderRecurring: reminderRecurring ?? this.reminderRecurring,
     createdAt: createdAt ?? this.createdAt,
+    needsUpload: needsUpload ?? this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
   );
   FeedbackEntry copyWithCompanion(FeedbackTableCompanion data) {
     return FeedbackEntry(
@@ -3250,6 +3388,12 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
           ? data.reminderRecurring.value
           : this.reminderRecurring,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
     );
   }
 
@@ -3276,7 +3420,9 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
           ..write('reminderHour: $reminderHour, ')
           ..write('reminderMinute: $reminderMinute, ')
           ..write('reminderRecurring: $reminderRecurring, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -3304,6 +3450,8 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     reminderMinute,
     reminderRecurring,
     createdAt,
+    needsUpload,
+    localUpdatedAt,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -3329,7 +3477,9 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
           other.reminderHour == this.reminderHour &&
           other.reminderMinute == this.reminderMinute &&
           other.reminderRecurring == this.reminderRecurring &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
 }
 
 class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
@@ -3354,6 +3504,8 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
   final Value<int> reminderMinute;
   final Value<bool> reminderRecurring;
   final Value<DateTime> createdAt;
+  final Value<bool> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
   final Value<int> rowid;
   const FeedbackTableCompanion({
     this.id = const Value.absent(),
@@ -3377,6 +3529,8 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
     this.reminderMinute = const Value.absent(),
     this.reminderRecurring = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FeedbackTableCompanion.insert({
@@ -3401,6 +3555,8 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
     this.reminderMinute = const Value.absent(),
     this.reminderRecurring = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        satisfactionLevel = Value(satisfactionLevel),
@@ -3428,6 +3584,8 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
     Expression<int>? reminderMinute,
     Expression<bool>? reminderRecurring,
     Expression<DateTime>? createdAt,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3452,6 +3610,8 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
       if (reminderMinute != null) 'reminder_minute': reminderMinute,
       if (reminderRecurring != null) 'reminder_recurring': reminderRecurring,
       if (createdAt != null) 'created_at': createdAt,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3478,6 +3638,8 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
     Value<int>? reminderMinute,
     Value<bool>? reminderRecurring,
     Value<DateTime>? createdAt,
+    Value<bool>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return FeedbackTableCompanion(
@@ -3502,6 +3664,8 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
       reminderMinute: reminderMinute ?? this.reminderMinute,
       reminderRecurring: reminderRecurring ?? this.reminderRecurring,
       createdAt: createdAt ?? this.createdAt,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3572,6 +3736,12 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3602,6 +3772,8 @@ class FeedbackTableCompanion extends UpdateCompanion<FeedbackEntry> {
           ..write('reminderMinute: $reminderMinute, ')
           ..write('reminderRecurring: $reminderRecurring, ')
           ..write('createdAt: $createdAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6005,7 +6177,7 @@ class $UserFoodsTableTable extends UserFoodsTable
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
+    clientDefault: () => DateTime.now(),
   );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
@@ -6017,7 +6189,7 @@ class $UserFoodsTableTable extends UserFoodsTable
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
+    clientDefault: () => DateTime.now(),
   );
   static const VerificationMeta _clientUpdatedAtMeta = const VerificationMeta(
     'clientUpdatedAt',
@@ -6026,6 +6198,33 @@ class $UserFoodsTableTable extends UserFoodsTable
   late final GeneratedColumn<DateTime> clientUpdatedAt =
       GeneratedColumn<DateTime>(
         'client_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
         aliasedName,
         true,
         type: DriftSqlType.dateTime,
@@ -6060,12 +6259,14 @@ class $UserFoodsTableTable extends UserFoodsTable
     createdAt,
     updatedAt,
     clientUpdatedAt,
+    needsUpload,
+    localUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'user_foods_table';
+  static const String $name = 'user_foods';
   @override
   VerificationContext validateIntegrity(
     Insertable<UserFood> instance, {
@@ -6291,6 +6492,24 @@ class $UserFoodsTableTable extends UserFoodsTable
         ),
       );
     }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -6408,6 +6627,14 @@ class $UserFoodsTableTable extends UserFoodsTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}client_updated_at'],
       ),
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      )!,
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
     );
   }
 
@@ -6476,6 +6703,10 @@ class UserFood extends DataClass implements Insertable<UserFood> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? clientUpdatedAt;
+
+  /// Sync tracking columns
+  final bool needsUpload;
+  final DateTime? localUpdatedAt;
   const UserFood({
     required this.id,
     required this.deviceId,
@@ -6504,6 +6735,8 @@ class UserFood extends DataClass implements Insertable<UserFood> {
     required this.createdAt,
     required this.updatedAt,
     this.clientUpdatedAt,
+    required this.needsUpload,
+    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -6570,6 +6803,10 @@ class UserFood extends DataClass implements Insertable<UserFood> {
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || clientUpdatedAt != null) {
       map['client_updated_at'] = Variable<DateTime>(clientUpdatedAt);
+    }
+    map['needs_upload'] = Variable<bool>(needsUpload);
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
     }
     return map;
   }
@@ -6639,6 +6876,10 @@ class UserFood extends DataClass implements Insertable<UserFood> {
       clientUpdatedAt: clientUpdatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(clientUpdatedAt),
+      needsUpload: Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
     );
   }
 
@@ -6683,6 +6924,8 @@ class UserFood extends DataClass implements Insertable<UserFood> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       clientUpdatedAt: serializer.fromJson<DateTime?>(json['clientUpdatedAt']),
+      needsUpload: serializer.fromJson<bool>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -6716,6 +6959,8 @@ class UserFood extends DataClass implements Insertable<UserFood> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'clientUpdatedAt': serializer.toJson<DateTime?>(clientUpdatedAt),
+      'needsUpload': serializer.toJson<bool>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
@@ -6747,6 +6992,8 @@ class UserFood extends DataClass implements Insertable<UserFood> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> clientUpdatedAt = const Value.absent(),
+    bool? needsUpload,
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => UserFood(
     id: id ?? this.id,
     deviceId: deviceId ?? this.deviceId,
@@ -6795,6 +7042,10 @@ class UserFood extends DataClass implements Insertable<UserFood> {
     clientUpdatedAt: clientUpdatedAt.present
         ? clientUpdatedAt.value
         : this.clientUpdatedAt,
+    needsUpload: needsUpload ?? this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
   );
   UserFood copyWithCompanion(UserFoodsTableCompanion data) {
     return UserFood(
@@ -6861,6 +7112,12 @@ class UserFood extends DataClass implements Insertable<UserFood> {
       clientUpdatedAt: data.clientUpdatedAt.present
           ? data.clientUpdatedAt.value
           : this.clientUpdatedAt,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
     );
   }
 
@@ -6893,7 +7150,9 @@ class UserFood extends DataClass implements Insertable<UserFood> {
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('clientUpdatedAt: $clientUpdatedAt')
+          ..write('clientUpdatedAt: $clientUpdatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -6927,6 +7186,8 @@ class UserFood extends DataClass implements Insertable<UserFood> {
     createdAt,
     updatedAt,
     clientUpdatedAt,
+    needsUpload,
+    localUpdatedAt,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -6958,7 +7219,9 @@ class UserFood extends DataClass implements Insertable<UserFood> {
           other.isDeleted == this.isDeleted &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.clientUpdatedAt == this.clientUpdatedAt);
+          other.clientUpdatedAt == this.clientUpdatedAt &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
 }
 
 class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
@@ -6989,6 +7252,8 @@ class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> clientUpdatedAt;
+  final Value<bool> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
   final Value<int> rowid;
   const UserFoodsTableCompanion({
     this.id = const Value.absent(),
@@ -7018,6 +7283,8 @@ class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.clientUpdatedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UserFoodsTableCompanion.insert({
@@ -7048,6 +7315,8 @@ class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.clientUpdatedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        deviceId = Value(deviceId),
@@ -7081,6 +7350,8 @@ class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? clientUpdatedAt,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -7113,6 +7384,8 @@ class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (clientUpdatedAt != null) 'client_updated_at': clientUpdatedAt,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -7145,6 +7418,8 @@ class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? clientUpdatedAt,
+    Value<bool>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return UserFoodsTableCompanion(
@@ -7175,6 +7450,8 @@ class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -7263,6 +7540,12 @@ class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
     if (clientUpdatedAt.present) {
       map['client_updated_at'] = Variable<DateTime>(clientUpdatedAt.value);
     }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -7299,6 +7582,8 @@ class UserFoodsTableCompanion extends UpdateCompanion<UserFood> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('clientUpdatedAt: $clientUpdatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -12223,12 +12508,13 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
   late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
     'needs_upload',
     aliasedName,
-    true,
+    false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("needs_upload" IN (0, 1))',
     ),
+    defaultValue: const Constant(false),
   );
   static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
     'localUpdatedAt',
@@ -12238,9 +12524,10 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
       GeneratedColumn<DateTime>(
         'local_updated_at',
         aliasedName,
-        true,
+        false,
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
+        clientDefault: () => DateTime.now(),
       );
   @override
   List<GeneratedColumn> get $columns => [
@@ -12448,11 +12735,11 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
-      ),
+      )!,
       localUpdatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}local_updated_at'],
-      ),
+      )!,
     );
   }
 
@@ -12475,8 +12762,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
   final String algorithmVersion;
   final double? adherenceScore;
   final DateTime? completedAt;
-  final bool? needsUpload;
-  final DateTime? localUpdatedAt;
+  final bool needsUpload;
+  final DateTime localUpdatedAt;
   const CarbLoadingPlan({
     required this.id,
     this.eventId,
@@ -12490,8 +12777,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
     required this.algorithmVersion,
     this.adherenceScore,
     this.completedAt,
-    this.needsUpload,
-    this.localUpdatedAt,
+    required this.needsUpload,
+    required this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -12516,12 +12803,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
     }
-    if (!nullToAbsent || needsUpload != null) {
-      map['needs_upload'] = Variable<bool>(needsUpload);
-    }
-    if (!nullToAbsent || localUpdatedAt != null) {
-      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
-    }
+    map['needs_upload'] = Variable<bool>(needsUpload);
+    map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
     return map;
   }
 
@@ -12547,12 +12830,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
-      needsUpload: needsUpload == null && nullToAbsent
-          ? const Value.absent()
-          : Value(needsUpload),
-      localUpdatedAt: localUpdatedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(localUpdatedAt),
+      needsUpload: Value(needsUpload),
+      localUpdatedAt: Value(localUpdatedAt),
     );
   }
 
@@ -12576,8 +12855,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
       algorithmVersion: serializer.fromJson<String>(json['algorithmVersion']),
       adherenceScore: serializer.fromJson<double?>(json['adherenceScore']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
-      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
-      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+      needsUpload: serializer.fromJson<bool>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime>(json['localUpdatedAt']),
     );
   }
   @override
@@ -12596,8 +12875,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
       'algorithmVersion': serializer.toJson<String>(algorithmVersion),
       'adherenceScore': serializer.toJson<double?>(adherenceScore),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
-      'needsUpload': serializer.toJson<bool?>(needsUpload),
-      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+      'needsUpload': serializer.toJson<bool>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime>(localUpdatedAt),
     };
   }
 
@@ -12614,8 +12893,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
     String? algorithmVersion,
     Value<double?> adherenceScore = const Value.absent(),
     Value<DateTime?> completedAt = const Value.absent(),
-    Value<bool?> needsUpload = const Value.absent(),
-    Value<DateTime?> localUpdatedAt = const Value.absent(),
+    bool? needsUpload,
+    DateTime? localUpdatedAt,
   }) => CarbLoadingPlan(
     id: id ?? this.id,
     eventId: eventId.present ? eventId.value : this.eventId,
@@ -12633,10 +12912,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
         ? adherenceScore.value
         : this.adherenceScore,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
-    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
-    localUpdatedAt: localUpdatedAt.present
-        ? localUpdatedAt.value
-        : this.localUpdatedAt,
+    needsUpload: needsUpload ?? this.needsUpload,
+    localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
   );
   CarbLoadingPlan copyWithCompanion(CarbLoadingPlansTableCompanion data) {
     return CarbLoadingPlan(
@@ -12744,8 +13021,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
   final Value<String> algorithmVersion;
   final Value<double?> adherenceScore;
   final Value<DateTime?> completedAt;
-  final Value<bool?> needsUpload;
-  final Value<DateTime?> localUpdatedAt;
+  final Value<bool> needsUpload;
+  final Value<DateTime> localUpdatedAt;
   const CarbLoadingPlansTableCompanion({
     this.id = const Value.absent(),
     this.eventId = const Value.absent(),
@@ -12832,8 +13109,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     Value<String>? algorithmVersion,
     Value<double?>? adherenceScore,
     Value<DateTime?>? completedAt,
-    Value<bool?>? needsUpload,
-    Value<DateTime?>? localUpdatedAt,
+    Value<bool>? needsUpload,
+    Value<DateTime>? localUpdatedAt,
   }) {
     return CarbLoadingPlansTableCompanion(
       id: id ?? this.id,
@@ -12997,7 +13274,8 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(8.0),
       );
   static const VerificationMeta _calorieTargetMeta = const VerificationMeta(
     'calorieTarget',
@@ -13140,12 +13418,13 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
   late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
     'needs_upload',
     aliasedName,
-    true,
+    false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("needs_upload" IN (0, 1))',
     ),
+    defaultValue: const Constant(false),
   );
   static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
     'localUpdatedAt',
@@ -13155,9 +13434,10 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
       GeneratedColumn<DateTime>(
         'local_updated_at',
         aliasedName,
-        true,
+        false,
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
+        clientDefault: () => DateTime.now(),
       );
   @override
   List<GeneratedColumn> get $columns => [
@@ -13242,8 +13522,6 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
           _carbProtocolGPerKgMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_carbProtocolGPerKgMeta);
     }
     if (data.containsKey('calorie_target')) {
       context.handle(
@@ -13440,11 +13718,11 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
-      ),
+      )!,
       localUpdatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}local_updated_at'],
-      ),
+      )!,
     );
   }
 
@@ -13472,8 +13750,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
   final int loggedCarbsGrams;
   final int loggedCalories;
   final bool completed;
-  final bool? needsUpload;
-  final DateTime? localUpdatedAt;
+  final bool needsUpload;
+  final DateTime localUpdatedAt;
   const CarbLoadingDay({
     required this.id,
     required this.carbLoadingPlanId,
@@ -13492,8 +13770,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
     required this.loggedCarbsGrams,
     required this.loggedCalories,
     required this.completed,
-    this.needsUpload,
-    this.localUpdatedAt,
+    required this.needsUpload,
+    required this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -13517,12 +13795,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
     map['logged_carbs_grams'] = Variable<int>(loggedCarbsGrams);
     map['logged_calories'] = Variable<int>(loggedCalories);
     map['completed'] = Variable<bool>(completed);
-    if (!nullToAbsent || needsUpload != null) {
-      map['needs_upload'] = Variable<bool>(needsUpload);
-    }
-    if (!nullToAbsent || localUpdatedAt != null) {
-      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
-    }
+    map['needs_upload'] = Variable<bool>(needsUpload);
+    map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
     return map;
   }
 
@@ -13547,12 +13821,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
       loggedCarbsGrams: Value(loggedCarbsGrams),
       loggedCalories: Value(loggedCalories),
       completed: Value(completed),
-      needsUpload: needsUpload == null && nullToAbsent
-          ? const Value.absent()
-          : Value(needsUpload),
-      localUpdatedAt: localUpdatedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(localUpdatedAt),
+      needsUpload: Value(needsUpload),
+      localUpdatedAt: Value(localUpdatedAt),
     );
   }
 
@@ -13587,8 +13857,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
       loggedCarbsGrams: serializer.fromJson<int>(json['loggedCarbsGrams']),
       loggedCalories: serializer.fromJson<int>(json['loggedCalories']),
       completed: serializer.fromJson<bool>(json['completed']),
-      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
-      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+      needsUpload: serializer.fromJson<bool>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime>(json['localUpdatedAt']),
     );
   }
   @override
@@ -13612,8 +13882,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
       'loggedCarbsGrams': serializer.toJson<int>(loggedCarbsGrams),
       'loggedCalories': serializer.toJson<int>(loggedCalories),
       'completed': serializer.toJson<bool>(completed),
-      'needsUpload': serializer.toJson<bool?>(needsUpload),
-      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+      'needsUpload': serializer.toJson<bool>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime>(localUpdatedAt),
     };
   }
 
@@ -13635,8 +13905,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
     int? loggedCarbsGrams,
     int? loggedCalories,
     bool? completed,
-    Value<bool?> needsUpload = const Value.absent(),
-    Value<DateTime?> localUpdatedAt = const Value.absent(),
+    bool? needsUpload,
+    DateTime? localUpdatedAt,
   }) => CarbLoadingDay(
     id: id ?? this.id,
     carbLoadingPlanId: carbLoadingPlanId ?? this.carbLoadingPlanId,
@@ -13657,10 +13927,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
     loggedCarbsGrams: loggedCarbsGrams ?? this.loggedCarbsGrams,
     loggedCalories: loggedCalories ?? this.loggedCalories,
     completed: completed ?? this.completed,
-    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
-    localUpdatedAt: localUpdatedAt.present
-        ? localUpdatedAt.value
-        : this.localUpdatedAt,
+    needsUpload: needsUpload ?? this.needsUpload,
+    localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
   );
   CarbLoadingDay copyWithCompanion(CarbLoadingDaysTableCompanion data) {
     return CarbLoadingDay(
@@ -13805,8 +14073,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
   final Value<int> loggedCarbsGrams;
   final Value<int> loggedCalories;
   final Value<bool> completed;
-  final Value<bool?> needsUpload;
-  final Value<DateTime?> localUpdatedAt;
+  final Value<bool> needsUpload;
+  final Value<DateTime> localUpdatedAt;
   const CarbLoadingDaysTableCompanion({
     this.id = const Value.absent(),
     this.carbLoadingPlanId = const Value.absent(),
@@ -13834,7 +14102,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     required DateTime planDate,
     required int dayNumber,
     required int carbTargetGrams,
-    required double carbProtocolGPerKg,
+    this.carbProtocolGPerKg = const Value.absent(),
     this.calorieTarget = const Value.absent(),
     this.mealCount = const Value.absent(),
     this.breakfastPercent = const Value.absent(),
@@ -13851,8 +14119,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
   }) : carbLoadingPlanId = Value(carbLoadingPlanId),
        planDate = Value(planDate),
        dayNumber = Value(dayNumber),
-       carbTargetGrams = Value(carbTargetGrams),
-       carbProtocolGPerKg = Value(carbProtocolGPerKg);
+       carbTargetGrams = Value(carbTargetGrams);
   static Insertable<CarbLoadingDay> custom({
     Expression<int>? id,
     Expression<int>? carbLoadingPlanId,
@@ -13919,8 +14186,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     Value<int>? loggedCarbsGrams,
     Value<int>? loggedCalories,
     Value<bool>? completed,
-    Value<bool?>? needsUpload,
-    Value<DateTime?>? localUpdatedAt,
+    Value<bool>? needsUpload,
+    Value<DateTime>? localUpdatedAt,
   }) {
     return CarbLoadingDaysTableCompanion(
       id: id ?? this.id,
@@ -17053,8 +17320,42 @@ class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, userId, selectedFeatures, votedAt];
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    selectedFeatures,
+    votedAt,
+    needsUpload,
+    localUpdatedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -17097,6 +17398,24 @@ class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
     } else if (isInserting) {
       context.missing(_votedAtMeta);
     }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -17125,6 +17444,14 @@ class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}voted_at'],
       )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      )!,
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
     );
   }
 
@@ -17148,11 +17475,17 @@ class FeatureSurveyResponseEntry extends DataClass
 
   /// Timestamp of when the vote was cast
   final DateTime votedAt;
+
+  /// Sync tracking columns
+  final bool needsUpload;
+  final DateTime? localUpdatedAt;
   const FeatureSurveyResponseEntry({
     required this.id,
     required this.userId,
     required this.selectedFeatures,
     required this.votedAt,
+    required this.needsUpload,
+    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -17161,6 +17494,10 @@ class FeatureSurveyResponseEntry extends DataClass
     map['user_id'] = Variable<String>(userId);
     map['selected_features'] = Variable<String>(selectedFeatures);
     map['voted_at'] = Variable<DateTime>(votedAt);
+    map['needs_upload'] = Variable<bool>(needsUpload);
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
     return map;
   }
 
@@ -17170,6 +17507,10 @@ class FeatureSurveyResponseEntry extends DataClass
       userId: Value(userId),
       selectedFeatures: Value(selectedFeatures),
       votedAt: Value(votedAt),
+      needsUpload: Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
     );
   }
 
@@ -17183,6 +17524,8 @@ class FeatureSurveyResponseEntry extends DataClass
       userId: serializer.fromJson<String>(json['userId']),
       selectedFeatures: serializer.fromJson<String>(json['selectedFeatures']),
       votedAt: serializer.fromJson<DateTime>(json['votedAt']),
+      needsUpload: serializer.fromJson<bool>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -17193,6 +17536,8 @@ class FeatureSurveyResponseEntry extends DataClass
       'userId': serializer.toJson<String>(userId),
       'selectedFeatures': serializer.toJson<String>(selectedFeatures),
       'votedAt': serializer.toJson<DateTime>(votedAt),
+      'needsUpload': serializer.toJson<bool>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
@@ -17201,11 +17546,17 @@ class FeatureSurveyResponseEntry extends DataClass
     String? userId,
     String? selectedFeatures,
     DateTime? votedAt,
+    bool? needsUpload,
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => FeatureSurveyResponseEntry(
     id: id ?? this.id,
     userId: userId ?? this.userId,
     selectedFeatures: selectedFeatures ?? this.selectedFeatures,
     votedAt: votedAt ?? this.votedAt,
+    needsUpload: needsUpload ?? this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
   );
   FeatureSurveyResponseEntry copyWithCompanion(
     FeatureSurveyResponsesTableCompanion data,
@@ -17217,6 +17568,12 @@ class FeatureSurveyResponseEntry extends DataClass
           ? data.selectedFeatures.value
           : this.selectedFeatures,
       votedAt: data.votedAt.present ? data.votedAt.value : this.votedAt,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
     );
   }
 
@@ -17226,13 +17583,22 @@ class FeatureSurveyResponseEntry extends DataClass
           ..write('id: $id, ')
           ..write('userId: $userId, ')
           ..write('selectedFeatures: $selectedFeatures, ')
-          ..write('votedAt: $votedAt')
+          ..write('votedAt: $votedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, userId, selectedFeatures, votedAt);
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    selectedFeatures,
+    votedAt,
+    needsUpload,
+    localUpdatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -17240,7 +17606,9 @@ class FeatureSurveyResponseEntry extends DataClass
           other.id == this.id &&
           other.userId == this.userId &&
           other.selectedFeatures == this.selectedFeatures &&
-          other.votedAt == this.votedAt);
+          other.votedAt == this.votedAt &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
 }
 
 class FeatureSurveyResponsesTableCompanion
@@ -17249,17 +17617,23 @@ class FeatureSurveyResponsesTableCompanion
   final Value<String> userId;
   final Value<String> selectedFeatures;
   final Value<DateTime> votedAt;
+  final Value<bool> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
   const FeatureSurveyResponsesTableCompanion({
     this.id = const Value.absent(),
     this.userId = const Value.absent(),
     this.selectedFeatures = const Value.absent(),
     this.votedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
   });
   FeatureSurveyResponsesTableCompanion.insert({
     this.id = const Value.absent(),
     required String userId,
     required String selectedFeatures,
     required DateTime votedAt,
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
   }) : userId = Value(userId),
        selectedFeatures = Value(selectedFeatures),
        votedAt = Value(votedAt);
@@ -17268,12 +17642,16 @@ class FeatureSurveyResponsesTableCompanion
     Expression<String>? userId,
     Expression<String>? selectedFeatures,
     Expression<DateTime>? votedAt,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (userId != null) 'user_id': userId,
       if (selectedFeatures != null) 'selected_features': selectedFeatures,
       if (votedAt != null) 'voted_at': votedAt,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
     });
   }
 
@@ -17282,12 +17660,16 @@ class FeatureSurveyResponsesTableCompanion
     Value<String>? userId,
     Value<String>? selectedFeatures,
     Value<DateTime>? votedAt,
+    Value<bool>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
   }) {
     return FeatureSurveyResponsesTableCompanion(
       id: id ?? this.id,
       userId: userId ?? this.userId,
       selectedFeatures: selectedFeatures ?? this.selectedFeatures,
       votedAt: votedAt ?? this.votedAt,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
     );
   }
 
@@ -17306,6 +17688,12 @@ class FeatureSurveyResponsesTableCompanion
     if (votedAt.present) {
       map['voted_at'] = Variable<DateTime>(votedAt.value);
     }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
     return map;
   }
 
@@ -17315,7 +17703,9 @@ class FeatureSurveyResponsesTableCompanion
           ..write('id: $id, ')
           ..write('userId: $userId, ')
           ..write('selectedFeatures: $selectedFeatures, ')
-          ..write('votedAt: $votedAt')
+          ..write('votedAt: $votedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -18191,6 +18581,7 @@ typedef $$FoodPreferencesTableTableCreateCompanionBuilder =
       required String userId,
       required String foodName,
       required String preference,
+      Value<int> preferenceLevel,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -18201,6 +18592,7 @@ typedef $$FoodPreferencesTableTableUpdateCompanionBuilder =
       Value<String> userId,
       Value<String> foodName,
       Value<String> preference,
+      Value<int> preferenceLevel,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -18232,6 +18624,11 @@ class $$FoodPreferencesTableTableFilterComposer
 
   ColumnFilters<String> get preference => $composableBuilder(
     column: $table.preference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get preferenceLevel => $composableBuilder(
+    column: $table.preferenceLevel,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18275,6 +18672,11 @@ class $$FoodPreferencesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get preferenceLevel => $composableBuilder(
+    column: $table.preferenceLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -18306,6 +18708,11 @@ class $$FoodPreferencesTableTableAnnotationComposer
 
   GeneratedColumn<String> get preference => $composableBuilder(
     column: $table.preference,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get preferenceLevel => $composableBuilder(
+    column: $table.preferenceLevel,
     builder: (column) => column,
   );
 
@@ -18363,6 +18770,7 @@ class $$FoodPreferencesTableTableTableManager
                 Value<String> userId = const Value.absent(),
                 Value<String> foodName = const Value.absent(),
                 Value<String> preference = const Value.absent(),
+                Value<int> preferenceLevel = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -18371,6 +18779,7 @@ class $$FoodPreferencesTableTableTableManager
                 userId: userId,
                 foodName: foodName,
                 preference: preference,
+                preferenceLevel: preferenceLevel,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -18381,6 +18790,7 @@ class $$FoodPreferencesTableTableTableManager
                 required String userId,
                 required String foodName,
                 required String preference,
+                Value<int> preferenceLevel = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -18389,6 +18799,7 @@ class $$FoodPreferencesTableTableTableManager
                 userId: userId,
                 foodName: foodName,
                 preference: preference,
+                preferenceLevel: preferenceLevel,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -18445,6 +18856,8 @@ typedef $$FeedbackTableTableCreateCompanionBuilder =
       Value<int> reminderMinute,
       Value<bool> reminderRecurring,
       Value<DateTime> createdAt,
+      Value<bool> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$FeedbackTableTableUpdateCompanionBuilder =
@@ -18470,6 +18883,8 @@ typedef $$FeedbackTableTableUpdateCompanionBuilder =
       Value<int> reminderMinute,
       Value<bool> reminderRecurring,
       Value<DateTime> createdAt,
+      Value<bool> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -18584,6 +18999,16 @@ class $$FeedbackTableTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -18701,6 +19126,16 @@ class $$FeedbackTableTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FeedbackTableTableAnnotationComposer
@@ -18804,6 +19239,16 @@ class $$FeedbackTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$FeedbackTableTableTableManager
@@ -18858,6 +19303,8 @@ class $$FeedbackTableTableTableManager
                 Value<int> reminderMinute = const Value.absent(),
                 Value<bool> reminderRecurring = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FeedbackTableCompanion(
                 id: id,
@@ -18881,6 +19328,8 @@ class $$FeedbackTableTableTableManager
                 reminderMinute: reminderMinute,
                 reminderRecurring: reminderRecurring,
                 createdAt: createdAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -18906,6 +19355,8 @@ class $$FeedbackTableTableTableManager
                 Value<int> reminderMinute = const Value.absent(),
                 Value<bool> reminderRecurring = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FeedbackTableCompanion.insert(
                 id: id,
@@ -18929,6 +19380,8 @@ class $$FeedbackTableTableTableManager
                 reminderMinute: reminderMinute,
                 reminderRecurring: reminderRecurring,
                 createdAt: createdAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -19835,6 +20288,8 @@ typedef $$UserFoodsTableTableCreateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> clientUpdatedAt,
+      Value<bool> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$UserFoodsTableTableUpdateCompanionBuilder =
@@ -19866,6 +20321,8 @@ typedef $$UserFoodsTableTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> clientUpdatedAt,
+      Value<bool> needsUpload,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -20010,6 +20467,16 @@ class $$UserFoodsTableTableFilterComposer
 
   ColumnFilters<DateTime> get clientUpdatedAt => $composableBuilder(
     column: $table.clientUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -20157,6 +20624,16 @@ class $$UserFoodsTableTableOrderingComposer
     column: $table.clientUpdatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserFoodsTableTableAnnotationComposer
@@ -20284,6 +20761,16 @@ class $$UserFoodsTableTableAnnotationComposer
     column: $table.clientUpdatedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$UserFoodsTableTableTableManager
@@ -20346,6 +20833,8 @@ class $$UserFoodsTableTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> clientUpdatedAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserFoodsTableCompanion(
                 id: id,
@@ -20375,6 +20864,8 @@ class $$UserFoodsTableTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 clientUpdatedAt: clientUpdatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -20406,6 +20897,8 @@ class $$UserFoodsTableTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> clientUpdatedAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserFoodsTableCompanion.insert(
                 id: id,
@@ -20435,6 +20928,8 @@ class $$UserFoodsTableTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 clientUpdatedAt: clientUpdatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -22510,8 +23005,8 @@ typedef $$CarbLoadingPlansTableTableCreateCompanionBuilder =
       Value<String> algorithmVersion,
       Value<double?> adherenceScore,
       Value<DateTime?> completedAt,
-      Value<bool?> needsUpload,
-      Value<DateTime?> localUpdatedAt,
+      Value<bool> needsUpload,
+      Value<DateTime> localUpdatedAt,
     });
 typedef $$CarbLoadingPlansTableTableUpdateCompanionBuilder =
     CarbLoadingPlansTableCompanion Function({
@@ -22527,8 +23022,8 @@ typedef $$CarbLoadingPlansTableTableUpdateCompanionBuilder =
       Value<String> algorithmVersion,
       Value<double?> adherenceScore,
       Value<DateTime?> completedAt,
-      Value<bool?> needsUpload,
-      Value<DateTime?> localUpdatedAt,
+      Value<bool> needsUpload,
+      Value<DateTime> localUpdatedAt,
     });
 
 class $$CarbLoadingPlansTableTableFilterComposer
@@ -22817,8 +23312,8 @@ class $$CarbLoadingPlansTableTableTableManager
                 Value<String> algorithmVersion = const Value.absent(),
                 Value<double?> adherenceScore = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
-                Value<bool?> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime> localUpdatedAt = const Value.absent(),
               }) => CarbLoadingPlansTableCompanion(
                 id: id,
                 eventId: eventId,
@@ -22849,8 +23344,8 @@ class $$CarbLoadingPlansTableTableTableManager
                 Value<String> algorithmVersion = const Value.absent(),
                 Value<double?> adherenceScore = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
-                Value<bool?> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime> localUpdatedAt = const Value.absent(),
               }) => CarbLoadingPlansTableCompanion.insert(
                 id: id,
                 eventId: eventId,
@@ -22903,7 +23398,7 @@ typedef $$CarbLoadingDaysTableTableCreateCompanionBuilder =
       required DateTime planDate,
       required int dayNumber,
       required int carbTargetGrams,
-      required double carbProtocolGPerKg,
+      Value<double> carbProtocolGPerKg,
       Value<int?> calorieTarget,
       Value<int> mealCount,
       Value<double> breakfastPercent,
@@ -22915,8 +23410,8 @@ typedef $$CarbLoadingDaysTableTableCreateCompanionBuilder =
       Value<int> loggedCarbsGrams,
       Value<int> loggedCalories,
       Value<bool> completed,
-      Value<bool?> needsUpload,
-      Value<DateTime?> localUpdatedAt,
+      Value<bool> needsUpload,
+      Value<DateTime> localUpdatedAt,
     });
 typedef $$CarbLoadingDaysTableTableUpdateCompanionBuilder =
     CarbLoadingDaysTableCompanion Function({
@@ -22937,8 +23432,8 @@ typedef $$CarbLoadingDaysTableTableUpdateCompanionBuilder =
       Value<int> loggedCarbsGrams,
       Value<int> loggedCalories,
       Value<bool> completed,
-      Value<bool?> needsUpload,
-      Value<DateTime?> localUpdatedAt,
+      Value<bool> needsUpload,
+      Value<DateTime> localUpdatedAt,
     });
 
 class $$CarbLoadingDaysTableTableFilterComposer
@@ -23306,8 +23801,8 @@ class $$CarbLoadingDaysTableTableTableManager
                 Value<int> loggedCarbsGrams = const Value.absent(),
                 Value<int> loggedCalories = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
-                Value<bool?> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime> localUpdatedAt = const Value.absent(),
               }) => CarbLoadingDaysTableCompanion(
                 id: id,
                 carbLoadingPlanId: carbLoadingPlanId,
@@ -23336,7 +23831,7 @@ class $$CarbLoadingDaysTableTableTableManager
                 required DateTime planDate,
                 required int dayNumber,
                 required int carbTargetGrams,
-                required double carbProtocolGPerKg,
+                Value<double> carbProtocolGPerKg = const Value.absent(),
                 Value<int?> calorieTarget = const Value.absent(),
                 Value<int> mealCount = const Value.absent(),
                 Value<double> breakfastPercent = const Value.absent(),
@@ -23348,8 +23843,8 @@ class $$CarbLoadingDaysTableTableTableManager
                 Value<int> loggedCarbsGrams = const Value.absent(),
                 Value<int> loggedCalories = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
-                Value<bool?> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime> localUpdatedAt = const Value.absent(),
               }) => CarbLoadingDaysTableCompanion.insert(
                 id: id,
                 carbLoadingPlanId: carbLoadingPlanId,
@@ -24850,6 +25345,8 @@ typedef $$FeatureSurveyResponsesTableTableCreateCompanionBuilder =
       required String userId,
       required String selectedFeatures,
       required DateTime votedAt,
+      Value<bool> needsUpload,
+      Value<DateTime?> localUpdatedAt,
     });
 typedef $$FeatureSurveyResponsesTableTableUpdateCompanionBuilder =
     FeatureSurveyResponsesTableCompanion Function({
@@ -24857,6 +25354,8 @@ typedef $$FeatureSurveyResponsesTableTableUpdateCompanionBuilder =
       Value<String> userId,
       Value<String> selectedFeatures,
       Value<DateTime> votedAt,
+      Value<bool> needsUpload,
+      Value<DateTime?> localUpdatedAt,
     });
 
 class $$FeatureSurveyResponsesTableTableFilterComposer
@@ -24885,6 +25384,16 @@ class $$FeatureSurveyResponsesTableTableFilterComposer
 
   ColumnFilters<DateTime> get votedAt => $composableBuilder(
     column: $table.votedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -24917,6 +25426,16 @@ class $$FeatureSurveyResponsesTableTableOrderingComposer
     column: $table.votedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FeatureSurveyResponsesTableTableAnnotationComposer
@@ -24941,6 +25460,16 @@ class $$FeatureSurveyResponsesTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get votedAt =>
       $composableBuilder(column: $table.votedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$FeatureSurveyResponsesTableTableTableManager
@@ -24993,11 +25522,15 @@ class $$FeatureSurveyResponsesTableTableTableManager
                 Value<String> userId = const Value.absent(),
                 Value<String> selectedFeatures = const Value.absent(),
                 Value<DateTime> votedAt = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
               }) => FeatureSurveyResponsesTableCompanion(
                 id: id,
                 userId: userId,
                 selectedFeatures: selectedFeatures,
                 votedAt: votedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
               ),
           createCompanionCallback:
               ({
@@ -25005,11 +25538,15 @@ class $$FeatureSurveyResponsesTableTableTableManager
                 required String userId,
                 required String selectedFeatures,
                 required DateTime votedAt,
+                Value<bool> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
               }) => FeatureSurveyResponsesTableCompanion.insert(
                 id: id,
                 userId: userId,
                 selectedFeatures: selectedFeatures,
                 votedAt: votedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -23,7 +23,7 @@ This is a **living v1 schema** that grows with new features until we need breaki
 
 ### Food System Tables (2)
 4. **foods** - Global food database with nutritional information
-5. **user_foods_table** - User-created or barcode-scanned foods
+5. **user_foods** - User-created or barcode-scanned foods
 
 ### Content Management (2)
 6. **app_content_table** - Dynamic UI text and algorithm parameters

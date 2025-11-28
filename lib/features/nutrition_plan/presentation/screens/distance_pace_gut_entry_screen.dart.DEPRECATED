@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/hero_image.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
@@ -279,7 +280,7 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
           Expanded(
             child: InkWell(
               onTap: () async {
-                final picked = await showDatePicker(
+                final picked = await showAppDatePicker(
                   context: context,
                   initialDate: runningForm.selectedDate,
                   firstDate: DateTime.now().subtract(const Duration(days: 7)),
@@ -316,7 +317,7 @@ class _DistancePaceGutEntryScreenState extends ConsumerState<DistancePaceGutEntr
                       const Spacer(),
                       InkWell(
                         onTap: () async {
-                          final picked = await showDatePicker(
+                          final picked = await showAppDatePicker(
                             context: context,
                             initialDate: runningForm.selectedDate,
                             firstDate: DateTime.now().subtract(const Duration(days: 7)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import '../providers/onboarding_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../theme/app_theme.dart';
@@ -46,7 +47,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   void _selectBirthday() async {
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(const Duration(days: 365 * 30)),
       firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),

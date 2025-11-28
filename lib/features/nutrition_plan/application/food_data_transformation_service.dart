@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../domain/food_item_data.dart';
 import '../data/food_repository.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -48,7 +49,7 @@ class FoodDataTransformationService {
         final packetLabel = quantity == 1 ? 'salt packet' : 'salt packets';
 
         return FoodItemData(
-          id: foodId,
+          id: const Uuid().v4(), // Generate unique instance ID
           name: 'Salt',
           quantity: '$packets $packetLabel',
           description: description.isNotEmpty ? description : 'Electrolyte supplement',
@@ -65,7 +66,7 @@ class FoodDataTransformationService {
 
       // Return fallback data if food not found
       return FoodItemData(
-        id: foodId,
+        id: const Uuid().v4(), // Generate unique instance ID
         name: foodName,
         quantity: _formatQuantity(quantity, '', foodName),
         description: description.isNotEmpty ? description : 'Food details not available',
@@ -92,7 +93,7 @@ class FoodDataTransformationService {
     final calculatedFluids = (foodDetails.fluidMlPerServing ?? 0.0) * quantity;
 
     return FoodItemData(
-      id: foodId,
+      id: const Uuid().v4(), // Generate unique instance ID
       name: foodDetails.displayOverride ?? foodDetails.name,
       quantity: displayName,
       imageAddress: foodDetails.imageAddress,

@@ -29,11 +29,6 @@ class CarbLoadingFoodSyncService {
   /// REFACTORED: Uses direct Supabase query instead of edge function
   Future<void> syncCarbLoadingFoods() async {
     try {
-      _logger.info(
-        'Syncing carb loading foods directly from Supabase',
-        context: 'CARB_LOADING_SYNC',
-      );
-
       // Direct Supabase query - no edge function needed!
       final response = await _supabase
           .from('carb_loading_foods')
@@ -43,19 +38,8 @@ class CarbLoadingFoodSyncService {
 
       final List<dynamic> foodsData = response as List<dynamic>;
 
-      _logger.info(
-        'Retrieved ${foodsData.length} carb loading foods from Supabase',
-        context: 'CARB_LOADING_SYNC',
-      );
-
       // Sync foods with their meal type arrays
       await _syncFoodsToLocalDatabase(foodsData);
-
-      _logger.info(
-        'Successfully synced carb loading foods',
-        context: 'CARB_LOADING_SYNC',
-      );
-
     } catch (e, stackTrace) {
       _logger.error(
         'Error syncing carb loading foods from Supabase',
@@ -72,14 +56,8 @@ class CarbLoadingFoodSyncService {
   /// Meal types are now stored as array column in foods table
   Future<void> _syncFoodsToLocalDatabase(List<dynamic> foodsData) async {
     if (foodsData.isEmpty) {
-      _logger.warning('No carb loading foods to sync', context: 'CARB_LOADING_SYNC');
       return;
     }
-
-    _logger.info(
-      'Syncing ${foodsData.length} foods to local database',
-      context: 'CARB_LOADING_SYNC',
-    );
 
     await _database.batch((batch) {
       for (final foodJson in foodsData) {
@@ -122,11 +100,6 @@ class CarbLoadingFoodSyncService {
         );
       }
     });
-
-    _logger.info(
-      'Successfully synced ${foodsData.length} foods to local database',
-      context: 'CARB_LOADING_SYNC',
-    );
   }
 
   /// Sync carb loading foods from pre-downloaded data (from sync-all-data edge function)
@@ -136,21 +109,8 @@ class CarbLoadingFoodSyncService {
     required List<dynamic> carbLoadingFoods,
   }) async {
     try {
-      _logger.info(
-        'Syncing carb loading foods from downloaded data',
-        context: 'CARB_LOADING_SYNC',
-        data: {
-          'carb_foods': carbLoadingFoods.length,
-        },
-      );
-
       // Sync carb loading foods with their meal type arrays
       await _syncFoodsToLocalDatabase(carbLoadingFoods);
-
-      _logger.info(
-        'Carb loading foods sync completed',
-        context: 'CARB_LOADING_SYNC',
-      );
     } catch (e, stackTrace) {
       _logger.error(
         'Carb loading foods sync failed',

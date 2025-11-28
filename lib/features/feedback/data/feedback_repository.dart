@@ -51,6 +51,10 @@ class FeedbackRepository {
     // Also save to Supabase for analytics and backup
     try {
       await _saveToSupabase(response);
+      await _database.customStatement(
+        'UPDATE feedback SET needs_upload = 0 WHERE id = ?',
+        [localId],
+      );
     } catch (error, stackTrace) {
       _logger.error('Failed to save survey response to Supabase',
         context: 'FEEDBACK',
@@ -134,11 +138,18 @@ class FeedbackRepository {
     );
   }
 
-  /// Check if user has submitted survey recently (DISABLED for development)
-  /// Always returns false to allow unlimited survey submissions
-  /// TODO: Re-enable time restrictions for production
+  /// Check if user has submitted survey recently
+  /// Rate limits to one survey per 24 hours per device to prevent spam/abuse
   Future<bool> hasRecentSurveyResponse(String deviceId) async {
-    return false; // Always allow survey submissions during development
+    final latestResponse = await _database.getLatestSurveyResponse(deviceId);
+    if (latestResponse == null) return false;
+
+    final hoursSinceLastResponse = DateTime.now()
+        .difference(latestResponse.createdAt)
+        .inHours;
+
+    // Allow one survey per 24 hours
+    return hoursSinceLastResponse < 24;
   }
 
   /// Convert database entry to domain model for UI consumption

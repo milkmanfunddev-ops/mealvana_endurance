@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/event.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../application/events_service.dart';
-import '../../../../shared/providers/device_id_provider.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 
 part 'upcoming_event_provider.g.dart';
 
@@ -12,7 +12,7 @@ Future<({Event event, DateTime eventDate})?> nextUpcomingEventFromDate(
   Ref ref,
   DateTime fromDate,
 ) async {
-  final userId = await ref.read(deviceIdProvider.future);
+  final userId = await ref.read(userIdProvider.future);
   final eventsService = ref.read(eventsServiceProvider);
   final activitiesService = ref.read(activitiesServiceProvider);
 

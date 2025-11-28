@@ -35,7 +35,7 @@ class EventsRepository {
   final AppDatabase _database;
   final AppLogger _logger;
 
-  /// Create a new event (offline-first: save to Drift first, background upload)
+  /// Create a new event (offline-first: save to Drift first, then sync immediately if possible)
   Future<domain.Event> createEvent({
     required String deviceId,
     required domain.Event event,
@@ -51,10 +51,25 @@ class EventsRepository {
       final generatedId = await _saveToDrift(eventWithDirtyFlag);
 
       // Update event with the generated ID
-      final createdEvent = eventWithDirtyFlag.copyWith(id: generatedId);
+      var createdEvent = eventWithDirtyFlag.copyWith(id: generatedId);
 
-      // Attempt background upload (non-blocking) with the correct ID
-      unawaited(_uploadEventToSupabase(deviceId, createdEvent, 'create'));
+      // Attempt upload immediately so the UI gets the final server ID (auth assigns new IDs)
+      final serverId = await _uploadEventToSupabase(deviceId, createdEvent, 'create');
+
+      // If Supabase assigned a new ID, return the re-keyed event
+      if (serverId != null && serverId != createdEvent.id) {
+        createdEvent = createdEvent.copyWith(
+          id: serverId,
+          needsUpload: false,
+          localUpdatedAt: DateTime.now(),
+        );
+      } else if (serverId != null) {
+        // Upload succeeded without re-key - clear dirty flag on the returned model
+        createdEvent = createdEvent.copyWith(
+          needsUpload: false,
+          localUpdatedAt: DateTime.now(),
+        );
+      }
 
       return createdEvent;
     } catch (e, stackTrace) {
@@ -85,7 +100,7 @@ class EventsRepository {
       await _saveToDrift(eventWithDirtyFlag);
 
       // Attempt background upload (non-blocking)
-      unawaited(_uploadEventToSupabase(deviceId, eventWithDirtyFlag, 'update'));
+      unawaited(_uploadEventToSupabase(deviceId, eventWithDirtyFlag, 'update').then((_) {}));
 
       return eventWithDirtyFlag;
     } catch (e, stackTrace) {
@@ -257,29 +272,57 @@ class EventsRepository {
         .insert(companion, mode: InsertMode.insertOrReplace);
   }
 
-  /// Upload event to Supabase in background (non-blocking)
-  Future<void> _uploadEventToSupabase(
-    String deviceId,
+  /// Upload event to Supabase directly (returns server ID if it changed)
+  Future<int?> _uploadEventToSupabase(
+    String deviceId, // acts as userId
     domain.Event event,
     String operation,
   ) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'save-calendar-event',
-        body: {
-          'device_id': deviceId,
-          'event': event.toJson(),
-          'operation': operation,
-        },
-      );
+      // DIRECT FIX: Use userId from event directly (unified with deviceId)
+      // Skip unnecessary and fragile user lookup
+      final userUuid = event.userId;
 
-      if (response.status >= 200 && response.status < 300) {
-        // Upload successful - clear dirty flag
-        await _clearDirtyFlag(event.id);
+      // 2. Prepare data
+      final eventData = _toSupabaseJson(event, userUuid);
+
+      if (operation == 'create') {
+        // Create: Insert and return ID
+        // Ensure we don't send the local ID (0 or temporary)
+        final response = await _supabase
+            .from('events')
+            .insert(eventData)
+            .select('id')
+            .single();
+        
+        final serverId = response['id'];
+        if (serverId is int && serverId != event.id) {
+          await _updateLocalId(event.id, serverId);
+          // Clear dirty flag for the NEW ID
+          await _clearDirtyFlag(serverId);
+          return serverId;
+        } else if (serverId is int) {
+          await _clearDirtyFlag(event.id);
+          return serverId;
+        }
 
       } else {
-        throw Exception('Edge function failed: ${response.data}');
+        // Update: Update by ID
+        // We assume event.id is already the server ID if it was synced
+        // If it's still a local ID that hasn't synced, this might fail/update wrong row if collision
+        // Ideally we rely on create succeeding first. 
+        // If this is a retry, upsert might be safer but 'id' is serial.
+        
+        // If we have a valid server ID (sync previously succeeded)
+        await _supabase
+            .from('events')
+            .update(eventData)
+            .eq('id', event.id);
+            
+        await _clearDirtyFlag(event.id);
+        return event.id;
       }
+
     } catch (e) {
       _logger.warning(
         'Failed to upload event (will retry on next sync)',
@@ -289,27 +332,21 @@ class EventsRepository {
       );
       // Don't rethrow - keep dirty flag, will retry on next sync
     }
+    return null;
   }
 
-  /// Upload event deletion to Supabase in background (non-blocking)
+  /// Upload event deletion to Supabase directly (non-blocking)
   Future<void> _uploadEventDeletion(
-    String deviceId,
+    String deviceId, // acts as userId
     int eventId,
   ) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'save-calendar-event',
-        body: {
-          'device_id': deviceId,
-          'event_id': eventId,
-          'operation': 'delete',
-        },
-      );
+      await _supabase
+          .from('events')
+          .delete()
+          .eq('id', eventId)
+          .eq('user_id', deviceId); // Scope by user for safety
 
-      if (response.status >= 200 && response.status < 300) {
-      } else {
-        throw Exception('Edge function failed: ${response.data}');
-      }
     } catch (e) {
       _logger.warning(
         'Failed to upload event deletion (will retry on next sync)',
@@ -319,6 +356,38 @@ class EventsRepository {
       );
       // Don't rethrow - will retry on next sync
     }
+  }
+
+  /// Helper to map domain Event to Supabase JSON (snake_case columns)
+  Map<String, dynamic> _toSupabaseJson(domain.Event event, String userUuid) {
+    return {
+      'user_id': userUuid,
+      'activity_id': event.activityId,
+      'event_type': event.eventType.dbValue,
+      'event_subtype': event.eventSubtype,
+      'event_name': event.eventName,
+      'location': event.location,
+      'registration_url': event.registrationUrl,
+      'event_date': event.eventDate?.toIso8601String(),
+      'start_time': event.startTime,
+      'goal_time_minutes': event.goalTimeMinutes,
+      'goal_pace_minutes_per_mile': event.goalPaceMinutesPerMile,
+      'predicted_finish_time_minutes': event.predictedFinishTimeMinutes,
+      'has_carb_loading': event.hasCarbLoading,
+      'carb_loading_days': event.carbLoadingDays,
+      'carb_loading_start_date': event.carbLoadingStartDate?.toIso8601String(),
+      'has_nutrition_plan': event.hasNutritionPlan,
+      'bib_number': event.bibNumber,
+      'wave_start_time': event.waveStartTime,
+      'packet_pickup_info': event.packetPickupInfo,
+      'actual_finish_time_minutes': event.actualFinishTimeMinutes,
+      'final_placement': event.finalPlacement,
+      'age_group_placement': event.ageGroupPlacement,
+      'created_at': event.createdAt.toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+      // 'needs_upload': false, // Local-only field, do not send to Supabase
+      // 'local_updated_at': DateTime.now().toIso8601String(), // Local-only field
+    };
   }
 
   /// Clear dirty flag after successful upload
@@ -377,5 +446,22 @@ class EventsRepository {
       default:
         return ActivityType.running;
     }
+  }
+
+  /// Update local event ID to match server ID
+  Future<void> _updateLocalId(int localId, int serverId) async {
+    await _database.transaction(() async {
+      // Update carb_loading_plans referencing this event
+      await _database.customStatement(
+        'UPDATE carb_loading_plans SET event_id = ? WHERE event_id = ?',
+        [serverId, localId],
+      );
+
+      // Update the event ID itself
+      await _database.customStatement(
+        'UPDATE events SET id = ? WHERE id = ?',
+        [serverId, localId],
+      );
+    });
   }
 }

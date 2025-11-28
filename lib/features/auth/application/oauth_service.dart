@@ -6,16 +6,20 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
+// Explicitly import AuthException to use it in catch blocks
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase show AuthException;
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../data/user_repository.dart';
+import '../domain/auth_exceptions.dart';
 
 part 'oauth_service.g.dart';
 
 /// Service for handling OAuth account linking via native SDKs
 /// Uses native Google Sign-In and Apple Sign-In packages
-/// Exchanges native tokens with Supabase via signInWithIdToken
+/// Links OAuth identities to existing anonymous users via linkIdentityWithIdToken()
+/// Preserves user ID and all user data during account linking
 /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
 @riverpod
 class OAuthService extends _$OAuthService {
@@ -105,24 +109,35 @@ class OAuthService extends _$OAuthService {
         'email': credential.email,
       });
 
-      // Exchange Apple credential for Supabase session
-      final response = await _supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.apple,
-        idToken: credential.identityToken!,
-        nonce: rawNonce,
-      );
-
-      // Defensive check: ensure user ID didn't change (data preservation)
-      if (response.user?.id != anonymousUserId) {
-        _logger.error(
-          'USER ID CHANGED during Apple linking - data may be lost!',
-          context: 'OAUTH_NATIVE',
-          data: {
-            'expected_user_id': anonymousUserId,
-            'actual_user_id': response.user?.id,
-          },
+      try {
+        // Link Apple identity to current user (preserves user ID)
+        final response = await _supabase.auth.linkIdentityWithIdToken(
+          provider: OAuthProvider.apple,
+          idToken: credential.identityToken!,
+          nonce: rawNonce,
         );
-        throw Exception('User ID changed during account linking');
+
+        // Verify user ID was preserved (should never change with linkIdentityWithIdToken)
+        if (response.user?.id != anonymousUserId) {
+          _logger.error(
+            'USER ID CHANGED during Apple linking - unexpected behavior!',
+            context: 'OAUTH_NATIVE',
+            data: {
+              'expected_user_id': anonymousUserId,
+              'actual_user_id': response.user?.id,
+            },
+          );
+          throw Exception('User ID changed unexpectedly during linking');
+        }
+      } on supabase.AuthException catch (e) {
+        if (e.message.contains('already linked') || e.message.contains('Identity is already linked')) {
+          _logger.warning('Apple account already linked to another user', context: 'OAUTH_NATIVE');
+          throw AccountAlreadyExistsException(
+            'This Apple account is already linked to another user.',
+            email: credential.email,
+          );
+        }
+        rethrow;
       }
 
       // Update local user profile with new auth provider
@@ -133,12 +148,12 @@ class OAuthService extends _$OAuthService {
       );
 
       _logger.info('Apple account linked successfully', context: 'OAUTH_NATIVE', data: {
-        'user_id': response.user?.id,
+        'user_id': anonymousUserId,
       });
 
       // Track successful linking
       await _analytics.track('auth_apple_native_linked', properties: {
-        'user_id': response.user?.id,
+        'user_id': anonymousUserId,
         'platform': Platform.operatingSystem,
       });
     });
@@ -146,6 +161,11 @@ class OAuthService extends _$OAuthService {
     // Handle errors
     if (state.hasError) {
       final error = state.error;
+      // Don't log expected exceptions as errors
+      if (error is AccountAlreadyExistsException) {
+        throw error;
+      }
+      
       _logger.error('Apple Sign-In failed', context: 'OAUTH_NATIVE', error: error);
 
       // Distinguish user cancellation from errors
@@ -227,24 +247,35 @@ class OAuthService extends _$OAuthService {
         'has_access_token': auth.accessToken != null,
       });
 
-      // Exchange Google tokens for Supabase session
-      final response = await _supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: auth.idToken!,
-        accessToken: auth.accessToken,
-      );
-
-      // Defensive check: ensure user ID didn't change (data preservation)
-      if (response.user?.id != anonymousUserId) {
-        _logger.error(
-          'USER ID CHANGED during Google linking - data may be lost!',
-          context: 'OAUTH_NATIVE',
-          data: {
-            'expected_user_id': anonymousUserId,
-            'actual_user_id': response.user?.id,
-          },
+      try {
+        // Link Google identity to current user (preserves user ID)
+        final response = await _supabase.auth.linkIdentityWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: auth.idToken!,
+          accessToken: auth.accessToken,
         );
-        throw Exception('User ID changed during account linking');
+
+        // Verify user ID was preserved (should never change with linkIdentityWithIdToken)
+        if (response.user?.id != anonymousUserId) {
+          _logger.error(
+            'USER ID CHANGED during Google linking - unexpected behavior!',
+            context: 'OAUTH_NATIVE',
+            data: {
+              'expected_user_id': anonymousUserId,
+              'actual_user_id': response.user?.id,
+            },
+          );
+          throw Exception('User ID changed unexpectedly during linking');
+        }
+      } on supabase.AuthException catch (e) {
+        if (e.message.contains('already linked') || e.message.contains('Identity is already linked')) {
+          _logger.warning('Google account already linked to another user', context: 'OAUTH_NATIVE');
+          throw AccountAlreadyExistsException(
+            'This Google account is already linked to another user.',
+            email: account.email,
+          );
+        }
+        rethrow;
       }
 
       // Update local user profile with new auth provider
@@ -255,13 +286,13 @@ class OAuthService extends _$OAuthService {
       );
 
       _logger.info('Google account linked successfully', context: 'OAUTH_NATIVE', data: {
-        'user_id': response.user?.id,
+        'user_id': anonymousUserId,
         'email': account.email,
       });
 
       // Track successful linking
       await _analytics.track('auth_google_native_linked', properties: {
-        'user_id': response.user?.id,
+        'user_id': anonymousUserId,
         'email': account.email,
         'platform': Platform.operatingSystem,
       });
@@ -270,6 +301,11 @@ class OAuthService extends _$OAuthService {
     // Handle errors
     if (state.hasError) {
       final error = state.error;
+      // Don't log expected exceptions as errors
+      if (error is AccountAlreadyExistsException) {
+        throw error;
+      }
+
       _logger.error('Google Sign-In failed', context: 'OAUTH_NATIVE', error: error);
 
       // Map Google Sign-In error codes
@@ -286,6 +322,166 @@ class OAuthService extends _$OAuthService {
         },
       );
 
+      throw state.error!;
+    }
+  }
+
+  /// Sign in with Apple (replaces current anonymous user)
+  /// Used when account linking fails because account already exists
+  /// Migrates anonymous user's data to the existing OAuth account
+  Future<void> signInWithApple() async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      _logger.info('Starting native Apple Sign-In (Sign In mode)', context: 'OAUTH_NATIVE');
+
+      await _analytics.track('auth_apple_signin_started', properties: {
+        'platform': Platform.operatingSystem,
+      });
+
+      // CRITICAL: Capture anonymous user ID BEFORE signing in
+      // This allows us to migrate their data after the session switch
+      final anonymousUserId = _supabase.auth.currentUser?.id;
+      final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+
+      _logger.info('Capturing anonymous user before sign-in', context: 'OAUTH_NATIVE', data: {
+        'anonymous_user_id': anonymousUserId,
+        'was_anonymous': wasAnonymous,
+      });
+
+      // Generate nonce
+      final rawNonce = _supabase.auth.generateRawNonce();
+      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+      // Native Apple Sign-In
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+
+      // Sign in (switches session to this user)
+      final response = await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: credential.identityToken!,
+        nonce: rawNonce,
+      );
+
+      final oauthUserId = response.user?.id;
+
+      _logger.info('Apple Sign-In successful (session switched)', context: 'OAUTH_NATIVE', data: {
+        'user_id': oauthUserId,
+      });
+
+      // CRITICAL: Migrate anonymous user's data to the OAuth account
+      if (anonymousUserId != null && oauthUserId != null && anonymousUserId != oauthUserId) {
+        _logger.info('Migrating anonymous user data to OAuth account', context: 'OAUTH_NATIVE', data: {
+          'from_anonymous_user_id': anonymousUserId,
+          'to_oauth_user_id': oauthUserId,
+        });
+
+        final userRepo = await ref.read(userRepositoryProvider.future);
+        await userRepo.migrateAnonymousUserData(
+          fromAnonymousUserId: anonymousUserId,
+          toOAuthUserId: oauthUserId,
+          authProvider: 'apple',
+        );
+
+        _logger.info('Data migration completed successfully', context: 'OAUTH_NATIVE');
+      }
+
+      await _analytics.track('auth_apple_signin_completed', properties: {
+        'user_id': oauthUserId,
+        'platform': Platform.operatingSystem,
+        'migrated_data': anonymousUserId != null && anonymousUserId != oauthUserId,
+      });
+    });
+
+    if (state.hasError) {
+      _logger.error('Apple Sign-In failed', context: 'OAUTH_NATIVE', error: state.error);
+      throw state.error!;
+    }
+  }
+
+  /// Sign in with Google (replaces current anonymous user)
+  /// Used when account linking fails because account already exists
+  /// Migrates anonymous user's data to the existing OAuth account
+  Future<void> signInWithGoogle() async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      _logger.info('Starting native Google Sign-In (Sign In mode)', context: 'OAUTH_NATIVE');
+
+      await _analytics.track('auth_google_signin_started', properties: {
+        'platform': Platform.operatingSystem,
+      });
+
+      // CRITICAL: Capture anonymous user ID BEFORE signing in
+      // This allows us to migrate their data after the session switch
+      final anonymousUserId = _supabase.auth.currentUser?.id;
+      final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+
+      _logger.info('Capturing anonymous user before sign-in', context: 'OAUTH_NATIVE', data: {
+        'anonymous_user_id': anonymousUserId,
+        'was_anonymous': wasAnonymous,
+      });
+
+      final googleSignIn = _getGoogleSignIn();
+      await googleSignIn.signOut(); // Force picker
+
+      final GoogleSignInAccount? account = await googleSignIn.signIn();
+
+      if (account == null) {
+        throw Exception('Google Sign-In cancelled');
+      }
+
+      final GoogleSignInAuthentication auth = await account.authentication;
+
+      if (auth.idToken == null) {
+        throw Exception('Google Sign-In failed: no ID token received');
+      }
+
+      // Sign in (switches session to this user)
+      final response = await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: auth.idToken!,
+        accessToken: auth.accessToken,
+      );
+
+      final oauthUserId = response.user?.id;
+
+      _logger.info('Google Sign-In successful (session switched)', context: 'OAUTH_NATIVE', data: {
+        'user_id': oauthUserId,
+      });
+
+      // CRITICAL: Migrate anonymous user's data to the OAuth account
+      if (anonymousUserId != null && oauthUserId != null && anonymousUserId != oauthUserId) {
+        _logger.info('Migrating anonymous user data to OAuth account', context: 'OAUTH_NATIVE', data: {
+          'from_anonymous_user_id': anonymousUserId,
+          'to_oauth_user_id': oauthUserId,
+        });
+
+        final userRepo = await ref.read(userRepositoryProvider.future);
+        await userRepo.migrateAnonymousUserData(
+          fromAnonymousUserId: anonymousUserId,
+          toOAuthUserId: oauthUserId,
+          authProvider: 'google',
+        );
+
+        _logger.info('Data migration completed successfully', context: 'OAUTH_NATIVE');
+      }
+
+      await _analytics.track('auth_google_signin_completed', properties: {
+        'user_id': oauthUserId,
+        'platform': Platform.operatingSystem,
+        'migrated_data': anonymousUserId != null && anonymousUserId != oauthUserId,
+      });
+    });
+
+    if (state.hasError) {
+      _logger.error('Google Sign-In failed', context: 'OAUTH_NATIVE', error: state.error);
       throw state.error!;
     }
   }

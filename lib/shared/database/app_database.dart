@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:convert';
 import 'dart:io';
 import '../../features/auth/domain/user_preferences.dart' as domain;
 import 'tables/user_profiles.dart';
@@ -34,41 +35,43 @@ part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
 /// V1 schema with 16 tables (added auth columns to users table)
-@DriftDatabase(tables: [
-  // Core tables aligned with Supabase
-  UserProfilesTable,
-  FoodPreferencesTable,
-  FeedbackTable,
+@DriftDatabase(
+  tables: [
+    // Core tables aligned with Supabase
+    UserProfilesTable,
+    FoodPreferencesTable,
+    FeedbackTable,
 
-  // Food system tables
-  FoodsTable,
+    // Food system tables
+    FoodsTable,
 
-  // User-specific food tables
-  UserFoodsTable,
+    // User-specific food tables
+    UserFoodsTable,
 
-  // Content management
-  AppContentTable,
+    // Content management
+    AppContentTable,
 
-  // Additional features
-  EdgeFunctionsTable,
+    // Additional features
+    EdgeFunctionsTable,
 
-  // Calendar feature tables
-  ActivitiesTable,
-  EventsTable,
-  CarbLoadingPlansTable,
-  CarbLoadingDaysTable,
+    // Calendar feature tables
+    ActivitiesTable,
+    EventsTable,
+    CarbLoadingPlansTable,
+    CarbLoadingDaysTable,
 
-  // Carb Loading Food tables
-  CarbLoadingFoodsTable,
-  CarbLoadingUserFoodsTable,
-  CarbLoadingDayMealsTable,
+    // Carb Loading Food tables
+    CarbLoadingFoodsTable,
+    CarbLoadingUserFoodsTable,
+    CarbLoadingDayMealsTable,
 
-  // Weather feature tables
-  WeatherForecastsTable,
+    // Weather feature tables
+    WeatherForecastsTable,
 
-  // Feature survey tables
-  FeatureSurveyResponsesTable,
-])
+    // Feature survey tables
+    FeatureSurveyResponsesTable,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -85,6 +88,13 @@ class AppDatabase extends _$AppDatabase {
     return uuid.v4();
   }
 
+  /// Ensure sync tracking columns exist for user-authored tables.
+  /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
+  Future<void> ensureUserDataSyncColumns() async {
+    // v1 ships with the correct schema; skip runtime ALTERs to avoid legacy migrations.
+    return;
+  }
+
   // Note: product_types table has been dropped - now using product_type_enum
 
   /// V1 database setup with seed database support and migration strategy
@@ -93,22 +103,14 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       // Called when database is first created (version 0 -> 1)
       onCreate: (Migrator m) async {
-        if (kDebugMode) {
-          print('🔨 onCreate triggered - checking for seed tables');
-        }
-
         // Check which tables already exist (from seed DB)
         final existingTablesResult = await customSelect(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
         ).get();
 
         final existingTables = existingTablesResult
             .map((row) => row.read<String>('name'))
             .toSet();
-
-        if (kDebugMode) {
-          print('📊 Found ${existingTables.length} existing tables from seed DB: ${existingTables.join(", ")}');
-        }
 
         // 🚨 CRITICAL FIX: m.createAll() DROPS tables before recreating them!
         // This wipes seed data even though tables exist. Instead, we manually
@@ -118,108 +120,49 @@ class AppDatabase extends _$AppDatabase {
         // Using actual SQLite table names from seed DB (NOT Drift class names)
         // Note: categories, meal_types, product_types, and their join tables are now dropped
         final seedTables = {
-          'foods',  // FoodsTable
-          'carb_loading_foods',  // CarbLoadingFoodsTable
+          'foods', // FoodsTable
+          'carb_loading_foods', // CarbLoadingFoodsTable
+          'user_foods', // UserFoodsTable
         };
 
         // For each table definition, manually create with IF NOT EXISTS
-        if (kDebugMode) {
-          print('📝 Creating ${allTables.length} tables...');
-        }
-
         for (final table in allTables) {
           final tableName = table.actualTableName;
 
           // Skip tables that already exist AND are seed tables (have data)
-          if (existingTables.contains(tableName) && seedTables.contains(tableName)) {
-            if (kDebugMode) {
-              print('  ⏭️ Skipping $tableName (seed table with data)');
-            }
+          if (existingTables.contains(tableName) &&
+              seedTables.contains(tableName)) {
             continue; // Don't recreate this table
           }
 
           // Create all other tables (new tables OR non-seed tables)
-          if (kDebugMode) {
-            print('  🔨 Creating table: $tableName');
-          }
           await m.createTable(table);
-          if (kDebugMode) {
-            print('  ✅ Created table: $tableName');
-          }
-        }
-
-        if (kDebugMode) {
-          print('✅ All tables created successfully');
         }
 
         // Only populate default data for NEW tables (not seed tables)
         await _populateDefaultData();
-
-        if (kDebugMode) {
-          // Verify food count after onCreate
-          final foodCountResult = await customSelect('SELECT COUNT(*) as count FROM foods').getSingle();
-          final foodCount = foodCountResult.read<int>('count');
-          print('✅ onCreate completed - foods table has $foodCount items');
-        }
       },
 
       // Called immediately after database is opened
       beforeOpen: (details) async {
-        if (kDebugMode) {
-          print('🔓 beforeOpen called (wasCreated: ${details.wasCreated})');
-        }
-
         // Enable foreign key support (required for Drift)
-        if (kDebugMode) {
-          print('  🔧 Enabling foreign keys...');
-        }
         await customStatement('PRAGMA foreign_keys = ON');
 
+        // Ensure new preference_level column exists without bumping schema version
+        await _ensureFoodPreferenceLevelColumn();
+
         if (kDebugMode) {
-          print('  ✅ Foreign keys enabled');
           // Enable detailed logging in debug mode
           await customStatement('PRAGMA synchronous = NORMAL');
           await customStatement('PRAGMA cache_size = 10000');
-          print('  ✅ PRAGMA settings configured');
         }
 
-        if (details.wasCreated) {
-          if (kDebugMode) {
-            print('  🔍 Verifying database creation...');
-          }
-          // Database just created from seed file
-          // onCreate already ran to create missing tables
-          // Verify seed data is still present
-          try {
-            final foodCountResult = await customSelect('SELECT COUNT(*) as count FROM foods').getSingle();
-            final foodCount = foodCountResult.read<int>('count');
-
-            if (foodCount > 0) {
-              if (kDebugMode) {
-                print('✅ Database initialized with $foodCount seed foods');
-              }
-            } else {
-              if (kDebugMode) {
-                print('⚠️ No seed foods found - will need fallback sync');
-              }
-            }
-          } catch (e) {
-            if (kDebugMode) {
-              print('⚠️ Could not verify seed data: $e');
-            }
-          }
-        } else if (kDebugMode) {
-          // Existing database opened
-          print('📂 Existing database opened (v${details.versionBefore} → v${details.versionNow})');
-        }
+        // Normalize any legacy timestamp strings in user_foods to Unix millis
+        await _normalizeUserFoodTimestamps();
       },
 
       // Called when upgrading from older version
       onUpgrade: (Migrator m, int from, int to) async {
-        if (kDebugMode) {
-          print('🔄 Migrating database from v$from to v$to');
-        }
-
         // Future migrations will go here when we move to v2
       },
     );
@@ -233,38 +176,55 @@ class AppDatabase extends _$AppDatabase {
 
   /// Get or create the current user profile (device-based)
   Future<domain.UserProfile?> getCurrentUserProfile() async {
-    if (kDebugMode) {
-      print('🔍 getCurrentUserProfile: Building query...');
-    }
     final query = select(userProfilesTable)
-      ..orderBy([(u) => OrderingTerm.desc(u.updatedAt)])
+      ..orderBy([
+        // Always prefer authenticated profiles over anonymous placeholders.
+        (u) => OrderingTerm.asc(u.isAnonymous),
+        // Within each auth type, pick the most recently updated profile.
+        (u) => OrderingTerm.desc(u.updatedAt),
+      ])
       ..limit(1);
 
-    if (kDebugMode) {
-      print('🔍 getCurrentUserProfile: Executing query...');
-    }
     final results = await query.get();
 
-    if (kDebugMode) {
-      print('🔍 getCurrentUserProfile: Query returned ${results.length} results');
-    }
-
     if (results.isEmpty) {
-      if (kDebugMode) {
-        print('🔍 getCurrentUserProfile: No user found, returning null');
-      }
       return null;
     }
 
-    if (kDebugMode) {
-      print('🔍 getCurrentUserProfile: Converting result to domain model...');
-    }
     final profile = _convertToDomainUserProfile(results.first);
-
-    if (kDebugMode) {
-      print('🔍 getCurrentUserProfile: Conversion complete, returning profile');
-    }
     return profile;
+  }
+
+  /// Look up a user profile by Supabase auth user ID.
+  Future<domain.UserProfile?> getUserProfileByAuthUserId(
+    String authUserId,
+  ) async {
+    final result =
+        await (select(userProfilesTable)
+              ..where((u) => u.authUserId.equals(authUserId))
+              ..limit(1))
+            .getSingleOrNull();
+
+    if (result == null) {
+      return null;
+    }
+
+    return _convertToDomainUserProfile(result);
+  }
+
+  /// Look up a user profile by its primary key/ID.
+  Future<domain.UserProfile?> getUserProfileById(String userId) async {
+    final result =
+        await (select(userProfilesTable)
+              ..where((u) => u.id.equals(userId))
+              ..limit(1))
+            .getSingleOrNull();
+
+    if (result == null) {
+      return null;
+    }
+
+    return _convertToDomainUserProfile(result);
   }
 
   /// Save a user profile
@@ -293,7 +253,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// Update user profile
   Future<void> updateUserProfile(domain.UserProfile profile) async {
-    await (update(userProfilesTable)..where((u) => u.id.equals(profile.id))).write(
+    await (update(
+      userProfilesTable,
+    )..where((u) => u.id.equals(profile.id))).write(
       UserProfilesTableCompanion(
         deviceId: Value(profile.deviceId),
         authUserId: Value(profile.authUserId),
@@ -315,25 +277,37 @@ class AppDatabase extends _$AppDatabase {
 
   /// Delete user profile
   Future<bool> deleteUserProfile(String userId) async {
-    final deletedRows = await (delete(userProfilesTable)..where((u) => u.id.equals(userId))).go();
+    final deletedRows = await (delete(
+      userProfilesTable,
+    )..where((u) => u.id.equals(userId))).go();
     return deletedRows > 0;
   }
 
   /// Save food preferences for a user
-  Future<void> saveFoodPreferences(String userId, Map<String, domain.FoodPreference> preferences) async {
+  Future<void> saveFoodPreferences(
+    String userId,
+    Map<String, domain.FoodPreference> preferences, {
+    Map<String, int>? sliderLevels,
+  }) async {
+    await ensureUserDataSyncColumns();
     await batch((batch) {
       // First delete existing preferences for this user
       batch.deleteWhere(foodPreferencesTable, (f) => f.userId.equals(userId));
 
       // Insert new preferences
       for (final entry in preferences.entries) {
+        final sliderLevel =
+            sliderLevels?[entry.key] ?? _defaultSliderLevel(entry.value);
         batch.insert(
           foodPreferencesTable,
           FoodPreferencesTableCompanion.insert(
             id: _generateUuid(),
             userId: userId,
             foodName: entry.key,
-            preference: entry.value.value, // Use .value instead of .name to get database-compatible format
+            preference: entry
+                .value
+                .value, // Use .value instead of .name to get database-compatible format
+            preferenceLevel: Value(sliderLevel),
             createdAt: Value(DateTime.now()),
             updatedAt: Value(DateTime.now()),
           ),
@@ -341,23 +315,86 @@ class AppDatabase extends _$AppDatabase {
         );
       }
     });
+
+    final metadata = <String, dynamic>{};
+    for (final entry in preferences.entries) {
+      final sliderLevel = sliderLevels?[entry.key] ?? _defaultSliderLevel(entry.value);
+      metadata[entry.key] = {
+        'preference': entry.value.value,
+        'slider_level': sliderLevel,
+      };
+    }
+
+    await (update(userProfilesTable)..where((u) => u.id.equals(userId))).write(
+      UserProfilesTableCompanion(
+        foodPreferences: Value(metadata),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    // food_preferences table is server-managed and doesn't have sync columns
+    // The batch operations above handle local storage only
   }
 
   /// Get food preferences for a user
-  Future<Map<String, domain.FoodPreference>> getUserFoodPreferences(String userId) async {
-    final query = select(foodPreferencesTable)..where((f) => f.userId.equals(userId));
+  Future<Map<String, domain.FoodPreference>> getUserFoodPreferences(
+    String userId,
+  ) async {
+    final query = select(foodPreferencesTable)
+      ..where((f) => f.userId.equals(userId));
     final results = await query.get();
 
     final preferencesMap = <String, domain.FoodPreference>{};
     for (final row in results) {
       final preference = domain.FoodPreference.values.firstWhere(
-        (p) => p.value == row.preference, // Use .value to match database underscore format
+        (p) =>
+            p.value ==
+            row.preference, // Use .value to match database underscore format
         orElse: () => domain.FoodPreference.dislike,
       );
       preferencesMap[row.foodName] = preference;
     }
 
     return preferencesMap;
+  }
+
+  Future<Map<String, int>> getUserFoodPreferenceLevels(String userId) async {
+    final rows = await (select(foodPreferencesTable)
+          ..where((f) => f.userId.equals(userId)))
+        .get();
+
+    if (rows.isEmpty) {
+      // Fallback to legacy JSON metadata in user profile
+      final profile = await (select(userProfilesTable)
+            ..where((u) => u.id.equals(userId))
+            ..limit(1))
+          .getSingleOrNull();
+
+      if (profile == null) return {};
+
+      final legacyLevels = <String, int>{};
+      profile.foodPreferences.forEach((foodName, rawValue) {
+        if (rawValue is Map<String, dynamic>) {
+          final slider = rawValue['slider_level'];
+          if (slider is num) {
+            legacyLevels[foodName] = slider.toInt().clamp(0, 4);
+          }
+        }
+      });
+
+      return legacyLevels;
+    }
+
+    final levels = <String, int>{};
+    for (final row in rows) {
+      final normalizedLevel =
+          (row.preferenceLevel ?? _defaultSliderLevel(_parsePreference(row.preference)))
+              .clamp(0, 4)
+              .toInt();
+      levels[row.foodName] = normalizedLevel;
+    }
+
+    return levels;
   }
 
   /// Get liked foods for a user
@@ -379,7 +416,8 @@ class AppDatabase extends _$AppDatabase {
   /// Get count of nutrition foods in local database
   /// Used during app startup to determine if fallback food loading is needed
   Future<int> getFoodCount() async {
-    final countQuery = selectOnly(foodsTable)..addColumns([foodsTable.id.count()]);
+    final countQuery = selectOnly(foodsTable)
+      ..addColumns([foodsTable.id.count()]);
     final result = await countQuery.getSingle();
     return result.read(foodsTable.id.count()) ?? 0;
   }
@@ -389,7 +427,9 @@ class AppDatabase extends _$AppDatabase {
     required int activityId,
     required String planData,
   }) async {
-    await (update(activitiesTable)..where((tbl) => tbl.id.equals(activityId))).write(
+    await (update(
+      activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
       ActivitiesTableCompanion(
         nutritionPlanData: Value(planData),
         needsUpload: const Value(true),
@@ -401,7 +441,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// Clear the nutrition plan fields for an activity.
   Future<void> clearActivityNutritionPlan(int activityId) async {
-    await (update(activitiesTable)..where((tbl) => tbl.id.equals(activityId))).write(
+    await (update(
+      activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
       const ActivitiesTableCompanion(
         nutritionPlanData: Value(null),
         needsUpload: Value(true),
@@ -420,7 +462,9 @@ class AppDatabase extends _$AppDatabase {
   /// Get the most recently updated activity that has a nutrition plan.
   Future<Activity?> getLatestActivityWithNutritionPlan(String userId) async {
     final query = select(activitiesTable)
-      ..where((tbl) => tbl.userId.equals(userId) & tbl.nutritionPlanData.isNotNull())
+      ..where(
+        (tbl) => tbl.userId.equals(userId) & tbl.nutritionPlanData.isNotNull(),
+      )
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
       ..limit(1);
     return await query.getSingleOrNull();
@@ -429,35 +473,177 @@ class AppDatabase extends _$AppDatabase {
   /// Get all activities for a user that contain nutrition plans.
   Future<List<Activity>> getActivitiesWithNutritionPlans(String userId) async {
     final query = select(activitiesTable)
-      ..where((tbl) => tbl.userId.equals(userId) & tbl.nutritionPlanData.isNotNull())
+      ..where(
+        (tbl) => tbl.userId.equals(userId) & tbl.nutritionPlanData.isNotNull(),
+      )
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
     return await query.get();
   }
 
+  /// Clear all user-scoped tables (profiles, preferences, calendar data, etc.)
+  Future<void> clearUserScopedData() async {
+    await transaction(() async {
+      // Child tables first to satisfy foreign key constraints
+      await delete(carbLoadingDayMealsTable).go();
+      await delete(carbLoadingDaysTable).go();
+      await delete(carbLoadingPlansTable).go();
+      await delete(eventsTable).go();
+      await delete(activitiesTable).go();
+      await delete(carbLoadingUserFoodsTable).go();
+      await delete(userFoodsTable).go();
+      await delete(featureSurveyResponsesTable).go();
+      await delete(feedbackTable).go();
+      await delete(userProfilesTable).go();
+      await delete(foodPreferencesTable).go();
+    });
+  }
+
   /// Clear all data (for testing/reset)
   Future<void> clearAllData() async {
-    await batch((batch) {
-      batch.deleteAll(userProfilesTable);
-      batch.deleteAll(foodPreferencesTable);
+    await clearUserScopedData();
+  }
+
+  /// Migrate all user-scoped data from one user ID to another
+  /// Used when signing into an existing OAuth account to preserve anonymous user's data
+  /// Strategy: DELETE existing OAuth user data first, then UPDATE anonymous user data to OAuth user ID
+  /// This preserves the fresh onboarding data from the anonymous session
+  Future<void> migrateUserData(String fromUserId, String toUserId) async {
+    await transaction(() async {
+      // STRATEGY: For each table, we DELETE the OAuth user's old data first,
+      // then UPDATE the anonymous user's fresh data to use the OAuth user ID.
+      // This ensures the fresh onboarding data is preserved without UNIQUE constraint violations.
+
+      // ============ ACTIVITIES ============
+      // Delete OAuth user's old activities (if any)
+      await customStatement(
+        'DELETE FROM activities WHERE user_id = ?',
+        [toUserId],
+      );
+      // Migrate anonymous user's activities to OAuth user
+      await customStatement(
+        'UPDATE activities SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ EVENTS ============
+      // Delete OAuth user's old events (if any)
+      await customStatement(
+        'DELETE FROM events WHERE user_id = ?',
+        [toUserId],
+      );
+      // Migrate anonymous user's events to OAuth user
+      await customStatement(
+        'UPDATE events SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ FOOD PREFERENCES ============
+      // Delete OAuth user's old food preferences (if any)
+      await customStatement(
+        'DELETE FROM food_preferences_table WHERE user_id = ?',
+        [toUserId],
+      );
+      // Migrate anonymous user's food preferences to OAuth user
+      await customStatement(
+        'UPDATE food_preferences_table SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ USER FOODS ============
+      // Delete OAuth user's old custom foods (if any)
+      await customStatement(
+        'DELETE FROM user_foods WHERE user_id = ?',
+        [toUserId],
+      );
+      // Migrate anonymous user's custom foods to OAuth user
+      await customStatement(
+        'UPDATE user_foods SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ CARB LOADING PLANS ============
+      // Delete OAuth user's old carb loading plans (if any)
+      // Note: carb_loading_days is a CHILD table with ON DELETE CASCADE,
+      // so deleting plans will automatically delete associated days
+      await customStatement(
+        'DELETE FROM carb_loading_plans WHERE user_id = ?',
+        [toUserId],
+      );
+      // Migrate anonymous user's carb loading plans to OAuth user
+      // Note: carb_loading_days does NOT have user_id column - it inherits
+      // user ownership through carb_loading_plan_id foreign key
+      await customStatement(
+        'UPDATE carb_loading_plans SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ CARB LOADING USER FOODS ============
+      // Delete OAuth user's old carb loading user foods (if any)
+      await customStatement(
+        'DELETE FROM carb_loading_user_foods WHERE user_id = ?',
+        [toUserId],
+      );
+      // Migrate anonymous user's carb loading user foods to OAuth user
+      await customStatement(
+        'UPDATE carb_loading_user_foods SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ FEEDBACK ============
+      // Note: feedback table uses device_id, NOT user_id
+      // Feedback stays with the device, not migrated with user account
+      // No migration needed here
+
+      // ============ FEATURE SURVEY RESPONSES ============
+      // Delete OAuth user's old survey responses (if any)
+      await customStatement(
+        'DELETE FROM feature_survey_responses WHERE user_id = ?',
+        [toUserId],
+      );
+      // Migrate anonymous user's survey responses to OAuth user
+      await customStatement(
+        'UPDATE feature_survey_responses SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ USER PROFILE ============
+      // Delete the old anonymous user profile
+      // The OAuth user profile will be created/updated separately by the caller
+      await customStatement(
+        'DELETE FROM users WHERE id = ?',
+        [fromUserId],
+      );
     });
   }
 
   /// Check if database has any user data
   Future<bool> hasUserData() async {
-    final userCount = await (selectOnly(userProfilesTable)..addColumns([userProfilesTable.id.count()])).getSingle();
+    final userCount = await (selectOnly(
+      userProfilesTable,
+    )..addColumns([userProfilesTable.id.count()])).getSingle();
     return userCount.read(userProfilesTable.id.count())! > 0;
   }
 
   /// Get database statistics for logging/debugging
   Future<Map<String, int>> getDatabaseStats() async {
-    final userCount = await (selectOnly(userProfilesTable)..addColumns([userProfilesTable.id.count()])).getSingle();
-    final preferencesCount = await (selectOnly(foodPreferencesTable)..addColumns([foodPreferencesTable.userId.count()])).getSingle();
-    final foodsCount = await (selectOnly(foodsTable)..addColumns([foodsTable.id.count()])).getSingle();
-    final contentCount = await (selectOnly(appContentTable)..addColumns([appContentTable.id.count()])).getSingle();
+    final userCount = await (selectOnly(
+      userProfilesTable,
+    )..addColumns([userProfilesTable.id.count()])).getSingle();
+    final preferencesCount = await (selectOnly(
+      foodPreferencesTable,
+    )..addColumns([foodPreferencesTable.userId.count()])).getSingle();
+    final foodsCount = await (selectOnly(
+      foodsTable,
+    )..addColumns([foodsTable.id.count()])).getSingle();
+    final contentCount = await (selectOnly(
+      appContentTable,
+    )..addColumns([appContentTable.id.count()])).getSingle();
 
     return {
       'users': userCount.read(userProfilesTable.id.count())!,
-      'preferences': preferencesCount.read(foodPreferencesTable.userId.count())!,
+      'preferences': preferencesCount.read(
+        foodPreferencesTable.userId.count(),
+      )!,
       'foods': foodsCount.read(foodsTable.id.count())!,
       'content': contentCount.read(appContentTable.id.count())!,
     };
@@ -469,40 +655,45 @@ class AppDatabase extends _$AppDatabase {
   Future<List<FoodEntry>> getAllCachedFoods() async {
     return await select(foodsTable).get();
   }
-  
+
   /// Cache foods from Supabase
   Future<void> cacheFoods(List<Map<String, dynamic>> foodsData) async {
     await batch((batch) {
       for (final food in foodsData) {
-        batch.insert(foodsTable, _mapToFoodEntry(food), mode: InsertMode.insertOrReplace);
+        batch.insert(
+          foodsTable,
+          _mapToFoodEntry(food),
+          mode: InsertMode.insertOrReplace,
+        );
       }
     });
   }
-  
+
   /// Get foods by category (using array-based categories now)
   /// TODO: Implement array-based category filtering after foods_table is updated
   Future<List<FoodEntry>> getFoodsByCategory(String categoryName) async {
     // Temporarily return all foods until array filtering is implemented
     return await select(foodsTable).get();
   }
-  
+
   /// Get active app content
   Future<AppContentEntry?> getActiveAppContent({
     String environment = 'production',
     String locale = 'en',
   }) async {
     final query = select(appContentTable)
-      ..where((c) => 
-        c.environment.equals(environment) &
-        c.locale.equals(locale) &
-        c.isActive.equals(true)
+      ..where(
+        (c) =>
+            c.environment.equals(environment) &
+            c.locale.equals(locale) &
+            c.isActive.equals(true),
       )
       ..orderBy([(c) => OrderingTerm.desc(c.version)])
       ..limit(1);
-    
+
     return await query.getSingleOrNull();
   }
-  
+
   /// Cache app content
   Future<void> cacheAppContent(Map<String, dynamic> contentData) async {
     final entry = AppContentTableCompanion(
@@ -515,10 +706,10 @@ class AppDatabase extends _$AppDatabase {
       lastSyncAt: Value(DateTime.now()),
       isCached: const Value(true),
     );
-    
+
     await into(appContentTable).insertOnConflictUpdate(entry);
   }
-  
+
   /// Helper method to map Supabase food data to FoodEntry (updated for new simplified schema)
   FoodsTableCompanion _mapToFoodEntry(Map<String, dynamic> foodData) {
     return FoodsTableCompanion.insert(
@@ -571,6 +762,7 @@ class AppDatabase extends _$AppDatabase {
     String? deviceId,
     String? planName,
   }) async {
+    await ensureUserDataSyncColumns();
     await into(feedbackTable).insertOnConflictUpdate(
       FeedbackTableCompanion.insert(
         id: id,
@@ -592,19 +784,26 @@ class AppDatabase extends _$AppDatabase {
         timestamp: Value(DateTime.now()),
       ),
     );
+
+    // Use Unix timestamp in milliseconds for Drift compatibility
+    final nowMillis = DateTime.now().millisecondsSinceEpoch;
+    await customStatement(
+      'UPDATE feedback SET needs_upload = 1, local_updated_at = ? WHERE id = ?',
+      [nowMillis, id],
+    );
   }
-  
+
   /// Get latest survey response for user
   Future<FeedbackEntry?> getLatestSurveyResponse(String deviceId) async {
     final query = select(feedbackTable)
       ..where((f) => f.deviceId.equals(deviceId))
       ..orderBy([(f) => OrderingTerm.desc(f.createdAt)])
       ..limit(1);
-    
+
     final results = await query.get();
     return results.isNotEmpty ? results.first : null;
   }
-  
+
   /// Update user notification preferences
   Future<void> updateUserNotificationPreferences({
     required String userId,
@@ -643,12 +842,14 @@ class AppDatabase extends _$AppDatabase {
     final user = await getCurrentUserProfile();
     if (user != null) {
       // Update user profile
-      await (update(userProfilesTable)
-            ..where((t) => t.id.equals(user.id)))
-          .write(UserProfilesTableCompanion(
-        swipeHintShown: const Value(true),
-        updatedAt: Value(DateTime.now()),
-      ));
+      await (update(
+        userProfilesTable,
+      )..where((t) => t.id.equals(user.id))).write(
+        UserProfilesTableCompanion(
+          swipeHintShown: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
     }
   }
 
@@ -679,6 +880,7 @@ class AppDatabase extends _$AppDatabase {
     List<String>? activityTypes,
     DateTime? clientUpdatedAt,
   }) async {
+    await ensureUserDataSyncColumns();
     // Convert arrays to PostgreSQL array format for consistency with Supabase
     // Format: {value1,value2,value3} or null if empty
     final categoriesJson = categories.isNotEmpty
@@ -717,23 +919,65 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: Value(DateTime.now()),
       ),
     );
+
+    // Mark as dirty for sync - use Unix timestamp for Drift compatibility
+    final nowMillis = DateTime.now().millisecondsSinceEpoch;
+    await customStatement(
+      'UPDATE user_foods SET needs_upload = 1, local_updated_at = ? WHERE id = ?',
+      [nowMillis, id],
+    );
   }
 
-  /// Get user foods for a device
-  Future<List<UserFood>> getUserFoods(String deviceId) async {
+  /// Get user foods for a user
+  Future<List<UserFood>> getUserFoods(String userId) async {
     final query = select(userFoodsTable)
-      ..where((f) => f.deviceId.equals(deviceId) & f.isDeleted.equals(false))
+      ..where((f) => f.userId.equals(userId) & f.isDeleted.equals(false))
       ..orderBy([(f) => OrderingTerm.desc(f.createdAt)]);
 
-    return await query.get();
+    try {
+      return await query.get();
+    } on FormatException {
+      // Legacy rows may store timestamps as TEXT; normalize and retry
+      await _normalizeUserFoodTimestamps();
+      return await query.get();
+    }
+  }
+
+  /// Normalize legacy TEXT timestamps in user_foods to Unix millis to satisfy Drift
+  Future<void> _normalizeUserFoodTimestamps() async {
+    const timestampColumns = [
+      'created_at',
+      'updated_at',
+      'client_updated_at',
+      'local_updated_at',
+    ];
+
+    await transaction(() async {
+      for (final column in timestampColumns) {
+        await customStatement('''
+          UPDATE user_foods
+          SET $column = CAST(
+            strftime('%s', replace(replace($column, 'T', ' '), 'Z', ''))
+            AS INTEGER
+          ) * 1000
+          WHERE typeof($column) = 'text'
+            AND $column IS NOT NULL
+            AND $column != ''
+            AND strftime('%s', replace(replace($column, 'T', ' '), 'Z', '')) IS NOT NULL;
+        ''');
+      }
+    });
   }
 
   /// Check for duplicate barcode in user foods
-  Future<bool> hasUserFoodWithBarcode(String deviceId, String barcode) async {
+  Future<bool> hasUserFoodWithBarcode(String userId, String barcode) async {
     final query = select(userFoodsTable)
-      ..where((f) => f.deviceId.equals(deviceId) &
-                     f.barcode.equals(barcode) &
-                     f.isDeleted.equals(false))
+      ..where(
+        (f) =>
+            f.userId.equals(userId) &
+            f.barcode.equals(barcode) &
+            f.isDeleted.equals(false),
+      )
       ..limit(1);
 
     final results = await query.get();
@@ -742,11 +986,91 @@ class AppDatabase extends _$AppDatabase {
 
   /// Delete user food completely (not soft delete)
   Future<bool> deleteUserFood(String userFoodId) async {
-    // Delete the user food (categories are now stored as array, no join table)
-    final deletedRows = await (delete(userFoodsTable)
-      ..where((f) => f.id.equals(userFoodId))).go();
+    await ensureUserDataSyncColumns();
+    // Soft delete: mark is_deleted for offline sync durability
+    final updatedRows =
+        await (update(userFoodsTable)..where((f) => f.id.equals(userFoodId)))
+            .write(const UserFoodsTableCompanion(isDeleted: Value(true)));
 
-    return deletedRows > 0;
+    // Update sync tracking columns - use Unix timestamp for Drift compatibility
+    final nowMillis = DateTime.now().millisecondsSinceEpoch;
+    await customStatement(
+      'UPDATE user_foods SET needs_upload = 1, local_updated_at = ? WHERE id = ?',
+      [nowMillis, userFoodId],
+    );
+
+    return updatedRows > 0;
+  }
+
+  Future<void> replaceUserFoods(String userId, List<Map<String, dynamic>> remoteFoods) async {
+    await transaction(() async {
+      await (delete(userFoodsTable)..where((tbl) => tbl.userId.equals(userId))).go();
+
+      for (final food in remoteFoods) {
+        try {
+          final categoriesJson = food['categories'];
+          final activityTypesJson = food['activity_types'];
+
+          await into(userFoodsTable).insertOnConflictUpdate(
+            UserFoodsTableCompanion(
+              id: Value(food['id'] as String),
+              deviceId: Value(food['device_id'] as String? ?? userId),
+              userId: Value(userId),
+              clientFoodId: Value(food['client_food_id'] as String?),
+              barcode: Value(food['barcode'] as String?),
+              name: Value(food['name'] as String),
+              displayName: Value(food['display_name'] as String?),
+              displayNamePlural: Value(food['display_name_plural'] as String?),
+              description: Value(food['description'] as String?),
+              imageAddress: Value(food['image_address'] as String?),
+              servingAmount: Value((food['serving_amount'] as num?)?.toDouble()),
+              servingUnit: Value(food['serving_unit'] as String?),
+              caloriesPerServing: Value(food['calories_per_serving'] as int?),
+              carbsPerServing: Value((food['carbs_per_serving'] as num?)?.toDouble()),
+              proteinPerServing: Value((food['protein_per_serving'] as num?)?.toDouble()),
+              fatPerServing: Value((food['fat_per_serving'] as num?)?.toDouble()),
+              sodiumMg: Value(food['sodium_mg'] as int?),
+              fluidMlPerServing: Value((food['fluid_ml_per_serving'] as num?)?.toDouble()),
+              productTypeId: Value(food['product_type_id'] as String?),
+              categories: Value(
+                categoriesJson is List
+                    ? jsonEncode(categoriesJson)
+                    : categoriesJson as String?,
+              ),
+              activityTypes: Value(
+                activityTypesJson is List
+                    ? jsonEncode(activityTypesJson)
+                    : activityTypesJson as String?,
+              ),
+              isElectrolyte: Value(_asBool(food['is_electrolyte'])),
+              toExcludeFromSolver: Value(_asBool(food['to_exclude_from_solver'])),
+              isDeleted: Value(_asBool(food['is_deleted'])),
+              createdAt: Value(_parseDate(food['created_at'] ) ?? DateTime.now()),
+              updatedAt: Value(_parseDate(food['updated_at'] ) ?? DateTime.now()),
+              clientUpdatedAt: Value(_parseDate(food['client_updated_at'])),
+              needsUpload: const Value(false),
+            ),
+          );
+        } catch (_) {
+          // Skip malformed rows but continue syncing others
+        }
+      }
+    });
+  }
+
+  bool _asBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    return false;
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    return null;
   }
 
   /// Convert UserFood (Drift) to FoodItem (Domain) for display
@@ -805,72 +1129,76 @@ class AppDatabase extends _$AppDatabase {
       swipeHintShown: dbUser.swipeHintShown,
     );
   }
+
+  int _defaultSliderLevel(domain.FoodPreference preference) {
+    switch (preference) {
+      case domain.FoodPreference.dislike:
+        return 1;
+      case domain.FoodPreference.willingToTry:
+        return 2;
+      case domain.FoodPreference.like:
+        return 3;
+    }
+  }
+
+  domain.FoodPreference _parsePreference(String value) {
+    return domain.FoodPreference.values.firstWhere(
+      (p) => p.value == value,
+      orElse: () => domain.FoodPreference.willingToTry,
+    );
+  }
+
+  Future<void> _ensureFoodPreferenceLevelColumn() async {
+    // Skip if table doesn't exist yet (during initial create on fresh installs)
+    final existingTablesResult = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='food_preferences'",
+    ).get();
+    if (existingTablesResult.isEmpty) {
+      return;
+    }
+
+    final columns =
+        await customSelect("PRAGMA table_info(food_preferences)").get();
+    final hasPreferenceLevel =
+        columns.any((row) => row.read<String>('name') == 'preference_level');
+
+    if (!hasPreferenceLevel) {
+      await customStatement(
+        'ALTER TABLE food_preferences ADD COLUMN preference_level INTEGER NOT NULL DEFAULT 2;',
+      );
+      await customStatement('''
+        UPDATE food_preferences
+        SET preference_level = CASE preference
+          WHEN 'like' THEN 3
+          WHEN 'dislike' THEN 1
+          ELSE 2
+        END;
+      ''');
+    }
+  }
 }
 
 /// Database connection setup with seed database support
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    if (kDebugMode) {
-      print('🔌 _openConnection: Starting database connection setup');
-    }
-
     // Put the database file in the documents directory
-    if (kDebugMode) {
-      print('🔌 _openConnection: Getting documents directory...');
-    }
     final dbFolder = await getApplicationDocumentsDirectory();
-
-    if (kDebugMode) {
-      print('🔌 _openConnection: Documents directory: ${dbFolder.path}');
-      print('🔌 _openConnection: Creating file path...');
-    }
     final file = File(p.join(dbFolder.path, 'mealvana_endurance_db.sqlite'));
-
-    // Log database initialization status
-    if (kDebugMode) {
-      print('🔌 _openConnection: Checking if database exists...');
-      final dbExists = await file.exists();
-      if (!dbExists) {
-        print('🌱 Fresh install detected - creating empty database');
-        print('📍 Target path: ${file.path}');
-        print('📋 All tables will be created by onCreate migration');
-        print('📥 Reference data will be downloaded via sync after onboarding');
-      } else {
-        print('📂 Database file already exists at: ${file.path}');
-        print('💡 This is NOT a fresh install - using existing database');
-      }
-      print('🔌 _openConnection: Creating NativeDatabase instance...');
-    }
 
     // Also work around limitations on old Android versions
     if (Platform.isAndroid) {
-      if (kDebugMode) {
-        print('🔌 _openConnection: Applying Android workarounds...');
-      }
       await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
     }
 
     // Make sqlite3 pick a more suitable location for temporary files
-    if (kDebugMode) {
-      print('🔌 _openConnection: Setting temp directory for sqlite3...');
-    }
     final cachebase = (await getTemporaryDirectory()).path;
     sqlite3.tempDirectory = cachebase;
-
-    if (kDebugMode) {
-      print('🔌 _openConnection: Calling NativeDatabase.createInBackground...');
-    }
 
     // TEMPORARY FIX: Use synchronous database in debug mode to avoid isolate issues
     // Background isolates can hang on iOS simulator during development
     final db = kDebugMode
         ? NativeDatabase(file, logStatements: true)
         : NativeDatabase.createInBackground(file);
-
-    if (kDebugMode) {
-      print('🔌 _openConnection: NativeDatabase created (debug mode: direct, release mode: background isolate)');
-      print('🔌 _openConnection: Returning database instance');
-    }
 
     return db;
   });

@@ -13,7 +13,7 @@ import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../barcode_scanning/application/open_food_facts_search_service.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/database/database_provider.dart';
-import '../../../../shared/providers/device_id_provider.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 
 part 'carb_loading_food_selection_controller.g.dart';
 
@@ -123,7 +123,7 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
   @override
   Future<CarbLoadingFoodSelectionState> build(CarbLoadingFoodSelectionParams params) async {
     // Load all food sources
-    final deviceId = await ref.read(deviceIdProvider.future);
+    final deviceId = await ref.read(userIdProvider.future);
     final database = ref.read(appDatabaseProvider);
 
     // Load carb loading specific foods
@@ -339,7 +339,7 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      final deviceId = await ref.read(deviceIdProvider.future);
+      final deviceId = await ref.read(userIdProvider.future);
       final selectedFood = currentState.selectedFood;
       final quantity = currentState.selectedQuantity.round();
 
@@ -532,7 +532,7 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
   /// Add food from Open Food Facts result
   /// Creates a new carb_loading_user_food entry or updates existing one with new meal type
   Future<CarbLoadingUserFood> addFromOpenFoodFacts(FoodSearchResult result) async {
-    final deviceId = await ref.read(deviceIdProvider.future);
+    final deviceId = await ref.read(userIdProvider.future);
     final currentState = state.value;
     if (currentState == null) return Future.error('State not initialized');
 

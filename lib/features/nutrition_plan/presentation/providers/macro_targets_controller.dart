@@ -9,6 +9,7 @@ import '../../domain/macro_targets.dart';
 import '../../data/macro_repository.dart';
 import '../../application/llm_nutrition_plan_service.dart';
 import '../../application/macro_generation_service.dart';
+import '../../application/nutrition_plan_service.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -151,6 +152,9 @@ class MacroTargetsState {
     int? activityId,
     int? eventId,
     PendingActivityData? pendingActivityData,
+    bool overrideActivityId = false,
+    bool overrideEventId = false,
+    bool overridePendingActivityData = false,
   }) {
     return MacroTargetsState(
       title: title ?? this.title,
@@ -190,9 +194,11 @@ class MacroTargetsState {
       
       // Shared fields
       errorMessage: errorMessage ?? this.errorMessage,
-      activityId: activityId ?? this.activityId,
-      eventId: eventId ?? this.eventId,
-      pendingActivityData: pendingActivityData ?? this.pendingActivityData,
+      activityId: overrideActivityId ? activityId : activityId ?? this.activityId,
+      eventId: overrideEventId ? eventId : eventId ?? this.eventId,
+      pendingActivityData: overridePendingActivityData
+          ? pendingActivityData
+          : pendingActivityData ?? this.pendingActivityData,
     );
   }
 }
@@ -286,13 +292,11 @@ class MacroTargetsController extends _$MacroTargetsController {
   Future<void> loadUserPreferences() async {
     // TODO: Load user profile when auth service method is available
     // For now, use default gut training level
-    DebugLogger.info('🔍 DEBUG: Loading user preferences (TODO: implement when auth service available)');
   }
 
   /// Clear cached macro targets
   /// Called when switching sports to ensure stale data doesn't persist
   Future<void> clearCachedMacros() async {
-    DebugLogger.info('🧹 CONTROLLER: Clearing cached macro targets...');
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -301,13 +305,14 @@ class MacroTargetsController extends _$MacroTargetsController {
       pendingActivityData: null,
       activityId: null,
       eventId: null,
+      overrideActivityId: true,
+      overridePendingActivityData: true,
+      overrideEventId: true,
     ));
 
     // Also clear from repository cache
     final repository = await ref.read(macroRepositoryProvider.future);
     await repository.clearCachedMacroTargets();
-
-    DebugLogger.info('✅ CONTROLLER: Cached macro targets cleared');
   }
 
   /// Generate macro targets by calling the generate-macros edge function
@@ -450,9 +455,12 @@ class MacroTargetsController extends _$MacroTargetsController {
           isGeneratingMacros: false,
           errorMessage: null,
           macroTargets: macroTargets,
-          activityId: activityId, // Store activity ID if provided
+          activityId: activityId, // Store activity ID if provided (clear prior IDs)
           eventId: eventId, // Store event ID for provider invalidation
           pendingActivityData: pendingActivityData, // Store activity data (not created yet)
+          overrideActivityId: true,
+          overrideEventId: true,
+          overridePendingActivityData: true,
         );
 
       } catch (error) {
@@ -588,6 +596,9 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId: activityId,
           eventId: eventId,
           pendingActivityData: pendingActivityData,
+          overrideActivityId: true,
+          overrideEventId: true,
+          overridePendingActivityData: true,
         );
 
       } catch (error) {
@@ -923,6 +934,9 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId: activityId,
           eventId: eventId,
           pendingActivityData: pendingActivityData,
+          overrideActivityId: true,
+          overrideEventId: true,
+          overridePendingActivityData: true,
         );
 
       } catch (error) {
@@ -1198,32 +1212,34 @@ class MacroTargetsController extends _$MacroTargetsController {
 
     state = await AsyncValue.guard(() async {
       try {
-        // Call the LLM service with adjusted macro targets
-        final llmService = ref.read(llmNutritionPlanServiceProvider);
+        // Use the service method that handles fallback automatically
+        final nutritionPlanService = ref.read(nutritionPlanServiceProvider);
         final currentStateValue = state.value;
-        final nutritionPlan = await llmService.generateLLMNutritionPlanFromMacros(
+
+        DebugLogger.info('🔄 Generating nutrition plan with automatic fallback...');
+        final nutritionPlan = await nutritionPlanService.generatePlanFromMacrosWithFallback(
           macroTargets: macroTargets,
           activityId: currentStateValue?.activityId, // Link to calendar activity/event if provided
         );
 
-        if (nutritionPlan != null) {
-          // Track successful plan creation
-          await _analytics.track('nutrition_plan_created_from_adjusted_macros', properties: {
-            'distance_miles': macroTargets.metrics.distanceMi,
-            'duration_hours': macroTargets.metrics.durationH,
-            'total_calories': macroTargets.metrics.caloriesNetKcal.round(),
-            'pre_run_carbs_g': macroTargets.preRun.carbsG,
-            'during_run_carbs_g': macroTargets.duringRun.carbTotalG,
-            'post_run_carbs_g': macroTargets.postRun.carbsG,
-            'modified_fields_count': modifiedFieldsCount,
-            'plan_type': 'llm_generated',
-          });
+        // Track successful plan creation (the service handles whether it's LLM or algorithmic)
+        await _analytics.track('nutrition_plan_created_from_adjusted_macros', properties: {
+          'distance_miles': macroTargets.metrics.distanceMi,
+          'duration_hours': macroTargets.metrics.durationH,
+          'total_calories': macroTargets.metrics.caloriesNetKcal.round(),
+          'pre_run_carbs_g': macroTargets.preRun.carbsG,
+          'during_run_carbs_g': macroTargets.duringRun.carbTotalG,
+          'post_run_carbs_g': macroTargets.postRun.carbsG,
+          'modified_fields_count': modifiedFieldsCount,
+          'plan_type': 'with_fallback', // Could be either LLM or algorithmic
+        });
 
-          // Save the nutrition plan to the activity
-          int? finalActivityId = currentStateValue?.activityId;
+        // Save the nutrition plan to the activity
+        int? finalActivityId = currentStateValue?.activityId;
 
-          // If no activityId exists, try to create activity from pendingActivityData
-          if (finalActivityId == null && currentStateValue?.pendingActivityData != null) {
+        // If no activityId exists, try to create activity from pendingActivityData
+        if (finalActivityId == null) {
+          if (currentStateValue?.pendingActivityData != null) {
             DebugLogger.info('📝 Creating new activity from pendingActivityData...');
             final pendingData = currentStateValue!.pendingActivityData!;
             final activitiesController = ref.read(activitiesControllerProvider.notifier);
@@ -1257,25 +1273,25 @@ class MacroTargetsController extends _$MacroTargetsController {
           } else {
             DebugLogger.warning('⚠️ No activityId available and no pendingActivityData to create activity from');
           }
-
-          // Invalidate eventDetailProvider if eventId exists (to refresh "Create Nutrition Plan" button)
-          if (currentStateValue?.eventId != null) {
-            DebugLogger.info('🔄 DEBUG: Invalidating eventDetailProvider for eventId: ${currentStateValue!.eventId}');
-            ref.invalidate(eventDetailProvider(currentStateValue.eventId!));
-          }
-
-          // Invalidate activities provider to refresh the list with the newly created activity
-          ref.invalidate(activitiesControllerProvider);
-          DebugLogger.info('🔄 Invalidated activitiesControllerProvider after activity creation');
-
-          return currentState.copyWith(
-            isCreatingPlan: false,
-            activityId: finalActivityId, // Update state with new activity ID
-          );
         } else {
-          // LLM service returned null, indicating fallback needed
-          throw Exception('LLM service failed, fallback to algorithm needed');
+          DebugLogger.info('ℹ️ Using existing activityId=$finalActivityId; skipping activity creation.');
         }
+
+        // Invalidate eventDetailProvider if eventId exists (to refresh "Create Nutrition Plan" button)
+        if (currentStateValue?.eventId != null) {
+          DebugLogger.info('🔄 DEBUG: Invalidating eventDetailProvider for eventId: ${currentStateValue!.eventId}');
+          ref.invalidate(eventDetailProvider(currentStateValue.eventId!));
+        }
+
+        // Invalidate activities provider to refresh the list with the newly created activity
+        ref.invalidate(activitiesControllerProvider);
+        DebugLogger.info('🔄 Invalidated activitiesControllerProvider after activity creation');
+
+        return currentState.copyWith(
+          isCreatingPlan: false,
+          activityId: finalActivityId, // Update state with new activity ID
+          overrideActivityId: true,
+        );
         
       } catch (error) {
         // Track error

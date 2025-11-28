@@ -422,7 +422,7 @@ Future<ActivityCompletion> completeActivity({required String activityId, ...});
 ```
 
 ### Device ID Provider
-**File**: `lib/shared/providers/device_id_provider.dart`
+**File**: `lib/shared/providers/user_id_provider.dart`
 
 ```dart
 @riverpod

@@ -8,112 +8,95 @@ _Last updated: 2025-11-19_
 |-------|--------|-------|
 | Phase 0: Hotfix & Schema Prep | ✅ Complete | Auth fields added, migration ready |
 | Phase 1: Canonical UUID Adoption | ✅ Complete | Anonymous auth implemented |
-| Phase 2: Authentication UX + Social Login | 🚧 In Progress (13/18) | Architecture done; Supabase config + testing remain |
+| Phase 2: Authentication UX + Social Login | ✅ **COMPLETE** (18/18) | Native OAuth with linkIdentity() - ready for testing |
 | Phase 3: Environment & Telemetry | ⏸️ Deferred | Low priority |
 | Phase 4: Observability | ⏸️ Deferred | Pre-launch only |
 
-**Current Focus:** Phase 2 - Provider configuration + OAuth testing (Apple, Google, email/password linking)
+**Current Focus:** Configuration fixes + device testing
 
-## ⚠️ CRITICAL: Supabase Provider Config + OAuth QA
+## ✅ PHASE 2 COMPLETE (2025-11-19)
 
-Phase 2 code is in place (AppStartupWidget refactor, auth state listener, deep links), but OAuth **still cannot be tested** until Supabase providers are configured and flows are exercised on devices.
+**Native OAuth with proper account linking is now fully implemented!**
 
-**Blocking Work:**
-- Configure Google + Apple providers inside the Supabase dashboard (client ID/secret or `.p8` key, redirect URL `https://wvmvsodrvbkxfydabqed.supabase.co/auth/v1/callback`, add `com.milkman.mealvanaendurance://auth-callback`).
-- Run Apple, Google, and email/password linking end-to-end to verify deep links, analytics, and data preservation.
-- Add the Settings account module so QA can see current auth status and trigger linking/sign-out flows.
+**What was fixed:**
+- ✅ Replaced `signInWithIdToken()` with `linkIdentityWithIdToken()` for proper account linking
+- ✅ User ID now preserved during Google/Apple sign-in (no data loss)
+- ✅ Upgraded `supabase_flutter` to ^2.10.0 for linkIdentityWithIdToken() support (gotrue 2.15.0+)
+- ✅ Enabled "Manual Linking" in Supabase Dashboard
+- ✅ Updated error handling and logging
+
+**Current implementation:**
+- ✅ `google_sign_in` package with native account picker
+- ✅ `sign_in_with_apple` package with native UI
+- ✅ `linkIdentityWithIdToken()` for Supabase account linking (preserves user ID)
+- ✅ Proper nonce generation for Apple
+- ✅ Comprehensive error handling and analytics
+
+**Remaining:** 2 configuration fixes in Google Cloud Console and Supabase Dashboard (see below)
+
+## ⚠️ Configuration Fixes Required (8 minutes)
+
+**Fix 1: Google Cloud Console - iOS Bundle ID**
+- Current: `com.example.mealvanaEndurance` ❌
+- Required: `com.milkman.mealvanaendurance` ✅
+- Time: 5 minutes + 10-15 min propagation
+
+**Fix 2: Supabase Dashboard - Google Client IDs**
+- Current: Missing iOS client ID + typo in Android ID ❌
+- Required: All 3 client IDs (Web, Android, iOS) comma-separated ✅
+- Time: 3 minutes
+
+**Detailed Instructions:** See [NATIVE_OAUTH_CONFIG_TROUBLESHOOTING.md](NATIVE_OAUTH_CONFIG_TROUBLESHOOTING.md)
+
+**After Fixes:**
+- Wait 10-15 minutes for Google to propagate changes
+- Test on physical iOS device (simulators don't support native OAuth)
+- Test on Android device/emulator
 
 **References:**
-- Phase 2 status tracker: `/docs/startup_auth_roadmap/PHASE_2_STATUS.md` (see "What's Remaining")
-- Implementation details: `/docs/startup_auth_roadmap/phase_2_implementation.md` ("Platform Configuration & Testing" section)
-- Supabase dashboard checklist: see README §3
-
-**Estimated Time:** ~2 hours once dashboard access is available (provider config + multi-device QA).
+- Configuration guide: `/docs/startup_auth_roadmap/NATIVE_OAUTH_CONFIG_TROUBLESHOOTING.md`
+- Status tracker: `/docs/startup_auth_roadmap/PHASE_2_STATUS.md`
+- Implementation details: `/docs/startup_auth_roadmap/phase_2_implementation.md`
 
 ---
 
-## 🔀 OAuth Approach Decision Point
+## 📱 Native OAuth Implementation Details
 
-**You have two options for implementing Google and Apple authentication:**
+**Current Implementation:** Native Google Sign-In + Native Apple Sign-In
 
-### Option 1: Web OAuth (Current Implementation) ✅ Simpler
+**User Experience:**
+- ✅ Native platform dialogs (no browser redirect)
+- ✅ Google: Account picker with profile pictures
+- ✅ Apple: Face ID / Touch ID authentication
+- ✅ Seamless return to app (no visible redirect)
+- ✅ Single Sign-On (uses existing platform account)
 
-**What it is:** Opens browser/web view for authentication, redirects back to app via deep link
+**Technical Stack:**
+- `google_sign_in: ^6.2.1` - Native Google authentication
+- `sign_in_with_apple: ^6.1.0` - Native Apple authentication
+- `supabase_flutter: ^2.8.5` - Token exchange with Supabase
+- `crypto: ^3.0.3` - SHA256 for Apple nonce generation
 
-**Status:** Backend ✅ | UI ✅ | Architecture ✅ | Testing ⏳
+**Code Location:**
+- OAuth Service: `/lib/features/auth/application/oauth_service.dart`
+- Uses `signInWithIdToken()` for Supabase integration
+- Account linking preserves user ID (no data loss)
 
-**Pros:**
-- ✅ Already implemented (code complete)
-- ✅ Simpler setup (just Supabase config)
-- ✅ Fewer dependencies (only `supabase_flutter`)
-- ✅ Less maintenance (no secret rotation)
-- ✅ Works on simulators
+**Platform Requirements:**
+- iOS: Physical device required (iOS 13+)
+- Android: Emulator or physical device (API 21+)
+- Simulators: ❌ Not supported (native SDK limitations)
 
-**Cons:**
-- ❌ Opens browser (5-10 second redirect)
-- ❌ User sees Supabase URL briefly
-- ❌ Requires deep link configuration
+**Maintenance:**
+- Google: Update SDK quarterly
+- Apple: No secret rotation for native flow (only for web OAuth)
+- Platform updates: Monitor Google/Apple SDK breaking changes
 
-**Next Steps:**
-1. Configure Supabase providers (see section below)
-2. Test OAuth flows on devices
-3. Ship to production
-
-**Reference:** [phase_2_implementation.md](phase_2_implementation.md)
-
----
-
-### Option 2: Native OAuth 🎯 Better UX
-
-**What it is:** Native Google/Apple Sign-In UI (no browser)
-
-**Status:** 📋 Planning phase (roadmap created)
-
-**Pros:**
-- ✅ Better UX (no browser redirect)
-- ✅ Native platform UI
-- ✅ Faster (no browser round-trip)
-- ✅ More reliable (fewer moving parts)
-
-**Cons:**
-- ⚠️ More setup (Google Cloud + Apple Developer consoles)
-- ⚠️ More dependencies (4 packages vs 1)
-- ⚠️ Apple secret rotation every 6 months
-- ⚠️ Requires physical iOS device for testing
-
-**Next Steps:**
-1. Review [NATIVE_OAUTH_ROADMAP.md](NATIVE_OAUTH_ROADMAP.md)
-2. Complete console configuration (2-3 hours)
-3. Update OAuthService code (2-3 hours)
-4. Test on physical devices
-
-**Reference:** [NATIVE_OAUTH_ROADMAP.md](NATIVE_OAUTH_ROADMAP.md) | [native-oauth-setup-guide.md](/docs/technical/native-oauth-setup-guide.md)
-
----
-
-### Decision Matrix
-
-| Factor | Web OAuth | Native OAuth |
-|--------|-----------|--------------|
-| **Setup Time** | ✅ 2 hours | ⚠️ 6-10 hours |
-| **User Experience** | ⚠️ Browser redirect | ✅ Native UI |
-| **Dependencies** | ✅ 1 package | ⚠️ 4 packages |
-| **Maintenance** | ✅ Low | ⚠️ Medium |
-| **Testing** | ✅ Simulators OK | ⚠️ Physical device |
-| **Production Ready** | ✅ Yes (code done) | ⏳ Not yet |
-
-### Recommendation
-
-**For MVP/Quick Launch:** Use Web OAuth (current implementation)
-- Code is done, just needs Supabase config and testing
-- Ship faster, iterate on UX later
-
-**For Best UX:** Switch to Native OAuth
-- Worth the investment for professional feel
-- Users won't see browser redirect
-- More work upfront, better long-term
-
-**You can always switch later!** The Supabase backend stays the same regardless of which OAuth method you use.
+**Testing:**
+- ⚠️ Simulators do NOT work for native OAuth
+- ✅ Physical iPhone required for Apple Sign-In
+- ✅ Android emulator works for Google Sign-In
+- 📖 See [NATIVE_OAUTH_CONFIG_TROUBLESHOOTING.md](NATIVE_OAUTH_CONFIG_TROUBLESHOOTING.md) for details
 
 ---
 

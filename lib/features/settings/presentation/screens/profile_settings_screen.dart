@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mealvana_endurance/features/settings/presentation/screens/debug_screen.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../providers/settings_controller.dart';
-import 'debug_screen.dart';
+import '../../../../shared/widgets/app_date_picker.dart';
 
 /// Profile Settings Screen - Personal information
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
@@ -97,11 +98,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref, dynamic state) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return GestureDetector(
+      onTap: () {
+        // Dismiss keyboard when tapping outside input fields
+        FocusScope.of(context).unfocus();
+      },
+      behavior: HitTestBehavior.opaque,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Gender
           _buildGenderSelector(context, ref, state),
           SizedBox(height: 20.h),
@@ -143,6 +150,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
           SizedBox(height: 40.h),
         ],
       ),
+      ),
     );
   }
 
@@ -177,7 +185,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    gender.name.toUpperCase(),
+                    gender.displayName.toUpperCase(),
                     textAlign: TextAlign.center,
                     style: AppTheme.textStyle.copyWith(
                       color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
@@ -209,7 +217,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
         SizedBox(height: 8.h),
         GestureDetector(
           onTap: () async {
-            final selectedDate = await showDatePicker(
+            final selectedDate = await showAppDatePicker(
               context: context,
               initialDate: state.birthday ?? DateTime.now().subtract(const Duration(days: 365 * 25)),
               firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),

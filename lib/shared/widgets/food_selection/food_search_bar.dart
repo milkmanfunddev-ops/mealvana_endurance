@@ -35,105 +35,103 @@ class FoodSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Row(
-          children: [
-            // Search input field
-            Expanded(
-              child: SizedBox(
-                height: AppSizes.inputHeight,
-                child: TextField(
-                  controller: controller,
-                  onChanged: (value) {
-                    // For real-time search filtering (not API search)
-                    if (onChanged != null) {
-                      onChanged!(value);
-                    } else {
-                      // Fallback: clear search when empty
-                      if (value.isEmpty) {
-                        onSearch('');
-                      }
-                    }
-                  },
-                  onSubmitted: (_) => onSearch(controller.text),
-                  style: AppTextStyles.inputText.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.transparent,
-                    contentPadding: AppSpacing.inputPadding,
-                    hintText: hintText,
-                    hintStyle: AppTextStyles.inputText.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                    prefixIcon: Icon(
-                      FontAwesomeIcons.magnifyingGlass,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+        // Search input field
+        SizedBox(
+          height: AppSizes.inputHeight,
+          child: TextField(
+            controller: controller,
+            onChanged: (value) {
+              // For real-time search filtering (not API search)
+              if (onChanged != null) {
+                onChanged!(value);
+              } else {
+                // Fallback: clear search when empty
+                if (value.isEmpty) {
+                  onSearch('');
+                }
+              }
+            },
+            onSubmitted: (_) => onSearch(controller.text),
+            style: AppTextStyles.inputText.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.transparent,
+              contentPadding: AppSpacing.inputPadding,
+              hintText: hintText,
+              hintStyle: AppTextStyles.inputText.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Barcode button
+                  IconButton(
+                    icon: Icon(
+                      FontAwesomeIcons.barcode,
+                      color: AppColors.orange,
                       size: AppIconSizes.controlIcon,
                     ),
-                    suffixIcon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Barcode button
-                        IconButton(
-                          icon: Icon(
-                            FontAwesomeIcons.barcode,
-                            color: AppColors.orange,
-                            size: AppIconSizes.controlIcon,
-                          ),
-                          onPressed: onBarcodeScan,
-                        ),
+                    onPressed: onBarcodeScan,
+                  ),
 
-                        // Filter button (only show for preferences screen)
-                        if (showFilters)
-                          IconButton(
-                            icon: Icon(
-                              FontAwesomeIcons.filter,
-                              color: filtersEnabled
-                                ? AppColors.orange
-                                : Theme.of(context).colorScheme.onSurfaceVariant,
-                              size: AppIconSizes.controlIcon,
-                            ),
-                            onPressed: onFilterToggle,
-                          ),
-                      ],
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: AppRadius.inputRadius,
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: AppRadius.inputRadius,
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: AppRadius.inputRadius,
-                      borderSide: const BorderSide(
-                        color: AppColors.orange,
-                        width: 2,
+                  // Search button with white circular background
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: GestureDetector(
+                      onTap: () => onSearch(controller.text),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          FontAwesomeIcons.magnifyingGlass,
+                          size: AppIconSizes.controlIcon,
+                          color: AppColors.blackberry,
+                        ),
                       ),
                     ),
                   ),
+
+                  // Filter button (only show for preferences screen)
+                  if (showFilters)
+                    IconButton(
+                      icon: Icon(
+                        FontAwesomeIcons.filter,
+                        color: filtersEnabled
+                            ? AppColors.orange
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: AppIconSizes.controlIcon,
+                      ),
+                      onPressed: onFilterToggle,
+                    ),
+                ],
+              ),
+              border: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: const BorderSide(
+                  color: AppColors.orange,
+                  width: 2,
                 ),
               ),
             ),
-
-            const SizedBox(width: AppSpacing.sm),
-
-            // Search button
-            SizedBox(
-              height: AppSizes.inputHeight,
-              child: KylePrimaryButton(
-                text: 'SEARCH',
-                onPressed: () => onSearch(controller.text),
-                isFullWidth: false,
-              ),
-            ),
-          ],
+          ),
         ),
 
         // Clear search button (when showing results)

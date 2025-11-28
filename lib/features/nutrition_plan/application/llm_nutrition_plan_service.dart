@@ -36,11 +36,9 @@ class LLMNutritionPlanService {
         throw Exception('No user found. Please complete onboarding first.');
       }
 
-      // Get user's food preferences
-      final foodPreferences = await _authService.getFoodPreferences(user.id);
-      if (foodPreferences == null || foodPreferences.isEmpty) {
-        throw Exception('No food preferences found. Please set your food preferences first.');
-      }
+      // Get user's food preferences (fallback to safe defaults instead of throwing)
+      final preferenceResult = await _resolveFoodPreferences(user.id);
+      final foodPreferences = preferenceResult.preferences;
 
       // Categorize foods by preference
       final likedFoods = <String>[];
@@ -106,6 +104,7 @@ class LLMNutritionPlanService {
         'liked_foods': likedFoods,
         'willing_to_try_foods': willingToTryFoods,
         'disliked_foods': dislikedFoods,
+        'using_default_preferences': preferenceResult.usedDefaults,
         if (sweatRate != null) 'sweat_rate': sweatRate,
         // Include macro targets for proper AI generation
         'macro_targets': {
@@ -135,15 +134,32 @@ class LLMNutritionPlanService {
         requestData['activity_id'] = activityId;
       }
 
+      // Log edge function call for debugging (simplified logging for context)
+      _logger.info('📤 Calling edge function generate-nutrition-plan', data: {
+        'user_id': requestData['device_id'],
+        'has_targets': requestData.containsKey('macro_targets'),
+      });
+
       // Call the edge function
       final response = await _supabase.functions.invoke(
         'generate-nutrition-plan',
         body: requestData,
       );
 
+      // Log response status
+      _logger.info('📥 Edge function response', data: {
+        'status': response.status,
+        'has_data': response.data != null,
+      });
+
       // Check if response indicates we should fallback
       if (response.status >= 400) {
         final data = response.data as Map<String, dynamic>?;
+        _logger.warning('⚠️ Edge function error', data: {
+          'status': response.status,
+          'message': data?['message'],
+          'fallback': data?['fallback_to_algorithm'],
+        });
         if (data?['fallback_to_algorithm'] == true) {
           return null; // Indicates fallback needed
         }
@@ -159,11 +175,21 @@ class LLMNutritionPlanService {
       );
       
       if (data['success'] != true) {
+        _logger.warning('❌ Plan generation unsuccessful', data: {
+          'success': data['success'],
+          'message': data['message'],
+          'fallback_requested': data['fallback_to_algorithm'],
+        });
         if (data['fallback_to_algorithm'] == true) {
           return null; // Indicates fallback needed
         }
         throw Exception(data['message'] ?? 'Failed to generate nutrition plan');
       }
+
+      _logger.info('✅ Plan generated successfully', data: {
+        'has_plan': data.containsKey('plan'),
+        'plan_type': data['plan_type'] ?? 'unknown',
+      });
 
       _logger.nutritionPlan(
         'Converting LLM response to nutrition plan',
@@ -171,7 +197,7 @@ class LLMNutritionPlanService {
       );
 
       // Convert the LLM response to our NutritionPlan format
-      final nutritionPlan = await _convertLLMResponseToPlan(
+      final nutritionPlan = await convertLLMResponseToPlan(
         data,
         user.id,
         activityId: activityId,
@@ -220,7 +246,8 @@ class LLMNutritionPlanService {
 
 
   /// Convert LLM response format to our NutritionPlan domain model
-  Future<NutritionPlan> _convertLLMResponseToPlan(
+  /// Made public to allow reuse for algorithmic fallback responses
+  Future<NutritionPlan> convertLLMResponseToPlan(
     Map<String, dynamic> data,
     String userId, {
     int? activityId,
@@ -423,11 +450,9 @@ class LLMNutritionPlanService {
         throw Exception('No user found. Please complete onboarding first.');
       }
 
-      // Get user's food preferences
-      final foodPreferences = await _authService.getFoodPreferences(user.id);
-      if (foodPreferences == null || foodPreferences.isEmpty) {
-        throw Exception('No food preferences found. Please set your food preferences first.');
-      }
+      // Get user's food preferences (fallback to safe defaults instead of throwing)
+      final preferenceResult = await _resolveFoodPreferences(user.id);
+      final foodPreferences = preferenceResult.preferences;
 
       // Categorize foods by preference
       final likedFoods = <String>[];
@@ -480,6 +505,7 @@ class LLMNutritionPlanService {
         'liked_foods': likedFoods,
         'willing_to_try_foods': willingToTryFoods,
         'disliked_foods': dislikedFoods,
+        'using_default_preferences': preferenceResult.usedDefaults,
         'macro_targets': {
           'pre_run': {
             'carbs_g': macroTargets.preRun.carbsG,
@@ -507,15 +533,32 @@ class LLMNutritionPlanService {
         requestData['activity_id'] = activityId;
       }
 
+      // Log edge function call for debugging (simplified logging for context)
+      _logger.info('📤 Calling edge function generate-nutrition-plan', data: {
+        'user_id': requestData['device_id'],
+        'has_targets': requestData.containsKey('macro_targets'),
+      });
+
       // Call the edge function
       final response = await _supabase.functions.invoke(
         'generate-nutrition-plan',
         body: requestData,
       );
 
+      // Log response status
+      _logger.info('📥 Edge function response', data: {
+        'status': response.status,
+        'has_data': response.data != null,
+      });
+
       // Check if response indicates we should fallback
       if (response.status >= 400) {
         final data = response.data as Map<String, dynamic>?;
+        _logger.warning('⚠️ Edge function error', data: {
+          'status': response.status,
+          'message': data?['message'],
+          'fallback': data?['fallback_to_algorithm'],
+        });
         if (data?['fallback_to_algorithm'] == true) {
           return null; // Indicates fallback needed
         }
@@ -526,7 +569,7 @@ class LLMNutritionPlanService {
       final data = response.data as Map<String, dynamic>;
 
       // Convert the LLM response to our NutritionPlan format
-      final nutritionPlan = await _convertLLMResponseToPlan(data, user.id, activityId: activityId);
+      final nutritionPlan = await convertLLMResponseToPlan(data, user.id, activityId: activityId);
 
       // Track success in Sentry
       _sentry.addBreadcrumb(
@@ -558,6 +601,78 @@ class LLMNutritionPlanService {
       return null;
     }
   }
+
+  /// Resolve food preferences, falling back to a small, safe default set when none are saved.
+  Future<_PreferenceResolutionResult> _resolveFoodPreferences(String userId) async {
+    var preferences = await _authService.getFoodPreferences(userId);
+    if (preferences != null && preferences.isNotEmpty) {
+      return _PreferenceResolutionResult(preferences: preferences, usedDefaults: false);
+    }
+
+    // Use defaults instead of failing, and try to persist them for future calls.
+    final defaults = _buildDefaultFoodPreferences();
+    _logger.warning('No food preferences found. Using default set for LLM generation.',
+      context: 'LLM_NUTRITION_PLAN',
+      data: {'default_count': defaults.length},
+    );
+
+    try {
+      final defaultLevels = defaults.map(
+        (food, preference) =>
+            MapEntry(food, sliderLevelForPreference(preference)),
+      );
+      await _authService.saveFoodPreferences(
+        userId,
+        defaults,
+        sliderLevels: defaultLevels,
+      );
+      _logger.info('Default food preferences saved for user',
+        context: 'LLM_NUTRITION_PLAN',
+        data: {'user_id': userId, 'count': defaults.length},
+      );
+    } catch (e, stackTrace) {
+      // Non-fatal: proceed with defaults even if persistence fails.
+      _logger.warning('Failed to persist default food preferences',
+        context: 'LLM_NUTRITION_PLAN',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return _PreferenceResolutionResult(preferences: defaults, usedDefaults: true);
+  }
+
+  Map<String, FoodPreference> _buildDefaultFoodPreferences() {
+    return {
+      // Simple carbs
+      'banana': FoodPreference.like,
+      'bagel': FoodPreference.like,
+      'oatmeal': FoodPreference.like,
+      'energy gel': FoodPreference.like,
+      'sports drink (carb + electrolytes)': FoodPreference.like,
+      'chews': FoodPreference.willingToTry,
+      // Hydration/electrolytes
+      'water': FoodPreference.like,
+      'electrolyte drink mix (electrolyte-only)': FoodPreference.like,
+      'electrolyte tablet (electrolyte-only)': FoodPreference.willingToTry,
+      // Recovery
+      'chocolate milk': FoodPreference.like,
+      'protein shake (ready-to-drink)': FoodPreference.like,
+      'protein powder (whey)': FoodPreference.willingToTry,
+      // Savory carb option
+      'pretzels': FoodPreference.willingToTry,
+    };
+  }
+}
+
+class _PreferenceResolutionResult {
+  const _PreferenceResolutionResult({
+    required this.preferences,
+    required this.usedDefaults,
+  });
+
+  final Map<String, FoodPreference> preferences;
+  final bool usedDefaults;
 }
 
 /// Provider for LLMNutritionPlanService

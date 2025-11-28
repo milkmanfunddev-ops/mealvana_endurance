@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:location_iq/location_iq.dart';
+import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
@@ -112,7 +113,7 @@ class _EventOnlyEditScreenState extends ConsumerState<EventOnlyEditScreen> {
   }
 
   Future<void> _selectDateTime() async {
-    final selectedDate = await showDatePicker(
+    final selectedDate = await showAppDatePicker(
       context: context,
       initialDate: _startTime ?? DateTime.now().add(const Duration(days: 30)),
       firstDate: DateTime.now(),

@@ -78,8 +78,8 @@
   },
   "gender": {
     "male": "Male",
-    "female": "Female", 
-    "other": "Other"
+    "female": "Female",
+    "other": "Non-binary"
   },
   "units": {
     "miles": "mi",

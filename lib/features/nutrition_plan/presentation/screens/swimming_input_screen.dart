@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/hero_image.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -386,7 +387,7 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
             child: InkWell(
               onTap: () async {
                 final currentForm = ref.read(swimmingInputControllerProvider);
-                final picked = await showDatePicker(
+                final picked = await showAppDatePicker(
                   context: context,
                   initialDate: currentForm.selectedDate,
                   firstDate: DateTime.now().subtract(const Duration(days: 7)),

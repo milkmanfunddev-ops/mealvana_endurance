@@ -74,14 +74,36 @@ class FoodPreferenceChipItem extends StatelessWidget {
             ],
           ),
           SizedBox(height: 12.h),
+          // Icons above the slider
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () => onChanged(FoodPreference.dislike),
+                child: Text(
+                  '❌',
+                  style: TextStyle(fontSize: 24.sp),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => onChanged(FoodPreference.like),
+                child: Text(
+                  '❤️',
+                  style: TextStyle(fontSize: 24.sp),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          // Slider for preference selection
           Row(
             children: [
               PreferenceChip(
-                label: likeLabel,
-                icon: '❤️',
-                isSelected: selected == FoodPreference.like,
-                onTap: () => onChanged(FoodPreference.like),
-                color: Colors.green,
+                label: dislikeLabel,
+                icon: '',
+                isSelected: selected == FoodPreference.dislike,
+                onTap: () => onChanged(FoodPreference.dislike),
+                color: Colors.red,
                 theme: theme,
               ),
               SizedBox(width: 8.w),
@@ -95,11 +117,11 @@ class FoodPreferenceChipItem extends StatelessWidget {
               ),
               SizedBox(width: 8.w),
               PreferenceChip(
-                label: dislikeLabel,
-                icon: '❌',
-                isSelected: selected == FoodPreference.dislike,
-                onTap: () => onChanged(FoodPreference.dislike),
-                color: Colors.red,
+                label: likeLabel,
+                icon: '',
+                isSelected: selected == FoodPreference.like,
+                onTap: () => onChanged(FoodPreference.like),
+                color: Colors.green,
                 theme: theme,
               ),
             ],
@@ -147,11 +169,13 @@ class PreferenceChip extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                icon,
-                style: TextStyle(fontSize: 18.sp),
-              ),
-              SizedBox(height: 4.h),
+              if (icon.isNotEmpty) ...[
+                Text(
+                  icon,
+                  style: TextStyle(fontSize: 18.sp),
+                ),
+                SizedBox(height: 4.h),
+              ],
               Text(
                 label,
                 textAlign: TextAlign.center,

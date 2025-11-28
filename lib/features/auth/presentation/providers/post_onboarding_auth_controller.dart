@@ -5,6 +5,7 @@ import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../application/oauth_service.dart';
 import '../../application/email_auth_service.dart';
+import '../../domain/auth_exceptions.dart';
 
 part 'post_onboarding_auth_controller.g.dart';
 
@@ -38,16 +39,27 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     });
 
     if (state.hasError) {
-      _logger.error('Post-onboarding auth: Apple Sign-In failed',
-        context: 'AUTH',
-        error: state.error,
-      );
+      final error = state.error;
+      
+      // Don't log account exists exception as an error - it's a valid flow
+      if (error is AccountAlreadyExistsException) {
+        _logger.info('Post-onboarding auth: Apple account already exists', context: 'AUTH');
+        await _analytics.track('auth_account_already_exists', properties: {
+          'provider': 'apple',
+          'source': 'post_onboarding',
+        });
+      } else {
+        _logger.error('Post-onboarding auth: Apple Sign-In failed',
+          context: 'AUTH',
+          error: error,
+        );
 
-      await _analytics.track('auth_flow_failed', properties: {
-        'provider': 'apple',
-        'source': 'post_onboarding',
-        'error': state.error.toString(),
-      });
+        await _analytics.track('auth_flow_failed', properties: {
+          'provider': 'apple',
+          'source': 'post_onboarding',
+          'error': error.toString(),
+        });
+      }
     } else {
       _logger.info('Post-onboarding auth: Apple Sign-In completed successfully', context: 'AUTH');
 
@@ -76,16 +88,27 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     });
 
     if (state.hasError) {
-      _logger.error('Post-onboarding auth: Google Sign-In failed',
-        context: 'AUTH',
-        error: state.error,
-      );
+      final error = state.error;
 
-      await _analytics.track('auth_flow_failed', properties: {
-        'provider': 'google',
-        'source': 'post_onboarding',
-        'error': state.error.toString(),
-      });
+      // Don't log account exists exception as an error - it's a valid flow
+      if (error is AccountAlreadyExistsException) {
+        _logger.info('Post-onboarding auth: Google account already exists', context: 'AUTH');
+        await _analytics.track('auth_account_already_exists', properties: {
+          'provider': 'google',
+          'source': 'post_onboarding',
+        });
+      } else {
+        _logger.error('Post-onboarding auth: Google Sign-In failed',
+          context: 'AUTH',
+          error: error,
+        );
+
+        await _analytics.track('auth_flow_failed', properties: {
+          'provider': 'google',
+          'source': 'post_onboarding',
+          'error': error.toString(),
+        });
+      }
     } else {
       _logger.info('Post-onboarding auth: Google Sign-In completed successfully', context: 'AUTH');
 
@@ -93,6 +116,38 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         'provider': 'google',
         'source': 'post_onboarding',
       });
+    }
+
+    return !state.hasError;
+  }
+
+  /// Sign in with Apple (replaces current user)
+  Future<bool> signInWithApple() async {
+    state = const AsyncLoading();
+    _logger.info('Post-onboarding auth: Switching to existing Apple account', context: 'AUTH');
+
+    state = await AsyncValue.guard(() async {
+      await _oauthService.signInWithApple();
+    });
+
+    if (state.hasError) {
+      _logger.error('Post-onboarding auth: Apple Sign-In failed', context: 'AUTH', error: state.error);
+    }
+
+    return !state.hasError;
+  }
+
+  /// Sign in with Google (replaces current user)
+  Future<bool> signInWithGoogle() async {
+    state = const AsyncLoading();
+    _logger.info('Post-onboarding auth: Switching to existing Google account', context: 'AUTH');
+
+    state = await AsyncValue.guard(() async {
+      await _oauthService.signInWithGoogle();
+    });
+
+    if (state.hasError) {
+      _logger.error('Post-onboarding auth: Google Sign-In failed', context: 'AUTH', error: state.error);
     }
 
     return !state.hasError;
@@ -136,6 +191,50 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       await _analytics.track('auth_flow_completed', properties: {
         'provider': 'email',
         'source': 'post_onboarding',
+      });
+    }
+
+    return !state.hasError;
+  }
+
+  /// Sign in with email/password
+  Future<bool> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    state = const AsyncLoading();
+
+    _logger.info('Post-onboarding auth: Starting email sign in', context: 'AUTH');
+
+    await _analytics.track('auth_flow_started', properties: {
+      'provider': 'email',
+      'source': 'post_onboarding_login',
+    });
+
+    state = await AsyncValue.guard(() async {
+      await _emailAuthService.signInWithEmail(
+        email: email,
+        password: password,
+      );
+    });
+
+    if (state.hasError) {
+      _logger.error('Post-onboarding auth: Email sign in failed',
+        context: 'AUTH',
+        error: state.error,
+      );
+
+      await _analytics.track('auth_flow_failed', properties: {
+        'provider': 'email',
+        'source': 'post_onboarding_login',
+        'error': state.error.toString(),
+      });
+    } else {
+      _logger.info('Post-onboarding auth: Email sign in successful', context: 'AUTH');
+
+      await _analytics.track('auth_flow_completed', properties: {
+        'provider': 'email',
+        'source': 'post_onboarding_login',
       });
     }
 

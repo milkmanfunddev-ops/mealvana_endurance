@@ -17,15 +17,35 @@ class FeatureSurveyRepository {
 
   /// Check if device has already voted
   Future<bool> hasVoted(String deviceId) async {
-    final query = _database.select(_database.featureSurveyResponsesTable)
-      ..where((row) => row.userId.equals(deviceId));
+    try {
+      final query = _database.select(_database.featureSurveyResponsesTable)
+        ..where((row) => row.userId.equals(deviceId));
 
-    final results = await query.get();
-    return results.isNotEmpty;
+      final results = await query.get();
+      return results.isNotEmpty;
+    } on FormatException {
+      // Legacy rows may have TEXT timestamps; normalize and retry
+      await _normalizeTimestamps();
+      final query = _database.select(_database.featureSurveyResponsesTable)
+        ..where((row) => row.userId.equals(deviceId));
+      final results = await query.get();
+      return results.isNotEmpty;
+    }
   }
 
   /// Get previous votes for device
   Future<FeatureSurveyResponse?> getPreviousVotes(String deviceId) async {
+    try {
+      return await _getPreviousVotesInternal(deviceId);
+    } on FormatException {
+      // Legacy rows may have TEXT timestamps; normalize and retry
+      await _normalizeTimestamps();
+      return await _getPreviousVotesInternal(deviceId);
+    }
+  }
+
+  Future<FeatureSurveyResponse?> _getPreviousVotesInternal(
+      String deviceId) async {
     final query = _database.select(_database.featureSurveyResponsesTable)
       ..where((row) => row.userId.equals(deviceId));
 
@@ -44,9 +64,31 @@ class FeatureSurveyRepository {
     );
   }
 
+  /// Normalize legacy TEXT timestamps to Unix millis for Drift compatibility
+  Future<void> _normalizeTimestamps() async {
+    const timestampColumns = ['voted_at', 'local_updated_at'];
+
+    for (final column in timestampColumns) {
+      await _database.customStatement('''
+        UPDATE feature_survey_responses
+        SET $column = CAST(
+          strftime('%s', replace(replace($column, 'T', ' '), 'Z', ''))
+          AS INTEGER
+        ) * 1000
+        WHERE typeof($column) = 'text'
+          AND $column IS NOT NULL
+          AND $column != ''
+          AND strftime('%s', replace(replace($column, 'T', ' '), 'Z', '')) IS NOT NULL;
+      ''');
+    }
+
+    DebugLogger.info('Normalized feature_survey_responses timestamps');
+  }
+
   /// Save survey response
   /// Uses insertOrReplace mode to allow updates (for future enhancement)
   Future<void> saveSurveyResponse(FeatureSurveyResponse response) async {
+    await _database.ensureUserDataSyncColumns();
     // 1. Save to local Drift database first (offline-first)
     await _database.into(_database.featureSurveyResponsesTable).insert(
           FeatureSurveyResponsesTableCompanion(
@@ -59,6 +101,14 @@ class FeatureSurveyRepository {
           mode: InsertMode.insertOrReplace, // Update if already exists
         );
 
+    // Use Unix timestamp in milliseconds for Drift compatibility
+    // (CURRENT_TIMESTAMP produces text format which Drift can't parse)
+    final nowMillis = DateTime.now().millisecondsSinceEpoch;
+    await _database.customStatement(
+      'UPDATE feature_survey_responses SET needs_upload = 1, local_updated_at = ? WHERE user_id = ?',
+      [nowMillis, response.deviceId],
+    );
+
     // 2. Sync to Supabase (best-effort, don't block on failure)
     try {
       final supabase = ref.read(supabaseClientProvider);
@@ -69,6 +119,11 @@ class FeatureSurveyRepository {
             jsonEncode(response.selectedFeatures.map((f) => f.id).toList()),
         'voted_at': response.votedAt.toIso8601String(),
       });
+
+      await _database.customStatement(
+        'UPDATE feature_survey_responses SET needs_upload = 0 WHERE user_id = ?',
+        [response.deviceId],
+      );
     } catch (e) {
       // Log but don't throw - local save is what matters
       // Analytics and backend sync are secondary concerns

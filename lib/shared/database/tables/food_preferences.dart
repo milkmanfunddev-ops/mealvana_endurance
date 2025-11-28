@@ -16,6 +16,10 @@ class FoodPreferencesTable extends Table {
   /// Preference type: 'like', 'dislike', 'willing_to_try' (matches Supabase constraint)
   TextColumn get preference => text()();
 
+  /// Slider intensity level (0-4) representing the UI selection strength
+  IntColumn get preferenceLevel =>
+      integer().named('preference_level').withDefault(const Constant(2))();
+
   /// When the preference was created (matches Supabase food_preferences.created_at)
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
 
@@ -29,5 +33,6 @@ class FoodPreferencesTable extends Table {
   List<String> get customConstraints => [
     'UNIQUE(user_id, food_name)', // Ensure one preference per food per user
     'CHECK (preference IN (\'like\', \'dislike\', \'willing_to_try\'))', // Match Supabase constraint
+    'CHECK (preference_level >= 0 AND preference_level <= 4)',
   ];
 }

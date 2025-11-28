@@ -395,26 +395,28 @@ class HelpFeedbackScreen extends ConsumerWidget {
   }
 
   // Bug report with Sentry integration
-  Future<void> _showBugReport(BuildContext context, WidgetRef ref) async {
+  // Uses Sentry's built-in feedback widget with screenshot capture capability
+  //
+  // Flow:
+  // 1. User taps "Report a Bug" -> Opens SentryFeedbackWidget
+  // 2. User describes the bug in the feedback form
+  // 3. User can tap "Capture Screenshot" button in the form
+  // 4. Form dismisses temporarily, "Take Screenshot" button appears over the app
+  // 5. User navigates to the problematic screen and taps the button
+  // 6. Screenshot is captured and attached to the feedback
+  // 7. Feedback form reopens with screenshot attached
+  void _showBugReport(BuildContext context, WidgetRef ref) {
     // Track bug report
     final analytics = ref.read(appExternalDepsProvider);
     analytics.analytics.track('help_bug_report_tapped');
 
-    // Capture screenshot for bug report
-    final screenshot = await SentryFlutter.captureScreenshot();
-
     if (!context.mounted) return;
 
-    // Show Sentry feedback widget
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SentryFeedbackWidget(
-          screenshot: screenshot,
-        ),
-        fullscreenDialog: true,
-      ),
-    );
+    // Show Sentry feedback widget using the static show method
+    // This properly integrates with the navigator key and screenshot system
+    // Don't pass a screenshot here - let users capture it from within the form
+    // so they can navigate to the screen where the bug occurred first
+    SentryFeedbackWidget.show(context);
   }
 
   void _openGettingStarted(BuildContext context, WidgetRef ref) {

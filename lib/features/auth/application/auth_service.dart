@@ -1,12 +1,14 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
+import 'package:device_info_plus/device_info_plus.dart';
 import '../data/auth_repository_edge.dart';
 import '../domain/user_preferences.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'dart:io';
 
 /// Application service for managing user authentication and preferences
 /// Follows the Andrea Bizzotto pattern with Ref for dependency injection
@@ -20,11 +22,16 @@ class AuthService {
   /// Get the Edge Function auth repository
   AuthRepositoryEdge get _authRepositoryEdge => ref.read(authRepositoryEdgeProvider);
 
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
 
   /// Create a new user profile during onboarding using Supabase Auth
   /// Uses anonymous auth session created during app startup
+  ///
+  /// Handles existing users transitioning to new auth sessions by checking
+  /// if a user with the same device_id already exists and updating that row
+  /// instead of creating a duplicate (which would violate the unique constraint).
   Future<UserProfile> createUser({
     required Gender gender,
     required DateTime birthday,
@@ -45,15 +52,51 @@ class AuthService {
       // Get device ID for backwards compatibility and analytics
       final deviceId = await _getDeviceId();
 
+      // Check if a user with this device_id already exists
+      // This handles existing users who are transitioning to new auth sessions
+      final existingUserResponse = await _supabase
+          .from('users')
+          .select('id')
+          .eq('device_id', deviceId)
+          .maybeSingle();
+
+      final String effectiveUserId;
+      final bool isExistingUser = existingUserResponse != null;
+
+      if (isExistingUser) {
+        // User exists - preserve their existing ID to maintain foreign key relationships
+        effectiveUserId = existingUserResponse['id'] as String;
+        _logger.info(
+          'Existing user found for device, updating with new auth session',
+          context: 'AUTH',
+          data: {
+            'device_id': deviceId,
+            'existing_user_id': effectiveUserId,
+            'new_auth_user_id': authUser.id,
+          },
+        );
+      } else {
+        // New user - use Supabase auth UUID as the canonical ID
+        effectiveUserId = authUser.id;
+        _logger.info(
+          'Creating new user',
+          context: 'AUTH',
+          data: {
+            'device_id': deviceId,
+            'user_id': effectiveUserId,
+          },
+        );
+      }
+
       // Get app version
       const appVersion = '1.0.0';
 
       // Create UserProfile with Supabase auth fields
       final now = DateTime.now();
       final userProfile = UserProfile(
-        id: authUser.id, // Use Supabase UUID as canonical ID
+        id: effectiveUserId, // Use existing ID or new auth ID
         deviceId: deviceId, // Keep for backwards compatibility
-        authUserId: authUser.id, // Supabase auth user ID
+        authUserId: authUser.id, // Always update to current Supabase auth user ID
         authProvider: 'anonymous', // Anonymous auth
         isAnonymous: true, // Anonymous until linked to email/social
         gender: gender,
@@ -65,7 +108,7 @@ class AuthService {
         gutTraining: gutTraining ?? GutTraining.high,
         onboardingCompleted: false,
         appVersion: appVersion,
-        createdAt: now,
+        createdAt: isExistingUser ? now : now, // For existing users, this will be ignored by upsert
         updatedAt: now,
         // Optional fields default to null
         giSensitivity: null,
@@ -78,8 +121,12 @@ class AuthService {
         typicalSwimCapType: null,
       );
 
-      // Save to Supabase (upsert to handle any edge cases)
-      await _supabase.from('users').upsert(userProfile.toJson());
+      // Save to Supabase using device_id as conflict target
+      // This ensures existing users get updated rather than causing a duplicate key error
+      await _supabase.from('users').upsert(
+        userProfile.toJson(),
+        onConflict: 'device_id',
+      );
 
       // Save locally for caching
       final userRepo = await _userRepository;
@@ -87,18 +134,22 @@ class AuthService {
 
       // Update Sentry user context with new user details
       await _sentry.setUserContext(
-        deviceId: authUser.id, // Use auth ID for Sentry
+        deviceId: effectiveUserId, // Use effective user ID for Sentry
         appVersion: appVersion,
         onboardingCompleted: false,
         gutTrainingLevel: (gutTraining ?? GutTraining.high).name,
       );
 
       _sentry.addBreadcrumb(
-        message: 'User created successfully with Supabase Auth',
+        message: isExistingUser
+            ? 'Existing user updated with new auth session'
+            : 'New user created with Supabase Auth',
         category: 'user_lifecycle',
         data: {
-          'user_id': authUser.id,
+          'user_id': effectiveUserId,
+          'auth_user_id': authUser.id,
           'auth_provider': 'anonymous',
+          'is_existing_user': isExistingUser.toString(),
           'gender': gender.name,
           'gut_training': (gutTraining ?? GutTraining.high).name,
         },
@@ -256,59 +307,97 @@ class AuthService {
   }
 
   /// Save food preferences (typically during onboarding)
-  Future<void> saveFoodPreferences(String userId, Map<String, FoodPreference> preferences) async {
-    // Get device ID (userId is actually deviceId in our system)
-    final deviceId = userId;
-    
-    // First, save to Supabase via Edge Function
-    final result = await _authRepositoryEdge.saveFoodPreferences(deviceId, preferences);
-    
-    if (!result.success) {
+  /// Uses Edge Function for optimized multi-step operation (reduces network roundtrips)
+  Future<void> saveFoodPreferences(
+    String userId,
+    Map<String, FoodPreference> preferences, {
+    Map<String, int>? sliderLevels,
+  }) async {
+    // userId is Supabase auth UUID (from auth.currentUser.id)
+    final deviceId = userId; // Keep variable name for backwards compatibility in logs
+
+    final normalizedLevels = sliderLevels ??
+        preferences.map((food, preference) =>
+            MapEntry(food, sliderLevelForPreference(preference)));
+
+    try {
+      _logger.info(
+        'Saving food preferences via edge function',
+        context: 'AUTH',
+        data: {'userId': userId, 'count': preferences.length},
+      );
+
+      // Call Edge Function - handles user check, preferences upsert, and onboarding flag in one operation
+      // This reduces 3-5 network roundtrips to 1
+      final result = await _authRepositoryEdge.saveFoodPreferences(
+        userId,
+        preferences,
+        preferenceLevels: normalizedLevels,
+      );
+
+      if (!result.success) {
+        _logger.error(
+          'Edge function food preferences save failed',
+          context: 'AUTH',
+          data: {'userId': userId, 'error': result.message},
+        );
+        throw Exception(result.message ?? 'Failed to save food preferences');
+      }
+
+      _logger.info(
+        'Food preferences saved successfully via edge function',
+        context: 'AUTH',
+        data: {'userId': userId, 'savedCount': result.preferencesCount},
+      );
+
+      // Save locally for offline access
+      final userRepo = await _userRepository;
+      await userRepo.saveFoodPreferences(
+        userId,
+        preferences,
+        sliderLevels: normalizedLevels,
+      );
+
+      // Mark user as having completed onboarding locally
+      final user = await getCurrentUser();
+      if (user != null) {
+        final updatedUser = user.copyWith(
+          onboardingCompleted: true,
+          updatedAt: DateTime.now(),
+        );
+        await userRepo.updateUserProfile(updatedUser);
+
+        // Update Sentry user context (unawaited for performance)
+        unawaited(_sentry.setUserContext(
+          deviceId: userId,
+          appVersion: '1.0.0',
+          onboardingCompleted: true,
+          gutTrainingLevel: user.gutTraining.name,
+        ));
+
+        _sentry.addBreadcrumb(
+          message: 'Onboarding completed - food preferences saved',
+          category: 'user_lifecycle',
+          data: {
+            'user_id': userId,
+            'food_preferences_count': preferences.length.toString(),
+          },
+        );
+      }
+    } catch (e, stackTrace) {
       // Critical: Food preferences save failure blocks onboarding completion
-      final error = Exception(result.message ?? 'Failed to save food preferences to server');
       await _sentry.reportCriticalError(
-        error,
+        e,
+        stackTrace: stackTrace,
         context: 'food_preferences_save_failure',
         tags: {
           'device_id': deviceId,
           'error_type': 'edge_function_failure',
           'operation': 'save_food_preferences',
           'preferences_count': preferences.length.toString(),
-          'edge_function_message': result.message ?? 'unknown',
         },
       );
-      throw error;
-    }
-    
-    // Then save locally for caching
-    final userRepo = await _userRepository;
-    await userRepo.saveFoodPreferences(userId, preferences);
-    
-    // Mark user as having completed onboarding locally
-    final user = await getCurrentUser();
-    if (user != null) {
-      final updatedUser = user.copyWith(
-        onboardingCompleted: true,
-        updatedAt: DateTime.now(),
-      );
-      await userRepo.updateUserProfile(updatedUser);
-      
-      // Update Sentry user context to reflect onboarding completion
-      await _sentry.setUserContext(
-        deviceId: userId,
-        appVersion: '1.0.0',
-        onboardingCompleted: true,
-        gutTrainingLevel: user.gutTraining.name,
-      );
-      
-      _sentry.addBreadcrumb(
-        message: 'Onboarding completed - food preferences saved',
-        category: 'user_lifecycle',
-        data: {
-          'user_id': userId,
-          'food_preferences_count': preferences.length.toString(),
-        },
-      );
+      throw Exception('Failed to save food preferences. Please check your internet connection and try again.');
     }
   }
 
@@ -325,6 +414,16 @@ class AuthService {
       return await userRepo.getFoodPreferences(userId);
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Get slider levels for food preferences
+  Future<Map<String, int>> getFoodPreferenceLevels(String userId) async {
+    try {
+      final userRepo = await _userRepository;
+      return await userRepo.getFoodPreferenceLevels(userId);
+    } catch (e) {
+      return {};
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:mealvana_endurance/features/events/presentation/screens/event_form_screen.dart';
 import '../../domain/event.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../screens/events_list_screen.dart';
@@ -57,7 +58,7 @@ class UpcomingEventCardKyle extends ConsumerWidget {
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => const EventsListScreen(),
+                builder: (context) => const EventFormScreen(), // Now uses new PublicEventsService
               ),
             );
           },
@@ -201,32 +202,35 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                 ),
               ),
               // Date display on the right
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    DateFormat('MMM').format(eventDate).toUpperCase(),
-                    style: TextStyle(
-                      fontFamily: 'Apercu',
-                      fontSize: 8,
-                      color: isDark ? AppColors.cream : AppColors.blackberry,
-                      fontWeight: FontWeight.w600,
-                      height: 0.8,
+              SizedBox(
+                width: 40,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      DateFormat('MMM').format(eventDate).toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'Apercu',
+                        fontSize: 8,
+                        color: isDark ? AppColors.cream : AppColors.blackberry,
+                        fontWeight: FontWeight.w600,
+                        height: 0.8,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    DateFormat('d').format(eventDate),
-                    style: TextStyle(
-                      fontFamily: 'Compadre',
-                      fontSize: 20,
-                      color: isDark ? AppColors.cream : AppColors.blackberry,
-                      fontWeight: FontWeight.w400,
-                      height: 0.9,
+                    const SizedBox(height: 2),
+                    Text(
+                      DateFormat('d').format(eventDate),
+                      style: TextStyle(
+                        fontFamily: 'Compadre',
+                        fontSize: 17,
+                        color: isDark ? AppColors.cream : AppColors.blackberry,
+                        fontWeight: FontWeight.w400,
+                        height: 0.9,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

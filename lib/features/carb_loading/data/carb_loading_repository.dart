@@ -96,7 +96,7 @@ class CarbLoadingRepository {
           planDate: dayDate,
           dayNumber: dayOffset + 1,
           carbTargetGrams: targetCarbsGrams.round(),
-          carbProtocolGPerKg: carbProtocolGPerKg,
+          carbProtocolGPerKg: Value(carbProtocolGPerKg),
           needsUpload: const Value(true),
           localUpdatedAt: Value(DateTime.now()),
         );
@@ -374,28 +374,11 @@ class CarbLoadingRepository {
         throw Exception('Plan not found: $planId');
       }
 
-      // Get all days for this plan from Drift
-      final days = await (_database.select(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]))
-          .get();
+      // DIRECT FIX: Use userId from plan directly (unified with deviceId)
+      // Skip unnecessary and fragile user lookup
+      final userId = plan.userId;
 
-      // Get user_id from device_id
-      final userResult = await _supabase
-          .from('users')
-          .select('id')
-          .eq('device_id', deviceId)
-          .maybeSingle();
-
-      if (userResult == null) {
-        throw Exception('User not found for device_id: $deviceId');
-      }
-
-      final userId = userResult['id'] as String;
-
-      // Insert plan directly to Supabase (using upsert for idempotency)
-      await _supabase.from('carb_loading_plans').upsert({
-        'id': plan.id,
+      final planPayload = {
         'event_id': plan.eventId,
         'user_id': userId,
         'total_days': plan.totalDays,
@@ -403,14 +386,70 @@ class CarbLoadingRepository {
         'end_date': plan.endDate.toIso8601String().split('T')[0],
         'daily_carb_target_grams': plan.dailyCarbTargetGrams,
         'generated_at': plan.generatedAt.toIso8601String(),
-        'needs_upload': false,
+        'algorithm_version': plan.algorithmVersion,
+        'adherence_score': plan.adherenceScore,
+        'completed_at': plan.completedAt?.toIso8601String(),
         'local_updated_at': DateTime.now().toIso8601String(),
-      });
+        // 'needs_upload': false, // Local-only field
+        // 'local_updated_at': DateTime.now().toIso8601String(), // Local-only field
+      };
+
+      Map<String, dynamic>? updateResponse;
+      try {
+        updateResponse = await _supabase
+            .from('carb_loading_plans')
+            .update(planPayload)
+            .eq('id', plan.id)
+            .eq('user_id', userId)
+            .select('id')
+            .maybeSingle();
+      } catch (e) {
+        _logger.debug(
+          'Plan update failed, will insert a new server ID',
+          context: 'CARB_LOADING_REPOSITORY',
+          data: {'planId': plan.id, 'error': e.toString()},
+        );
+      }
+
+      int serverPlanId;
+      if (updateResponse != null && updateResponse['id'] != null) {
+        serverPlanId = updateResponse['id'] as int;
+      } else {
+        // If update returned no rows, check for an existing plan by event/user to avoid duplicate key collisions
+        Map<String, dynamic>? existingPlan;
+        if (plan.eventId != null) {
+          existingPlan = await _supabase
+              .from('carb_loading_plans')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('event_id', plan.eventId!)
+              .maybeSingle();
+        }
+
+        if (existingPlan != null && existingPlan['id'] != null) {
+          serverPlanId = existingPlan['id'] as int;
+        } else {
+          final insertResponse = await _supabase
+              .from('carb_loading_plans')
+              .insert(planPayload)
+              .select('id')
+              .single();
+          serverPlanId = insertResponse['id'] as int;
+        }
+      }
+
+      if (serverPlanId != plan.id) {
+        await _rekeyPlanLocally(plan.id, serverPlanId);
+      }
 
       // Insert all days directly to Supabase (using upsert for idempotency)
-      for (final day in days) {
-        await _supabase.from('carb_loading_days').upsert({
-          'id': day.id,
+      final updatedDays = await (_database.select(_database.carbLoadingDaysTable)
+            ..where((tbl) => tbl.carbLoadingPlanId.equals(serverPlanId))
+            ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]))
+          .get();
+
+      for (final day in updatedDays) {
+        final dayPayload = {
           'carb_loading_plan_id': day.carbLoadingPlanId,
           'plan_date': day.planDate.toIso8601String().split('T')[0],
           'day_number': day.dayNumber,
@@ -426,14 +465,48 @@ class CarbLoadingRepository {
           'logged_carbs_grams': day.loggedCarbsGrams,
           'logged_calories': day.loggedCalories,
           'completed': day.completed,
-          'needs_upload': false,
           'local_updated_at': DateTime.now().toIso8601String(),
-        });
+          // 'needs_upload': false, // Local-only field
+          // 'local_updated_at': DateTime.now().toIso8601String(), // Local-only field
+        };
+
+        Map<String, dynamic>? dayUpdate;
+        try {
+          dayUpdate = await _supabase
+              .from('carb_loading_days')
+              .update(dayPayload)
+              .eq('id', day.id)
+              .eq('carb_loading_plan_id', serverPlanId)
+              .select('id')
+              .maybeSingle();
+        } catch (e) {
+          _logger.debug(
+            'Day update failed, inserting with server ID',
+            context: 'CARB_LOADING_REPOSITORY',
+            data: {'dayId': day.id, 'error': e.toString()},
+          );
+        }
+
+        int serverDayId;
+        if (dayUpdate != null && dayUpdate['id'] != null) {
+          serverDayId = dayUpdate['id'] as int;
+        } else {
+          final insertDayResponse = await _supabase
+              .from('carb_loading_days')
+              .insert(dayPayload)
+              .select('id')
+              .single();
+          serverDayId = insertDayResponse['id'] as int;
+        }
+
+        if (serverDayId != day.id) {
+          await _rekeyDayLocally(day.id, serverDayId);
+        }
       }
 
       // Clear dirty flags
-      await _clearPlanDirtyFlag(planId);
-      for (final day in days) {
+      await _clearPlanDirtyFlag(serverPlanId);
+      for (final day in updatedDays) {
         await _clearDayDirtyFlag(day.id);
       }
     } catch (e, stackTrace) {
@@ -459,9 +532,7 @@ class CarbLoadingRepository {
         throw Exception('Carb loading day not found: $carbLoadingDayId');
       }
 
-      // Update directly in Supabase using upsert
-      await _supabase.from('carb_loading_days').upsert({
-        'id': day.id,
+      final payload = {
         'carb_loading_plan_id': day.carbLoadingPlanId,
         'plan_date': day.planDate.toIso8601String().split('T')[0],
         'day_number': day.dayNumber,
@@ -477,12 +548,46 @@ class CarbLoadingRepository {
         'logged_carbs_grams': day.loggedCarbsGrams,
         'logged_calories': day.loggedCalories,
         'completed': day.completed,
-        'needs_upload': false,
         'local_updated_at': DateTime.now().toIso8601String(),
-      });
+        // 'needs_upload': false, // Local-only field
+        // 'local_updated_at': DateTime.now().toIso8601String(), // Local-only field
+      };
+
+      Map<String, dynamic>? updateResponse;
+      try {
+        updateResponse = await _supabase
+            .from('carb_loading_days')
+            .update(payload)
+            .eq('id', day.id)
+            .eq('carb_loading_plan_id', day.carbLoadingPlanId)
+            .select('id')
+            .maybeSingle();
+      } catch (e) {
+        _logger.debug(
+          'Day update failed, will insert new server ID',
+          context: 'CARB_LOADING_REPOSITORY',
+          data: {'dayId': day.id, 'error': e.toString()},
+        );
+      }
+
+      int serverDayId;
+      if (updateResponse != null && updateResponse['id'] != null) {
+        serverDayId = updateResponse['id'] as int;
+      } else {
+        final insertResponse = await _supabase
+            .from('carb_loading_days')
+            .insert(payload)
+            .select('id')
+            .single();
+        serverDayId = insertResponse['id'] as int;
+      }
+
+      if (serverDayId != day.id) {
+        await _rekeyDayLocally(day.id, serverDayId);
+      }
 
       // Clear dirty flag
-      await _clearDayDirtyFlag(carbLoadingDayId);
+      await _clearDayDirtyFlag(serverDayId);
     } catch (e, stackTrace) {
       _logger.error(
         'Error uploading carb loading day, will retry on next sync',
@@ -519,6 +624,45 @@ class CarbLoadingRepository {
       );
       // Don't rethrow - deletion already succeeded locally
     }
+  }
+
+  Future<void> _rekeyPlanLocally(int oldId, int newId) async {
+    await _database.transaction(() async {
+      // Update child tables first
+      await _database.customStatement(
+        'UPDATE carb_loading_days SET carb_loading_plan_id = ? WHERE carb_loading_plan_id = ?',
+        [newId, oldId],
+      );
+      await _database.customStatement(
+        'UPDATE carb_loading_plans SET id = ? WHERE id = ?',
+        [newId, oldId],
+      );
+    });
+
+    _logger.info(
+      'Rekeyed carb loading plan ID to match Supabase',
+      context: 'CARB_LOADING_REPOSITORY',
+      data: {'oldId': oldId, 'newId': newId},
+    );
+  }
+
+  Future<void> _rekeyDayLocally(int oldId, int newId) async {
+    await _database.transaction(() async {
+      await _database.customStatement(
+        'UPDATE carb_loading_day_meals SET carb_loading_day_id = ? WHERE carb_loading_day_id = ?',
+        [newId, oldId],
+      );
+      await _database.customStatement(
+        'UPDATE carb_loading_days SET id = ? WHERE id = ?',
+        [newId, oldId],
+      );
+    });
+
+    _logger.info(
+      'Rekeyed carb loading day ID to match Supabase',
+      context: 'CARB_LOADING_REPOSITORY',
+      data: {'oldId': oldId, 'newId': newId},
+    );
   }
 
   Future<void> _clearPlanDirtyFlag(int planId) async {

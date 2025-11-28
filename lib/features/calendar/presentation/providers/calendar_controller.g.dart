@@ -37,7 +37,7 @@ final class CalendarControllerProvider
 }
 
 String _$calendarControllerHash() =>
-    r'ba1421e08976630901137918834f2076c5c58ef8';
+    r'2471e596bd7ad4bb42d985a91e30c9989138fffb';
 
 /// Calendar controller for managing activities and events
 
@@ -92,7 +92,7 @@ final class AllEventsControllerProvider
 }
 
 String _$allEventsControllerHash() =>
-    r'8ee590ab9d775d2973c8b747340d696f9a1499e9';
+    r'72c01b43765fd2f3feafc5289d29810970dfa8fa';
 
 /// All Events Controller - separate from calendar week view
 /// Used by EventsListScreen to show ALL events, not just current week
@@ -181,7 +181,7 @@ final class EventDetailProvider
   }
 }
 
-String _$eventDetailHash() => r'1c64de23308f8999f48bc7e933f9ee834f358b82';
+String _$eventDetailHash() => r'3918f712fe1d638c5282243a2bd6751001d83414';
 
 /// Provider to watch a specific event by eventId
 /// This ensures the UI updates when the event data changes in the database
@@ -276,7 +276,7 @@ final class ActivityDetailProvider
   }
 }
 
-String _$activityDetailHash() => r'd4133035f59f8f065aa5f50a80bdbe6db5be7a62';
+String _$activityDetailHash() => r'b79de9956139fe7fd6908ff89929475933aa59fb';
 
 /// Provider to watch a specific activity by activityId
 /// This ensures the UI updates when the activity data changes in the database
@@ -345,4 +345,4 @@ final class NextUpcomingEventProvider
   }
 }
 
-String _$nextUpcomingEventHash() => r'1df44176c026385f7e2fe418933d52e43c958c6b';
+String _$nextUpcomingEventHash() => r'ecd355491f517752404cb9d00e47a14a364aca67';

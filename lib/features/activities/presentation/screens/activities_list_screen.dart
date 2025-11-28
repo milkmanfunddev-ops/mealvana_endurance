@@ -59,43 +59,43 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Calendar view toggle
-            CalendarViewToggle(
-              selectedMode: calendarMode,
-              onModeChanged: (mode) {
-                ref.read(calendarViewProvider.notifier).setView(mode);
+      body: Column(
+        children: [
+          // Top padding to account for status bar and position toggle at AppBar level
+          SizedBox(height: MediaQuery.of(context).padding.top),
+          // Calendar view toggle (centered on same row as Pro button)
+          CalendarViewToggle(
+            selectedMode: calendarMode,
+            onModeChanged: (mode) {
+              ref.read(calendarViewProvider.notifier).setView(mode);
+            },
+          ),
+          const SizedBox(height: 8),
+          // Calendar (week or month view)
+          if (calendarMode == CalendarViewMode.week)
+            CalendarWeekViewKyle(
+              selectedDate: _selectedDate,
+              onDateSelected: (date) {
+                setState(() {
+                  _selectedDate = date;
+                });
               },
+              dayIndicators: dayIndicators,
+            )
+          else
+            CalendarMonthViewKyle(
+              selectedDate: _selectedDate,
+              onDateSelected: (date) {
+                setState(() {
+                  _selectedDate = date;
+                });
+              },
+              dayIndicators: dayIndicators,
             ),
-            const SizedBox(height: 8),
-            // Calendar (week or month view)
-            if (calendarMode == CalendarViewMode.week)
-              CalendarWeekViewKyle(
-                selectedDate: _selectedDate,
-                onDateSelected: (date) {
-                  setState(() {
-                    _selectedDate = date;
-                  });
-                },
-                dayIndicators: dayIndicators,
-              )
-            else
-              CalendarMonthViewKyle(
-                selectedDate: _selectedDate,
-                onDateSelected: (date) {
-                  setState(() {
-                    _selectedDate = date;
-                  });
-                },
-                dayIndicators: dayIndicators,
-              ),
-            Expanded(
-              child: _buildContent(activitiesState, upcomingEvent, carbLoadingState),
-            ),
-          ],
-        ),
+          Expanded(
+            child: _buildContent(activitiesState, upcomingEvent, carbLoadingState),
+          ),
+        ],
       ),
       // FloatingActionButton removed - now in FloatingActionButtonsBar
     );
@@ -201,7 +201,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
               // Divider between Upcoming Events and Today's Activities
               SliverToBoxAdapter(
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   height: 1,
                   color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.2),
                 ),
@@ -216,7 +216,12 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                 ),
               // Activities and Carb Days List
               if (!hasItems)
-                SliverFillRemaining(child: _buildEmptyState())
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
+                    child: _buildEmptyState(),
+                  ),
+                )
               else
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -245,31 +250,29 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.calendar_today,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No activities scheduled',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _selectedDate.toString().split(' ')[0],
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[500],
-                ),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.calendar_today,
+          size: 64,
+          color: Colors.grey[400],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'No activities scheduled',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Colors.grey[600],
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _selectedDate.toString().split(' ')[0],
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[500],
+              ),
+        ),
+      ],
     );
   }
 

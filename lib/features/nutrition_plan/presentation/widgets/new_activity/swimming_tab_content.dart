@@ -73,6 +73,7 @@ class SwimmingTabContent extends ConsumerWidget {
             max: 20000,
             step: 100,
             unit: 'meters',
+            tappable: true,
           ),
 
           const SizedBox(height: AppSpacing.xl),

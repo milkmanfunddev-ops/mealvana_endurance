@@ -40,7 +40,7 @@ final class CarbLoadingControllerProvider
 }
 
 String _$carbLoadingControllerHash() =>
-    r'c2d6cdee003355e021c496c2f1d149b1524d439b';
+    r'5504d90dac5f04fea2e5e1b28bf03b7d554936b7';
 
 /// Controller for managing carb loading plans
 /// Handles carb loading protocol creation, updates, and queries

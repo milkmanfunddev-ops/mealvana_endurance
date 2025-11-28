@@ -1,5 +1,18 @@
 import '../../../shared/domain/activity_type.dart';
 
+/// Match type returned by hybrid search
+enum SearchMatchType {
+  exact, // Full-text search match
+  fuzzy; // Fuzzy/similarity match (typo tolerance)
+
+  factory SearchMatchType.fromString(String value) {
+    return SearchMatchType.values.firstWhere(
+      (e) => e.name == value.toLowerCase(),
+      orElse: () => SearchMatchType.exact,
+    );
+  }
+}
+
 /// Public Event domain model
 ///
 /// Represents a publicly available race event from the public_events table.
@@ -19,6 +32,10 @@ class PublicEvent {
   final String? description;
   final String? organizerName;
 
+  // Search metadata (returned by hybrid search function)
+  final SearchMatchType? matchType; // How this result was matched
+  final double? relevanceScore; // Search relevance score (0-1)
+
   const PublicEvent({
     required this.id,
     required this.eventName,
@@ -33,6 +50,8 @@ class PublicEvent {
     this.websiteUrl,
     this.description,
     this.organizerName,
+    this.matchType,
+    this.relevanceScore,
   });
 
   /// Create from JSON (from Supabase Edge Function response)
@@ -53,6 +72,12 @@ class PublicEvent {
       websiteUrl: json['website_url'] as String?,
       description: json['description'] as String?,
       organizerName: json['organizer_name'] as String?,
+      matchType: json['match_type'] != null
+          ? SearchMatchType.fromString(json['match_type'] as String)
+          : null,
+      relevanceScore: json['relevance_score'] != null
+          ? (json['relevance_score'] as num).toDouble()
+          : null,
     );
   }
 
@@ -72,6 +97,8 @@ class PublicEvent {
       'website_url': websiteUrl,
       'description': description,
       'organizer_name': organizerName,
+      if (matchType != null) 'match_type': matchType!.name,
+      if (relevanceScore != null) 'relevance_score': relevanceScore,
     };
   }
 

@@ -118,27 +118,27 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          const SizedBox(height: 24), // Top padding
+          const SizedBox(height: 12), // Top padding
 
           // "During this Run" dynamic header
           _buildActivityHeader(context, state),
 
-          const SizedBox(height: 24),
+          // const SizedBox(height: 12),
 
           // PACE and TOTAL BURN stats
           _buildPaceBurnStats(context, state, macros),
 
-          const SizedBox(height: 24),
+          // const SizedBox(height: 12),
 
           // "Your Nutritional Targets" with table
           _buildMacroTargetsSection(context, ref, state, macros),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Edit Macros + Reset All buttons
           _buildActionButtons(context, ref, state, macros),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Create Plan button
           _buildCreatePlanButton(context, ref, state),
@@ -238,7 +238,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     final pace = _formatPaceValue(state);
 
     // Format total burn (calories)
-    final totalBurn = macros.metrics.caloriesNetKcal.round().toString();
+    final totalBurn = '${macros.metrics.caloriesNetKcal.round().toString()} kcal';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 17),
@@ -283,7 +283,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     domain.MacroTargets macros,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 17),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: MacroTargetsTable(
         title: 'Your Nutritional Targets',
         macroData: MacroTableData(
@@ -517,13 +517,13 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     await Future.delayed(const Duration(milliseconds: 100));
 
     // Navigate to activity detail screen after plan creation
+    // SIMPLIFIED: Only activityId is needed - isNewActivity=true shows "Save Workout" button
     if (context.mounted) {
       final state = ref.read(macroTargetsControllerProvider).value;
-      if (state != null) {
+      if (state != null && state.activityId != null) {
         context.push('/current-plan', extra: {
-          'mode': 'create', // Use 'create' mode to show "Save Workout" button for first-time viewing
-          'activityId': state.activityId, // Activity already created and saved to DB
-          'macroTargets': state.macroTargets,
+          'activityId': state.activityId,
+          'isNewActivity': true, // Shows "Save Workout" button for first-time viewing
         });
       }
     }

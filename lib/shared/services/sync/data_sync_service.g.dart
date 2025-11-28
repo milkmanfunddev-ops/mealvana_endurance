@@ -22,7 +22,7 @@ final class DataSyncServiceProvider
         argument: null,
         retry: null,
         name: r'dataSyncServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -49,4 +49,4 @@ final class DataSyncServiceProvider
   }
 }
 
-String _$dataSyncServiceHash() => r'232acff77e4e8ab89b242de8010cd8efdc34e1ca';
+String _$dataSyncServiceHash() => r'0fbcdd95772f132bb61f9d8a37b022e44b15978c';

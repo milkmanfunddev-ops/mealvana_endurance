@@ -1,8 +1,8 @@
 create table public.users
 (
-    id                            uuid                     default gen_random_uuid() not null
+    id                            uuid                     default gen_random_uuid()               not null
         primary key,
-    device_id                     text                                               not null
+    device_id                     text                                                             not null
         unique,
     created_at                    timestamp with time zone default now(),
     updated_at                    timestamp with time zone default now(),
@@ -27,7 +27,22 @@ create table public.users
     cycling_ftp_watts             integer,
     prefers_cycling_power         boolean                  default false,
     swimming_css_seconds_per_100m integer,
-    prefers_swimming_pace         boolean                  default false
+    prefers_swimming_pace         boolean                  default false,
+    auth_user_id                  uuid,
+    auth_provider                 auth_provider_enum       default 'anonymous'::auth_provider_enum not null,
+    is_anonymous                  boolean                  default true                            not null,
+    auth_skipped_at               timestamp with time zone,
+    typical_bike_bottles          integer
+        constraint check_bike_bottles
+            check ((typical_bike_bottles IS NULL) OR ((typical_bike_bottles >= 0) AND (typical_bike_bottles <= 6))),
+    has_aero_bottle               boolean,
+    has_bento_box                 boolean,
+    typical_wetsuit               boolean,
+    typical_swim_cap_type         text
+        constraint check_swim_cap_type
+            check ((typical_swim_cap_type IS NULL) OR (typical_swim_cap_type = ANY
+                                                       (ARRAY ['none'::text, 'latex'::text, 'silicone'::text, 'neoprene'::text]))),
+    gi_sensitivity                boolean
 );
 
 comment on column public.users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -38,6 +53,18 @@ comment on column public.users.swimming_css_seconds_per_100m is 'User default CS
 
 comment on column public.users.prefers_swimming_pace is 'Whether user prefers to input pace vs speed for swimming';
 
+comment on column public.users.typical_bike_bottles is 'Number of water bottles typically carried on bike (1-4)';
+
+comment on column public.users.has_aero_bottle is 'Whether cyclist has aero bottle for additional hydration';
+
+comment on column public.users.has_bento_box is 'Whether cyclist has bento box for additional nutrition storage';
+
+comment on column public.users.typical_wetsuit is 'Whether swimmer typically uses wetsuit in open water';
+
+comment on column public.users.typical_swim_cap_type is 'Typical swim cap type: none, latex, silicone, neoprene';
+
+comment on column public.users.gi_sensitivity is 'Whether user has GI sensitivity issues during endurance activities';
+
 alter table public.users
     owner to postgres;
 
@@ -46,6 +73,12 @@ create index idx_users_device_id
 
 create index idx_users_updated_at
     on public.users (updated_at);
+
+create index idx_users_auth_user_id
+    on public.users (auth_user_id);
+
+create index idx_users_auth_provider
+    on public.users (auth_provider);
 
 create trigger update_users_updated_at
     before update
@@ -181,7 +214,10 @@ create table public.foods
     preference_priority    integer,
     categories             category_enum[]          default '{}'::category_enum[] not null,
     product_type           product_type_enum,
-    activity_types         activity_type_enum[]
+    activity_types         activity_type_enum[],
+    before_run_suitable    boolean                  default false,
+    during_run_suitable    boolean                  default false,
+    after_run_suitable     boolean                  default false
 );
 
 comment on column public.foods.show_in_preferences is 'Whether this food should be shown in the onboarding food preferences screen';
@@ -197,6 +233,21 @@ create unique index uq_foods_lower_name
 create index idx_foods_categories_gin
     on public.foods using gin (categories);
 
+create index idx_foods_show_in_preferences_name
+    on public.foods (show_in_preferences, name);
+
+create index idx_foods_before_suitable
+    on public.foods (before_run_suitable)
+    where (before_run_suitable = true);
+
+create index idx_foods_during_suitable
+    on public.foods (during_run_suitable)
+    where (during_run_suitable = true);
+
+create index idx_foods_after_suitable
+    on public.foods (after_run_suitable)
+    where (after_run_suitable = true);
+
 grant delete, insert, references, select, trigger, truncate, update on public.foods to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on public.foods to authenticated;
@@ -207,9 +258,7 @@ create table public.user_foods
 (
     id                     uuid                     default gen_random_uuid()     not null
         primary key,
-    device_id              text                                                   not null
-        references public.users (device_id)
-            on delete cascade,
+    device_id              text                                                   not null,
     client_food_id         text,
     barcode                text,
     name                   text                                                   not null,
@@ -235,6 +284,8 @@ create table public.user_foods
     user_id                uuid                                                   not null
         constraint fk_user_foods_user
             references public.users
+            on delete cascade
+        references public.users
             on delete cascade,
     product_type           product_type_enum,
     activity_types         activity_type_enum[]
@@ -258,6 +309,14 @@ create index idx_user_foods_device_not_deleted
 
 create index idx_user_foods_categories_gin
     on public.user_foods using gin (categories);
+
+create index idx_user_foods_user_id
+    on public.user_foods (user_id);
+
+create policy "Users can manage their own foods" on public.user_foods
+    as permissive
+    for all
+    using (user_id = auth.uid());
 
 grant delete, insert, references, select, trigger, truncate, update on public.user_foods to anon;
 
@@ -645,6 +704,8 @@ create table public.carb_loading_user_foods
         constraint fk_carb_loading_user_foods_user
             references public.users
             on delete cascade
+        references public.users
+            on delete cascade
 );
 
 alter table public.carb_loading_user_foods
@@ -659,6 +720,14 @@ create index idx_carb_loading_user_foods_deleted
 create index idx_carb_loading_user_foods_barcode
     on public.carb_loading_user_foods (barcode)
     where (barcode IS NOT NULL);
+
+create index idx_carb_loading_user_foods_user_id
+    on public.carb_loading_user_foods (user_id);
+
+create policy "Users can manage their own carb loading foods" on public.carb_loading_user_foods
+    as permissive
+    for all
+    using (user_id = auth.uid());
 
 grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_user_foods to anon;
 
@@ -780,4 +849,60 @@ grant delete, insert, references, select, trigger, truncate, update on public.fo
 grant delete, insert, references, select, trigger, truncate, update on public.food_preferences to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on public.food_preferences to service_role;
+
+create table public.public_events
+(
+    id               bigserial
+        primary key,
+    event_name       text               not null,
+    event_type       activity_type_enum not null,
+    event_subtype    event_subtype_enum,
+    location         text,
+    city             text,
+    state            text,
+    country          text                     default 'USA'::text,
+    event_date       date,
+    start_time       time,
+    registration_url text,
+    website_url      text,
+    description      text,
+    organizer_name   text,
+    is_active        boolean                  default true,
+    source           text,
+    external_id      text,
+    created_at       timestamp with time zone default now(),
+    updated_at       timestamp with time zone default now(),
+    search_vector    tsvector generated always as (to_tsvector('english'::regconfig,
+                                                               ((((((COALESCE(event_name, ''::text) || ' '::text) ||
+                                                                    COALESCE(location, ''::text)) || ' '::text) ||
+                                                                  COALESCE(city, ''::text)) || ' '::text) ||
+                                                                COALESCE(state, ''::text)))) stored
+);
+
+alter table public.public_events
+    owner to postgres;
+
+grant select, update, usage on sequence public.public_events_id_seq to anon;
+
+grant select, update, usage on sequence public.public_events_id_seq to authenticated;
+
+grant select, update, usage on sequence public.public_events_id_seq to service_role;
+
+create index idx_public_events_search
+    on public.public_events using gin (search_vector);
+
+create index idx_public_events_name_trgm
+    on public.public_events using gin (event_name public.gin_trgm_ops);
+
+create index idx_public_events_city_trgm
+    on public.public_events using gin (city public.gin_trgm_ops);
+
+create index idx_public_events_location_trgm
+    on public.public_events using gin (location public.gin_trgm_ops);
+
+grant delete, insert, references, select, trigger, truncate, update on public.public_events to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.public_events to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.public_events to service_role;
 

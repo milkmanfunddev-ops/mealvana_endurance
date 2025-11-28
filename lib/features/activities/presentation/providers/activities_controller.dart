@@ -4,7 +4,8 @@ import '../../../../shared/domain/activity_type.dart';
 import '../../application/activities_service.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
-import '../../../../shared/providers/device_id_provider.dart';
+import '../../../../shared/providers/user_id_provider.dart';
+import '../../../auth/application/supabase_auth_service.dart';
 
 part 'activities_controller.g.dart';
 
@@ -17,8 +18,11 @@ class ActivitiesController extends _$ActivitiesController {
 
   @override
   FutureOr<List<Activity>> build() async {
+    // Watch auth state to trigger rebuilds on sign in/out
+    ref.watch(currentUserProvider);
+    
     // Load all activities on build
-    final userId = await ref.read(deviceIdProvider.future);
+    final userId = await ref.read(userIdProvider.future);
     return await _service.getAllActivities(userId);
   }
 
@@ -49,7 +53,7 @@ class ActivitiesController extends _$ActivitiesController {
     Map<String, dynamic>? nutritionPlanData,
   }) async {
     try {
-      final deviceIdValue = await ref.read(deviceIdProvider.future);
+      final deviceIdValue = await ref.read(userIdProvider.future);
 
       final createdActivity = await _service.createActivity(
         deviceId: deviceIdValue,
@@ -88,7 +92,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// Update an existing activity
   Future<void> updateActivity(Activity activity) async {
     try {
-      final deviceIdValue = await ref.read(deviceIdProvider.future);
+      final deviceIdValue = await ref.read(userIdProvider.future);
 
       await _service.updateActivity(
         deviceId: deviceIdValue,
@@ -106,7 +110,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// Delete an activity (soft delete)
   Future<void> deleteActivity(int activityId) async {
     try {
-      final deviceIdValue = await ref.read(deviceIdProvider.future);
+      final deviceIdValue = await ref.read(userIdProvider.future);
 
       await _service.deleteActivity(
         deviceId: deviceIdValue,
@@ -124,7 +128,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// Get activities for a specific date
   Future<List<Activity>> getActivitiesForDate(DateTime date) async {
     try {
-      final userId = await ref.read(deviceIdProvider.future);
+      final userId = await ref.read(userIdProvider.future);
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = startOfDay.add(const Duration(days: 1)).subtract(const Duration(seconds: 1));
 
@@ -138,7 +142,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// Get activity by ID
   Future<Activity?> getActivityById(int activityId) async {
     try {
-      final userId = await ref.read(deviceIdProvider.future);
+      final userId = await ref.read(userIdProvider.future);
       return await _service.getActivityById(userId, activityId);
     } catch (e) {
       _logger.error('Error getting activity by ID', error: e);
@@ -155,7 +159,7 @@ class ActivitiesController extends _$ActivitiesController {
 /// Provider for getting a specific activity by ID
 @riverpod
 Future<Activity?> activityDetail(Ref ref, int activityId) async {
-  final userId = await ref.read(deviceIdProvider.future);
+  final userId = await ref.read(userIdProvider.future);
   final service = ref.read(activitiesServiceProvider);
   return await service.getActivityById(userId, activityId);
 }
@@ -163,7 +167,7 @@ Future<Activity?> activityDetail(Ref ref, int activityId) async {
 /// Provider for getting all activities
 @riverpod
 Future<List<Activity>> allActivities(Ref ref) async {
-  final userId = await ref.read(deviceIdProvider.future);
+  final userId = await ref.read(userIdProvider.future);
   final service = ref.read(activitiesServiceProvider);
   return await service.getAllActivities(userId);
 }

@@ -45,6 +45,7 @@ class CyclingTabContent extends ConsumerWidget {
             step: 1.0,
             decimalPlaces: 1,
             unit: 'miles',
+            tappable: true,
           ),
 
           const SizedBox(height: AppSpacing.xl),

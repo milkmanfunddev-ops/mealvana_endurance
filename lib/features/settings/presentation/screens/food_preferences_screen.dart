@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,9 +35,13 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   final Map<String, int> _sliderLevels = {};
 
   List<FoodItem> _allFoodPreferences = [];
+  List<FoodItem> _additionalFoodPreferences = []; // Additional food options (expandable)
   List<FoodItem> _userFoods = []; // User-added foods (scanned/searched)
   bool _isLoading = true;
   bool _isSaving = false;
+
+  // Expandable additional foods state
+  bool _isAdditionalFoodsExpanded = false;
 
   // Search functionality
   final TextEditingController _searchController = TextEditingController();
@@ -64,39 +70,88 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   }
 
   Future<void> _loadFoods() async {
+    DebugLogger.info('[FOOD_PREFS] 🔄 Starting food preferences load...');
+
     try {
       final foodRepository = ref.read(foodRepositoryProvider);
       final authService = ref.read(authServiceProvider);
       final database = ref.read(appDatabaseProvider);
 
       // Get current user's device ID for user foods
+      DebugLogger.info('[FOOD_PREFS] 🔍 Getting current user profile...');
       final userProfile = await database.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
+      DebugLogger.info('[FOOD_PREFS] ✅ User profile retrieved, deviceId: $deviceId');
 
-      // Load primary foods, user foods, and existing preferences in parallel
+      // Load primary foods, additional foods, user foods, and existing preferences in parallel
+      DebugLogger.info('[FOOD_PREFS] 📦 Starting parallel data load (primary foods, additional foods, user foods, preferences)...');
+
       final results = await Future.wait([
-        foodRepository.getPrimaryFoodsForPreferences(),
-        database.getUserFoods(deviceId),
-        authService.getCurrentUser().then((user) async {
+        () async {
+          DebugLogger.info('[FOOD_PREFS] 🌐 Fetching primary foods from Supabase...');
+          final foods = await foodRepository.getPrimaryFoodsForPreferences();
+          DebugLogger.info('[FOOD_PREFS] ✅ Primary foods loaded: ${foods.length} items');
+          return foods;
+        }(),
+        () async {
+          DebugLogger.info('[FOOD_PREFS] 🌐 Fetching additional foods from Supabase...');
+          final foods = await foodRepository.getAdditionalFoodsForPreferences();
+          DebugLogger.info('[FOOD_PREFS] ✅ Additional foods loaded: ${foods.length} items');
+          return foods;
+        }(),
+        () async {
+          DebugLogger.info('[FOOD_PREFS] 💾 Fetching user foods from local database...');
+          final userFoods = await database.getUserFoods(deviceId);
+          DebugLogger.info('[FOOD_PREFS] ✅ User foods loaded: ${userFoods.length} items');
+          return userFoods;
+        }(),
+        () async {
+          DebugLogger.info('[FOOD_PREFS] 🔐 Checking auth and loading preferences...');
+          final user = await authService.getCurrentUser();
           if (user != null) {
-            return await authService.getFoodPreferences(user.id);
+            DebugLogger.info('[FOOD_PREFS] 👤 User authenticated, fetching preferences...');
+            final prefs = await authService.getFoodPreferences(user.id);
+            DebugLogger.info('[FOOD_PREFS] ✅ Preferences loaded: ${prefs?.length ?? 0} items');
+            return prefs;
           }
+          DebugLogger.info('[FOOD_PREFS] ⚠️ No authenticated user, skipping preferences');
           return null;
-        }),
-      ]);
+        }(),
+        () async {
+          DebugLogger.info('[FOOD_PREFS] 📊 Loading slider levels...');
+          final user = await authService.getCurrentUser();
+          if (user != null) {
+            final levels = await authService.getFoodPreferenceLevels(user.id);
+            DebugLogger.info('[FOOD_PREFS] ✅ Slider levels loaded: ${levels.length}');
+            return levels;
+          }
+          return <String, int>{};
+        }(),
+      ]).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          DebugLogger.error('[FOOD_PREFS] ❌ Future.wait timed out after 15 seconds');
+          throw TimeoutException('Failed to load food data - operation timed out');
+        },
+      );
 
       final primaryFoods = results[0] as List<FoodItem>;
-      final userFoodsData = results[1] as List<dynamic>;
-      final existingPreferences = results[2] as Map<String, FoodPreference>?;
+      final additionalFoods = results[1] as List<FoodItem>;
+      final userFoodsData = results[2] as List<dynamic>;
+      final existingPreferences = results[3] as Map<String, FoodPreference>?;
+      final sliderLevels = Map<String, int>.from(results[4] as Map<String, int>? ?? {});
 
+      DebugLogger.info('[FOOD_PREFS] 🔄 Converting user foods to FoodItems...');
       // Convert user foods to FoodItems
       final userFoods = userFoodsData
           .map((userFood) => database.convertUserFoodToFoodItem(userFood))
           .cast<FoodItem>()
           .toList();
 
+      DebugLogger.info('[FOOD_PREFS] 🎨 Setting state with loaded data...');
       setState(() {
         _allFoodPreferences = primaryFoods;
+        _additionalFoodPreferences = additionalFoods;
         _userFoods = userFoods;
         _isLoading = false;
 
@@ -104,32 +159,54 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         for (final food in primaryFoods) {
           if (existingPreferences != null && existingPreferences.containsKey(food.name)) {
             // Convert existing preference to slider level
-            _sliderLevels[food.name] = _preferenceToLevel(existingPreferences[food.name]!);
+            final level =
+                (sliderLevels[food.name] ?? _preferenceToLevel(existingPreferences[food.name]!))
+                    .clamp(0, 4);
+            _sliderLevels[food.name] = level.toInt();
           } else {
             // Default to neutral (level 2)
             _sliderLevels[food.name] = 2;
           }
         }
 
+        // Initialize slider levels for additional foods with avoid (level 0) by default
+        for (final food in additionalFoods) {
+          if (existingPreferences != null && existingPreferences.containsKey(food.name)) {
+            final level =
+                (sliderLevels[food.name] ?? _preferenceToLevel(existingPreferences[food.name]!))
+                    .clamp(0, 4);
+            _sliderLevels[food.name] = level.toInt();
+          } else {
+            // Default to avoid (level 0)
+            _sliderLevels[food.name] = 0;
+          }
+        }
+
         // Initialize slider levels for user foods
         for (final food in userFoods) {
           if (existingPreferences != null && existingPreferences.containsKey(food.name)) {
-            _sliderLevels[food.name] = _preferenceToLevel(existingPreferences[food.name]!);
+            final level =
+                (sliderLevels[food.name] ?? _preferenceToLevel(existingPreferences[food.name]!))
+                    .clamp(0, 4);
+            _sliderLevels[food.name] = level.toInt();
           } else {
             // Default to neutral (level 2)
             _sliderLevels[food.name] = 2;
           }
         }
       });
-    } catch (e) {
+
+      DebugLogger.info('[FOOD_PREFS] 🎉 Food preferences load completed successfully! (${primaryFoods.length} primary foods, ${userFoods.length} user foods)');
+    } catch (e, stackTrace) {
+      DebugLogger.error('[FOOD_PREFS] ❌ Failed to load foods', error: e, stackTrace: stackTrace);
       setState(() {
         _isLoading = false;
       });
-      DebugLogger.error('Error loading foods: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading food preferences: $e'),
+            content: Text('Error loading food preferences: ${e.toString()}'),
             backgroundColor: AppColors.dragonfruit,
           ),
         );
@@ -159,7 +236,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       // Save preferences
       final currentUser = await authService.getCurrentUser();
       if (currentUser != null) {
-        await authService.saveFoodPreferences(currentUser.id, preferences);
+        await authService.saveFoodPreferences(
+          currentUser.id,
+          preferences,
+          sliderLevels: _sliderLevels,
+        );
       }
 
       final analytics = ref.read(appExternalDepsProvider).analytics;
@@ -254,6 +335,15 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       return _allFoodPreferences;
     }
     return _allFoodPreferences
+        .where((food) => food.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+  }
+
+  List<FoodItem> get _filteredAdditionalFoods {
+    if (_searchQuery.isEmpty) {
+      return _additionalFoodPreferences;
+    }
+    return _additionalFoodPreferences
         .where((food) => food.name.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
   }
@@ -583,18 +673,15 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       // 1. Delete from local Drift database first
       await database.deleteUserFood(food.id);
 
-      // 2. Sync deletion to Supabase via edge function
+      // 2. Sync deletion to Supabase (direct delete)
       try {
-        final response = await supabase.functions.invoke('delete-user-food', body: {
-          'device_id': deviceId,
-          'food_id': food.id,
-        });
+        await supabase
+            .from('user_foods')
+            .delete()
+            .eq('device_id', deviceId)
+            .eq('id', food.id);
 
-        if (response.status != 200) {
-          DebugLogger.warning('⚠️ Supabase delete sync failed, but local delete succeeded: ${response.data}');
-        } else {
-          DebugLogger.info('✅ Food deleted from both local and Supabase: ${food.name}');
-        }
+        DebugLogger.info('✅ Food deleted from both local and Supabase: ${food.name}');
       } catch (supabaseError) {
         DebugLogger.warning('⚠️ Supabase delete sync failed, but local delete succeeded: $supabaseError');
       }
@@ -718,93 +805,95 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
             children: [
               const SizedBox(height: AppSpacing.md),
 
-              // Search bar with barcode button and search button
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search foods...',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        prefixIcon: Icon(
-                          FontAwesomeIcons.magnifyingGlass,
+              // Search bar with barcode button and search icon
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search foods...',
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Barcode button
+                      IconButton(
+                        icon: Icon(
+                          FontAwesomeIcons.barcode,
                           size: AppIconSizes.controlIcon,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: AppColors.electrolyte,
                         ),
-                        suffixIcon: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Barcode button
-                            IconButton(
-                              icon: Icon(
-                                FontAwesomeIcons.barcode,
-                                size: AppIconSizes.controlIcon,
-                                color: AppColors.electrolyte,
-                              ),
-                              onPressed: () {
-                                final analytics = ref.read(appExternalDepsProvider);
-                                analytics.analytics.track('barcode_scanner_opened', properties: {
-                                  'source': 'food_preferences_settings',
-                                });
-                                _handleBarcodeScan();
-                              },
+                        onPressed: () {
+                          final analytics = ref.read(appExternalDepsProvider);
+                          analytics.analytics.track('barcode_scanner_opened', properties: {
+                            'source': 'food_preferences_settings',
+                          });
+                          _handleBarcodeScan();
+                        },
+                      ),
+                      // Search button with white circular background
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: GestureDetector(
+                          onTap: _performSearch,
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
                             ),
-                            // Clear button (if search query is not empty)
-                            if (_searchQuery.isNotEmpty)
-                              IconButton(
-                                icon: Icon(
-                                  FontAwesomeIcons.xmark,
-                                  size: AppIconSizes.controlIcon,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                                onPressed: _clearSearch,
-                              ),
-                          ],
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                            child: Icon(
+                              FontAwesomeIcons.magnifyingGlass,
+                              size: AppIconSizes.controlIcon,
+                              color: AppColors.blackberry,
+                            ),
                           ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: const BorderSide(
-                            color: AppColors.electrolyte,
-                            width: 2,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surface,
                       ),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
-                      onSubmitted: (_) => _performSearch(),
+                      // Clear button (if search query is not empty)
+                      if (_searchQuery.isNotEmpty)
+                        IconButton(
+                          icon: Icon(
+                            FontAwesomeIcons.xmark,
+                            size: AppIconSizes.controlIcon,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          onPressed: _clearSearch,
+                        ),
+                    ],
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  // Search button
-                  KylePrimaryButton(
-                    text: 'Search',
-                    onPressed: _performSearch,
-                    isFullWidth: false,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                    ),
                   ),
-                ],
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: const BorderSide(
+                      color: AppColors.electrolyte,
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
+                ),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                onSubmitted: (_) => _performSearch(),
               ),
 
               const SizedBox(height: AppSpacing.lg),
@@ -840,6 +929,12 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                         child: _buildFoodPreferenceItem(context, food, sliderLevel),
                       );
                     }).toList(),
+
+                    // Expandable additional foods section
+                    if (_filteredAdditionalFoods.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      _buildExpandableAdditionalFoods(context),
+                    ],
                   ],
                 ),
         ),
@@ -1330,6 +1425,76 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildExpandableAdditionalFoods(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      children: [
+        // Expandable header
+        InkWell(
+          onTap: () {
+            setState(() {
+              _isAdditionalFoodsExpanded = !_isAdditionalFoodsExpanded;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.blackberry.withOpacity(0.2)
+                  : Theme.of(context).colorScheme.surface.withOpacity(0.5),
+              borderRadius: AppRadius.cardRadius,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.restaurant_menu,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  size: AppIconSizes.controlIcon,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    _isAdditionalFoodsExpanded
+                        ? 'Show fewer food options'
+                        : 'Show more food options',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  _isAdditionalFoodsExpanded
+                      ? FontAwesomeIcons.chevronUp
+                      : FontAwesomeIcons.chevronDown,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  size: AppIconSizes.chevron,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Expandable content
+        if (_isAdditionalFoodsExpanded) ...[
+          const SizedBox(height: AppSpacing.md),
+          ..._filteredAdditionalFoods.map((food) {
+            final sliderLevel = _sliderLevels[food.name] ?? 0;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: _buildFoodPreferenceItem(context, food, sliderLevel),
+            );
+          }),
+        ],
+      ],
     );
   }
 

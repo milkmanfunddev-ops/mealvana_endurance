@@ -36,6 +36,14 @@ class AppTextStyles {
     height: 1.2,
   );
 
+  // Date Picker Header (24px) - Smaller to fit year in header
+  static const TextStyle datePickerHeader = TextStyle(
+    fontFamily: apercu, // Changed from sansita to save space
+    fontSize: 18, // Reduced to 18px (was 20, and before that 24)
+    fontWeight: FontWeight.w700,
+    height: 1.2,
+  );
+
   // === Activity & Food Titles (Compadre Wide) ===
   
   // Activity titles (18px)

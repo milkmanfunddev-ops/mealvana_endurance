@@ -9,6 +9,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'shared/services/app_config.dart';
 import 'shared/widgets/root_app_widget.dart';
 
+/// Global navigator key for Sentry feedback widget screenshot capture
+/// This key is used by SentryFeedbackWidget to navigate and capture screenshots
+final GlobalKey<NavigatorState> sentryNavigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> main() async {
   runZonedGuarded(() async {
     // Initialize widgets binding for Sentry frame tracking BEFORE Sentry init
@@ -20,11 +24,6 @@ Future<void> main() async {
     // Determine which env file to load based on dev mode
     final isDevMode = AppConfig.effectiveDevMode;
     final envFileName = isDevMode ? '.env.dev.local' : '.env.prod.local';
-
-    if (kDebugMode) {
-      print('🔧 Loading environment from: $envFileName');
-      print('   Dev Mode: $isDevMode');
-    }
 
     // Load environment variables from appropriate file
     await dotenv.load(fileName: envFileName);
@@ -88,12 +87,19 @@ Future<void> main() async {
         // Enhanced breadcrumb filtering
         options.beforeBreadcrumb = (breadcrumb, hint) {
           // Don't log sensitive navigation paths
-          if (breadcrumb?.category == 'navigation' && 
+          if (breadcrumb?.category == 'navigation' &&
               breadcrumb?.data?['to']?.contains('admin') == true) {
             return null;
           }
           return breadcrumb;
         };
+
+        // Navigator key for Sentry feedback widget screenshot capture
+        // Required for SentryFeedbackWidget to capture screenshots from any screen
+        options.navigatorKey = sentryNavigatorKey;
+
+        // Enable screenshot capture for feedback
+        options.attachScreenshot = true;
       },
     );
 
@@ -113,13 +119,17 @@ Future<void> _runMealvanaApp(AppConfig config) async {
   );
 
   // Entry point following Andrea Bizzotto's pattern with runZonedGuarded pattern
+  // SentryWidget wraps the app to enable screenshot capture for bug reporting
+  // This creates a RepaintBoundary that captures the actual app content
   runApp(
-    ProviderScope(
-      overrides: [
-        // Override appConfigProvider with loaded config
-        appConfigProvider.overrideWithValue(config),
-      ],
-      child: RootAppWidget(),
+    SentryWidget(
+      child: ProviderScope(
+        overrides: [
+          // Override appConfigProvider with loaded config
+          appConfigProvider.overrideWithValue(config),
+        ],
+        child: const RootAppWidget(),
+      ),
     ),
   );
 }

@@ -61,8 +61,6 @@ class FoodRepository {
   /// Get primary foods for the preferences screen (curated foods with show_in_preferences=true)
   Future<List<FoodItem>> getPrimaryFoodsForPreferences() async {
     try {
-      _logger.info('[FOOD_REPO] Fetching primary foods from Supabase (show_in_preferences=true)...');
-
       final response = await _supabase
           .from('foods')
           .select('''
@@ -86,21 +84,21 @@ class FoodRepository {
             product_type,
             show_in_preferences,
             is_electrolyte,
+            is_essential,
             to_exclude_from_solver,
             created_at
           ''')
           .eq('show_in_preferences', true)
+          .eq('is_essential', false)
           .order('name', ascending: true)
           .timeout(
             const Duration(seconds: 10),
             onTimeout: () {
-              _logger.error('[FOOD_REPO] Supabase foods query timed out after 10 seconds');
               throw TimeoutException('Failed to load foods from Supabase');
             },
           );
 
       final List<dynamic> data = response as List<dynamic>;
-      _logger.info('[FOOD_REPO] Successfully fetched ${data.length} primary foods from Supabase');
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
       _logger.error('Error fetching primary preference foods from Supabase',
@@ -115,8 +113,6 @@ class FoodRepository {
   /// Get additional foods for expanded options (show_in_preferences=false)
   Future<List<FoodItem>> getAdditionalFoodsForPreferences() async {
     try {
-      _logger.info('[FOOD_REPO] Fetching additional foods from Supabase (show_in_preferences=false)...');
-
       final response = await _supabase
           .from('foods')
           .select('''
@@ -140,25 +136,24 @@ class FoodRepository {
             product_type,
             show_in_preferences,
             is_electrolyte,
+            is_essential,
             to_exclude_from_solver,
             created_at
           ''')
           .eq('show_in_preferences', false)
+          .eq('is_essential', false)
           .order('name', ascending: true)
           .timeout(
             const Duration(seconds: 10),
             onTimeout: () {
-              _logger.error('[FOOD_REPO] Additional foods query timed out after 10 seconds');
               throw TimeoutException('Failed to load additional foods from Supabase');
             },
           );
 
       final List<dynamic> data = response as List<dynamic>;
-      _logger.info('[FOOD_REPO] Successfully fetched ${data.length} additional foods from Supabase');
-
       return data.map((json) => _mapSupabaseFoodToFoodItem(json)).toList();
     } catch (e) {
-      _logger.error('[FOOD_REPO] Error fetching additional preference foods from Supabase: $e',
+      _logger.error('Error fetching additional preference foods from Supabase',
         context: 'FoodRepository',
         error: e,
       );
@@ -206,26 +201,12 @@ class FoodRepository {
   /// Checks both regular foods table and user_foods table
   Future<FoodItem?> getFoodById(String id) async {
     try {
-      // 🐛 DIAGNOSTIC: Log total food count before querying specific food
-      final allFoods = await _database.select(_database.foodsTable).get();
-      final totalFoods = allFoods.length;
-      _logger.debug('🔍 [FOOD_LOOKUP] Searching for food $id (total foods in table: $totalFoods)',
-        context: 'FoodRepository',
-        data: {'foodId': id, 'totalFoodsCount': totalFoods},
-      );
-
       // First try to get from regular foods table
       final foodEntry = await (_database.select(_database.foodsTable)
         ..where((f) => f.id.equals(id)))
         .getSingleOrNull();
 
       if (foodEntry != null) {
-        _logger.debug('✅ [FOOD_LOOKUP] Found food in foods table: ${foodEntry.name}',
-          context: 'FoodRepository',
-          data: {'foodId': id, 'foodName': foodEntry.name},
-        );
-        // Log sports drink data from local Drift database
-        if (foodEntry.name?.toLowerCase().contains('sports drink') == true) {        }
         return _mapLocalFoodToFoodItem(foodEntry);
       }
 
@@ -235,17 +216,9 @@ class FoodRepository {
         .getSingleOrNull();
 
       if (userFoodEntry != null) {
-        _logger.debug('✅ [FOOD_LOOKUP] Found food in user_foods table: ${userFoodEntry.name}',
-          context: 'FoodRepository',
-          data: {'foodId': id, 'foodName': userFoodEntry.name},
-        );
         return _mapUserFoodToFoodItem(userFoodEntry);
       }
 
-      _logger.warning('⚠️ [FOOD_LOOKUP] Food not found in either table (searched $totalFoods foods)',
-        context: 'FoodRepository',
-        data: {'foodId': id, 'totalFoodsInTable': totalFoods},
-      );
       return null;
     } catch (e) {
       _logger.error('Error fetching food by ID from local database',
@@ -269,10 +242,6 @@ class FoodRepository {
         return _mapLocalFoodToFoodItem(foodEntry);
       }
 
-      _logger.warning('Food not found in local database',
-        context: 'FoodRepository',
-        data: {'foodName': name},
-      );
       return null;
     } catch (e) {
       _logger.error('Error fetching food by name from local database',
@@ -358,13 +327,22 @@ class FoodRepository {
     // Debug logging
     final imageAddress = json['image_address'] as String?;
 
+    // Parse categories from JSON array
+    final categoriesJson = json['categories'];
+    final categoryStrings = categoriesJson != null && categoriesJson is List
+        ? List<String>.from(categoriesJson)
+        : <String>[];
+    final mappedCategories = categoryStrings
+        .map((value) => FoodCategory.fromDbValue(value))
+        .toList();
+
     return FoodItem(
       id: json['id'] as String,
       name: json['name'] as String,
       imageAddress: imageAddress,
       description: null, // Not available in Supabase schema
       instructions: null, // Not available in Supabase schema
-      categories: [], // Would need separate query for categories
+      categories: mappedCategories,
       servingSize: servingSize,
       servingAmount: servingAmount,
       servingUnit: servingUnit,
@@ -433,13 +411,22 @@ class FoodRepository {
     // Debug logging
     final imageAddress = json['image_address'] as String?;
 
+    // Parse categories from JSON array
+    final categoriesJson = json['categories'];
+    final categoryStrings = categoriesJson != null && categoriesJson is List
+        ? List<String>.from(categoriesJson)
+        : <String>[];
+    final mappedCategories = categoryStrings
+        .map((value) => FoodCategory.fromDbValue(value))
+        .toList();
+
     return FoodItem(
       id: json['id'] as String,
       name: json['name'] as String,
       imageAddress: imageAddress,
       description: json['description'] as String?,
       instructions: json['instructions'] as String?,
-      categories: [], // Would need separate query for categories
+      categories: mappedCategories,
       servingSize: servingSize,
       servingAmount: servingAmount,
       servingUnit: servingUnit,
@@ -628,8 +615,8 @@ class FoodRepository {
           servingUnitPlural: null,
           servingQualifier: null,
           // Use categories to determine suitability
-          beforeRunSuitable: categories.contains(1), // category_id = 1
-          duringRunSuitable: categories.contains(2), // category_id = 2
+          beforeRunSuitable: categories.contains('before_run'),
+          duringRunSuitable: categories.contains('during_run'),
           runPortable: true,
           requiresPreparation: false,
           aidStationAvailable: false,
@@ -804,11 +791,6 @@ class FoodRepository {
       // Clear existing foods to avoid duplicates
       await _database.delete(_database.foodsTable).go();
 
-      // Log each food being synced for debugging
-      for (final json in supabaseFoodsData) {
-        if ((json['name'] as String).toLowerCase().contains('sports drink')) {        }
-      }
-
       // Convert Supabase data to FoodsTableCompanion objects for insertion
       final foodsToInsert = supabaseFoodsData.map((json) {
         // Helper function to convert array columns to JSON strings for SQLite storage
@@ -872,20 +854,8 @@ class FoodRepository {
     required List<dynamic> foods,
   }) async {
     try {
-      _logger.info(
-        'Syncing nutrition foods from downloaded data',
-        context: 'FOOD_REPOSITORY',
-        data: {'count': foods.length},
-      );
-
       // Reuse existing sync logic that clears and repopulates foods table
       await _syncFoodsToLocalDatabase(foods);
-
-      _logger.info(
-        'Nutrition foods sync completed',
-        context: 'FOOD_REPOSITORY',
-        data: {'count': foods.length},
-      );
     } catch (e, stackTrace) {
       _logger.error(
         'Nutrition foods sync failed',

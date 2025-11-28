@@ -14,6 +14,11 @@ import '../../../shared/services/notification_service.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/sync/data_sync_service.dart';
 import '../../nutrition_plan/data/food_repository.dart';
+import '../../auth/data/user_repository.dart';
+import '../../settings/presentation/providers/settings_controller.dart';
+import '../../activities/presentation/providers/activities_controller.dart';
+import '../../events/presentation/providers/events_controller.dart';
+import '../../../shared/providers/user_id_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -30,29 +35,21 @@ class AppStartupService {
   /// Initialize Drift database with v2 migration support
   Future<void> initializeDatabase() async {
     try {
-      _logger.info('🔍 Getting database instance...', context: 'DATABASE');
-
       // Touch the database provider so migrations run.
       // The database is ready immediately - Drift's LazyDatabase handles
       // async initialization internally (onCreate, onUpgrade, beforeOpen).
       final db = ref.read(appDatabaseProvider);
 
-      _logger.info('🔍 Database instance obtained, triggering initialization...', context: 'DATABASE');
-
       // Trigger lazy initialization by accessing the database
       // This ensures onCreate/migration runs before we proceed
       // Use a simple table query instead of SELECT 1 to verify schema is ready
       try {
-        _logger.info('🔍 Querying user profiles table to verify database...', context: 'DATABASE');
         await db.select(db.userProfilesTable).get();
-        _logger.info('✅ Database query successful', context: 'DATABASE');
       } catch (e) {
-        _logger.warning('First query failed (expected on fresh install): $e', context: 'DATABASE');
         // On fresh install, table might not exist yet - that's OK
         // The important part is that onCreate has completed
       }
 
-      _logger.info('✅ Database initialization verified', context: 'DATABASE');
     } catch (e, stackTrace) {
       _logger.error('Database initialization failed',
         context: 'DATABASE',
@@ -139,23 +136,10 @@ class AppStartupService {
   /// This is the foundation for all Supabase Auth-based operations
   Future<void> initializeSupabaseAuth() async {
     try {
-      _logger.info('🔄 Initializing Supabase Auth...', context: 'AUTH');
-
       // Check if we already have a session (SDK auto-restores from secure storage)
       final existingSession = _supabase.auth.currentSession;
 
       if (existingSession != null) {
-        _logger.info(
-          '✅ Existing Supabase session restored',
-          context: 'AUTH',
-          data: {
-            'user_id': existingSession.user.id,
-            'expires_at': existingSession.expiresAt != null
-                ? DateTime.fromMillisecondsSinceEpoch(existingSession.expiresAt! * 1000).toIso8601String()
-                : null,
-          },
-        );
-
         // Track session restoration
         await _analytics.track(
           'auth_session_restored',
@@ -172,24 +156,11 @@ class AppStartupService {
       }
 
       // No existing session - create anonymous user
-      _logger.info('🔄 No session found, creating anonymous user...', context: 'AUTH');
-
       final response = await _supabase.auth.signInAnonymously();
 
       if (response.session == null || response.user == null) {
         throw Exception('Failed to create anonymous session - null response');
       }
-
-      _logger.info(
-        '✅ Anonymous Supabase user created successfully',
-        context: 'AUTH',
-        data: {
-          'user_id': response.user!.id,
-          'session_expires_at': response.session!.expiresAt != null
-              ? DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000).toIso8601String()
-              : null,
-        },
-      );
 
       // Track anonymous user creation
       await _analytics.track(
@@ -244,25 +215,12 @@ class AppStartupService {
   /// Note: With native OAuth, account linking completes synchronously
   /// within OAuthService methods, so we no longer need OAuth callbacks here
   void setupAuthStateListener() {
-    _logger.info('🔄 Setting up auth state change listener...', context: 'AUTH');
-
     _supabase.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
       final session = data.session;
 
-      _logger.info(
-        'Auth state changed',
-        context: 'AUTH',
-        data: {
-          'event': event.name,
-          'user_id': session?.user.id,
-          'is_anonymous': session?.user.isAnonymous,
-        },
-      );
-
       // Handle token refresh events
       if (event == AuthChangeEvent.tokenRefreshed) {
-        _logger.info('Auth token refreshed', context: 'AUTH');
         await _analytics.track('auth_token_refreshed', properties: {
           'user_id': session?.user.id,
           'timestamp': DateTime.now().toIso8601String(),
@@ -271,32 +229,111 @@ class AppStartupService {
 
       // Handle sign-out events
       if (event == AuthChangeEvent.signedOut) {
-        _logger.info('User signed out', context: 'AUTH');
+        // Get the old user ID before creating new session
+        final oldUserId = session?.user.id;
+
         await _analytics.track('user_signed_out', properties: {
+          'old_user_id': oldUserId,
           'timestamp': DateTime.now().toIso8601String(),
         });
+
+        try {
+          // Create new anonymous session immediately
+          final response = await _supabase.auth.signInAnonymously();
+
+          if (response.user != null) {
+            final newUserId = response.user!.id;
+
+            // Reset local database to new anonymous user
+            // This preserves food preferences but clears biometric data
+            final userRepo = await ref.read(userRepositoryProvider.future);
+            await userRepo.resetToAnonymousAfterSignOut(
+              newAnonymousUserId: newUserId,
+              oldUserId: oldUserId,
+            );
+
+            // Ensure providers dependent on user identity refresh immediately
+            ref.invalidate(userIdProvider);
+            ref.invalidate(activitiesControllerProvider);
+            ref.invalidate(allEventsProvider);
+            ref.invalidate(nextUpcomingEventProvider);
+
+            // Track analytics
+            await _analytics.track('anonymous_user_created_after_signout', properties: {
+              'new_user_id': newUserId,
+              'old_user_id': oldUserId,
+              'timestamp': DateTime.now().toIso8601String(),
+            });
+
+            // Invalidate settings controller to refresh UI
+            ref.invalidate(settingsControllerProvider);
+          }
+        } catch (e, stackTrace) {
+          _logger.error(
+            'Failed to create anonymous session after sign-out',
+            context: 'AUTH',
+            error: e,
+            stackTrace: stackTrace,
+          );
+
+          await _sentry.reportCriticalError(
+            e,
+            stackTrace: stackTrace,
+            context: 'sign_out_recovery_failed',
+            tags: {
+              'error_type': 'anonymous_session_creation_failed',
+              'operation': 'sign_out_handler',
+            },
+          );
+        }
+      }
+
+      // Handle sign-in events
+      if (event == AuthChangeEvent.signedIn) {
+        final userId = session?.user.id;
+
+        // Sync user profile from Supabase to local DB if needed
+        // This handles the case where a user logs in on a new device
+        // or switches accounts
+        if (userId != null) {
+           try {
+             // Fetch fresh profile from Supabase and save to local DB
+             // This is critical when switching from anonymous to existing account
+             final userRepo = await ref.read(userRepositoryProvider.future);
+            await userRepo.fetchAndSaveRemoteProfile(userId);
+            await userRepo.fetchAndCacheRemoteFoodPreferences(userId);
+            await userRepo.syncUserFoodsFromSupabase(userId);
+
+            // Force providers that depend on the cached user to refresh immediately.
+            ref.invalidate(userIdProvider);
+            ref.invalidate(activitiesControllerProvider);
+            ref.invalidate(allEventsProvider);
+            ref.invalidate(nextUpcomingEventProvider);
+           } catch (e) {
+             _logger.error('Failed to sync remote profile on sign in', context: 'AUTH', error: e);
+           }
+
+           // Invalidate settings controller to refresh UI immediately
+           ref.invalidate(settingsControllerProvider);
+
+          // Trigger a data sync for the new user in the background
+          unawaited(syncAllAppData().then((_) {
+            ref.invalidate(activitiesControllerProvider);
+            ref.invalidate(allEventsProvider);
+            ref.invalidate(nextUpcomingEventProvider);
+          }));
+        }
       }
     });
-
-    _logger.info('✅ Auth state listener setup complete', context: 'AUTH');
   }
 
   /// Check if user has existing session and restore it
   Future<void> checkUserSession() async {
     try {
-      _logger.info('🔄 Starting session check...', context: 'APP_STARTUP');
-
-      _logger.info('🔄 Getting database instance...', context: 'APP_STARTUP');
       final database = ref.read(appDatabaseProvider);
-      _logger.info('✅ Database instance obtained', context: 'APP_STARTUP');
-
-      // Check if user exists in Drift database
-      _logger.info('🔄 Querying for current user profile...', context: 'APP_STARTUP');
       final user = await database.getCurrentUserProfile();
-      _logger.info('✅ User profile query complete (user: ${user != null})', context: 'APP_STARTUP');
 
       if (user != null) {
-        _logger.info('🔄 Identifying user in analytics...', context: 'APP_STARTUP');
         // User exists locally - identify them properly in analytics
         await _analytics.identifyUser(
           user.id,
@@ -306,7 +343,6 @@ class AppStartupService {
           runsWithWaterBottle: user.runsWithWaterBottle,
           gutTrainingLevel: user.gutTraining.name,
         );
-        _logger.info('✅ User identified in analytics', context: 'APP_STARTUP');
       }
     } catch (e, stackTrace) {
       _logger.error('Session check error',
@@ -351,36 +387,14 @@ class AppStartupService {
       final user = await database.getCurrentUserProfile();
 
       if (user == null) {
-        _logger.info(
-          'No user profile found - skipping sync (fresh install before onboarding)',
-          context: 'APP_STARTUP',
-        );
         // This is normal on fresh install before onboarding
         // Reference data will be downloaded after onboarding completes
         return true;
       }
 
-      _logger.info(
-        'Starting unified data sync',
-        context: 'APP_STARTUP',
-        data: {'userId': user.id},
-      );
-
       // Call unified sync service - single network call
       final dataSyncService = ref.read(dataSyncServiceProvider);
       final success = await dataSyncService.syncAllData(user.id);
-
-      if (success) {
-        _logger.info(
-          'Unified data sync completed successfully',
-          context: 'APP_STARTUP',
-        );
-      } else {
-        _logger.warning(
-          'Unified data sync failed - app continuing with cached/seed data',
-          context: 'APP_STARTUP',
-        );
-      }
 
       return success;
     } catch (e, stackTrace) {
@@ -405,19 +419,9 @@ class AppStartupService {
       final foodCount = await database.select(database.foodsTable).get().then((rows) => rows.length);
 
       if (foodCount == 0) {
-        _logger.warning(
-          'Foods table is empty - attempting fallback load',
-          context: 'FOOD_DATA_FALLBACK',
-        );
-
         // Last resort: call get-foods edge function directly
         final foodRepository = ref.read(foodRepositoryProvider);
         await foodRepository.getAllFoods();
-
-        _logger.info(
-          'Fallback food load completed',
-          context: 'FOOD_DATA_FALLBACK',
-        );
       }
     } catch (e, stackTrace) {
       _logger.error(

@@ -10,7 +10,8 @@ part of 'oauth_service.dart';
 // ignore_for_file: type=lint, type=warning
 /// Service for handling OAuth account linking via native SDKs
 /// Uses native Google Sign-In and Apple Sign-In packages
-/// Exchanges native tokens with Supabase via signInWithIdToken
+/// Links OAuth identities to existing anonymous users via linkIdentityWithIdToken()
+/// Preserves user ID and all user data during account linking
 /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
 
 @ProviderFor(OAuthService)
@@ -18,13 +19,15 @@ const oAuthServiceProvider = OAuthServiceProvider._();
 
 /// Service for handling OAuth account linking via native SDKs
 /// Uses native Google Sign-In and Apple Sign-In packages
-/// Exchanges native tokens with Supabase via signInWithIdToken
+/// Links OAuth identities to existing anonymous users via linkIdentityWithIdToken()
+/// Preserves user ID and all user data during account linking
 /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
 final class OAuthServiceProvider
     extends $AsyncNotifierProvider<OAuthService, void> {
   /// Service for handling OAuth account linking via native SDKs
   /// Uses native Google Sign-In and Apple Sign-In packages
-  /// Exchanges native tokens with Supabase via signInWithIdToken
+  /// Links OAuth identities to existing anonymous users via linkIdentityWithIdToken()
+  /// Preserves user ID and all user data during account linking
   /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
   const OAuthServiceProvider._()
     : super(
@@ -45,11 +48,12 @@ final class OAuthServiceProvider
   OAuthService create() => OAuthService();
 }
 
-String _$oAuthServiceHash() => r'00a048ebc9c6275cb82e20c424741c14cfe63a1c';
+String _$oAuthServiceHash() => r'c8ba235c8194c937985620278a490db7b6d58081';
 
 /// Service for handling OAuth account linking via native SDKs
 /// Uses native Google Sign-In and Apple Sign-In packages
-/// Exchanges native tokens with Supabase via signInWithIdToken
+/// Links OAuth identities to existing anonymous users via linkIdentityWithIdToken()
+/// Preserves user ID and all user data during account linking
 /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
 
 abstract class _$OAuthService extends $AsyncNotifier<void> {

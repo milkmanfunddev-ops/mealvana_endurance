@@ -41,7 +41,7 @@ final class FoodPreferencesControllerProvider
 }
 
 String _$foodPreferencesControllerHash() =>
-    r'968324bd8f3f6c0254690cb1baaff586530784e9';
+    r'8b65ccf81e50f7cac4cbd0d1307552abf3c0c5f5';
 
 /// Controller for food preferences screen - follows Andrea Bizzotto's AsyncNotifier pattern
 

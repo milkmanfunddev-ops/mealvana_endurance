@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/database/app_database.dart' as db;
-import '../../../../shared/providers/device_id_provider.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../application/carb_loading_food_service.dart';
 import '../../application/food_selection_service.dart';
 import '../../domain/carb_loading_food.dart';
@@ -83,7 +83,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
 
     state = await AsyncValue.guard(() async {
       // Get device ID
-      final deviceId = await ref.read(deviceIdProvider.future);
+      final deviceId = await ref.read(userIdProvider.future);
 
       // Load meals for this day
       final meals = await _selectionService.getMealsByDay(carbLoadingDay.id);

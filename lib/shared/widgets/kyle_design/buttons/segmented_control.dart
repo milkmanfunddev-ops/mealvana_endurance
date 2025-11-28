@@ -182,7 +182,7 @@ class _GutTrainingSegmentedControlWithValues extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDark ? AppColors.blackberry : AppColors.blackberry)
+                      ? (isDark ? AppColors.cream : AppColors.blackberry)
                       : Colors.transparent,
                   borderRadius: AppRadius.segmentedControlRadius,
                   border: Border.all(
@@ -197,7 +197,7 @@ class _GutTrainingSegmentedControlWithValues extends StatelessWidget {
                       segment.displayName,
                       style: AppTextStyles.segmentedControl.copyWith(
                         color: isSelected
-                            ? AppColors.cream
+                            ? (isDark ? AppColors.blackberry : AppColors.cream)
                             : (isDark ? AppColors.cream : AppColors.blackberry),
                         fontWeight: FontWeight.w700,
                       ),
@@ -209,7 +209,7 @@ class _GutTrainingSegmentedControlWithValues extends StatelessWidget {
                       style: AppTextStyles.smallLabel.copyWith(
                         fontSize: 10,
                         color: isSelected
-                            ? AppColors.cream.withValues(alpha: 0.8)
+                            ? (isDark ? AppColors.blackberry.withValues(alpha: 0.8) : AppColors.cream.withValues(alpha: 0.8))
                             : (isDark ? AppColors.cream.withValues(alpha: 0.6) : AppColors.blackberry.withValues(alpha: 0.6)),
                       ),
                       textAlign: TextAlign.center,

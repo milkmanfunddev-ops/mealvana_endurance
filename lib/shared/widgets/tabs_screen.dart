@@ -35,21 +35,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     const SettingsScreen(),
   ];
 
-  List<_TabItem> get _tabs => [
-    _TabItem(
-      icon: Icons.list_alt,
-      label: 'Activities',
-    ),
-    _TabItem(
-      icon: Icons.assignment,
-      label: 'Survey',
-    ),
-    _TabItem(
-      icon: Icons.settings,
-      label: 'Settings',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -57,6 +42,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -151,14 +137,4 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       ),
     );
   }
-}
-
-class _TabItem {
-  final IconData icon;
-  final String label;
-
-  _TabItem({
-    required this.icon,
-    required this.label,
-  });
 }

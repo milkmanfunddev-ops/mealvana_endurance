@@ -104,7 +104,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     final controller = ref.read(onboardingControllerProvider.notifier);
     DebugLogger.info('🎮 Food preferences screen - Calling controller.saveFoodPreferences');
 
-    final success = await controller.saveFoodPreferences(preferences);
+    final success = await controller.saveFoodPreferences(
+      preferences,
+      _sliderLevels,
+    );
     DebugLogger.debug('📋 Food preferences screen - Save result: $success');
 
     if (success && mounted) {
@@ -485,7 +488,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                           decoration: BoxDecoration(
                             color: index <= sliderLevel
                                 ? Colors.white
-                                : Colors.white.withOpacity(0.3),
+                                : Colors.grey.withOpacity(0.8),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -599,94 +602,96 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   Widget _buildSearchBar() {
     return Column(
       children: [
-        // Search bar with barcode button and search button
-        Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search foods...',
-                    hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+        // Search bar with barcode button and search icon
+        TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Search foods...',
+            hintStyle: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Barcode button
+                IconButton(
+                  icon: Icon(
+                    FontAwesomeIcons.barcode,
+                    size: AppIconSizes.controlIcon,
+                    color: AppColors.electrolyte,
+                  ),
+                  onPressed: () {
+                    final analytics = ref.read(appExternalDepsProvider);
+                    analytics.analytics.track('barcode_scanner_opened', properties: {
+                      'source': 'onboarding_food_preferences',
+                    });
+                    _handleBarcodeScan();
+                  },
+                ),
+                // Search button with white circular background
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: GestureDetector(
+                    onTap: _performSearch,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        FontAwesomeIcons.magnifyingGlass,
+                        size: AppIconSizes.controlIcon,
+                        color: AppColors.blackberry,
+                      ),
                     ),
-                    prefixIcon: Icon(
-                      FontAwesomeIcons.magnifyingGlass,
+                  ),
+                ),
+                // Clear button (if search query is not empty)
+                if (_searchQuery.isNotEmpty)
+                  IconButton(
+                    icon: Icon(
+                      FontAwesomeIcons.xmark,
                       size: AppIconSizes.controlIcon,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                    suffixIcon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Barcode button
-                        IconButton(
-                          icon: Icon(
-                            FontAwesomeIcons.barcode,
-                            size: AppIconSizes.controlIcon,
-                            color: AppColors.electrolyte,
-                          ),
-                          onPressed: () {
-                            final analytics = ref.read(appExternalDepsProvider);
-                            analytics.analytics.track('barcode_scanner_opened', properties: {
-                              'source': 'onboarding_food_preferences',
-                            });
-                            _handleBarcodeScan();
-                          },
-                        ),
-                        // Clear button (if search query is not empty)
-                        if (_searchQuery.isNotEmpty)
-                          IconButton(
-                            icon: Icon(
-                              FontAwesomeIcons.xmark,
-                              size: AppIconSizes.controlIcon,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                            onPressed: _clearSearch,
-                          ),
-                      ],
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: AppRadius.inputRadius,
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: AppRadius.inputRadius,
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: AppRadius.inputRadius,
-                      borderSide: const BorderSide(
-                        color: AppColors.electrolyte,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surface,
+                    onPressed: _clearSearch,
                   ),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                  onSubmitted: (_) => _performSearch(),
-                ),
+              ],
+            ),
+            border: OutlineInputBorder(
+              borderRadius: AppRadius.inputRadius,
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              // Search button
-              KylePrimaryButton(
-                text: 'Search',
-                onPressed: _performSearch,
-                isFullWidth: false,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: AppRadius.inputRadius,
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
-            ],
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: AppRadius.inputRadius,
+              borderSide: const BorderSide(
+                color: AppColors.electrolyte,
+                width: 2,
+              ),
+            ),
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surface,
           ),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
+          onSubmitted: (_) => _performSearch(),
+        ),
       ],
     );
   }
@@ -1190,16 +1195,13 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       await database.deleteUserFood(food.id);
 
       try {
-        final response = await supabase.functions.invoke('delete-user-food', body: {
-          'device_id': deviceId,
-          'food_id': food.id,
-        });
+        await supabase
+            .from('user_foods')
+            .delete()
+            .eq('device_id', deviceId)
+            .eq('id', food.id);
 
-        if (response.status != 200) {
-          DebugLogger.warning('⚠️ Supabase delete sync failed, but local delete succeeded: ${response.data}');
-        } else {
-          DebugLogger.info('✅ Food deleted from both local and Supabase: ${food.name}');
-        }
+        DebugLogger.info('✅ Food deleted from both local and Supabase: ${food.name}');
       } catch (supabaseError) {
         DebugLogger.warning('⚠️ Supabase delete sync failed, but local delete succeeded: $supabaseError');
       }

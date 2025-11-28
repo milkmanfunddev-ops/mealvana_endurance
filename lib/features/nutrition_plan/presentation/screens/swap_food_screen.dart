@@ -9,20 +9,18 @@ import '../../../../shared/widgets/food_selection/recommended_alternatives.dart'
 import '../providers/swap_food_controller.dart';
 import '../../domain/food.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../domain/pending_activity_data.dart';
-import '../../domain/macro_targets.dart';
 
 /// Swap/Add Food Screen - Kyle's Design System
 /// Allows users to swap existing food or add new food to nutrition plan
 /// Features: Smart recommendations, search, barcode scanning, OpenFoodFacts integration
+///
+/// SIMPLIFIED: Only needs activityId to match ActivityDetailController provider.
 class SwapFoodScreen extends ConsumerStatefulWidget {
   final String? foodToSwapId;
   final String? foodToSwapName;
   final String category; // before_run, during_run, after_run
   final int activityId;
-  final String mode; // 'create' or 'view' - must match ActivityDetailController mode
-  final PendingActivityData? pendingActivityData; // Required to match ActivityDetailController instance
-  final MacroTargets? macroTargets; // Required to match ActivityDetailController instance
+  final bool isNewActivity;
 
   const SwapFoodScreen({
     super.key,
@@ -30,9 +28,7 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
     this.foodToSwapName,
     required this.category,
     required this.activityId,
-    this.mode = 'view', // Default to 'view' for backwards compatibility
-    this.pendingActivityData,
-    this.macroTargets,
+    this.isNewActivity = false,
   });
 
   @override
@@ -42,6 +38,7 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
 class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   final TextEditingController _searchController = TextEditingController();
   double _selectedQuantity = 1.0;
+  bool _isProcessing = false;
 
   late final SwapFoodParams _params;
 
@@ -53,9 +50,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       category: widget.category,
       originalFoodId: widget.foodToSwapId,
       originalFoodName: widget.foodToSwapName,
-      mode: widget.mode,
-      pendingActivityData: widget.pendingActivityData,
-      macroTargets: widget.macroTargets,
+      isNewActivity: widget.isNewActivity,
     );
 
     // Track screen viewed
@@ -64,7 +59,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       analytics.analytics.track('swap_food_screen_viewed', properties: {
         'is_swapping': widget.foodToSwapId != null,
         'category': widget.category,
-        'mode': widget.mode,
       });
     });
   }
@@ -141,34 +135,73 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   Future<void> _handleConfirm() async {
+    debugPrint('🔵 _handleConfirm START');
+
+    // Prevent double-tap
+    if (_isProcessing) {
+      debugPrint('🔴 _handleConfirm: already processing, ignoring');
+      return;
+    }
+
     final controllerState = ref.read(swapFoodControllerProvider(_params));
     final state = controllerState.value;
 
-    if (state?.selectedFood == null) return;
+    if (state?.selectedFood == null) {
+      debugPrint('🔴 _handleConfirm: selectedFood is null, returning early');
+      return;
+    }
 
     final food = state!.selectedFood!;
+    debugPrint('🔵 _handleConfirm: food selected = ${food.name}, isSwapping = $_isSwapping');
+
+    // IMPORTANT: Capture references BEFORE async operation to avoid context issues
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    // Capture the navigator with rootNavigator to ensure we pop from correct level
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    setState(() {
+      _isProcessing = true;
+    });
 
     try {
       if (_isSwapping) {
+        debugPrint('🔵 _handleConfirm: calling swapFood...');
         await ref.read(swapFoodControllerProvider(_params).notifier)
           .swapFood(_params, widget.foodToSwapId!, food, widget.category, customAmount: _selectedQuantity);
+        debugPrint('🔵 _handleConfirm: swapFood returned');
       } else {
+        debugPrint('🔵 _handleConfirm: calling addFood...');
         await ref.read(swapFoodControllerProvider(_params).notifier)
           .addFood(_params, food, widget.category, customAmount: _selectedQuantity);
+        debugPrint('🔵 _handleConfirm: addFood returned');
       }
 
+      debugPrint('🔵 _handleConfirm: operation complete, mounted = $mounted');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        debugPrint('🔵 _handleConfirm: showing snackbar');
+        scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text(_isSwapping ? 'Food swapped successfully!' : 'Food added successfully!'),
             backgroundColor: AppColors.electrolyte,
           ),
         );
-        context.pop();
+
+        // Use Navigator.pop with rootNavigator to bypass go_router and pop directly
+        debugPrint('🔵 _handleConfirm: navigator.canPop() = ${navigator.canPop()}');
+        debugPrint('🔵 _handleConfirm: calling navigator.pop() with rootNavigator');
+        navigator.pop();
+        debugPrint('🔵 _handleConfirm: navigator.pop() completed');
+      } else {
+        debugPrint('🔴 _handleConfirm: NOT mounted, cannot pop');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('🔴 _handleConfirm: EXCEPTION caught: $e');
+      debugPrint('🔴 Stack trace: $stackTrace');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        setState(() {
+          _isProcessing = false;
+        });
+        scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text('Failed to ${_isSwapping ? 'swap' : 'add'} food: $e'),
             backgroundColor: AppColors.dragonfruit,
@@ -176,6 +209,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         );
       }
     }
+    debugPrint('🔵 _handleConfirm END');
   }
 
   Future<void> _handleOpenFoodFactsSelection(dynamic result) async {
@@ -201,6 +235,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🏗️ SwapFoodScreen build() called - isProcessing: $_isProcessing');
     final controllerState = ref.watch(swapFoodControllerProvider(_params));
 
     return Scaffold(
@@ -304,7 +339,11 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: KylePrimaryButton(
                 text: _isSwapping ? 'SWAP FOOD' : 'ADD FOOD',
-                onPressed: _handleConfirm,
+                isLoading: _isProcessing,
+                onPressed: () {
+                  debugPrint('🟢 SWAP/ADD BUTTON PRESSED - about to call _handleConfirm');
+                  _handleConfirm();
+                },
                 isFullWidth: true,
               ),
             ),

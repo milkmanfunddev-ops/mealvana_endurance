@@ -396,17 +396,14 @@ function computeRunFueling(params) {
     post_run_sodium_mg: aftHyd.rehydrationSodiumMg || 625
   };
 }
-
 // ============================================================================
 // CYCLING FORMULAS (NEW - Multi-Sport Support)
 // Based on docs/features/cycling_swimming/formulas.md
 // ============================================================================
-
 // Cycling MET calculation from speed
 function cyclingMETFromSpeed(speedKph, terrain) {
   // Base MET from speed (flat terrain, outdoor)
   let met;
-
   if (speedKph <= 16) {
     // Leisure pace (~10 mph)
     met = 6.0;
@@ -426,27 +423,22 @@ function cyclingMETFromSpeed(speedKph, terrain) {
     // Racing pace (>19 mph)
     met = 16.0;
   }
-
   // Terrain adjustment
   if (terrain === 'rolling') {
     met *= 1.1; // 10% increase for rolling hills
   } else if (terrain === 'hilly') {
     met *= 1.25; // 25% increase for hilly terrain
   }
-
   return Math.round(met * 10) / 10;
 }
-
 // Adjust MET for elevation gain
 function adjustMETForElevation(baseMET, elevationGainFt, distanceMiles) {
   // Calculate vertical meters per kilometer
   const elevationGainM = elevationGainFt * 0.3048;
   const distanceKm = distanceMiles * MI_TO_KM;
   const verticalMPerKm = elevationGainM / distanceKm;
-
   // Add MET based on climbing rate
   let elevationMETBonus = 0;
-
   if (verticalMPerKm > 100) {
     // Extreme climbing (>100m/km = ~10% grade)
     elevationMETBonus = 4.0;
@@ -460,10 +452,8 @@ function adjustMETForElevation(baseMET, elevationGainFt, distanceMiles) {
     // Light climbing (10-30m/km = ~1-3% grade)
     elevationMETBonus = 1.0;
   }
-
   return baseMET + elevationMETBonus;
 }
-
 // Adjust MET for indoor vs outdoor
 function adjustMETForIndoorOutdoor(baseMET, isIndoor) {
   if (isIndoor) {
@@ -472,18 +462,15 @@ function adjustMETForIndoorOutdoor(baseMET, isIndoor) {
   }
   return baseMET;
 }
-
 // Cycling gross energy expenditure
 function cyclingGrossCalories(weightKg, durationMin, met) {
   // Same formula as running: MET × 3.5 × body weight (kg) / 200 × duration (min)
   return grossKcal(weightKg, durationMin, met);
 }
-
 // Cycling net energy expenditure
 function cyclingNetCalories(weightKg, distanceKm, speedKph) {
   // Cycling net cost varies with speed due to air resistance
   let costPerKgKm;
-
   if (speedKph <= 20) {
     costPerKgKm = 0.3;
   } else if (speedKph <= 25) {
@@ -493,23 +480,18 @@ function cyclingNetCalories(weightKg, distanceKm, speedKph) {
   } else {
     costPerKgKm = 0.5;
   }
-
   return weightKg * distanceKm * costPerKgKm;
 }
-
 // Cycling duration calculations
 function cyclingDuration(distanceMiles, speedMph) {
   return distanceMiles / speedMph;
 }
-
 function cyclingDurationMinutes(distanceMiles, speedMph) {
   return cyclingDuration(distanceMiles, speedMph) * 60;
 }
-
 // Pre-ride carbohydrates
 function cyclingPreRideCarbs(weightKg, hoursBeforeRide) {
   const hoursEffective = Math.min(hoursBeforeRide, 4.0);
-
   if (hoursEffective >= 1.0) {
     // 1 g/kg per hour available (cap at 4 g/kg)
     return hoursEffective * weightKg;
@@ -521,12 +503,10 @@ function cyclingPreRideCarbs(weightKg, hoursBeforeRide) {
     return 0.25 * weightKg;
   }
 }
-
 // During-ride carbohydrates (cyclists can tolerate more than runners)
 function cyclingDuringRideCarbs(durationH, met, weightKg, gutTraining) {
   // Carb bands by duration (cyclists can go higher than runners)
   let carbMin, carbMax;
-
   if (durationH <= 1.0) {
     carbMin = 0;
     carbMax = 30;
@@ -543,7 +523,6 @@ function cyclingDuringRideCarbs(durationH, met, weightKg, gutTraining) {
     carbMin = 90;
     carbMax = 120; // Elite cyclists can absorb 120 g/h
   }
-
   // Gut training adjustment
   let gutMultiplier = 1.0;
   if (gutTraining === 'low') {
@@ -551,7 +530,6 @@ function cyclingDuringRideCarbs(durationH, met, weightKg, gutTraining) {
   } else if (gutTraining === 'high') {
     gutMultiplier = 1.1;
   }
-
   // Intensity adjustment from MET
   let intensityBonus = 0;
   if (met >= 12) {
@@ -559,63 +537,50 @@ function cyclingDuringRideCarbs(durationH, met, weightKg, gutTraining) {
   } else if (met >= 10) {
     intensityBonus = 5;
   }
-
   // Calculate target
   const baseTarget = (carbMin + carbMax) / 2;
   const adjusted = baseTarget * gutMultiplier + intensityBonus;
-
   // Cap at max absorption rate
   const maxAbsorption = gutTraining === 'high' ? 100 : 90;
-
   return Math.min(Math.round(adjusted), maxAbsorption);
 }
-
 // Post-ride carbohydrates
 function cyclingPostRideCarbs(weightKg, durationH) {
   const carbPerKg = durationH > 2.0 ? 1.2 : 1.0;
   return carbPerKg * weightKg;
 }
-
 // Post-ride protein
 function cyclingPostRideProtein(weightKg) {
   return 0.3 * weightKg;
 }
-
 // During-ride protein (only for ultra-endurance)
 function cyclingDuringRideProtein(durationH) {
   return durationH > 3.5 ? 5.0 : 0.0;
 }
-
 // Cycling hydration rate
 function cyclingHydrationRate(weightKg, met, tempC, humidityPct) {
   // Base rate: 0.5-0.75 L/h (slightly higher than running)
   let baseLph = 0.60;
-
   // Weight adjustment
   if (weightKg < 50) {
     baseLph = 0.50;
   } else if (weightKg > 80) {
     baseLph = 0.70;
   }
-
   // Intensity adjustment
   if (met >= 12) {
     baseLph += 0.1;
   }
-
   // Environmental adjustment (reuse shared function)
   const [envMult] = envMultiplier(tempC, humidityPct);
   baseLph *= envMult;
-
   // Cap at 1.0 L/h for cyclists
   return Math.min(baseLph, 1.0);
 }
-
 // Cycling sodium rate
 function cyclingSodiumRate(durationH, sweatSodiumCat, envLabel) {
   // Base sodium by sweat category
   let sodiumMgph = 500;
-
   if (sweatSodiumCat === 'low') {
     sodiumMgph = 400;
   } else if (sweatSodiumCat === 'medium') {
@@ -623,18 +588,15 @@ function cyclingSodiumRate(durationH, sweatSodiumCat, envLabel) {
   } else if (sweatSodiumCat === 'high') {
     sodiumMgph = 1000;
   }
-
   // Environmental bump
   if (envLabel === 'hot') {
     sodiumMgph += 100;
   } else if (envLabel === 'very_hot') {
     sodiumMgph += 150;
   }
-
   // Cap at 1200 mg/h
   return Math.min(sodiumMgph, 1200);
 }
-
 // Complete cycling macro calculator
 function calculateCyclingMacros(input) {
   // 1. Duration
@@ -642,41 +604,33 @@ function calculateCyclingMacros(input) {
   const durationMin = durationH * 60;
   const distanceKm = input.distanceMiles * MI_TO_KM;
   const speedKph = input.speedMph * MI_TO_KM;
-
   // 2. MET and Energy
   let baseMET = cyclingMETFromSpeed(speedKph, input.terrain);
   baseMET = adjustMETForElevation(baseMET, input.elevationGainFt, input.distanceMiles);
   const finalMET = adjustMETForIndoorOutdoor(baseMET, input.indoorOutdoor === 'indoor');
-
   const caloriesGross = cyclingGrossCalories(input.weightKg, durationMin, finalMET);
   const caloriesNet = cyclingNetCalories(input.weightKg, distanceKm, speedKph);
-
   // 3. Carbohydrates
   const hoursBeforeRide = input.timeBeforeMinutes / 60.0;
   const preCarbs = cyclingPreRideCarbs(input.weightKg, hoursBeforeRide);
   const duringCarbsPerH = cyclingDuringRideCarbs(durationH, finalMET, input.weightKg, input.gutTraining);
   const duringCarbsTotal = duringCarbsPerH * durationH;
   const postCarbs = cyclingPostRideCarbs(input.weightKg, durationH);
-
   // 4. Protein
   const preProtein = 0.25 * input.weightKg;
   const duringProtein = cyclingDuringRideProtein(durationH);
   const postProtein = cyclingPostRideProtein(input.weightKg);
-
   // 5. Fat
   const preFat = hoursBeforeRide > 2.0 ? 0.2 * input.weightKg : 0.1 * input.weightKg;
-
   // 6. Hydration
   const [envMult, envLabel] = envMultiplier(input.tempC, input.humidityPct);
   const preWater = preRunHydration(input.weightKg, input.timeBeforeMinutes, input.sweatSodiumCat, envLabel);
   const duringWaterPerH = cyclingHydrationRate(input.weightKg, finalMET, input.tempC || 20, input.humidityPct || 60);
   const duringWaterTotal = duringWaterPerH * 1000 * durationH;
-
   // 7. Sodium
   const preSodium = preWater.sodiumMg;
   const duringSodiumPerH = cyclingSodiumRate(durationH, input.sweatSodiumCat, envLabel);
   const duringSodiumTotal = duringSodiumPerH * durationH;
-
   return {
     duration_min: Math.round(durationMin * 100) / 100,
     duration_h: Math.round(durationH * 10000) / 10000,
@@ -686,37 +640,29 @@ function calculateCyclingMacros(input) {
     calories_net_kcal: Math.round(caloriesNet),
     calories_gross_kcal: Math.round(caloriesGross),
     MET: Math.round(finalMET * 100) / 100,
-
     pre_ride_carbs_g: Math.round(preCarbs),
     pre_ride_protein_g: Math.round(preProtein),
     pre_ride_fat_g: Math.round(preFat * 10) / 10,
-
     during_ride_carbs_per_h: Math.round(duringCarbsPerH),
     during_ride_carbs_total: Math.round(duringCarbsTotal),
     during_ride_protein_per_h: duringProtein,
-
     post_ride_carbs_g: Math.round(postCarbs),
     post_ride_protein_g: Math.round(postProtein),
-
     pre_ride_water_ml: preWater.mainMl + preWater.topoffMl,
     during_ride_water_per_h_ml: Math.round(duringWaterPerH * 1000),
     during_ride_water_total_ml: Math.round(duringWaterTotal),
-
     pre_ride_sodium_mg: preSodium,
     during_ride_sodium_per_h_mg: duringSodiumPerH,
-    during_ride_sodium_total_mg: Math.round(duringSodiumTotal),
+    during_ride_sodium_total_mg: Math.round(duringSodiumTotal)
   };
 }
-
 // ============================================================================
 // SWIMMING FORMULAS (NEW - Multi-Sport Support)
 // Based on docs/features/cycling_swimming/formulas.md
 // ============================================================================
-
 // Swimming MET calculation from pace
 function swimmingMETFromPace(paceSecondsper100m, poolOrOpenWater, waterTempC) {
   let met;
-
   if (paceSecondsper100m >= 180) {
     met = 6.0;
   } else if (paceSecondsper100m >= 150) {
@@ -728,57 +674,47 @@ function swimmingMETFromPace(paceSecondsper100m, poolOrOpenWater, waterTempC) {
   } else {
     met = 13.0;
   }
-
   if (poolOrOpenWater === 'open_water') {
     met *= 1.15;
   }
-
   if (waterTempC < 20) {
     met *= 1.1;
   } else if (waterTempC > 28) {
     met *= 0.95;
   }
-
   return Math.round(met * 10) / 10;
 }
-
 // Swimming MET from intensity zone
 function swimmingMETFromIntensity(intensity) {
   const intensityMETs = {
     zone_1: 6.0,
     zone_2: 8.0,
     zone_3: 10.0,
-    zone_4: 12.0,
+    zone_4: 12.0
   };
   return intensityMETs[intensity];
 }
-
 // Swimming gross energy expenditure
 function swimmingGrossCalories(weightKg, durationMin, met) {
   return grossKcal(weightKg, durationMin, met);
 }
-
 // Swimming net energy expenditure
 function swimmingNetCalories(weightKg, distanceKm) {
   const costPerKgKm = 3.5;
   return weightKg * distanceKm * costPerKgKm;
 }
-
 // Swimming duration calculations
 function swimmingDuration(distanceMeters, paceSecondsper100m) {
   const num100mSegments = distanceMeters / 100;
   const totalSeconds = num100mSegments * paceSecondsper100m;
   return totalSeconds / 60;
 }
-
 function swimmingDurationHours(distanceMeters, paceSecondsper100m) {
   return swimmingDuration(distanceMeters, paceSecondsper100m) / 60;
 }
-
 // Pre-swim carbohydrates
 function swimmingPreSwimCarbs(weightKg, hoursBeforeSwim) {
   const hoursEffective = Math.min(hoursBeforeSwim, 4.0);
-
   if (hoursEffective >= 1.0) {
     return hoursEffective * weightKg;
   } else if (hoursEffective >= 0.25) {
@@ -787,11 +723,9 @@ function swimmingPreSwimCarbs(weightKg, hoursBeforeSwim) {
     return 0.25 * weightKg;
   }
 }
-
 // During-swim carbohydrates (lower than cycling due to feeding difficulty)
 function swimmingDuringSwimCarbs(durationH, poolOrOpenWater, gutTraining) {
   let carbMin, carbMax;
-
   if (durationH <= 1.0) {
     carbMin = 0;
     carbMax = 0;
@@ -805,74 +739,58 @@ function swimmingDuringSwimCarbs(durationH, poolOrOpenWater, gutTraining) {
     carbMin = 45;
     carbMax = 75;
   }
-
   if (poolOrOpenWater === 'open_water' && durationH > 1.5) {
     carbMax += 10;
   }
-
   let gutMultiplier = 1.0;
   if (gutTraining === 'low') {
     gutMultiplier = 0.85;
   } else if (gutTraining === 'high') {
     gutMultiplier = 1.1;
   }
-
   const baseTarget = (carbMin + carbMax) / 2;
   const adjusted = baseTarget * gutMultiplier;
-
   const maxAbsorption = 60; // Swimmers struggle to consume >60 g/h
-
   return Math.min(Math.round(adjusted), maxAbsorption);
 }
-
 // Post-swim carbohydrates
 function swimmingPostSwimCarbs(weightKg, durationH) {
   const carbPerKg = durationH > 2.0 ? 1.2 : 1.0;
   return carbPerKg * weightKg;
 }
-
 // Post-swim protein
 function swimmingPostSwimProtein(weightKg) {
   return 0.3 * weightKg;
 }
-
 // During-swim protein (only for ultra-endurance)
 function swimmingDuringSwimProtein(durationH) {
   return durationH > 3.5 ? 3.0 : 0.0;
 }
-
 // Swimming hydration rate
 function swimmingHydrationRate(weightKg, met, waterTempC, poolDeckTempC, poolDeckHumidityPct) {
   let baseLph = 0.45;
-
   if (weightKg < 50) {
     baseLph = 0.35;
   } else if (weightKg > 80) {
     baseLph = 0.55;
   }
-
   if (met >= 11) {
     baseLph += 0.1;
   }
-
   if (waterTempC > 28) {
     baseLph *= 1.2;
   } else if (waterTempC < 20) {
     baseLph *= 0.8;
   }
-
   if (poolDeckTempC !== null && poolDeckHumidityPct !== null) {
     const [deckEnvMultiplier] = envMultiplier(poolDeckTempC, poolDeckHumidityPct);
     baseLph *= deckEnvMultiplier;
   }
-
   return Math.min(baseLph, 0.8);
 }
-
 // Swimming sodium rate
 function swimmingSodiumRate(durationH, sweatSodiumCat, waterTempC) {
   let sodiumMgph = 400;
-
   if (sweatSodiumCat === 'low') {
     sodiumMgph = 300;
   } else if (sweatSodiumCat === 'medium') {
@@ -880,60 +798,44 @@ function swimmingSodiumRate(durationH, sweatSodiumCat, waterTempC) {
   } else if (sweatSodiumCat === 'high') {
     sodiumMgph = 700;
   }
-
   if (waterTempC > 28) {
     sodiumMgph += 50;
   } else if (waterTempC < 20) {
     sodiumMgph -= 50;
   }
-
   return Math.min(sodiumMgph, 800);
 }
-
 // Complete swimming macro calculator
 function calculateSwimmingMacros(input) {
   // 1. Duration
   const durationMin = swimmingDuration(input.distanceMeters, input.paceSecondsper100m);
   const durationH = durationMin / 60;
   const distanceKm = input.distanceMeters / 1000;
-
   // 2. MET and Energy
   const finalMET = swimmingMETFromPace(input.paceSecondsper100m, input.poolOrOpenWater, input.waterTempC);
   const caloriesGross = swimmingGrossCalories(input.weightKg, durationMin, finalMET);
   const caloriesNet = swimmingNetCalories(input.weightKg, distanceKm);
-
   // 3. Carbohydrates
   const hoursBeforeSwim = input.timeBeforeMinutes / 60.0;
   const preCarbs = swimmingPreSwimCarbs(input.weightKg, hoursBeforeSwim);
   const duringCarbsPerH = swimmingDuringSwimCarbs(durationH, input.poolOrOpenWater, input.gutTraining);
   const duringCarbsTotal = duringCarbsPerH * durationH;
   const postCarbs = swimmingPostSwimCarbs(input.weightKg, durationH);
-
   // 4. Protein
   const preProtein = 0.2 * input.weightKg;
   const duringProtein = swimmingDuringSwimProtein(durationH);
   const postProtein = swimmingPostSwimProtein(input.weightKg);
-
   // 5. Fat
   const preFat = hoursBeforeSwim > 2.0 ? 0.15 * input.weightKg : 0.1 * input.weightKg;
-
   // 6. Hydration
   const [envMult, envLabel] = envMultiplier(input.poolDeckTempC, input.poolDeckHumidityPct);
   const preWater = preRunHydration(input.weightKg, input.timeBeforeMinutes, input.sweatSodiumCat, envLabel);
-  const duringWaterPerH = swimmingHydrationRate(
-    input.weightKg,
-    finalMET,
-    input.waterTempC,
-    input.poolDeckTempC,
-    input.poolDeckHumidityPct
-  );
+  const duringWaterPerH = swimmingHydrationRate(input.weightKg, finalMET, input.waterTempC, input.poolDeckTempC, input.poolDeckHumidityPct);
   const duringWaterTotal = duringWaterPerH * 1000 * durationH;
-
   // 7. Sodium
   const preSodium = preWater.sodiumMg;
   const duringSodiumPerH = swimmingSodiumRate(durationH, input.sweatSodiumCat, input.waterTempC);
   const duringSodiumTotal = duringSodiumPerH * durationH;
-
   return {
     duration_min: Math.round(durationMin * 100) / 100,
     duration_h: Math.round(durationH * 10000) / 10000,
@@ -943,28 +845,22 @@ function calculateSwimmingMacros(input) {
     calories_net_kcal: Math.round(caloriesNet),
     calories_gross_kcal: Math.round(caloriesGross),
     MET: Math.round(finalMET * 100) / 100,
-
     pre_swim_carbs_g: Math.round(preCarbs),
     pre_swim_protein_g: Math.round(preProtein),
     pre_swim_fat_g: Math.round(preFat * 10) / 10,
-
     during_swim_carbs_per_h: Math.round(duringCarbsPerH),
     during_swim_carbs_total: Math.round(duringCarbsTotal),
     during_swim_protein_per_h: duringProtein,
-
     post_swim_carbs_g: Math.round(postCarbs),
     post_swim_protein_g: Math.round(postProtein),
-
     pre_swim_water_ml: preWater.mainMl + preWater.topoffMl,
     during_swim_water_per_h_ml: Math.round(duringWaterPerH * 1000),
     during_swim_water_total_ml: Math.round(duringWaterTotal),
-
     pre_swim_sodium_mg: preSodium,
     during_swim_sodium_per_h_mg: duringSodiumPerH,
-    during_swim_sodium_total_mg: Math.round(duringSodiumTotal),
+    during_swim_sodium_total_mg: Math.round(duringSodiumTotal)
   };
 }
-
 serve(async (req)=>{
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -974,10 +870,8 @@ serve(async (req)=>{
   }
   try {
     const requestData = await req.json();
-
     // Determine activity type (default to running for backward compatibility)
     const activityType = requestData.activity_type || 'running';
-
     console.log('🔍 DEBUG: Received macro calculation request:', {
       activity_type: activityType,
       weight: requestData.weight,
@@ -987,9 +881,7 @@ serve(async (req)=>{
       gut_training: requestData.gut_training,
       sweat_rate_category: requestData.sweat_rate_category
     });
-
     let macros;
-
     // Route to appropriate calculation function based on activity type
     if (activityType === 'running') {
       // Validate running-specific fields
@@ -1005,10 +897,8 @@ serve(async (req)=>{
           }
         });
       }
-
       // Calculate running macros
       macros = computeRunFueling(requestData);
-
       console.log('✅ DEBUG: Calculated running macros successfully:', {
         duration_h: macros.duration_h,
         calories_net: macros.calories_net_kcal,
@@ -1017,7 +907,6 @@ serve(async (req)=>{
         during_total_g: macros.during_total_g,
         MET: macros.MET
       });
-
     } else if (activityType === 'cycling') {
       // Validate cycling-specific fields
       if (!requestData.weight || !requestData.distance_miles || !requestData.speed_mph) {
@@ -1032,10 +921,8 @@ serve(async (req)=>{
           }
         });
       }
-
       // Convert weight to kg if needed
       const weightKg = toKg(requestData.weight, requestData.weight_unit || 'kg');
-
       // Prepare cycling input
       const timeBeforeMinutes = requestData.time_before_min || 120;
       const cyclingInput = {
@@ -1051,22 +938,19 @@ serve(async (req)=>{
         humidityPct: requestData.humidity_pct || null,
         sweatSodiumCat: requestData.sweat_sodium || 'medium'
       };
-
       // Calculate cycling macros
       const cyclingMacros = calculateCyclingMacros(cyclingInput);
-
       // Normalize cycling field names to match running format (for consistent Dart parsing)
       macros = {
         duration_min: cyclingMacros.duration_min,
         duration_h: cyclingMacros.duration_h,
-        pace_min_per_mile: 0, // Not applicable for cycling
+        pace_min_per_mile: 0,
         speed_mph: cyclingMacros.speed_mph,
         distance_mi: cyclingMacros.distance_mi,
         distance_km: cyclingMacros.distance_km,
         calories_net_kcal: cyclingMacros.calories_net_kcal,
         calories_gross_kcal: cyclingMacros.calories_gross_kcal,
         MET: cyclingMacros.MET,
-
         // Pre-activity (normalize pre_ride_* to pre_run_*)
         pre_run_carbs_g: cyclingMacros.pre_ride_carbs_g,
         pre_run_carbs_rule: `${Math.round(timeBeforeMinutes / 60 * 10) / 10}h × ${Math.round(cyclingMacros.pre_ride_carbs_g / weightKg * 10) / 10} g/kg`,
@@ -1074,24 +958,24 @@ serve(async (req)=>{
         pre_run_fat_g_cap: cyclingMacros.pre_ride_fat_g,
         pre_run_water_ml: cyclingMacros.pre_ride_water_ml,
         pre_run_sodium_mg: cyclingMacros.pre_ride_sodium_mg,
-
         // During-activity (normalize during_ride_* to during_*)
         during_rate_g_per_h: cyclingMacros.during_ride_carbs_per_h,
         during_total_g: cyclingMacros.during_ride_carbs_total,
         during_mass_norm_rate_g_per_h: cyclingMacros.during_ride_carbs_per_h,
-        during_abs_clamp_range_g_per_h: [30, 90], // Cycling range
+        during_abs_clamp_range_g_per_h: [
+          30,
+          90
+        ],
         during_water_rate_ml_per_h: cyclingMacros.during_ride_water_per_h_ml,
         during_water_total_ml: cyclingMacros.during_ride_water_total_ml,
         during_sodium_rate_mg_per_h: cyclingMacros.during_ride_sodium_per_h_mg,
         during_sodium_total_mg: cyclingMacros.during_ride_sodium_total_mg,
-
         // Post-activity (normalize post_ride_* to post_run_*)
         post_run_carbs_g: cyclingMacros.post_ride_carbs_g,
         post_run_protein_g: cyclingMacros.post_ride_protein_g,
-        post_run_water_ml: cyclingMacros.pre_ride_water_ml, // Cycling doesn't have post_ride_water_ml, reusing pre
-        post_run_sodium_mg: 625, // Default post-activity sodium
+        post_run_water_ml: cyclingMacros.pre_ride_water_ml,
+        post_run_sodium_mg: 625
       };
-
       console.log('✅ DEBUG: Calculated cycling macros successfully:', {
         duration_h: macros.duration_h,
         calories_net: macros.calories_net_kcal,
@@ -1100,7 +984,6 @@ serve(async (req)=>{
         during_total_g: macros.during_total_g,
         MET: macros.MET
       });
-
     } else if (activityType === 'swimming') {
       // Validate swimming-specific fields
       if (!requestData.weight || !requestData.distance_meters || !requestData.pace_per_100m_seconds) {
@@ -1115,10 +998,8 @@ serve(async (req)=>{
           }
         });
       }
-
       // Convert weight to kg if needed
       const weightKg = toKg(requestData.weight, requestData.weight_unit || 'kg');
-
       // Prepare swimming input
       const swimmingInput = {
         weightKg: weightKg,
@@ -1132,24 +1013,21 @@ serve(async (req)=>{
         gutTraining: requestData.gut_training || 'moderate',
         sweatSodiumCat: requestData.sweat_sodium || 'medium'
       };
-
       // Calculate swimming macros
       const swimmingMacros = calculateSwimmingMacros(swimmingInput);
-
       // Normalize swimming field names to match running format (for consistent Dart parsing)
       macros = {
         duration_min: swimmingMacros.duration_min,
         duration_h: swimmingMacros.duration_h,
-        pace_min_per_mile: 0, // Not applicable for swimming
+        pace_min_per_mile: 0,
         pace_per_100m_seconds: swimmingMacros.pace_per_100m_seconds,
-        speed_mph: 0, // Not applicable for swimming
-        distance_mi: swimmingMacros.distance_meters * 0.000621371, // Convert meters to miles
+        speed_mph: 0,
+        distance_mi: swimmingMacros.distance_meters * 0.000621371,
         distance_km: swimmingMacros.distance_km,
         distance_meters: swimmingMacros.distance_meters,
         calories_net_kcal: swimmingMacros.calories_net_kcal,
         calories_gross_kcal: swimmingMacros.calories_gross_kcal,
         MET: swimmingMacros.MET,
-
         // Pre-activity (normalize pre_swim_* to pre_run_*)
         pre_run_carbs_g: swimmingMacros.pre_swim_carbs_g,
         pre_run_carbs_rule: `${Math.round(swimmingInput.timeBeforeMinutes / 60 * 10) / 10}h × ${Math.round(swimmingMacros.pre_swim_carbs_g / weightKg * 10) / 10} g/kg`,
@@ -1157,24 +1035,24 @@ serve(async (req)=>{
         pre_run_fat_g_cap: swimmingMacros.pre_swim_fat_g,
         pre_run_water_ml: swimmingMacros.pre_swim_water_ml,
         pre_run_sodium_mg: swimmingMacros.pre_swim_sodium_mg,
-
         // During-activity (normalize during_swim_* to during_*)
         during_rate_g_per_h: swimmingMacros.during_swim_carbs_per_h,
         during_total_g: swimmingMacros.during_swim_carbs_total,
         during_mass_norm_rate_g_per_h: swimmingMacros.during_swim_carbs_per_h,
-        during_abs_clamp_range_g_per_h: [0, 60], // Swimming range
+        during_abs_clamp_range_g_per_h: [
+          0,
+          60
+        ],
         during_water_rate_ml_per_h: swimmingMacros.during_swim_water_per_h_ml,
         during_water_total_ml: swimmingMacros.during_swim_water_total_ml,
         during_sodium_rate_mg_per_h: swimmingMacros.during_swim_sodium_per_h_mg,
         during_sodium_total_mg: swimmingMacros.during_swim_sodium_total_mg,
-
         // Post-activity (normalize post_swim_* to post_run_*)
         post_run_carbs_g: swimmingMacros.post_swim_carbs_g,
         post_run_protein_g: swimmingMacros.post_swim_protein_g,
-        post_run_water_ml: swimmingMacros.pre_swim_water_ml, // Swimming doesn't have post_swim_water_ml, reusing pre
-        post_run_sodium_mg: 625, // Default post-activity sodium
+        post_run_water_ml: swimmingMacros.pre_swim_water_ml,
+        post_run_sodium_mg: 625
       };
-
       console.log('✅ DEBUG: Calculated swimming macros successfully:', {
         duration_h: macros.duration_h,
         calories_net: macros.calories_net_kcal,
@@ -1184,7 +1062,6 @@ serve(async (req)=>{
         during_total_g: macros.during_total_g,
         MET: macros.MET
       });
-
     } else {
       // Invalid activity type
       return new Response(JSON.stringify({
@@ -1198,7 +1075,6 @@ serve(async (req)=>{
         }
       });
     }
-
     return new Response(JSON.stringify({
       success: true,
       activity_type: activityType,

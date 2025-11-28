@@ -88,7 +88,7 @@ All 26 tables exist in both databases with identical structure:
 7. **product_types_table** - Food categories (gel, bar, drink mix)
 8. **categories_table** - Timing categories (before_run, during_run, after_run)
 9. **food_categories_table** - Food-to-category mappings
-10. **user_foods_table** - User-created/scanned foods
+10. **user_foods** - User-created/scanned foods
 11. **user_food_categories_table** - User food timing mappings
 12. **user_hidden_foods_table** - Hidden foods per user
 13. **edge_functions_table** - Edge function code storage

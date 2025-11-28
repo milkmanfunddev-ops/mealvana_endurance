@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/carb_loading_service.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/logging_service.dart';
-import '../../../../shared/providers/device_id_provider.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 
 part 'carb_loading_controller.g.dart';
 
@@ -28,7 +28,7 @@ class CarbLoadingController extends _$CarbLoadingController {
     required double bodyWeightPounds,
   }) async {
     try {
-      final deviceIdValue = await ref.read(deviceIdProvider.future);
+      final deviceIdValue = await ref.read(userIdProvider.future);
       final userId = deviceIdValue; // Device ID is used as user ID
 
       await _service.createCarbLoadingPlan(
@@ -53,7 +53,7 @@ class CarbLoadingController extends _$CarbLoadingController {
   /// Delete carb loading plan and associated days
   Future<void> deleteCarbLoadingPlan(int eventId) async {
     try {
-      final deviceIdValue = await ref.read(deviceIdProvider.future);
+      final deviceIdValue = await ref.read(userIdProvider.future);
 
       await _service.deleteCarbLoadingPlan(
         deviceId: deviceIdValue,
@@ -93,7 +93,7 @@ class CarbLoadingController extends _$CarbLoadingController {
     required double bodyWeightPounds,
   }) async {
     try {
-      final deviceIdValue = await ref.read(deviceIdProvider.future);
+      final deviceIdValue = await ref.read(userIdProvider.future);
       final userId = deviceIdValue;
 
       await _service.updateCarbLoadingProtocol(

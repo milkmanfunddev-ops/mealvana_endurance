@@ -34,33 +34,30 @@ serve(async (req)=>{
     // Build the query - get foods from two sources:
     // 1. Foods with category relationships (for before/during/after suitability)
     // 2. Essential foods (available globally, like Water and Salt)
-
     let categorizedFoods = [];
     let essentialFoods = [];
-
     if (categoryId) {
       // Get foods assigned to this specific category using array contains
       const { data, error } = await supabaseClient.from('foods').select('*').filter('categories', 'cs', `{${categoryId}}`);
-
       if (error) throw error;
       categorizedFoods = data || [];
     } else {
       // Get ALL foods with categories (non-empty array)
       const { data, error } = await supabaseClient.from('foods').select('*').not('categories', 'eq', '{}');
-
       if (error) throw error;
       categorizedFoods = data || [];
     }
-
     // Always get essential foods (Water, Salt, etc.) - these are available in all phases
     const { data: essentialData, error: essentialError } = await supabaseClient.from('foods').select('*').eq('is_essential', true);
     if (!essentialError && essentialData) {
       essentialFoods = essentialData;
     }
-
     // Combine and deduplicate foods
     const foodsMap = new Map();
-    for (const food of [...categorizedFoods, ...essentialFoods]) {
+    for (const food of [
+      ...categorizedFoods,
+      ...essentialFoods
+    ]){
       if (!foodsMap.has(food.id)) {
         foodsMap.set(food.id, food);
       }
@@ -75,6 +72,7 @@ serve(async (req)=>{
         image_address: food.image_address,
         description: food.description,
         instructions: food.instructions,
+        categories: food.categories || [],
         carbs_per_serving: food.carbs_per_serving || 0,
         sodium_mg: food.sodium_mg || 0,
         fluid_ml_per_serving: food.fluid_ml_per_serving || 0,

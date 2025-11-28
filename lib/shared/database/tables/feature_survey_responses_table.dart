@@ -20,6 +20,10 @@ class FeatureSurveyResponsesTable extends Table {
   /// Timestamp of when the vote was cast
   DateTimeColumn get votedAt => dateTime().named('voted_at')();
 
+  /// Sync tracking columns
+  BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();
+  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+
   // Note: Primary key is automatically set by autoIncrement()
 
   @override

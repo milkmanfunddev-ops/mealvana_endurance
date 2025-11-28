@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 import '../../../shared/services/app_external_deps.dart';
@@ -119,6 +121,85 @@ class EmailAuthService extends _$EmailAuthService {
         'error': state.error.toString(),
       });
 
+      throw state.error!;
+    }
+  }
+
+  /// Sign in with email/password
+  /// This will replace the current anonymous session with the email user's session
+  Future<void> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      _logger.info('Starting email sign in', context: 'EMAIL_AUTH', data: {
+        'email_length': email.length,
+      });
+
+      // Validate inputs
+      final emailValidation = validateEmail(email);
+      if (emailValidation != null) {
+        throw Exception(emailValidation);
+      }
+
+      if (password.isEmpty) {
+        throw Exception('Password is required');
+      }
+
+      // Sign in with Supabase
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.session == null || response.user == null) {
+        throw Exception('Sign in failed - no session returned');
+      }
+
+      _logger.info('Email sign in successful', context: 'EMAIL_AUTH', data: {
+        'user_id': response.user!.id,
+        'email': response.user!.email,
+      });
+
+      // Update local user profile if needed (handled by auth state listener usually)
+      // But we can ensure provider is updated here
+      final userRepo = await ref.read(userRepositoryProvider.future);
+      
+      // We might want to sync the user profile from Supabase to local DB here
+      // since we just switched users completely
+      String? deviceId;
+      try {
+        final deviceInfo = DeviceInfoPlugin();
+        if (Platform.isIOS) {
+          final iosInfo = await deviceInfo.iosInfo;
+          deviceId = iosInfo.identifierForVendor;
+        } else if (Platform.isAndroid) {
+          final androidInfo = await deviceInfo.androidInfo;
+          deviceId = androidInfo.id;
+        }
+      } catch (e) {
+        // Ignore device ID errors
+      }
+
+      if (deviceId != null) {
+         // Sync down the profile for this user
+         final userProfile = await userRepo.getUserFromSupabase(deviceId);
+         if (userProfile != null) {
+           await userRepo.saveUserProfile(userProfile);
+         }
+      }
+
+      // Track successful sign in
+      await _analytics.track('email_sign_in_success', properties: {
+        'user_id': response.user!.id,
+      });
+    });
+
+    // Re-throw errors for UI to handle
+    if (state.hasError) {
+      _logger.error('Email sign in failed', context: 'EMAIL_AUTH', error: state.error);
       throw state.error!;
     }
   }

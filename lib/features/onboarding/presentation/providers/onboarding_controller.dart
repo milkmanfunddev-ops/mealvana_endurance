@@ -106,7 +106,10 @@ class OnboardingController extends _$OnboardingController {
   }
 
   /// Save food preferences (step 3 of onboarding)
-  Future<bool> saveFoodPreferences(Map<String, FoodPreference> preferences) async {
+  Future<bool> saveFoodPreferences(
+    Map<String, FoodPreference> preferences,
+    Map<String, int> sliderLevels,
+  ) async {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
 
@@ -126,7 +129,11 @@ class OnboardingController extends _$OnboardingController {
 
     state = await AsyncValue.guard(() async {
       DebugLogger.debug('📞 Food preferences - Calling onboarding service');
-      await _onboardingService.saveFoodPreferences(currentUser.id, preferences);
+      await _onboardingService.saveFoodPreferences(
+        currentUser.id,
+        preferences,
+        sliderLevels: sliderLevels,
+      );
       DebugLogger.info('✅ Food preferences - Save completed successfully');
       // Update our session user reference
       _currentUser = currentUser;

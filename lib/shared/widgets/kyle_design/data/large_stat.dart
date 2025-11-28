@@ -71,6 +71,8 @@ class LargeStatDisplay extends ConsumerWidget {
             stat.value,
             style: AppTextStyles.dataNumberLarge.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
+              //smaller font size for two-column layout
+              fontSize: 28,
             ),
           ),
         ],

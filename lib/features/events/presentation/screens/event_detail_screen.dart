@@ -13,6 +13,9 @@ import '../providers/events_controller.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../carb_loading/presentation/screens/carb_loading_protocol_selection_screen.dart';
+import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
+import '../../../../shared/database/app_database.dart' as db;
+import '../../../../shared/services/logging_service.dart';
 import 'event_form_screen.dart';
 
 /// Event Detail Screen showing event information and action buttons.
@@ -557,6 +560,42 @@ class EventDetailScreen extends ConsumerWidget {
           );
           // Refresh the event detail to show updated info
           ref.invalidate(eventDetailProvider(eventId));
+
+          // Navigate to the first day of the carb loading plan
+          try {
+            // Fetch the carb loading plan to get plan ID
+            final carbLoadingPlan = await ref.read(carbLoadingPlanProvider(event.id).future);
+
+            if (carbLoadingPlan != null) {
+              // Fetch all carb loading days for this plan
+              final carbLoadingDays = await ref.read(carbLoadingDaysForPlanProvider(carbLoadingPlan.id).future);
+
+              // Cast to the correct type
+              final days = carbLoadingDays.cast<db.CarbLoadingDay>();
+
+              // Find the first day (earliest date)
+              if (days.isNotEmpty && context.mounted) {
+                // Sort by date to ensure we get the first day (T-2, T-1, etc.)
+                final sortedDays = List<db.CarbLoadingDay>.from(days)
+                  ..sort((a, b) => a.planDate.compareTo(b.planDate));
+
+                final firstDay = sortedDays.first;
+
+                // Navigate to the carb loading day detail page
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CarbLoadingDayDetailPage(
+                      carbLoadingDay: firstDay,
+                    ),
+                  ),
+                );
+              }
+            }
+          } catch (e) {
+            ref.read(appLoggerProvider).error('Error navigating to carb loading day', error: e);
+            // Don't show error to user - plan was created successfully
+          }
         }
       }
     } catch (e) {

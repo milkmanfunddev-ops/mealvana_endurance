@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/onboarding_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -78,13 +79,19 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   Widget _buildContent(BuildContext context, AsyncValue<void> asyncState) {
-    return SingleChildScrollView(
-      padding: AppSpacing.screenPaddingHorizontal,
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return GestureDetector(
+      onTap: () {
+        // Dismiss keyboard when tapping outside input fields
+        FocusScope.of(context).unfocus();
+      },
+      behavior: HitTestBehavior.opaque,
+      child: SingleChildScrollView(
+        padding: AppSpacing.screenPaddingHorizontal,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             const SizedBox(height: AppSpacing.lg),
 
             // Introduction text
@@ -159,6 +166,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             const SizedBox(height: AppSpacing.lg),
           ],
         ),
+      ),
       ),
     );
   }
@@ -418,6 +426,17 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 onChanged: (value) => setState(() => _selectedGender = value),
               ),
             ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _buildRadioOption(
+                context: context,
+                title: 'Non-binary',
+                subtitle: 'Select if you identify as non-binary',
+                value: Gender.other,
+                groupValue: _selectedGender,
+                onChanged: (value) => setState(() => _selectedGender = value),
+              ),
+            ),
           ],
         ),
       ],
@@ -591,7 +610,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             Icon(
               value == Gender.male
                   ? FontAwesomeIcons.mars
-                  : FontAwesomeIcons.venus,
+                  : value == Gender.female
+                      ? FontAwesomeIcons.venus
+                      : FontAwesomeIcons.genderless,
               size: 28,
               color: isSelected
                   ? (isDark ? AppColors.blackberry : AppColors.cream)
@@ -618,7 +639,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   void _selectBirthday() async {
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(const Duration(days: 365 * 30)),
       firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),

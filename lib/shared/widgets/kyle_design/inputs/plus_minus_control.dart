@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
@@ -19,6 +20,7 @@ class KylePlusMinusControl extends ConsumerStatefulWidget {
     this.label,
     this.unit,
     this.enabled = true,
+    this.tappable = false,
   });
 
   final int value;
@@ -29,6 +31,7 @@ class KylePlusMinusControl extends ConsumerStatefulWidget {
   final String? label;
   final String? unit;
   final bool enabled;
+  final bool tappable;
 
   @override
   ConsumerState<KylePlusMinusControl> createState() => _KylePlusMinusControlState();
@@ -53,7 +56,7 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
 
   void _increment() {
     if (!widget.enabled) return;
-    
+
     final newValue = _currentValue + widget.step;
     if (widget.max == null || newValue <= widget.max!) {
       setState(() {
@@ -65,13 +68,57 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
 
   void _decrement() {
     if (!widget.enabled) return;
-    
+
     final newValue = _currentValue - widget.step;
     if (newValue >= widget.min) {
       setState(() {
         _currentValue = newValue;
       });
       widget.onChanged(newValue);
+    }
+  }
+
+  Future<void> _showEditDialog() async {
+    final controller = TextEditingController(text: _currentValue.toString());
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(widget.label ?? 'Enter Value'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Enter ${widget.unit ?? 'value'}',
+            suffixText: widget.unit?.toUpperCase(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text);
+              if (value != null) {
+                // Clamp value to min/max
+                final clampedValue = value.clamp(widget.min, widget.max ?? value);
+                Navigator.pop(context, clampedValue);
+              }
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _currentValue = result;
+      });
+      widget.onChanged(result);
     }
   }
 
@@ -110,17 +157,32 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
 
             // Value display (flexible to expand)
             Expanded(
-              child: Text(
-                widget.unit != null ? '$_currentValue ${widget.unit!.toUpperCase()}' : '$_currentValue',
-                style: AppTextStyles.dataNumber.copyWith(
-                  color: widget.enabled
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              child: widget.tappable
+                  ? GestureDetector(
+                      onTap: widget.enabled ? _showEditDialog : null,
+                      child: Text(
+                        widget.unit != null ? '$_currentValue ${widget.unit!.toUpperCase()}' : '$_currentValue',
+                        style: AppTextStyles.dataNumber.copyWith(
+                          color: widget.enabled
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : Text(
+                      widget.unit != null ? '$_currentValue ${widget.unit!.toUpperCase()}' : '$_currentValue',
+                      style: AppTextStyles.dataNumber.copyWith(
+                        color: widget.enabled
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
             ),
 
             const SizedBox(width: AppSpacing.xl),
@@ -202,6 +264,7 @@ class KylePlusMinusDecimalControl extends ConsumerStatefulWidget {
     this.label,
     this.unit,
     this.enabled = true,
+    this.tappable = false,
   });
 
   final double value;
@@ -213,6 +276,7 @@ class KylePlusMinusDecimalControl extends ConsumerStatefulWidget {
   final String? label;
   final String? unit;
   final bool enabled;
+  final bool tappable;
 
   @override
   ConsumerState<KylePlusMinusDecimalControl> createState() => _KylePlusMinusDecimalControlState();
@@ -237,7 +301,7 @@ class _KylePlusMinusDecimalControlState extends ConsumerState<KylePlusMinusDecim
 
   void _increment() {
     if (!widget.enabled) return;
-    
+
     final newValue = _currentValue + widget.step;
     if (widget.max == null || newValue <= widget.max!) {
       setState(() {
@@ -249,13 +313,59 @@ class _KylePlusMinusDecimalControlState extends ConsumerState<KylePlusMinusDecim
 
   void _decrement() {
     if (!widget.enabled) return;
-    
+
     final newValue = _currentValue - widget.step;
     if (newValue >= widget.min) {
       setState(() {
         _currentValue = newValue;
       });
       widget.onChanged(newValue);
+    }
+  }
+
+  Future<void> _showEditDialog() async {
+    final controller = TextEditingController(text: _currentValue.toStringAsFixed(widget.decimalPlaces));
+    final result = await showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(widget.label ?? 'Enter Value'),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+          ],
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Enter ${widget.unit ?? 'value'}',
+            suffixText: widget.unit?.toUpperCase(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final value = double.tryParse(controller.text);
+              if (value != null) {
+                // Clamp value to min/max
+                final clampedValue = value.clamp(widget.min, widget.max ?? value);
+                Navigator.pop(context, clampedValue);
+              }
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _currentValue = result;
+      });
+      widget.onChanged(result);
     }
   }
 
@@ -294,19 +404,36 @@ class _KylePlusMinusDecimalControlState extends ConsumerState<KylePlusMinusDecim
 
             // Value display (flexible to expand)
             Expanded(
-              child: Text(
-                widget.unit != null
-                    ? '${_currentValue.toStringAsFixed(widget.decimalPlaces)} ${widget.unit!.toUpperCase()}'
-                    : _currentValue.toStringAsFixed(widget.decimalPlaces),
-                style: AppTextStyles.dataNumber.copyWith(
-                  color: widget.enabled
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              child: widget.tappable
+                  ? GestureDetector(
+                      onTap: widget.enabled ? _showEditDialog : null,
+                      child: Text(
+                        widget.unit != null
+                            ? '${_currentValue.toStringAsFixed(widget.decimalPlaces)} ${widget.unit!.toUpperCase()}'
+                            : _currentValue.toStringAsFixed(widget.decimalPlaces),
+                        style: AppTextStyles.dataNumber.copyWith(
+                          color: widget.enabled
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : Text(
+                      widget.unit != null
+                          ? '${_currentValue.toStringAsFixed(widget.decimalPlaces)} ${widget.unit!.toUpperCase()}'
+                          : _currentValue.toStringAsFixed(widget.decimalPlaces),
+                      style: AppTextStyles.dataNumber.copyWith(
+                        color: widget.enabled
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
             ),
 
             const SizedBox(width: AppSpacing.xl),

@@ -42,9 +42,10 @@ class RunningTabContent extends ConsumerWidget {
             onChanged: controller.updateDistance,
             min: 0.1,
             max: 200.0,
-            step: 0.1,
+            step: 1.0,
             decimalPlaces: 1,
             unit: 'miles', // Will be displayed as "MILES" in uppercase
+            tappable: true,
           ),
 
           const SizedBox(height: AppSpacing.xl),
@@ -367,7 +368,7 @@ class _TimeBeforeRunControl extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Time Before Run',
+          'Pre-Run Fueling Window',
           style: AppTextStyles.descriptor.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w700,

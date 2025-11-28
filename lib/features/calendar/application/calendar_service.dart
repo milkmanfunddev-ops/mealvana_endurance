@@ -111,12 +111,11 @@ class CalendarService {
 
       return event != null ? _mapToEventDomain(event) : null;
     } catch (e, stackTrace) {
-      // ignore: avoid_print
-      print('Error getting event for activity: $activityId');
-      // ignore: avoid_print
-      print('Error: $e');
-      // ignore: avoid_print
-      print('StackTrace: $stackTrace');
+      _logger.error(
+        'Error getting event for activity: $activityId',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -363,7 +362,7 @@ class CalendarService {
           planDate: dayDate,
           dayNumber: dayOffset + 1,
           carbTargetGrams: targetCarbsGrams.round(),
-          carbProtocolGPerKg: carbProtocolGPerKg,
+          carbProtocolGPerKg: Value(carbProtocolGPerKg),
         );
 
         await _database.into(_database.carbLoadingDaysTable).insert(carbDayCompanion);

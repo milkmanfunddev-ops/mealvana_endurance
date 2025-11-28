@@ -352,9 +352,7 @@ class PrettyAppLogger implements AppLogger {
     try {
       _logger.log(level, payload, error: error, stackTrace: stackTrace);
     } catch (e) {
-      // Fallback if logger itself fails - print to console
-      // ignore: avoid_print
-      print('Logger error: $e - Original message: $payload');
+      // Fallback if logger itself fails - silently ignore to avoid infinite recursion
     }
 
     // Capture to debug log storage for in-app viewing
@@ -368,9 +366,7 @@ class PrettyAppLogger implements AppLogger {
         error: error,
       ));
     } catch (e) {
-      // Don't let debug logging break the app
-      // ignore: avoid_print
-      print('Debug log storage error: $e');
+      // Don't let debug logging break the app - silently ignore
     }
 
     if (_enableFileOutput) {

@@ -112,16 +112,17 @@ class UserProfile {
       ),
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       appVersion: json['app_version'] as String? ?? '1.0.0',
-      swipeHintShown: json['swipe_hint_shown'] as bool? ?? false,
-      // Sport preferences
-      giSensitivity: json['gi_sensitivity'] as bool?,
-      ftpWatts: json['ftp_watts'] as int?,
-      typicalBikeBottles: json['typical_bike_bottles'] as int?,
-      hasAeroBottle: json['has_aero_bottle'] as bool?,
-      hasBentoBox: json['has_bento_box'] as bool?,
-      cssPacePer100mSeconds: json['css_pace_per_100m_seconds'] as int?,
-      typicalWetsuit: json['typical_wetsuit'] as bool?,
-      typicalSwimCapType: json['typical_swim_cap_type'] as String?,
+      swipeHintShown: false, // Drift-only field, always default to false from Supabase
+      // Sport preferences (use correct production Supabase column names)
+      ftpWatts: json['cycling_ftp_watts'] as int?,
+      cssPacePer100mSeconds: json['swimming_css_seconds_per_100m'] as int?,
+      // Drift-only fields - always default to null from Supabase
+      giSensitivity: null,
+      typicalBikeBottles: null,
+      hasAeroBottle: null,
+      hasBentoBox: null,
+      typicalWetsuit: null,
+      typicalSwimCapType: null,
     );
   }
 
@@ -142,18 +143,14 @@ class UserProfile {
       'gut_training_level': gutTraining.name,
       'onboarding_completed': onboardingCompleted,
       'app_version': appVersion,
-      'swipe_hint_shown': swipeHintShown,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      // Sport preferences
-      'gi_sensitivity': giSensitivity,
-      'ftp_watts': ftpWatts,
-      'typical_bike_bottles': typicalBikeBottles,
-      'has_aero_bottle': hasAeroBottle,
-      'has_bento_box': hasBentoBox,
-      'css_pace_per_100m_seconds': cssPacePer100mSeconds,
-      'typical_wetsuit': typicalWetsuit,
-      'typical_swim_cap_type': typicalSwimCapType,
+      // Sport preferences (only include fields that exist in production Supabase)
+      'cycling_ftp_watts': ftpWatts,
+      'swimming_css_seconds_per_100m': cssPacePer100mSeconds,
+      // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
+      // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields
+      // and should not be synced to Supabase production
     };
   }
 
@@ -222,6 +219,18 @@ enum Gender {
 
   /// Get string value for API calls
   String get value => name;
+
+  /// Get display name for UI
+  String get displayName {
+    switch (this) {
+      case Gender.male:
+        return 'Male';
+      case Gender.female:
+        return 'Female';
+      case Gender.other:
+        return 'Non-binary';
+    }
+  }
 }
 
 class FoodPreferences {
@@ -280,6 +289,17 @@ enum FoodPreference {
 
   /// Get string value for API calls
   String get value => name == 'willingToTry' ? 'willing_to_try' : name;
+}
+
+int sliderLevelForPreference(FoodPreference preference) {
+  switch (preference) {
+    case FoodPreference.dislike:
+      return 1;
+    case FoodPreference.willingToTry:
+      return 2;
+    case FoodPreference.like:
+      return 3;
+  }
 }
 
 enum GutTraining {

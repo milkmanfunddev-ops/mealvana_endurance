@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.10.0+31
+version: 1.11.0+34
 
 environment:
   sdk: ^3.8.1
@@ -61,7 +61,7 @@ dependencies:
   mixpanel_flutter: ^2.4.4
   
   # Backend & Auth
-  supabase_flutter: ^2.8.5
+  supabase_flutter: ^2.10.0  # Required for linkIdentityWithIdToken() (gotrue 2.15.0+)
   google_sign_in: ^6.2.1
   sign_in_with_apple: ^6.1.0
   crypto: ^3.0.3

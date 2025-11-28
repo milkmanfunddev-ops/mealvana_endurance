@@ -7,7 +7,8 @@ import '../../../events/domain/event.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/database/app_database.dart' as db;
-import '../../../auth/application/auth_service.dart';
+import '../../../auth/application/auth_service.dart' as auth_service;
+import '../../../auth/application/supabase_auth_service.dart' as supabase_auth;
 
 part 'calendar_controller.g.dart';
 
@@ -57,10 +58,13 @@ class CalendarController extends _$CalendarController {
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
   ActivitiesService get _activitiesService => ref.read(activitiesServiceProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
-  AuthService get _authService => ref.read(authServiceProvider);
+  auth_service.AuthService get _authService => ref.read(auth_service.authServiceProvider);
 
   @override
   FutureOr<CalendarState> build() async {
+    // Watch auth state to trigger rebuilds on sign in/out
+    ref.watch(supabase_auth.currentUserProvider);
+    
     // Load initial week on build
     final weekStart = _getWeekStart(DateTime.now());
     return await _loadWeekActivities(weekStart);
@@ -448,10 +452,13 @@ class CalendarController extends _$CalendarController {
 class AllEventsController extends _$AllEventsController {
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
-  AuthService get _authService => ref.read(authServiceProvider);
+  auth_service.AuthService get _authService => ref.read(auth_service.authServiceProvider);
 
   @override
   FutureOr<CalendarState> build() async {
+    // Watch auth state to trigger rebuilds on sign in/out
+    ref.watch(supabase_auth.currentUserProvider);
+
     // Load all activities on build
     return await _loadAllActivities();
   }
@@ -492,7 +499,10 @@ Future<({Activity? activity, Event event})> eventDetail(
 ) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);
-  final authService = ref.read(authServiceProvider);
+  final authService = ref.read(auth_service.authServiceProvider);
+
+  // Watch auth state to trigger rebuilds on sign in/out
+  ref.watch(supabase_auth.currentUserProvider);
 
   try {
     // Get current user's device ID
@@ -527,7 +537,10 @@ Future<({Activity activity, Event? event})> activityDetail(
 ) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);
-  final authService = ref.read(authServiceProvider);
+  final authService = ref.read(auth_service.authServiceProvider);
+
+  // Watch auth state to trigger rebuilds on sign in/out
+  ref.watch(supabase_auth.currentUserProvider);
 
   try {
     // Get current user's device ID
@@ -556,7 +569,10 @@ Future<({Activity activity, Event? event})> activityDetail(
 Future<Event?> nextUpcomingEvent(Ref ref) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);
-  final authService = ref.read(authServiceProvider);
+  final authService = ref.read(auth_service.authServiceProvider);
+
+  // Watch auth state to trigger rebuilds on sign in/out
+  ref.watch(supabase_auth.currentUserProvider);
 
   try {
     // Get current user's device ID

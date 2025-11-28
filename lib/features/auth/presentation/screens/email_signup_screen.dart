@@ -71,8 +71,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         ),
       );
 
-      // Navigate back and indicate success
-      // Auth state listener will handle navigation to main app
+      // Return to post-onboarding auth screen which will navigate to main
       context.pop(true);
     } else if (!success && mounted) {
       // Error message shown by controller via snackbar

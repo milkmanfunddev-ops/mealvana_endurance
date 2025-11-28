@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:location_iq/location_iq.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../calendar/domain/event_subtype.dart';
 import '../../../calendar/presentation/widgets/sport_category_selector.dart';
@@ -371,7 +372,7 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
   }
 
   Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await showAppDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),

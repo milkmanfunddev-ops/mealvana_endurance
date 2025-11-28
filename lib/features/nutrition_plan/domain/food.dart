@@ -10,6 +10,9 @@ class Food {
   final String? displayName;        // e.g., "cup cooked oatmeal"
   final String? displayNamePlural;  // e.g., "cups cooked oatmeal"
 
+  // Categories array (new approach)
+  final List<String> categories; // e.g., ['before_run', 'during_run']
+
   // Deprecated fields (legacy compatibility)
   final String? servingUnit;
   final String? servingUnitPlural;
@@ -41,6 +44,7 @@ class Food {
     this.servingAmount,
     this.displayName,
     this.displayNamePlural,
+    this.categories = const [],
     this.servingUnit,
     this.servingUnitPlural,
     this.servingQualifier,
@@ -73,6 +77,9 @@ class Food {
       servingAmount: (json['serving_amount'] as num?)?.toDouble(),
       displayName: json['display_name'] as String?,
       displayNamePlural: json['display_name_plural'] as String?,
+      categories: json['categories'] != null
+        ? List<String>.from(json['categories'])
+        : [],
       servingUnit: json['serving_unit'] as String?,
       servingUnitPlural: json['serving_unit_plural'] as String?,
       servingQualifier: json['serving_qualifier'] as String?,
@@ -154,6 +161,7 @@ class Food {
       'serving_amount': servingAmount,
       'display_name': displayName,
       'display_name_plural': displayNamePlural,
+      'categories': categories,
       'serving_unit': servingUnit,
       'serving_unit_plural': servingUnitPlural,
       'serving_qualifier': servingQualifier,

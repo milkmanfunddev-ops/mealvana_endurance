@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../shared/widgets/app_date_picker.dart';
 import '../../domain/calendar_day_indicators.dart';
 
 /// Month calendar view matching Kyle's design
@@ -228,8 +229,6 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
           ),
         ),
 
-        const SizedBox(height: 16),
-
         // Divider line
         Container(
           height: 1,
@@ -241,24 +240,11 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
   }
 
   Future<void> _showDatePicker(BuildContext context) async {
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: widget.selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.orange,
-              onPrimary: AppColors.cream,
-              surface: AppColors.cream,
-              onSurface: AppColors.blackberry,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null && !_isSameDay(picked, widget.selectedDate)) {

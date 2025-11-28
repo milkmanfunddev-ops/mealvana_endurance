@@ -25,8 +25,10 @@ class CarbLoadingPlansTable extends Table {
   DateTimeColumn get completedAt => dateTime().nullable().named('completed_at')();
 
   // Sync tracking (offline-first architecture)
-  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
-  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+  BoolColumn get needsUpload =>
+      boolean().withDefault(const Constant(false)).named('needs_upload')();
+  DateTimeColumn get localUpdatedAt =>
+      dateTime().clientDefault(() => DateTime.now()).named('local_updated_at')();
 
   // Note: Primary key is automatically set by autoIncrement()
   

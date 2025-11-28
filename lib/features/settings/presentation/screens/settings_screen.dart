@@ -5,8 +5,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/settings_controller.dart';
-import '../../../auth/domain/user_preferences.dart';
-import '../../../nutrition_plan/domain/run_parameters.dart';
 import 'debug_screen.dart';
 
 /// Settings Screen - Kyle's Design System + Database Integration RESTORED
@@ -130,26 +128,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.lg),
 
-          // Theme toggle section
-          _buildThemeSection(context),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // Profile section (with triple-tap gesture)
-          GestureDetector(
-            onTap: _handleProfileTap,
-            behavior: HitTestBehavior.opaque,
-            child: _buildProfileSection(context, state),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // Preferences section
-          _buildPreferencesSection(context, state),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // Quick links section
+          // Quick links section (removed label, added preferences link)
           _buildQuickLinksSection(context),
 
           const SizedBox(height: AppSpacing.xxxl),
@@ -197,9 +176,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Row(
               children: [
                 Icon(
-                  FontAwesomeIcons.userLarge,
+                  FontAwesomeIcons.user,
                   size: AppIconSizes.md,
-                  color: AppColors.orange.withOpacity(0.7),
+                  color: AppColors.orange.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -231,12 +210,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // Create Account button
             SizedBox(
               width: double.infinity,
-              child: PrimaryButton(
+              child: KylePrimaryButton(
                 text: state.createAccountButton ?? 'Create Account',
                 onPressed: () {
                   final analytics = ref.read(appExternalDepsProvider);
                   analytics.analytics.track('settings_create_account_tapped');
                   context.push('/auth/post-onboarding');
+                },
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Log In button
+            SizedBox(
+              width: double.infinity,
+              child: KyleSecondaryButton(
+                text: 'Log In',
+                onPressed: () {
+                  final analytics = ref.read(appExternalDepsProvider);
+                  analytics.analytics.track('settings_login_tapped');
+                  context.push('/auth/post-onboarding?mode=login');
                 },
               ),
             ),
@@ -284,182 +278,145 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // Sign Out button
             SizedBox(
               width: double.infinity,
-              child: SecondaryButton(
+              child: KyleSecondaryButton(
                 text: state.signOutButton ?? 'Sign Out',
                 onPressed: () async {
-                  await ref.read(settingsControllerProvider.notifier).signOut();
+                  // Show confirmation dialog
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Sign Out?'),
+                      content: const Text(
+                        'You\'ll continue using the app as a guest. Your preferences will be saved on this device. Sign in again to sync across devices.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Sign Out'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  // If user confirmed, proceed with sign out
+                  if (confirmed == true && context.mounted) {
+                    await ref.read(settingsControllerProvider.notifier).signOut();
+
+                    // Show success message
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Signed out. Your preferences are saved on this device.'),
+                          backgroundColor: AppColors.electrolyte,
+                        ),
+                      );
+                    }
+                  }
                 },
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeSection(BuildContext context) {
-    final themeModeAsync = ref.watch(kyleThemeModeProvider);
-
-    return themeModeAsync.when(
-      data: (themeMode) => BaseCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Appearance',
-              style: AppTextStyles.subtitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
 
             const SizedBox(height: AppSpacing.md),
 
-            // Theme mode selector
-            Row(
-              children: [
-                Icon(
-                  FontAwesomeIcons.palette,
-                  size: AppIconSizes.md,
-                  color: AppColors.electrolyte,
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Theme Mode',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+            // Delete Account button
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () async {
+                  // Show confirmation dialog
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete Account?'),
+                      content: const Text(
+                        'This will permanently delete your account and all associated data. This action cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      KyleSegmentedControl<ThemeMode>(
-                        segments: ThemeMode.values,
-                        selected: themeMode,
-                        onChanged: (mode) => ref.read(kyleThemeModeProvider.notifier).setThemeMode(mode),
-                      ),
-                    ],
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: TextButton.styleFrom(foregroundColor: AppColors.dragonfruit),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  // If user confirmed, proceed with delete
+                  if (confirmed == true && context.mounted) {
+                    await ref.read(settingsControllerProvider.notifier).deleteAccount();
+
+                    // Show success message
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Account deleted.'),
+                          backgroundColor: AppColors.electrolyte,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: Text(
+                  'Delete Account',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.dragonfruit,
+                    decoration: TextDecoration.underline,
                   ),
                 ),
-              ],
+              ),
             ),
           ],
-        ),
-      ),
-      loading: () => const BaseCard(
-        child: Center(
-          child: CircularProgressIndicator(color: AppColors.electrolyte),
-        ),
-      ),
-      error: (error, stack) => BaseCard(
-        child: Text(
-          'Error loading theme settings',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.dragonfruit,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileSection(BuildContext context, dynamic state) {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                state.profileSectionTitle,
-                style: AppTextStyles.subtitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                '(Tap 3x for debug)',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Gender selector
-          _buildGenderSelector(context, state),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Birthday selector
-          _buildBirthdaySelector(context, state),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Height selector
-          _buildHeightSelector(context, state),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Weight selector
-          _buildWeightSelector(context, state),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Water bottle toggle
-          _buildWaterBottleToggle(context, state),
         ],
       ),
     );
   }
 
-  Widget _buildPreferencesSection(BuildContext context, dynamic state) {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            state.preferenceSectionTitle,
-            style: AppTextStyles.subtitle.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Distance unit
-          _buildDistanceUnitSelector(context, state),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Pace unit
-          _buildPaceUnitSelector(context, state),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Gut training level
-          _buildGutTrainingSelector(context, state),
-        ],
-      ),
-    );
-  }
 
   Widget _buildQuickLinksSection(BuildContext context) {
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Quick Links',
-            style: AppTextStyles.subtitle.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
+          // Profile & Preferences (with triple-tap gesture for debug)
+          GestureDetector(
+            onTap: _handleProfileTap,
+            behavior: HitTestBehavior.opaque,
+            child: _buildQuickLink(
+              context: context,
+              icon: FontAwesomeIcons.user,
+              title: 'Profile & Preferences',
+              subtitle: 'Edit your profile, units, and preferences',
+              onTap: () {
+                final analytics = ref.read(appExternalDepsProvider);
+                analytics.analytics.track('settings_preferences_tapped');
+                context.push('/settings/preferences');
+              },
             ),
           ),
 
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.sm),
+
+          // Appearance
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.palette,
+            title: 'Appearance',
+            subtitle: 'Theme mode (light/dark/system)',
+            onTap: () {
+              // Show theme mode dialog
+              _showThemeModeDialog(context);
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
 
           // Food preferences
           _buildQuickLink(
@@ -493,400 +450,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildGenderSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.genderLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
+  void _showThemeModeDialog(BuildContext context) {
+    final themeModeAsync = ref.read(kyleThemeModeProvider);
+
+    themeModeAsync.when(
+      data: (currentMode) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Theme Mode'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: ThemeMode.values.map((mode) {
+                return RadioListTile<ThemeMode>(
+                  title: Text(_getThemeModeName(mode)),
+                  value: mode,
+                  groupValue: currentMode,
+                  onChanged: (selected) {
+                    if (selected != null) {
+                      ref.read(kyleThemeModeProvider.notifier).setThemeMode(selected);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                );
+              }).toList(),
+            ),
           ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        KyleSegmentedControl<Gender>(
-          segments: [Gender.male, Gender.female],
-          selected: state.gender ?? Gender.male,
-          onChanged: (gender) => ref.read(settingsControllerProvider.notifier).updateGender(gender),
-        ),
-      ],
+        );
+      },
+      loading: () {},
+      error: (_, __) {},
     );
   }
 
-  Widget _buildBirthdaySelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.birthdayLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        InkWell(
-          onTap: () async {
-            final selectedDate = await showDatePicker(
-              context: context,
-              initialDate: state.birthday ?? DateTime.now().subtract(const Duration(days: 365 * 30)),
-              firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
-              lastDate: DateTime.now().subtract(const Duration(days: 365 * 16)),
-            );
-            if (selectedDate != null) {
-              ref.read(settingsControllerProvider.notifier).updateBirthday(selectedDate);
-            }
-          },
-          borderRadius: AppRadius.inputRadius,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-              ),
-              borderRadius: AppRadius.inputRadius,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  FontAwesomeIcons.calendar,
-                  size: AppIconSizes.controlIcon,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    state.birthday != null
-                        ? '${state.birthday!.month}/${state.birthday!.day}/${state.birthday!.year}'
-                        : 'Select your birthday',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: state.birthday != null
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeightSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.heightLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        Row(
-          children: [
-            // Feet dropdown
-            Expanded(
-              child: _buildDropdown<int>(
-                context: context,
-                value: state.heightFeet,
-                hint: 'Feet',
-                items: List.generate(6, (index) => index + 3),
-                itemBuilder: (feet) => '$feet ft',
-                onChanged: (feet) {
-                  if (feet != null) {
-                    ref.read(settingsControllerProvider.notifier).updateHeight(feet, state.heightInches ?? 0);
-                  }
-                },
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            // Inches dropdown
-            Expanded(
-              child: _buildDropdown<int>(
-                context: context,
-                value: state.heightInches,
-                hint: 'Inches',
-                items: List.generate(12, (index) => index),
-                itemBuilder: (inches) => '$inches in',
-                onChanged: (inches) {
-                  if (inches != null) {
-                    ref.read(settingsControllerProvider.notifier).updateHeight(state.heightFeet ?? 5, inches);
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWeightSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.weightLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        TextFormField(
-          initialValue: state.weightPounds?.toString() ?? '',
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            hintText: 'Enter weight',
-            hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            suffixText: 'lbs',
-            suffixStyle: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(
-                color: AppColors.orange,
-                width: 2,
-              ),
-            ),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-          ),
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onChanged: (value) {
-            final weight = double.tryParse(value);
-            if (weight != null && weight > 0) {
-              ref.read(settingsControllerProvider.notifier).updateWeight(weight);
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWaterBottleToggle(BuildContext context, dynamic state) {
-    return InkWell(
-      onTap: () => ref.read(settingsControllerProvider.notifier).updateWaterBottle(!state.runsWithWaterBottle),
-      borderRadius: AppRadius.cardRadius,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: state.runsWithWaterBottle
-              ? AppColors.blackberry.withOpacity(0.1)
-              : Colors.transparent,
-          border: Border.all(
-            color: state.runsWithWaterBottle
-                ? AppColors.blackberry
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-            width: state.runsWithWaterBottle ? 2 : 1,
-          ),
-          borderRadius: AppRadius.cardRadius,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: state.runsWithWaterBottle
-                    ? AppColors.blackberry
-                    : Colors.transparent,
-                border: Border.all(
-                  color: state.runsWithWaterBottle
-                      ? AppColors.blackberry
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: state.runsWithWaterBottle
-                  ? const Icon(
-                      FontAwesomeIcons.check,
-                      size: 14,
-                      color: AppColors.cream,
-                    )
-                  : null,
-            ),
-
-            const SizedBox(width: AppSpacing.md),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'I run with a water bottle',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'This helps us estimate your hydration needs',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDistanceUnitSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.distanceUnitLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        KyleSegmentedControl<DistanceUnit>(
-          segments: DistanceUnit.values,
-          selected: state.preferredDistanceUnit ?? DistanceUnit.miles,
-          onChanged: (unit) => ref.read(settingsControllerProvider.notifier).updateDistanceUnit(unit),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPaceUnitSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.paceUnitLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        KyleSegmentedControl<PaceUnit>(
-          segments: PaceUnit.values,
-          selected: state.preferredPaceUnit ?? PaceUnit.minPerMile,
-          onChanged: (unit) => ref.read(settingsControllerProvider.notifier).updatePaceUnit(unit),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGutTrainingSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.gutTrainingLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        KyleGutTrainingSegmentedControl(
-          selected: state.gutTrainingLevel ?? GutTraining.moderate,
-          onChanged: (level) => ref.read(settingsControllerProvider.notifier).updateGutTraining(level),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDropdown<T>({
-    required BuildContext context,
-    required T? value,
-    required String hint,
-    required List<T> items,
-    required String Function(T) itemBuilder,
-    required ValueChanged<T?> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-        ),
-        borderRadius: AppRadius.inputRadius,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          hint: Text(
-            hint,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          isExpanded: true,
-          items: items.map((item) {
-            return DropdownMenuItem<T>(
-              value: item,
-              child: Text(
-                itemBuilder(item),
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            );
-          }).toList(),
-          onChanged: onChanged,
-          dropdownColor: Theme.of(context).colorScheme.surface,
-        ),
-      ),
-    );
+  String _getThemeModeName(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.system:
+        return 'System';
+      case ThemeMode.light:
+        return 'Light';
+      case ThemeMode.dark:
+        return 'Dark';
+    }
   }
 
   Widget _buildQuickLink({
@@ -907,7 +512,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.electrolyte.withOpacity(0.2),
+                color: AppColors.electrolyte.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(

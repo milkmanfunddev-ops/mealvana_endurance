@@ -8,7 +8,7 @@ import '../../../../shared/widgets/primary_button.dart';
 import '../../../../theme/app_theme.dart';
 import '../../application/food_import_service.dart';
 import '../../domain/meal_type.dart';
-import '../../../../shared/providers/device_id_provider.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../../auth/application/auth_service.dart';
 
 /// Screen for creating a custom carb loading food from scratch
@@ -74,7 +74,7 @@ class _CreateCustomCarbLoadingFoodScreenState
     });
 
     try {
-      final deviceId = await ref.read(deviceIdProvider.future);
+      final deviceId = await ref.read(userIdProvider.future);
       final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
       final userId = user?.id ?? deviceId; // Fallback to deviceId if no user

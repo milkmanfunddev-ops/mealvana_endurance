@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import '../../domain/feedback_data.dart';
 import '../providers/survey_controller.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -331,7 +332,7 @@ class SurveyPage2 extends ConsumerWidget {
 
 
   void _showDatePicker(BuildContext context, DateTime selectedDate, SurveyController controller) {
-    showDatePicker(
+    showAppDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime.now(),

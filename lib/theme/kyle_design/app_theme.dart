@@ -236,6 +236,29 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+      
+      // Date Picker
+      datePickerTheme: DatePickerThemeData(
+        headerHeadlineStyle: AppTextStyles.datePickerHeader.copyWith(
+          fontSize: 18, // Smaller font to prevent year truncation (was 20, 24)
+          letterSpacing: -0.5,
+          color: AppColors.textLight,
+        ),
+        headerHelpStyle: AppTextStyles.smallLabel.copyWith(
+          color: AppColors.textLightSecondary,
+        ),
+        weekdayStyle: AppTextStyles.calendarDayLetter.copyWith(
+          color: AppColors.textLightSecondary,
+        ),
+        dayStyle: AppTextStyles.calendarDay.copyWith(
+          color: AppColors.textLight,
+        ),
+        yearStyle: AppTextStyles.calendarDay.copyWith(
+          color: AppColors.textLight,
+        ),
+        backgroundColor: AppColors.cream,
+        surfaceTintColor: Colors.transparent,
+      ),
     );
   }
 
@@ -464,6 +487,29 @@ class AppTheme {
         color: AppColors.borderDarkSecondary,
         thickness: 1,
         space: 1,
+      ),
+      
+      // Date Picker
+      datePickerTheme: DatePickerThemeData(
+        headerHeadlineStyle: AppTextStyles.datePickerHeader.copyWith(
+          fontSize: 18, // Smaller font to prevent year truncation (was 20, 24)
+          letterSpacing: -0.5,
+          color: AppColors.textDark,
+        ),
+        headerHelpStyle: AppTextStyles.smallLabel.copyWith(
+          color: AppColors.textDarkSecondary,
+        ),
+        weekdayStyle: AppTextStyles.calendarDayLetter.copyWith(
+          color: AppColors.textDarkSecondary,
+        ),
+        dayStyle: AppTextStyles.calendarDay.copyWith(
+          color: AppColors.textDark,
+        ),
+        yearStyle: AppTextStyles.calendarDay.copyWith(
+          color: AppColors.textDark,
+        ),
+        backgroundColor: AppColors.blackberry,
+        surfaceTintColor: Colors.transparent,
       ),
     );
   }

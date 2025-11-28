@@ -52,6 +52,15 @@ class WelcomeScreen extends ConsumerWidget {
               isFullWidth: false,
             ),
 
+            const SizedBox(height: AppSpacing.md),
+
+            // Login button
+            KyleSecondaryButton(
+              text: 'Log In',
+              onPressed: () => _goToLogin(context, ref),
+              isFullWidth: false,
+            ),
+
             const SizedBox(height: AppSpacing.lg),
 
             // // Skip link
@@ -164,6 +173,15 @@ class WelcomeScreen extends ConsumerWidget {
 
     // Navigate to profile setup
     context.push('/onboarding/profile');
+  }
+
+  void _goToLogin(BuildContext context, WidgetRef ref) {
+    // Track login button tap
+    final analytics = ref.read(appExternalDepsProvider);
+    analytics.analytics.track('welcome_login_tapped');
+
+    // Navigate to post-onboarding auth screen in login mode
+    context.push('/auth/post-onboarding?mode=login');
   }
 
   void _skipOnboarding(BuildContext context, WidgetRef ref) {

@@ -54,7 +54,7 @@ class MacroTargetsTable extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       child: Row(
         children: [
           Expanded(
@@ -86,7 +86,7 @@ class MacroTargetsTable extends ConsumerWidget {
         _buildTableRow(
           context,
           isHeader: true,
-          cells: const ['PRE', 'DURING', 'POST'],
+          cells: const ['', 'PRE', 'DURING', 'POST'],
         ),
         
         // Data rows
@@ -190,7 +190,7 @@ class MacroTargetsTable extends ConsumerWidget {
                           cell,
                           style: AppTextStyles.dataNumber.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 16,
+                            fontSize: 15,
                           ),
                           textAlign: TextAlign.center,
                         ),

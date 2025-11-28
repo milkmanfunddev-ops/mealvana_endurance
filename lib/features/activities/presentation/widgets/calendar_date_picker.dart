@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
 import '../../domain/activity.dart';
 import '../../../events/domain/event.dart';
@@ -110,7 +111,7 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
   }
 
   Future<void> _showMonthYearPicker() async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await showAppDatePicker(
       context: context,
       initialDate: _visibleMonthDate,
       firstDate: DateTime(2020),

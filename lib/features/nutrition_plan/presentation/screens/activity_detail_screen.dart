@@ -4,48 +4,97 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../providers/activity_detail_controller.dart';
-import '../../domain/pending_activity_data.dart';
-import '../../domain/macro_targets.dart';
 import '../../domain/nutrition_plan.dart';
 
 /// Activity Detail Screen - Kyle's Design System
 /// Shows activity details with nutrition sections and food items
 ///
-/// **RESTORED FUNCTIONALITY**: This screen now integrates with ActivityDetailController
-/// and supports both 'create' and 'view' modes with real data
+/// SIMPLIFIED: Uses only activityId for provider. Always allows editing
+/// regardless of how the user arrived at the screen. This eliminates
+/// provider instance mismatches that caused food swap bugs.
 class ActivityDetailScreen extends ConsumerStatefulWidget {
   const ActivityDetailScreen({
     super.key,
-    this.mode = 'view',
-    this.activityId,
-    this.pendingActivityData,
-    this.macroTargets,
+    required this.activityId,
+    this.isNewActivity = false,
   });
 
-  final String mode; // 'create' or 'view'
-  final int? activityId; // Required for view mode
-  final PendingActivityData? pendingActivityData; // Required for create mode
-  final MacroTargets? macroTargets; // Macro targets for create mode
+  final int activityId; // Activity ID is always required
+  final bool isNewActivity; // True if just created (for showing "Save Workout" button)
 
   @override
   ConsumerState<ActivityDetailScreen> createState() => _ActivityDetailScreenState();
 }
 
 class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
+  static const String _swipeHintShownKey = 'activity_detail_swipe_hint_shown';
+  bool _hasShownSwipeHint = false;
+  bool _swipeHintChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSwipeHintShown();
+  }
+
+  /// Check SharedPreferences for swipe hint status (only once per app install)
+  Future<void> _checkSwipeHintShown() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasShown = prefs.getBool(_swipeHintShownKey) ?? false;
+      if (mounted) {
+        setState(() {
+          _hasShownSwipeHint = hasShown;
+          _swipeHintChecked = true;
+        });
+      }
+    } catch (e) {
+      // On error, just don't show the hint
+      if (mounted) {
+        setState(() {
+          _hasShownSwipeHint = true;
+          _swipeHintChecked = true;
+        });
+      }
+    }
+  }
+
+  /// Mark swipe hint as shown and persist to SharedPreferences
+  Future<void> _markSwipeHintShown() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_swipeHintShownKey, true);
+    } catch (e) {
+      // Silently fail - hint will just show again next time
+    }
+  }
+
+  /// Consume swipe hint - returns true only the first time, then persists
+  bool _consumeSwipeHint() {
+    // Don't show hint until we've checked SharedPreferences
+    if (!_swipeHintChecked) return false;
+    // Already shown this session or previously
+    if (_hasShownSwipeHint) return false;
+    // Mark as shown for this session
+    _hasShownSwipeHint = true;
+    // Persist to SharedPreferences
+    _markSwipeHintShown();
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Watch the activity detail controller with parameters
+    // SIMPLIFIED: Only activityId needed for provider
     final activityDetailAsync = ref.watch(
       activityDetailControllerProvider(
-        mode: widget.mode,
         activityId: widget.activityId,
-        pendingActivityData: widget.pendingActivityData,
-        macroTargets: widget.macroTargets,
+        isNewActivity: widget.isNewActivity,
       ),
     );
 
@@ -88,7 +137,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            widget.mode == 'create' ? 'New Activity' : 'Activity Details',
+            widget.isNewActivity ? 'New Activity' : 'Activity Details',
             style: AppTextStyles.sectionTitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -155,12 +204,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   }
 
   Widget _buildContent(BuildContext context, ActivityDetailState state) {
-    // Get activity data - either from existing activity or pending data
+    // Get activity data from state
     final activity = state.activity;
-    final pendingData = state.pendingActivityData;
 
-    // If we have neither, show error
-    if (activity == null && pendingData == null) {
+    // If we have no activity, show error
+    if (activity == null) {
       return _buildErrorState(context, 'No activity data available');
     }
 
@@ -197,10 +245,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   Widget _buildHeroSection(BuildContext context, ActivityDetailState state) {
     final activity = state.activity;
-    final pendingData = state.pendingActivityData;
 
-    // Get activity details from either source
-    final activityType = activity?.activityType ?? pendingData?.activityType ?? ActivityType.running;
+    // Get activity details from activity (always available at this point)
+    final activityType = activity?.activityType ?? ActivityType.running;
     final scheduledDateTime = state.scheduledDateTime ?? DateTime.now();
 
     return Column(
@@ -457,7 +504,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               padding: EdgeInsets.only(
                 bottom: index < section.foodItems.length - 1 ? AppSpacing.sm : 0,
               ),
-              child: _buildExpandableFoodItem(context, state, food, category),
+              child: _buildExpandableFoodItem(
+                context,
+                state,
+                food,
+                category,
+                showSwipeHint: _consumeSwipeHint(),
+              ),
             );
           }),
 
@@ -502,66 +555,119 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     int targetSodium = section.sodiumTarget?.round() ?? totalSodium;
     int targetFluids = section.fluidsTarget?.round() ?? totalFluids.round();
 
-    // If section doesn't have targets (rare case), try state.macroTargets from creation
-    if (section.carbsTarget == null && state.macroTargets != null) {
-      final macroTargets = state.macroTargets!;
-      if (category == 'before_run') {
-        targetCarbs = macroTargets.preRun.carbsG.round();
-        targetProtein = macroTargets.preRun.proteinG.round();
-        targetSodium = macroTargets.preRun.sodiumMg.round();
-      } else if (category == 'during_run') {
-        targetCarbs = macroTargets.duringRun.carbTotalG.round();
-        targetFluids = macroTargets.duringRun.fluidTotalMl.round();
-        targetSodium = macroTargets.duringRun.sodiumTotalMg.round();
-      } else if (category == 'after_run') {
-        targetCarbs = macroTargets.postRun.carbsG.round();
-        targetProtein = macroTargets.postRun.proteinG.round();
-        targetSodium = macroTargets.postRun.sodiumMg.round();
-      }
-    }
+    // Note: Section targets are now always stored in the nutrition plan
+    // No need for macroTargets fallback
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildMacroSummaryItem(
           context: context,
-          value: '$totalCarbs/${targetCarbs}g',
+          actual: totalCarbs,
+          target: targetCarbs,
+          unit: 'g',
           label: 'CARBS',
         ),
         if (category == 'during_run')
           _buildMacroSummaryItem(
             context: context,
-            value: '${totalFluids.round()}/${targetFluids}mL',
+            actual: totalFluids.round(),
+            target: targetFluids,
+            unit: 'mL',
             label: 'FLUIDS',
           )
         else
           _buildMacroSummaryItem(
             context: context,
-            value: '$totalProtein/${targetProtein}g',
+            actual: totalProtein,
+            target: targetProtein,
+            unit: 'g',
             label: 'PROTEIN',
           ),
         _buildMacroSummaryItem(
           context: context,
-          value: '$totalSodium/${targetSodium}mg',
+          actual: totalSodium,
+          target: targetSodium,
+          unit: 'mg',
           label: 'SODIUM',
         ),
       ],
     );
   }
 
+  /// Get color for macro value based on deviation from target
+  /// Returns red shades if significantly off from target
+  Color _getMacroDeviationColor(BuildContext context, int actual, int target) {
+    // If target is 0, can't calculate deviation
+    if (target == 0) return Theme.of(context).colorScheme.onSurface;
+
+    // Calculate percentage deviation from target
+    final deviation = ((actual - target).abs() / target * 100);
+
+    // > 30% off target: darker red (more visible)
+    if (deviation > 30) {
+      return AppColors.dragonfruitDark;
+    }
+    // 15-30% off target: medium red
+    else if (deviation > 15) {
+      return AppColors.dragonfruit;
+    }
+    // Within 15% tolerance: normal color
+    else {
+      return Theme.of(context).colorScheme.onSurface;
+    }
+  }
+
   Widget _buildMacroSummaryItem({
     required BuildContext context,
-    required String value,
+    required int actual,
+    required int target,
+    required String unit,
     required String label,
   }) {
+    // Get color for the actual value based on deviation
+    final actualColor = _getMacroDeviationColor(context, actual, target);
+    final targetColor = Theme.of(context).colorScheme.onSurface;
+
     return Column(
       children: [
-        Text(
-          value,
-          style: AppTextStyles.dataNumber.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        // Display numerator/denominator with colored numerator
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: '$actual',
+                style: AppTextStyles.dataNumber.copyWith(
+                  color: actualColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextSpan(
+                text: '/',
+                style: AppTextStyles.dataNumber.copyWith(
+                  color: targetColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextSpan(
+                text: '$target',
+                style: AppTextStyles.dataNumber.copyWith(
+                  color: targetColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextSpan(
+                text: unit,
+                style: AppTextStyles.dataNumber.copyWith(
+                  color: targetColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: AppSpacing.xxs),
@@ -581,6 +687,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     ActivityDetailState state,
     FoodItemData food,
     String category,
+    {bool showSwipeHint = false}
   ) {
     return Dismissible(
       key: Key(food.id),
@@ -640,7 +747,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
           // Delete - show confirmation
-          return await showDialog<bool>(
+          final confirmed = await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
               title: const Text('Delete Food Item'),
@@ -660,6 +767,12 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               ],
             ),
           );
+
+          if (confirmed == true) {
+            // Perform deletion via controller and rely on rebuild to remove widget
+            await _deleteFood(context, state, food.id, category);
+          }
+          return false; // Keep Dismissible in place; rebuild will drop it
         } else if (direction == DismissDirection.endToStart) {
           // Swap - navigate to swap screen, don't dismiss
           _swapFood(context, state, food.id, food.name, category);
@@ -667,16 +780,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         }
         return false;
       },
-      onDismissed: (direction) {
-        if (direction == DismissDirection.startToEnd) {
-          // Delete confirmed
-          _deleteFood(context, state, food.id, category);
-        }
-      },
       child: _ExpandableFoodItem(
         food: food,
         onSwap: () => _swapFood(context, state, food.id, food.name, category),
         onRemove: () => _deleteFood(context, state, food.id, category),
+        showSwipeHint: showSwipeHint,
         onQuantityChange: (newQuantity) => _updateFoodQuantity(context, state, food.id, category, newQuantity),
       ),
     );
@@ -741,51 +849,46 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   /// Build action buttons based on current state
   Widget _buildActionButtons(BuildContext context, ActivityDetailState state) {
-    // If completed, show completion info
+    // If completed, show completion info but still allow editing foods
     if (state.isCompleted) {
       return _buildCompletedState(context, state);
     }
 
-    // Create mode: Show "Save Workout" button
-    if (state.isCreateMode) {
+    // New activity: Show "Save Workout" button
+    if (state.isNewActivity) {
       return KylePrimaryButton(
         text: state.isSaving ? 'Saving...' : 'Save Workout',
         onPressed: state.isSaving ? null : () => _saveWorkout(context, state),
       );
     }
 
-    // View mode (not completed): Show "Edit" and "Complete Workout" buttons
-    if (state.isViewMode) {
-      return Row(
-        children: [
-          Expanded(
-            child: KyleSecondaryButton(
-              text: 'Edit',
-              onPressed: () => _editWorkout(context, state),
-            ),
+    // Existing activity (not completed): Show "Save" and "Complete" buttons
+    // Always show both buttons so user can enter edit flow even if no detected changes
+    return Row(
+      children: [
+        Expanded(
+          child: KyleSecondaryButton(
+            text: state.isSaving ? 'Saving...' : 'Save',
+            onPressed: state.isSaving ? null : () => _saveWorkout(context, state),
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: KylePrimaryButton(
-              text: state.isCompleting ? 'Completing...' : 'Complete Workout',
-              onPressed: state.isCompleting ? null : () => _completeWorkout(context, state),
-            ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: KylePrimaryButton(
+            text: state.isCompleting ? 'Completing...' : 'Complete',
+            onPressed: state.isCompleting ? null : () => _completeWorkout(context, state),
           ),
-        ],
-      );
-    }
-
-    return const SizedBox.shrink();
+        ),
+      ],
+    );
   }
 
   void _saveWorkout(BuildContext context, ActivityDetailState state) async {
     // Call controller to save the activity
     final controller = ref.read(
       activityDetailControllerProvider(
-        mode: widget.mode,
         activityId: widget.activityId,
-        pendingActivityData: widget.pendingActivityData,
-        macroTargets: widget.macroTargets,
+        isNewActivity: widget.isNewActivity,
       ).notifier,
     );
 
@@ -796,32 +899,26 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     analytics.analytics.track('workout_saved', properties: {
       'activity_id': state.activity?.id,
       'has_nutrition_plan': state.nutritionPlan != null,
+      'is_new_activity': state.isNewActivity,
     });
 
     // Show success message
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Workout saved successfully!'),
+          content: Text('Changes saved successfully!'),
           backgroundColor: AppColors.electrolyte,
         ),
       );
 
-      // Navigate to home screen (activities list) after saving
-      // Use go() instead of pop() to replace the navigation stack
-      context.go('/main');
+      // If new activity, navigate to activities list after saving
+      // Otherwise stay on screen (user might want to continue editing or complete)
+      if (state.isNewActivity) {
+        context.go('/main');
+      }
     }
   }
 
-  void _editWorkout(BuildContext context, ActivityDetailState state) {
-    // TODO: Navigate to edit screen or show edit dialog
-    // For now, show a simple message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edit functionality coming soon!'),
-      ),
-    );
-  }
 
   void _completeWorkout(BuildContext context, ActivityDetailState state) {
     // Show completion dialog
@@ -834,10 +931,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           // Call controller to complete the activity
           final controller = ref.read(
             activityDetailControllerProvider(
-              mode: widget.mode,
               activityId: widget.activityId,
-              pendingActivityData: widget.pendingActivityData,
-              macroTargets: widget.macroTargets,
+              isNewActivity: widget.isNewActivity,
             ).notifier,
           );
 
@@ -877,39 +972,21 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       'section': category,
     });
 
-    // Get activity ID - try from existing activity first, then from widget parameter
-    final activityId = state.activity?.id ?? widget.activityId;
-
-    if (activityId == null) {
-      // This should rarely happen, but provide a helpful error if it does
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot swap food: no activity found. Please save the activity first.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
-
-    // Navigate to food swap screen with correct parameters
+    // SIMPLIFIED: Just pass activityId to swap food screen (activityId is always required now)
     context.push('/swap-food', extra: {
       'foodToSwapId': foodId,
       'foodToSwapName': foodName,
       'category': category,
-      'activityId': activityId,
-      'mode': widget.mode, // Pass the mode so SwapFoodController uses the correct provider instance
-      'pendingActivityData': widget.pendingActivityData, // Pass to ensure same ActivityDetailController instance
-      'macroTargets': widget.macroTargets, // Pass to ensure same ActivityDetailController instance
+      'activityId': widget.activityId,
+      'isNewActivity': widget.isNewActivity,
     });
   }
 
   Future<void> _deleteFood(BuildContext context, ActivityDetailState state, String foodId, String category) async {
     final controller = ref.read(
       activityDetailControllerProvider(
-        mode: widget.mode,
         activityId: widget.activityId,
-        pendingActivityData: widget.pendingActivityData,
-        macroTargets: widget.macroTargets,
+        isNewActivity: widget.isNewActivity,
       ).notifier,
     );
 
@@ -927,10 +1004,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   Future<void> _updateFoodQuantity(BuildContext context, ActivityDetailState state, String foodId, String category, double newQuantity) async {
     final controller = ref.read(
       activityDetailControllerProvider(
-        mode: widget.mode,
         activityId: widget.activityId,
-        pendingActivityData: widget.pendingActivityData,
-        macroTargets: widget.macroTargets,
+        isNewActivity: widget.isNewActivity,
       ).notifier,
     );
 
@@ -944,37 +1019,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       'section': category,
     });
 
-    // Get activity ID from state - try state first, then widget parameter
-    final activityDetailAsync = ref.read(
-      activityDetailControllerProvider(
-        mode: widget.mode,
-        activityId: widget.activityId,
-        pendingActivityData: widget.pendingActivityData,
-        macroTargets: widget.macroTargets,
-      ),
-    );
-
-    final activityId = activityDetailAsync.value?.activity?.id ?? widget.activityId;
-
-    if (activityId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot add food: no activity found. Please save the activity first.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
-
-    // Navigate to swap food screen in add mode (foodToSwapId = null)
+    // SIMPLIFIED: Just pass activityId to swap food screen (activityId is always required now)
     context.push('/swap-food', extra: {
       'foodToSwapId': null, // null = add mode
       'foodToSwapName': null,
       'category': category,
-      'activityId': activityId,
-      'mode': widget.mode, // Pass the mode so SwapFoodController uses the correct provider instance
-      'pendingActivityData': widget.pendingActivityData, // Pass to ensure same ActivityDetailController instance
-      'macroTargets': widget.macroTargets, // Pass to ensure same ActivityDetailController instance
+      'activityId': widget.activityId,
+      'isNewActivity': widget.isNewActivity,
     });
   }
 
@@ -1367,21 +1418,97 @@ class _ExpandableFoodItem extends StatefulWidget {
   final VoidCallback? onSwap;
   final VoidCallback? onRemove;
   final Function(double)? onQuantityChange;
+  final bool showSwipeHint;
 
   const _ExpandableFoodItem({
     required this.food,
     this.onSwap,
     this.onRemove,
     this.onQuantityChange,
+    this.showSwipeHint = false,
   });
 
   @override
   State<_ExpandableFoodItem> createState() => _ExpandableFoodItemState();
 }
 
-class _ExpandableFoodItemState extends State<_ExpandableFoodItem> {
+class _ExpandableFoodItemState extends State<_ExpandableFoodItem> with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
-  double _quantity = 1.0;
+  late double _quantity;
+  late final AnimationController _swipeHintController;
+  late final Animation<double> _swipeHintOffset;
+  bool _hasPlayedSwipeHint = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Extract numeric quantity from the quantity string (e.g., "2 banana" -> 2.0)
+    // The quantity string format is like "2 banana", "1.5 gel", etc.
+    final quantityMatch = RegExp(r'^([\d.]+)').firstMatch(widget.food.quantity);
+    _quantity = quantityMatch != null
+        ? double.tryParse(quantityMatch.group(1)!) ?? 1.0
+        : 1.0;
+
+    _swipeHintController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3500),
+    );
+    _swipeHintOffset = TweenSequence<double>([
+      // Swipe left to show "Delete" button
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: -80.0).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 25,
+      ),
+      // Pause on Delete to let user see it
+      TweenSequenceItem(
+        tween: ConstantTween(-80.0),
+        weight: 15,
+      ),
+      // Swipe right to show "Swap" button
+      TweenSequenceItem(
+        tween: Tween(begin: -80.0, end: 80.0).chain(CurveTween(curve: Curves.easeInOutCubic)),
+        weight: 25,
+      ),
+      // Pause on Swap to let user see it
+      TweenSequenceItem(
+        tween: ConstantTween(80.0),
+        weight: 15,
+      ),
+      // Return to center
+      TweenSequenceItem(
+        tween: Tween(begin: 80.0, end: 0.0).chain(CurveTween(curve: Curves.easeInCubic)),
+        weight: 20,
+      ),
+    ]).animate(_swipeHintController);
+
+    if (widget.showSwipeHint) {
+      _playSwipeHint();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExpandableFoodItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.showSwipeHint && !_hasPlayedSwipeHint) {
+      _playSwipeHint();
+    }
+  }
+
+  @override
+  void dispose() {
+    _swipeHintController.dispose();
+    super.dispose();
+  }
+
+  void _playSwipeHint() {
+    if (_hasPlayedSwipeHint) return;
+    _hasPlayedSwipeHint = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _swipeHintController.forward(from: 0);
+      }
+    });
+  }
 
   /// Get the appropriate icon for a food based on its name
   IconData _getFoodIcon(String foodName) {
@@ -1503,7 +1630,7 @@ class _ExpandableFoodItemState extends State<_ExpandableFoodItem> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.smRadius,
@@ -1725,6 +1852,95 @@ class _ExpandableFoodItemState extends State<_ExpandableFoodItem> {
           ],
         ],
       ),
+    );
+
+    if (!_hasPlayedSwipeHint && !widget.showSwipeHint) {
+      return content;
+    }
+
+    // Show backgrounds during animation to demonstrate swipe actions
+    return AnimatedBuilder(
+      animation: _swipeHintOffset,
+      builder: (context, child) {
+        final offset = _hasPlayedSwipeHint ? _swipeHintOffset.value : 0;
+
+        return ClipRRect(
+          borderRadius: AppRadius.smRadius,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Swap background (visible when swiping left - revealed on right side)
+              Positioned.fill(
+                child: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: offset < 0 ? AppColors.electrolyte : Colors.transparent,
+                    borderRadius: AppRadius.smRadius,
+                  ),
+                  child: offset < 0
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Swap',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Icon(
+                              FontAwesomeIcons.arrowRightArrowLeft,
+                              color: Colors.white,
+                              size: AppIconSizes.md,
+                            ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
+              // Delete background (visible when swiping right - revealed on left side)
+              Positioned.fill(
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.only(left: AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: offset > 0 ? AppColors.dragonfruit : Colors.transparent,
+                    borderRadius: AppRadius.smRadius,
+                  ),
+                  child: offset > 0
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              FontAwesomeIcons.trash,
+                              color: Colors.white,
+                              size: AppIconSizes.md,
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Text(
+                              'Delete',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
+              // Animated card on top
+              Transform.translate(
+                offset: Offset(offset.toDouble(), 0),
+                child: child,
+              ),
+            ],
+          ),
+        );
+      },
+      child: content,
     );
   }
 

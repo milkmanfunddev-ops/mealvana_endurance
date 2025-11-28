@@ -12,7 +12,8 @@ class CarbLoadingDaysTable extends Table {
   
   // Daily targets
   IntColumn get carbTargetGrams => integer().named('carb_target_grams')();
-  RealColumn get carbProtocolGPerKg => real().named('carb_protocol_g_per_kg')(); // Carbohydrate protocol (e.g., 8.0 for 8g/kg bodyweight)
+  RealColumn get carbProtocolGPerKg =>
+      real().withDefault(const Constant(8.0)).named('carb_protocol_g_per_kg')(); // Carbohydrate protocol (e.g., 8.0 for 8g/kg bodyweight)
   IntColumn get calorieTarget => integer().nullable().named('calorie_target')();
   IntColumn get mealCount => integer().withDefault(const Constant(6)).named('meal_count')(); // breakfast, snack, lunch, snack, dinner, evening
   
@@ -30,8 +31,10 @@ class CarbLoadingDaysTable extends Table {
   BoolColumn get completed => boolean().withDefault(const Constant(false)).named('completed')();
 
   // Sync tracking (offline-first architecture)
-  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
-  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+  BoolColumn get needsUpload =>
+      boolean().withDefault(const Constant(false)).named('needs_upload')();
+  DateTimeColumn get localUpdatedAt =>
+      dateTime().clientDefault(() => DateTime.now()).named('local_updated_at')();
 
   // Note: Primary key is automatically set by autoIncrement()
   

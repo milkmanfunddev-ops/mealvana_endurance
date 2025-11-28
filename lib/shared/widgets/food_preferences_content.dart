@@ -96,15 +96,15 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
       final foodRepository = ref.read(foodRepositoryProvider);
       final database = ref.read(appDatabaseProvider);
 
-      // Get current user's device ID
+      // Get current user's ID
       final userProfile = await database.getCurrentUserProfile();
-      final deviceId = userProfile?.id ?? 'unknown';
+      final userId = userProfile?.id ?? 'unknown';
 
       // Load primary foods, additional foods, and scanned foods in parallel
       final results = await Future.wait([
         foodRepository.getPrimaryFoodsForPreferences(),
         foodRepository.getAdditionalFoodsForPreferences(),
-        database.getUserFoods(deviceId),
+        database.getUserFoods(userId),
       ]);
 
       final primaryFoods = results[0] as List<FoodItem>;
@@ -155,25 +155,22 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
     try {
       final database = ref.read(appDatabaseProvider);
       final userProfile = await database.getCurrentUserProfile();
-      final deviceId = userProfile?.id ?? 'unknown';
+      final userId = userProfile?.id ?? 'unknown';
+      final deviceId = userProfile?.deviceId ?? userId; // For backwards compatibility
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
       // 1. Delete from local Drift database first
       await database.deleteUserFood(food.id);
 
-      // 2. Sync deletion to Supabase via edge function
+      // 2. Sync deletion to Supabase (direct delete, replacing edge function)
       try {
-        final response = await supabase.functions.invoke('delete-user-food', body: {
-          'device_id': deviceId,
-          'food_id': food.id,
-        });
+        await supabase
+            .from('user_foods')
+            .delete()
+            .eq('device_id', deviceId)
+            .eq('id', food.id);
 
-        if (response.status != 200) {
-          debugPrint('⚠️ Supabase delete sync failed, but local delete succeeded: ${response.data}');
-          // Don't throw - local delete worked, just log the sync failure
-        } else {
-          debugPrint('✅ Food deleted from both local and Supabase: ${food.name}');
-        }
+        debugPrint('✅ Food deleted from both local and Supabase: ${food.name}');
       } catch (supabaseError) {
         debugPrint('⚠️ Supabase delete sync failed, but local delete succeeded: $supabaseError');
         // Don't throw - local delete worked, just log the sync failure
@@ -408,7 +405,8 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
     try {
       final database = ref.read(appDatabaseProvider);
       final userProfile = await database.getCurrentUserProfile();
-      final deviceId = userProfile?.id ?? 'unknown';
+      final userId = userProfile?.id ?? 'unknown';
+      final deviceId = userProfile?.deviceId ?? userId; // For backwards compatibility
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
       // Generate unique UUID for this food
@@ -699,90 +697,79 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
       color: AppTheme.baseCream,
       child: Column(
         children: [
-          Row(
-            children: [
-              // Search input field
-              Expanded(
-                child: Container(
-                  height: 48.h,
-                  decoration: BoxDecoration(
-                    color: AppTheme.baseWhite,
-                    borderRadius: BorderRadius.circular(24.r),
-                    border: Border.all(color: AppTheme.primary100),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          focusNode: _searchFocusNode,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            errorBorder: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            fillColor: Colors.transparent,
-                            filled: false,
-                            hintText: 'Search foods...',
-                            contentPadding: EdgeInsets.fromLTRB(16.w, 12.h, 8.w, 12.h),
-                          ),
-                          onSubmitted: (_) => _performSearch(),
-                          onChanged: (value) {
-                            setState(() {
-                              _searchQuery = value;
-                            });
-                          },
-                        ),
-                      ),
-                      // Barcode button
-                      GestureDetector(
-                        onTap: _handleBarcodeScan,
-                        child: Container(
-                          padding: EdgeInsets.fromLTRB(6.w, 12.h, 0.w, 12.h),
-                          child: Icon(Icons.qr_code_scanner, color: AppTheme.primary600, size: 20.sp),
-                        ),
-                      ),
-                      // Filter button
-                      GestureDetector(
-                        onTap: _toggleFilterPills,
-                        child: Container(
-                          padding: EdgeInsets.fromLTRB(6.w, 12.h, 8.w, 12.h),
-                          child: Icon(
-                            Icons.filter_list,
-                            color: _selectedFilters.isNotEmpty ? AppTheme.primary600 : AppTheme.primary100,
-                            size: 20.sp,
-                          ),
-                        ),
-                      ),
-                    ],
+          // Search input field
+          Container(
+            height: 48.h,
+            decoration: BoxDecoration(
+              color: AppTheme.baseWhite,
+              borderRadius: BorderRadius.circular(24.r),
+              border: Border.all(color: AppTheme.primary100),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      fillColor: Colors.transparent,
+                      filled: false,
+                      hintText: 'Search foods...',
+                      contentPadding: EdgeInsets.fromLTRB(16.w, 12.h, 8.w, 12.h),
+                    ),
+                    onSubmitted: (_) => _performSearch(),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
                   ),
                 ),
-              ),
-              SizedBox(width: 8.w),
-              // Search button
-              GestureDetector(
-                onTap: _performSearch,
-                child: Container(
-                  height: 48.h,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary600,
-                    borderRadius: BorderRadius.circular(24.r),
+                // Barcode button
+                GestureDetector(
+                  onTap: _handleBarcodeScan,
+                  child: Container(
+                    padding: EdgeInsets.fromLTRB(6.w, 12.h, 6.w, 12.h),
+                    child: Icon(Icons.qr_code_scanner, color: AppTheme.primary600, size: 20.sp),
                   ),
-                  child: Center(
-                    child: Text(
-                      'Search',
-                      style: TextStyle(
-                        color: AppTheme.baseWhite,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14.sp,
-                      ),
+                ),
+                // Search button with white circular background
+                GestureDetector(
+                  onTap: _performSearch,
+                  child: Container(
+                    width: 36.w,
+                    height: 36.h,
+                    margin: EdgeInsets.only(right: 6.w),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.search,
+                      color: AppTheme.primary600,
+                      size: 18.sp,
                     ),
                   ),
                 ),
-              ),
-            ],
+                // Filter button
+                GestureDetector(
+                  onTap: _toggleFilterPills,
+                  child: Container(
+                    padding: EdgeInsets.fromLTRB(6.w, 12.h, 12.w, 12.h),
+                    child: Icon(
+                      Icons.filter_list,
+                      color: _selectedFilters.isNotEmpty ? AppTheme.primary600 : AppTheme.primary100,
+                      size: 20.sp,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
 
           // Clear search button (when showing results)

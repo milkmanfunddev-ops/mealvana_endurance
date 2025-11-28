@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
 import 'package:mealvana_endurance/shared/widgets/secondary_button.dart';
 import '../../domain/carb_loading_plan_simple.dart';
@@ -245,7 +246,7 @@ class _RaceInfoModalState extends State<RaceInfoModal> {
     final firstDate = DateTime.now().add(const Duration(days: 3)); // Min 3 days from now
     final lastDate = DateTime.now().add(const Duration(days: 365)); // Max 1 year from now
 
-    final selectedDate = await showDatePicker(
+    final selectedDate = await showAppDatePicker(
       context: context,
       initialDate: initialDate.isBefore(firstDate) ? firstDate : initialDate,
       firstDate: firstDate,

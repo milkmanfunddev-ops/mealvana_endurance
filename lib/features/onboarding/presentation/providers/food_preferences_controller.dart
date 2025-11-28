@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../../shared/database/database_provider.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'food_preferences_controller.g.dart';
 
@@ -40,109 +39,60 @@ class FoodPreferencesController extends _$FoodPreferencesController {
 
   @override
   FutureOr<FoodPreferencesState> build() async {
-    DebugLogger.info('[FOOD_PREFS_CTRL] 🎬 Initializing food preferences controller...');
     return await _loadFoodPreferences();
   }
 
-  /// Load all food preferences with timeout protection and comprehensive logging
+  /// Load all food preferences with timeout protection
   Future<FoodPreferencesState> _loadFoodPreferences() async {
-    DebugLogger.info('[FOOD_PREFS_CTRL] 🔄 Starting food preferences load...');
-
     final database = ref.read(appDatabaseProvider);
-
-    // Get current user's device ID
-    DebugLogger.info('[FOOD_PREFS_CTRL] 📦 Fetching user profile...');
     final userProfile = await database.getCurrentUserProfile();
-    final deviceId = userProfile?.id ?? 'unknown';
-    DebugLogger.info('[FOOD_PREFS_CTRL] ✅ User profile loaded: deviceId=$deviceId');
+    final userId = userProfile?.id ?? 'unknown';
 
-    try {
-      // Load primary foods, additional foods, and user foods in parallel with timeout
-      DebugLogger.info('[FOOD_PREFS_CTRL] 📦 Starting parallel fetch of all food data...');
+    final results = await Future.wait([
+      _loadPrimaryFoods(),
+      _loadAdditionalFoods(),
+      _loadUserFoods(userId),
+    ]).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () {
+        throw TimeoutException('Failed to load food data - operation timed out after 15 seconds');
+      },
+    );
 
-      final results = await Future.wait([
-        _loadPrimaryFoods(),
-        _loadAdditionalFoods(),
-        _loadUserFoods(deviceId),
-      ]).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          DebugLogger.error('[FOOD_PREFS_CTRL] ⏱️ Future.wait timed out after 15 seconds');
-          throw TimeoutException('Failed to load food data - operation timed out after 15 seconds');
-        },
-      );
+    final primaryFoods = results[0];
+    final additionalFoods = results[1];
+    final userFoods = results[2];
 
-      final primaryFoods = results[0] as List<FoodItem>;
-      final additionalFoods = results[1] as List<FoodItem>;
-      final userFoods = results[2] as List<FoodItem>;
-
-      DebugLogger.info('[FOOD_PREFS_CTRL] ✅ All food data loaded successfully');
-      DebugLogger.info('[FOOD_PREFS_CTRL] 📊 Primary: ${primaryFoods.length}, Additional: ${additionalFoods.length}, User: ${userFoods.length}');
-
-      return FoodPreferencesState(
-        primaryFoods: primaryFoods,
-        additionalFoods: additionalFoods,
-        userFoods: userFoods,
-      );
-    } catch (e, stackTrace) {
-      DebugLogger.error('[FOOD_PREFS_CTRL] ❌ Error loading food preferences: $e');
-      DebugLogger.error('[FOOD_PREFS_CTRL] 📚 Stack trace: $stackTrace');
-      rethrow;
-    }
+    return FoodPreferencesState(
+      primaryFoods: primaryFoods,
+      additionalFoods: additionalFoods,
+      userFoods: userFoods,
+    );
   }
 
-  /// Load primary foods with individual logging
+  /// Load primary foods
   Future<List<FoodItem>> _loadPrimaryFoods() async {
-    DebugLogger.info('[FOOD_PREFS_CTRL] 📦 Fetching primary foods...');
-    try {
-      final foods = await _foodRepository.getPrimaryFoodsForPreferences();
-      DebugLogger.info('[FOOD_PREFS_CTRL] ✅ Primary foods loaded: ${foods.length} items');
-      return foods;
-    } catch (e) {
-      DebugLogger.error('[FOOD_PREFS_CTRL] ❌ Failed to load primary foods: $e');
-      rethrow;
-    }
+    return await _foodRepository.getPrimaryFoodsForPreferences();
   }
 
-  /// Load additional foods with individual logging
+  /// Load additional foods
   Future<List<FoodItem>> _loadAdditionalFoods() async {
-    DebugLogger.info('[FOOD_PREFS_CTRL] 📦 Fetching additional foods...');
-    try {
-      final foods = await _foodRepository.getAdditionalFoodsForPreferences();
-      DebugLogger.info('[FOOD_PREFS_CTRL] ✅ Additional foods loaded: ${foods.length} items');
-      return foods;
-    } catch (e) {
-      DebugLogger.error('[FOOD_PREFS_CTRL] ❌ Failed to load additional foods: $e');
-      rethrow;
-    }
+    return await _foodRepository.getAdditionalFoodsForPreferences();
   }
 
-  /// Load user foods with individual logging
-  Future<List<FoodItem>> _loadUserFoods(String deviceId) async {
-    DebugLogger.info('[FOOD_PREFS_CTRL] 📦 Fetching user foods for deviceId=$deviceId...');
-    try {
-      final database = ref.read(appDatabaseProvider);
-      final userFoodsData = await database.getUserFoods(deviceId);
+  /// Load user foods
+  Future<List<FoodItem>> _loadUserFoods(String userId) async {
+    final database = ref.read(appDatabaseProvider);
+    final userFoodsData = await database.getUserFoods(userId);
 
-      // Convert user foods to FoodItems
-      final userFoods = userFoodsData
-          .map((userFood) => database.convertUserFoodToFoodItem(userFood))
-          .cast<FoodItem>()
-          .toList();
-
-      DebugLogger.info('[FOOD_PREFS_CTRL] ✅ User foods loaded: ${userFoods.length} items');
-      return userFoods;
-    } catch (e) {
-      DebugLogger.error('[FOOD_PREFS_CTRL] ❌ Failed to load user foods: $e');
-      rethrow;
-    }
+    return userFoodsData
+        .map((userFood) => database.convertUserFoodToFoodItem(userFood))
+        .toList();
   }
 
   /// Refresh food preferences (called after adding/deleting user foods)
   Future<void> refresh() async {
-    DebugLogger.info('[FOOD_PREFS_CTRL] 🔄 Refreshing food preferences...');
     state = const AsyncLoading();
-
     state = await AsyncValue.guard(() async {
       return await _loadFoodPreferences();
     });
@@ -150,19 +100,11 @@ class FoodPreferencesController extends _$FoodPreferencesController {
 
   /// Add a user food and refresh the list
   Future<void> addUserFood(FoodItem food) async {
-    DebugLogger.info('[FOOD_PREFS_CTRL] ➕ Adding user food: ${food.name}');
-
-    // The actual save logic is handled in the screen for now (due to category sheet)
-    // Just refresh the list after save
     await refresh();
   }
 
   /// Remove a user food and refresh the list
   Future<void> removeUserFood(FoodItem food) async {
-    DebugLogger.info('[FOOD_PREFS_CTRL] ➖ Removing user food: ${food.name}');
-
-    // The actual delete logic is handled in the screen for now
-    // Just refresh the list after delete
     await refresh();
   }
 }

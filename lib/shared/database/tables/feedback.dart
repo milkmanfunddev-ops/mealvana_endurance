@@ -39,6 +39,10 @@ class FeedbackTable extends Table {
   /// Audit fields
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
+  /// Sync tracking columns
+  BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();
+  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+
   @override
   Set<Column> get primaryKey => {id};
   

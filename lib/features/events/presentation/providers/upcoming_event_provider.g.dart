@@ -72,7 +72,7 @@ final class NextUpcomingEventFromDateProvider
 }
 
 String _$nextUpcomingEventFromDateHash() =>
-    r'dbd5954e028822653d7bd899c74cfb037d9fb14e';
+    r'58b0a59088e55904628c14f349615926b9beb5a0';
 
 /// Provider for next upcoming event from a specific date
 

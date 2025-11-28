@@ -12,30 +12,27 @@ import '../../../../shared/services/food_management/food_recommendation_service.
 import '../../../../shared/services/food_management/shared_food_search_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
-import '../../domain/pending_activity_data.dart';
-import '../../domain/macro_targets.dart';
 
 part 'swap_food_controller.g.dart';
 
 /// Parameters for the swap food controller
+///
+/// SIMPLIFIED: Uses activityId plus the current isNewActivity flag to match the
+/// ActivityDetailController provider instance and avoid mismatches.
 class SwapFoodParams {
   const SwapFoodParams({
     required this.activityId,
     required this.category,
     this.originalFoodId,
     this.originalFoodName,
-    this.mode = 'view',
-    this.pendingActivityData,
-    this.macroTargets,
+    this.isNewActivity = false,
   });
 
-  final int activityId; // Activity ID for activity-scoped nutrition plan
+  final int activityId; // Activity ID - matches ActivityDetailController provider
   final String category; // Keep for context (before_run, during_run, after_run)
   final String? originalFoodId; // Food being swapped (for product type matching)
   final String? originalFoodName; // Food name being swapped (fallback if ID lookup fails)
-  final String mode; // 'create' or 'view' - must match ActivityDetailController mode
-  final PendingActivityData? pendingActivityData; // Required to match ActivityDetailController instance
-  final MacroTargets? macroTargets; // Required to match ActivityDetailController instance
+  final bool isNewActivity; // Match ActivityDetailController provider instance
 }
 
 /// State for the swap food screen
@@ -116,22 +113,22 @@ class SwapFoodController extends _$SwapFoodController {
     try {      // Get current user's device ID and preferences
       final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
-      final deviceId = currentUser?.id ?? 'unknown';
+      final userId = currentUser?.id ?? 'unknown';
 
       // Load user preferences
-      final preferences = await authService.getFoodPreferences(deviceId) ?? {};
+      final preferences = await authService.getFoodPreferences(userId) ?? {};
 
       // Use recommendation service to get smart recommendations
       final recommendationService = ref.read(foodRecommendationServiceProvider);
 
       final recommendations = await recommendationService.getRecommendations(
         productTypeId: params.originalFoodId != null ? await _getProductTypeId(params.originalFoodId!) : null,
-        category: params.originalFoodId == null ? params.category : null, // Use category for "add" scenarios
+        category: params.category, // Always pass category for both add and swap scenarios
         preferences: preferences,
         maxResults: 10,
-        deviceId: deviceId,
+        userId: userId,
       );      // Load all foods for search (generic + user foods)
-      final allFoods = await _loadAllFoodsForSearch(deviceId);
+      final allFoods = await _loadAllFoodsForSearch(userId);
 
       return SwapFoodState(
         recommendations: recommendations,
@@ -173,9 +170,9 @@ class SwapFoodController extends _$SwapFoodController {
       final userFoodService = ref.read(userFoodCrudServiceProvider);
       final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
-      final deviceId = currentUser?.id ?? 'unknown';
+      final userId = currentUser?.id ?? 'unknown';
 
-      final userFoods = await userFoodService.getUserFoods(deviceId);
+      final userFoods = await userFoodService.getUserFoods(userId);
       for (final food in userFoods) {
         if (food.id == foodId) {
           return food.productTypeId;
@@ -195,7 +192,7 @@ class SwapFoodController extends _$SwapFoodController {
   }
 
   /// Load all foods for search (generic + user foods)
-  Future<List<Food>> _loadAllFoodsForSearch(String deviceId) async {
+  Future<List<Food>> _loadAllFoodsForSearch(String userId) async {
     try {
       // Load generic foods
       final foodRepository = ref.read(foodRepositoryProvider);
@@ -204,7 +201,7 @@ class SwapFoodController extends _$SwapFoodController {
 
       // Load user foods
       final userFoodService = ref.read(userFoodCrudServiceProvider);
-      final userFoods = await userFoodService.getUserFoods(deviceId);
+      final userFoods = await userFoodService.getUserFoods(userId);
 
       // Combine all foods
       final allFoods = [...genericFoods, ...userFoods];      return allFoods;
@@ -219,6 +216,9 @@ class SwapFoodController extends _$SwapFoodController {
   
   /// Convert FoodItem to Food domain object
   Food _convertFoodItemToFood(FoodItem foodItem) {
+    // Convert FoodCategory enums to strings
+    final categories = foodItem.categories.map((cat) => cat.dbValue).toList();
+
     return Food(
       id: foodItem.id,
       name: foodItem.name,
@@ -228,6 +228,7 @@ class SwapFoodController extends _$SwapFoodController {
       servingAmount: foodItem.servingAmount,
       displayName: foodItem.displayName,
       displayNamePlural: foodItem.displayNamePlural,
+      categories: categories,
       servingUnit: foodItem.servingUnit,
       servingUnitPlural: foodItem.servingUnitPlural,
       servingQualifier: foodItem.servingQualifier,
@@ -306,24 +307,117 @@ class SwapFoodController extends _$SwapFoodController {
   
   /// Swap a food in the nutrition plan
   Future<void> swapFood(SwapFoodParams params, String oldFoodId, Food newFood, String category, {double? customAmount}) async {
-    final activityDetailController = ref.read(activityDetailControllerProvider(
-      mode: params.mode,
+    // CRITICAL: Wait for the ActivityDetailController to finish loading before swapping
+    // This prevents race conditions where we try to swap before the nutrition plan is loaded
+    _logger.info('Waiting for ActivityDetailController to initialize',
+      context: 'SwapFoodController',
+      data: {'activityId': params.activityId},
+    );
+
+    // Store the provider reference to ensure we use the same instance
+    final provider = activityDetailControllerProvider(
       activityId: params.activityId,
-      pendingActivityData: params.pendingActivityData, // Pass to ensure same provider instance
-      macroTargets: params.macroTargets, // Pass to ensure same provider instance
-    ).notifier);
+      isNewActivity: params.isNewActivity,
+    );
+
+    // Wait for the provider's async build() to complete
+    final controllerState = await ref.read(provider.future);
+
+    if (controllerState.nutritionPlan == null) {
+      _logger.error('Cannot swap food: nutrition plan not loaded after waiting',
+        context: 'SwapFoodController',
+        data: {'activityId': params.activityId},
+      );
+      throw Exception('Nutrition plan not available. Please try again.');
+    }
+
+    _logger.info('ActivityDetailController ready, performing swap',
+      context: 'SwapFoodController',
+      data: {
+        'activityId': params.activityId,
+        'oldFoodId': oldFoodId,
+        'newFoodName': newFood.name,
+        'nutritionPlanId': controllerState.nutritionPlan!.id,
+      },
+    );
+
+    // Use the SAME provider instance to get the notifier
+    final activityDetailController = ref.read(provider.notifier);
+
+    _logger.info('About to call swapFoodItem on controller',
+      context: 'SwapFoodController',
+      data: {
+        'controllerHashCode': activityDetailController.hashCode,
+        'controllerStateIsNull': activityDetailController.state.value == null,
+        'controllerNutritionPlanIsNull': activityDetailController.state.value?.nutritionPlan == null,
+      },
+    );
+
     await activityDetailController.swapFoodItem(oldFoodId, newFood, category, customAmount: customAmount);
+
+    _logger.info('swapFoodItem returned',
+      context: 'SwapFoodController',
+      data: {
+        'hasUnsavedChanges': activityDetailController.state.value?.hasUnsavedChanges,
+      },
+    );
   }
 
   /// Add a food to the nutrition plan
   Future<void> addFood(SwapFoodParams params, Food food, String category, {double? customAmount}) async {
-    final activityDetailController = ref.read(activityDetailControllerProvider(
-      mode: params.mode,
+    // CRITICAL: Wait for the ActivityDetailController to finish loading before adding
+    // This prevents race conditions where we try to add before the nutrition plan is loaded
+    _logger.info('Waiting for ActivityDetailController to initialize',
+      context: 'SwapFoodController',
+      data: {'activityId': params.activityId},
+    );
+
+    // Store the provider reference to ensure we use the same instance
+    final provider = activityDetailControllerProvider(
       activityId: params.activityId,
-      pendingActivityData: params.pendingActivityData, // Pass to ensure same provider instance
-      macroTargets: params.macroTargets, // Pass to ensure same provider instance
-    ).notifier);
+      isNewActivity: params.isNewActivity,
+    );
+
+    // Wait for the provider's async build() to complete
+    final controllerState = await ref.read(provider.future);
+
+    if (controllerState.nutritionPlan == null) {
+      _logger.error('Cannot add food: nutrition plan not loaded after waiting',
+        context: 'SwapFoodController',
+        data: {'activityId': params.activityId},
+      );
+      throw Exception('Nutrition plan not available. Please try again.');
+    }
+
+    _logger.info('ActivityDetailController ready, performing add',
+      context: 'SwapFoodController',
+      data: {
+        'activityId': params.activityId,
+        'foodName': food.name,
+        'nutritionPlanId': controllerState.nutritionPlan!.id,
+      },
+    );
+
+    // Use the SAME provider instance to get the notifier
+    final activityDetailController = ref.read(provider.notifier);
+
+    _logger.info('About to call addFoodItem on controller',
+      context: 'SwapFoodController',
+      data: {
+        'controllerHashCode': activityDetailController.hashCode,
+        'controllerStateIsNull': activityDetailController.state.value == null,
+        'controllerNutritionPlanIsNull': activityDetailController.state.value?.nutritionPlan == null,
+      },
+    );
+
     await activityDetailController.addFoodItem(food, category, customAmount: customAmount);
+
+    _logger.info('addFoodItem returned',
+      context: 'SwapFoodController',
+      data: {
+        'hasUnsavedChanges': activityDetailController.state.value?.hasUnsavedChanges,
+      },
+    );
   }
 
   /// Search Open Food Facts and update state
@@ -365,11 +459,11 @@ class SwapFoodController extends _$SwapFoodController {
     try {      // Get current user's device ID
       final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
-      final deviceId = currentUser?.id ?? 'unknown';
+      final userId = currentUser?.id ?? 'unknown';
 
       // Add to user foods using shared service
       final searchService = ref.read(sharedFoodSearchServiceProvider);
-      final food = await searchService.addSearchResultToUserFoods(result, deviceId);
+      final food = await searchService.addSearchResultToUserFoods(result, userId);
 
       if (food != null) {
         // Auto-select the food and clear search state

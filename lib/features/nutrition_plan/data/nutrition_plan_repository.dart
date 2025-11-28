@@ -57,7 +57,7 @@ class NutritionPlanRepository {
     return {};
   }
 
-  /// Create a new nutrition plan via new run-plan Edge Function
+  // Deprecated: run-plan edge function removed
   Future<CreateNutritionPlanResult> createNutritionPlanV2({
     required String deviceId,
     required double weightKg,
@@ -73,126 +73,11 @@ class NutritionPlanRepository {
     double? paceMinPerKm,
     bool debug = false,
   }) async {
-    final startTime = DateTime.now();
-    
-    try {
-      // Prepare request payload for new run-plan Edge Function
-      final requestBody = <String, dynamic>{
-        'deviceId': deviceId,
-        'weightKg': weightKg,
-        'durationMin': durationMin,
-        'debug': debug,
-      };
-      
-      // Add optional parameters
-      if (preWindowMin != null) requestBody['preWindowMin'] = preWindowMin;
-      if (gutTraining != null) requestBody['gutTraining'] = gutTraining;
-      if (giSensitivity != null) requestBody['giSensitivity'] = giSensitivity;
-      if (tempF != null) requestBody['tempF'] = tempF;
-      if (humidity != null) requestBody['humidity'] = humidity;
-      if (sweatRate != null) requestBody['sweatRate'] = sweatRate;
-      if (allowHighCarbRun != null) requestBody['allowHighCarbRun'] = allowHighCarbRun;
-      if (intervalMinutes != null) requestBody['intervalMinutes'] = intervalMinutes;
-      if (paceMinPerKm != null) requestBody['paceMinPerKm'] = paceMinPerKm;
-
-      // Add breadcrumb for Edge Function call
-      sentry.addBreadcrumb(
-        message: 'Calling run-plan Edge Function',
-        category: 'edge_function',
-        data: {
-          'device_id': deviceId,
-          'weight_kg': weightKg.toString(),
-          'duration_min': durationMin.toString(),
-        },
-      );
-
-      // Call new run-plan Edge Function
-      final response = await supabase.functions.invoke(
-        'run-plan',
-        body: requestBody,
-      );
-
-      final responseTime = DateTime.now().difference(startTime);
-
-      // Handle response
-      if (response.status >= 200 && response.status < 300) {
-        final data = response.data as Map<String, dynamic>;
-        
-        // The new edge function doesn't return a success flag, it returns plan directly
-        if (data.containsKey('plan')) {
-          // Convert new format to existing NutritionPlan format
-          final convertedPlan = await _convertNewPlanFormat(data, deviceId);
-          
-          // Cache the plan locally
-          await cachePlanLocally(deviceId, convertedPlan);
-          
-          // Success breadcrumb
-          sentry.addBreadcrumb(
-            message: 'Nutrition plan created successfully with run-plan',
-            category: 'edge_function',
-            data: {
-              'plan_id': convertedPlan.id,
-              'response_time_ms': responseTime.inMilliseconds.toString(),
-              'warnings': data['warnings']?.length?.toString() ?? '0',
-            },
-          );
-          
-          return CreateNutritionPlanResult(
-            success: true,
-            plan: convertedPlan,
-            calculations: data['targets'], // New format uses targets instead of calculations
-            message: 'Nutrition plan created successfully',
-            warnings: List<String>.from(data['warnings'] ?? []),
-          );
-        } else if (data.containsKey('error')) {
-          // Edge Function returned an error
-          await sentry.reportEdgeFunctionError(
-            'run-plan',
-            Exception('Edge Function returned error: ${data['error']}'),
-            responseTime: responseTime,
-            statusCode: response.status,
-          );
-          
-          return CreateNutritionPlanResult(
-            success: false,
-            message: data['error'],
-            details: data['details'],
-          );
-        } else {
-          return CreateNutritionPlanResult(
-            success: false,
-            message: 'Invalid response format from run-plan Edge Function',
-          );
-        }
-      } else {
-        // HTTP error
-        await sentry.reportEdgeFunctionError(
-          'run-plan',
-          Exception('Edge Function HTTP error: ${response.status}'),
-          responseTime: responseTime,
-          statusCode: response.status,
-        );
-        
-        return CreateNutritionPlanResult(
-          success: false,
-          message: 'Edge Function call failed with status ${response.status}',
-        );
-      }
-    } catch (e, stackTrace) {
-      final responseTime = DateTime.now().difference(startTime);
-      
-      await sentry.reportEdgeFunctionError(
-        'run-plan',
-        e,
-        responseTime: responseTime,
-        stackTrace: stackTrace,
-      );
-      
-      return CreateNutritionPlanResult(
-        success: false,
-        message: 'Failed to create nutrition plan: $e',
-      );
-    }
+    DebugLogger.error('❌ createNutritionPlanV2 called but run-plan is deprecated');
+    return CreateNutritionPlanResult(
+      success: false,
+      message: 'Algorithmic plan generation is deprecated. Please use LLM generation.',
+    );
   }
 
   /// Cache nutrition plan locally in Drift database

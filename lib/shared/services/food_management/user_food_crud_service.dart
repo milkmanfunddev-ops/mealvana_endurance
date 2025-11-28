@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -29,10 +30,10 @@ class UserFoodCrudService {
   final SupabaseClient _supabase;
   static const _uuid = Uuid();
 
-  /// Load user foods for a device
-  Future<List<Food>> getUserFoods(String deviceId) async {
+  /// Load user foods for a user
+  Future<List<Food>> getUserFoods(String userId) async {
     try {
-      final userFoodsData = await _database.getUserFoods(deviceId);
+      final userFoodsData = await _database.getUserFoods(userId);
 
       // Convert to Food domain objects
       final foods = userFoodsData
@@ -41,7 +42,7 @@ class UserFoodCrudService {
     } catch (e) {
       _logger.error('Error loading user foods',
         context: 'UserFoodCrudService',
-        data: {'deviceId': deviceId},
+        data: {'userId': userId},
         error: e,
       );
       return [];
@@ -55,9 +56,10 @@ class UserFoodCrudService {
     String? barcode,
   }) async {
     try {
-      // Get current user's device ID
+      // Get current user's ID
       final userProfile = await _database.getCurrentUserProfile();
-      final deviceId = userProfile?.id ?? 'unknown';
+      final userId = userProfile?.id ?? 'unknown';
+      final deviceId = userProfile?.deviceId ?? userId; // Use userId as fallback
       // Generate unique UUID for this food
       final foodId = _uuid.v4();
 
@@ -65,8 +67,8 @@ class UserFoodCrudService {
 
       // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
       await _database.saveUserFood(
-        deviceId: deviceId,
-        userId: deviceId,
+        deviceId: deviceId, // Keep for backwards compatibility
+        userId: userId, // Use actual user UUID
         id: foodId,
         clientFoodId: food.id,
         barcode: barcode,
@@ -88,12 +90,13 @@ class UserFoodCrudService {
         clientUpdatedAt: DateTime.now(),
       );
 
-      // Attempt background upload (non-blocking)
+      // Attempt background upload (non-blocking); needs_upload handles offline failure
       unawaited(_uploadUserFoodToSupabase(
         deviceId: deviceId,
+        userId: userId,
         foodId: foodId,
         food: food,
-        categoryIds: categoryIds,
+        categoryNames: categoryNames,
         barcode: barcode,
       ));
     } catch (e) {
@@ -131,15 +134,17 @@ class UserFoodCrudService {
   /// Upload user food to Supabase in background (non-blocking)
   Future<void> _uploadUserFoodToSupabase({
     required String deviceId,
+    required String userId,
     required String foodId,
     required Food food,
-    required List<int> categoryIds,
+    required List<String> categoryNames,
     String? barcode,
   }) async {
     try {
-      final response = await _supabase.functions.invoke('save-user-food', body: {
-        'device_id': deviceId,
+      await _supabase.from('user_foods').upsert({
         'id': foodId,
+        'device_id': deviceId,
+        'user_id': userId,
         'client_food_id': food.id,
         'barcode': barcode,
         'name': food.name,
@@ -155,15 +160,21 @@ class UserFoodCrudService {
         'fat_per_serving': food.fatPerServing,
         'sodium_mg': food.sodiumMg,
         'fluid_ml_per_serving': food.fluidMlPerServing,
-        'product_type_id': food.productTypeId,
-        'category_ids': categoryIds,
+        'product_type': food.productTypeId,
+        'categories': categoryNames,
+        'activity_types': null,
+        'is_electrolyte': false,
+        'to_exclude_from_solver': false,
+        'is_deleted': false,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+        'client_updated_at': DateTime.now().toIso8601String(),
       });
 
-      if (response.status >= 200 && response.status < 300) {
-        // Upload successful
-      } else {
-        throw Exception('Edge function failed: ${response.data}');
-      }
+      await _database.customStatement(
+        'UPDATE user_foods SET needs_upload = 0 WHERE id = ?',
+        [foodId],
+      );
     } catch (e) {
       _logger.warning(
         'Failed to upload user food (will retry on next sync)',
@@ -178,18 +189,16 @@ class UserFoodCrudService {
   /// Upload user food deletion to Supabase in background (non-blocking)
   Future<void> _uploadUserFoodDeletion(String deviceId, String foodId) async {
     try {
-      final response = await _supabase.functions.invoke('delete-user-food', body: {
-        'device_id': deviceId,
-        'food_id': foodId,
-      });
+      await _supabase
+          .from('user_foods')
+          .update({'is_deleted': true, 'updated_at': DateTime.now().toIso8601String()})
+          .eq('id', foodId)
+          .eq('device_id', deviceId);
 
-      if (response.status < 200 || response.status >= 300) {
-        _logger.warning(
-          'Failed to upload user food deletion',
-          context: 'UserFoodCrudService',
-          data: {'foodId': foodId, 'status': response.status},
-        );
-      }
+      await _database.customStatement(
+        'UPDATE user_foods SET needs_upload = 0 WHERE id = ?',
+        [foodId],
+      );
     } catch (e) {
       _logger.warning(
         'Failed to upload user food deletion',
@@ -205,9 +214,9 @@ class UserFoodCrudService {
   Future<bool> isUserFood(String foodId) async {
     try {
       final userProfile = await _database.getCurrentUserProfile();
-      final deviceId = userProfile?.id ?? 'unknown';
+      final userId = userProfile?.id ?? 'unknown';
 
-      final userFoods = await _database.getUserFoods(deviceId);
+      final userFoods = await _database.getUserFoods(userId);
       return userFoods.any((userFood) => userFood.clientFoodId == foodId || userFood.id == foodId);
     } catch (e) {
       _logger.error('Error checking if food is user food',
@@ -221,6 +230,19 @@ class UserFoodCrudService {
 
   /// Convert database UserFood to Food domain object
   Food _convertUserFoodToFood(dynamic userFood) {
+    // Parse categories from JSON string if available
+    List<String> categories = [];
+    if (userFood.categories != null && userFood.categories.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(userFood.categories);
+        if (decoded is List) {
+          categories = List<String>.from(decoded);
+        }
+      } catch (e) {
+        _logger.warning('Failed to parse categories for user food ${userFood.id}', error: e);
+      }
+    }
+
     return Food(
       id: userFood.id,
       name: userFood.name,
@@ -230,6 +252,7 @@ class UserFoodCrudService {
       imageAddress: userFood.imageAddress,
       servingAmount: userFood.servingAmount,
       servingUnit: userFood.servingUnit,
+      categories: categories,
       carbsPerServing: userFood.carbsPerServing,
       proteinPerServing: userFood.proteinPerServing,
       fatPerServing: userFood.fatPerServing,

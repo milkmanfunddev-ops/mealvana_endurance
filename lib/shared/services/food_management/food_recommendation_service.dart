@@ -36,11 +36,11 @@ class FoodRecommendationService {
     String? category,           // For add scenarios (match timing category)
     Map<String, FoodPreference> preferences = const {},
     int maxResults = 10,
-    String? deviceId,
+    String? userId,
   }) async {
     try {      // Load both user foods and generic foods
-      final userFoods = deviceId != null
-          ? await _userFoodService.getUserFoods(deviceId)
+      final userFoods = userId != null
+          ? await _userFoodService.getUserFoods(userId)
           : <Food>[];
 
       final genericFoodItems = await _foodRepository.getAllFoods();
@@ -53,12 +53,26 @@ class FoodRecommendationService {
       List<Food> filteredFoods;
 
       if (productTypeId != null) {
-        // Swap scenario: match product type
-        filteredFoods = allFoods.where((food) =>
+        // Swap scenario: Try to match product type first
+        List<Food> productTypeMatches = allFoods.where((food) =>
           food.productTypeId == productTypeId
-        ).toList();      } else if (category != null) {
+        ).toList();
+
+        // Apply category filter if category is provided
+        if (category != null) {
+          filteredFoods = _filterByCategory(productTypeMatches, category);
+
+          // Fallback: if no results, filter all foods by category only
+          if (filteredFoods.isEmpty) {
+            filteredFoods = _filterByCategory(allFoods, category);
+          }
+        } else {
+          filteredFoods = productTypeMatches;
+        }
+      } else if (category != null) {
         // Add scenario: match category/timing suitability
-        filteredFoods = _filterByCategory(allFoods, category);      } else {
+        filteredFoods = _filterByCategory(allFoods, category);
+      } else {
         // No specific filtering
         filteredFoods = allFoods;
       }
@@ -133,22 +147,20 @@ class FoodRecommendationService {
     return sortedFoods;
   }
 
-  /// Filter foods by category/timing suitability
+  /// Filter foods by category/timing suitability using categories array
   List<Food> _filterByCategory(List<Food> foods, String category) {
+    // Normalize the category string to match database values
+    String normalizedCategory = category.toLowerCase();
+    if (normalizedCategory == 'before') normalizedCategory = 'before_run';
+    if (normalizedCategory == 'during') normalizedCategory = 'during_run';
+    if (normalizedCategory == 'after') normalizedCategory = 'after_run';
+
     return foods.where((food) {
-      switch (category.toLowerCase()) {
-        case 'before_run':
-        case 'before':
-          return food.beforeRunSuitable;
-        case 'during_run':
-        case 'during':
-          return food.duringRunSuitable;
-        case 'after_run':
-        case 'after':
-          return true; // All foods suitable after run
-        default:
-          return true; // Unknown category, include all
-      }
+      // After run accepts all foods
+      if (normalizedCategory == 'after_run') return true;
+
+      // Check if the food's categories array contains the target category
+      return food.categories.contains(normalizedCategory);
     }).toList();
   }
 
@@ -184,6 +196,11 @@ class FoodRecommendationService {
 
   /// Convert FoodItem to Food domain object
   Food _convertFoodItemToFood(dynamic foodItem) {
+    // Convert FoodCategory enums to strings for the Food model
+    final List<String> categories = foodItem.categories
+        .map<String>((cat) => cat.dbValue as String)
+        .toList();
+
     return Food(
       id: foodItem.id,
       name: foodItem.name,
@@ -193,6 +210,7 @@ class FoodRecommendationService {
       imageAddress: foodItem.imageAddress,
       instructions: foodItem.instructions ?? '',
       servingAmount: foodItem.servingAmount,
+      categories: categories,
       servingUnit: foodItem.servingUnit,
       servingUnitPlural: foodItem.servingUnitPlural,
       servingQualifier: foodItem.servingQualifier,

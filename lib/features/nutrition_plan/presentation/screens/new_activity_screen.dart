@@ -12,6 +12,7 @@ import '../widgets/new_activity/running_tab_content.dart';
 import '../widgets/new_activity/cycling_tab_content.dart';
 import '../widgets/new_activity/swimming_tab_content.dart';
 import '../../../../core/utils/debug_logger.dart';
+import '../../../../shared/widgets/app_date_picker.dart';
 
 /// New Activity Screen - Kyle's Unified Design
 ///
@@ -98,7 +99,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       automaticallyImplyLeading: false,
       centerTitle: true,
       title: Text(
-        'New Activity',
+        'Create New Activity Plan',
         style: AppTextStyles.sectionTitle.copyWith(
           color: isDark ? AppColors.cream : AppColors.blackberry,
         ),
@@ -315,7 +316,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     NewActivityCoordinatorState state,
     NewActivityCoordinator coordinator,
   ) async {
-    final date = await showDatePicker(
+    final date = await showAppDatePicker(
       context: context,
       initialDate: state.selectedDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),

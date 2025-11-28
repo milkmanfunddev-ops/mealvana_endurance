@@ -1,61 +1,48 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || 're_DHjg7ayY_PmqLvMtUm7W5GXJaugAtQn93';
 // const FROM_EMAIL = 'onboarding@resend.dev'; // Will change to support@mealvana.io after DNS verification
 const FROM_EMAIL = 'support@mealvana.io'; // Will change to support@mealvana.io after DNS verification
-
-interface SendEmailRequest {
-  recipientEmail: string;
-  senderName?: string;
-  subject?: string;
-  comments?: string;
-  pdfAttachment: string; // Base64 encoded PDF
-}
-
-serve(async (req) => {
+serve(async (req)=>{
   // CORS headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
   };
-
   // Handle OPTIONS request for CORS
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', {
+      headers: corsHeaders
+    });
   }
-
   try {
     // Parse request body
-    const requestData: SendEmailRequest = await req.json();
+    const requestData = await req.json();
     const { recipientEmail, senderName, subject, comments, pdfAttachment } = requestData;
-
     // Validate required fields
     if (!recipientEmail) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Recipient email is required'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Recipient email is required'
+      }), {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
         }
-      );
+      });
     }
-
     if (!pdfAttachment) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'PDF attachment is required'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'PDF attachment is required'
+      }), {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
         }
-      );
+      });
     }
-
     // Build email HTML content
     const emailHtml = `
       <html>
@@ -109,13 +96,12 @@ serve(async (req) => {
         </body>
       </html>
     `;
-
     // Send email via Resend API
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Authorization': `Bearer ${RESEND_API_KEY}`
       },
       body: JSON.stringify({
         from: FROM_EMAIL,
@@ -125,53 +111,49 @@ serve(async (req) => {
         attachments: [
           {
             filename: 'nutrition-plan.pdf',
-            content: pdfAttachment,
-          },
-        ],
-      }),
+            content: pdfAttachment
+          }
+        ]
+      })
     });
-
     const resendData = await resendResponse.json();
-
     // Check if email was sent successfully
     if (!resendResponse.ok) {
       console.error('Resend API error:', resendData);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: resendData.message || 'Failed to send email'
-        }),
-        {
-          status: resendResponse.status,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      return new Response(JSON.stringify({
+        success: false,
+        error: resendData.message || 'Failed to send email'
+      }), {
+        status: resendResponse.status,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
         }
-      );
+      });
     }
-
     // Return success response
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Email sent successfully',
-        emailId: resendData.id
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Email sent successfully',
+      emailId: resendData.id
+    }), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
       }
-    );
-
+    });
   } catch (error) {
     console.error('Error sending email:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    return new Response(JSON.stringify({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    }), {
+      status: 500,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
       }
-    );
+    });
   }
 });

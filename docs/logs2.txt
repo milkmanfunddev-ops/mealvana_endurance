@@ -1,0 +1,344 @@
+Restarted application in 825ms.
+flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+flutter: Drift: Sent PRAGMA foreign_keys = ON with args []
+flutter: Drift: Sent SELECT name FROM sqlite_master WHERE type='table' AND name='food_preferences' with args []
+flutter: Drift: Sent PRAGMA synchronous = NORMAL with args []
+flutter: Drift: Sent PRAGMA cache_size = 10000 with args []
+flutter: Drift: Sent BEGIN TRANSACTION with args []
+flutter: Drift: Sent           UPDATE user_foods
+flutter:           SET created_at = CAST(
+flutter:             strftime('%s', replace(replace(created_at, 'T', ' '), 'Z', ''))
+flutter:             AS INTEGER
+flutter:           ) * 1000
+flutter:           WHERE typeof(created_at) = 'text'
+flutter:             AND created_at IS NOT NULL
+flutter:             AND created_at != ''
+flutter:             AND strftime('%s', replace(replace(created_at, 'T', ' '), 'Z', '')) IS NOT NULL;
+flutter:          with args []
+flutter: Drift: Sent           UPDATE user_foods
+flutter:           SET updated_at = CAST(
+flutter:             strftime('%s', replace(replace(updated_at, 'T', ' '), 'Z', ''))
+flutter:             AS INTEGER
+flutter:           ) * 1000
+flutter:           WHERE typeof(updated_at) = 'text'
+flutter:             AND updated_at IS NOT NULL
+flutter:             AND updated_at != ''
+flutter:             AND strftime('%s', replace(replace(updated_at, 'T', ' '), 'Z', '')) IS NOT NULL;
+flutter:          with args []
+flutter: Drift: Sent           UPDATE user_foods
+flutter:           SET client_updated_at = CAST(
+flutter:             strftime('%s', replace(replace(client_updated_at, 'T', ' '), 'Z', ''))
+flutter:             AS INTEGER
+flutter:           ) * 1000
+flutter:           WHERE typeof(client_updated_at) = 'text'
+flutter:             AND client_updated_at IS NOT NULL
+flutter:             AND client_updated_at != ''
+flutter:             AND strftime('%s', replace(replace(client_updated_at, 'T', ' '), 'Z', '')) IS NOT NULL;
+flutter:          with args []
+flutter: Drift: Sent           UPDATE user_foods
+flutter:           SET local_updated_at = CAST(
+flutter:             strftime('%s', replace(replace(local_updated_at, 'T', ' '), 'Z', ''))
+flutter:             AS INTEGER
+flutter:           ) * 1000
+flutter:           WHERE typeof(local_updated_at) = 'text'
+flutter:             AND local_updated_at IS NOT NULL
+flutter:             AND local_updated_at != ''
+flutter:             AND strftime('%s', replace(replace(local_updated_at, 'T', ' '), 'Z', '')) IS NOT NULL;
+flutter:          with args []
+flutter: Drift: Sent COMMIT TRANSACTION with args []
+flutter: Drift: Sent SELECT * FROM "users"; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "activities" WHERE "user_id" = ? AND "nutrition_plan_data" IS NOT NULL ORDER BY "updated_at" DESC; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "carb_loading_days" WHERE "plan_date" >= ? AND "plan_date" <= ? ORDER BY "plan_date" ASC; with args [1732824967, 1827432967]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "feature_survey_responses" WHERE "user_id" = ?; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "feature_survey_responses" WHERE "user_id" = ?; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" WHERE "id" = ? LIMIT 1; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "activities" WHERE LOWER("user_id") = ? AND "deleted_at" IS NULL ORDER BY "scheduled_date_time" DESC; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:07.560 (+0:00:01.650766)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 19, hasNutritionPlan: true, nutritionPlanDataSize: 6635}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:07.568 (+0:00:01.659484)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 20, hasNutritionPlan: true, nutritionPlanDataSize: 6592}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: Drift: Sent SELECT * FROM "events" ORDER BY "created_at" DESC; with args []
+flutter: Drift: Sent SELECT * FROM "events" ORDER BY "created_at" DESC; with args []
+flutter: Drift: Sent SELECT * FROM "activities" WHERE LOWER("user_id") = ? AND "deleted_at" IS NULL ORDER BY "scheduled_date_time" DESC; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:07.575 (+0:00:01.666361)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 19, hasNutritionPlan: true, nutritionPlanDataSize: 6635}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:07.580 (+0:00:01.671107)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 20, hasNutritionPlan: true, nutritionPlanDataSize: 6592}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: Drift: Sent SELECT * FROM "activities" WHERE "needs_upload" = ?; with args [1]
+flutter: Drift: Sent SELECT * FROM "events" WHERE "needs_upload" = ?; with args [1]
+flutter: Drift: Sent SELECT * FROM "carb_loading_plans" WHERE "needs_upload" = ?; with args [1]
+flutter: Drift: Sent SELECT * FROM "carb_loading_days" WHERE "needs_upload" = ?; with args [1]
+flutter: Drift: Sent SELECT * FROM user_foods WHERE needs_upload = 1 with args []
+flutter: Drift: Sent SELECT * FROM feedback WHERE needs_upload = 1 with args []
+flutter: Drift: Sent SELECT * FROM feature_survey_responses WHERE needs_upload = 1 with args []
+flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;196m│ type 'int' is not a subtype of type 'DateTime?' in type cast\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ #0   DataSyncService._uploadFeatureSurveyRow (package:mealvana_endurance/shared/services/sync/data_sync_service.dart:1097:38)\^[[0m
+flutter: \^[[38;5;196m│ #1   DataSyncService._uploadDirtyRecords (package:mealvana_endurance/shared/services/sync/data_sync_service.dart:723:25)\^[[0m
+flutter: \^[[38;5;196m│ #2   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m│ #3   DataSyncService.syncAllData (package:mealvana_endurance/shared/services/sync/data_sync_service.dart:65:7)\^[[0m
+flutter: \^[[38;5;196m│ #4   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m│ #5   AppStartupService.syncAllAppData (package:mealvana_endurance/features/app_startup/application/app_startup_service.dart:397:23)\^[[0m
+flutter: \^[[38;5;196m│ #6   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ 14:16:07.897 (+0:00:01.988408)\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ ⛔ [DATA_SYNC] Failed to upload feature survey 1\^[[0m
+flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:09.580 (+0:00:03.671413)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Fetching activity by ID\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, activityId: 19}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: Drift: Sent SELECT * FROM "activities" WHERE (LOWER("user_id") = ? AND "id" = ?) AND "deleted_at" IS NULL; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, 19]
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:09.583 (+0:00:03.674494)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Activity found successfully\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 19, title: 12.0 mi Run, hasNutritionPlan: true}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:09.584 (+0:00:03.675554)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 19, hasNutritionPlan: true, nutritionPlanDataSize: 6635}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: 🔍 Getting nutrition plan for activityId: 19, userId: 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc
+flutter: Drift: Sent SELECT * FROM "activities" WHERE "id" = ? LIMIT 1; with args [19]
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:09.596 (+0:00:03.687232)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 Loaded nutrition plan for activity: 11b9a47e-b969-462e-a855-63e34683e3a4\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:11.972 (+0:00:06.062793)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Fetching activity by ID\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, activityId: 20}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: Drift: Sent SELECT * FROM "activities" WHERE (LOWER("user_id") = ? AND "id" = ?) AND "deleted_at" IS NULL; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, 20]
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:11.975 (+0:00:06.066386)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Activity found successfully\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 20, title: 12.0 mi Run, hasNutritionPlan: true}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:11.976 (+0:00:06.067196)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 20, hasNutritionPlan: true, nutritionPlanDataSize: 6592}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: 🔍 Getting nutrition plan for activityId: 20, userId: 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc
+flutter: Drift: Sent SELECT * FROM "activities" WHERE "id" = ? LIMIT 1; with args [20]
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:11.979 (+0:00:06.070335)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 Loaded nutrition plan for activity: 8273e10c-83a0-4e56-b188-dabcdf9c0621\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764360983, female, 818229600, 6, 2, 168.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764360983, female, 818229600, 6, 2, 168.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764360983, female, 818229600, 6, 2, 168.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764360983, female, 818229600, 6, 2, 120.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764360983, female, 818229600, 6, 2, 120.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764360983, female, 818229600, 6, 2, 120.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764360983, female, 818229600, 6, 2, 120.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764360984, female, 818229600, 6, 2, 120.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" WHERE "id" = ? LIMIT 1; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" WHERE "id" = ? LIMIT 1; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "activities" WHERE LOWER("user_id") = ? AND "deleted_at" IS NULL ORDER BY "scheduled_date_time" DESC; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:24.371 (+0:00:18.461641)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 19, hasNutritionPlan: true, nutritionPlanDataSize: 6635}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:24.372 (+0:00:18.462787)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 20, hasNutritionPlan: true, nutritionPlanDataSize: 6592}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: Drift: Sent SELECT * FROM "activities" WHERE LOWER("user_id") = ? AND "deleted_at" IS NULL ORDER BY "scheduled_date_time" DESC; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:24.373 (+0:00:18.463942)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 19, hasNutritionPlan: true, nutritionPlanDataSize: 6635}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:16:24.374 (+0:00:18.464833)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 20, hasNutritionPlan: true, nutritionPlanDataSize: 6592}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764361040, female, 818229600, 6, 2, 120.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764361040, female, 818229600, 6, 2, 120.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764361040, female, 818229600, 6, 2, 120.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764361040, female, 818229600, 6, 2, 111.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764361041, female, 818229600, 6, 2, 111.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764361041, female, 818229600, 6, 2, 111.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764361041, female, 818229600, 6, 2, 111.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent UPDATE "users" SET "device_id" = ?, "auth_user_id" = ?, "auth_provider" = ?, "is_anonymous" = ?, "updated_at" = ?, "gender" = ?, "birthday" = ?, "height_feet" = ?, "height_inches" = ?, "weight_pounds" = ?, "runs_with_water_bottle" = ?, "gut_training_level" = ?, "onboarding_completed" = ?
+flutter: , "app_version" = ? WHERE "id" = ?; with args [E42D763E-2031-4053-BEB6-1061994779F0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc, email, 0, 1764361041, female, 818229600, 6, 2, 111.0, 0, high, 1, 1.0.0, 0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" ORDER BY "is_anonymous" ASC, "updated_at" DESC LIMIT 1; with args []
+flutter: Drift: Sent SELECT * FROM "users" WHERE "id" = ? LIMIT 1; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: Drift: Sent SELECT * FROM "activities" WHERE LOWER("user_id") = ? AND "deleted_at" IS NULL ORDER BY "scheduled_date_time" DESC; with args [0cd3eefb-c9c6-40ff-8f51-05bc55a55fdc]
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:17:21.727 (+0:01:15.818160)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 19, hasNutritionPlan: true, nutritionPlanDataSize: 6635}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:17:21.728 (+0:01:15.819549)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 20, hasNutritionPlan: true, nutritionPlanDataSize: 6592}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m

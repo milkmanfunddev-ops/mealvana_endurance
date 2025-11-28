@@ -35,74 +35,11 @@ class ActiveComService {
   /// final events = await service.searchEvents('Boston Marathon');
   /// ```
   Future<List<ActiveComEvent>> searchEvents(String query) async {
-    try {
-      // Don't search if query is empty or too short
-      if (query.trim().isEmpty || query.trim().length < 2) {
-        return [];
-      }
-
-      logger.info(
-        'Searching Active.com for events: "$query"',
-        context: 'ACTIVE_COM_SERVICE',
-      );
-
-      final response = await supabase.functions.invoke(
-        'search-active-events',
-        body: {
-          'query': query.trim(),
-        },
-      );
-
-      if (response.status != 200) {
-        logger.warning(
-          'Active.com API returned non-200 status: ${response.status}',
-          context: 'ACTIVE_COM_SERVICE',
-        );
-        return [];
-      }
-
-      final data = response.data;
-      if (data == null || data['success'] != true || data['events'] == null) {
-        logger.warning(
-          'Invalid response from Active.com API',
-          context: 'ACTIVE_COM_SERVICE',
-        );
-        return [];
-      }
-
-      // Parse events from response
-      final eventsList = data['events'] as List<dynamic>;
-      final events = eventsList
-          .map((json) {
-            try {
-              return ActiveComEvent.fromJson(json as Map<String, dynamic>);
-            } catch (e) {
-              logger.error(
-                'Error parsing Active.com event',
-                error: e,
-                context: 'ACTIVE_COM_SERVICE',
-              );
-              return null;
-            }
-          })
-          .whereType<ActiveComEvent>()
-          .toList();
-
-      logger.info(
-        'Found ${events.length} events from Active.com',
-        context: 'ACTIVE_COM_SERVICE',
-      );
-
-      return events;
-    } catch (e, stackTrace) {
-      logger.error(
-        'Error searching Active.com',
-        error: e,
-        stackTrace: stackTrace,
-        context: 'ACTIVE_COM_SERVICE',
-      );
-      // Fail silently - return empty list to allow manual entry
-      return [];
-    }
+    // Deprecated - this functionality has been removed
+    logger.warning(
+      'searchEvents called but active.com search is deprecated. Use searchPublicEvents instead.',
+      context: 'ACTIVE_COM_SERVICE',
+    );
+    return [];
   }
 }

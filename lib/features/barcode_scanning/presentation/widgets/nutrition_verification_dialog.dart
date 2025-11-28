@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
-import 'package:mealvana_endurance/shared/widgets/secondary_button.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../domain/api_food_product.dart';
 import '../../../nutrition_plan/domain/food.dart';
 
@@ -224,16 +224,16 @@ class _NutritionVerificationDialogState extends State<NutritionVerificationDialo
             Row(
               children: [
                 Expanded(
-                  child: SecondaryButton(
+                  child: KyleSecondaryButton(
                     onPressed: widget.onCancel,
                     text: 'Cancel',
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: PrimaryButton(
+                  child: KylePrimaryButton(
                     onPressed: _onConfirm,
-                    text: 'Add to Plan',
+                    text: 'Save to My Foods',
                   ),
                 ),
               ],

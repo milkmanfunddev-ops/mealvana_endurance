@@ -40,7 +40,7 @@ final class ActivitiesControllerProvider
 }
 
 String _$activitiesControllerHash() =>
-    r'9aa2d4e2bad3650b34b36203bb7139d9e193a8ab';
+    r'8af32fc9d7ce55eac9ed275d29641cff825324bf';
 
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)
@@ -123,7 +123,7 @@ final class ActivityDetailProvider
   }
 }
 
-String _$activityDetailHash() => r'4dab33f82f149b1719f885dd8d514b2aa660ee45';
+String _$activityDetailHash() => r'a4535335b9a250db2147c14d97c40e729aac5dfe';
 
 /// Provider for getting a specific activity by ID
 
@@ -189,4 +189,4 @@ final class AllActivitiesProvider
   }
 }
 
-String _$allActivitiesHash() => r'06a6131f76ce494ea0463a5400432791ca223764';
+String _$allActivitiesHash() => r'1e3220fef429b420532ac38d3d9cc01c529ea17e';

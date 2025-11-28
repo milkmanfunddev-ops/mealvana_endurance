@@ -315,7 +315,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
         // Week selector
         _buildWeekSelector(context),
         
-        const SizedBox(height: AppSpacing.lg),
+        // const SizedBox(height: AppSpacing.lg),
         
         // Today's Activities section
         _buildTodaysActivities(context),

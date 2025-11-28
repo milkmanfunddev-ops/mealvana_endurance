@@ -38,7 +38,7 @@ serve(async (req)=>{
     const { data: userFoodData, error: userFoodError } = await supabaseClient.from('user_foods').upsert({
       id: requestData.id,
       device_id: requestData.device_id,
-      user_id: requestData.device_id, // Set user_id to device_id (privacy-first approach)
+      user_id: requestData.device_id,
       client_food_id: requestData.client_food_id,
       barcode: requestData.barcode,
       name: requestData.name,
