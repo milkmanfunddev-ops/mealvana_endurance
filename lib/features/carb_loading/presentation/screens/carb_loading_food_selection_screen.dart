@@ -11,12 +11,14 @@ import '../../../../shared/widgets/kyle_design/cards/base_card.dart';
 import '../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../shared/widgets/food_icon.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
+import '../../../../shared/screens/food_detail_screen.dart';
 import '../providers/carb_loading_food_selection_controller.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/carb_loading_food.dart';
 import '../../domain/carb_loading_user_food.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../../shared/database/app_database.dart' as db;
+import '../../../../shared/services/food_management/user_food_crud_service.dart';
 
 /// Screen for selecting foods to add to a carb loading meal
 /// Searches across all food sources and handles importing from nutrition plan
@@ -240,8 +242,13 @@ class _CarbLoadingFoodSelectionScreenState
                   const SizedBox(height: AppSpacing.lg),
                 ],
 
-                // Open Food Facts search results
-                if (state.openFoodFactsResults.isNotEmpty) ...[
+                // Show searching indicator when searching Open Food Facts
+                if (state.isSearchingOpenFoodFacts) ...[
+                  Expanded(
+                    child: _buildSearchingIndicator(),
+                  ),
+                ] else if (state.openFoodFactsResults.isNotEmpty) ...[
+                  // Open Food Facts search results
                   Expanded(
                     child: _buildOpenFoodFactsResults(state),
                   ),
@@ -525,6 +532,28 @@ class _CarbLoadingFoodSelectionScreenState
     );
   }
 
+  Widget _buildSearchingIndicator() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Searching food database...',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFoodCard(dynamic food) {
     String displayName = '';
     String? imageUrl;
@@ -562,6 +591,7 @@ class _CarbLoadingFoodSelectionScreenState
       child: BaseCard(
         child: InkWell(
           onTap: () => _selectFood(food),
+          onLongPress: isCustom ? () => _showUserFoodEditSheet(food) : null,
           borderRadius: AppRadius.cardRadius,
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -619,17 +649,174 @@ class _CarbLoadingFoodSelectionScreenState
                   ),
                 ),
 
-                // Add icon
-                Icon(
-                  FontAwesomeIcons.circlePlus,
-                  color: AppColors.orange,
-                  size: AppIconSizes.md,
-                ),
+                // Show edit button for custom foods, plus for others
+                if (isCustom)
+                  IconButton(
+                    icon: Icon(
+                      FontAwesomeIcons.penToSquare,
+                      color: AppColors.electrolyte.withValues(alpha: 0.7),
+                      size: AppIconSizes.sm,
+                    ),
+                    onPressed: () => _showUserFoodEditSheet(food),
+                    tooltip: 'Edit food',
+                  )
+                else
+                  Icon(
+                    FontAwesomeIcons.circlePlus,
+                    color: AppColors.orange,
+                    size: AppIconSizes.md,
+                  ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// Show the edit screen for a user food (no categories for carb loading)
+  Future<void> _showUserFoodEditSheet(dynamic food) async {
+    final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+
+    String foodId = '';
+    String foodName = '';
+    String? displayName;
+    String? displayNamePlural;
+    double? servingAmount;
+    String? servingUnit;
+    double? carbsPerServing;
+    double? proteinPerServing;
+    double? fatPerServing;
+    int? sodiumMg;
+    double? fluidMlPerServing;
+    int? caloriesPerServing;
+
+    // Extract data based on food type
+    if (food is CarbLoadingUserFood) {
+      foodId = food.id;
+      foodName = food.name;
+      displayName = food.displayName;
+      displayNamePlural = food.displayNamePlural;
+      servingAmount = null;
+      servingUnit = null;
+      carbsPerServing = food.carbsPerServing;
+      proteinPerServing = null;
+      fatPerServing = null;
+      sodiumMg = null;
+      fluidMlPerServing = null;
+      caloriesPerServing = null;
+    } else if (food is db.UserFood) {
+      foodId = food.id;
+      foodName = food.name;
+      displayName = food.displayName;
+      displayNamePlural = food.displayNamePlural;
+      servingAmount = food.servingAmount;
+      servingUnit = food.servingUnit;
+      carbsPerServing = food.carbsPerServing;
+      proteinPerServing = food.proteinPerServing;
+      fatPerServing = food.fatPerServing;
+      sodiumMg = food.sodiumMg;
+      fluidMlPerServing = food.fluidMlPerServing;
+      caloriesPerServing = food.caloriesPerServing;
+    } else {
+      return; // Not an editable food type
+    }
+
+    final foodData = FoodDetailData(
+      id: foodId,
+      name: foodName,
+      servingAmount: servingAmount,
+      servingUnit: servingUnit,
+      carbsPerServing: carbsPerServing,
+      proteinPerServing: proteinPerServing,
+      fatPerServing: fatPerServing,
+      sodiumMg: sodiumMg,
+      fluidMlPerServing: fluidMlPerServing,
+      caloriesPerServing: caloriesPerServing,
+      categoryIds: [], // No categories for carb loading
+    );
+
+    final result = await context.pushNamed<dynamic>(
+      'food-detail',
+      extra: {
+        'foodData': foodData,
+        'mode': FoodDetailMode.editExisting,
+        'screenContext': FoodDetailContext.carbLoading,
+        'showCategories': false, // Hide category checkboxes for carb loading
+        'showProductType': false,
+        'allowDelete': true,
+      },
+    );
+
+    if (!mounted) return;
+
+    // Handle delete
+    if (result is String && result.startsWith('DELETE:')) {
+      final deletedFoodId = result.substring(7);
+      try {
+        await userFoodCrudService.deleteUserFood(deletedFoodId);
+        ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$foodName deleted'),
+              backgroundColor: AppColors.electrolyte,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error deleting user food: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to delete food. Please try again.'),
+              backgroundColor: AppColors.dragonfruit,
+            ),
+          );
+        }
+      }
+    }
+    // Handle update
+    else if (result is FoodDetailResult) {
+      try {
+        await userFoodCrudService.updateUserFood(
+          foodId: result.foodId,
+          name: result.name,
+          displayName: result.name,
+          displayNamePlural: '${result.name}s',
+          servingAmount: result.servingAmount,
+          servingUnit: result.servingUnit,
+          carbsPerServing: result.carbsPerServing,
+          proteinPerServing: result.proteinPerServing,
+          fatPerServing: result.fatPerServing,
+          sodiumMg: result.sodiumMg,
+          fluidMlPerServing: result.fluidMlPerServing,
+          // Don't update categories for carb loading foods
+        );
+
+        // Refresh foods to reflect changes
+        ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${result.name} updated!'),
+              backgroundColor: AppColors.electrolyte,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error updating user food: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to update food. Please try again.'),
+              backgroundColor: AppColors.dragonfruit,
+            ),
+          );
+        }
+      }
+    }
   }
 }

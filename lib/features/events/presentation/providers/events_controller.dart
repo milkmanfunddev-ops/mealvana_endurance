@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/events_service.dart';
 import '../../../activities/application/activities_service.dart';
+import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../domain/event.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
@@ -128,7 +129,7 @@ class EventsController extends _$EventsController {
   }
 
   /// Delete an event
-  /// Note: Does NOT invalidate the provider - calling code should handle refresh
+  /// Also cascade deletes any associated carb loading plan and invalidates related providers
   Future<void> deleteEvent(int eventId) async {
     final keepAliveLink = ref.keepAlive();
 
@@ -147,10 +148,15 @@ class EventsController extends _$EventsController {
       // Check if provider is still mounted before accessing ref
       if (!ref.mounted) return;
 
-      // Invalidate providers to refresh UI
+      // Invalidate event providers to refresh UI
       ref.invalidateSelf();
       ref.invalidate(nextUpcomingEventProvider);
       ref.invalidate(allEventsProvider);
+
+      // Invalidate carb loading providers to refresh calendar UI
+      // The event deletion cascades to carb loading data in the repository layer
+      ref.invalidate(carbLoadingDaysForRangeProvider);
+      ref.invalidate(carbLoadingPlanProvider(eventId));
     } catch (e) {
       logger.error('Error deleting event', error: e);
       rethrow;

@@ -928,10 +928,68 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Update an existing user food
+  Future<bool> updateUserFood({
+    required String id,
+    String? name,
+    String? displayName,
+    String? displayNamePlural,
+    String? description,
+    double? servingAmount,
+    String? servingUnit,
+    int? caloriesPerServing,
+    double? carbsPerServing,
+    double? proteinPerServing,
+    double? fatPerServing,
+    int? sodiumMg,
+    double? fluidMlPerServing,
+    List<String>? categories,
+  }) async {
+    await ensureUserDataSyncColumns();
+
+    // Build update companion with only provided fields
+    final companion = UserFoodsTableCompanion(
+      name: name != null ? Value(name) : const Value.absent(),
+      displayName: displayName != null ? Value(displayName) : const Value.absent(),
+      displayNamePlural: displayNamePlural != null ? Value(displayNamePlural) : const Value.absent(),
+      description: description != null ? Value(description) : const Value.absent(),
+      servingAmount: servingAmount != null ? Value(servingAmount) : const Value.absent(),
+      servingUnit: servingUnit != null ? Value(servingUnit) : const Value.absent(),
+      caloriesPerServing: caloriesPerServing != null ? Value(caloriesPerServing) : const Value.absent(),
+      carbsPerServing: carbsPerServing != null ? Value(carbsPerServing) : const Value.absent(),
+      proteinPerServing: proteinPerServing != null ? Value(proteinPerServing) : const Value.absent(),
+      fatPerServing: fatPerServing != null ? Value(fatPerServing) : const Value.absent(),
+      sodiumMg: sodiumMg != null ? Value(sodiumMg) : const Value.absent(),
+      fluidMlPerServing: fluidMlPerServing != null ? Value(fluidMlPerServing) : const Value.absent(),
+      categories: categories != null
+          ? Value(categories.isNotEmpty ? '{${categories.join(',')}}' : null)
+          : const Value.absent(),
+      updatedAt: Value(DateTime.now()),
+      clientUpdatedAt: Value(DateTime.now()),
+    );
+
+    final updatedRows = await (update(userFoodsTable)
+          ..where((f) => f.id.equals(id)))
+        .write(companion);
+
+    // Mark as dirty for sync
+    final nowMillis = DateTime.now().millisecondsSinceEpoch;
+    await customStatement(
+      'UPDATE user_foods SET needs_upload = 1, local_updated_at = ? WHERE id = ?',
+      [nowMillis, id],
+    );
+
+    return updatedRows > 0;
+  }
+
   /// Get user foods for a user
+  /// Searches by both userId AND deviceId for backwards compatibility
+  /// (older foods may have been saved with deviceId only)
   Future<List<UserFood>> getUserFoods(String userId) async {
     final query = select(userFoodsTable)
-      ..where((f) => f.userId.equals(userId) & f.isDeleted.equals(false))
+      ..where((f) =>
+          (f.userId.equals(userId) | f.deviceId.equals(userId)) &
+          f.isDeleted.equals(false))
       ..orderBy([(f) => OrderingTerm.desc(f.createdAt)]);
 
     try {
@@ -1075,12 +1133,15 @@ class AppDatabase extends _$AppDatabase {
 
   /// Convert UserFood (Drift) to FoodItem (Domain) for display
   FoodItem convertUserFoodToFoodItem(UserFood userFood) {
+    // Parse categories from database string field
+    final categories = _parseUserFoodCategories(userFood.categories);
+
     return FoodItem(
       id: userFood.id,
       name: userFood.name,
       imageAddress: userFood.imageAddress,
       description: userFood.description,
-      categories: [], // Categories loaded separately
+      categories: categories,
       servingAmount: userFood.servingAmount,
       displayName: userFood.displayName,
       displayNamePlural: userFood.displayNamePlural,
@@ -1099,6 +1160,55 @@ class AppDatabase extends _$AppDatabase {
       maxServingsDuring: 1,
       toExcludeFromSolver: userFood.toExcludeFromSolver,
     );
+  }
+
+  /// Parse categories from UserFood database string to FoodCategory list
+  /// Handles PostgreSQL array format {a,b,c} and JSON format ["a","b"]
+  List<FoodCategory> _parseUserFoodCategories(String? categoriesStr) {
+    if (categoriesStr == null || categoriesStr.isEmpty) {
+      return [];
+    }
+
+    final trimmed = categoriesStr.trim();
+    List<String> categoryStrings = [];
+
+    // Handle PostgreSQL array format: {before_run,during_run,after_run}
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      final inner = trimmed.substring(1, trimmed.length - 1);
+      if (inner.isNotEmpty) {
+        categoryStrings = inner.split(',').map((s) => s.trim()).toList();
+      }
+    }
+    // Handle JSON array format: ["before_run","during_run"]
+    else if (trimmed.startsWith('[')) {
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is List) {
+          categoryStrings = List<String>.from(decoded);
+        }
+      } catch (_) {
+        // Fallback to comma-separated
+        categoryStrings = trimmed.split(',').map((s) => s.trim()).toList();
+      }
+    }
+    // Fallback: treat as single category or comma-separated
+    else if (trimmed.contains(',')) {
+      categoryStrings = trimmed.split(',').map((s) => s.trim()).toList();
+    } else if (trimmed.isNotEmpty) {
+      categoryStrings = [trimmed];
+    }
+
+    // Convert strings to FoodCategory enums
+    return categoryStrings
+        .map((str) {
+          try {
+            return FoodCategory.fromDbValue(str);
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<FoodCategory>()
+        .toList();
   }
 
   /// Convert Drift UserProfileEntry to Domain UserProfile
@@ -1196,8 +1306,10 @@ LazyDatabase _openConnection() {
 
     // TEMPORARY FIX: Use synchronous database in debug mode to avoid isolate issues
     // Background isolates can hang on iOS simulator during development
+    // NOTE: SQL logging disabled - was causing 77% of debug log volume
+    // Set to true only when debugging specific database issues
     final db = kDebugMode
-        ? NativeDatabase(file, logStatements: true)
+        ? NativeDatabase(file, logStatements: false)
         : NativeDatabase.createInBackground(file);
 
     return db;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -8,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'shared/services/app_config.dart';
 import 'shared/widgets/root_app_widget.dart';
+import 'shared/widgets/kyle_design/kyle_design.dart';
 
 /// Global navigator key for Sentry feedback widget screenshot capture
 /// This key is used by SentryFeedbackWidget to navigate and capture screenshots
@@ -53,16 +55,10 @@ Future<void> main() async {
         }
         
         // Session Replay configuration
-        // NOTE: Temporarily disabled due to iOS crash in development mode
-        if (kDebugMode) {
-          // Disabled in development due to profiler crash
-          options.replay.sessionSampleRate = 0.0;
-          options.replay.onErrorSampleRate = 0.0;
-        } else {
-          // Low sample rate in production (can be enabled safely)
-          options.replay.sessionSampleRate = 0; // 5% of sessions
-          options.replay.onErrorSampleRate = 1.0;   // 50% of error sessions
-        }
+        // Captures video-like replay of user sessions for debugging
+        // Only capture replays when errors occur (not regular sessions)
+        options.replay.sessionSampleRate = 0.0;   // Don't capture regular sessions
+        options.replay.onErrorSampleRate = 1.0;   // 100% of error sessions get replay
         
         // Enhanced error tracking
         options.attachStacktrace = true;
@@ -119,16 +115,59 @@ Future<void> _runMealvanaApp(AppConfig config) async {
   );
 
   // Entry point following Andrea Bizzotto's pattern with runZonedGuarded pattern
-  // SentryWidget wraps the app to enable screenshot capture for bug reporting
-  // This creates a RepaintBoundary that captures the actual app content
+  // Widget hierarchy:
+  // 1. BetterFeedback - Enables screenshot annotation for bug reports
+  // 2. SentryWidget - Wraps app to enable screenshot capture and session replay
+  // 3. ProviderScope - Riverpod state management
+  // 4. RootAppWidget - MaterialApp.router with AppStartupWidget
+  // Drawing colors for feedback annotations (same for both themes)
+  final feedbackDrawColors = [
+    AppColors.dragonfruit,  // Red/Pink - for highlighting issues
+    AppColors.electrolyte,  // Teal - for success areas
+    Colors.blue,            // Blue - for info
+    Colors.yellow,          // Yellow - for warnings
+  ];
+
   runApp(
-    SentryWidget(
-      child: ProviderScope(
-        overrides: [
-          // Override appConfigProvider with loaded config
-          appConfigProvider.overrideWithValue(config),
-        ],
-        child: const RootAppWidget(),
+    BetterFeedback(
+      // Use system theme mode to match app's light/dark setting
+      themeMode: ThemeMode.system,
+      // Light theme for feedback UI
+      theme: FeedbackThemeData(
+        background: Colors.black54,
+        feedbackSheetColor: AppColors.cream,
+        bottomSheetDescriptionStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textLight,
+        ),
+        bottomSheetTextInputStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textLight,
+        ),
+        activeFeedbackModeColor: AppColors.electrolyte,
+        drawColors: feedbackDrawColors,
+        brightness: Brightness.light,
+      ),
+      // Dark theme for feedback UI
+      darkTheme: FeedbackThemeData(
+        background: Colors.black87,
+        feedbackSheetColor: AppColors.surfaceDark,
+        bottomSheetDescriptionStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textDark,
+        ),
+        bottomSheetTextInputStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textDark,
+        ),
+        activeFeedbackModeColor: AppColors.electrolyte,
+        drawColors: feedbackDrawColors,
+        brightness: Brightness.dark,
+      ),
+      child: SentryWidget(
+        child: ProviderScope(
+          overrides: [
+            // Override appConfigProvider with loaded config
+            appConfigProvider.overrideWithValue(config),
+          ],
+          child: const RootAppWidget(),
+        ),
       ),
     ),
   );

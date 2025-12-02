@@ -76,7 +76,7 @@ class AppConfig {
     _runtimeOverride = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('dev_mode_override', value);
-  }
+  } 
 
   /// Clear runtime override (revert to default)
   static Future<void> clearDevModeOverride() async {

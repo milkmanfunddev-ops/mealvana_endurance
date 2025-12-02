@@ -16,6 +16,8 @@ class RecommendedAlternatives extends StatelessWidget {
     required this.preferences,
     this.title = 'Recommended Alternatives',
     this.maxItems = 10,
+    this.userFoodIds = const {},
+    this.onEditUserFood,
   });
 
   final List<Food> foods;
@@ -23,6 +25,10 @@ class RecommendedAlternatives extends StatelessWidget {
   final Map<String, FoodPreference> preferences;
   final String title;
   final int maxItems;
+  /// Set of food IDs that are user foods (editable)
+  final Set<String> userFoodIds;
+  /// Callback when user wants to edit a user food
+  final Function(Food)? onEditUserFood;
 
   @override
   Widget build(BuildContext context) {
@@ -59,12 +65,17 @@ class RecommendedAlternatives extends StatelessWidget {
               final food = displayFoods[index];
               final preference = preferences[food.name];
               final isAvoided = preference == FoodPreference.dislike;
+              final isUserFood = userFoodIds.contains(food.id);
 
               return FoodItemTile(
                 food: food,
                 onTap: () => onFoodSelected(food),
                 isAvoided: isAvoided,
                 showPreference: false, // Don't show preference chips in recommendations
+                showEditButton: isUserFood && onEditUserFood != null,
+                onEdit: isUserFood && onEditUserFood != null
+                    ? () => onEditUserFood!(food)
+                    : null,
               );
             },
           ),
@@ -74,34 +85,37 @@ class RecommendedAlternatives extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              FontAwesomeIcons.utensils,
-              size: AppIconSizes.xl,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'No recommendations available',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.subtitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                FontAwesomeIcons.utensils,
+                size: AppIconSizes.xl,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Try searching for foods or use the barcode scanner',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'No recommendations available',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.subtitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Try searching for foods or use the barcode scanner',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

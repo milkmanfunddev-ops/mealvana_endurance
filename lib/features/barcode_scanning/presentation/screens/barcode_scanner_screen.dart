@@ -5,9 +5,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/screens/food_detail_screen.dart';
 import '../../application/barcode_scanner_service.dart';
 import '../../../nutrition_plan/domain/food.dart';
-import '../widgets/nutrition_verification_dialog.dart';
 
 /// Barcode Scanner Screen - Kyle's Design System
 /// Unified scanner for all contexts (swap, add, preferences, carb loading)
@@ -215,23 +215,95 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     _showVerificationDialog(food, apiProduct);
   }
 
-  void _showVerificationDialog(Food food, dynamic apiProduct) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => NutritionVerificationDialog(
-        apiProduct: apiProduct,
-        mappedFood: food,
-        onCancel: () {
-          Navigator.of(context).pop();
-          _resetScanning();
-        },
-        onConfirm: (updatedFood) {
-          Navigator.of(context).pop();
-          context.pop(updatedFood); // Return food to calling screen
-        },
-      ),
+  Future<void> _showVerificationDialog(Food food, dynamic apiProduct) async {
+    // Determine the context and pre-selected categories based on widget.category
+    FoodDetailContext foodContext;
+    List<int>? preSelectedCategories;
+
+    switch (widget.category) {
+      case 'before_run':
+        foodContext = FoodDetailContext.addFood;
+        preSelectedCategories = [1]; // Only before run
+        break;
+      case 'during_run':
+        foodContext = FoodDetailContext.addFood;
+        preSelectedCategories = [2]; // Only during run
+        break;
+      case 'after_run':
+        foodContext = FoodDetailContext.addFood;
+        preSelectedCategories = [3]; // Only after run
+        break;
+      case 'preferences':
+        foodContext = FoodDetailContext.foodPreferences;
+        preSelectedCategories = null; // All categories available
+        break;
+      case 'carb_loading':
+        foodContext = FoodDetailContext.carbLoading;
+        preSelectedCategories = null;
+        break;
+      default:
+        foodContext = FoodDetailContext.addFood;
+        preSelectedCategories = null;
+    }
+
+    // Navigate to FoodDetailScreen and await result
+    final result = await context.pushNamed<dynamic>(
+      'food-detail',
+      extra: {
+        'foodData': FoodDetailData.fromFood(food),
+        'mode': FoodDetailMode.addFromScan,
+        'screenContext': foodContext,
+        'preSelectedCategories': preSelectedCategories,
+        'showCategories': widget.category != 'carb_loading',
+        'showProductType': true,
+        'allowDelete': false,
+      },
     );
+
+    // Handle result
+    if (!mounted) return;
+
+    if (result is FoodDetailResult) {
+      // Create updated Food object from result
+      final updatedFood = Food(
+        id: result.foodId,
+        name: result.name,
+        imageAddress: food.imageAddress,
+        description: food.description,
+        instructions: food.instructions,
+        servingAmount: result.servingAmount,
+        displayName: food.displayName,
+        displayNamePlural: food.displayNamePlural,
+        categories: result.categoryIds.map((id) {
+          switch (id) {
+            case 1:
+              return 'before_run';
+            case 2:
+              return 'during_run';
+            case 3:
+              return 'after_run';
+            default:
+              return 'before_run';
+          }
+        }).toList(),
+        servingUnit: result.servingUnit,
+        servingSize: result.servingSize,
+        carbsPerServing: result.carbsPerServing,
+        sodiumMg: result.sodiumMg,
+        fluidMlPerServing: result.fluidMlPerServing,
+        caloriesPerServing: result.caloriesPerServing,
+        proteinPerServing: result.proteinPerServing,
+        fatPerServing: result.fatPerServing,
+        productTypeId: result.productType,
+        beforeRunSuitable: result.categoryIds.contains(1),
+        duringRunSuitable: result.categoryIds.contains(2),
+      );
+      // Pop back to calling screen with the updated food
+      context.pop(updatedFood);
+    } else {
+      // User cancelled - reset scanning
+      _resetScanning();
+    }
   }
 
   void _showNotFoundResult(String barcode, String message) {

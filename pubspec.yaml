@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.11.0+34
+version: 1.11.1+37
 
 environment:
   sdk: ^3.8.1
@@ -51,7 +51,7 @@ dependencies:
 
   # Utilities
   uuid: ^4.2.1
-  intl: ^0.19.0
+  intl: any  # Let flutter_localizations pin this
   http: ^1.1.0
   device_info_plus: ^10.1.0
   package_info_plus: ^8.0.2
@@ -96,14 +96,18 @@ dependencies:
   # Location Services
   geolocator: ^13.0.2
   location_iq: ^1.0.1
+  feedback: ^3.2.0
+  feedback_sentry: ^3.2.0
 
 dev_dependencies:
   sentry_dart_plugin: ^3.1.1
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
 
   flutter_lints: ^5.0.0
-  
+
   # Testing
   mocktail: ^1.0.4
   

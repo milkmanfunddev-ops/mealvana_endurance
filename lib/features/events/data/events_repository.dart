@@ -7,6 +7,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/activity_type.dart';
+import '../../carb_loading/data/carb_loading_repository.dart';
 import '../domain/event.dart' as domain;
 
 part 'events_repository.g.dart';
@@ -17,6 +18,7 @@ EventsRepository eventsRepository(Ref ref) {
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    carbLoadingRepository: ref.read(carbLoadingRepositoryProvider),
   );
 }
 
@@ -27,13 +29,16 @@ class EventsRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
+    required CarbLoadingRepository carbLoadingRepository,
   })  : _supabase = supabase,
         _database = database,
-        _logger = logger;
+        _logger = logger,
+        _carbLoadingRepository = carbLoadingRepository;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+  final CarbLoadingRepository _carbLoadingRepository;
 
   /// Create a new event (offline-first: save to Drift first, then sync immediately if possible)
   Future<domain.Event> createEvent({
@@ -115,18 +120,26 @@ class EventsRepository {
   }
 
   /// Delete an event (offline-first: hard delete from Drift first, background upload)
+  /// Also cascade deletes any associated carb loading plan
   Future<void> deleteEvent({
     required String deviceId,
     required int eventId,
   }) async {
     try {
-      // OFFLINE-FIRST: Hard delete from Drift IMMEDIATELY
+      // CASCADE: Delete carb loading plan first (Drift doesn't enforce FK constraints)
+      // This must happen BEFORE deleting the event so we can find the plan by eventId
+      await _carbLoadingRepository.deleteCarbLoadingPlanByEventId(
+        deviceId: deviceId,
+        eventId: eventId,
+      );
+
+      // OFFLINE-FIRST: Hard delete event from Drift IMMEDIATELY
       await (_database.delete(_database.eventsTable)
             ..where((tbl) => tbl.id.equals(eventId)))
           .go();
 
-
       // Attempt background upload (non-blocking)
+      // Note: Supabase CASCADE will also delete the carb_loading_plan on the server
       unawaited(_uploadEventDeletion(deviceId, eventId));
     } catch (e, stackTrace) {
       _logger.error(

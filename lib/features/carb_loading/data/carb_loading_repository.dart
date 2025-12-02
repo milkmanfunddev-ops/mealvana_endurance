@@ -237,6 +237,42 @@ class CarbLoadingRepository {
     }
   }
 
+  /// Delete carb loading plan by event ID (cascade delete for event deletion)
+  /// This handles the cascade since Drift doesn't enforce FK constraints like PostgreSQL
+  Future<void> deleteCarbLoadingPlanByEventId({
+    required String deviceId,
+    required int eventId,
+  }) async {
+    try {
+      // Find the plan for this event
+      final plan = await getCarbLoadingPlanForEvent(eventId);
+      if (plan == null) {
+        _logger.debug(
+          'No carb loading plan found for event $eventId - nothing to delete',
+          context: 'CARB_LOADING_REPOSITORY',
+        );
+        return;
+      }
+
+      // Use the existing delete method which handles full cascade
+      await deleteCarbLoadingPlan(deviceId: deviceId, planId: plan.id);
+
+      _logger.info(
+        'Cascade deleted carb loading plan ${plan.id} for event $eventId',
+        context: 'CARB_LOADING_REPOSITORY',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to cascade delete carb loading plan for event $eventId',
+        context: 'CARB_LOADING_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - event deletion should still proceed
+      // The Supabase CASCADE will clean up the server side
+    }
+  }
+
   /// Get carb loading plan by ID
   Future<CarbLoadingPlan?> getCarbLoadingPlanById(int planId) async {
     try {

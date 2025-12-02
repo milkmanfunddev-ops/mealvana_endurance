@@ -114,6 +114,78 @@ class UserFoodCrudService {
     }
   }
 
+  /// Update user food (offline-first pattern)
+  Future<bool> updateUserFood({
+    required String foodId,
+    String? name,
+    String? displayName,
+    String? displayNamePlural,
+    String? description,
+    double? servingAmount,
+    String? servingUnit,
+    int? caloriesPerServing,
+    double? carbsPerServing,
+    double? proteinPerServing,
+    double? fatPerServing,
+    int? sodiumMg,
+    double? fluidMlPerServing,
+    List<int>? categoryIds,
+  }) async {
+    try {
+      // Convert category IDs to names if provided
+      final categoryNames = categoryIds != null
+          ? _mapCategoryIdsToNames(categoryIds)
+          : null;
+
+      // OFFLINE-FIRST: Update Drift IMMEDIATELY
+      final success = await _database.updateUserFood(
+        id: foodId,
+        name: name,
+        displayName: displayName,
+        displayNamePlural: displayNamePlural,
+        description: description,
+        servingAmount: servingAmount,
+        servingUnit: servingUnit,
+        caloriesPerServing: caloriesPerServing,
+        carbsPerServing: carbsPerServing,
+        proteinPerServing: proteinPerServing,
+        fatPerServing: fatPerServing,
+        sodiumMg: sodiumMg,
+        fluidMlPerServing: fluidMlPerServing,
+        categories: categoryNames,
+      );
+
+      if (success) {
+        // Attempt background upload (non-blocking)
+        unawaited(_uploadUserFoodUpdateToSupabase(
+          foodId: foodId,
+          name: name,
+          displayName: displayName,
+          displayNamePlural: displayNamePlural,
+          description: description,
+          servingAmount: servingAmount,
+          servingUnit: servingUnit,
+          caloriesPerServing: caloriesPerServing,
+          carbsPerServing: carbsPerServing,
+          proteinPerServing: proteinPerServing,
+          fatPerServing: fatPerServing,
+          sodiumMg: sodiumMg,
+          fluidMlPerServing: fluidMlPerServing,
+          categoryNames: categoryNames,
+        ));
+      }
+
+      return success;
+    } catch (e) {
+      _logger.error('Error updating user food',
+        context: 'UserFoodCrudService',
+        data: {'foodId': foodId},
+        error: e,
+      );
+      rethrow;
+    }
+  }
+
   /// Delete user food (offline-first pattern)
   Future<void> deleteUserFood(String foodId) async {
     try {
@@ -219,6 +291,63 @@ class UserFoodCrudService {
     }
   }
 
+  /// Upload user food update to Supabase in background (non-blocking)
+  Future<void> _uploadUserFoodUpdateToSupabase({
+    required String foodId,
+    String? name,
+    String? displayName,
+    String? displayNamePlural,
+    String? description,
+    double? servingAmount,
+    String? servingUnit,
+    int? caloriesPerServing,
+    double? carbsPerServing,
+    double? proteinPerServing,
+    double? fatPerServing,
+    int? sodiumMg,
+    double? fluidMlPerServing,
+    List<String>? categoryNames,
+  }) async {
+    try {
+      // Build update map with only provided fields
+      final updateData = <String, dynamic>{
+        'updated_at': DateTime.now().toIso8601String(),
+        'client_updated_at': DateTime.now().toIso8601String(),
+      };
+
+      if (name != null) updateData['name'] = name;
+      if (displayName != null) updateData['display_name'] = displayName;
+      if (displayNamePlural != null) updateData['display_name_plural'] = displayNamePlural;
+      if (description != null) updateData['description'] = description;
+      if (servingAmount != null) updateData['serving_amount'] = servingAmount;
+      if (servingUnit != null) updateData['serving_unit'] = servingUnit;
+      if (caloriesPerServing != null) updateData['calories_per_serving'] = caloriesPerServing;
+      if (carbsPerServing != null) updateData['carbs_per_serving'] = carbsPerServing;
+      if (proteinPerServing != null) updateData['protein_per_serving'] = proteinPerServing;
+      if (fatPerServing != null) updateData['fat_per_serving'] = fatPerServing;
+      if (sodiumMg != null) updateData['sodium_mg'] = sodiumMg;
+      if (fluidMlPerServing != null) updateData['fluid_ml_per_serving'] = fluidMlPerServing;
+      if (categoryNames != null) updateData['categories'] = categoryNames;
+
+      await _supabase
+          .from('user_foods')
+          .update(updateData)
+          .eq('id', foodId);
+
+      await _database.customStatement(
+        'UPDATE user_foods SET needs_upload = 0 WHERE id = ?',
+        [foodId],
+      );
+    } catch (e) {
+      _logger.warning(
+        'Failed to upload user food update (will retry on next sync)',
+        context: 'UserFoodCrudService',
+        error: e,
+        data: {'foodId': foodId},
+      );
+      // Don't rethrow - keep dirty flag, will retry on next sync
+    }
+  }
 
   /// Check if food exists in user_foods
   Future<bool> isUserFood(String foodId) async {
@@ -240,17 +369,10 @@ class UserFoodCrudService {
 
   /// Convert database UserFood to Food domain object
   Food _convertUserFoodToFood(dynamic userFood) {
-    // Parse categories from JSON string if available
+    // Parse categories from string (handles both JSON and PostgreSQL array formats)
     List<String> categories = [];
     if (userFood.categories != null && userFood.categories.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(userFood.categories);
-        if (decoded is List) {
-          categories = List<String>.from(decoded);
-        }
-      } catch (e) {
-        _logger.warning('Failed to parse categories for user food ${userFood.id}', error: e);
-      }
+      categories = _parseCategories(userFood.categories);
     }
 
     return Food(
@@ -293,5 +415,38 @@ class UserFoodCrudService {
           return 'before_run';
       }
     }).toList();
+  }
+
+  /// Parse categories from string - handles both JSON array and PostgreSQL array formats
+  /// JSON format: ["before_run","during_run"]
+  /// PostgreSQL format: {before_run,during_run}
+  List<String> _parseCategories(String categoriesStr) {
+    final trimmed = categoriesStr.trim();
+
+    // Handle PostgreSQL array format: {before_run,during_run,after_run}
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      final inner = trimmed.substring(1, trimmed.length - 1);
+      if (inner.isEmpty) return [];
+      return inner.split(',').map((s) => s.trim()).toList();
+    }
+
+    // Handle JSON array format: ["before_run","during_run"]
+    if (trimmed.startsWith('[')) {
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is List) {
+          return List<String>.from(decoded);
+        }
+      } catch (e) {
+        _logger.warning('Failed to parse JSON categories: $trimmed', error: e);
+      }
+    }
+
+    // Fallback: treat as single category or comma-separated
+    if (trimmed.contains(',')) {
+      return trimmed.split(',').map((s) => s.trim()).toList();
+    }
+
+    return trimmed.isNotEmpty ? [trimmed] : [];
   }
 }

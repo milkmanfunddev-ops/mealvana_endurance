@@ -296,7 +296,7 @@ extension GutTrainingDisplayExtension on GutTraining {
       case GutTraining.moderate:
         return '0.8 g/kg/h';
       case GutTraining.high:
-        return '0.8 g/kg/h';
+        return '1.0 g/kg/h';
     }
   }
 }

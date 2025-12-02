@@ -47,6 +47,7 @@ class SwapFoodState {
     this.preferences = const {},
     this.openFoodFactsResults = const [],
     this.isSearchingOpenFoodFacts = false,
+    this.userFoodIds = const {},
   });
 
   final List<Food> recommendations; // Smart recommendations (user + generic foods)
@@ -58,7 +59,8 @@ class SwapFoodState {
   final Map<String, FoodPreference> preferences; // User food preferences
   final List<dynamic> openFoodFactsResults; // Open Food Facts search results (FoodSearchResult)
   final bool isSearchingOpenFoodFacts;
-  
+  final Set<String> userFoodIds; // Set of food IDs that are user-created foods
+
   SwapFoodState copyWith({
     List<Food>? recommendations,
     List<Food>? searchResults,
@@ -70,6 +72,7 @@ class SwapFoodState {
     Map<String, FoodPreference>? preferences,
     List<dynamic>? openFoodFactsResults,
     bool? isSearchingOpenFoodFacts,
+    Set<String>? userFoodIds,
   }) {
     return SwapFoodState(
       recommendations: recommendations ?? this.recommendations,
@@ -81,6 +84,7 @@ class SwapFoodState {
       preferences: preferences ?? this.preferences,
       openFoodFactsResults: openFoodFactsResults ?? this.openFoodFactsResults,
       isSearchingOpenFoodFacts: isSearchingOpenFoodFacts ?? this.isSearchingOpenFoodFacts,
+      userFoodIds: userFoodIds ?? this.userFoodIds,
     );
   }
 }
@@ -100,11 +104,26 @@ FoodRepository foodRepository(Ref ref) {
 /// Controller for swap food functionality - takes swap parameters
 @riverpod
 class SwapFoodController extends _$SwapFoodController {
+  /// Cached logger instance - avoids accessing ref after disposal
+  /// Note: Using `late` (not `late final`) because build() can be called multiple times
+  late AppLogger _logger;
 
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  /// Helper to check if provider is still mounted before state updates
+  bool get _isMounted {
+    try {
+      // Accessing state when unmounted throws
+      state;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
   FutureOr<SwapFoodState> build(SwapFoodParams params) async {
+    // Cache logger immediately in build() to avoid UnmountedRefException
+    _logger = ref.read(appExternalDepsProvider).logger;
+
     // Auto-initialize with foods based on original food's product type
     return await _loadFoodsForSwapping(params);
   }
@@ -127,7 +146,14 @@ class SwapFoodController extends _$SwapFoodController {
         preferences: preferences,
         maxResults: 10,
         userId: userId,
-      );      // Load all foods for search (generic + user foods)
+      );
+
+      // Load all foods for search (generic + user foods) and collect user food IDs
+      final userFoodService = ref.read(userFoodCrudServiceProvider);
+      final userFoods = await userFoodService.getUserFoods(userId);
+      final userFoodIds = userFoods.map((f) => f.id).toSet();
+
+      // Load all foods for search (generic + user foods)
       final allFoods = await _loadAllFoodsForSearch(userId);
 
       return SwapFoodState(
@@ -135,6 +161,7 @@ class SwapFoodController extends _$SwapFoodController {
         searchResults: recommendations, // Initially show recommendations
         allFoodsForSearch: allFoods,
         preferences: preferences,
+        userFoodIds: userFoodIds,
       );
 
     } catch (e) {
@@ -425,27 +452,53 @@ class SwapFoodController extends _$SwapFoodController {
     final currentState = state.value;
     if (currentState == null || query.isEmpty) return;
 
+    // Cache services before async gap to avoid ref access after disposal
+    final searchService = ref.read(sharedFoodSearchServiceProvider);
+
     try {
       // Set searching state
       state = AsyncValue.data(currentState.copyWith(
         isSearchingOpenFoodFacts: true,
-      ));      // Search Open Food Facts
-      final searchService = ref.read(sharedFoodSearchServiceProvider);
-      final results = await searchService.searchProducts(query);      // Update state with results
-      state = AsyncValue.data(currentState.copyWith(
+      ));
+
+      // Search Open Food Facts (async operation)
+      final results = await searchService.searchProducts(query);
+
+      // Check if still mounted before updating state
+      if (!_isMounted) {
+        _logger.warning('SwapFoodController disposed during Open Food Facts search',
+          context: 'SwapFoodController',
+          data: {'query': query},
+        );
+        return;
+      }
+
+      // Get fresh state after async gap
+      final freshState = state.value;
+      if (freshState == null) return;
+
+      // Update state with results
+      state = AsyncValue.data(freshState.copyWith(
         openFoodFactsResults: results,
         isSearchingOpenFoodFacts: false,
       ));
 
     } catch (e) {
+      // Check if still mounted before logging/updating state
+      if (!_isMounted) return;
+
       _logger.error('Open Food Facts search failed',
         context: 'SwapFoodController',
         data: {'query': query},
         error: e,
       );
 
+      // Get fresh state after async gap
+      final freshState = state.value;
+      if (freshState == null) return;
+
       // Clear searching state and keep current results
-      state = AsyncValue.data(currentState.copyWith(
+      state = AsyncValue.data(freshState.copyWith(
         isSearchingOpenFoodFacts: false,
       ));
     }
@@ -456,28 +509,42 @@ class SwapFoodController extends _$SwapFoodController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    try {      // Get current user's device ID
-      final authService = ref.read(authServiceProvider);
+    // Cache services before async gap to avoid ref access after disposal
+    final authService = ref.read(authServiceProvider);
+    final searchService = ref.read(sharedFoodSearchServiceProvider);
+
+    try {
+      // Get current user's device ID
       final currentUser = await authService.getCurrentUser();
       final userId = currentUser?.id ?? 'unknown';
 
       // Add to user foods using shared service
-      final searchService = ref.read(sharedFoodSearchServiceProvider);
       final food = await searchService.addSearchResultToUserFoods(result, userId);
 
+      // Check if still mounted before updating state
+      if (!_isMounted) return;
+
       if (food != null) {
+        // Get fresh state after async gap
+        final freshState = state.value;
+        if (freshState == null) return;
+
         // Auto-select the food and clear search state
-        state = AsyncValue.data(currentState.copyWith(
+        state = AsyncValue.data(freshState.copyWith(
           selectedFood: food,
           searchQuery: '', // Clear search query
-          searchResults: currentState.recommendations, // Show recommendations
+          searchResults: freshState.recommendations, // Show recommendations
           isSearching: false,
           openFoodFactsResults: [], // Clear Open Food Facts results
-        ));      } else {
+        ));
+      } else {
         _logger.warning('Failed to add Open Food Facts result');
       }
 
     } catch (e) {
+      // Check if still mounted before logging
+      if (!_isMounted) return;
+
       _logger.error('Error adding Open Food Facts result',
         context: 'SwapFoodController',
         data: {'productId': result.id},
@@ -495,5 +562,22 @@ class SwapFoodController extends _$SwapFoodController {
       openFoodFactsResults: [],
       isSearchingOpenFoodFacts: false,
     ));
+  }
+
+  /// Refresh foods list (called after adding new user food)
+  Future<void> refreshFoods() async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    // Re-fetch foods to include newly added user foods
+    // This triggers a rebuild that will refresh recommendations
+    state = AsyncValue.data(currentState.copyWith(
+      openFoodFactsResults: [],
+      isSearchingOpenFoodFacts: false,
+      searchQuery: '',
+    ));
+
+    // Invalidate and rebuild to refresh food data
+    ref.invalidateSelf();
   }
 }

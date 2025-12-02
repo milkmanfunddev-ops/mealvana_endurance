@@ -207,32 +207,26 @@ async function getFoodsForPhase(supabase, phase, userId, likedFoods, willTryFood
     userFoods = userFoods.concat(filteredUncategorized);
     console.log(`[FOODS-${phase.toUpperCase()}] Found ${filteredUncategorized.length} uncategorized user foods (${userFoods.length} total user foods)`);
   }
-  // STEP 3: Include essential foods (global) and combine all sources
-  const { data: essentialFoods, error: essentialError } = await supabase.from("foods").select(`
-      id, name, display_name, display_name_plural, image_address, description,
-      calories_per_serving, carbs_per_serving, protein_per_serving,
-      fat_per_serving, sodium_mg, fluid_ml_per_serving,
-      serving_amount,
-      max_servings_before, max_servings_during, max_servings_after,
-      is_electrolyte, to_exclude_from_solver, is_essential
-    `).eq("is_essential", true);
-  if (essentialError) {
-    console.log(`[FOODS-${phase.toUpperCase()}] Error fetching essential foods:`, essentialError);
-  }
+  // STEP 3: Combine generic and user foods (NO essential foods in initial pool)
+  // Essential foods (water, salt) are now ONLY added in post-processing when there's
+  // an actual deficit that other foods cannot fill. This prevents unnecessary 3.5 salt packets.
   const allFoodsMap = new Map();
-  const addFoods = (list)=>{
+  const addFoods = (list, isUserFood = false)=>{
     if (!list) return;
     for (const food of list){
       if (!allFoodsMap.has(food.id)) {
-        allFoodsMap.set(food.id, food);
+        // Mark user foods so they can be given "liked" preference automatically
+        allFoodsMap.set(food.id, { ...food, _isUserFood: isUserFood });
       }
     }
   };
-  addFoods(genericFoods);
-  addFoods(userFoods);
-  addFoods(essentialFoods);
+  addFoods(genericFoods, false);
+  addFoods(userFoods, true);
+  // NOTE: Essential foods intentionally NOT added here - they're added in postProcessPhase
+  // only when there's a true sodium/water deficit that regular foods cannot fill
   const allFoods = Array.from(allFoodsMap.values());
-  console.log(`[FOODS-${phase.toUpperCase()}] Combined ${genericFoods.length} generic + ${userFoods.length} user foods + ${essentialFoods?.length || 0} essential = ${allFoods.length} total`);
+  const userFoodCount = allFoods.filter(f => f._isUserFood).length;
+  console.log(`[FOODS-${phase.toUpperCase()}] Combined ${genericFoods.length} generic + ${userFoods.length} user foods = ${allFoods.length} total (${userFoodCount} marked as user foods for preference boost)`);
   if (allFoods.length === 0) return [];
   // Helper function to check if a food matches user preferences
   const matchesPreference = (food, preferenceSet)=>{
@@ -247,39 +241,38 @@ async function getFoodsForPhase(supabase, phase, userId, likedFoods, willTryFood
     Array.from(preferenceSet).some((pref)=>foodName && pref.toLowerCase().includes(foodName) || foodName && foodName.includes(pref.toLowerCase()));
   };
   // Filter out disliked foods and foods excluded from solver
+  // NOTE: Essential foods are no longer in the pool - they're added in post-processing only when needed
+  // NOTE: User foods are NEVER filtered as disliked - they should always be available
   return allFoods.filter((f)=>{
+    const isUserFood = f._isUserFood === true;
     const isDisliked = matchesPreference(f, dislikedFoods);
     const isExcludedFromSolver = f.to_exclude_from_solver === true;
-    // Only generic foods have is_essential, user foods don't
-    const isEssential = 'is_essential' in f && f.is_essential === true;
-    // CRITICAL: Log when disliked foods are being filtered out
-    if (isDisliked && !isEssential) {
+    // CRITICAL: Never filter out user foods as disliked - user explicitly added them
+    if (isDisliked && !isUserFood) {
       console.log(`[FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`);
       return false;
     }
-    if (isDisliked && isEssential) {
-      console.log(`[FILTER-DISLIKED] Keeping essential food despite dislike: ${f.name} (id: ${f.id})`);
+    if (isDisliked && isUserFood) {
+      console.log(`[FILTER-DISLIKED] Keeping user food despite dislike match: ${f.name} (id: ${f.id})`);
     }
     return !isExcludedFromSolver;
   }).map((f)=>{
     // Calculate preference score using improved matching
-    // Only generic foods have is_essential, user foods don't
-    const isEssential = 'is_essential' in f && f.is_essential === true;
-    const isLiked = matchesPreference(f, likedFoods);
-    const isWilling = matchesPreference(f, willTryFoods) || isEssential;
+    // CRITICAL: User foods are automatically considered "liked" since the user added them
+    const isUserFood = f._isUserFood === true;
+    const isLiked = isUserFood || matchesPreference(f, likedFoods);
+    const isWilling = matchesPreference(f, willTryFoods);
     let preferenceCategory = 'neutral';
     if (isLiked) {
       preferenceCategory = 'liked';
-    } else if (isEssential) {
-      preferenceCategory = 'essential';
     } else if (isWilling) {
       preferenceCategory = 'willing';
     }
     const preference_score = PREFERENCE_SCORE_MAP[preferenceCategory];
-    if (preferenceCategory === 'liked') {
+    if (isUserFood) {
+      console.log(`[PREFERENCE] User food (auto-liked): ${f.name} (score: ${preference_score})`);
+    } else if (preferenceCategory === 'liked') {
       console.log(`[PREFERENCE] Loved food found: ${f.name} (score: ${preference_score})`);
-    } else if (preferenceCategory === 'essential') {
-      console.log(`[PREFERENCE] Essential food included: ${f.name} (score: ${preference_score})`);
     } else if (preferenceCategory === 'willing') {
       console.log(`[PREFERENCE] Willing-to-try food found: ${f.name} (score: ${preference_score})`);
     } else {
@@ -310,7 +303,8 @@ async function getFoodsForPhase(supabase, phase, userId, likedFoods, willTryFood
       max_servings: maxServings || 4,
       preference_score,
       is_electrolyte: f.is_electrolyte || false,
-      is_essential: isEssential
+      is_essential: f.is_essential || false,
+      is_user_food: f._isUserFood || false
     };
   });
 }
@@ -662,7 +656,39 @@ function greedyFallback(foods, targets, phase) {
   };
 }
 // ---------------- Post-Processing ----------------
-async function postProcessPhase(_supabase, result, targets, electrolyteFoods, allFoods, phase) {
+async function postProcessPhase(supabase, result, targets, electrolyteFoods, allFoods, phase) {
+  // Fetch essential foods (water, salt) directly for post-processing
+  // They are NOT in allFoods anymore - they're only added when there's a true deficit
+  const { data: essentialFoods, error: essentialError } = await supabase.from("foods").select(`
+      id, name, display_name, display_name_plural, image_address, description,
+      calories_per_serving, carbs_per_serving, protein_per_serving,
+      fat_per_serving, sodium_mg, fluid_ml_per_serving,
+      serving_amount, is_electrolyte, is_essential
+    `).eq("is_essential", true);
+  if (essentialError) {
+    console.log(`[POST-PROCESS-${phase?.toUpperCase()}] Error fetching essential foods:`, essentialError);
+  }
+  // Transform essential foods to the same format as allFoods
+  const essentialFoodsTransformed = (essentialFoods || []).map(f => ({
+    id: f.id,
+    name: f.name,
+    display_name: f.display_name,
+    display_name_plural: f.display_name_plural,
+    image_address: f.image_address,
+    description: f.description,
+    is_essential: f.is_essential,
+    is_electrolyte: f.is_electrolyte,
+    per_serving: {
+      calories: f.calories_per_serving || 0,
+      carbs_g: f.carbs_per_serving || 0,
+      protein_g: f.protein_per_serving || 0,
+      fat_g: f.fat_per_serving || 0,
+      sodium_mg: f.sodium_mg || 0,
+      water_ml: f.fluid_ml_per_serving || 0
+    }
+  }));
+  console.log(`[POST-PROCESS-${phase?.toUpperCase()}] Fetched ${essentialFoodsTransformed.length} essential foods for deficit-filling`);
+
   // First, fix any water/electrolyte items from solver with incorrect formatting
   const foods = result.foods.map((food)=>{
     // Check if this is a water/electrolyte item (identified by name pattern)
@@ -743,14 +769,20 @@ async function postProcessPhase(_supabase, result, targets, electrolyteFoods, al
   const needsWater = waterDeficit > 0 && waterDeficitPercent > POST_PROCESS_THRESHOLDS.water_deficit_percent && totals.water_ml < waterMaxAllowed;
   if (!needsWater && targets.water_ml > 0 && totals.water_ml < waterMaxAllowed) {
     const remainingCapacity = waterMaxAllowed - totals.water_ml;
-    const waterFood = allFoods.find((f)=>{
+    // Look in essential foods first, then fall back to allFoods
+    const waterFood = essentialFoodsTransformed.find((f)=>{
+      const name = f.name?.toLowerCase();
+      const displayName = f.display_name?.toLowerCase();
+      return name === 'water' || displayName?.includes('water');
+    }) || allFoods.find((f)=>{
       const name = f.name?.toLowerCase();
       const displayName = f.display_name?.toLowerCase();
       return name === 'water' || displayName?.includes('water');
     });
     if (waterFood && waterFood.per_serving.water_ml > 0) {
       const minimalServings = Math.min((targets.water_ml * 0.9 - totals.water_ml) / waterFood.per_serving.water_ml, remainingCapacity / waterFood.per_serving.water_ml);
-      const roundedWaterServings = roundUpToIncrement(Math.max(0, minimalServings), 0.5);
+      // Use roundToIncrement for consistency
+      const roundedWaterServings = roundToIncrement(Math.max(0, minimalServings), 0.5);
       const potentialWater = waterFood.per_serving.water_ml * roundedWaterServings;
       if (roundedWaterServings >= 0.5 && totals.water_ml + potentialWater <= waterMaxAllowed + 1e-3) {
         foods.push({
@@ -773,11 +805,13 @@ async function postProcessPhase(_supabase, result, targets, electrolyteFoods, al
     }
   }
   // INDIVIDUAL SOLUTIONS: Add water and electrolytes separately
-  // Add sodium if needed
+  // Add sodium if needed - use essential foods that were fetched at start of post-processing
+  // Max sodium allowed is 110% of target (current tolerance)
+  const sodiumMaxAllowed = targets.sodium_mg * 1.1;
   if (needsSodium) {
-    console.log(`[POST-PROCESS-${phase?.toUpperCase()}] Adding sodium for deficit: ${sodiumDeficit}mg`);
-    // Only generic foods have is_essential property
-    const essentialSodiumOptions = allFoods.filter((f)=>(f.is_essential === true || f.is_electrolyte) && safe(f.per_serving.sodium_mg) > 0);
+    console.log(`[POST-PROCESS-${phase?.toUpperCase()}] Adding sodium for deficit: ${sodiumDeficit}mg (max allowed: ${sodiumMaxAllowed}mg)`);
+    // Use essential foods fetched at start of post-processing + electrolyte foods
+    const essentialSodiumOptions = essentialFoodsTransformed.filter((f)=>safe(f.per_serving.sodium_mg) > 0);
     const sodiumCandidates = [
       ...electrolyteFoods,
       ...essentialSodiumOptions
@@ -792,8 +826,43 @@ async function postProcessPhase(_supabase, result, targets, electrolyteFoods, al
       const sodiumPerServing = option.per_serving.sodium_mg;
       if (sodiumPerServing <= 0) continue;
       const exactServings = sodiumDeficit / sodiumPerServing;
-      const roundedServings = Math.max(0.5, roundUpToIncrement(exactServings, 0.5));
+      // Use roundToIncrement (nearest 0.5) instead of roundUpToIncrement to prevent overshooting
+      const roundedServings = Math.max(0.5, roundToIncrement(exactServings, 0.5));
+      const potentialSodium = sodiumPerServing * roundedServings;
       const potentialWater = option.per_serving.water_ml * roundedServings;
+      // OVERSHOOT PREVENTION: Check if adding this would exceed 110% of target
+      if (totals.sodium_mg + potentialSodium > sodiumMaxAllowed + 1e-3) {
+        console.log(`[POST-PROCESS-${phase?.toUpperCase()}] Skipping ${option.name}: would overshoot sodium (${totals.sodium_mg + potentialSodium}mg > ${sodiumMaxAllowed}mg max)`);
+        // Try with fewer servings if possible
+        const maxServingsForSodium = (sodiumMaxAllowed - totals.sodium_mg) / sodiumPerServing;
+        const reducedServings = roundToIncrement(maxServingsForSodium, 0.5);
+        if (reducedServings >= 0.5) {
+          const reducedSodium = sodiumPerServing * reducedServings;
+          const reducedWater = option.per_serving.water_ml * reducedServings;
+          if (totals.water_ml + reducedWater <= waterMaxAllowed + 1e-3) {
+            console.log(`[POST-PROCESS-${phase?.toUpperCase()}] Using reduced servings: ${reducedServings} of ${option.name}`);
+            foods.push({
+              food_id: option.id,
+              food_name: option.name,
+              quantity: reducedServings,
+              carbs_grams: option.per_serving.carbs_g * reducedServings,
+              protein_grams: option.per_serving.protein_g * reducedServings,
+              fat_grams: option.per_serving.fat_g * reducedServings,
+              sodium_mg: reducedSodium,
+              fluids_ml: reducedWater,
+              calories: option.per_serving.calories * reducedServings,
+              display_name: option.display_name ?? option.name,
+              display_name_plural: option.display_name_plural ?? option.display_name ?? option.name,
+              description: option.description,
+              image_address: option.image_address
+            });
+            totals.sodium_mg += reducedSodium;
+            totals.water_ml += reducedWater;
+            break;
+          }
+        }
+        continue;
+      }
       if (totals.water_ml + potentialWater > waterMaxAllowed + 1e-3) {
         continue;
       }
@@ -804,51 +873,64 @@ async function postProcessPhase(_supabase, result, targets, electrolyteFoods, al
         carbs_grams: option.per_serving.carbs_g * roundedServings,
         protein_grams: option.per_serving.protein_g * roundedServings,
         fat_grams: option.per_serving.fat_g * roundedServings,
-        sodium_mg: option.per_serving.sodium_mg * roundedServings,
-        fluids_ml: option.per_serving.water_ml * roundedServings,
+        sodium_mg: potentialSodium,
+        fluids_ml: potentialWater,
         calories: option.per_serving.calories * roundedServings,
         display_name: option.display_name ?? option.name,
         display_name_plural: option.display_name_plural ?? option.display_name ?? option.name,
         description: option.description,
         image_address: option.image_address
       });
-      totals.sodium_mg += option.per_serving.sodium_mg * roundedServings;
+      totals.sodium_mg += potentialSodium;
       totals.water_ml += potentialWater;
       break;
     }
+    // Only add electrolyte powder as last resort if still significantly under target
     if (targets.sodium_mg > 0 && totals.sodium_mg < targets.sodium_mg * (1 - POST_PROCESS_THRESHOLDS.sodium_deficit_percent)) {
-      const electrolytePowder = allFoods.find((f)=>f.name === 'Electrolyte Powder (1mg sodium)');
+      const electrolytePowder = essentialFoodsTransformed.find((f)=>f.name === 'Electrolyte Powder (1mg sodium)') ||
+                               allFoods.find((f)=>f.name === 'Electrolyte Powder (1mg sodium)');
       if (electrolytePowder) {
-        const remainingSodium = targets.sodium_mg - totals.sodium_mg;
-        const preciseServings = Math.max(0, remainingSodium / Math.max(1, electrolytePowder.per_serving.sodium_mg));
-        const roundedServings = Math.max(0.5, roundUpToIncrement(preciseServings, 0.5));
-        const potentialWater = electrolytePowder.per_serving.water_ml * roundedServings;
-        if (totals.water_ml + potentialWater <= waterMaxAllowed + 1e-3) {
-          foods.push({
-            food_id: electrolytePowder.id,
-            food_name: electrolytePowder.name,
-            quantity: roundedServings,
-            carbs_grams: electrolytePowder.per_serving.carbs_g * roundedServings,
-            protein_grams: electrolytePowder.per_serving.protein_g * roundedServings,
-            fat_grams: electrolytePowder.per_serving.fat_g * roundedServings,
-            sodium_mg: electrolytePowder.per_serving.sodium_mg * roundedServings,
-            fluids_ml: electrolytePowder.per_serving.water_ml * roundedServings,
-            calories: electrolytePowder.per_serving.calories * roundedServings,
-            display_name: electrolytePowder.display_name ?? electrolytePowder.name,
-            display_name_plural: electrolytePowder.display_name_plural ?? electrolytePowder.display_name ?? electrolytePowder.name,
-            description: electrolytePowder.description,
-            image_address: electrolytePowder.image_address
-          });
-          totals.sodium_mg += electrolytePowder.per_serving.sodium_mg * roundedServings;
-          totals.water_ml += potentialWater;
+        const remainingSodium = Math.min(targets.sodium_mg - totals.sodium_mg, sodiumMaxAllowed - totals.sodium_mg);
+        if (remainingSodium > 0) {
+          const preciseServings = Math.max(0, remainingSodium / Math.max(1, electrolytePowder.per_serving.sodium_mg));
+          // Use roundToIncrement instead of roundUpToIncrement
+          const roundedServings = Math.max(0.5, roundToIncrement(preciseServings, 0.5));
+          const potentialSodiumPowder = electrolytePowder.per_serving.sodium_mg * roundedServings;
+          const potentialWater = electrolytePowder.per_serving.water_ml * roundedServings;
+          // Also check overshoot for electrolyte powder
+          if (totals.sodium_mg + potentialSodiumPowder <= sodiumMaxAllowed + 1e-3 &&
+              totals.water_ml + potentialWater <= waterMaxAllowed + 1e-3) {
+            foods.push({
+              food_id: electrolytePowder.id,
+              food_name: electrolytePowder.name,
+              quantity: roundedServings,
+              carbs_grams: electrolytePowder.per_serving.carbs_g * roundedServings,
+              protein_grams: electrolytePowder.per_serving.protein_g * roundedServings,
+              fat_grams: electrolytePowder.per_serving.fat_g * roundedServings,
+              sodium_mg: potentialSodiumPowder,
+              fluids_ml: potentialWater,
+              calories: electrolytePowder.per_serving.calories * roundedServings,
+              display_name: electrolytePowder.display_name ?? electrolytePowder.name,
+              display_name_plural: electrolytePowder.display_name_plural ?? electrolytePowder.display_name ?? electrolytePowder.name,
+              description: electrolytePowder.description,
+              image_address: electrolytePowder.image_address
+            });
+            totals.sodium_mg += potentialSodiumPowder;
+            totals.water_ml += potentialWater;
+          }
         }
       }
     }
   }
-  // Add water if needed
+  // Add water if needed - look in essential foods first (since water is essential)
   if (needsWater && !hasPlainWater && !hasWaterWithElectrolytes) {
     console.log(`[POST-PROCESS-${phase?.toUpperCase()}] Adding water for deficit: ${waterDeficit}ml`);
-    const water = allFoods.find((f)=>{
+    // Look in essential foods first, then fall back to allFoods
+    const water = essentialFoodsTransformed.find((f)=>{
+      const name = f.name?.toLowerCase();
+      const displayName = f.display_name?.toLowerCase();
+      return name === 'water' || displayName?.includes('water');
+    }) || allFoods.find((f)=>{
       const name = f.name?.toLowerCase();
       const displayName = f.display_name?.toLowerCase();
       return name === 'water' || displayName?.includes('water');
@@ -858,7 +940,8 @@ async function postProcessPhase(_supabase, result, targets, electrolyteFoods, al
       if (waterPerServing > 0) {
         const remainingCapacity = waterMaxAllowed - totals.water_ml;
         const feasibleServings = Math.min(waterDeficit / waterPerServing, remainingCapacity / waterPerServing);
-        const roundedWaterServings = roundUpToIncrement(Math.max(0, feasibleServings), 0.5);
+        // Use roundToIncrement for consistency
+        const roundedWaterServings = roundToIncrement(Math.max(0, feasibleServings), 0.5);
         const potentialWater = water.per_serving.water_ml * roundedWaterServings;
         if (roundedWaterServings >= 0.5 && totals.water_ml + potentialWater <= waterMaxAllowed + 1e-3) {
           foods.push({

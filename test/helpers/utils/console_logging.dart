@@ -1,59 +1,44 @@
-/// Console logging utilities for test output consistency
-///
-/// All tests should use these functions to ensure readable, structured output
-/// that makes debugging and verification easier.
+/// Console logging utilities for test output
+/// Provides structured, colored console output for test debugging
 library;
 
-import 'package:flutter/foundation.dart';
+/// ANSI color codes for console output
+class _Colors {
+  static const String reset = '\x1B[0m';
+  static const String bold = '\x1B[1m';
+  static const String green = '\x1B[32m';
+  static const String red = '\x1B[31m';
+  static const String yellow = '\x1B[33m';
+  static const String blue = '\x1B[34m';
+  static const String cyan = '\x1B[36m';
+  static const String gray = '\x1B[90m';
+}
 
-// ANSI color codes for terminal output
-const String _reset = '\x1B[0m';
-const String _bold = '\x1B[1m';
-const String _green = '\x1B[32m';
-const String _red = '\x1B[31m';
-const String _blue = '\x1B[34m';
-const String _yellow = '\x1B[33m';
-const String _cyan = '\x1B[36m';
-const String _magenta = '\x1B[35m';
-
-/// Log a test heading/title
-///
-/// Example: logTestHeading('Edge Function – Marathon Plan Generation')
-void logTestHeading(String heading) {
+/// Log a test heading with colored divider
+void logTestHeading(String title) {
   final divider = '=' * 80;
-  debugPrint('\n$_bold$_cyan$divider$_reset');
-  debugPrint('$_bold$_cyan║ $heading$_reset');
-  debugPrint('$_bold$_cyan$divider$_reset\n');
+  print('${_Colors.bold}${_Colors.blue}$divider${_Colors.reset}');
+  print('${_Colors.bold}${_Colors.blue}TEST: $title${_Colors.reset}');
+  print('${_Colors.bold}${_Colors.blue}$divider${_Colors.reset}');
 }
 
-/// Log test input data
-///
-/// Example:
-/// ```dart
-/// logTestInput({
-///   'distance_miles': 26.2,
-///   'gut_training': 'advanced',
-///   'pace_min_per_mile': 8.5,
-/// });
-/// ```
-void logTestInput(Map<String, dynamic> input) {
-  debugPrint('$_bold$_blue📥 Test Input:$_reset');
-  input.forEach((key, value) {
-    final displayValue = value is double
-        ? value.toStringAsFixed(2)
-        : value.toString();
-    debugPrint('  • $key: $_cyan$displayValue$_reset');
+/// Log test setup/configuration details
+void logTestSetup(Map<String, dynamic> config) {
+  print('${_Colors.cyan}SETUP:${_Colors.reset}');
+  config.forEach((key, value) {
+    print('  ${_Colors.gray}$key: ${_Colors.reset}$value');
   });
-  debugPrint('');
 }
 
-/// Log a single test result with actual value and optional expected range
-///
-/// Example:
-/// ```dart
-/// logTestResult('carbs_total_g', 285.0, expectedRange: '280-290');
-/// logTestResult('hydration_ml', 1500, expected: 1500);
-/// ```
+/// Log test input parameters
+void logTestInput(Map<String, dynamic> inputs) {
+  print('${_Colors.cyan}INPUT:${_Colors.reset}');
+  inputs.forEach((key, value) {
+    print('  ${_Colors.gray}$key: ${_Colors.reset}$value');
+  });
+}
+
+/// Log a single test result
 void logTestResult(
   String label,
   dynamic actual, {
@@ -61,190 +46,83 @@ void logTestResult(
   String? expectedRange,
   String? unit,
 }) {
-  final actualStr = _formatValue(actual, unit);
+  final unitStr = unit != null ? ' $unit' : '';
+  final expectedStr = expected != null
+      ? ' (expected: $expected$unitStr)'
+      : (expectedRange != null ? ' (expected range: $expectedRange$unitStr)' : '');
 
-  if (expectedRange != null) {
-    debugPrint('$_bold$_magenta📊 $label:$_reset $actualStr (expected: $expectedRange)');
-  } else if (expected != null) {
-    final expectedStr = _formatValue(expected, unit);
-    final matches = actual == expected;
-    final icon = matches ? '✓' : '✗';
-    final color = matches ? _green : _red;
-    debugPrint('$_bold$_magenta📊 $label:$_reset $actualStr (expected: $expectedStr) $color$icon$_reset');
-  } else {
-    debugPrint('$_bold$_magenta📊 $label:$_reset $actualStr');
-  }
+  print(
+      '${_Colors.cyan}RESULT:${_Colors.reset} $label = ${_Colors.bold}$actual$unitStr${_Colors.reset}$expectedStr');
 }
 
 /// Log multiple test results at once
-///
-/// Example:
-/// ```dart
-/// logTestResults({
-///   'carbs_g': ResultData(actual: 285, expectedRange: '280-290'),
-///   'protein_g': ResultData(actual: 45, expected: 45),
-///   'water_ml': ResultData(actual: 1500),
-/// });
-/// ```
 void logTestResults(Map<String, ResultData> results) {
-  debugPrint('$_bold$_magenta📊 Test Results:$_reset');
+  print('${_Colors.cyan}RESULTS:${_Colors.reset}');
   results.forEach((label, data) {
-    final actualStr = _formatValue(data.actual, data.unit);
+    final unitStr = data.unit != null ? ' ${data.unit}' : '';
+    final expectedStr = data.expected != null
+        ? ' (expected: ${data.expected}$unitStr)'
+        : (data.expectedRange != null
+            ? ' (expected range: ${data.expectedRange}$unitStr)'
+            : '');
 
-    if (data.expectedRange != null) {
-      debugPrint('  • $label: $actualStr (range: ${data.expectedRange})');
-    } else if (data.expected != null) {
-      final expectedStr = _formatValue(data.expected, data.unit);
-      final matches = data.actual == data.expected;
-      final icon = matches ? '✓' : '✗';
-      final color = matches ? _green : _red;
-      debugPrint('  • $label: $actualStr vs $expectedStr $color$icon$_reset');
-    } else {
-      debugPrint('  • $label: $actualStr');
-    }
+    print(
+        '  $label: ${_Colors.bold}${data.actual}$unitStr${_Colors.reset}$expectedStr');
   });
-  debugPrint('');
 }
 
-/// Log a test assertion/expectation
-///
-/// Example:
-/// ```dart
-/// logAssertion('Carbs should be within ±10g of target', passed: true);
-/// logAssertion('No dairy products during run', passed: false, reason: 'Found milk in plan');
-/// ```
-void logAssertion(String assertion, {required bool passed, String? reason}) {
-  final icon = passed ? '✓' : '✗';
-  final color = passed ? _green : _red;
-  debugPrint('$color$icon $assertion$_reset');
-  if (!passed && reason != null) {
-    debugPrint('  ${_red}Reason: $reason$_reset');
-  }
+/// Log an assertion/validation check
+void logAssertion(String description, {required bool passed, String? reason}) {
+  final status = passed
+      ? '${_Colors.green}PASS${_Colors.reset}'
+      : '${_Colors.red}FAIL${_Colors.reset}';
+  final reasonStr = reason != null ? ' - $reason' : '';
+  print('${_Colors.yellow}ASSERT:${_Colors.reset} $description [$status]$reasonStr');
 }
 
 /// Log test pass status
-///
-/// Example: logTestPass()
 void logTestPass([String? message]) {
-  final msg = message ?? 'Test PASSED';
-  debugPrint('$_bold$_green✅ $msg$_reset\n');
+  final msg = message ?? 'Test passed';
+  print('${_Colors.bold}${_Colors.green}✓ $msg${_Colors.reset}');
 }
 
-/// Log test failure status
-///
-/// Example: logTestFail('Expected carbs to be 280-290g but got 150g')
+/// Log test fail status
 void logTestFail(String reason) {
-  debugPrint('$_bold$_red❌ Test FAILED: $reason$_reset\n');
+  print('${_Colors.bold}${_Colors.red}✗ Test failed: $reason${_Colors.reset}');
 }
 
-/// Log a warning during test execution
-///
-/// Example: logTestWarning('Using fallback algorithm instead of AI')
-void logTestWarning(String warning) {
-  debugPrint('$_yellow⚠️  Warning: $warning$_reset');
-}
-
-/// Log test setup information
-///
-/// Example:
-/// ```dart
-/// logTestSetup({
-///   'database': 'In-memory Drift v1',
-///   'supabase': 'Mock client',
-///   'analytics': 'Recording fake',
-/// });
-/// ```
-void logTestSetup(Map<String, String> setup) {
-  debugPrint('$_bold$_blue🔧 Test Setup:$_reset');
-  setup.forEach((component, description) {
-    debugPrint('  • $component: $_cyan$description$_reset');
-  });
-  debugPrint('');
-}
-
-/// Log section divider
-///
-/// Example: logSection('Phase 1: Before Run Foods')
+/// Log a section divider
 void logSection(String title) {
-  debugPrint('\n$_bold$_blue─── $title ───$_reset\n');
+  print('\n${_Colors.bold}${_Colors.cyan}--- $title ---${_Colors.reset}');
 }
 
-/// Log API/Edge Function call
-///
-/// Example:
-/// ```dart
-/// logApiCall(
-///   method: 'POST',
-///   endpoint: '/functions/v1/generate-ai-nutrition-plan',
-///   duration: Duration(milliseconds: 850),
-/// );
-/// ```
-void logApiCall({
-  required String method,
-  required String endpoint,
-  int? statusCode,
-  Duration? duration,
-  dynamic error,
-}) {
-  final status = statusCode != null ? ' ($statusCode)' : '';
-  final timing = duration != null ? ' [${duration.inMilliseconds}ms]' : '';
-
-  if (error != null) {
-    debugPrint('$_red🌐 $method $endpoint$status$timing - ERROR: $error$_reset');
-  } else {
-    debugPrint('$_blue🌐 $method $endpoint$status$timing$_reset');
+/// Log an API call
+void logApiCall(String endpoint, {Map<String, dynamic>? params}) {
+  print('${_Colors.yellow}API CALL:${_Colors.reset} $endpoint');
+  if (params != null && params.isNotEmpty) {
+    params.forEach((key, value) {
+      print('  ${_Colors.gray}$key: ${_Colors.reset}$value');
+    });
   }
 }
 
-/// Log database operation
-///
-/// Example:
-/// ```dart
-/// logDatabaseOp(
-///   operation: 'INSERT',
-///   table: 'nutrition_plans',
-///   duration: Duration(milliseconds: 12),
-/// );
-/// ```
-void logDatabaseOp({
-  required String operation,
-  required String table,
-  Duration? duration,
-  int? rowsAffected,
-}) {
-  final timing = duration != null ? ' [${duration.inMilliseconds}ms]' : '';
-  final rows = rowsAffected != null ? ' ($rowsAffected rows)' : '';
-  debugPrint('$_cyan💾 $operation $table$rows$timing$_reset');
+/// Log a database operation
+void logDatabaseOp(String operation, {String? details}) {
+  final detailStr = details != null ? ' - $details' : '';
+  print('${_Colors.cyan}DB:${_Colors.reset} $operation$detailStr');
 }
 
-/// Log analytics event tracking
-///
-/// Example:
-/// ```dart
-/// logAnalyticsEvent('plan_generated', properties: {'type': 'ai', 'distance': 26.2});
-/// ```
+/// Log an analytics event
 void logAnalyticsEvent(String eventName, {Map<String, dynamic>? properties}) {
-  final props = properties != null
-      ? ' ${properties.entries.map((e) => '${e.key}:${e.value}').join(', ')}'
-      : '';
-  debugPrint('$_magenta📈 Analytics: $eventName$props$_reset');
-}
-
-/// Format a value for display with optional unit
-String _formatValue(dynamic value, String? unit) {
-  String valueStr;
-  if (value is double) {
-    valueStr = value.toStringAsFixed(2);
-  } else if (value is int) {
-    valueStr = value.toString();
-  } else {
-    valueStr = value.toString();
+  print('${_Colors.yellow}ANALYTICS:${_Colors.reset} $eventName');
+  if (properties != null && properties.isNotEmpty) {
+    properties.forEach((key, value) {
+      print('  ${_Colors.gray}$key: ${_Colors.reset}$value');
+    });
   }
-
-  return unit != null ? '$valueStr$unit' : valueStr;
 }
 
-/// Data class for structured test results
+/// Data class for test results
 class ResultData {
   const ResultData({
     required this.actual,

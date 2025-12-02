@@ -4,13 +4,40 @@ import '../../theme/app_theme.dart';
 
 /// Custom app bar back button with primary900 background
 /// Provides a consistent back button design across the app
-class CustomAppBarBackButton extends StatelessWidget {
+/// Includes debouncing to prevent double-tap crashes
+class CustomAppBarBackButton extends StatefulWidget {
   const CustomAppBarBackButton({
     super.key,
     this.onPressed,
   });
 
   final VoidCallback? onPressed;
+
+  @override
+  State<CustomAppBarBackButton> createState() => _CustomAppBarBackButtonState();
+}
+
+class _CustomAppBarBackButtonState extends State<CustomAppBarBackButton> {
+  bool _isProcessing = false;
+
+  void _handleTap() {
+    // Prevent double-tap by checking if already processing
+    if (_isProcessing) return;
+
+    _isProcessing = true;
+
+    // Execute the callback
+    if (widget.onPressed != null) {
+      widget.onPressed!();
+    } else {
+      Navigator.of(context).pop();
+    }
+
+    // Note: We don't reset _isProcessing because the widget will be
+    // disposed after navigation. If navigation doesn't dispose the widget,
+    // the button will remain disabled which is safer than allowing
+    // repeated taps.
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +47,7 @@ class CustomAppBarBackButton extends StatelessWidget {
         color: AppTheme.primary900,
         shape: const CircleBorder(),
         child: InkWell(
-          onTap: onPressed ?? () => Navigator.of(context).pop(),
+          onTap: _handleTap,
           customBorder: const CircleBorder(),
           child: Container(
             width: 40.w,

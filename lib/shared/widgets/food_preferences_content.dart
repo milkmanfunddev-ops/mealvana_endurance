@@ -17,7 +17,7 @@ import '../../features/content/domain/content_keys.dart';
 import '../../features/barcode_scanning/application/open_food_facts_search_service.dart';
 import '../../features/barcode_scanning/application/product_detail_service.dart';
 import '../../features/barcode_scanning/application/food_mapping_service.dart';
-import '../widgets/scanned_food_category_sheet.dart';
+import '../screens/food_detail_screen.dart';
 import '../services/app_external_deps.dart';
 
 /// Configuration for different food preferences layouts
@@ -318,29 +318,32 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
       final food = await mappingService.mapToFood(apiProduct);
       final foodItem = _convertFoodToFoodItem(food);
 
-      // Show category selection sheet
+      // Navigate to food detail screen
       if (mounted) {
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => ScannedFoodCategorySheet(
-            scannedFood: foodItem,
-            context: 'add_food',
-            fluidMlPerServing: foodItem.fluidMlPerServing,
-            onSave: (categoryIds, finalFluidAmount, {carbsPerServing, proteinPerServing, fatPerServing, sodiumMg}) async {
-              await _saveSearchedFood(
-                foodItem,
-                categoryIds,
-                finalFluidAmount,
-                carbsPerServing: carbsPerServing,
-                proteinPerServing: proteinPerServing,
-                fatPerServing: fatPerServing,
-                sodiumMg: sodiumMg,
-              );
-            },
-          ),
+        final result = await context.pushNamed<dynamic>(
+          'food-detail',
+          extra: {
+            'foodData': FoodDetailData.fromFoodItem(foodItem),
+            'mode': FoodDetailMode.addFromSearch,
+            'screenContext': FoodDetailContext.foodPreferences,
+            'showCategories': true,
+            'showProductType': true,
+            'allowDelete': false,
+          },
         );
+
+        if (result is FoodDetailResult && mounted) {
+          await _saveSearchedFood(
+            foodItem,
+            result.categoryIds,
+            result.fluidMlPerServing,
+            carbsPerServing: result.carbsPerServing,
+            proteinPerServing: result.proteinPerServing,
+            fatPerServing: result.fatPerServing,
+            sodiumMg: result.sodiumMg.toDouble(),
+            productType: result.productType,
+          );
+        }
       }
     } catch (e) {
       // Close loading dialog if still open
@@ -401,6 +404,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
     double? proteinPerServing,
     double? fatPerServing,
     double? sodiumMg,
+    String? productType,
   }) async {
     try {
       final database = ref.read(appDatabaseProvider);
@@ -425,6 +429,9 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
         }
       }).toList();
 
+      // Use user-selected product type if provided, otherwise fall back to 'import'
+      final finalProductType = productType ?? foodItem.productTypeId ?? 'import';
+
       // 1. Save to local Drift database first (for offline access)
       await database.saveUserFood(
         deviceId: deviceId,
@@ -444,7 +451,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
         fatPerServing: fatPerServing ?? foodItem.fatPerServing,
         sodiumMg: (sodiumMg?.toInt()) ?? foodItem.sodiumMg,
         fluidMlPerServing: finalFluidAmount ?? foodItem.fluidMlPerServing,
-        productTypeId: foodItem.productTypeId,
+        productTypeId: finalProductType,
         categories: categoryNames,
       );
 
@@ -467,7 +474,7 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
           'fat_per_serving': fatPerServing ?? foodItem.fatPerServing,
           'sodium_mg': (sodiumMg?.toInt()) ?? foodItem.sodiumMg,
           'fluid_ml_per_serving': finalFluidAmount ?? foodItem.fluidMlPerServing,
-          'product_type_id': foodItem.productTypeId,
+          'product_type_id': finalProductType,
           'category_ids': categoryIds,
         });
 
@@ -1222,31 +1229,28 @@ class _FoodPreferencesContentState extends ConsumerState<FoodPreferencesContent>
         'category': 'preferences', // Indicate this is for food preferences
       });
 
-      // If a food was successfully scanned, handle it
+      // If a food was successfully scanned, the FoodDetailScreen already handled category selection
+      // The result from barcode-scanner is now a Food with categories already set
       if (result != null && result is Food && mounted) {
         final foodItem = _convertFoodToFoodItem(result);
 
-        // Show category selection sheet for the scanned food
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => ScannedFoodCategorySheet(
-            scannedFood: foodItem,
-            context: 'add_food',
-            fluidMlPerServing: foodItem.fluidMlPerServing,
-            onSave: (categoryIds, finalFluidAmount, {carbsPerServing, proteinPerServing, fatPerServing, sodiumMg}) async {
-              await _saveSearchedFood(
-                foodItem,
-                categoryIds,
-                finalFluidAmount,
-                carbsPerServing: carbsPerServing,
-                proteinPerServing: proteinPerServing,
-                fatPerServing: fatPerServing,
-                sodiumMg: sodiumMg,
-              );
-            },
-          ),
+        // Save the food with the categories that were set in FoodDetailScreen
+        await _saveSearchedFood(
+          foodItem,
+          result.categories.map((cat) {
+            switch (cat) {
+              case 'before_run': return 1;
+              case 'during_run': return 2;
+              case 'after_run': return 3;
+              default: return 1;
+            }
+          }).toList(),
+          result.fluidMlPerServing,
+          carbsPerServing: result.carbsPerServing,
+          proteinPerServing: result.proteinPerServing,
+          fatPerServing: result.fatPerServing,
+          sodiumMg: result.sodiumMg?.toDouble(),
+          productType: result.productTypeId,
         );
       }
     } catch (e) {

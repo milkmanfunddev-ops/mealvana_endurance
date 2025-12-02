@@ -410,19 +410,24 @@ class ActivityDetailController extends _$ActivityDetailController {
         updatedAt: DateTime.now(),
       );
 
-      // Don't auto-save - let user click Save to persist changes
-      // User must now explicitly save by clicking the Save button
-
-      // Update state with new plan and mark as having unsaved changes
+      // Update state first for immediate UI feedback
       state = AsyncData(currentState.copyWith(
         nutritionPlan: updatedPlan,
-        hasUnsavedChanges: true, // Always mark as changed, user must click Save
+        hasUnsavedChanges: false, // Will be saved immediately
       ));
 
-      _logger.info('swapFoodItem SUCCESS - state updated',
+      // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
+      // This ensures the nutrition plan is persisted before any navigation events
+      final activity = currentState.activity;
+      if (activity != null) {
+        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+        _logger.info('swapFoodItem: Auto-saved nutrition plan to prevent data loss');
+      }
+
+      _logger.info('swapFoodItem SUCCESS - state updated and saved',
         context: 'ActivityDetailController',
         data: {
-          'hasUnsavedChanges': true,
+          'hasUnsavedChanges': false,
           'updatedPlanId': updatedPlan.id,
         },
       );
@@ -495,14 +500,19 @@ class ActivityDetailController extends _$ActivityDetailController {
         updatedAt: DateTime.now(),
       );
 
-      // Don't auto-save - let user click Save to persist changes
-      // User must now explicitly save by clicking the Save button
-
-      // Update state with new plan and mark as having unsaved changes
+      // Update state first for immediate UI feedback
       state = AsyncData(currentState.copyWith(
         nutritionPlan: updatedPlan,
-        hasUnsavedChanges: true, // Always mark as changed, user must click Save
+        hasUnsavedChanges: false, // Will be saved immediately
       ));
+
+      // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
+      // This ensures the nutrition plan is persisted before any navigation events
+      final activity = currentState.activity;
+      if (activity != null) {
+        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+        _logger.info('addFoodItem: Auto-saved nutrition plan to prevent data loss');
+      }
     } catch (error, stackTrace) {
       _logger.error('Error adding food item', error: error, stackTrace: stackTrace);
       state = AsyncValue.error(error, stackTrace);
@@ -553,14 +563,19 @@ class ActivityDetailController extends _$ActivityDetailController {
         updatedAt: DateTime.now(),
       );
 
-      // Don't auto-save - let user click Save to persist changes
-      // User must now explicitly save by clicking the Save button
-
-      // Update state with new plan and mark as having unsaved changes
+      // Update state first for immediate UI feedback
       state = AsyncData(currentState.copyWith(
         nutritionPlan: updatedPlan,
-        hasUnsavedChanges: true, // Always mark as changed, user must click Save
+        hasUnsavedChanges: false, // Will be saved immediately
       ));
+
+      // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
+      // This ensures the nutrition plan is persisted before any navigation events
+      final activity = currentState.activity;
+      if (activity != null) {
+        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+        _logger.info('deleteFoodItem: Auto-saved nutrition plan to prevent data loss');
+      }
     } catch (error, stackTrace) {
       _logger.error('Error deleting food item', error: error, stackTrace: stackTrace);
       state = AsyncValue.error(error, stackTrace);
@@ -645,14 +660,19 @@ class ActivityDetailController extends _$ActivityDetailController {
         updatedAt: DateTime.now(),
       );
 
-      // Don't auto-save - let user click Save to persist changes
-      // User must now explicitly save by clicking the Save button
-
-      // Update state with new plan and mark as having unsaved changes
+      // Update state first for immediate UI feedback
       state = AsyncData(currentState.copyWith(
         nutritionPlan: updatedPlan,
-        hasUnsavedChanges: true, // Always mark as changed, user must click Save
+        hasUnsavedChanges: false, // Will be saved immediately
       ));
+
+      // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
+      // This ensures the nutrition plan is persisted before any navigation events
+      final activity = currentState.activity;
+      if (activity != null) {
+        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+        _logger.info('updateFoodQuantity: Auto-saved nutrition plan to prevent data loss');
+      }
     } catch (error, stackTrace) {
       _logger.error('Error updating food quantity', error: error, stackTrace: stackTrace);
     }

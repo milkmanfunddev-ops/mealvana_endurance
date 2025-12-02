@@ -6,9 +6,14 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
 import '../../../../shared/widgets/food_selection/recommended_alternatives.dart';
+import '../../../../shared/screens/food_detail_screen.dart';
 import '../providers/swap_food_controller.dart';
 import '../../domain/food.dart';
+import '../../domain/food_item.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/food_management/user_food_crud_service.dart';
+import '../../../barcode_scanning/application/product_detail_service.dart';
+import '../../../barcode_scanning/application/food_mapping_service.dart';
 
 /// Swap/Add Food Screen - Kyle's Design System
 /// Allows users to swap existing food or add new food to nutrition plan
@@ -214,18 +219,219 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
   Future<void> _handleOpenFoodFactsSelection(dynamic result) async {
     try {
-      await ref.read(swapFoodControllerProvider(_params).notifier)
-        .addOpenFoodFactsResult(result);
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      // Fetch product details
+      final productDetailService = ref.read(productDetailServiceProvider);
+      final apiProduct = await productDetailService.getProductDetails(openFoodFactsId: result.id);
+
+      if (mounted) Navigator.of(context).pop(); // Close loading dialog
+
+      if (apiProduct == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unable to load product details'),
+              backgroundColor: AppColors.dragonfruit,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Map to Food domain object
+      final mappingService = ref.read(foodMappingServiceProvider);
+      final food = await mappingService.mapToFood(apiProduct);
+      final foodItem = _convertFoodToFoodItem(food);
+
+      // Determine pre-checked category based on current phase
+      final preCheckedCategories = <int>[_categoryToId(widget.category)];
+
+      // Navigate to food detail screen with current phase pre-checked
+      if (mounted) {
+        final result = await context.pushNamed<dynamic>(
+          'food-detail',
+          extra: {
+            'foodData': FoodDetailData.fromFoodItem(foodItem),
+            'mode': FoodDetailMode.addFromSearch,
+            'screenContext': _isSwapping ? FoodDetailContext.swapFood : FoodDetailContext.addFood,
+            'preSelectedCategories': preCheckedCategories,
+            'showCategories': true,
+            'showProductType': true,
+            'allowDelete': false,
+          },
+        );
+
+        if (result is FoodDetailResult && mounted) {
+          await _saveOpenFoodFactsFood(
+            foodItem,
+            result.categoryIds,
+            result.fluidMlPerServing,
+            carbsPerServing: result.carbsPerServing,
+            proteinPerServing: result.proteinPerServing,
+            fatPerServing: result.fatPerServing,
+            sodiumMg: result.sodiumMg.toDouble(),
+            productType: result.productType,
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog if still showing
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to import food: $e'),
+            backgroundColor: AppColors.dragonfruit,
+          ),
+        );
+      }
+    }
+  }
+
+  int _categoryToId(String category) {
+    switch (category) {
+      case 'before_run':
+        return 1;
+      case 'during_run':
+        return 2;
+      case 'after_run':
+        return 3;
+      default:
+        return 1;
+    }
+  }
+
+  FoodItem _convertFoodToFoodItem(Food food) {
+    // Convert List<String> categories to List<FoodCategory>
+    final foodCategories = food.categories.map((cat) {
+      switch (cat) {
+        case 'before_run':
+          return FoodCategory.beforeRun;
+        case 'during_run':
+          return FoodCategory.duringRun;
+        case 'after_run':
+          return FoodCategory.afterRun;
+        default:
+          return FoodCategory.beforeRun; // Default fallback
+      }
+    }).toList();
+
+    return FoodItem(
+      id: food.id,
+      name: food.name,
+      imageAddress: food.imageAddress,
+      description: food.description,
+      instructions: food.instructions,
+      categories: foodCategories,
+      servingSize: food.servingSize,
+      servingAmount: food.servingAmount,
+      servingUnit: food.servingUnit,
+      servingUnitPlural: food.servingUnitPlural,
+      servingQualifier: food.servingQualifier,
+      displayName: food.displayName,
+      displayNamePlural: food.displayNamePlural,
+      fluidMlPerServing: food.fluidMlPerServing,
+      carbsPerServing: food.carbsPerServing,
+      proteinPerServing: food.proteinPerServing,
+      fatPerServing: food.fatPerServing,
+      sodiumMg: food.sodiumMg,
+      caloriesPerServing: food.caloriesPerServing,
+      productTypeId: food.productTypeId,
+      beforeRunSuitable: food.beforeRunSuitable,
+      duringRunSuitable: food.duringRunSuitable,
+      runPortable: food.runPortable,
+      requiresPreparation: food.requiresPreparation,
+      aidStationAvailable: food.aidStationAvailable,
+      maxServingsBefore: food.maxServingsBefore,
+      maxServingsDuring: food.maxServingsDuring,
+      caffeineMg: food.caffeineMg,
+      potassiumMg: food.potassiumMg,
+    );
+  }
+
+  Future<void> _saveOpenFoodFactsFood(
+    FoodItem foodItem,
+    List<int> categoryIds,
+    double? finalFluidAmount, {
+    double? carbsPerServing,
+    double? proteinPerServing,
+    double? fatPerServing,
+    double? sodiumMg,
+    String? productType,
+  }) async {
+    try {
+      final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+
+      // Convert categoryIds to category strings for Food object
+      final categoryStrings = categoryIds.map((id) {
+        switch (id) {
+          case 1:
+            return 'before_run';
+          case 2:
+            return 'during_run';
+          case 3:
+            return 'after_run';
+          default:
+            return 'before_run';
+        }
+      }).toList();
+
+      // Create Food object for the crud service
+      // Use user-selected product type if provided, otherwise fall back to 'import'
+      final food = Food(
+        id: foodItem.id,
+        name: foodItem.name,
+        displayName: foodItem.displayName ?? foodItem.name,
+        displayNamePlural: foodItem.displayNamePlural ?? '${foodItem.name}s',
+        description: foodItem.description,
+        imageAddress: foodItem.imageAddress,
+        servingAmount: foodItem.servingAmount,
+        servingUnit: foodItem.servingUnit,
+        caloriesPerServing: foodItem.caloriesPerServing,
+        carbsPerServing: carbsPerServing ?? foodItem.carbsPerServing,
+        proteinPerServing: proteinPerServing ?? foodItem.proteinPerServing,
+        fatPerServing: fatPerServing ?? foodItem.fatPerServing,
+        sodiumMg: sodiumMg?.toInt() ?? foodItem.sodiumMg,
+        fluidMlPerServing: finalFluidAmount ?? foodItem.fluidMlPerServing,
+        productTypeId: productType ?? foodItem.productTypeId ?? 'import',
+        categories: categoryStrings,
+      );
+
+      // Save via crud service (offline-first)
+      await userFoodCrudService.saveUserFood(food, categoryIds);
+
+      // Refresh controller state and auto-select the food
+      await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
 
       // Reset quantity after selection
       setState(() {
         _selectedQuantity = 1.0;
       });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${foodItem.name} added!'),
+            backgroundColor: AppColors.electrolyte,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to import food: $e'),
+            content: Text('Failed to save food: $e'),
             backgroundColor: AppColors.dragonfruit,
           ),
         );
@@ -302,10 +508,14 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   Widget _buildContent(SwapFoodState state) {
+    final hasSelectedFood = state.selectedFood != null &&
+        state.searchQuery.isEmpty &&
+        state.openFoodFactsResults.isEmpty;
+
     return SafeArea(
       child: Column(
         children: [
-          // Search bar with barcode
+          // Search bar with barcode - always visible at top
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: FoodSearchBar(
@@ -319,22 +529,15 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
             ),
           ),
 
-          // Selected food card (when food is selected and no active search)
-          if (state.selectedFood != null && state.searchQuery.isEmpty && state.openFoodFactsResults.isEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: _buildSelectedFoodCard(state.selectedFood!),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-
-          // Content area (recommendations, search results, or OpenFoodFacts results)
+          // Main content area - uses Expanded to fill remaining space
           Expanded(
-            child: _buildContentArea(state),
+            child: hasSelectedFood
+                ? _buildSelectedFoodContent(state.selectedFood!)
+                : _buildContentArea(state),
           ),
 
           // Confirm button (only when food is selected and no active search)
-          if (state.selectedFood != null && state.searchQuery.isEmpty && state.openFoodFactsResults.isEmpty) ...[
+          if (hasSelectedFood) ...[
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: KylePrimaryButton(
@@ -353,7 +556,21 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     );
   }
 
+  /// Build scrollable content when a food is selected
+  /// This prevents keyboard overflow by making the selected food card scrollable
+  Widget _buildSelectedFoodContent(Food selectedFood) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: _buildSelectedFoodCard(selectedFood),
+    );
+  }
+
   Widget _buildContentArea(SwapFoodState state) {
+    // Show searching indicator when searching Open Food Facts
+    if (state.isSearchingOpenFoodFacts) {
+      return _buildSearchingIndicator();
+    }
+
     // OpenFoodFacts results take priority
     if (state.openFoodFactsResults.isNotEmpty) {
       return _buildOpenFoodFactsResults(state);
@@ -367,11 +584,35 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         onFoodSelected: _selectFood,
         preferences: state.preferences,
         title: _isSwapping ? 'Recommended Alternatives' : 'Recommended Foods',
+        userFoodIds: state.userFoodIds,
+        onEditUserFood: _showUserFoodEditSheet,
       );
     } else {
       // Show search results
       return _buildSearchResults(state);
     }
+  }
+
+  Widget _buildSearchingIndicator() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Searching food database...',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildSearchResults(SwapFoodState state) {
@@ -427,9 +668,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   Widget _buildFoodCard(Food food) {
+    final isUserFood = _isUserFood(food);
+
     return BaseCard(
       child: InkWell(
         onTap: () => _selectFood(food),
+        onLongPress: isUserFood ? () => _showUserFoodEditSheet(food) : null,
         borderRadius: AppRadius.cardRadius,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -469,19 +713,204 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                         ),
                       ),
                     ],
+                    // Show category badges for user foods
+                    if (isUserFood && food.categories.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      _buildCategoryBadges(food.categories),
+                    ],
                   ],
                 ),
               ),
-              Icon(
-                FontAwesomeIcons.circlePlus,
-                color: AppColors.orange,
-                size: AppIconSizes.md,
-              ),
+              // Show edit button for user foods, plus for others
+              if (isUserFood)
+                IconButton(
+                  icon: Icon(
+                    FontAwesomeIcons.penToSquare,
+                    color: AppColors.electrolyte.withValues(alpha: 0.7),
+                    size: AppIconSizes.sm,
+                  ),
+                  onPressed: () => _showUserFoodEditSheet(food),
+                  tooltip: 'Edit food',
+                )
+              else
+                Icon(
+                  FontAwesomeIcons.circlePlus,
+                  color: AppColors.orange,
+                  size: AppIconSizes.md,
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Check if a food is a user-imported food (not a system food)
+  /// Uses the userFoodIds set from the controller state for accurate detection
+  bool _isUserFood(Food food) {
+    // First try to use the userFoodIds from state for accurate detection
+    final controllerState = ref.read(swapFoodControllerProvider(_params));
+    if (controllerState.hasValue && controllerState.value!.userFoodIds.isNotEmpty) {
+      return controllerState.value!.userFoodIds.contains(food.id);
+    }
+
+    // Fallback to name-based heuristic if state not available
+    final name = food.name.toLowerCase();
+    final knownGenericFoods = [
+      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
+      'chocolate milk', 'coconut water', 'coffee', 'date',
+      'electrolyte drink', 'electrolyte tablet', 'energy bar',
+      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
+      'gel', 'oatmeal', 'orange juice', 'peanut butter',
+      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
+      'protein shake', 'salt packet', 'sports drink', 'toast',
+      'trail mix', 'water', 'yogurt',
+    ];
+    return !knownGenericFoods.any((keyword) => name.contains(keyword));
+  }
+
+  /// Build category badges for user foods
+  Widget _buildCategoryBadges(List<String> categories) {
+    return Wrap(
+      spacing: AppSpacing.xs,
+      runSpacing: AppSpacing.xs,
+      children: categories.map((category) {
+        final label = _categoryToLabel(category);
+        final color = _getCategoryColor(category);
+        return Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: 2,
+          ),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.5)),
+          ),
+          child: Text(
+            label,
+            style: AppTextStyles.smallLabel.copyWith(
+              color: color,
+              fontSize: 10,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  String _categoryToLabel(String category) {
+    switch (category) {
+      case 'before_run':
+        return 'Before';
+      case 'during_run':
+        return 'During';
+      case 'after_run':
+        return 'After';
+      default:
+        return category;
+    }
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'before_run':
+        return AppColors.electrolyte;
+      case 'during_run':
+        return AppColors.orange;
+      case 'after_run':
+        return AppColors.dragonfruit;
+      default:
+        return AppColors.cream;
+    }
+  }
+
+  /// Show the edit screen for a user food
+  Future<void> _showUserFoodEditSheet(Food food) async {
+    final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+
+    final result = await context.pushNamed<dynamic>(
+      'food-detail',
+      extra: {
+        'foodData': FoodDetailData.fromFood(food),
+        'mode': FoodDetailMode.editExisting,
+        'screenContext': FoodDetailContext.swapFood,
+        'showCategories': true,
+        'showProductType': true,
+        'allowDelete': true,
+      },
+    );
+
+    if (!mounted) return;
+
+    // Handle delete
+    if (result is String && result.startsWith('DELETE:')) {
+      final foodId = result.substring(7);
+      try {
+        await userFoodCrudService.deleteUserFood(foodId);
+        await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${food.name} deleted'),
+              backgroundColor: AppColors.electrolyte,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error deleting user food: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to delete food. Please try again.'),
+              backgroundColor: AppColors.dragonfruit,
+            ),
+          );
+        }
+      }
+    }
+    // Handle update
+    else if (result is FoodDetailResult) {
+      try {
+        await userFoodCrudService.updateUserFood(
+          foodId: result.foodId,
+          name: result.name,
+          displayName: result.name,
+          displayNamePlural: '${result.name}s',
+          servingAmount: result.servingAmount,
+          servingUnit: result.servingUnit,
+          carbsPerServing: result.carbsPerServing,
+          proteinPerServing: result.proteinPerServing,
+          fatPerServing: result.fatPerServing,
+          sodiumMg: result.sodiumMg,
+          fluidMlPerServing: result.fluidMlPerServing,
+          categoryIds: result.categoryIds,
+        );
+
+        // Refresh foods to reflect changes
+        await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${result.name} updated!'),
+              backgroundColor: AppColors.electrolyte,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error updating user food: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to update food. Please try again.'),
+              backgroundColor: AppColors.dragonfruit,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildOpenFoodFactsCard(dynamic result) {

@@ -9,7 +9,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/cards/base_card.dart';
 import '../../../../shared/widgets/kyle_design/inputs/text_field.dart';
-import '../../../../shared/widgets/scanned_food_category_sheet.dart';
+import '../../../../shared/screens/food_detail_screen.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../application/open_food_facts_search_service.dart';
@@ -133,29 +133,32 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       final food = await mappingService.mapToFood(apiProduct);
       final foodItem = _convertFoodToFoodItem(food);
 
-      // Show category selection sheet
+      // Navigate to food detail screen
       if (mounted) {
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => ScannedFoodCategorySheet(
-            scannedFood: foodItem,
-            context: 'add_food',
-            fluidMlPerServing: foodItem.fluidMlPerServing,
-            onSave: (categoryIds, finalFluidAmount, {carbsPerServing, proteinPerServing, fatPerServing, sodiumMg}) async {
-              await _saveSearchedFood(
-                foodItem,
-                categoryIds,
-                finalFluidAmount,
-                carbsPerServing: carbsPerServing,
-                proteinPerServing: proteinPerServing,
-                fatPerServing: fatPerServing,
-                sodiumMg: sodiumMg,
-              );
-            },
-          ),
+        final result = await context.pushNamed<dynamic>(
+          'food-detail',
+          extra: {
+            'foodData': FoodDetailData.fromFoodItem(foodItem),
+            'mode': FoodDetailMode.addFromSearch,
+            'screenContext': FoodDetailContext.addFood,
+            'showCategories': true,
+            'showProductType': true,
+            'allowDelete': false,
+          },
         );
+
+        if (result is FoodDetailResult && mounted) {
+          await _saveSearchedFood(
+            foodItem,
+            result.categoryIds,
+            result.fluidMlPerServing,
+            carbsPerServing: result.carbsPerServing,
+            proteinPerServing: result.proteinPerServing,
+            fatPerServing: result.fatPerServing,
+            sodiumMg: result.sodiumMg.toDouble(),
+            productType: result.productType,
+          );
+        }
       }
     } on ProductDetailException catch (e) {
       // Close loading dialog if still open
@@ -234,6 +237,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
     double? proteinPerServing,
     double? fatPerServing,
     double? sodiumMg,
+    String? productType,
   }) async {
     DebugLogger.info('🔄 _saveSearchedFood - Starting save process');
     DebugLogger.info('📊 _saveSearchedFood - Food: ${foodItem.name}');
@@ -298,6 +302,9 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         }
       }).toList();
 
+      // Use user-selected product type if provided, otherwise fall back to 'import'
+      final finalProductType = productType ?? foodItem.productTypeId ?? 'import';
+
       await database.saveUserFood(
         deviceId: deviceId,
         userId: deviceId,
@@ -317,7 +324,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         fatPerServing: fatPerServing ?? foodItem.fatPerServing,
         sodiumMg: sodiumMg?.toInt() ?? foodItem.sodiumMg,
         fluidMlPerServing: fluidMlPerServing ?? foodItem.fluidMlPerServing,
-        productTypeId: foodItem.productTypeId,
+        productTypeId: finalProductType,
         categories: categoryNames,  // Now using string array instead of int IDs
       );
 
@@ -368,31 +375,29 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       },
     );
 
-    // Handle scanned result
+    // Handle scanned result - FoodDetailScreen already handled category selection
+    // The result from barcode-scanner is now a Food with categories already set
     if (result != null && mounted) {
-      final scannedFood = result as FoodItem;
+      final scannedFood = result as Food;
+      final foodItem = _convertFoodToFoodItem(scannedFood);
 
-      // Show category selection sheet
-      await showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => ScannedFoodCategorySheet(
-          scannedFood: scannedFood,
-          context: 'add_food',
-          fluidMlPerServing: scannedFood.fluidMlPerServing,
-          onSave: (categoryIds, finalFluidAmount, {carbsPerServing, proteinPerServing, fatPerServing, sodiumMg}) async {
-            await _saveSearchedFood(
-              scannedFood,
-              categoryIds,
-              finalFluidAmount,
-              carbsPerServing: carbsPerServing,
-              proteinPerServing: proteinPerServing,
-              fatPerServing: fatPerServing,
-              sodiumMg: sodiumMg,
-            );
-          },
-        ),
+      // Save the food with the categories that were set in FoodDetailScreen
+      await _saveSearchedFood(
+        foodItem,
+        scannedFood.categories.map((cat) {
+          switch (cat) {
+            case 'before_run': return 1;
+            case 'during_run': return 2;
+            case 'after_run': return 3;
+            default: return 1;
+          }
+        }).toList(),
+        scannedFood.fluidMlPerServing,
+        carbsPerServing: scannedFood.carbsPerServing,
+        proteinPerServing: scannedFood.proteinPerServing,
+        fatPerServing: scannedFood.fatPerServing,
+        sodiumMg: scannedFood.sodiumMg?.toDouble(),
+        productType: scannedFood.productTypeId,
       );
     }
   }

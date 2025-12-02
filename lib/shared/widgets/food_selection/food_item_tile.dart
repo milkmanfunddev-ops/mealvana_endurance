@@ -18,6 +18,8 @@ class FoodItemTile extends StatelessWidget {
     this.isAvoided = false,
     this.showDeleteButton = false,
     this.onDelete,
+    this.showEditButton = false,
+    this.onEdit,
     this.likeLabel = 'Love',
     this.willingLabel = 'Willing to Try',
     this.dislikeLabel = 'Avoid',
@@ -31,6 +33,8 @@ class FoodItemTile extends StatelessWidget {
   final bool isAvoided;
   final bool showDeleteButton;
   final VoidCallback? onDelete;
+  final bool showEditButton;
+  final VoidCallback? onEdit;
   final String likeLabel;
   final String willingLabel;
   final String dislikeLabel;
@@ -119,6 +123,25 @@ class FoodItemTile extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // Edit button (for user foods)
+              if (showEditButton && onEdit != null) ...[
+                IconButton(
+                  onPressed: onEdit,
+                  icon: Icon(
+                    FontAwesomeIcons.penToSquare,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    size: AppIconSizes.sm,
+                  ),
+                  tooltip: 'Edit food',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
 
               // Action indicator
               Icon(

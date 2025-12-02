@@ -32,6 +32,7 @@ import '../../features/carb_loading/domain/meal_type.dart';
 import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
+import '../screens/food_detail_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
@@ -323,6 +324,30 @@ class AppRouter {
             category: extra?['category'] as String? ?? 'before_run',
             foodToSwapId: extra?['foodToSwapId'] as String?,
             foodToSwapName: extra?['foodToSwapName'] as String?,
+          );
+        },
+      ),
+
+      // Food Detail Screen - Unified screen for adding/editing foods
+      // Returns FoodDetailResult when saved, 'DELETE:foodId' when deleted, or null when cancelled
+      GoRoute(
+        path: '/food-detail',
+        name: 'food-detail',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          if (extra == null) {
+            return const Scaffold(
+              body: Center(child: Text('Missing food data')),
+            );
+          }
+          return FoodDetailScreen(
+            foodData: extra['foodData'] as FoodDetailData,
+            mode: extra['mode'] as FoodDetailMode,
+            screenContext: extra['screenContext'] as FoodDetailContext? ?? FoodDetailContext.addFood,
+            preSelectedCategories: extra['preSelectedCategories'] as List<int>?,
+            showCategories: extra['showCategories'] as bool? ?? true,
+            showProductType: extra['showProductType'] as bool? ?? true,
+            allowDelete: extra['allowDelete'] as bool? ?? false,
           );
         },
       ),

@@ -247,10 +247,15 @@ class LLMNutritionPlanService {
 
   /// Convert LLM response format to our NutritionPlan domain model
   /// Made public to allow reuse for algorithmic fallback responses
+  ///
+  /// [inputMacroTargets] - Optional MacroTargets from the Adjust Macros screen.
+  /// When provided, these values are used directly for section targets instead of
+  /// parsing from the edge function response (which may have field name mismatches).
   Future<NutritionPlan> convertLLMResponseToPlan(
     Map<String, dynamic> data,
     String userId, {
     int? activityId,
+    targets.MacroTargets? inputMacroTargets,
   }) async {
     final planData = data['plan'] as Map<String, dynamic>;
     final macroTargets = data['macro_targets'] as Map<String, dynamic>;
@@ -365,6 +370,31 @@ class LLMNutritionPlanService {
       },
     );
 
+    // Use inputMacroTargets directly when available (from Adjust Macros screen)
+    // This ensures the targets displayed match exactly what the user saw/edited
+    // Fall back to parsing from response only when inputMacroTargets is not provided
+    final preRunSodiumTarget = inputMacroTargets?.preRun.sodiumMg ??
+        (preRun['sodium_mg'] as num? ?? 200).toDouble();
+    final preRunFluidsTarget = inputMacroTargets?.preRun.fluidsMl ??
+        (preRun['water_ml'] as num? ?? 500).toDouble();
+    final preRunCarbsTarget = inputMacroTargets?.preRun.carbsG ?? preRunCarbs.toDouble();
+    final preRunProteinTarget = inputMacroTargets?.preRun.proteinG ?? preRunProtein.toDouble();
+    final preRunFatTarget = inputMacroTargets?.preRun.fatCapG ??
+        (preRun['fat_g'] as num? ?? 5).toDouble();
+
+    final duringRunSodiumTarget = inputMacroTargets?.duringRun.sodiumTotalMg ??
+        (duringRun['sodium_total_mg'] as num? ?? 250).toDouble();
+    final duringRunFluidsTarget = inputMacroTargets?.duringRun.fluidTotalMl ??
+        (duringRun['water_total_ml'] as num? ?? 600).toDouble();
+    final duringRunCarbsTarget = inputMacroTargets?.duringRun.carbTotalG ?? duringRunCarbs.toDouble();
+
+    final postRunSodiumTarget = inputMacroTargets?.postRun.sodiumMg ??
+        (postRun['sodium_mg'] as num? ?? 300).toDouble();
+    final postRunFluidsTarget = inputMacroTargets?.postRun.fluidsMl ??
+        (postRun['water_ml'] as num?)?.toDouble() ?? (duringRunFluidsTarget * 1.25);
+    final postRunCarbsTarget = inputMacroTargets?.postRun.carbsG ?? postRunCarbs.toDouble();
+    final postRunProteinTarget = inputMacroTargets?.postRun.proteinG ?? postRunProtein.toDouble();
+
     // Create the nutrition plan
     final plan = NutritionPlan(
       id: planId,
@@ -375,38 +405,38 @@ class LLMNutritionPlanService {
         PlanSection(
           id: 'before-run',
           title: 'Before Run',
-          subtitle: '${preRunCarbs}g carbs, ${preRunProtein}g protein, ${preRunSodium}g sodium',
+          subtitle: '${preRunCarbsTarget.round()}g carbs, ${preRunProteinTarget.round()}g protein, ${preRunSodiumTarget.round()}mg sodium',
           timing: 'Before',
           foodItems: beforeItems,
-          carbsTarget: preRunCarbs.toDouble(),
-          proteinTarget: preRunProtein.toDouble(),
-          fatTarget: (preRun['fat_total_g'] as num? ?? 5).toDouble(),
-          sodiumTarget: (preRun['sodium_total_mg'] as num? ?? 200).toDouble(),
-          fluidsTarget: (preRun['water_total_ml'] as num? ?? 500).toDouble(),
+          carbsTarget: preRunCarbsTarget,
+          proteinTarget: preRunProteinTarget,
+          fatTarget: preRunFatTarget,
+          sodiumTarget: preRunSodiumTarget,
+          fluidsTarget: preRunFluidsTarget,
         ),
         PlanSection(
           id: 'during-run',
           title: 'During Run',
-          subtitle: 'Total: ${duringRunCarbs}g carbs, ${(duringRun['water_total_ml'] as num? ?? 0).toInt()}ml fluids',
+          subtitle: 'Total: ${duringRunCarbsTarget.round()}g carbs, ${duringRunFluidsTarget.round()}ml fluids',
           timing: 'During',
           foodItems: duringItems,
-          carbsTarget: duringRunCarbs.toDouble(),
+          carbsTarget: duringRunCarbsTarget,
           proteinTarget: 0.0,
           fatTarget: 0.0,
-          sodiumTarget: (duringRun['sodium_total_mg'] as num? ?? 250).toDouble(),
-          fluidsTarget: (duringRun['water_total_ml'] as num? ?? 600).toDouble(),
+          sodiumTarget: duringRunSodiumTarget,
+          fluidsTarget: duringRunFluidsTarget,
         ),
         PlanSection(
           id: 'after-run',
           title: 'After Run',
-          subtitle: 'Recovery (${postRunCarbs}g carbs, ${postRunProtein}g protein)',
+          subtitle: 'Recovery (${postRunCarbsTarget.round()}g carbs, ${postRunProteinTarget.round()}g protein)',
           timing: 'Within 30min',
           foodItems: afterItems,
-          carbsTarget: postRunCarbs.toDouble(),
-          proteinTarget: postRunProtein.toDouble(),
-          fatTarget: (postRun['fat_total_g'] as num? ?? 10).toDouble(),
-          sodiumTarget: (postRun['sodium_total_mg'] as num? ?? 300).toDouble(),
-          fluidsTarget: ((duringRun['water_total_ml'] as num? ?? 600) * 1.25).toDouble(),
+          carbsTarget: postRunCarbsTarget,
+          proteinTarget: postRunProteinTarget,
+          fatTarget: (postRun['fat_g'] as num? ?? 10).toDouble(),
+          sodiumTarget: postRunSodiumTarget,
+          fluidsTarget: postRunFluidsTarget,
         ),
       ],
       macroTargets: PlanMacroSummary(
@@ -569,7 +599,13 @@ class LLMNutritionPlanService {
       final data = response.data as Map<String, dynamic>;
 
       // Convert the LLM response to our NutritionPlan format
-      final nutritionPlan = await convertLLMResponseToPlan(data, user.id, activityId: activityId);
+      // Pass the original macroTargets so section targets match exactly what user saw/edited
+      final nutritionPlan = await convertLLMResponseToPlan(
+        data,
+        user.id,
+        activityId: activityId,
+        inputMacroTargets: macroTargets,
+      );
 
       // Track success in Sentry
       _sentry.addBreadcrumb(

@@ -1,88 +1,162 @@
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
+/// Recording Sentry reporter for testing
+/// Captures all Sentry calls for verification in tests
+library;
 
-class RecordedException {
-  RecordedException(this.error, this.stackTrace, this.tags);
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+
+/// Exception record
+class ExceptionRecord {
+  const ExceptionRecord({
+    required this.error,
+    this.stackTrace,
+    this.context,
+    this.tags,
+  });
+
   final dynamic error;
   final StackTrace? stackTrace;
+  final String? context;
   final Map<String, String>? tags;
+
+  @override
+  String toString() => 'ExceptionRecord($error, context: $context)';
 }
 
-class RecordedBreadcrumb {
-  RecordedBreadcrumb(this.message, this.category, this.level, this.data);
+/// Breadcrumb record
+class BreadcrumbRecord {
+  const BreadcrumbRecord({
+    required this.message,
+    this.category,
+    this.level,
+    this.data,
+  });
+
   final String message;
   final String? category;
-  final SentryLevel level;
+  final SentryLevel? level;
   final Map<String, dynamic>? data;
+
+  @override
+  String toString() => 'BreadcrumbRecord($message, category: $category)';
 }
 
+/// User context record
+class UserContextRecord {
+  const UserContextRecord({
+    required this.deviceId,
+    this.appVersion,
+    this.onboardingCompleted,
+    this.gutTrainingLevel,
+  });
+
+  final String deviceId;
+  final String? appVersion;
+  final bool? onboardingCompleted;
+  final String? gutTrainingLevel;
+
+  @override
+  String toString() => 'UserContextRecord($deviceId)';
+}
+
+/// Message record
+class MessageRecord {
+  const MessageRecord({
+    required this.message,
+    this.level,
+    this.tags,
+  });
+
+  final String message;
+  final SentryLevel? level;
+  final Map<String, String>? tags;
+
+  @override
+  String toString() => 'MessageRecord($message, level: $level)';
+}
+
+/// Recording implementation of SentryReporter for testing
 class RecordingSentryReporter implements SentryReporter {
-  final List<RecordedException> criticalErrors = [];
-  final List<RecordedException> databaseErrors = [];
-  final List<RecordedException> edgeFunctionErrors = [];
-  final List<RecordedException> networkErrors = [];
-  final List<RecordedBreadcrumb> breadcrumbs = [];
-  final List<String> messages = [];
-  Map<String, String>? lastUserContext;
-  bool userCleared = false;
+  final List<ExceptionRecord> capturedExceptions = [];
+  final List<BreadcrumbRecord> breadcrumbs = [];
+  final List<UserContextRecord> userContexts = [];
+  final List<MessageRecord> messages = [];
+
+  bool _userContextCleared = false;
+  bool _enabled = true;
 
   @override
   Future<void> reportCriticalError(
-    error, {
+    dynamic error, {
     StackTrace? stackTrace,
     String? context,
     Map<String, String>? tags,
   }) async {
-    criticalErrors.add(RecordedException(error, stackTrace, {
-      if (context != null) 'context': context,
-      ...?tags,
-    }));
+    capturedExceptions.add(ExceptionRecord(
+      error: error,
+      stackTrace: stackTrace,
+      context: context,
+      tags: tags,
+    ));
   }
 
   @override
   Future<void> reportEdgeFunctionError(
     String functionName,
-    error, {
+    dynamic error, {
     Duration? responseTime,
     int? statusCode,
     StackTrace? stackTrace,
   }) async {
-    edgeFunctionErrors.add(RecordedException(error, stackTrace, {
-      'function_name': functionName,
-      if (responseTime != null)
-        'response_time_ms': responseTime.inMilliseconds.toString(),
-      if (statusCode != null) 'status_code': statusCode.toString(),
-    }));
+    capturedExceptions.add(ExceptionRecord(
+      error: error,
+      stackTrace: stackTrace,
+      context: 'edge_function',
+      tags: {
+        'function_name': functionName,
+        if (statusCode != null) 'status_code': statusCode.toString(),
+        if (responseTime != null) 'response_time_ms': responseTime.inMilliseconds.toString(),
+      },
+    ));
   }
 
   @override
   Future<void> reportDatabaseError(
-    error, {
+    dynamic error, {
     String? operation,
     String? table,
     StackTrace? stackTrace,
   }) async {
-    databaseErrors.add(RecordedException(error, stackTrace, {
-      if (operation != null) 'operation': operation,
-      if (table != null) 'table': table,
-    }));
+    capturedExceptions.add(ExceptionRecord(
+      error: error,
+      stackTrace: stackTrace,
+      context: 'database',
+      tags: {
+        if (operation != null) 'operation': operation,
+        if (table != null) 'table': table,
+      },
+    ));
   }
 
   @override
   Future<void> reportNetworkError(
-    error, {
+    dynamic error, {
     String? url,
     String? method,
     int? statusCode,
     Duration? timeout,
     StackTrace? stackTrace,
   }) async {
-    networkErrors.add(RecordedException(error, stackTrace, {
-      if (url != null) 'url': url,
-      if (method != null) 'method': method,
-      if (statusCode != null) 'status_code': statusCode.toString(),
-      if (timeout != null) 'timeout_ms': timeout.inMilliseconds.toString(),
-    }));
+    capturedExceptions.add(ExceptionRecord(
+      error: error,
+      stackTrace: stackTrace,
+      context: 'network',
+      tags: {
+        if (url != null) 'url': url,
+        if (method != null) 'method': method,
+        if (statusCode != null) 'status_code': statusCode.toString(),
+      },
+    ));
   }
 
   @override
@@ -92,19 +166,17 @@ class RecordingSentryReporter implements SentryReporter {
     bool? onboardingCompleted,
     String? gutTrainingLevel,
   }) async {
-    lastUserContext = {
-      'device_id': deviceId,
-      if (appVersion != null) 'app_version': appVersion,
-      if (onboardingCompleted != null)
-        'onboarding_completed': onboardingCompleted.toString(),
-      if (gutTrainingLevel != null) 'gut_training': gutTrainingLevel,
-    };
+    userContexts.add(UserContextRecord(
+      deviceId: deviceId,
+      appVersion: appVersion,
+      onboardingCompleted: onboardingCompleted,
+      gutTrainingLevel: gutTrainingLevel,
+    ));
   }
 
   @override
   Future<void> clearUserContext() async {
-    userCleared = true;
-    lastUserContext = null;
+    _userContextCleared = true;
   }
 
   @override
@@ -114,7 +186,12 @@ class RecordingSentryReporter implements SentryReporter {
     SentryLevel level = SentryLevel.info,
     Map<String, dynamic>? data,
   }) {
-    breadcrumbs.add(RecordedBreadcrumb(message, category, level, data));
+    breadcrumbs.add(BreadcrumbRecord(
+      message: message,
+      category: category,
+      level: level,
+      data: data,
+    ));
   }
 
   @override
@@ -123,9 +200,44 @@ class RecordingSentryReporter implements SentryReporter {
     SentryLevel level = SentryLevel.info,
     Map<String, String>? tags,
   }) async {
-    messages.add(message);
+    messages.add(MessageRecord(
+      message: message,
+      level: level,
+      tags: tags,
+    ));
   }
 
   @override
-  bool get isEnabled => true;
+  bool get isEnabled => _enabled;
+
+  // Test helpers
+  bool get wasUserContextCleared => _userContextCleared;
+
+  ExceptionRecord? get lastException =>
+      capturedExceptions.isNotEmpty ? capturedExceptions.last : null;
+
+  BreadcrumbRecord? get lastBreadcrumb =>
+      breadcrumbs.isNotEmpty ? breadcrumbs.last : null;
+
+  UserContextRecord? get lastUserContext =>
+      userContexts.isNotEmpty ? userContexts.last : null;
+
+  /// Find breadcrumbs by category
+  List<BreadcrumbRecord> findBreadcrumbs(String category) {
+    return breadcrumbs.where((b) => b.category == category).toList();
+  }
+
+  /// Check if a breadcrumb was added
+  bool hasBreadcrumb(String message) {
+    return breadcrumbs.any((b) => b.message == message);
+  }
+
+  /// Clear all recorded data (for test cleanup)
+  void clear() {
+    capturedExceptions.clear();
+    breadcrumbs.clear();
+    userContexts.clear();
+    messages.clear();
+    _userContextCleared = false;
+  }
 }
