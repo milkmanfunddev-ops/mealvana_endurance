@@ -14,6 +14,8 @@ class AppConfig {
     required this.sentryEnvironment,
     required this.mixpanelProjectToken,
     required this.usdaApiKey,
+    required this.wiredashProjectId,
+    required this.wiredashSecret,
     required this.devModeEnabled,
     required this.appEnvironment,
     this.enableDebugLogging = false,
@@ -32,6 +34,10 @@ class AppConfig {
 
   // Analytics configuration
   final String mixpanelProjectToken;
+
+  // Wiredash (User Feedback) configuration
+  final String wiredashProjectId;
+  final String wiredashSecret;
 
   // External API keys
   final String usdaApiKey;
@@ -141,6 +147,16 @@ class AppConfig {
             : 'bd8fe50bb67b1dd0860351e6297347db', // Prod token
       ),
 
+      // Wiredash (User Feedback) configuration
+      wiredashProjectId: dotenv.get(
+        'WIREDASH_PROJECT_ID',
+        fallback: 'mealvana-endurance-vn1pxw3',
+      ),
+      wiredashSecret: dotenv.get(
+        'WIREDASH_SECRET',
+        fallback: 'wuQrGN_DMojjIopfhEblvMpU53FSChuD',
+      ),
+
       // External API keys
       usdaApiKey: dotenv.get(
         'USDA_API_KEY',
@@ -163,6 +179,8 @@ class AppConfig {
     String? sentryDsn,
     String? sentryEnvironment,
     String? mixpanelToken,
+    String? wiredashProjectId,
+    String? wiredashSecret,
     String? usdaApiKey,
     bool devModeEnabled = true,
     String appEnvironment = 'dev',
@@ -177,6 +195,8 @@ class AppConfig {
       sentryDsn: sentryDsn ?? 'https://test-sentry-dsn@test.ingest.sentry.io/test',
       sentryEnvironment: sentryEnvironment ?? 'test',
       mixpanelProjectToken: mixpanelToken ?? 'test-mixpanel-token',
+      wiredashProjectId: wiredashProjectId ?? 'test-wiredash-project',
+      wiredashSecret: wiredashSecret ?? 'test-wiredash-secret',
       usdaApiKey: usdaApiKey ?? 'test-usda-api-key',
       devModeEnabled: devModeEnabled,
       appEnvironment: appEnvironment,

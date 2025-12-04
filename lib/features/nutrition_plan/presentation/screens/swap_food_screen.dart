@@ -124,6 +124,29 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
     if (result != null && mounted) {
       final food = result as Food;
+
+      // Convert category strings to category IDs for saving
+      final categoryIds = food.categories.map((cat) {
+        switch (cat) {
+          case 'before_run':
+            return 1;
+          case 'during_run':
+            return 2;
+          case 'after_run':
+            return 3;
+          default:
+            return 1;
+        }
+      }).toList();
+
+      // Save to user_foods table (offline-first) - same as Open Food Facts flow
+      final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+      await userFoodCrudService.saveUserFood(food, categoryIds);
+
+      // Refresh controller state to include the newly saved food
+      await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
+
+      // Select the food and clear search
       ref.read(swapFoodControllerProvider(_params).notifier).selectFood(food);
       _searchController.clear();
       _onSearchChanged('');

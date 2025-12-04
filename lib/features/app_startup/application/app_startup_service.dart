@@ -131,6 +131,9 @@ class AppStartupService {
     return 'device_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (999 * DateTime.now().millisecond)).toString()}';
   }
 
+  /// Track auth state listener subscription to prevent duplicates
+  StreamSubscription<AuthState>? _authStateSubscription;
+
   /// Initialize Supabase Anonymous Authentication
   /// Creates or restores an anonymous auth session for the user
   /// This is the foundation for all Supabase Auth-based operations
@@ -149,41 +152,34 @@ class AppStartupService {
           },
         );
 
-        // Setup auth state listener for OAuth callbacks
-        setupAuthStateListener();
+        // Don't return early - setup listener in finally block
+      } else {
+        // No existing session - create anonymous user
+        final response = await _supabase.auth.signInAnonymously();
 
-        return;
+        if (response.session == null || response.user == null) {
+          throw Exception('Failed to create anonymous session - null response');
+        }
+
+        // Track anonymous user creation
+        await _analytics.track(
+          'anonymous_auth_created',
+          properties: {
+            'user_id': response.user!.id,
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        );
+
+        // Add Sentry breadcrumb for tracking
+        _sentry.addBreadcrumb(
+          message: 'Anonymous Supabase user created',
+          category: 'auth',
+          data: {
+            'user_id': response.user!.id,
+            'auth_provider': 'anonymous',
+          },
+        );
       }
-
-      // No existing session - create anonymous user
-      final response = await _supabase.auth.signInAnonymously();
-
-      if (response.session == null || response.user == null) {
-        throw Exception('Failed to create anonymous session - null response');
-      }
-
-      // Track anonymous user creation
-      await _analytics.track(
-        'anonymous_auth_created',
-        properties: {
-          'user_id': response.user!.id,
-          'timestamp': DateTime.now().toIso8601String(),
-        },
-      );
-
-      // Add Sentry breadcrumb for tracking
-      _sentry.addBreadcrumb(
-        message: 'Anonymous Supabase user created',
-        category: 'auth',
-        data: {
-          'user_id': response.user!.id,
-          'auth_provider': 'anonymous',
-        },
-      );
-
-      // Setup auth state listener for OAuth callbacks
-      setupAuthStateListener();
-
     } catch (e, stackTrace) {
       _logger.error(
         'Supabase Auth initialization failed',
@@ -206,6 +202,10 @@ class AppStartupService {
       // Re-throw to trigger error handling in AppStartupWidget
       // User will see error screen with retry option
       rethrow;
+    } finally {
+      // Setup auth state listener ONCE, regardless of path taken
+      // This prevents duplicate listeners that cause race conditions
+      setupAuthStateListener();
     }
   }
 
@@ -214,8 +214,14 @@ class AppStartupService {
   ///
   /// Note: With native OAuth, account linking completes synchronously
   /// within OAuthService methods, so we no longer need OAuth callbacks here
+  ///
+  /// IMPORTANT: This listener is now NON-BLOCKING to prevent race conditions
+  /// during navigation. Heavy operations are deferred to background.
   void setupAuthStateListener() {
-    _supabase.auth.onAuthStateChange.listen((data) async {
+    // Cancel existing subscription to prevent duplicates
+    _authStateSubscription?.cancel();
+
+    _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
       final session = data.session;
 
@@ -288,43 +294,54 @@ class AppStartupService {
         }
       }
 
-      // Handle sign-in events
+      // Handle sign-in events - NON-BLOCKING to prevent navigation hangs
       if (event == AuthChangeEvent.signedIn) {
         final userId = session?.user.id;
 
-        // Sync user profile from Supabase to local DB if needed
-        // This handles the case where a user logs in on a new device
-        // or switches accounts
         if (userId != null) {
-           try {
-             // Fetch fresh profile from Supabase and save to local DB
-             // This is critical when switching from anonymous to existing account
-             final userRepo = await ref.read(userRepositoryProvider.future);
-            await userRepo.fetchAndSaveRemoteProfile(userId);
-            await userRepo.fetchAndCacheRemoteFoodPreferences(userId);
-            await userRepo.syncUserFoodsFromSupabase(userId);
+          // Only invalidate the identity provider immediately
+          // This allows navigation to proceed without waiting for data sync
+          ref.invalidate(userIdProvider);
 
-            // Force providers that depend on the cached user to refresh immediately.
-            ref.invalidate(userIdProvider);
-            ref.invalidate(activitiesControllerProvider);
-            ref.invalidate(allEventsProvider);
-            ref.invalidate(nextUpcomingEventProvider);
-           } catch (e) {
-             _logger.error('Failed to sync remote profile on sign in', context: 'AUTH', error: e);
-           }
-
-           // Invalidate settings controller to refresh UI immediately
-           ref.invalidate(settingsControllerProvider);
-
-          // Trigger a data sync for the new user in the background
-          unawaited(syncAllAppData().then((_) {
-            ref.invalidate(activitiesControllerProvider);
-            ref.invalidate(allEventsProvider);
-            ref.invalidate(nextUpcomingEventProvider);
-          }));
+          // Defer ALL heavy operations to background
+          // This prevents race conditions during navigation in release mode
+          unawaited(_performPostAuthSync(userId));
         }
       }
     });
+  }
+
+  /// Perform post-authentication sync operations in the background
+  /// This runs AFTER navigation completes to prevent race conditions
+  Future<void> _performPostAuthSync(String userId) async {
+    try {
+      final userRepo = await ref.read(userRepositoryProvider.future);
+
+      // Run ALL network calls in PARALLEL for faster sync (~500ms vs 1.5s)
+      // These are independent operations that don't depend on each other
+      await Future.wait([
+        userRepo.fetchAndSaveRemoteProfile(userId),
+        userRepo.fetchAndCacheRemoteFoodPreferences(userId),
+        userRepo.syncUserFoodsFromSupabase(userId),
+      ]);
+
+      // Only invalidate providers AFTER data is loaded
+      // This triggers clean rebuilds with fresh data (no race conditions)
+      ref.invalidate(activitiesControllerProvider);
+      ref.invalidate(allEventsProvider);
+      ref.invalidate(nextUpcomingEventProvider);
+      ref.invalidate(settingsControllerProvider);
+
+    } catch (e) {
+      _logger.error('Failed to sync remote profile on sign in', context: 'AUTH', error: e);
+    }
+
+    // Background sync for other data (activities, events, etc.)
+    unawaited(syncAllAppData().then((_) {
+      ref.invalidate(activitiesControllerProvider);
+      ref.invalidate(allEventsProvider);
+      ref.invalidate(nextUpcomingEventProvider);
+    }));
   }
 
   /// Check if user has existing session and restore it

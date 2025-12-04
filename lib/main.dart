@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -9,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'shared/services/app_config.dart';
 import 'shared/widgets/root_app_widget.dart';
-import 'shared/widgets/kyle_design/kyle_design.dart';
 
 /// Global navigator key for Sentry feedback widget screenshot capture
 /// This key is used by SentryFeedbackWidget to navigate and capture screenshots
@@ -116,58 +114,17 @@ Future<void> _runMealvanaApp(AppConfig config) async {
 
   // Entry point following Andrea Bizzotto's pattern with runZonedGuarded pattern
   // Widget hierarchy:
-  // 1. BetterFeedback - Enables screenshot annotation for bug reports
-  // 2. SentryWidget - Wraps app to enable screenshot capture and session replay
-  // 3. ProviderScope - Riverpod state management
-  // 4. RootAppWidget - MaterialApp.router with AppStartupWidget
-  // Drawing colors for feedback annotations (same for both themes)
-  final feedbackDrawColors = [
-    AppColors.dragonfruit,  // Red/Pink - for highlighting issues
-    AppColors.electrolyte,  // Teal - for success areas
-    Colors.blue,            // Blue - for info
-    Colors.yellow,          // Yellow - for warnings
-  ];
-
+  // 1. SentryWidget - Wraps app to enable screenshot capture and session replay
+  // 2. ProviderScope - Riverpod state management
+  // 3. RootAppWidget - MaterialApp.router with Wiredash and AppStartupWidget
   runApp(
-    BetterFeedback(
-      // Use system theme mode to match app's light/dark setting
-      themeMode: ThemeMode.system,
-      // Light theme for feedback UI
-      theme: FeedbackThemeData(
-        background: Colors.black54,
-        feedbackSheetColor: AppColors.cream,
-        bottomSheetDescriptionStyle: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textLight,
-        ),
-        bottomSheetTextInputStyle: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textLight,
-        ),
-        activeFeedbackModeColor: AppColors.electrolyte,
-        drawColors: feedbackDrawColors,
-        brightness: Brightness.light,
-      ),
-      // Dark theme for feedback UI
-      darkTheme: FeedbackThemeData(
-        background: Colors.black87,
-        feedbackSheetColor: AppColors.surfaceDark,
-        bottomSheetDescriptionStyle: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textDark,
-        ),
-        bottomSheetTextInputStyle: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textDark,
-        ),
-        activeFeedbackModeColor: AppColors.electrolyte,
-        drawColors: feedbackDrawColors,
-        brightness: Brightness.dark,
-      ),
-      child: SentryWidget(
-        child: ProviderScope(
-          overrides: [
-            // Override appConfigProvider with loaded config
-            appConfigProvider.overrideWithValue(config),
-          ],
-          child: const RootAppWidget(),
-        ),
+    SentryWidget(
+      child: ProviderScope(
+        overrides: [
+          // Override appConfigProvider with loaded config
+          appConfigProvider.overrideWithValue(config),
+        ],
+        child: const RootAppWidget(),
       ),
     ),
   );

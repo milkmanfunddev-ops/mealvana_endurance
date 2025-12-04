@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:mealvana_endurance/features/events/presentation/screens/event_form_screen.dart';
 import '../../domain/event.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
-import '../screens/events_list_screen.dart';
 import '../screens/event_detail_screen.dart';
 
 /// Upcoming event card widget matching Kyle's design
@@ -55,12 +54,26 @@ class UpcomingEventCardKyle extends ConsumerWidget {
           ),
         ),
         child: InkWell(
-          onTap: () {
-            Navigator.of(context).push(
+          onTap: () async {
+            final result = await Navigator.of(context).push<Map<String, dynamic>>(
               MaterialPageRoute(
-                builder: (context) => const EventFormScreen(), // Now uses new PublicEventsService
+                builder: (context) => const EventFormScreen(),
               ),
             );
+
+            // Navigate to event detail screen if event was created successfully
+            if (result != null && result['success'] == true) {
+              final createdEventId = result['eventId'];
+              if (createdEventId is int && context.mounted) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => EventDetailScreen(
+                      eventId: createdEventId,
+                    ),
+                  ),
+                );
+              }
+            }
           },
           borderRadius: BorderRadius.circular(15),
           child: Padding(

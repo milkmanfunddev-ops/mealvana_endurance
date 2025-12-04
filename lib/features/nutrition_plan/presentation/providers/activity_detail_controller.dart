@@ -163,20 +163,19 @@ class ActivityDetailController extends _$ActivityDetailController {
         final deviceId = user.id;
         final activity = currentState.activity!;
 
-        // Update activity with any changes (e.g., scheduled date/time)
+        // CRITICAL FIX: Always include the current nutrition plan data when saving
+        // The state's nutritionPlan may have been updated (e.g., by food swaps) but
+        // the activity object still has the old nutritionPlanData from when it was loaded.
+        // We must use the current nutritionPlan from state to avoid overwriting changes.
         final updatedActivity = activity.copyWith(
           scheduledDateTime: currentState.scheduledDateTime,
+          nutritionPlanData: currentState.nutritionPlan?.toJson(),
         );
 
         await _activitiesService.updateActivity(
           deviceId: deviceId,
           activity: updatedActivity,
         );
-
-        // Save nutrition plan if modified
-        if (currentState.hasUnsavedChanges && currentState.nutritionPlan != null) {
-          await _saveNutritionPlanToActivity(activity.id, currentState.nutritionPlan!);
-        }
 
         return currentState.copyWith(
           isSaving: false,
