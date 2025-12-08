@@ -109,6 +109,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     if (widget.activityId != null || widget.eventId != null) {
       DebugLogger.info('🔗 NEW ACTIVITY: Linked to activityId: ${widget.activityId}, eventId: ${widget.eventId}');
     }
+
+    // Trigger location fetch for the active sport tab
+    // This is done via coordinator to ensure only ONE controller fetches at a time
+    coordinator.fetchLocationForActiveTab();
   }
 
   @override

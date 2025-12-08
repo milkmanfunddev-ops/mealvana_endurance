@@ -111,20 +111,22 @@ class CyclingInputController extends _$CyclingInputController {
       selectedTime: const TimeOfDay(hour: 7, minute: 0),
     );
 
-    // Auto-fetch location and weather on first build
-    Future.microtask(() async {
-      // Always fetch location and weather on first build
-      if (!state.isLoadingLocation && !state.isLoadingWeather) {
-        if (state.location == null) {
-          await fetchCurrentLocation();
-        } else {
-          // Location exists, just fetch weather for today
-          await fetchWeatherForecast();
-        }
-      }
-    });
+    // NOTE: Location fetching is now triggered explicitly when this tab becomes active
+    // or when user opens the screen. This prevents race conditions where multiple
+    // controllers try to request location permissions simultaneously.
+    // See: fetchLocationIfNeeded() method
 
     return initialState;
+  }
+
+  /// Fetch location if this controller needs it and doesn't already have it.
+  /// Called when this sport tab becomes active or the screen initializes.
+  Future<void> fetchLocationIfNeeded() async {
+    if (!state.isLoadingLocation && !state.isLoadingWeather && state.location == null) {
+      await fetchCurrentLocation();
+    } else if (state.location != null && state.weatherForecast == null) {
+      await fetchWeatherForecast();
+    }
   }
 
   /// Initialize with specific date if needed (called from screen's initState)

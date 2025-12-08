@@ -45,6 +45,28 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
 
     state = state.copyWith(selectedTab: tab);
     DebugLogger.info('✅ COORDINATOR: Sport tab switched, cached macros cleared');
+
+    // Trigger location fetch for the newly selected sport
+    fetchLocationForActiveTab();
+  }
+
+  /// Fetch location for the currently active sport tab.
+  /// This ensures only ONE controller requests location at a time,
+  /// preventing race conditions with the geolocator.
+  Future<void> fetchLocationForActiveTab() async {
+    DebugLogger.info('📍 COORDINATOR: Fetching location for ${state.selectedTab.name} tab');
+
+    switch (state.selectedTab) {
+      case SportTab.running:
+        await ref.read(runningInputControllerProvider.notifier).fetchLocationIfNeeded();
+        break;
+      case SportTab.cycling:
+        await ref.read(cyclingInputControllerProvider.notifier).fetchLocationIfNeeded();
+        break;
+      case SportTab.swimming:
+        await ref.read(swimmingInputControllerProvider.notifier).fetchLocationIfNeeded();
+        break;
+    }
   }
 
   /// Update date and time (propagates to all sport controllers)
