@@ -138,6 +138,10 @@ class AppRouter {
           final extra = state.extra as Map<String, dynamic>?;
           return NewActivityScreen(
             initialDate: extra?['initialDate'] as DateTime?,
+            initialDistance: extra?['distance'] as double?,
+            initialPace: extra?['goalPace'] as double?,
+            activityId: extra?['activityId'] as int?,
+            eventId: extra?['eventId'] as int?,
           );
         },
       ),
@@ -151,6 +155,10 @@ class AppRouter {
           final extra = state.extra as Map<String, dynamic>?;
           return NewActivityScreen(
             initialDate: extra?['initialDate'] as DateTime?,
+            initialDistance: extra?['distance'] as double?,
+            initialPace: extra?['goalPace'] as double?,
+            activityId: extra?['activityId'] as int?,
+            eventId: extra?['eventId'] as int?,
           );
         },
       ),

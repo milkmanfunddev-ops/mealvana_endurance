@@ -7,6 +7,7 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../providers/new_activity_coordinator.dart';
+import '../providers/running_input_controller.dart';
 import '../widgets/new_activity/shared/sport_selector.dart';
 import '../widgets/new_activity/running_tab_content.dart';
 import '../widgets/new_activity/cycling_tab_content.dart';
@@ -26,19 +27,90 @@ import '../../../../shared/widgets/app_date_picker.dart';
 /// - All sport-specific fields in single scroll
 /// - Forecast link that navigates to weather screen
 /// - Generate button at bottom
+///
+/// Event Integration:
+/// When navigating from an event (e.g., marathon), this screen receives:
+/// - initialDate: The event date
+/// - initialDistance: Race distance from event subtype (e.g., 26.2 for marathon)
+/// - initialPace: Goal pace from event settings
+/// - activityId: Existing activity ID if already created
+/// - eventId: Event ID for linking nutrition plan back to event
 class NewActivityScreen extends ConsumerStatefulWidget {
   const NewActivityScreen({
     super.key,
     this.initialDate,
+    this.initialDistance,
+    this.initialPace,
+    this.activityId,
+    this.eventId,
   });
 
   final DateTime? initialDate;
+  final double? initialDistance;
+  final double? initialPace;
+  final int? activityId;
+  final int? eventId;
 
   @override
   ConsumerState<NewActivityScreen> createState() => _NewActivityScreenState();
 }
 
 class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize controllers with event data after first frame
+    // Using microtask to avoid modifying providers during build
+    Future.microtask(() {
+      _initializeFromEventData();
+    });
+  }
+
+  /// Initialize form controllers with data from event navigation
+  ///
+  /// When coming from an event (e.g., marathon race day), pre-populate:
+  /// - Date/time from event date
+  /// - Distance from event subtype (e.g., 26.2 miles for marathon)
+  /// - Pace from event goal pace
+  void _initializeFromEventData() {
+    final coordinator = ref.read(newActivityCoordinatorProvider.notifier);
+    final coordinatorState = ref.read(newActivityCoordinatorProvider);
+
+    // Check if coordinator has default date (today) - only override if it's the default
+    final now = DateTime.now();
+    final isDefaultDate = coordinatorState.selectedDate.year == now.year &&
+        coordinatorState.selectedDate.month == now.month &&
+        coordinatorState.selectedDate.day == now.day;
+
+    // Initialize date/time from event
+    if (widget.initialDate != null && isDefaultDate) {
+      DebugLogger.info('🗓️ NEW ACTIVITY: Initializing date from event: ${widget.initialDate}');
+      coordinator.updateDateTime(
+        widget.initialDate!,
+        TimeOfDay.fromDateTime(widget.initialDate!),
+      );
+    }
+
+    // Initialize running controller with event distance and pace
+    // (Currently defaulting to running for events - can be extended for multi-sport)
+    final runningController = ref.read(runningInputControllerProvider.notifier);
+
+    if (widget.initialDistance != null) {
+      DebugLogger.info('📏 NEW ACTIVITY: Initializing distance from event: ${widget.initialDistance} miles');
+      runningController.updateDistance(widget.initialDistance!);
+    }
+
+    if (widget.initialPace != null) {
+      DebugLogger.info('⏱️ NEW ACTIVITY: Initializing pace from event: ${widget.initialPace} min/mile');
+      runningController.updatePace(widget.initialPace!);
+    }
+
+    if (widget.activityId != null || widget.eventId != null) {
+      DebugLogger.info('🔗 NEW ACTIVITY: Linked to activityId: ${widget.activityId}, eventId: ${widget.eventId}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final coordinatorState = ref.watch(newActivityCoordinatorProvider);
@@ -287,7 +359,11 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
             : () async {
                 try {
                   DebugLogger.info('🎯 NEW ACTIVITY: Starting macro generation from UI...');
-                  await coordinator.generateMacros();
+                  DebugLogger.info('🔗 NEW ACTIVITY: activityId=${widget.activityId}, eventId=${widget.eventId}');
+                  await coordinator.generateMacros(
+                    activityId: widget.activityId,
+                    eventId: widget.eventId,
+                  );
                   DebugLogger.info('✅ NEW ACTIVITY: Coordinator generateMacros completed');
 
                   // Coordinator now waits for state to update - no need for manual checks
