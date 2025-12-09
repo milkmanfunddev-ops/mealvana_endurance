@@ -56,9 +56,9 @@ class HelpFeedbackScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
 
           // Help section
-          _buildHelpSection(context, ref),
+          // _buildHelpSection(context, ref),
 
-          const SizedBox(height: AppSpacing.lg),
+          // const SizedBox(height: AppSpacing.lg),
 
           // Contact section
           _buildContactSection(context, ref),
@@ -112,53 +112,53 @@ class HelpFeedbackScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Help Center',
-            style: AppTextStyles.subtitle.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+          // Text(
+          //   'Help Center',
+          //   style: AppTextStyles.subtitle.copyWith(
+          //     color: Theme.of(context).colorScheme.onSurface,
+          //   ),
+          // ),
 
-          const SizedBox(height: AppSpacing.md),
+          // const SizedBox(height: AppSpacing.md),
 
           // Help options
-          _buildHelpOption(
-            context: context,
-            icon: FontAwesomeIcons.book,
-            title: 'Getting Started Guide',
-            subtitle: 'Learn the basics of Mealvana Endurance',
-            onTap: () => _openGettingStarted(context, ref),
-          ),
+          // _buildHelpOption(
+          //   context: context,
+          //   icon: FontAwesomeIcons.book,
+          //   title: 'Getting Started Guide',
+          //   subtitle: 'Learn the basics of Mealvana Endurance',
+          //   onTap: () => _openGettingStarted(context, ref),
+          // ),
 
-          const SizedBox(height: AppSpacing.sm),
+          // const SizedBox(height: AppSpacing.sm),
 
-          _buildHelpOption(
-            context: context,
-            icon: FontAwesomeIcons.personRunning,
-            title: 'Sport Training Tips',
-            subtitle: 'Improve your endurance performance',
-            onTap: () => _openTrainingTips(context, ref),
-          ),
+          // _buildHelpOption(
+          //   context: context,
+          //   icon: FontAwesomeIcons.personRunning,
+          //   title: 'Sport Training Tips',
+          //   subtitle: 'Improve your endurance performance',
+          //   onTap: () => _openTrainingTips(context, ref),
+          // ),
 
-          const SizedBox(height: AppSpacing.sm),
+          // const SizedBox(height: AppSpacing.sm),
 
-          _buildHelpOption(
-            context: context,
-            icon: FontAwesomeIcons.utensils,
-            title: 'Nutrition Guide',
-            subtitle: 'Fueling strategies and meal planning',
-            onTap: () => _openNutritionGuide(context, ref),
-          ),
+          // _buildHelpOption(
+          //   context: context,
+          //   icon: FontAwesomeIcons.utensils,
+          //   title: 'Nutrition Guide',
+          //   subtitle: 'Fueling strategies and meal planning',
+          //   onTap: () => _openNutritionGuide(context, ref),
+          // ),
 
-          const SizedBox(height: AppSpacing.sm),
+          // const SizedBox(height: AppSpacing.sm),
 
-          _buildHelpOption(
-            context: context,
-            icon: FontAwesomeIcons.circleQuestion,
-            title: 'FAQs',
-            subtitle: 'Frequently asked questions',
-            onTap: () => _openFAQs(context, ref),
-          ),
+          // _buildHelpOption(
+          //   context: context,
+          //   icon: FontAwesomeIcons.circleQuestion,
+          //   title: 'FAQs',
+          //   subtitle: 'Frequently asked questions',
+          //   onTap: () => _openFAQs(context, ref),
+          // ),
         ],
       ),
     );
@@ -193,19 +193,19 @@ class HelpFeedbackScreen extends ConsumerWidget {
             context: context,
             icon: FontAwesomeIcons.globe,
             title: 'Website',
-            subtitle: 'www.mealvana.io',
+            subtitle: 'endurance.mealvana.io',
             onTap: () => _openWebsite(context, ref),
           ),
 
-          const SizedBox(height: AppSpacing.sm),
+          // const SizedBox(height: AppSpacing.sm),
 
-          _buildContactOption(
-            context: context,
-            icon: FontAwesomeIcons.shareNodes,
-            title: 'Community Forum',
-            subtitle: 'Connect with other athletes',
-            onTap: () => _openForum(context, ref),
-          ),
+          // _buildContactOption(
+          //   context: context,
+          //   icon: FontAwesomeIcons.shareNodes,
+          //   title: 'Community Forum',
+          //   subtitle: 'Connect with other athletes',
+          //   onTap: () => _openForum(context, ref),
+          // ),
         ],
       ),
     );
@@ -597,7 +597,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
     final analytics = ref.read(appExternalDepsProvider);
     analytics.analytics.track('help_website_tapped');
 
-    final websiteUri = Uri.parse('https://www.mealvana.io');
+    final websiteUri = Uri.parse('https://endurance.mealvana.io');
 
     if (await canLaunchUrl(websiteUri)) {
       await launchUrl(websiteUri);

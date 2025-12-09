@@ -66,16 +66,16 @@ class RunningTabContent extends ConsumerWidget {
                 value: formState.preRunMinutes,
                 onChanged: controller.updatePreRunMinutes,
               ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Optimal timing: Balanced meal with carbs and protein',
-                style: AppTextStyles.smallLabel.copyWith(
-                  color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
-                  fontSize: 11,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.left,
-              ),
+              // const SizedBox(height: AppSpacing.xs),
+              // Text(
+              //   'Optimal timing: Balanced meal with carbs and protein',
+              //   style: AppTextStyles.smallLabel.copyWith(
+              //     color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
+              //     fontSize: 11,
+              //     fontStyle: FontStyle.italic,
+              //   ),
+              //   textAlign: TextAlign.left,
+              // ),
             ],
           ),
 
@@ -352,7 +352,7 @@ class _TimeBeforeRunControl extends StatelessWidget {
 
     if (remainingMinutes == 0) {
       // Exactly on the hour - show as optimal
-      return '$hours ${hours == 1 ? 'HOUR' : 'HOURS'} (OPTIMAL)';
+      return '$hours ${hours == 1 ? 'HOUR' : 'HOURS'}';
     } else {
       // Show both hours and minutes
       return '$hours ${hours == 1 ? 'HOUR' : 'HOURS'} $remainingMinutes MIN';

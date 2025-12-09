@@ -15,11 +15,15 @@ final GlobalKey<NavigatorState> sentryNavigatorKey = GlobalKey<NavigatorState>()
 
 Future<void> main() async {
   runZonedGuarded(() async {
+    final mainStopwatch = Stopwatch()..start();
+
     // Initialize widgets binding for Sentry frame tracking BEFORE Sentry init
     SentryWidgetsFlutterBinding.ensureInitialized();
+    debugPrint('[STARTUP] Widget binding initialized: ${mainStopwatch.elapsedMilliseconds}ms');
 
     // Load dev mode override from SharedPreferences BEFORE loading env
     await AppConfig.loadDevModeOverride();
+    debugPrint('[STARTUP] Dev mode override loaded: ${mainStopwatch.elapsedMilliseconds}ms');
 
     // Determine which env file to load based on dev mode
     final isDevMode = AppConfig.effectiveDevMode;
@@ -27,11 +31,14 @@ Future<void> main() async {
 
     // Load environment variables from appropriate file
     await dotenv.load(fileName: envFileName);
+    debugPrint('[STARTUP] dotenv loaded ($envFileName): ${mainStopwatch.elapsedMilliseconds}ms');
 
     // Create app configuration from loaded env
     final config = AppConfig.fromEnv();
+    debugPrint('[STARTUP] AppConfig created: ${mainStopwatch.elapsedMilliseconds}ms');
 
     // Initialize Sentry with configuration from .env
+    debugPrint('[STARTUP] Starting Sentry init...');
     await SentryFlutter.init(
       (options) {
         // DSN configuration from AppConfig
@@ -97,7 +104,10 @@ Future<void> main() async {
       },
     );
 
-    await _runMealvanaApp(config);
+    debugPrint('[STARTUP] Sentry init completed: ${mainStopwatch.elapsedMilliseconds}ms');
+
+    debugPrint('[STARTUP] Starting Supabase and runApp...');
+    await _runMealvanaApp(config, mainStopwatch);
   }, (exception, stackTrace) async {
     // Capture any uncaught exceptions
     await Sentry.captureException(exception, stackTrace: stackTrace);
@@ -105,14 +115,17 @@ Future<void> main() async {
 }
 
 /// App runner function called after Sentry initialization
-Future<void> _runMealvanaApp(AppConfig config) async {
+Future<void> _runMealvanaApp(AppConfig config, Stopwatch mainStopwatch) async {
   // Initialize Supabase (non-recoverable initialization) using config
+  debugPrint('[STARTUP] Starting Supabase.initialize...');
   await Supabase.initialize(
     url: config.supabaseUrl,
     anonKey: config.supabaseAnonKey,
   );
+  debugPrint('[STARTUP] Supabase.initialize completed: ${mainStopwatch.elapsedMilliseconds}ms');
 
   // Entry point following Andrea Bizzotto's pattern with runZonedGuarded pattern
+  debugPrint('[STARTUP] Calling runApp...');
   // Widget hierarchy:
   // 1. SentryWidget - Wraps app to enable screenshot capture and session replay
   // 2. ProviderScope - Riverpod state management

@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../widgets/carb_loading_food_pills.dart';
+import '../widgets/edit_carb_target_dialog.dart';
 import '../providers/carb_loading_day_detail_controller.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/carb_loading_day_meal.dart';
@@ -25,17 +26,6 @@ class CarbLoadingDayDetailPage extends ConsumerStatefulWidget {
 }
 
 class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailPage> {
-  @override
-  void initState() {
-    super.initState();
-    // Initialize controller with the carb loading day
-    Future.microtask(() {
-      ref
-          .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
-          .initialize(widget.carbLoadingDay);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final controllerState = ref.watch(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id));
@@ -377,14 +367,17 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
           children: [
             // Header with meal name and progress badge
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  displayName,
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: textColor,
+                Expanded(
+                  child: Text(
+                    displayName,
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: textColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: AppSpacing.sm),
                 // Progress badge (blue circle)
                 Container(
                   padding: EdgeInsets.symmetric(
@@ -612,10 +605,34 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
   }
 
   void _showEditTargetDialog(BuildContext context) {
-    // TODO: Implement edit target dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit target coming soon')),
-    );
+    final controllerState = ref.read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id));
+
+    controllerState.whenData((state) {
+      final carbDay = state.carbLoadingDay;
+
+      // Calculate body weight from target and protocol
+      final carbProtocol = carbDay.carbProtocolGPerKg;
+      final bodyWeightKg = carbProtocol > 0
+          ? carbDay.carbTargetGrams / carbProtocol
+          : 70.0; // Fallback to 70kg if protocol is 0
+
+      showDialog(
+        context: context,
+        builder: (dialogContext) => EditCarbTargetDialog(
+          currentCarbsPerKg: carbProtocol,
+          currentDailyTargetG: carbDay.carbTargetGrams,
+          bodyWeightKg: bodyWeightKg,
+          onSave: (carbsPerKg, dailyTargetG) {
+            ref
+                .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
+                .updateCarbTarget(
+                  carbsPerKg: carbsPerKg,
+                  dailyTargetG: dailyTargetG,
+                );
+          },
+        ),
+      );
+    });
   }
 
   void _showResetProgressDialog(BuildContext context) {

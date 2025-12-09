@@ -646,8 +646,9 @@ class _EditMacrosDialogState extends ConsumerState<_EditMacrosDialog> {
         KyleSecondaryButton(
           text: 'Cancel',
           onPressed: () => Navigator.of(context).pop(),
-          variant: SecondaryButtonVariant.blackberry,
+          // variant: SecondaryButtonVariant.blackberry,
         ),
+            const SizedBox(height: AppSpacing.lg),
         KylePrimaryButton(
           text: 'Save Changes',
           onPressed: _saveChanges,

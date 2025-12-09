@@ -306,14 +306,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (confirmed == true && context.mounted) {
                     await ref.read(settingsControllerProvider.notifier).signOut();
 
-                    // Show success message
+                    // Navigate to welcome screen after logout
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Signed out. Your preferences are saved on this device.'),
-                          backgroundColor: AppColors.electrolyte,
-                        ),
-                      );
+                      context.go('/welcome');
                     }
                   }
                 },

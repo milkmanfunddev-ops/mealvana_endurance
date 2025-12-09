@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/activities/presentation/screens/activities_list_screen.dart';
 import '../../features/calendar/presentation/providers/calendar_view_provider.dart';
+import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../features/feature_survey/presentation/screens/feature_survey_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
@@ -48,55 +49,55 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         elevation: 0,
         title: null,
         actions: [
-          // Pro version button
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.orange,
-                    AppColors.dragonfruit,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => context.pushNamed('pro-version'),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0,
-                      vertical: 8.0,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.workspace_premium,
-                          size: 20,
-                          color: isDark ? AppColors.textDark : AppColors.textLight,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Pro',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? AppColors.textDark : AppColors.textLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // // Pro version button
+          // Padding(
+          //   padding: const EdgeInsets.only(right: 8.0),
+          //   child: Container(
+          //     decoration: BoxDecoration(
+          //       gradient: LinearGradient(
+          //         colors: [
+          //           AppColors.orange,
+          //           AppColors.dragonfruit,
+          //         ],
+          //         begin: Alignment.topLeft,
+          //         end: Alignment.bottomRight,
+          //       ),
+          //       borderRadius: BorderRadius.circular(20),
+          //     ),
+          //     child: Material(
+          //       color: Colors.transparent,
+          //       child: InkWell(
+          //         onTap: () => context.pushNamed('pro-version'),
+          //         borderRadius: BorderRadius.circular(20),
+          //         child: Padding(
+          //           padding: const EdgeInsets.symmetric(
+          //             horizontal: 12.0,
+          //             vertical: 8.0,
+          //           ),
+          //           child: Row(
+          //             mainAxisSize: MainAxisSize.min,
+          //             children: [
+          //               Icon(
+          //                 Icons.workspace_premium,
+          //                 size: 20,
+          //                 color: isDark ? AppColors.textDark : AppColors.textLight,
+          //               ),
+          //               const SizedBox(width: 6),
+          //               Text(
+          //                 'Pro',
+          //                 style: TextStyle(
+          //                   fontSize: 14,
+          //                   fontWeight: FontWeight.bold,
+          //                   color: isDark ? AppColors.textDark : AppColors.textLight,
+          //                 ),
+          //               ),
+          //             ],
+          //           ),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
       body: Stack(
@@ -130,7 +131,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             },
             onAddTap: () {
               // Navigate to New Activity Screen (Kyle's unified tabbed design)
-              context.pushNamed('distancepacegut');
+              final selectedDate = ref.read(calendarSelectedDateProvider);
+              context.pushNamed('distancepacegut', extra: {'initialDate': selectedDate});
             },
           ),
         ],

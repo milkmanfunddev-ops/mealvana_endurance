@@ -908,22 +908,55 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
         // Food preferences list
         Expanded(
-          child: (_filteredFoods.isEmpty && _filteredUserFoods.isEmpty)
+          child: (_filteredFoods.isEmpty && _filteredUserFoods.isEmpty && _filteredAdditionalFoods.isEmpty)
               ? Center(
-                  child: Text(
-                    'No foods found',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        FontAwesomeIcons.searchengin,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        _searchQuery.isEmpty ? 'No foods found' : 'No foods found for "$_searchQuery"',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (_searchQuery.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Try a different search term or use the search button to find foods in our database',
+                          style: AppTextStyles.smallLabel.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ],
                   ),
                 )
               : ListView(
                   padding: AppSpacing.screenPaddingHorizontal,
                   children: [
-                    // Your Added Foods section (if any)
+                    // Your Added Foods section - show section when not searching, show items directly when searching
                     if (_filteredUserFoods.isNotEmpty) ...[
-                      _buildUserFoodsSection(context),
-                      const SizedBox(height: AppSpacing.lg),
+                      if (_searchQuery.isEmpty) ...[
+                        _buildUserFoodsSection(context),
+                        const SizedBox(height: AppSpacing.lg),
+                      ] else ...[
+                        // When searching, show user foods directly (no wrapper)
+                        ..._filteredUserFoods.map((food) {
+                          final sliderLevel = _sliderLevels[food.name] ?? 2;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                            child: _buildFoodPreferenceItem(context, food, sliderLevel),
+                          );
+                        }),
+                      ],
                     ],
 
                     // Primary foods
@@ -935,10 +968,22 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                       );
                     }).toList(),
 
-                    // Expandable additional foods section
+                    // Additional foods - show directly when searching, in expandable section when not
                     if (_filteredAdditionalFoods.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      _buildExpandableAdditionalFoods(context),
+                      if (_searchQuery.isEmpty) ...[
+                        // When not searching, show in expandable section
+                        const SizedBox(height: AppSpacing.md),
+                        _buildExpandableAdditionalFoods(context),
+                      ] else ...[
+                        // When searching, show additional foods directly (no expandable wrapper)
+                        ..._filteredAdditionalFoods.map((food) {
+                          final sliderLevel = _sliderLevels[food.name] ?? 0;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                            child: _buildFoodPreferenceItem(context, food, sliderLevel),
+                          );
+                        }),
+                      ],
                     ],
                   ],
                 ),

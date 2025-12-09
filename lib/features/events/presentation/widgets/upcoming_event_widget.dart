@@ -178,24 +178,28 @@ class UpcomingEventWidget extends ConsumerWidget {
   }
 
   String _formatCountdown(DateTime eventDate) {
-    final now = DateTime.now();
-    final difference = eventDate.difference(now);
+    // Compare dates at day level only, ignoring time components
+    final today = DateTime.now();
+    final todayDateOnly = DateTime(today.year, today.month, today.day);
+    final eventDateOnly =
+        DateTime(eventDate.year, eventDate.month, eventDate.day);
+    final daysDifference = eventDateOnly.difference(todayDateOnly).inDays;
 
-    if (difference.isNegative) {
+    if (daysDifference < 0) {
       return 'Event passed';
     }
 
-    if (difference.inDays == 0) {
+    if (daysDifference == 0) {
       return 'Today!';
-    } else if (difference.inDays == 1) {
+    } else if (daysDifference == 1) {
       return 'Tomorrow';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days away';
-    } else if (difference.inDays < 30) {
-      final weeks = (difference.inDays / 7).floor();
+    } else if (daysDifference < 7) {
+      return '$daysDifference days away';
+    } else if (daysDifference < 30) {
+      final weeks = (daysDifference / 7).floor();
       return '$weeks ${weeks == 1 ? 'week' : 'weeks'} away';
     } else {
-      final months = (difference.inDays / 30).floor();
+      final months = (daysDifference / 30).floor();
       return '$months ${months == 1 ? 'month' : 'months'} away';
     }
   }

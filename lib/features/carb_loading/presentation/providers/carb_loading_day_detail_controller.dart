@@ -4,6 +4,7 @@ import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../application/carb_loading_food_service.dart';
 import '../../application/food_selection_service.dart';
+import '../../data/carb_loading_repository.dart';
 import '../../domain/carb_loading_food.dart';
 import '../../domain/carb_loading_user_food.dart';
 import '../../domain/carb_loading_day_meal.dart';
@@ -69,46 +70,49 @@ class CarbLoadingDayDetailState {
 class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   CarbLoadingFoodService get _foodService => ref.read(carbLoadingFoodServiceProvider);
   FoodSelectionService get _selectionService => ref.read(foodSelectionServiceProvider);
+  CarbLoadingRepository get _repository => ref.read(carbLoadingRepositoryProvider);
 
   @override
   Future<CarbLoadingDayDetailState> build(int carbLoadingDayId) async {
-    // TODO: Get actual carb loading day from repository
-    // For now, throwing as this should be passed differently
-    throw UnimplementedError('Must pass carbLoadingDay directly');
-  }
+    // Fetch fresh data from repository
+    final carbLoadingDay = await _repository.getCarbLoadingDayById(carbLoadingDayId);
+    if (carbLoadingDay == null) {
+      throw Exception('Carb loading day not found: $carbLoadingDayId');
+    }
 
-  /// Initialize with a specific carb loading day
-  Future<void> initialize(db.CarbLoadingDay carbLoadingDay) async {
-    state = const AsyncLoading();
+    // Get device ID
+    final deviceId = await ref.read(userIdProvider.future);
 
-    state = await AsyncValue.guard(() async {
-      // Get device ID
-      final deviceId = await ref.read(userIdProvider.future);
+    // Load meals for this day
+    final meals = await _selectionService.getMealsByDay(carbLoadingDayId);
 
-      // Load meals for this day
-      final meals = await _selectionService.getMealsByDay(carbLoadingDay.id);
+    // Load available foods (both default and user foods)
+    final defaultFoods = <CarbLoadingFood>[];
+    final userFoods = await _foodService.getAllUserFoods(deviceId);
 
-      // Load available foods (both default and user foods)
-      final defaultFoods = <CarbLoadingFood>[];
-      final userFoods = await _foodService.getAllUserFoods(deviceId);
-
-      // Load default foods for each meal type
-      for (final mealType in MealType.values) {
-        final foods = await _foodService.getDefaultFoodsForMealType(mealType);
-        for (final food in foods) {
-          if (!defaultFoods.any((f) => f.id == food.id)) {
-            defaultFoods.add(food);
-          }
+    // Load default foods for each meal type
+    for (final mealType in MealType.values) {
+      final foods = await _foodService.getDefaultFoodsForMealType(mealType);
+      for (final food in foods) {
+        if (!defaultFoods.any((f) => f.id == food.id)) {
+          defaultFoods.add(food);
         }
       }
+    }
 
-      return CarbLoadingDayDetailState(
-        carbLoadingDay: carbLoadingDay,
-        meals: meals,
-        defaultFoods: defaultFoods,
-        userFoods: userFoods,
-      );
-    });
+    return CarbLoadingDayDetailState(
+      carbLoadingDay: carbLoadingDay,
+      meals: meals,
+      defaultFoods: defaultFoods,
+      userFoods: userFoods,
+    );
+  }
+
+  /// Initialize with a specific carb loading day (legacy - now uses build())
+  @Deprecated('Use build() instead - controller now auto-fetches from repository')
+  Future<void> initialize(db.CarbLoadingDay carbLoadingDay) async {
+    // Just invalidate self to trigger rebuild with fresh data
+    ref.invalidateSelf();
   }
 
   /// Add a default food to a meal
@@ -273,11 +277,39 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     });
   }
 
-  /// Refresh data
+  /// Refresh data from repository
   Future<void> refresh() async {
+    ref.invalidateSelf();
+  }
+
+  /// Update the carb target for this day
+  Future<void> updateCarbTarget({
+    required double carbsPerKg,
+    required int dailyTargetG,
+  }) async {
     final currentState = state.value;
     if (currentState == null) return;
 
-    await initialize(currentState.carbLoadingDay);
+    state = AsyncData(currentState.copyWith(isLoading: true));
+
+    state = await AsyncValue.guard(() async {
+      // Get device ID for the repository
+      final deviceId = await ref.read(userIdProvider.future);
+
+      // Update the carb loading day in the repository
+      final updatedDay = await _repository.updateCarbLoadingDay(
+        deviceId: deviceId,
+        carbLoadingDayId: currentState.carbLoadingDay.id,
+        updates: {
+          'carbTargetGrams': dailyTargetG,
+          'carbProtocolGPerKg': carbsPerKg,
+        },
+      );
+
+      return currentState.copyWith(
+        carbLoadingDay: updatedDay,
+        isLoading: false,
+      );
+    });
   }
 }

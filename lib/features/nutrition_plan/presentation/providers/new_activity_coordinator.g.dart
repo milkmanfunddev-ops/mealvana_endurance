@@ -70,7 +70,7 @@ final class NewActivityCoordinatorProvider
 }
 
 String _$newActivityCoordinatorHash() =>
-    r'0a997b83da80de0db4022663c169252e93914310';
+    r'0b014a05ad78234c637d1a01e1011a1c877542cd';
 
 /// New Activity Coordinator
 ///

@@ -1,10 +1,8 @@
-import 'dart:io';
-
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 
 import '../app_config.dart';
+import '../device_info_service.dart';
 import '../logging_service.dart';
 
 /// Abstraction over analytics tracking so we can swap implementations in tests.
@@ -29,14 +27,11 @@ abstract class AnalyticsTracker {
 class MixpanelAnalyticsTracker implements AnalyticsTracker {
   MixpanelAnalyticsTracker({
     required AppConfig config,
-    DeviceInfoPlugin? deviceInfoPlugin,
     AppLogger? logger,
   })  : _config = config,
-        _deviceInfoPlugin = deviceInfoPlugin ?? DeviceInfoPlugin(),
         _logger = logger ?? const NoopAppLogger();
 
   final AppConfig _config;
-  final DeviceInfoPlugin _deviceInfoPlugin;
   final AppLogger _logger;
 
   Mixpanel? _mixpanel;
@@ -199,22 +194,18 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
     if (mixpanel == null) return;
 
     try {
+      // Use the shared DeviceInfoService (already initialized before parallel ops)
+      final deviceInfoService = DeviceInfoService.instance;
+      final deviceInfo = deviceInfoService.isInitialized
+          ? deviceInfoService.deviceInfo
+          : {'os_version': 'unknown', 'device_model': 'unknown'};
+
       final superProps = <String, dynamic>{
         'app_version': '1.3.0',
-        'platform': Platform.isIOS ? 'iOS' : 'Android',
+        'platform': deviceInfo['device_model']?.contains('iPhone') == true ? 'iOS' : 'Android',
+        'os_version': deviceInfo['os_version'] ?? 'unknown',
+        'device_model': deviceInfo['device_model'] ?? 'unknown',
       };
-
-      if (Platform.isIOS) {
-        final iosInfo = await _deviceInfoPlugin.iosInfo;
-        superProps
-          ..['os_version'] = iosInfo.systemVersion
-          ..['device_model'] = iosInfo.model;
-      } else if (Platform.isAndroid) {
-        final androidInfo = await _deviceInfoPlugin.androidInfo;
-        superProps
-          ..['os_version'] = androidInfo.version.release
-          ..['device_model'] = androidInfo.model;
-      }
 
       mixpanel.registerSuperProperties(superProps);
     } catch (error, stackTrace) {

@@ -141,6 +141,12 @@ class CarbLoadingRepository {
     try {
       // OFFLINE-FIRST: Update locally IMMEDIATELY with dirty flag
       final companion = CarbLoadingDaysTableCompanion(
+        carbTargetGrams: updates.containsKey('carbTargetGrams')
+            ? Value(updates['carbTargetGrams'] as int)
+            : const Value.absent(),
+        carbProtocolGPerKg: updates.containsKey('carbProtocolGPerKg')
+            ? Value(updates['carbProtocolGPerKg'] as double)
+            : const Value.absent(),
         breakfastPercent: updates.containsKey('breakfastPercent')
             ? Value(updates['breakfastPercent'] as double)
             : const Value.absent(),
@@ -464,6 +470,21 @@ class CarbLoadingRepository {
 
         if (existingPlan != null && existingPlan['id'] != null) {
           serverPlanId = existingPlan['id'] as int;
+          
+          // CRITICAL: Update the existing server plan with the new data from the local plan
+          // This ensures the server reflects the user's latest "Create Plan" action even if we reused the ID
+          try {
+            await _supabase
+                .from('carb_loading_plans')
+                .update(planPayload)
+                .eq('id', serverPlanId);
+          } catch (e) {
+            _logger.warning(
+              'Failed to update existing server plan with new data',
+              context: 'CARB_LOADING_REPOSITORY',
+              data: {'serverPlanId': serverPlanId, 'error': e.toString()},
+            );
+          }
         } else {
           final insertResponse = await _supabase
               .from('carb_loading_plans')
@@ -664,6 +685,27 @@ class CarbLoadingRepository {
 
   Future<void> _rekeyPlanLocally(int oldId, int newId) async {
     await _database.transaction(() async {
+      // Check if newId already exists (collision with synced data)
+      final existingCollision = await (_database.select(_database.carbLoadingPlansTable)
+            ..where((tbl) => tbl.id.equals(newId)))
+          .getSingleOrNull();
+
+      if (existingCollision != null) {
+        _logger.info(
+          'Collision detected during rekey. Deleting existing plan $newId to replace with $oldId',
+          context: 'CARB_LOADING_REPOSITORY',
+        );
+        // Delete the colliding plan and its days to allow rekey
+        // Days first
+        await (_database.delete(_database.carbLoadingDaysTable)
+              ..where((tbl) => tbl.carbLoadingPlanId.equals(newId)))
+            .go();
+        // Plan
+        await (_database.delete(_database.carbLoadingPlansTable)
+              ..where((tbl) => tbl.id.equals(newId)))
+            .go();
+      }
+
       // Update child tables first
       await _database.customStatement(
         'UPDATE carb_loading_days SET carb_loading_plan_id = ? WHERE carb_loading_plan_id = ?',
@@ -684,6 +726,25 @@ class CarbLoadingRepository {
 
   Future<void> _rekeyDayLocally(int oldId, int newId) async {
     await _database.transaction(() async {
+      // Check if newId already exists (collision with synced data)
+      final existingCollision = await (_database.select(_database.carbLoadingDaysTable)
+            ..where((tbl) => tbl.id.equals(newId)))
+          .getSingleOrNull();
+
+      if (existingCollision != null) {
+        _logger.info(
+          'Collision detected during day rekey. Deleting existing day $newId to replace with $oldId',
+          context: 'CARB_LOADING_REPOSITORY',
+        );
+        // Delete the colliding day and its meals
+        await (_database.delete(_database.carbLoadingDayMealsTable)
+              ..where((tbl) => tbl.carbLoadingDayId.equals(newId)))
+            .go();
+        await (_database.delete(_database.carbLoadingDaysTable)
+              ..where((tbl) => tbl.id.equals(newId)))
+            .go();
+      }
+
       await _database.customStatement(
         'UPDATE carb_loading_day_meals SET carb_loading_day_id = ? WHERE carb_loading_day_id = ?',
         [newId, oldId],

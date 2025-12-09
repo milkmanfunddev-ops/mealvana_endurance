@@ -59,6 +59,8 @@ class CarbLoadingService {
               carbLoadingDays: Value(protocolDays),
               carbLoadingStartDate: Value(startDate),
               updatedAt: Value(DateTime.now()),
+              needsUpload: const Value(true),
+              localUpdatedAt: Value(DateTime.now()),
             ));
       } else {
       }

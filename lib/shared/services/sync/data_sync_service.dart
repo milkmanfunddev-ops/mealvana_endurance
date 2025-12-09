@@ -8,6 +8,7 @@ import '../logging_service.dart';
 import '../food_management/product_type_mapper.dart';
 import '../../../features/nutrition_plan/data/food_repository.dart';
 import '../../../features/carb_loading/application/carb_loading_food_sync_service.dart';
+import '../../../features/auth/domain/user_preferences.dart';
 
 import '../../../shared/services/preferences_service.dart';
 
@@ -69,29 +70,49 @@ class DataSyncService {
   /// Non-blocking: app continues with cached data if sync fails
   Future<bool> syncAllData(String userId) async {
     try {
+      _logger.info(
+        'Starting syncAllData',
+        context: 'DATA_SYNC',
+        data: {'userId': userId},
+      );
+
       // Get last sync timestamp
       final prefs = await _ref.read(sharedPreferencesProvider.future);
       final lastSyncTimestamp = prefs.getString('last_sync_timestamp_$userId');
 
       // STEP 0: CRITICAL - Sync user profile first to prevent FK violations
+      _logger.info('STEP 0: Syncing user profile', context: 'DATA_SYNC');
       await syncUsers(userId);
 
       // STEP 1: CRITICAL - Upload dirty records FIRST to prevent data loss
+      _logger.info('STEP 1: Uploading dirty records', context: 'DATA_SYNC');
       await _uploadDirtyRecords(userId);
 
       // STEP 2: Try edge function for fast parallel download
+      _logger.info('STEP 2: Trying edge function sync', context: 'DATA_SYNC');
       final edgeFunctionSuccess = await _tryEdgeFunctionSync(userId, lastSyncTimestamp);
 
       if (edgeFunctionSuccess) {
+        _logger.info(
+          'Edge function sync completed successfully',
+          context: 'DATA_SYNC',
+          data: {'userId': userId},
+        );
         return true;
       }
 
       // STEP 3: Fallback to client-side download if edge function fails
+      _logger.info('STEP 3: Falling back to client-side download', context: 'DATA_SYNC');
       await _clientSideDownload(userId);
 
       // Update timestamp on successful client-side sync too
       await prefs.setString('last_sync_timestamp_$userId', DateTime.now().toIso8601String());
 
+      _logger.info(
+        'Client-side sync completed successfully',
+        context: 'DATA_SYNC',
+        data: {'userId': userId},
+      );
       return true;
     } catch (e, stackTrace) {
       _logger.error(
@@ -107,14 +128,70 @@ class DataSyncService {
   /// PHASE 1 FIX: Ensure user profile exists in Supabase before syncing dependent records
   /// This prevents foreign key violations on activities, events, etc.
   /// SIMPLIFIED: Only syncs core fields to handle dev/prod schema differences
+  ///
+  /// MULTI-DEVICE FIX: If no local user profile exists but user is authenticated,
+  /// fetch the profile from Supabase first (important for new device login)
+  ///
+  /// SIGN-BACK-IN FIX: If local user ID doesn't match the auth user ID,
+  /// fetch the correct profile from Supabase (important for sign-out/sign-in flow)
   Future<void> syncUsers(String userId) async {
     try {
 
       // Get the current user profile from local database
-      final localUser = await _database.getCurrentUserProfile();
+      var localUser = await _database.getCurrentUserProfile();
 
+      // SIGN-BACK-IN FIX: Check if local user ID matches the auth user ID
+      // After sign-out, local DB has anonymous user, but we're syncing as OAuth user
+      final needsRemoteFetch = localUser == null ||
+          localUser.id.toLowerCase() != userId.toLowerCase();
+
+      if (needsRemoteFetch) {
+        _logger.info(
+          'Local user profile missing or mismatched - fetching from Supabase',
+          context: 'USER_SYNC',
+          data: {
+            'userId': userId,
+            'localUserId': localUser?.id,
+            'reason': localUser == null ? 'no_local_profile' : 'user_id_mismatch',
+          },
+        );
+
+        final remoteUser = await _supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (remoteUser != null) {
+          _logger.info(
+            'Found remote user profile - saving locally',
+            context: 'USER_SYNC',
+            data: {'userId': userId},
+          );
+
+          // Save the remote profile to local database
+          await _saveRemoteUserProfile(remoteUser, userId);
+
+          // Re-fetch the local user after saving
+          localUser = await _database.getCurrentUserProfile();
+        } else {
+          _logger.info(
+            'No remote user profile found - user may need to complete onboarding',
+            context: 'USER_SYNC',
+            data: {'userId': userId},
+          );
+          return; // No profile anywhere - user needs to onboard
+        }
+      }
+
+      // At this point localUser should not be null
       if (localUser == null) {
-        return; // No local user profile - skipping sync
+        _logger.warning(
+          'Failed to establish user profile after fetch attempt',
+          context: 'USER_SYNC',
+          data: {'userId': userId},
+        );
+        return;
       }
 
       // Sync ALL fields that exist in PRODUCTION schema (source of truth)
@@ -159,6 +236,89 @@ class DataSyncService {
       );
       // Re-throw to prevent syncing dependent records if user sync fails
       rethrow;
+    }
+  }
+
+  /// Save a remote user profile to the local Drift database
+  /// Used when logging into a new device with an existing account
+  Future<void> _saveRemoteUserProfile(
+    Map<String, dynamic> remoteUser,
+    String userId,
+  ) async {
+    try {
+      // Parse the remote user data and save to local database
+      // Map Supabase column names to Drift schema
+      // Note: UserProfilesTableCompanion.insert requires id and deviceId as String (not Value)
+      // All other fields are optional and use Value<T>
+      // Note: cycling_ftp_watts and swimming_css_seconds_per_100m are in Supabase but not in local Drift schema
+      // CRITICAL: Set isAnonymous to false for OAuth users (default is true)
+      final companion = UserProfilesTableCompanion.insert(
+        id: userId,
+        deviceId: userId, // In unified auth, deviceId == userId
+        isAnonymous: const Value(false), // OAuth user = not anonymous
+        authProvider: const Value('google'), // OAuth provider
+        gender: Value(_parseGenderString(remoteUser['gender'] as String?)),
+        birthday: Value(DateTime.tryParse(remoteUser['birthday'] as String? ?? '') ??
+            DateTime(1990, 1, 1)),
+        heightFeet: Value(remoteUser['height_feet'] as int? ?? 5),
+        heightInches: Value(remoteUser['height_inches'] as int? ?? 8),
+        weightPounds: Value((remoteUser['weight_pounds'] as num?)?.toDouble() ?? 150.0),
+        runsWithWaterBottle: Value(remoteUser['runs_with_water_bottle'] as bool? ?? true),
+        gutTrainingLevel: Value(_parseGutTrainingString(remoteUser['gut_training_level'] as String?)),
+        onboardingCompleted: Value(remoteUser['onboarding_completed'] as bool? ?? false),
+        appVersion: Value(remoteUser['app_version'] as String?),
+        createdAt: Value(DateTime.tryParse(remoteUser['created_at'] as String? ?? '') ??
+            DateTime.now()),
+        updatedAt: Value(DateTime.tryParse(remoteUser['updated_at'] as String? ?? '') ??
+            DateTime.now()),
+      );
+
+      await _database
+          .into(_database.userProfilesTable)
+          .insert(companion, mode: InsertMode.insertOrReplace);
+
+      _logger.info(
+        'Successfully saved remote user profile to local database',
+        context: 'USER_SYNC',
+        data: {'userId': userId},
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to save remote user profile locally',
+        context: 'USER_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Parse gender string to string value for database
+  String _parseGenderString(String? gender) {
+    switch (gender?.toLowerCase()) {
+      case 'male':
+        return 'male';
+      case 'female':
+        return 'female';
+      default:
+        return 'male'; // Default
+    }
+  }
+
+  /// Parse gut training string to string value for database
+  /// Note: GutTraining enum has: low, moderate, high (no 'none')
+  String _parseGutTrainingString(String? level) {
+    switch (level?.toLowerCase()) {
+      case 'none':
+        return 'low'; // Map 'none' to 'low' since enum doesn't have 'none'
+      case 'low':
+        return 'low';
+      case 'moderate':
+        return 'moderate';
+      case 'high':
+        return 'high';
+      default:
+        return 'moderate'; // Default
     }
   }
 
@@ -230,6 +390,10 @@ class DataSyncService {
       // Sync activities
       final activities = data['activities'] as List<dynamic>?;
       if (activities != null) {
+        _logger.info(
+          'Syncing ${activities.length} activities from edge function',
+          context: 'EDGE_SYNC',
+        );
         for (final activityData in activities) {
           await _upsertActivity(activityData as Map<String, dynamic>);
         }
@@ -238,6 +402,10 @@ class DataSyncService {
       // Sync events
       final events = data['events'] as List<dynamic>?;
       if (events != null) {
+        _logger.info(
+          'Syncing ${events.length} events from edge function',
+          context: 'EDGE_SYNC',
+        );
         for (final eventData in events) {
           final eventMap = eventData as Map<String, dynamic>;
           await _upsertEvent(eventMap, eventMap['user_id'] as String);
@@ -247,6 +415,10 @@ class DataSyncService {
       // Sync carb loading plans
       final carbLoadingPlans = data['carb_loading_plans'] as List<dynamic>?;
       if (carbLoadingPlans != null) {
+        _logger.info(
+          'Syncing ${carbLoadingPlans.length} carb loading plans from edge function',
+          context: 'EDGE_SYNC',
+        );
         for (final planData in carbLoadingPlans) {
           await _upsertCarbLoadingPlan(planData as Map<String, dynamic>);
         }
@@ -255,10 +427,36 @@ class DataSyncService {
       // Sync carb loading days
       final carbLoadingDays = data['carb_loading_days'] as List<dynamic>?;
       if (carbLoadingDays != null) {
+        _logger.info(
+          'Syncing ${carbLoadingDays.length} carb loading days from edge function',
+          context: 'EDGE_SYNC',
+        );
         for (final dayData in carbLoadingDays) {
           await _upsertCarbLoadingDay(dayData as Map<String, dynamic>);
         }
       }
+
+      // Sync food preferences
+      final foodPreferences = data['food_preferences'] as List<dynamic>?;
+      if (foodPreferences != null && foodPreferences.isNotEmpty) {
+        _logger.info(
+          'Syncing ${foodPreferences.length} food preferences from edge function',
+          context: 'EDGE_SYNC',
+        );
+        await _syncFoodPreferencesFromEdgeFunction(foodPreferences);
+      }
+
+      _logger.info(
+        'Edge function data sync to local DB completed',
+        context: 'EDGE_SYNC',
+        data: {
+          'activities': activities?.length ?? 0,
+          'events': events?.length ?? 0,
+          'carbLoadingPlans': carbLoadingPlans?.length ?? 0,
+          'carbLoadingDays': carbLoadingDays?.length ?? 0,
+          'foodPreferences': foodPreferences?.length ?? 0,
+        },
+      );
     } catch (e, stackTrace) {
       _logger.error('[EDGE_SYNC] Failed to sync edge function data to local DB',
         context: 'EDGE_SYNC',
@@ -663,6 +861,89 @@ class DataSyncService {
         stackTrace: stackTrace,
         data: {'dayId': data['id']},
       );
+    }
+  }
+
+  /// Sync food preferences from edge function response
+  /// Uses merge mode to preserve local preferences not in server response
+  Future<void> _syncFoodPreferencesFromEdgeFunction(List<dynamic> foodPreferences) async {
+    try {
+      if (foodPreferences.isEmpty) {
+        _logger.info(
+          'No food preferences to sync from edge function',
+          context: 'FOOD_PREF_SYNC',
+        );
+        return;
+      }
+
+      // Extract user_id from first preference (all should have same user_id)
+      final firstPref = foodPreferences.first as Map<String, dynamic>;
+      final userId = firstPref['user_id'] as String?;
+      if (userId == null) {
+        _logger.warning(
+          'Food preferences missing user_id, skipping sync',
+          context: 'FOOD_PREF_SYNC',
+        );
+        return;
+      }
+
+      // Convert to preference maps
+      final preferences = <String, FoodPreference>{};
+      final sliderLevels = <String, int>{};
+
+      for (final prefData in foodPreferences) {
+        final data = prefData as Map<String, dynamic>;
+        final foodName = data['food_name'] as String?;
+        final preferenceValue = data['preference'] as String?;
+        final preferenceLevel = data['preference_level'] as int?;
+
+        if (foodName == null || preferenceValue == null) continue;
+
+        // Parse preference enum
+        final preference = FoodPreference.values.firstWhere(
+          (p) => p.value == preferenceValue,
+          orElse: () => FoodPreference.willingToTry,
+        );
+
+        preferences[foodName] = preference;
+        if (preferenceLevel != null) {
+          sliderLevels[foodName] = preferenceLevel.clamp(0, 4);
+        }
+      }
+
+      // SAFETY CHECK: Don't wipe local data if server returned empty
+      if (preferences.isEmpty) {
+        final localPrefs = await _database.getUserFoodPreferences(userId);
+        if (localPrefs.isNotEmpty) {
+          _logger.warning(
+            'Server returned empty food_preferences but local has ${localPrefs.length} items - keeping local data',
+            context: 'FOOD_PREF_SYNC',
+          );
+          return;
+        }
+      }
+
+      // Use merge mode to preserve local preferences not in server response
+      await _database.saveFoodPreferences(
+        userId,
+        preferences,
+        sliderLevels: sliderLevels.isEmpty ? null : sliderLevels,
+        mergeMode: true,
+      );
+
+      _logger.info(
+        'Synced ${preferences.length} food preferences from edge function',
+        context: 'FOOD_PREF_SYNC',
+        data: {'userId': userId, 'count': preferences.length},
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync food preferences from edge function',
+        context: 'FOOD_PREF_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - continue with other syncs
     }
   }
 

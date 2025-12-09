@@ -5,6 +5,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../core/utils/debug_logger.dart';
 
 part 'user_repository.g.dart';
 
@@ -198,15 +199,20 @@ class UserRepository {
   }
 
   /// Save food preferences for a user
+  ///
+  /// [mergeMode] - when true, merges with existing preferences instead of replacing all.
+  /// Use mergeMode=true when syncing from server to avoid data loss.
   Future<void> saveFoodPreferences(
     String userId,
     Map<String, FoodPreference> preferences, {
     Map<String, int>? sliderLevels,
+    bool mergeMode = false,
   }) async {
     await database.saveFoodPreferences(
       userId,
       preferences,
       sliderLevels: sliderLevels,
+      mergeMode: mergeMode,
     );
     // Remote sync is handled via the edge function in AuthService; avoid direct Supabase client writes here.
   }
@@ -536,10 +542,25 @@ class UserRepository {
         });
       }
 
+      // SAFETY CHECK: Don't wipe local data if server returned empty
+      // This prevents data loss from RLS issues, network problems, or timing issues
+      if (preferences.isEmpty) {
+        final localPrefs = await database.getUserFoodPreferences(userId);
+        if (localPrefs.isNotEmpty) {
+          DebugLogger.warning(
+            'Server returned empty food_preferences but local has ${localPrefs.length} items - keeping local data',
+          );
+          return localPrefs;
+        }
+      }
+
+      // Use mergeMode to preserve local preferences that server doesn't have
+      // This prevents data loss when server has stale or incomplete data
       await saveFoodPreferences(
         userId,
         preferences,
         sliderLevels: sliderLevels.isEmpty ? null : sliderLevels,
+        mergeMode: true, // Merge with existing local data instead of replacing
       );
       return preferences;
     } catch (e, stackTrace) {
@@ -654,6 +675,49 @@ class UserRepository {
         method: 'UPSERT',
         stackTrace: stackTrace,
       );
+    }
+  }
+
+  /// Check if a user has any data worth migrating (activities, events, etc.)
+  /// This is used to prevent unnecessary migration when signing back into an existing account
+  /// after sign-out (where a new empty anonymous user is created)
+  Future<bool> checkUserHasData(String userId) async {
+    try {
+      // Check Supabase for any user data
+      // We check activities and events as the most common user-created data
+      final activitiesResponse = await supabase
+          .from('activities')
+          .select('id')
+          .eq('user_id', userId)
+          .limit(1);
+
+      if ((activitiesResponse as List).isNotEmpty) {
+        return true;
+      }
+
+      final eventsResponse = await supabase
+          .from('events')
+          .select('id')
+          .eq('user_id', userId)
+          .limit(1);
+
+      if ((eventsResponse as List).isNotEmpty) {
+        return true;
+      }
+
+      // Note: We only check Supabase here since the purpose is to prevent
+      // migration that would DELETE data from Supabase. Local-only data
+      // wouldn't be affected by the migration deletion.
+
+      return false;
+    } catch (e) {
+      // If we can't check, assume no data to be safe (don't trigger migration)
+      sentry.addBreadcrumb(
+        message: 'Error checking user data - assuming no data',
+        category: 'auth',
+        data: {'user_id': userId, 'error': e.toString()},
+      );
+      return false;
     }
   }
 

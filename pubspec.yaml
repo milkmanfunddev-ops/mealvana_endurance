@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.11.1+38
+version: 1.11.2+41
 
 environment:
   sdk: ^3.8.1
@@ -79,9 +79,12 @@ dependencies:
   # Local Notifications
   flutter_local_notifications: ^19.4.1
   timezone: ^0.10.0
+
+  # Push Notifications (OneSignal)
+  onesignal_flutter: ^5.2.7
   
   # Speech Recognition
-  speech_to_text: ^6.6.0
+  speech_to_text: ^7.0.0
 
   # Barcode Scanning
   mobile_scanner: ^7.0.1

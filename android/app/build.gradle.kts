@@ -1,13 +1,18 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Google Services plugin for Firebase (required for OneSignal push notifications)
+    id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.milkman.mealvanaendurance"
-    compileSdk = 35  // Required by supabase_flutter, sentry_flutter
+    compileSdk = 36  // Required by app_links, geolocator, google_sign_in, etc.
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -24,13 +29,29 @@ android {
 
     defaultConfig {
         applicationId = "com.milkman.mealvanaendurance"
-        minSdk = 21  // Matches pubspec.yaml flutter_launcher_icons config
+        minSdk = flutter.minSdkVersion  // Matches pubspec.yaml flutter_launcher_icons config
         targetSdk = 34  // Google Play requirement (will require 35 by Aug 2025)
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
         // Enable MultiDex for notification library (may exceed 64K method limit)
         multiDexEnabled = true
+    }
+
+    // Release signing configuration - must be defined BEFORE buildTypes
+    signingConfigs {
+        create("release") {
+            val keystorePropertiesFile = rootProject.file("key.properties")
+            if (keystorePropertiesFile.exists()) {
+                val keystoreProperties = Properties()
+                keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
     }
 
     buildTypes {
@@ -51,27 +72,11 @@ android {
             )
         }
     }
-
-    // Release signing configuration
-    signingConfigs {
-        create("release") {
-            val keystorePropertiesFile = rootProject.file("key.properties")
-            if (keystorePropertiesFile.exists()) {
-                val keystoreProperties = java.util.Properties()
-                keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
-
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-            }
-        }
-    }
 }
 
 dependencies {
     // Core library desugaring for java.time APIs on older Android versions
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 flutter {

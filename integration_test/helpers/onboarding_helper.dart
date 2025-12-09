@@ -175,21 +175,54 @@ Future<void> skipOnboarding(WidgetTester tester) async {
 
   // ============================================================
   // STEP 5: Create Account Screen
+  // Wait for the screen to appear, then skip auth
   // ============================================================
   await tester.pumpAndSettle();
-  final createAccount = find.text('Create Your Account');
-  if (createAccount.evaluate().isNotEmpty) {
-    debugPrint('  [Onboarding] On Create Account screen');
+  await Future.delayed(TestConfig.pageTransitionDelay);
+  await tester.pumpAndSettle();
 
-    // Tap "Continue without signing in"
-    final skipAuth = find.text('Continue without signing in');
-    if (skipAuth.evaluate().isNotEmpty) {
-      await tester.tap(skipAuth.first);
-      await tester.pumpAndSettle();
-      await Future.delayed(TestConfig.pageTransitionDelay);
-      debugPrint('  [Onboarding] Tapped Continue without signing in');
+  // Check for various possible screen states
+  final createAccount = find.text('Create Your Account');
+  final createAccountAlt = find.text('Create Account');
+  final signInTitle = find.text('Sign In');
+  final welcomeBack = find.text('Welcome Back');
+
+  final isOnAuthScreen = createAccount.evaluate().isNotEmpty ||
+      createAccountAlt.evaluate().isNotEmpty ||
+      signInTitle.evaluate().isNotEmpty ||
+      welcomeBack.evaluate().isNotEmpty;
+
+  if (isOnAuthScreen) {
+    debugPrint('  [Onboarding] On Auth/Create Account screen');
+
+    // Try multiple possible skip options
+    final skipOptions = [
+      'Continue without signing in',
+      'Skip',
+      'Skip for now',
+      'Continue as guest',
+      'Not now',
+    ];
+
+    for (final option in skipOptions) {
+      final skipAuth = find.text(option);
+      if (skipAuth.evaluate().isNotEmpty) {
+        await tester.tap(skipAuth.first);
+        await tester.pumpAndSettle();
+        await Future.delayed(TestConfig.pageTransitionDelay);
+        debugPrint('  [Onboarding] Tapped: $option');
+        break;
+      }
     }
+  } else {
+    // The user might already be authenticated (anonymous) and go directly to main app
+    debugPrint('  [Onboarding] Auth screen not found - user may already be authenticated');
   }
+
+  // Final wait for navigation to complete
+  await tester.pumpAndSettle();
+  await Future.delayed(TestConfig.networkDelay);
+  await tester.pumpAndSettle();
 
   debugPrint('  [Onboarding] Onboarding complete!');
 }

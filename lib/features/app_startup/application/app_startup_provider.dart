@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'app_startup_service.dart';
 import '../../../shared/database/database_provider.dart';
@@ -26,37 +27,60 @@ class AppStartupData {
 @riverpod
 class AppStartup extends _$AppStartup {
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
-  
+
+  /// Helper to log timing of each parallel operation for debugging
+  Future<void> _timedOperation(String name, Future<void> operation) async {
+    final sw = Stopwatch()..start();
+    debugPrint('[APP_STARTUP] $name started');
+    try {
+      await operation;
+      debugPrint('[APP_STARTUP] $name completed: ${sw.elapsedMilliseconds}ms');
+    } catch (e) {
+      debugPrint('[APP_STARTUP] $name FAILED after ${sw.elapsedMilliseconds}ms: $e');
+      rethrow;
+    }
+  }
+
   @override
   Future<AppStartupData> build() async {
     try {
       final AppStartupService startupService = ref.read(appStartupServiceProvider);
 
-      // 1. CRITICAL PATH: Run independent core initializations in parallel
+      // 1. CRITICAL PATH: Run only essential initializations in parallel
+      // Analytics and device info are deferred to avoid Android startup deadlock
       final stopwatch = Stopwatch()..start();
 
+      debugPrint('[APP_STARTUP] Starting critical path initialization...');
+
       await Future.wait([
-        startupService.initializeDatabase(),
-        startupService.initializeSupabaseAuth(),
-        startupService.initializeAnalytics(),
-        startupService.setSentryUserContext(),
+        _timedOperation('initializeDatabase', startupService.initializeDatabase()),
+        _timedOperation('initializeSupabaseAuth', startupService.initializeSupabaseAuth()),
+        _timedOperation('setSentryUserContext', startupService.setSentryUserContext()),
       ]);
 
-      // 2. Identify user in analytics (requires DB & Auth to be ready)
-      await startupService.checkUserSession();
+      debugPrint('[APP_STARTUP] Critical path completed: ${stopwatch.elapsedMilliseconds}ms');
 
-      // 3. Unified data sync - Fire and forget, happens in background
+      // 2. NON-BLOCKING: Analytics, device info, and push notifications
+      // These are deferred to after first frame to avoid Android DeviceInfoPlugin deadlock
+      debugPrint('[APP_STARTUP] Scheduling deferred initialization (analytics, device info, push)...');
+      unawaited(startupService.initializeDeferredServices());
+
+      // 4. Unified data sync - Fire and forget, happens in background
       unawaited(startupService.syncAllAppData());
 
-      // 4. Get navigation data (fast local DB query)
+      // 5. Get navigation data (fast local DB query)
+      debugPrint('[APP_STARTUP] Getting navigation data...');
       final database = ref.read(appDatabaseProvider);
       final user = await database.getCurrentUserProfile();
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
+      debugPrint('[APP_STARTUP] User profile loaded: ${stopwatch.elapsedMilliseconds}ms');
 
       // Check for pending feedback
+      debugPrint('[APP_STARTUP] Checking pending feedback...');
       final activityIdNeedingFeedback = await startupService.checkForPendingFeedback();
+      debugPrint('[APP_STARTUP] Pending feedback checked: ${stopwatch.elapsedMilliseconds}ms');
 
-      // 5. Track startup completion in Sentry
+      // 6. Track startup completion in Sentry
       final sentry = ref.read(appExternalDepsProvider).sentry;
       sentry.addBreadcrumb(
         message: 'App startup completed successfully',
@@ -67,6 +91,7 @@ class AppStartup extends _$AppStartup {
         },
       );
 
+      debugPrint('[APP_STARTUP] ✅ STARTUP COMPLETE: ${stopwatch.elapsedMilliseconds}ms total');
       return AppStartupData(
         user: user,
         hasCompletedOnboarding: hasCompletedOnboarding,

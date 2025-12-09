@@ -7,6 +7,7 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../calendar/domain/calendar_day_indicators.dart';
+import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../events/presentation/providers/events_controller.dart';
 import '../../../events/presentation/widgets/upcoming_event_card_kyle.dart';
 import '../../../../shared/widgets/kyle_design/typography/section_header_text.dart';
@@ -30,14 +31,13 @@ class ActivitiesListScreen extends ConsumerStatefulWidget {
 }
 
 class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
-  DateTime _selectedDate = DateTime.now();
-
   // Cache the date range to avoid creating new provider instances on every rebuild
   late final DateTime _queryStartDate = DateTime.now().subtract(const Duration(days: 365));
   late final DateTime _queryEndDate = DateTime.now().add(const Duration(days: 730));
 
   @override
   Widget build(BuildContext context) {
+    final selectedDate = ref.watch(calendarSelectedDateProvider);
     final activitiesState = ref.watch(activitiesControllerProvider);
     final upcomingEvent = ref.watch(nextUpcomingEventProvider);
     final allEventsState = ref.watch(allEventsProvider);
@@ -74,26 +74,22 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           // Calendar (week or month view)
           if (calendarMode == CalendarViewMode.week)
             CalendarWeekViewKyle(
-              selectedDate: _selectedDate,
+              selectedDate: selectedDate,
               onDateSelected: (date) {
-                setState(() {
-                  _selectedDate = date;
-                });
+                ref.read(calendarSelectedDateProvider.notifier).setDate(date);
               },
               dayIndicators: dayIndicators,
             )
           else
             CalendarMonthViewKyle(
-              selectedDate: _selectedDate,
+              selectedDate: selectedDate,
               onDateSelected: (date) {
-                setState(() {
-                  _selectedDate = date;
-                });
+                ref.read(calendarSelectedDateProvider.notifier).setDate(date);
               },
               dayIndicators: dayIndicators,
             ),
           Expanded(
-            child: _buildContent(activitiesState, upcomingEvent, carbLoadingState),
+            child: _buildContent(activitiesState, upcomingEvent, carbLoadingState, selectedDate),
           ),
         ],
       ),
@@ -157,6 +153,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     AsyncValue activitiesState,
     AsyncValue upcomingEvent,
     AsyncValue<List<dynamic>> carbLoadingState,
+    DateTime selectedDate,
   ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -169,11 +166,11 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         );
 
         final selectedDateActivities = activities.where((activity) {
-          return _isSameDay(activity.scheduledDateTime, _selectedDate);
+          return _isSameDay(activity.scheduledDateTime, selectedDate);
         }).toList();
 
         final selectedDateCarbDays = carbLoadingDays.where((carbDay) {
-          return _isSameDay(carbDay.planDate, _selectedDate);
+          return _isSameDay(carbDay.planDate, selectedDate);
         }).toList();
 
         final hasItems = selectedDateActivities.isNotEmpty || selectedDateCarbDays.isNotEmpty;
@@ -219,7 +216,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
-                    child: _buildEmptyState(),
+                    child: _buildEmptyState(selectedDate),
                   ),
                 )
               else
@@ -249,7 +246,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(DateTime selectedDate) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -267,7 +264,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          _selectedDate.toString().split(' ')[0],
+          selectedDate.toString().split(' ')[0],
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[500],
               ),

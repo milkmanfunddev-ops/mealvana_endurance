@@ -8,7 +8,6 @@ import '../../../../shared/utils/location_formatter.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../calendar/domain/event_subtype.dart';
 import '../../domain/event.dart';
-import '../../../activities/presentation/providers/activities_controller.dart';
 import '../providers/events_controller.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../../../features/auth/data/user_repository.dart';
@@ -633,86 +632,35 @@ class EventDetailScreen extends ConsumerWidget {
           // Nutrition Plan Button (Create or View)
           KylePrimaryButton(
             onPressed: () async {
-              if (activity != null) {
-                // Activity exists - check if nutrition plan exists
-                if (event.hasNutritionPlan) {
-                  // Navigate to view/edit existing nutrition plan
-                  context.push(
-                    '/plan',
-                    extra: {
-                      'mode': 'view',
-                      'activityId': activity.id,
-                    },
-                  );
-                } else {
-                  // Navigate to distance/pace/gut entry screen to create new plan
-                  context.push(
-                    '/distance-pace-gut-entry',
-                    extra: {
-                      'initialDate': activity.scheduledDateTime,
-                      'distance': activity.distanceMiles,
-                      'goalPace': event.goalPaceMinutesPerMile,
-                      'activityId': activity.id, // Link plan to this activity
-                      'eventId': event.id, // Pass event ID to link back
-                    },
-                  );
-                }
+              if (activity != null && event.hasNutritionPlan) {
+                // Activity exists AND nutrition plan exists - navigate to view/edit existing nutrition plan
+                context.push(
+                  '/plan',
+                  extra: {
+                    'mode': 'view',
+                    'activityId': activity.id,
+                  },
+                );
               } else {
-                // No activity yet - create one first, then navigate
-                try {
-                  // Get event date and calculate distance from event subtype
-                  final scheduledDateTime = event.startTime != null
-                      ? DateTime.parse(event.startTime!)
-                      : DateTime.now();
-                  final distanceMiles = _getEventDistanceMiles(event);
-
-                  // Create activity using ActivitiesController directly
-                  final activitiesController = ref.read(activitiesControllerProvider.notifier);
-                  final activityId = await activitiesController.createActivity(
-                    title: event.eventName ?? event.formattedEventType,
-                    scheduledDateTime: scheduledDateTime,
-                    activityType: event.eventType, // Use event's sport type
-                    distanceMiles: distanceMiles,
-                  );
-
-                  // Link activity to event using EventsController directly
-                  final eventsController = ref.read(eventsControllerProvider.notifier);
-                  await eventsController.updateEvent(
-                    event.copyWith(activityId: activityId),
-                  );
-
-                  // Refresh the event detail provider to get updated data
-                  ref.invalidate(eventDetailProvider(eventId));
-
-                  // Navigate to distance/pace/gut entry
-                  if (context.mounted) {
-                    context.push(
-                      '/distance-pace-gut-entry',
-                      extra: {
-                        'initialDate': scheduledDateTime,
-                        'distance': distanceMiles,
-                        'goalPace': event.goalPaceMinutesPerMile,
-                        'activityId': activityId,
-                        'eventId': event.id, // Pass event ID to link back
-                      },
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Error creating activity: $e',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                        backgroundColor: AppColors.dragonfruit,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                }
+                // Either no activity yet OR activity exists but no nutrition plan
+                // Navigate to distance/pace/gut entry screen to create new plan
+                // We pass BOTH activityId (if exists) and eventId
+                
+                final scheduledDateTime = activity?.scheduledDateTime ?? 
+                    (event.startTime != null ? DateTime.parse(event.startTime!) : DateTime.now());
+                
+                final distanceMiles = activity?.distanceMiles ?? _getEventDistanceMiles(event);
+                
+                context.push(
+                  '/distance-pace-gut-entry',
+                  extra: {
+                    'initialDate': scheduledDateTime,
+                    'distance': distanceMiles,
+                    'goalPace': event.goalPaceMinutesPerMile,
+                    'activityId': activity?.id, // Pass existing activity ID if any
+                    'eventId': event.id, // Pass event ID to link back after creation
+                  },
+                );
               }
             },
             text: event.hasNutritionPlan ? 'View Nutrition Plan' : 'Create Nutrition Plan',

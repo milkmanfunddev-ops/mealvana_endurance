@@ -85,6 +85,16 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     }
   }
 
+  /// Filter foods based on search query
+  List<FoodItem> _getFilteredFoods(List<FoodItem> foods) {
+    if (_searchQuery.isEmpty) {
+      return foods;
+    }
+    return foods.where((food) =>
+      food.name.toLowerCase().contains(_searchQuery.toLowerCase())
+    ).toList();
+  }
+
   Future<void> _completeOnboarding() async {
     DebugLogger.info('🔄 Food preferences screen - Complete onboarding button pressed');
     DebugLogger.info('📊 Food preferences screen - Selected preferences count: ${_sliderLevels.length}');
@@ -279,57 +289,136 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   Widget _buildContent(BuildContext context, FoodPreferencesState foodState) {
     final asyncState = ref.watch(onboardingControllerProvider);
 
+    // Filter foods based on search query
+    final filteredPrimaryFoods = _getFilteredFoods(foodState.primaryFoods);
+    final filteredAdditionalFoods = _getFilteredFoods(foodState.additionalFoods);
+    final filteredUserFoods = _getFilteredFoods(foodState.userFoods);
+
+    // Check if we're actively searching
+    final isSearching = _searchQuery.isNotEmpty;
+
     return Column(
       children: [
-        // Food preferences list
-        //text saying taht you can edit your preferences later in settings
+        // Search bar at the top (before food list)
+        Padding(
+          padding: AppSpacing.screenPaddingHorizontal,
+          child: _buildSearchBar(),
+        ),
 
+        // Food preferences list
         Expanded(
           child: SingleChildScrollView(
             padding: AppSpacing.screenPaddingHorizontal,
             child: Column(
               children: [
                 const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Set your food preferences to help us tailor your nutrition plan. You can edit these later in settings.',
-                  textAlign: TextAlign.start,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+
+                // Only show instructional text when NOT searching
+                if (!isSearching)
+                  Text(
+                    'Set your food preferences to help us tailor your nutrition plan. You can edit these later in settings.',
+                    textAlign: TextAlign.start,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                // Primary foods list
-                ...foodState.primaryFoods.map((food) {
-                  final sliderLevel = _sliderLevels[food.name] ?? 2;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: _buildFoodPreferenceItem(context, food, sliderLevel),
-                  );
-                }),
 
-                const SizedBox(height: AppSpacing.md),
-
-                // Expandable additional foods section
-                if (foodState.additionalFoods.isNotEmpty)
-                  _buildExpandableAdditionalFoods(foodState),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                // Divider before search section
-                Divider(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                  thickness: 1,
-                ),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                // Your Added Foods section (if any) - at bottom
-                if (foodState.userFoods.isNotEmpty) ...[
-                  _buildUserFoodsSection(context, foodState),
-                  const SizedBox(height: AppSpacing.lg),
+                // Show "no results" message when search has no matches
+                if (isSearching &&
+                    filteredPrimaryFoods.isEmpty &&
+                    filteredAdditionalFoods.isEmpty &&
+                    filteredUserFoods.isEmpty) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          FontAwesomeIcons.searchengin,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'No foods found for "$_searchQuery"',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Try a different search term or use the search button to find foods in our database',
+                          style: AppTextStyles.smallLabel.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
 
-                // Search bar and barcode scanning section - at bottom
-                _buildSearchBar(),
+                // Primary foods list (filtered)
+                if (filteredPrimaryFoods.isNotEmpty)
+                  ...filteredPrimaryFoods.map((food) {
+                    final sliderLevel = _sliderLevels[food.name] ?? 2;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _buildFoodPreferenceItem(context, food, sliderLevel),
+                    );
+                  }),
+
+                // Additional foods - show directly when searching, in expandable section when not
+                if (filteredAdditionalFoods.isNotEmpty) ...[
+                  if (isSearching) ...[
+                    // When searching, show additional foods directly (no expandable wrapper)
+                    ...filteredAdditionalFoods.map((food) {
+                      final sliderLevel = _sliderLevels[food.name] ?? 0;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: _buildFoodPreferenceItem(context, food, sliderLevel),
+                      );
+                    }),
+                  ] else ...[
+                    // When not searching, show in expandable section
+                    const SizedBox(height: AppSpacing.md),
+                    _buildExpandableAdditionalFoods(
+                      foodState.copyWith(additionalFoods: filteredAdditionalFoods),
+                    ),
+                  ],
+                ],
+
+                // Only show divider and user foods section when not searching or when there are filtered user foods
+                if (!isSearching && foodState.additionalFoods.isNotEmpty)
+                  const SizedBox(height: AppSpacing.lg),
+
+                // Divider before user foods section (only when not searching)
+                if (!isSearching && foodState.userFoods.isNotEmpty)
+                  Divider(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                    thickness: 1,
+                  ),
+
+                if (!isSearching)
+                  const SizedBox(height: AppSpacing.lg),
+
+                // Your Added Foods section - show when not searching OR when there are filtered results
+                if (filteredUserFoods.isNotEmpty) ...[
+                  if (isSearching) ...[
+                    // When searching, show user foods directly
+                    ...filteredUserFoods.map((food) {
+                      final sliderLevel = _sliderLevels[food.name] ?? 2;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: _buildFoodPreferenceItem(context, food, sliderLevel),
+                      );
+                    }),
+                  ] else ...[
+                    // When not searching, show in the user foods section
+                    _buildUserFoodsSection(context, foodState.copyWith(userFoods: filteredUserFoods)),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                ],
 
                 const SizedBox(height: AppSpacing.xl),
               ],

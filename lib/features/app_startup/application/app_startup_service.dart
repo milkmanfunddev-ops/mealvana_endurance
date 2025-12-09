@@ -1,16 +1,19 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
+import '../../../shared/services/device_info_service.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/notification_service.dart';
+import '../../../shared/services/push_notification_service.dart';
+import '../../../shared/services/app_config.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/sync/data_sync_service.dart';
 import '../../nutrition_plan/data/food_repository.dart';
@@ -19,6 +22,8 @@ import '../../settings/presentation/providers/settings_controller.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
 import '../../events/presentation/providers/events_controller.dart';
 import '../../../shared/providers/user_id_provider.dart';
+import '../../../shared/services/preferences_service.dart';
+import 'app_startup_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -60,37 +65,131 @@ class AppStartupService {
     }
   }
   
-  /// Initialize analytics service with proper user identification
-  Future<void> initializeAnalytics() async {
-    // Get or create device ID for user identification
-    final deviceId = await getOrCreateDeviceId();
-    await _analytics.initialize();
-    await _analytics.identifyUser(deviceId);
-    NotificationService.configure(_analytics);
+  /// Initialize deferred services after first frame renders.
+  /// This includes analytics, device info, and push notifications.
+  ///
+  /// IMPORTANT: On Android, DeviceInfoPlugin can deadlock if called during
+  /// app startup. By deferring these to post-frame, we avoid the deadlock
+  /// while still initializing everything promptly.
+  Future<void> initializeDeferredServices() async {
+    // Wait for first frame to render before initializing these services
+    // This avoids Android DeviceInfoPlugin deadlock
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      debugPrint('[DEFERRED_INIT] Post-frame: Starting deferred initialization...');
+      final sw = Stopwatch()..start();
 
-    // Track app opened event with session ID
-    final sessionId = const Uuid().v4();
-    await _analytics.trackAppOpened(
-      deviceId: deviceId,
-      sessionId: sessionId,
-    );
+      try {
+        // 1. Initialize device info (safe after first frame)
+        await DeviceInfoService.instance.initialize();
+        debugPrint('[DEFERRED_INIT] Device info initialized: ${sw.elapsedMilliseconds}ms');
+
+        // 2. Initialize analytics with device ID
+        await _initializeAnalytics();
+        debugPrint('[DEFERRED_INIT] Analytics initialized: ${sw.elapsedMilliseconds}ms');
+
+        // 3. Check user session for analytics identification
+        await checkUserSession();
+        debugPrint('[DEFERRED_INIT] User session checked: ${sw.elapsedMilliseconds}ms');
+
+        // 4. Initialize push notifications
+        await _initializePushNotifications();
+        debugPrint('[DEFERRED_INIT] Push notifications initialized: ${sw.elapsedMilliseconds}ms');
+
+        debugPrint('[DEFERRED_INIT] ✅ All deferred services initialized: ${sw.elapsedMilliseconds}ms');
+      } catch (e, stackTrace) {
+        _logger.error(
+          'Deferred initialization failed',
+          context: 'DEFERRED_INIT',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        // Don't rethrow - app should continue even if deferred services fail
+      }
+    });
   }
-  
+
+  /// Initialize analytics service with proper user identification
+  /// Called after first frame to avoid Android DeviceInfoPlugin deadlock
+  Future<void> _initializeAnalytics() async {
+    try {
+      final deviceId = DeviceInfoService.instance.deviceId;
+      await _analytics.initialize();
+      await _analytics.identifyUser(deviceId);
+      NotificationService.configure(_analytics);
+      PushNotificationService.configure(_analytics);
+
+      // Track app opened event with session ID
+      final sessionId = const Uuid().v4();
+      await _analytics.trackAppOpened(
+        deviceId: deviceId,
+        sessionId: sessionId,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Analytics initialization failed',
+        context: 'ANALYTICS',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - app should continue even if analytics fails
+    }
+  }
+
+  /// Initialize OneSignal push notification service
+  Future<void> _initializePushNotifications() async {
+    try {
+      final config = ref.read(appConfigProvider);
+
+      if (config.oneSignalAppId.isEmpty) {
+        _logger.info(
+          'OneSignal App ID not configured - skipping push notification initialization',
+          context: 'PUSH_NOTIFICATIONS',
+        );
+        return;
+      }
+
+      // Initialize OneSignal
+      await PushNotificationService.initialize(config.oneSignalAppId);
+
+      // Login with device ID for user targeting
+      final deviceId = DeviceInfoService.instance.deviceId;
+      await PushNotificationService.login(deviceId);
+
+      // Request permission - shows iOS prompt if not already granted
+      final permissionGranted = await PushNotificationService.requestPermission();
+
+      _logger.info(
+        'Push notifications initialized successfully',
+        context: 'PUSH_NOTIFICATIONS',
+        data: {'permission_granted': permissionGranted},
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Push notification initialization failed',
+        context: 'PUSH_NOTIFICATIONS',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - app should continue even if push notifications fail
+    }
+  }
+
   /// Set Sentry user context during app startup
+  /// Uses Supabase auth ID (not device ID) to avoid DeviceInfoPlugin deadlock
   Future<void> setSentryUserContext() async {
     try {
-      // Sentry is already initialized in main.dart
-      // Here we set user context with device ID
-      final deviceId = await getOrCreateDeviceId();
-      
+      // Use Supabase auth ID if available, otherwise defer to later
+      final supabaseUser = _supabase.auth.currentUser;
+      final userId = supabaseUser?.id ?? 'anonymous';
+
       await _sentry.setUserContext(
-        deviceId: deviceId,
+        deviceId: userId,
         appVersion: '1.1.0+8',
       );
-      
+
     } catch (e, stackTrace) {
       // Don't use Sentry to report Sentry initialization errors
-      _logger.error('Sentry user context error', 
+      _logger.error('Sentry user context error',
         context: 'SENTRY',
         error: e,
         stackTrace: stackTrace
@@ -98,37 +197,14 @@ class AppStartupService {
       // Don't rethrow - app should continue even if Sentry fails
     }
   }
-  
-  
+
   /// Get or create a persistent device ID for analytics
+  /// NOTE: Only call this AFTER first frame to avoid Android deadlock
   Future<String> getOrCreateDeviceId() async {
-    try {
-      // Try to get existing device ID from database
-      // For now, we'll use a simple approach - store it with the user profile
-      // or generate a new one each time during the transition
-      final deviceInfo = DeviceInfoPlugin();
-      
-      if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        // Use identifierForVendor for iOS (stable across app installs from same vendor)
-        return iosInfo.identifierForVendor ?? _generateFallbackId();
-      } else if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        // Use Android ID (stable across app installs)
-        return androidInfo.id;
-      } else {
-        return _generateFallbackId();
-      }
-      
-    } catch (e) {
-      _logger.error('Error getting device ID', error: e);
-      return _generateFallbackId();
+    if (!DeviceInfoService.instance.isInitialized) {
+      await DeviceInfoService.instance.initialize();
     }
-  }
-  
-  /// Generate a fallback device ID if platform-specific ID fails
-  String _generateFallbackId() {
-    return 'device_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (999 * DateTime.now().millisecond)).toString()}';
+    return DeviceInfoService.instance.deviceId;
   }
 
   /// Track auth state listener subscription to prevent duplicates
@@ -143,15 +219,14 @@ class AppStartupService {
       final existingSession = _supabase.auth.currentSession;
 
       if (existingSession != null) {
-        // Track session restoration
-        await _analytics.track(
-          'auth_session_restored',
-          properties: {
+        // Session restored - Sentry breadcrumb for tracking (analytics deferred)
+        _sentry.addBreadcrumb(
+          message: 'Supabase session restored',
+          category: 'auth',
+          data: {
             'user_id': existingSession.user.id,
-            'timestamp': DateTime.now().toIso8601String(),
           },
         );
-
         // Don't return early - setup listener in finally block
       } else {
         // No existing session - create anonymous user
@@ -161,16 +236,7 @@ class AppStartupService {
           throw Exception('Failed to create anonymous session - null response');
         }
 
-        // Track anonymous user creation
-        await _analytics.track(
-          'anonymous_auth_created',
-          properties: {
-            'user_id': response.user!.id,
-            'timestamp': DateTime.now().toIso8601String(),
-          },
-        );
-
-        // Add Sentry breadcrumb for tracking
+        // Add Sentry breadcrumb for tracking (analytics is deferred to post-frame)
         _sentry.addBreadcrumb(
           message: 'Anonymous Supabase user created',
           category: 'auth',
@@ -235,7 +301,7 @@ class AppStartupService {
 
       // Handle sign-out events
       if (event == AuthChangeEvent.signedOut) {
-        // Get the old user ID before creating new session
+        // Get the old user ID before clearing data
         final oldUserId = session?.user.id;
 
         await _analytics.track('user_signed_out', properties: {
@@ -244,39 +310,49 @@ class AppStartupService {
         });
 
         try {
-          // Create new anonymous session immediately
-          final response = await _supabase.auth.signInAnonymously();
-
-          if (response.user != null) {
-            final newUserId = response.user!.id;
-
-            // Reset local database to new anonymous user
-            // This preserves food preferences but clears biometric data
-            final userRepo = await ref.read(userRepositoryProvider.future);
-            await userRepo.resetToAnonymousAfterSignOut(
-              newAnonymousUserId: newUserId,
-              oldUserId: oldUserId,
+          // CRITICAL: Clear sync timestamp so next sign-in does a FULL sync
+          // Without this, incremental sync returns 0 activities (nothing changed since last sync)
+          // but local DB is empty because clearUserScopedData() deleted everything
+          if (oldUserId != null) {
+            final prefs = await ref.read(sharedPreferencesProvider.future);
+            await prefs.remove('last_sync_timestamp_$oldUserId');
+            _logger.info(
+              'Cleared sync timestamp for signed-out user',
+              context: 'AUTH',
+              data: {'userId': oldUserId},
             );
+          }
 
-            // Ensure providers dependent on user identity refresh immediately
-            ref.invalidate(userIdProvider);
-            ref.invalidate(activitiesControllerProvider);
-            ref.invalidate(allEventsProvider);
-            ref.invalidate(nextUpcomingEventProvider);
+          // Clear all local user data - user is fully logged out
+          // They will need to go through onboarding again or sign in
+          final database = ref.read(appDatabaseProvider);
+          await database.clearUserScopedData();
 
-            // Track analytics
-            await _analytics.track('anonymous_user_created_after_signout', properties: {
-              'new_user_id': newUserId,
+          _logger.info(
+            'Cleared all local user data on sign-out',
+            context: 'AUTH',
+            data: {'old_user_id': oldUserId},
+          );
+
+          // Ensure providers dependent on user identity refresh immediately
+          ref.invalidate(userIdProvider);
+          ref.invalidate(activitiesControllerProvider);
+          ref.invalidate(allEventsProvider);
+          ref.invalidate(nextUpcomingEventProvider);
+          ref.invalidate(settingsControllerProvider);
+          ref.invalidate(appStartupProvider);
+
+          _sentry.addBreadcrumb(
+            message: 'User fully signed out - local data cleared',
+            category: 'auth',
+            data: {
               'old_user_id': oldUserId,
               'timestamp': DateTime.now().toIso8601String(),
-            });
-
-            // Invalidate settings controller to refresh UI
-            ref.invalidate(settingsControllerProvider);
-          }
+            },
+          );
         } catch (e, stackTrace) {
           _logger.error(
-            'Failed to create anonymous session after sign-out',
+            'Failed to clear local data after sign-out',
             context: 'AUTH',
             error: e,
             stackTrace: stackTrace,
@@ -285,9 +361,9 @@ class AppStartupService {
           await _sentry.reportCriticalError(
             e,
             stackTrace: stackTrace,
-            context: 'sign_out_recovery_failed',
+            context: 'sign_out_data_clear_failed',
             tags: {
-              'error_type': 'anonymous_session_creation_failed',
+              'error_type': 'local_data_clear_failed',
               'operation': 'sign_out_handler',
             },
           );
@@ -325,23 +401,31 @@ class AppStartupService {
         userRepo.syncUserFoodsFromSupabase(userId),
       ]);
 
-      // Only invalidate providers AFTER data is loaded
-      // This triggers clean rebuilds with fresh data (no race conditions)
-      ref.invalidate(activitiesControllerProvider);
-      ref.invalidate(allEventsProvider);
-      ref.invalidate(nextUpcomingEventProvider);
+      // Invalidate settings provider after profile is loaded
       ref.invalidate(settingsControllerProvider);
 
     } catch (e) {
       _logger.error('Failed to sync remote profile on sign in', context: 'AUTH', error: e);
     }
 
-    // Background sync for other data (activities, events, etc.)
-    unawaited(syncAllAppData().then((_) {
+    // CRITICAL: Sync activities/events BEFORE invalidating their providers
+    // This prevents the race condition where UI queries empty local DB
+    try {
+      await syncAllAppData();
+
+      // NOW invalidate providers - data is already in local DB
       ref.invalidate(activitiesControllerProvider);
       ref.invalidate(allEventsProvider);
       ref.invalidate(nextUpcomingEventProvider);
-    }));
+
+      _logger.info('Post-auth sync completed - providers invalidated', context: 'AUTH');
+    } catch (e) {
+      _logger.error('Failed to sync app data on sign in', context: 'AUTH', error: e);
+      // Still invalidate providers so UI can show whatever local data exists
+      ref.invalidate(activitiesControllerProvider);
+      ref.invalidate(allEventsProvider);
+      ref.invalidate(nextUpcomingEventProvider);
+    }
   }
 
   /// Check if user has existing session and restore it
@@ -396,22 +480,62 @@ class AppStartupService {
   /// Syncs ALL app data: calendar, foods, carb loading foods, meal types
   /// Returns true if sync was successful, false otherwise
   /// Non-blocking: app continues with cached data if sync fails
+  ///
+  /// MULTI-DEVICE FIX: Now properly invalidates providers after sync completes
+  /// to ensure UI reflects newly downloaded data
   Future<bool> syncAllAppData() async {
     try {
       final database = ref.read(appDatabaseProvider);
 
-      // Get current user (required for sync-all-data edge function)
-      final user = await database.getCurrentUserProfile();
+      // CRITICAL: Always prefer Supabase auth user ID over local database
+      // After sign-out, local DB has the anonymous user, but after sign-in
+      // we need to sync with the OAuth user's data
+      final supabaseUser = _supabase.auth.currentUser;
 
-      if (user == null) {
+      // Priority: Supabase auth ID > local DB profile ID
+      String? userIdForSync = supabaseUser?.id;
+
+      if (userIdForSync == null) {
+        // Fallback to local DB only if no Supabase session (offline mode)
+        final user = await database.getCurrentUserProfile();
+        userIdForSync = user?.id;
+      }
+
+      if (userIdForSync == null) {
         // This is normal on fresh install before onboarding
         // Reference data will be downloaded after onboarding completes
+        _logger.info(
+          'No user ID available for sync - skipping (fresh install)',
+          context: 'APP_STARTUP',
+        );
         return true;
       }
 
+      _logger.info(
+        'syncAllAppData using user ID',
+        context: 'APP_STARTUP',
+        data: {
+          'userIdForSync': userIdForSync,
+          'supabaseUserId': supabaseUser?.id,
+        },
+      );
+
       // Call unified sync service - single network call
       final dataSyncService = ref.read(dataSyncServiceProvider);
-      final success = await dataSyncService.syncAllData(user.id);
+      final success = await dataSyncService.syncAllData(userIdForSync);
+
+      // MULTI-DEVICE FIX: Invalidate providers AFTER sync completes
+      // This ensures UI reflects the newly downloaded data
+      if (success) {
+        _logger.info(
+          'Sync completed successfully - invalidating providers',
+          context: 'APP_STARTUP',
+        );
+        ref.invalidate(activitiesControllerProvider);
+        ref.invalidate(allEventsProvider);
+        ref.invalidate(nextUpcomingEventProvider);
+        ref.invalidate(settingsControllerProvider);
+      }
 
       return success;
     } catch (e, stackTrace) {

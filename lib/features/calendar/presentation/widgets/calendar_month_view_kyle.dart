@@ -52,12 +52,15 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
   late DateTime _currentMonth;
   late DateTime _baseMonth; // Fixed reference point that never changes
   static const int _initialPage = 500; // Start at middle page
+  late DateTime _todayMonth; // Month containing today (for "Today" button logic)
 
   @override
   void initState() {
     super.initState();
     _currentMonth = DateTime(widget.selectedDate.year, widget.selectedDate.month, 1);
     _baseMonth = _currentMonth; // Store the base reference
+    final now = DateTime.now();
+    _todayMonth = DateTime(now.year, now.month, 1); // Store today's month
     _pageController = PageController(initialPage: _initialPage);
   }
 
@@ -71,23 +74,56 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isCurrentMonth = _currentMonth.year == _todayMonth.year &&
+                           _currentMonth.month == _todayMonth.month;
 
     return Column(
       children: [
-        // Month/Year title (tappable for date picker)
-        GestureDetector(
-          onTap: () => _showDatePicker(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              _formatMonthYear(widget.selectedDate),
-              style: const TextStyle(
-                fontFamily: 'Sansita',
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
+        // Month/Year title with optional Today button
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Month/Year title (tappable for date picker)
+              GestureDetector(
+                onTap: () => _showDatePicker(context),
+                child: Text(
+                  _formatMonthYear(widget.selectedDate),
+                  style: const TextStyle(
+                    fontFamily: 'Sansita',
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
+              // Today button - only shown when not on current month
+              if (!isCurrentMonth) ...[
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _goToToday,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.cream.withValues(alpha: 0.15)
+                          : AppColors.blackberry.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Text(
+                      'Today',
+                      style: TextStyle(
+                        fontFamily: 'Apercu',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.cream : AppColors.blackberry,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
 
@@ -257,6 +293,18 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
       });
       _pageController.jumpToPage(_initialPage);
     }
+  }
+
+  void _goToToday() {
+    final today = DateTime.now();
+    final newMonth = DateTime(today.year, today.month, 1);
+    widget.onDateSelected(today);
+    setState(() {
+      _currentMonth = newMonth;
+      _baseMonth = newMonth;
+      _todayMonth = newMonth; // Also update today's month reference
+    });
+    _pageController.jumpToPage(_initialPage);
   }
 
   String _getDayAbbreviation(int weekday) {

@@ -7,7 +7,7 @@ import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/macro_targets.dart';
 import '../../data/macro_repository.dart';
-import '../../application/llm_nutrition_plan_service.dart';
+import '../../data/nutrition_plan_repository.dart';
 import '../../application/macro_generation_service.dart';
 import '../../application/nutrition_plan_service.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -1266,6 +1266,21 @@ class MacroTargetsController extends _$MacroTargetsController {
                 nutritionPlanData: nutritionPlan.toJson(),
               );
               DebugLogger.info('✅ Activity created successfully with nutrition plan, ID: $finalActivityId');
+
+              // 🔗 Link new activity to event if eventId exists
+              if (currentStateValue.eventId != null) {
+                DebugLogger.info('🔗 Linking new activity $finalActivityId to event ${currentStateValue.eventId}');
+                final eventsController = ref.read(eventsControllerProvider.notifier);
+                final event = await eventsController.getEventById(currentStateValue.eventId!);
+                if (event != null) {
+                  await eventsController.updateEvent(event.copyWith(activityId: finalActivityId));
+                  // Also update the flag since we just created a plan
+                  await eventsController.updateEventNutritionPlanFlag(
+                      activityId: finalActivityId, 
+                      hasNutritionPlan: true
+                  );
+                }
+              }
             } catch (e) {
               DebugLogger.error('❌ Failed to create activity from pendingActivityData: $e');
               // Continue anyway - the plan was generated successfully
@@ -1274,7 +1289,29 @@ class MacroTargetsController extends _$MacroTargetsController {
             DebugLogger.warning('⚠️ No activityId available and no pendingActivityData to create activity from');
           }
         } else {
-          DebugLogger.info('ℹ️ Using existing activityId=$finalActivityId; skipping activity creation.');
+          DebugLogger.info('ℹ️ Using existing activityId=$finalActivityId; updating activity with nutrition plan.');
+          
+          // Ensure the plan is saved to the existing activity
+          try {
+            final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
+            final user = await _authService.getCurrentUser();
+            if (user != null) {
+              final planWithActivityId = nutritionPlan.copyWith(activityId: finalActivityId);
+              await planRepository.cachePlanLocally(user.id, planWithActivityId);
+              DebugLogger.info('💾 Saved nutrition plan to existing activity $finalActivityId');
+              
+              // Also ensure event flag is updated if eventId exists
+              if (currentStateValue?.eventId != null) {
+                 final eventsController = ref.read(eventsControllerProvider.notifier);
+                 await eventsController.updateEventNutritionPlanFlag(
+                    activityId: finalActivityId, 
+                    hasNutritionPlan: true
+                 );
+              }
+            }
+          } catch (e) {
+            DebugLogger.error('❌ Failed to save nutrition plan to existing activity: $e');
+          }
         }
 
         // Invalidate eventDetailProvider if eventId exists (to refresh "Create Nutrition Plan" button)

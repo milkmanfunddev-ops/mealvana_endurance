@@ -29,6 +29,7 @@ NC='\033[0m' # No Color
 # Configuration
 DEFAULT_DEVICE="iphone 15 pro max"
 TEST_DIR="integration_test"
+APP_BUNDLE_ID="com.lee.endurance"
 
 # Print colored output
 print_header() {
@@ -78,6 +79,77 @@ find_device() {
     echo ""
 }
 
+# Get simulator UUID from device name
+get_simulator_uuid() {
+    local device_name="$1"
+    # Get the booted simulator's UUID
+    local uuid=$(xcrun simctl list devices | grep -i "$device_name" | grep "Booted" | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+    if [ -z "$uuid" ]; then
+        # Try to get any simulator with that name
+        uuid=$(xcrun simctl list devices | grep -i "$device_name" | head -1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+    fi
+    echo "$uuid"
+}
+
+# Grant iOS permissions for the app to avoid permission dialogs blocking tests
+grant_ios_permissions() {
+    local sim_uuid="$1"
+
+    if [ -z "$sim_uuid" ]; then
+        print_info "No simulator UUID found, skipping permission grants"
+        return
+    fi
+
+    print_info "Granting iOS permissions to avoid dialogs during tests..."
+
+    # Grant notification permission
+    if xcrun simctl privacy "$sim_uuid" grant notifications "$APP_BUNDLE_ID" 2>/dev/null; then
+        print_success "Granted notification permission"
+    else
+        print_info "Could not grant notification permission (may require app to be installed first)"
+    fi
+
+    # Grant location permission (always)
+    if xcrun simctl privacy "$sim_uuid" grant location-always "$APP_BUNDLE_ID" 2>/dev/null; then
+        print_success "Granted location permission"
+    else
+        print_info "Could not grant location permission (may require app to be installed first)"
+    fi
+
+    # Grant camera permission
+    if xcrun simctl privacy "$sim_uuid" grant camera "$APP_BUNDLE_ID" 2>/dev/null; then
+        print_success "Granted camera permission"
+    else
+        print_info "Could not grant camera permission"
+    fi
+
+    # Grant photo library permission
+    if xcrun simctl privacy "$sim_uuid" grant photos "$APP_BUNDLE_ID" 2>/dev/null; then
+        print_success "Granted photos permission"
+    else
+        print_info "Could not grant photos permission"
+    fi
+}
+
+# Reset app state on simulator (uninstall app to clear all data and permissions)
+reset_app_state() {
+    local sim_uuid="$1"
+
+    if [ -z "$sim_uuid" ]; then
+        print_info "No simulator UUID found, skipping app reset"
+        return
+    fi
+
+    print_info "Resetting app state on simulator..."
+
+    # Uninstall the app if it exists
+    if xcrun simctl uninstall "$sim_uuid" "$APP_BUNDLE_ID" 2>/dev/null; then
+        print_success "Uninstalled existing app"
+    else
+        print_info "App was not installed"
+    fi
+}
+
 # Run a single test file
 run_test() {
     local test_file=$1
@@ -97,7 +169,7 @@ run_test() {
 # Show usage
 show_usage() {
     echo ""
-    echo "Usage: $0 [test-name]"
+    echo "Usage: $0 [test-name] [flags]"
     echo ""
     echo "Available tests:"
     echo ""
@@ -112,15 +184,51 @@ show_usage() {
     echo "  food         - Food Management Flow"
     echo "  onboarding   - Onboarding & Auth Flow"
     echo ""
+    echo "Flags:"
+    echo "  --no-reset        - Skip app uninstall (keep existing data)"
+    echo "  --no-permissions  - Skip auto-granting iOS permissions"
+    echo ""
     echo "Examples:"
-    echo "  $0 quick       # Fast: all tests in one session (~3 min)"
-    echo "  $0 nutrition   # Debug: just nutrition plan test"
-    echo "  $0 all         # Slow: all tests in separate sessions (~12 min)"
+    echo "  $0 quick            # Clean start: uninstall app, run all tests"
+    echo "  $0 quick --no-reset # Keep app data, run all tests"
+    echo "  $0 nutrition        # Debug: just nutrition plan test"
+    echo "  $0 all              # Slow: all tests in separate sessions"
+    echo ""
+    echo "Note: By DEFAULT, the app is uninstalled before each test run for"
+    echo "      clean, reproducible results. Use --no-reset to keep app data."
+    echo ""
+    echo "IMPORTANT: On first run after uninstall, iOS will show a notification"
+    echo "           permission dialog. You must tap 'Allow' for tests to proceed."
     echo ""
 }
 
 # Main script
 print_header "Mealvana Endurance Integration Tests"
+
+# Parse flags
+# NOTE: Reset is ON by default for clean, reproducible tests
+RESET_APP=true
+SKIP_PERMISSIONS=false
+for arg in "$@"; do
+    case "$arg" in
+        --no-reset)
+            RESET_APP=false
+            ;;
+        --no-permissions)
+            SKIP_PERMISSIONS=true
+            ;;
+    esac
+done
+
+# Get non-flag argument
+TEST_FILTER=""
+for arg in "$@"; do
+    if [[ "$arg" != --* ]]; then
+        TEST_FILTER="$arg"
+        break
+    fi
+done
+TEST_FILTER="${TEST_FILTER:-quick}"
 
 # Find device
 DEVICE=$(find_device)
@@ -136,8 +244,23 @@ fi
 
 print_info "Using device: $DEVICE"
 
-# Parse command line argument
-TEST_FILTER="${1:-quick}"
+# Get simulator UUID for permission management
+SIM_UUID=$(get_simulator_uuid "$DEVICE")
+if [ -n "$SIM_UUID" ]; then
+    print_info "Simulator UUID: $SIM_UUID"
+
+    # Reset app if requested
+    if [ "$RESET_APP" = true ]; then
+        reset_app_state "$SIM_UUID"
+    fi
+
+    # Grant permissions (unless skipped)
+    if [ "$SKIP_PERMISSIONS" = false ]; then
+        grant_ios_permissions "$SIM_UUID"
+    fi
+else
+    print_info "Could not determine simulator UUID - permissions will need manual approval"
+fi
 
 case "$TEST_FILTER" in
     quick|fast|combined)

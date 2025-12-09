@@ -51,12 +51,14 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
   late DateTime _currentWeekStart;
   late DateTime _baseWeekStart; // Fixed reference point that never changes
   static const int _initialPage = 500; // Start at middle page
+  late DateTime _todayWeekStart; // Week start for today (for "Today" button logic)
 
   @override
   void initState() {
     super.initState();
     _currentWeekStart = _getWeekStart(widget.selectedDate);
     _baseWeekStart = _currentWeekStart; // Store the base reference
+    _todayWeekStart = _getWeekStart(DateTime.now()); // Store today's week start
     _pageController = PageController(initialPage: _initialPage);
   }
 
@@ -70,23 +72,55 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isCurrentWeek = _isSameDay(_currentWeekStart, _todayWeekStart);
 
     return Column(
       children: [
-        // Month/Year title (tappable for date picker)
-        GestureDetector(
-          onTap: () => _showDatePicker(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              _formatMonthYear(widget.selectedDate),
-              style: const TextStyle(
-                fontFamily: 'Sansita',
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
+        // Month/Year title with optional Today button
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Month/Year title (tappable for date picker)
+              GestureDetector(
+                onTap: () => _showDatePicker(context),
+                child: Text(
+                  _formatMonthYear(widget.selectedDate),
+                  style: const TextStyle(
+                    fontFamily: 'Sansita',
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
+              // Today button - only shown when not on current week
+              if (!isCurrentWeek) ...[
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _goToToday,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.cream.withValues(alpha: 0.15)
+                          : AppColors.blackberry.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Text(
+                      'Today',
+                      style: TextStyle(
+                        fontFamily: 'Apercu',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.cream : AppColors.blackberry,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
 
@@ -218,6 +252,18 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
       });
       _pageController.jumpToPage(_initialPage);
     }
+  }
+
+  void _goToToday() {
+    final today = DateTime.now();
+    final newWeekStart = _getWeekStart(today);
+    widget.onDateSelected(today);
+    setState(() {
+      _currentWeekStart = newWeekStart;
+      _baseWeekStart = newWeekStart;
+      _todayWeekStart = newWeekStart; // Also update today's week reference
+    });
+    _pageController.jumpToPage(_initialPage);
   }
 
   bool _isInWeek(DateTime date, DateTime weekStart) {

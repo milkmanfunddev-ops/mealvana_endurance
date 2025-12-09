@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -11,6 +12,11 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase show AuthExc
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/data_sync_service.dart';
+import '../../../shared/services/preferences_service.dart';
+import '../../../shared/providers/user_id_provider.dart';
+import '../../activities/presentation/providers/activities_controller.dart';
+import '../../events/presentation/providers/events_controller.dart';
 import '../data/user_repository.dart';
 import '../domain/auth_exceptions.dart';
 
@@ -46,18 +52,40 @@ class OAuthService extends _$OAuthService {
   GoogleSignIn _getGoogleSignIn() {
     if (_googleSignIn != null) return _googleSignIn!;
 
-    // Platform-specific client ID configuration
-    // iOS: Uses GIDClientID from Info.plist
-    // Android: Uses web client ID for server auth
-    final clientId = Platform.isIOS
-        ? null // iOS reads from Info.plist GIDClientID key
-        : const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+    // Web Client ID for Supabase OAuth - used as serverClientId to get ID token
+    // This is the OAuth 2.0 Client ID for Web Application from Google Cloud Console
+    const webClientId = '171527646530-d1hr8a9ja4ucqk28cipcfnlo288qhccn.apps.googleusercontent.com';
 
-    final serverClientId = const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+    // Android Debug Client ID - registered with debug keystore SHA-1
+    // SHA-1: 7F:E9:43:B8:CE:F8:13:E9:EA:4E:A0:C9:5A:3D:87:E8:25:04:80:B9
+    const androidDebugClientId = '171527646530-h7omr4i3lgseljh598sdfc1seiqd5eqj.apps.googleusercontent.com';
+
+    // Android Release Client ID - registered with release keystore SHA-1
+    // SHA-1: AB:86:C5:24:4D:DE:3E:75:40:65:B4:1D:7F:FC:61:CB:10:05:7A:0D
+    const androidReleaseClientId = '171527646530-5sjjs6che5nsl7nom9l8cfh64087aitb.apps.googleusercontent.com';
+
+    // kReleaseMode is true for release builds, false for debug/profile
+    // This is set automatically by Flutter based on build mode
+    const isReleaseBuild = kReleaseMode;
+
+    // Platform-specific client ID configuration:
+    // - iOS: Pass null to let plugin read GIDClientID from Info.plist
+    // - Android Debug: Use debug client ID (matches debug keystore SHA-1)
+    // - Android Release: Use release client ID (matches release keystore SHA-1)
+    //
+    // serverClientId is the Web client ID - required to get an ID token that
+    // Supabase can verify on the backend
+    final androidClientId = isReleaseBuild ? androidReleaseClientId : androidDebugClientId;
+
+    _logger.info('Initializing Google Sign-In', context: 'OAUTH_NATIVE', data: {
+      'platform': Platform.operatingSystem,
+      'is_release_build': isReleaseBuild,
+      'using_client_id': Platform.isAndroid ? (isReleaseBuild ? 'release' : 'debug') : 'ios_plist',
+    });
 
     _googleSignIn = GoogleSignIn(
-      clientId: clientId,
-      serverClientId: serverClientId,
+      clientId: Platform.isIOS ? null : androidClientId,
+      serverClientId: webClientId,
       scopes: ['email', 'profile'],
     );
 
@@ -456,21 +484,46 @@ class OAuthService extends _$OAuthService {
         'user_id': oauthUserId,
       });
 
-      // CRITICAL: Migrate anonymous user's data to the OAuth account
-      if (anonymousUserId != null && oauthUserId != null && anonymousUserId != oauthUserId) {
-        _logger.info('Migrating anonymous user data to OAuth account', context: 'OAUTH_NATIVE', data: {
-          'from_anonymous_user_id': anonymousUserId,
-          'to_oauth_user_id': oauthUserId,
-        });
-
+      // CRITICAL: Only migrate data if:
+      // 1. We had an anonymous user before sign-in
+      // 2. That user was actually anonymous (not an OAuth user who signed out)
+      // 3. The anonymous user has data worth migrating (activities, events, etc.)
+      //
+      // DO NOT migrate if:
+      // - User is signing back into their existing OAuth account after sign-out
+      // - The "anonymous" user was just created during sign-out and has no data
+      //
+      // This prevents the bug where signing back in deletes all user data
+      if (anonymousUserId != null && oauthUserId != null && anonymousUserId != oauthUserId && wasAnonymous) {
+        // Check if the anonymous user actually has data worth migrating
         final userRepo = await ref.read(userRepositoryProvider.future);
-        await userRepo.migrateAnonymousUserData(
-          fromAnonymousUserId: anonymousUserId,
-          toOAuthUserId: oauthUserId,
-          authProvider: 'google',
-        );
+        final hasDataToMigrate = await userRepo.checkUserHasData(anonymousUserId);
 
-        _logger.info('Data migration completed successfully', context: 'OAUTH_NATIVE');
+        if (hasDataToMigrate) {
+          _logger.info('Migrating anonymous user data to OAuth account', context: 'OAUTH_NATIVE', data: {
+            'from_anonymous_user_id': anonymousUserId,
+            'to_oauth_user_id': oauthUserId,
+          });
+
+          await userRepo.migrateAnonymousUserData(
+            fromAnonymousUserId: anonymousUserId,
+            toOAuthUserId: oauthUserId,
+            authProvider: 'google',
+          );
+
+          _logger.info('Data migration completed successfully', context: 'OAUTH_NATIVE');
+        } else {
+          _logger.info('Skipping migration - anonymous user has no data to migrate', context: 'OAUTH_NATIVE', data: {
+            'anonymous_user_id': anonymousUserId,
+            'oauth_user_id': oauthUserId,
+          });
+        }
+      } else {
+        _logger.info('Skipping migration - user signing back into existing account', context: 'OAUTH_NATIVE', data: {
+          'anonymous_user_id': anonymousUserId,
+          'oauth_user_id': oauthUserId,
+          'was_anonymous': wasAnonymous,
+        });
       }
 
       await _analytics.track('auth_google_signin_completed', properties: {
@@ -478,6 +531,36 @@ class OAuthService extends _$OAuthService {
         'platform': Platform.operatingSystem,
         'migrated_data': anonymousUserId != null && anonymousUserId != oauthUserId,
       });
+
+      // CRITICAL: Explicitly trigger full sync after sign-in
+      // The auth state listener may not fire reliably, so we trigger sync directly
+      // Clear any stale sync timestamp first to force a FULL sync
+      if (oauthUserId != null) {
+        _logger.info('Triggering post-sign-in sync', context: 'OAUTH_NATIVE', data: {
+          'user_id': oauthUserId,
+        });
+
+        try {
+          // Clear sync timestamp to force full sync (not incremental)
+          final prefs = await ref.read(sharedPreferencesProvider.future);
+          await prefs.remove('last_sync_timestamp_$oauthUserId');
+
+          // Trigger sync
+          final syncService = ref.read(dataSyncServiceProvider);
+          await syncService.syncAllData(oauthUserId);
+
+          // Invalidate providers so UI reflects synced data
+          ref.invalidate(userIdProvider);
+          ref.invalidate(activitiesControllerProvider);
+          ref.invalidate(allEventsProvider);
+          ref.invalidate(nextUpcomingEventProvider);
+
+          _logger.info('Post-sign-in sync completed - providers invalidated', context: 'OAUTH_NATIVE');
+        } catch (e) {
+          _logger.error('Post-sign-in sync failed', context: 'OAUTH_NATIVE', error: e);
+          // Don't rethrow - sign-in was successful, sync can be retried
+        }
+      }
     });
 
     if (state.hasError) {

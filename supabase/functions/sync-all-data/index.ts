@@ -45,7 +45,7 @@ serve(async (req)=>{
       return query;
     };
     // Parallel fetch all data (PHASE 1: Added user profile to prevent FK violations)
-    const [userProfileResult, nutritionFoodsResult, carbLoadingFoodsResult, activitiesResult, eventsResult, carbLoadingPlansResult, carbLoadingDaysResult] = await Promise.allSettled([
+    const [userProfileResult, nutritionFoodsResult, carbLoadingFoodsResult, activitiesResult, eventsResult, carbLoadingPlansResult, carbLoadingDaysResult, foodPreferencesResult] = await Promise.allSettled([
       // 0. User Profile (PHASE 1: Added to ensure user exists before dependent records)
       // FIXED: Query by 'id' instead of 'device_id' (user_id is now the auth UUID)
       // Note: User profile sync always fetches latest if updated
@@ -73,7 +73,9 @@ serve(async (req)=>{
       addFilter(supabaseClient.from('carb_loading_days').select(`
           *,
           carb_loading_plans!inner(user_id)
-        `).eq('carb_loading_plans.user_id', user_id))
+        `).eq('carb_loading_plans.user_id', user_id)),
+      // 7. Food Preferences - user's liked/disliked foods
+      addFilter(supabaseClient.from('food_preferences').select('*').eq('user_id', user_id))
     ]);
     // Process results and handle errors gracefully
     const response = {
@@ -110,6 +112,7 @@ serve(async (req)=>{
     extractData(eventsResult, 'events');
     extractData(carbLoadingPlansResult, 'carb_loading_plans');
     extractData(carbLoadingDaysResult, 'carb_loading_days');
+    extractData(foodPreferencesResult, 'food_preferences');
     // Note: carb_loading_foods now has meal_types as a text[] column
     // No transformation needed - the array is already in the correct format
     // Also get essential foods (Water, Salt, etc.) - ONLY if full sync or if updated

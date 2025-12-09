@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
-import 'package:device_info_plus/device_info_plus.dart';
+import '../../../shared/services/device_info_service.dart';
 import '../data/auth_repository_edge.dart';
 import '../domain/user_preferences.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -43,10 +42,19 @@ class AuthService {
     Map<String, FoodPreference>? foodPreferences,
   }) async {
     try {
-      // Get Supabase auth session (should exist from app startup)
-      final authUser = _supabase.auth.currentUser;
+      // Get or create Supabase auth session
+      // Session may not exist if user logged out and is starting fresh
+      var authUser = _supabase.auth.currentUser;
       if (authUser == null) {
-        throw Exception('No Supabase auth session found - app startup may have failed');
+        _logger.info(
+          'No auth session found, creating anonymous session for new user',
+          context: 'AUTH',
+        );
+        final response = await _supabase.auth.signInAnonymously();
+        authUser = response.user;
+        if (authUser == null) {
+          throw Exception('Failed to create anonymous session');
+        }
       }
 
       // Get device ID for backwards compatibility and analytics
@@ -220,37 +228,13 @@ class AuthService {
   }
   
   /// Get device ID for user identification
+  /// Uses the shared DeviceInfoService to prevent concurrent DeviceInfoPlugin calls
   Future<String> _getDeviceId() async {
-    try {
-      final deviceInfo = DeviceInfoPlugin();
-      
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        final deviceId = androidInfo.id;
-        
-        // Fallback for devices that return empty Android ID
-        if (deviceId.isEmpty) {
-          final fallbackId = 'android-${androidInfo.fingerprint.hashCode.abs()}';
-          return fallbackId;
-        }
-        return deviceId;
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        final deviceId = iosInfo.identifierForVendor;
-        
-        if (deviceId == null || deviceId.isEmpty) {
-          final fallbackId = 'ios-${iosInfo.model.hashCode.abs()}';
-          return fallbackId;
-        }
-        return deviceId;
-      } else {
-        return 'unknown-platform-${DateTime.now().millisecondsSinceEpoch}';
-      }
-    } catch (e) {
-      // Ultimate fallback
-      final emergencyId = 'emergency-${DateTime.now().millisecondsSinceEpoch}';
-      return emergencyId;
+    // Ensure device info is initialized
+    if (!DeviceInfoService.instance.isInitialized) {
+      await DeviceInfoService.instance.initialize();
     }
+    return DeviceInfoService.instance.deviceId;
   }
   
   /// Update user profile

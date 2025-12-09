@@ -4,12 +4,11 @@ import 'package:uuid/uuid.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
 import '../../../activities/application/activities_service.dart';
-import '../../domain/nutrition_plan.dart' show NutritionPlan, PlanSection;
+import '../../domain/nutrition_plan.dart' show NutritionPlan;
 import '../../domain/food_item_data.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../../shared/services/logging_service.dart';
-import '../../../../shared/services/app_external_deps.dart';
 import '../../data/nutrition_plan_repository.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
@@ -217,7 +216,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         activity: updatedActivity,
       );
 
-      DebugLogger.info('✅ Nutrition plan saved to activity $activityId');
+      DebugLogger.info('Nutrition plan saved to activity $activityId');
     } catch (e) {
       _logger.error('Error saving nutrition plan to activity', error: e);
       rethrow;
@@ -343,6 +342,104 @@ class ActivityDetailController extends _$ActivityDetailController {
     state = AsyncData(currentState.copyWith(hasUnsavedChanges: false));
   }
 
+  // ============================================================================
+  // UNIFIED FOOD MODIFICATION METHODS
+  // ============================================================================
+
+  /// Check if a category matches a section title
+  bool _categoryMatchesSection(String category, String sectionTitle) {
+    return (category == 'before_run' && sectionTitle == 'Before Run') ||
+           (category == 'during_run' && sectionTitle == 'During Run') ||
+           (category == 'after_run' && sectionTitle == 'After Run');
+  }
+
+  /// Create a FoodItemData from a food object with optional custom amount
+  FoodItemData _createFoodItemData(dynamic food, {double? customAmount}) {
+    final multiplier = customAmount ?? food.servingAmount ?? 1.0;
+    return FoodItemData(
+      id: const Uuid().v4(),
+      name: food.name,
+      quantity: food.generateQuantityDisplay(customAmount: customAmount),
+      imageAddress: food.imageAddress,
+      description: food.description,
+      instructions: food.instructions,
+      displayName: food.displayName,
+      displayNamePlural: food.displayNamePlural,
+      nutritionalInfo: NutritionalInfo(
+        calories: ((food.caloriesPerServing ?? 0) * multiplier).toInt(),
+        carbs: ((food.carbsPerServing ?? 0) * multiplier).toInt(),
+        protein: ((food.proteinPerServing ?? 0) * multiplier).toInt(),
+        fat: ((food.fatPerServing ?? 0) * multiplier).toInt(),
+        sodium: ((food.sodiumMg ?? 0) * multiplier).toInt(),
+        fluids: ((food.fluidMlPerServing ?? 0) * multiplier),
+      ),
+    );
+  }
+
+  /// Unified method to modify food items in a nutrition plan section.
+  ///
+  /// This consolidates add, swap, and delete operations to ensure consistent
+  /// behavior and prevent bugs like losing section targets (uses copyWith).
+  ///
+  /// [category] - The section category ('before_run', 'during_run', 'after_run')
+  /// [transform] - Function that transforms the current food items list
+  /// [operationName] - Name of the operation for logging
+  Future<void> _updateSectionFoods({
+    required String category,
+    required List<FoodItemData> Function(List<FoodItemData> currentItems) transform,
+    required String operationName,
+  }) async {
+    final currentState = state.value;
+    if (currentState?.nutritionPlan == null) {
+      _logger.warning('Cannot $operationName: no nutrition plan');
+      return;
+    }
+
+    final currentPlan = currentState!.nutritionPlan!;
+
+    state = AsyncData(currentState.copyWith(hasUnsavedChanges: true));
+
+    try {
+      // Update sections, using copyWith to preserve all section properties (including targets)
+      final updatedSections = currentPlan.sections.map((section) {
+        if (_categoryMatchesSection(category, section.title)) {
+          final updatedItems = transform(section.foodItems);
+          return section.copyWith(foodItems: updatedItems);
+        }
+        return section;
+      }).toList();
+
+      final updatedPlan = currentPlan.copyWith(
+        sections: updatedSections,
+        updatedAt: DateTime.now(),
+      );
+
+      // Update state first for immediate UI feedback
+      state = AsyncData(currentState.copyWith(
+        nutritionPlan: updatedPlan,
+        hasUnsavedChanges: false,
+      ));
+
+      // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
+      final activity = currentState.activity;
+      if (activity != null) {
+        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+        _logger.info('$operationName: Auto-saved nutrition plan to prevent data loss');
+      }
+
+      _logger.info('$operationName SUCCESS',
+        context: 'ActivityDetailController',
+        data: {
+          'category': category,
+          'updatedPlanId': updatedPlan.id,
+        },
+      );
+    } catch (error, stackTrace) {
+      _logger.error('Error in $operationName', error: error, stackTrace: stackTrace);
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
   /// Swap a food item in the nutrition plan
   Future<void> swapFoodItem(String oldFoodId, dynamic newFood, String category, {double? customAmount}) async {
     _logger.info('swapFoodItem ENTRY',
@@ -352,88 +449,19 @@ class ActivityDetailController extends _$ActivityDetailController {
         'newFoodName': newFood?.name ?? 'null',
         'category': category,
         'customAmount': customAmount,
-        'stateIsNull': state.value == null,
-        'nutritionPlanIsNull': state.value?.nutritionPlan == null,
       },
     );
 
-    final currentState = state.value;
-    if (currentState?.nutritionPlan == null) {
-      _logger.warning('Cannot swap food: no nutrition plan');
-      return;
-    }
-
-    final currentPlan = currentState!.nutritionPlan!;
-
-    state = AsyncData(currentState.copyWith(hasUnsavedChanges: true));
-
-    try {
-      // Create a new plan with the swapped food
-      final updatedSections = currentPlan.sections.map((section) {
-        if ((category == 'before_run' && section.title == 'Before Run') ||
-            (category == 'during_run' && section.title == 'During Run') ||
-            (category == 'after_run' && section.title == 'After Run')) {
-          final updatedItems = section.foodItems.map((item) {
-            if (item.id == oldFoodId) {
-              // Create a new food item from the newFood with a unique instance ID
-              final multiplier = customAmount ?? newFood.servingAmount ?? 1.0;
-              return FoodItemData(
-                id: const Uuid().v4(), // Generate unique instance ID
-                name: newFood.name,
-                quantity: newFood.generateQuantityDisplay(customAmount: customAmount),
-                imageAddress: newFood.imageAddress,
-                description: newFood.description,
-                instructions: newFood.instructions,
-                displayName: newFood.displayName,
-                displayNamePlural: newFood.displayNamePlural,
-                nutritionalInfo: NutritionalInfo(
-                  calories: ((newFood.caloriesPerServing ?? 0) * multiplier).toInt(),
-                  carbs: ((newFood.carbsPerServing ?? 0) * multiplier).toInt(),
-                  protein: ((newFood.proteinPerServing ?? 0) * multiplier).toInt(),
-                  fat: ((newFood.fatPerServing ?? 0) * multiplier).toInt(),
-                  sodium: ((newFood.sodiumMg ?? 0) * multiplier).toInt(),
-                  fluids: ((newFood.fluidMlPerServing ?? 0) * multiplier)),
-              );
-            }
-            return item;
-          }).toList();
-
-          return section.copyWith(foodItems: updatedItems);
+    await _updateSectionFoods(
+      category: category,
+      operationName: 'swapFoodItem',
+      transform: (items) => items.map((item) {
+        if (item.id == oldFoodId) {
+          return _createFoodItemData(newFood, customAmount: customAmount);
         }
-        return section;
-      }).toList();
-
-      // Create updated plan
-      final updatedPlan = currentPlan.copyWith(
-        sections: updatedSections,
-        updatedAt: DateTime.now(),
-      );
-
-      // Update state first for immediate UI feedback
-      state = AsyncData(currentState.copyWith(
-        nutritionPlan: updatedPlan,
-        hasUnsavedChanges: false, // Will be saved immediately
-      ));
-
-      // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
-      // This ensures the nutrition plan is persisted before any navigation events
-      final activity = currentState.activity;
-      if (activity != null) {
-        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
-        _logger.info('swapFoodItem: Auto-saved nutrition plan to prevent data loss');
-      }
-
-      _logger.info('swapFoodItem SUCCESS - state updated and saved',
-        context: 'ActivityDetailController',
-        data: {
-          'hasUnsavedChanges': false,
-          'updatedPlanId': updatedPlan.id,
-        },
-      );
-    } catch (error, stackTrace) {
-      _logger.error('Error swapping food item', error: error, stackTrace: stackTrace);
-      state = AsyncValue.error(error, stackTrace);
-    }
+        return item;
+      }).toList(),
+    );
   }
 
   /// Add a food item to the nutrition plan
@@ -444,236 +472,98 @@ class ActivityDetailController extends _$ActivityDetailController {
         'foodName': food?.name ?? 'null',
         'category': category,
         'customAmount': customAmount,
-        'stateIsNull': state.value == null,
-        'nutritionPlanIsNull': state.value?.nutritionPlan == null,
       },
     );
 
-    final currentState = state.value;
-    if (currentState?.nutritionPlan == null) {
-      _logger.warning('Cannot add food: no nutrition plan');
-      return;
-    }
-
-    final currentPlan = currentState!.nutritionPlan!;
-
-    state = AsyncData(currentState.copyWith(hasUnsavedChanges: true));
-
-    try {
-      // Create a new plan with the added food
-      final updatedSections = currentPlan.sections.map((section) {
-        if ((category == 'before_run' && section.title == 'Before Run') ||
-            (category == 'during_run' && section.title == 'During Run') ||
-            (category == 'after_run' && section.title == 'After Run')) {
-          final multiplier = customAmount ?? food.servingAmount ?? 1.0;
-          final newItem = FoodItemData(
-            id: const Uuid().v4(), // Generate unique instance ID
-            name: food.name,
-            quantity: food.generateQuantityDisplay(customAmount: customAmount),
-            imageAddress: food.imageAddress,
-            description: food.description,
-            instructions: food.instructions,
-            displayName: food.displayName,
-            displayNamePlural: food.displayNamePlural,
-            nutritionalInfo: NutritionalInfo(
-              calories: ((food.caloriesPerServing ?? 0) * multiplier).toInt(),
-              carbs: ((food.carbsPerServing ?? 0) * multiplier).toInt(),
-              protein: ((food.proteinPerServing ?? 0) * multiplier).toInt(),
-              fat: ((food.fatPerServing ?? 0) * multiplier).toInt(),
-              sodium: ((food.sodiumMg ?? 0) * multiplier).toInt(),
-              fluids: ((food.fluidMlPerServing ?? 0) * multiplier)),
-          );
-
-          return PlanSection(
-            id: section.id,
-            title: section.title,
-            subtitle: section.subtitle,
-            foodItems: [...section.foodItems, newItem],
-          );
-        }
-        return section;
-      }).toList();
-
-      final updatedPlan = currentPlan.copyWith(
-        sections: updatedSections,
-        updatedAt: DateTime.now(),
-      );
-
-      // Update state first for immediate UI feedback
-      state = AsyncData(currentState.copyWith(
-        nutritionPlan: updatedPlan,
-        hasUnsavedChanges: false, // Will be saved immediately
-      ));
-
-      // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
-      // This ensures the nutrition plan is persisted before any navigation events
-      final activity = currentState.activity;
-      if (activity != null) {
-        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
-        _logger.info('addFoodItem: Auto-saved nutrition plan to prevent data loss');
-      }
-    } catch (error, stackTrace) {
-      _logger.error('Error adding food item', error: error, stackTrace: stackTrace);
-      state = AsyncValue.error(error, stackTrace);
-    }
+    await _updateSectionFoods(
+      category: category,
+      operationName: 'addFoodItem',
+      transform: (items) => [...items, _createFoodItemData(food, customAmount: customAmount)],
+    );
   }
 
   /// Delete a food item from the nutrition plan
   Future<void> deleteFoodItem(String foodId, String category) async {
-    final currentState = state.value;
-    if (currentState?.nutritionPlan == null) {
-      _logger.warning('Cannot delete food: no nutrition plan');
-      return;
-    }
+    _logger.info('deleteFoodItem ENTRY',
+      context: 'ActivityDetailController',
+      data: {
+        'foodId': foodId,
+        'category': category,
+      },
+    );
 
-    final currentPlan = currentState!.nutritionPlan!;
-
-    state = AsyncData(currentState.copyWith(hasUnsavedChanges: true));
-
-    try {
-      // Find the item being deleted for analytics tracking
-      String? deletedItemName;
-      for (final section in currentPlan.sections) {
-        if ((category == 'before_run' && section.title == 'Before Run') ||
-            (category == 'during_run' && section.title == 'During Run') ||
-            (category == 'after_run' && section.title == 'After Run')) {
-          final itemToDelete = section.foodItems.firstWhere(
-            (item) => item.id == foodId,
-            orElse: () => FoodItemData(id: '', name: 'Unknown', quantity: ''),
-          );
-          deletedItemName = itemToDelete.name;
-          break;
-        }
-      }
-
-      // Create a new plan without the deleted food
-      final updatedSections = currentPlan.sections.map((section) {
-        if ((category == 'before_run' && section.title == 'Before Run') ||
-            (category == 'during_run' && section.title == 'During Run') ||
-            (category == 'after_run' && section.title == 'After Run')) {
-          final updatedItems = section.foodItems.where((item) => item.id != foodId).toList();
-          return section.copyWith(foodItems: updatedItems);
-        }
-        return section;
-      }).toList();
-
-      final updatedPlan = currentPlan.copyWith(
-        sections: updatedSections,
-        updatedAt: DateTime.now(),
-      );
-
-      // Update state first for immediate UI feedback
-      state = AsyncData(currentState.copyWith(
-        nutritionPlan: updatedPlan,
-        hasUnsavedChanges: false, // Will be saved immediately
-      ));
-
-      // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
-      // This ensures the nutrition plan is persisted before any navigation events
-      final activity = currentState.activity;
-      if (activity != null) {
-        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
-        _logger.info('deleteFoodItem: Auto-saved nutrition plan to prevent data loss');
-      }
-    } catch (error, stackTrace) {
-      _logger.error('Error deleting food item', error: error, stackTrace: stackTrace);
-      state = AsyncValue.error(error, stackTrace);
-    }
+    await _updateSectionFoods(
+      category: category,
+      operationName: 'deleteFoodItem',
+      transform: (items) => items.where((item) => item.id != foodId).toList(),
+    );
   }
 
   /// Update the quantity of an existing food item
   Future<void> updateFoodQuantity(String foodId, String category, double newQuantity) async {
-    final currentState = state.value;
-    if (currentState?.nutritionPlan == null) {
-      _logger.warning('Cannot update food quantity: no nutrition plan');
-      return;
-    }
+    _logger.info('updateFoodQuantity ENTRY',
+      context: 'ActivityDetailController',
+      data: {
+        'foodId': foodId,
+        'category': category,
+        'newQuantity': newQuantity,
+      },
+    );
 
-    final currentPlan = currentState!.nutritionPlan!;
+    await _updateSectionFoods(
+      category: category,
+      operationName: 'updateFoodQuantity',
+      transform: (items) => items.map((item) {
+        if (item.id == foodId) {
+          final currentNutrition = item.nutritionalInfo;
+          if (currentNutrition != null) {
+            // Extract the current quantity
+            final currentQuantityMatch = RegExp(r'^([\d.]+)').firstMatch(item.quantity);
+            final currentQuantity = currentQuantityMatch != null
+                ? double.tryParse(currentQuantityMatch.group(1)!) ?? 1.0
+                : 1.0;
 
-    try {
-      // Create a new plan with the updated food quantity
-      final updatedSections = currentPlan.sections.map((section) {
-        if ((category == 'before_run' && section.title == 'Before Run') ||
-            (category == 'during_run' && section.title == 'During Run') ||
-            (category == 'after_run' && section.title == 'After Run')) {
-          final updatedItems = section.foodItems.map((item) {
-            if (item.id == foodId) {
-              final currentNutrition = item.nutritionalInfo;
-              if (currentNutrition != null) {
-                // Extract the current quantity
-                final currentQuantityMatch = RegExp(r'^([\d.]+)').firstMatch(item.quantity);
-                final currentQuantity = currentQuantityMatch != null
-                    ? double.tryParse(currentQuantityMatch.group(1)!) ?? 1.0
-                    : 1.0;
+            final scaleFactor = newQuantity / currentQuantity;
 
-                final scaleFactor = newQuantity / currentQuantity;
+            // Generate new quantity display string
+            final quantityStr = newQuantity == newQuantity.toInt()
+                ? newQuantity.toInt().toString()
+                : newQuantity.toStringAsFixed(1);
+            final isPlural = newQuantity != 1.0;
 
-                // Generate new quantity display string
-                final quantityStr = newQuantity == newQuantity.toInt()
-                    ? newQuantity.toInt().toString()
-                    : newQuantity.toStringAsFixed(1);
-                final isPlural = newQuantity != 1.0;
-
-                String displayName;
-                if (isPlural && item.displayNamePlural?.isNotEmpty == true) {
-                  displayName = item.displayNamePlural!;
-                } else if (item.displayName?.isNotEmpty == true) {
-                  displayName = item.displayName!;
-                } else {
-                  displayName = item.name;
-                }
-
-                final newQuantityDisplay = '$quantityStr $displayName';
-
-                return FoodItemData(
-                  id: item.id,
-                  name: item.name,
-                  quantity: newQuantityDisplay,
-                  imageAddress: item.imageAddress,
-                  instructions: item.instructions,
-                  description: item.description,
-                  displayName: item.displayName,
-                  displayNamePlural: item.displayNamePlural,
-                  nutritionalInfo: NutritionalInfo(
-                    calories: (currentNutrition.calories! * scaleFactor).round(),
-                    carbs: (currentNutrition.carbs! * scaleFactor).round(),
-                    protein: (currentNutrition.protein! * scaleFactor).round(),
-                    fat: (currentNutrition.fat! * scaleFactor).round(),
-                    sodium: (currentNutrition.sodium! * scaleFactor).round(),
-                    fluids: currentNutrition.fluids! * scaleFactor,
-                  ),
-                );
-              }
+            String displayName;
+            if (isPlural && item.displayNamePlural?.isNotEmpty == true) {
+              displayName = item.displayNamePlural!;
+            } else if (item.displayName?.isNotEmpty == true) {
+              displayName = item.displayName!;
+            } else {
+              displayName = item.name;
             }
-            return item;
-          }).toList();
 
-          return section.copyWith(foodItems: updatedItems);
+            final newQuantityDisplay = '$quantityStr $displayName';
+
+            return FoodItemData(
+              id: item.id,
+              name: item.name,
+              quantity: newQuantityDisplay,
+              imageAddress: item.imageAddress,
+              instructions: item.instructions,
+              description: item.description,
+              displayName: item.displayName,
+              displayNamePlural: item.displayNamePlural,
+              nutritionalInfo: NutritionalInfo(
+                calories: (currentNutrition.calories! * scaleFactor).round(),
+                carbs: (currentNutrition.carbs! * scaleFactor).round(),
+                protein: (currentNutrition.protein! * scaleFactor).round(),
+                fat: (currentNutrition.fat! * scaleFactor).round(),
+                sodium: (currentNutrition.sodium! * scaleFactor).round(),
+                fluids: currentNutrition.fluids! * scaleFactor,
+              ),
+            );
+          }
         }
-        return section;
-      }).toList();
-
-      final updatedPlan = currentPlan.copyWith(
-        sections: updatedSections,
-        updatedAt: DateTime.now(),
-      );
-
-      // Update state first for immediate UI feedback
-      state = AsyncData(currentState.copyWith(
-        nutritionPlan: updatedPlan,
-        hasUnsavedChanges: false, // Will be saved immediately
-      ));
-
-      // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
-      // This ensures the nutrition plan is persisted before any navigation events
-      final activity = currentState.activity;
-      if (activity != null) {
-        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
-        _logger.info('updateFoodQuantity: Auto-saved nutrition plan to prevent data loss');
-      }
-    } catch (error, stackTrace) {
-      _logger.error('Error updating food quantity', error: error, stackTrace: stackTrace);
-    }
+        return item;
+      }).toList(),
+    );
   }
 }

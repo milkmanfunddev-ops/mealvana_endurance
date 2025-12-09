@@ -1,186 +1,1069 @@
+Launching lib/main.dart on Lee’s iPhone in debug mode...
+Automatically signing iOS for device deployment using specified development team in Xcode project: 9Y99749RG3
+Xcode build done.                                           18.7s
+You may be prompted to give access to control Xcode. Flutter uses Xcode to run your app. If access is not allowed, you can change this through your Settings > Privacy & Security > Automation.
+Connecting to VM Service at ws://127.0.0.1:58004/1EK_lT-TSUY=/ws
+Connected to the VM Service.
+flutter: [STARTUP] Widget binding initialized: 42ms
+flutter: [STARTUP] Dev mode override loaded: 58ms
+flutter: [STARTUP] dotenv loaded (.env.prod.local): 69ms
+flutter: [STARTUP] AppConfig created: 70ms
+flutter: [STARTUP] Starting Sentry init...
+flutter: [STARTUP] Sentry init completed: 148ms
+flutter: [STARTUP] Starting Supabase and runApp...
+flutter: [STARTUP] Starting Supabase.initialize...
+flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+flutter: [STARTUP] Supabase.initialize completed: 179ms
+flutter: [STARTUP] Calling runApp...
+flutter: [APP_STARTUP] Starting critical path initialization...
+flutter: [APP_STARTUP] initializeDatabase started
+flutter: [APP_STARTUP] initializeSupabaseAuth started
+flutter: [APP_STARTUP] setSentryUserContext started
+flutter: [APP_STARTUP] setSentryUserContext completed: 96ms
+flutter: [APP_STARTUP] initializeDatabase completed: 2274ms
+flutter: [APP_STARTUP] initializeSupabaseAuth completed: 3599ms
+flutter: [APP_STARTUP] Critical path completed: 3638ms
+flutter: [APP_STARTUP] Scheduling deferred initialization (analytics, device info, push)...
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:47.961 (+0:00:03.627260)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [APP_STARTUP] syncAllAppData using user ID\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userIdForSync: 438f318f-fc1c-4058-9650-73169fd86b23, supabaseUserId: 438f318f-fc1c-4058-9650-73169fd86b23}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:47.973 (+0:00:03.638512)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting syncAllData\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 438f318f-fc1c-4058-9650-73169fd86b23}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: [APP_STARTUP] Getting navigation data...
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:47.987 (+0:00:03.652728)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 0: Syncing user profile\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: [APP_STARTUP] User profile loaded: 3671ms
+flutter: [APP_STARTUP] Checking pending feedback...
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:47.995 (+0:00:03.660423)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [USER_SYNC] Local user profile missing or mismatched - fetching from Supabase\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 438f318f-fc1c-4058-9650-73169fd86b23, localUserId: null, reason: no_local_profile}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: [APP_STARTUP] Pending feedback checked: 3675ms
+flutter: [APP_STARTUP] ✅ STARTUP COMPLETE: 3675ms total
+flutter: [DEFERRED_INIT] Post-frame: Starting deferred initialization...
+flutter: [DEVICE_INFO] Initializing...
+flutter: [DEVICE_INFO] Initialized in 15ms (ID: FDA023A1-F2CC-4EBE-B7EA-E9C01EDB4B91)
+flutter: [DEFERRED_INIT] Device info initialized: 17ms
+flutter: [DEFERRED_INIT] Analytics initialized: 48ms
+flutter: [DEFERRED_INIT] User session checked: 49ms
+flutter: PushNotificationService: Initialized with app ID: 335e597f...
+flutter: PushNotificationService: Logged in user: FDA023A1-F2CC-4EBE-B7EA-E9C01EDB4B91
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:48.922 (+0:00:04.587548)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [USER_SYNC] No remote user profile found - user may need to complete onboarding\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 438f318f-fc1c-4058-9650-73169fd86b23}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:48.926 (+0:00:04.592010)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 1: Uploading dirty records\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:48.940 (+0:00:04.605516)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 2: Trying edge function sync\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.148 (+0:00:04.813760)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [APP_STARTUP] syncAllAppData using user ID\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userIdForSync: 438f318f-fc1c-4058-9650-73169fd86b23, supabaseUserId: 438f318f-fc1c-4058-9650-73169fd86b23}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.150 (+0:00:04.815696)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting syncAllData\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 438f318f-fc1c-4058-9650-73169fd86b23}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.152 (+0:00:04.817513)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 0: Syncing user profile\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.153 (+0:00:04.818817)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [USER_SYNC] Local user profile missing or mismatched - fetching from Supabase\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 438f318f-fc1c-4058-9650-73169fd86b23, localUserId: null, reason: no_local_profile}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.310 (+0:00:04.976265)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [USER_SYNC] No remote user profile found - user may need to complete onboarding\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 438f318f-fc1c-4058-9650-73169fd86b23}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.312 (+0:00:04.978098)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 1: Uploading dirty records\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.314 (+0:00:04.979960)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 2: Trying edge function sync\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.611 (+0:00:05.277243)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 0 activities from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.613 (+0:00:05.278598)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 0 events from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.614 (+0:00:05.279914)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 0 carb loading plans from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.615 (+0:00:05.280808)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 0 carb loading days from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.616 (+0:00:05.281714)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Edge function data sync to local DB completed\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activities: 0, events: 0, carbLoadingPlans: 0, carbLoadingDays: 0, foodPreferences: 0}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.618 (+0:00:05.283860)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Edge function sync completed successfully\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 438f318f-fc1c-4058-9650-73169fd86b23}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.620 (+0:00:05.285984)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [APP_STARTUP] Sync completed successfully - invalidating providers\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.724 (+0:00:05.389959)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 0 activities from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.726 (+0:00:05.391457)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 0 events from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.727 (+0:00:05.392612)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 0 carb loading plans from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.728 (+0:00:05.394066)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 0 carb loading days from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.730 (+0:00:05.395545)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Edge function data sync to local DB completed\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activities: 0, events: 0, carbLoadingPlans: 0, carbLoadingDays: 0, foodPreferences: 0}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.732 (+0:00:05.398003)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Edge function sync completed successfully\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 438f318f-fc1c-4058-9650-73169fd86b23}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.733 (+0:00:05.399275)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [APP_STARTUP] Sync completed successfully - invalidating providers\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:49.735 (+0:00:05.400688)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [AUTH] Post-auth sync completed - providers invalidated\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:53.949 (+0:00:09.615097)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [AUTH] Post-onboarding auth: Switching to existing Google account\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:53.956 (+0:00:09.621389)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [OAUTH_NATIVE] Starting native Google Sign-In (Sign In mode)\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:53.958 (+0:00:09.623849)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [OAUTH_NATIVE] Capturing anonymous user before sign-in\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {anonymous_user_id: 438f318f-fc1c-4058-9650-73169fd86b23, was_anonymous: true}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:53.960 (+0:00:09.625461)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [OAUTH_NATIVE] Initializing Google Sign-In\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {platform: ios, is_release_build: false, using_client_id: ios_plist}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:59.896 (+0:00:15.562135)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [OAUTH_NATIVE] Skipping migration - anonymous user has no data to migrate\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {anonymous_user_id: 438f318f-fc1c-4058-9650-73169fd86b23, oauth_user_id: 09cd66df-b38e-42c9-a738-1f002f7c1f1e}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:59.898 (+0:00:15.564025)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [OAUTH_NATIVE] Triggering post-sign-in sync\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {user_id: 09cd66df-b38e-42c9-a738-1f002f7c1f1e}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:59.900 (+0:00:15.566048)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting syncAllData\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 09cd66df-b38e-42c9-a738-1f002f7c1f1e}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:59.902 (+0:00:15.567645)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:59.995 (+0:00:15.660948)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 1: Uploading dirty records\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:25:59.998 (+0:00:15.663491)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 2: Trying edge function sync\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:00.011 (+0:00:15.677107)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 1: Uploading dirty records\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:00.016 (+0:00:15.681438)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 2: Trying edge function sync\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:00.847 (+0:00:16.513062)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 9 activities from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:00.865 (+0:00:16.530728)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 3 events from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:00.881 (+0:00:16.546413)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 3 carb loading plans from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:00.887 (+0:00:16.552429)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 9 carb loading days from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:00.998 (+0:00:16.663303)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Syncing 29 food preferences from edge function\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:01.007 (+0:00:16.673163)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [FOOD_PREF_SYNC] Synced 29 food preferences from edge function\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 09cd66df-b38e-42c9-a738-1f002f7c1f1e, count: 29}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:01.008 (+0:00:16.674214)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [EDGE_SYNC] Edge function data sync to local DB completed\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activities: 9, events: 3, carbLoadingPlans: 3, carbLoadingDays: 9, foodPreferences: 29}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:01.011 (+0:00:16.676488)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Edge function sync completed successfully\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 09cd66df-b38e-42c9-a738-1f002f7c1f1e}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:01.013 (+0:00:16.678493)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [OAUTH_NATIVE] Post-sign-in sync completed - providers invalidated\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:01.159 (+0:00:16.824783)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 121, hasNutritionPlan: true, nutritionPlanDataSize: 7331}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:01.161 (+0:00:16.826529)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 114, hasNutritionPlan: true, nutritionPlanDataSize: 6658}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:01.162 (+0:00:16.827364)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 118, hasNutritionPlan: true, nutritionPlanDataSize: 6658}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:01.162 (+0:00:16.828065)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Mapping activity with nutrition plan data\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 115, hasNutritionPlan: true, nutritionPlanDataSize: 7213}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:01.163 (+0:00:16.828745)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:09.325 (+0:00:24.990756)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Fetching activity by ID\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 09cd66df-b38e-42c9-a738-1f002f7c1f1e, activityId: 117}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:09.327 (+0:00:24.992571)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Activity found successfully\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 117, title: Test, hasNutritionPlan: false}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:17.490 (+0:00:33.155453)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Fetching activity by ID\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {userId: 09cd66df-b38e-42c9-a738-1f002f7c1f1e, activityId: 117}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:17.492 (+0:00:33.157345)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Activity found successfully\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {activityId: 117, title: Test, hasNutritionPlan: false}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:353:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 16:26:20.472 (+0:00:36.137684)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [CARB_LOADING_REPOSITORY] Cascade deleted carb loading plan 34 for event 57\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+[sentry.flutterError] [error] Exception caught by widgets library
+[sentry.flutterError] FlutterError (A dismissed Dismissible widget is still part of the tree.
+                      Make sure to implement the onDismissed handler and to immediately remove the Dismissible widget from the application once that handler has fired.)
+[sentry.flutterError] #0      _DismissibleState.build.<anonymous closure> (package:flutter/src/widgets/dismissible.dart:626:11)
+                      #1      _DismissibleState.build (package:flutter/src/widgets/dismissible.dart:635:8)
+                      #2      StatefulElement.build (package:flutter/src/widgets/framework.dart:5833:27)
+                      #3      ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5723:15)
+                      #4      StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #5      Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #6      StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #7      Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #8      SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #9      Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #10     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #11     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #12     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #13     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #14     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #15     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #16     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #17     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #18     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #19     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #20     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #21     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #22     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #23     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #24     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #25     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #26     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #27     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #28     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #29     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #30     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #31     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #32     StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+                      #33     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #34     SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1001:37)
+                      #35     SliverMultiBoxAdaptorElement.performRebuild.processElement (package:flutter/src/widgets/sliver.dart:892:35)
+                      #36     Iterable.forEach (dart:core/iterable.dart:366:35)
+                      #37     SliverMultiBoxAdaptorElement.performRebuild (package:flutter/src/widgets/sliver.dart:946:24)
+                      #38     SliverMultiBoxAdaptorElement.update (package:flutter/src/widgets/sliver.dart:868:7)
+                      #39     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #40     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #41     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #42     Element.updateChildren (package:flutter/src/widgets/framework.dart:4139:32)
+                      #43     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7202:17)
+                      #44     _ViewportElement.update (package:flutter/src/widgets/viewport.dart:264:11)
+                      #45     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #46     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #47     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #48     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #49     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #50     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #51     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #52     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #53     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #54     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #55     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #56     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #57     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #58     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #59     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #60     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #61     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #62     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #63     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #64     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #65     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #66     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #67     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #68     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #69     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #70     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #71     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #72     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #73     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #74     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #75     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #76     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #77     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #78     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #79     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #80     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #81     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #82     StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+                      #83     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #84     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #85     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #86     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #87     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #88     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #89     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #90     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #91     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #92     Element.updateChildren (package:flutter/src/widgets/framework.dart:4139:32)
+                      #93     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7202:17)
+                      #94     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #95     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #96     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #97     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #98     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #99     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #100    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #101    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #102    StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+                      #103    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #104    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #105    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #106    StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+                      #107    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #108    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #109    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #110    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #111    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #112    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #113    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #114    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #115    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #116    Element.updateChildren (package:flutter/src/widgets/framework.dart:4139:32)
+                      #117    MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7202:17)
+                      #118    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #119    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #120    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #121    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #122    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #123    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #124    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #125    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #126    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #127    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #128    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #129    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #130    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #131    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #132    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #133    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #134    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #135    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #136    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #137    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #138    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #139    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #140    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #141    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #142    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #143    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #144    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #145    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #146    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #147    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #148    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+                      #149    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #150    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #151    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #152    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #153    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #154    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #155    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #156    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #157    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #158    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #159    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #160    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #161    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #162    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #163    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #164    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #165    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #166    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #167    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #168    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #169    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #170    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #171    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #172    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #173    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #174    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #175    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #176    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #177    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #178    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #179    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+                      #180    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #181    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #182    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #183    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #184    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+                      #185    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+                      #186    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+                      #187    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+                      #188    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+                      #189    BuildScope._tryRebuild (package:flutter/src/widgets/framework.dart:2695:15)
+                      #190    BuildScope._flushDirtyElements (package:flutter/src/widgets/framework.dart:2752:11)
+                      #191    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3056:18)
+                      #192    WidgetsBinding.drawFrame (package:flutter/src/widgets/binding.dart:1259:21)
+                      #193    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+                      #194    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+                      #195    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+                      #196    SentryWidgetsBindingMixin.handleDrawFrame (package:sentry_flutter/src/binding_wrapper.dart:128:11)
+                      #197    SchedulerBinding._handleDrawFrame (package:flutter/src/scheduler/binding.dart:1200:5)
+                      #198    _rootRun (dart:async/zone.dart:1525:13)
+                      #199    _CustomZone.run (dart:async/zone.dart:1422:19)
+                      #200    _CustomZone.runGuarded (dart:async/zone.dart:1321:7)
+                      #201    _invoke (dart:ui/hooks.dart:332:10)
+                      #202    PlatformDispatcher._drawFrame (dart:ui/platform_dispatcher.dart:444:5)
+                      #203    _drawFrame (dart:ui/hooks.dart:302:31)
 
-========================================
-STEP: Starting Nutrition Plan Flow Test
-========================================
+════════ Exception caught by widgets library ═══════════════════════════════════
+The following assertion was thrown building Dismissible-[<'57'>](dependencies: [Directionality], state: _DismissibleState#c2a10(tickers: tracking 2 tickers)):
+A dismissed Dismissible widget is still part of the tree.
+Make sure to implement the onDismissed handler and to immediately remove the Dismissible widget from the application once that handler has fired.
 
-  -> Launching app...
-supabase.supabase_flutter: INFO: ***** Supabase init completed ***** 
-  -> Skipping through onboarding...
+When the exception was thrown, this was the stack:
+#0      _DismissibleState.build.<anonymous closure> (package:flutter/src/widgets/dismissible.dart:626:11)
+#1      _DismissibleState.build (package:flutter/src/widgets/dismissible.dart:635:8)
+#2      StatefulElement.build (package:flutter/src/widgets/framework.dart:5833:27)
+#3      ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5723:15)
+#4      StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#5      Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#6      StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#7      Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#8      SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#9      Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#10     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#11     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#12     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#13     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#14     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#15     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#16     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#17     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#18     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#19     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#20     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#21     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#22     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#23     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#24     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#25     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#26     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#27     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#28     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#29     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#30     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#31     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#32     StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+#33     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#34     SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1001:37)
+#35     SliverMultiBoxAdaptorElement.performRebuild.processElement (package:flutter/src/widgets/sliver.dart:892:35)
+#36     Iterable.forEach (dart:core/iterable.dart:366:35)
+#37     SliverMultiBoxAdaptorElement.performRebuild (package:flutter/src/widgets/sliver.dart:946:24)
+#38     SliverMultiBoxAdaptorElement.update (package:flutter/src/widgets/sliver.dart:868:7)
+#39     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#40     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#41     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#42     Element.updateChildren (package:flutter/src/widgets/framework.dart:4139:32)
+#43     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7202:17)
+#44     _ViewportElement.update (package:flutter/src/widgets/viewport.dart:264:11)
+#45     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#46     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#47     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#48     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#49     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#50     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#51     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#52     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#53     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#54     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#55     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#56     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#57     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#58     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#59     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#60     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#61     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#62     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#63     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#64     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#65     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#66     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#67     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#68     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#69     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#70     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#71     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#72     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#73     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#74     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#75     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#76     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#77     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#78     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#79     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#80     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#81     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#82     StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+#83     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#84     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#85     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#86     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#87     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#88     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#89     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#90     ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#91     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#92     Element.updateChildren (package:flutter/src/widgets/framework.dart:4139:32)
+#93     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7202:17)
+#94     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#95     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#96     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#97     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#98     StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#99     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#100    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#101    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#102    StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+#103    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#104    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#105    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#106    StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+#107    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#108    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#109    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#110    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#111    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#112    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#113    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#114    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#115    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#116    Element.updateChildren (package:flutter/src/widgets/framework.dart:4139:32)
+#117    MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7202:17)
+#118    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#119    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#120    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#121    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#122    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#123    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#124    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#125    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#126    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#127    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#128    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#129    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#130    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#131    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#132    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#133    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#134    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#135    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#136    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#137    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#138    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#139    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#140    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#141    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#142    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#143    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#144    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#145    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#146    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#147    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#148    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7025:14)
+#149    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#150    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#151    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#152    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#153    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#154    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#155    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#156    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#157    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#158    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#159    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#160    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#161    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#162    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#163    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#164    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#165    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#166    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#167    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#168    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#169    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#170    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#171    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#172    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#173    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#174    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#175    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#176    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#177    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#178    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#179    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+#180    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#181    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#182    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#183    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#184    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+#185    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#186    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+#187    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+#188    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+#189    BuildScope._tryRebuild (package:flutter/src/widgets/framework.dart:2695:15)
+#190    BuildScope._flushDirtyElements (package:flutter/src/widgets/framework.dart:2752:11)
+#191    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3056:18)
+#192    WidgetsBinding.drawFrame (package:flutter/src/widgets/binding.dart:1259:21)
+#193    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#194    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#195    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+#196    SentryWidgetsBindingMixin.handleDrawFrame (package:sentry_flutter/src/binding_wrapper.dart:128:11)
+#197    SchedulerBinding._handleDrawFrame (package:flutter/src/scheduler/binding.dart:1200:5)
+#201    _invoke (dart:ui/hooks.dart:332:10)
+#202    PlatformDispatcher._drawFrame (dart:ui/platform_dispatcher.dart:444:5)
+#203    _drawFrame (dart:ui/hooks.dart:302:31)
+(elided 3 frames from dart:async)
 
-Warning: A call to tap() with finder "Found 1 widget with text containing Continue (ignoring all but first): [
-  Text("Continue", inherit: true, color: Color(alpha: 1.0000, red: 0.2196, green: 0.0863, blue: 0.2000, colorSpace: ColorSpace.sRGB), family: Sansita, size: 16.0, weight: 700, height: 1.2x, textAlign: center, overflow: ellipsis, dependencies: [DefaultSelectionStyle, DefaultTextStyle, MediaQuery]),
-]" derived an Offset (Offset(215.0, 1009.0)) that would not hit test on the specified widget.
-Maybe the widget is actually off-screen, or another widget is obscuring it, or the widget cannot receive pointer events.
-Indeed, Offset(215.0, 1009.0) is outside the bounds of the root of the render tree, Size(430.0, 932.0).
-The finder corresponds to this RenderBox: RenderParagraph#da9b7 relayoutBoundary=up2
-The hit test result at that offset is: HitTestResult(HitTestEntry<HitTestTarget>#48d90(_ReusableRenderView#82bcd NEEDS-LAYOUT), HitTestEntry<HitTestTarget>#29dda(<IntegrationTestWidgetsFlutterBinding>))
-#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2077:25)
-#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1861:12)
-#2      WidgetController.tap (package:flutter_test/src/controller.dart:1041:7)
-#3      _skipOnboarding (file:///Users/leemartin/development/mealvana_endurance/integration_test/flows/nutrition_plan_flow_test.dart:361:18)
-<asynchronous suspension>
-#4      main.<anonymous closure>.<anonymous closure> (file:///Users/leemartin/development/mealvana_endurance/integration_test/flows/nutrition_plan_flow_test.dart:45:11)
-<asynchronous suspension>
-#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
-<asynchronous suspension>
-#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
-<asynchronous suspension>
-#7      StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
-<asynchronous suspension>
-To silence this warning, pass "warnIfMissed: false" to "tap()".
-To make this warning fatal, set WidgetController.hitTestWarningShouldBeFatal to true.
+════════════════════════════════════════════════════════════════════════════════
+[sentry.flutterError] [error] Exception caught by widget inspector
+[sentry.flutterError] FlutterError (Looking up a deactivated widget's ancestor is unsafe.
+                      At this point the state of the widget's element tree is no longer stable.
+                      To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.)
+[sentry.flutterError] #0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:4954:9)
+                      #1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:4968:6)
+                      #2      Element.visitAncestorElements (package:flutter/src/widgets/framework.dart:5080:12)
+                      #3      _describeRelevantUserCode (package:flutter/src/widgets/widget_inspector.dart:4221:13)
+                      #4      _parseDiagnosticsNode (package:flutter/src/widgets/widget_inspector.dart:4140:12)
+                      #5      debugTransformDebugCreator (package:flutter/src/widgets/widget_inspector.dart:4119:21)
+                      #6      _FlutterErrorDetailsNode.builder (package:flutter/src/foundation/assertions.dart:1310:31)
+                      #7      DiagnosticableNode.emptyBodyDescription (package:flutter/src/foundation/diagnostics.dart:2941:45)
+                      #8      DiagnosticsNode.toJsonMap.<anonymous closure> (package:flutter/src/foundation/diagnostics.dart:1654:13)
+                      #9      DiagnosticsNode.toJsonMap (package:flutter/src/foundation/diagnostics.dart:1672:6)
+                      #10     WidgetInspectorService._nodeToJson (package:flutter/src/widgets/widget_inspector.dart:1772:20)
+                      #11     WidgetInspectorService._reportStructuredError (package:flutter/src/widgets/widget_inspector.dart:1009:44)
+                      #12     FlutterErrorIntegration.call.<anonymous closure> (package:sentry_flutter/src/integrations/flutter_error_integration.dart:106:25)
+                      <asynchronous suspension>
+[sentry.flutterError] [error] Exception caught by widget inspector
+[sentry.flutterError] FlutterError (Looking up a deactivated widget's ancestor is unsafe.
+                      At this point the state of the widget's element tree is no longer stable.
+                      To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.)
+[sentry.flutterError] #0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:4954:9)
+                      #1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:4968:6)
+                      #2      Element.visitAncestorElements (package:flutter/src/widgets/framework.dart:5080:12)
+                      #3      _describeRelevantUserCode (package:flutter/src/widgets/widget_inspector.dart:4221:13)
+                      #4      _parseDiagnosticsNode (package:flutter/src/widgets/widget_inspector.dart:4140:12)
+                      #5      debugTransformDebugCreator (package:flutter/src/widgets/widget_inspector.dart:4119:21)
+                      #6      _FlutterErrorDetailsNode.builder (package:flutter/src/foundation/assertions.dart:1310:31)
+                      #7      DiagnosticableNode.getProperties (package:flutter/src/foundation/diagnostics.dart:2945:68)
+                      #8      TextTreeRenderer._debugRender (package:flutter/src/foundation/diagnostics.dart:1270:63)
+                      #9      TextTreeRenderer.render (package:flutter/src/foundation/diagnostics.dart:1137:14)
+                      #10     WidgetInspectorService._reportStructuredError (package:flutter/src/widgets/widget_inspector.dart:1025:9)
+                      #11     FlutterErrorIntegration.call.<anonymous closure> (package:sentry_flutter/src/integrations/flutter_error_integration.dart:106:25)
+                      <asynchronous suspension>
+[sentry.flutterError] [error] Exception caught by widget inspector
+[sentry.flutterError] FlutterError (Looking up a deactivated widget's ancestor is unsafe.
+                      At this point the state of the widget's element tree is no longer stable.
+                      To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.)
+[sentry.flutterError] #0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:4954:9)
+                      #1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:4968:6)
+                      #2      Element.visitAncestorElements (package:flutter/src/widgets/framework.dart:5080:12)
+                      #3      _describeRelevantUserCode (package:flutter/src/widgets/widget_inspector.dart:4221:13)
+                      #4      _parseDiagnosticsNode (package:flutter/src/widgets/widget_inspector.dart:4140:12)
+                      #5      debugTransformDebugCreator (package:flutter/src/widgets/widget_inspector.dart:4119:21)
+                      #6      _FlutterErrorDetailsNode.builder (package:flutter/src/foundation/assertions.dart:1310:31)
+                      #7      DiagnosticableNode.getProperties (package:flutter/src/foundation/diagnostics.dart:2945:68)
+                      #8      DiagnosticsNode.toJsonMap.<anonymous closure> (package:flutter/src/foundation/diagnostics.dart:1664:39)
+                      #9      DiagnosticsNode.toJsonMap (package:flutter/src/foundation/diagnostics.dart:1672:6)
+                      #10     WidgetInspectorService._nodeToJson (package:flutter/src/widgets/widget_inspector.dart:1772:20)
+                      #11     WidgetInspectorService._reportStructuredError (package:flutter/src/widgets/widget_inspector.dart:1009:44)
+                      #12     FlutterErrorIntegration.call.<anonymous closure> (package:sentry_flutter/src/integrations/flutter_error_integration.dart:106:25)
+                      <asynchronous suspension>
+[sentry.flutterError] [error] Exception caught by widget inspector
+[sentry.flutterError] FlutterError (Looking up a deactivated widget's ancestor is unsafe.
+                      At this point the state of the widget's element tree is no longer stable.
+                      To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.)
+[sentry.flutterError] #0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:4954:9)
+                      #1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:4968:6)
+                      #2      Element.visitAncestorElements (package:flutter/src/widgets/framework.dart:5080:12)
+                      #3      _describeRelevantUserCode (package:flutter/src/widgets/widget_inspector.dart:4221:13)
+                      #4      _parseDiagnosticsNode (package:flutter/src/widgets/widget_inspector.dart:4140:12)
+                      #5      debugTransformDebugCreator (package:flutter/src/widgets/widget_inspector.dart:4119:21)
+                      #6      _FlutterErrorDetailsNode.builder (package:flutter/src/foundation/assertions.dart:1310:31)
+                      #7      DiagnosticableNode.style (package:flutter/src/foundation/diagnostics.dart:2936:26)
+                      #8      DiagnosticsNode.toJsonMap.<anonymous closure> (package:flutter/src/foundation/diagnostics.dart:1655:13)
+                      #9      DiagnosticsNode.toJsonMap (package:flutter/src/foundation/diagnostics.dart:1672:6)
+                      #10     WidgetInspectorService._nodeToJson (package:flutter/src/widgets/widget_inspector.dart:1772:20)
+                      #11     WidgetInspectorService._reportStructuredError (package:flutter/src/widgets/widget_inspector.dart:1009:44)
+                      #12     FlutterErrorIntegration.call.<anonymous closure> (package:sentry_flutter/src/integrations/flutter_error_integration.dart:106:25)
+                      <asynchronous suspension>
+[sentry.flutterError] [error] Exception caught by widget inspector
+[sentry.flutterError] FlutterError (Looking up a deactivated widget's ancestor is unsafe.
+                      At this point the state of the widget's element tree is no longer stable.
+                      To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.)
+[sentry.flutterError] #0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:4954:9)
+                      #1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:4968:6)
+                      #2      Element.visitAncestorElements (package:flutter/src/widgets/framework.dart:5080:12)
+                      #3      _describeRelevantUserCode (package:flutter/src/widgets/widget_inspector.dart:4221:13)
+                      #4      _parseDiagnosticsNode (package:flutter/src/widgets/widget_inspector.dart:4140:12)
+                      #5      debugTransformDebugCreator (package:flutter/src/widgets/widget_inspector.dart:4119:21)
+                      #6      _FlutterErrorDetailsNode.builder (package:flutter/src/foundation/assertions.dart:1310:31)
+                      #7      DiagnosticableNode.emptyBodyDescription (package:flutter/src/foundation/diagnostics.dart:2941:45)
+                      #8      TextTreeRenderer._debugRender (package:flutter/src/foundation/diagnostics.dart:1307:14)
+                      #9      TextTreeRenderer.render (package:flutter/src/foundation/diagnostics.dart:1137:14)
+                      #10     WidgetInspectorService._reportStructuredError (package:flutter/src/widgets/widget_inspector.dart:1025:9)
+                      #11     FlutterErrorIntegration.call.<anonymous closure> (package:sentry_flutter/src/integrations/flutter_error_integration.dart:106:25)
+                      <asynchronous suspension>
 
+════════ Exception caught by widget inspector ══════════════════════════════════
+Looking up a deactivated widget's ancestor is unsafe.
+════════════════════════════════════════════════════════════════════════════════
 
-Warning: A call to tap() with finder "Found 1 widget with text containing Continue (ignoring all but first): [
-  Text("Continue", inherit: true, color: Color(alpha: 1.0000, red: 0.2196, green: 0.0863, blue: 0.2000, colorSpace: ColorSpace.sRGB), family: Sansita, size: 16.0, weight: 700, height: 1.2x, textAlign: center, overflow: ellipsis, dependencies: [DefaultSelectionStyle, DefaultTextStyle, MediaQuery]),
-]" derived an Offset (Offset(215.0, 1009.0)) that would not hit test on the specified widget.
-Maybe the widget is actually off-screen, or another widget is obscuring it, or the widget cannot receive pointer events.
-Indeed, Offset(215.0, 1009.0) is outside the bounds of the root of the render tree, Size(430.0, 932.0).
-The finder corresponds to this RenderBox: RenderParagraph#da9b7 relayoutBoundary=up2
-The hit test result at that offset is: HitTestResult(HitTestEntry<HitTestTarget>#09903(_ReusableRenderView#82bcd), HitTestEntry<HitTestTarget>#09c36(<IntegrationTestWidgetsFlutterBinding>))
-#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2077:25)
-#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1861:12)
-#2      WidgetController.tap (package:flutter_test/src/controller.dart:1041:7)
-#3      _skipOnboarding (file:///Users/leemartin/development/mealvana_endurance/integration_test/flows/nutrition_plan_flow_test.dart:369:18)
-<asynchronous suspension>
-#4      main.<anonymous closure>.<anonymous closure> (file:///Users/leemartin/development/mealvana_endurance/integration_test/flows/nutrition_plan_flow_test.dart:45:11)
-<asynchronous suspension>
-#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
-<asynchronous suspension>
-#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
-<asynchronous suspension>
-#7      StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
-<asynchronous suspension>
-To silence this warning, pass "warnIfMissed: false" to "tap()".
-To make this warning fatal, set WidgetController.hitTestWarningShouldBeFatal to true.
+════════ Exception caught by widget inspector ══════════════════════════════════
+Looking up a deactivated widget's ancestor is unsafe.
+════════════════════════════════════════════════════════════════════════════════
 
+════════ Exception caught by widget inspector ══════════════════════════════════
+Looking up a deactivated widget's ancestor is unsafe.
+════════════════════════════════════════════════════════════════════════════════
 
-Warning: A call to tap() with finder "Found 1 widget with text containing Continue (ignoring all but first): [
-  Text("Continue", inherit: true, color: Color(alpha: 1.0000, red: 0.2196, green: 0.0863, blue: 0.2000, colorSpace: ColorSpace.sRGB), family: Sansita, size: 16.0, weight: 700, height: 1.2x, textAlign: center, overflow: ellipsis, dependencies: [DefaultSelectionStyle, DefaultTextStyle, MediaQuery]),
-]" derived an Offset (Offset(215.0, 1009.0)) that would not hit test on the specified widget.
-Maybe the widget is actually off-screen, or another widget is obscuring it, or the widget cannot receive pointer events.
-Indeed, Offset(215.0, 1009.0) is outside the bounds of the root of the render tree, Size(430.0, 932.0).
-The finder corresponds to this RenderBox: RenderParagraph#da9b7 relayoutBoundary=up2
-The hit test result at that offset is: HitTestResult(HitTestEntry<HitTestTarget>#230b7(_ReusableRenderView#82bcd), HitTestEntry<HitTestTarget>#e54aa(<IntegrationTestWidgetsFlutterBinding>))
-#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2077:25)
-#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1861:12)
-#2      WidgetController.tap (package:flutter_test/src/controller.dart:1041:7)
-#3      _skipOnboarding (file:///Users/leemartin/development/mealvana_endurance/integration_test/flows/nutrition_plan_flow_test.dart:383:20)
-<asynchronous suspension>
-#4      main.<anonymous closure>.<anonymous closure> (file:///Users/leemartin/development/mealvana_endurance/integration_test/flows/nutrition_plan_flow_test.dart:45:11)
-<asynchronous suspension>
-#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
-<asynchronous suspension>
-#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
-<asynchronous suspension>
-#7      StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
-<asynchronous suspension>
-To silence this warning, pass "warnIfMissed: false" to "tap()".
-To make this warning fatal, set WidgetController.hitTestWarningShouldBeFatal to true.
+════════ Exception caught by widget inspector ══════════════════════════════════
+Looking up a deactivated widget's ancestor is unsafe.
+════════════════════════════════════════════════════════════════════════════════
 
-  [PASS] App ready
-
-========================================
-STEP: Creating New Activity
-========================================
-
-
-========================================
-STEP: Entering Activity Details
-========================================
-
-  -> Entering distance: 10.0 miles
-  -> Entering pace: 9:30
-
-========================================
-STEP: Generating Macros
-========================================
-
-
-Warning: A call to tap() with finder "Found 1 widget with text containing Continue (ignoring all but first): [
-  Text("Continue", inherit: true, color: Color(alpha: 1.0000, red: 0.2196, green: 0.0863, blue: 0.2000, colorSpace: ColorSpace.sRGB), family: Sansita, size: 16.0, weight: 700, height: 1.2x, textAlign: center, overflow: ellipsis, dependencies: [DefaultSelectionStyle, DefaultTextStyle, MediaQuery]),
-]" derived an Offset (Offset(215.0, 1009.0)) that would not hit test on the specified widget.
-Maybe the widget is actually off-screen, or another widget is obscuring it, or the widget cannot receive pointer events.
-Indeed, Offset(215.0, 1009.0) is outside the bounds of the root of the render tree, Size(430.0, 932.0).
-The finder corresponds to this RenderBox: RenderParagraph#da9b7 relayoutBoundary=up2
-The hit test result at that offset is: HitTestResult(HitTestEntry<HitTestTarget>#4b5ec(_ReusableRenderView#82bcd), HitTestEntry<HitTestTarget>#9bdae(<IntegrationTestWidgetsFlutterBinding>))
-#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2077:25)
-#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1861:12)
-#2      WidgetController.tap (package:flutter_test/src/controller.dart:1041:7)
-#3      IntegrationTestHelpers.tapAndSettle (file:///Users/leemartin/development/mealvana_endurance/integration_test/helpers/test_helpers.dart:30:11)
-#4      main.<anonymous closure>.<anonymous closure> (file:///Users/leemartin/development/mealvana_endurance/integration_test/flows/nutrition_plan_flow_test.dart:163:28)
-<asynchronous suspension>
-#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
-<asynchronous suspension>
-#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
-<asynchronous suspension>
-#7      StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
-<asynchronous suspension>
-To silence this warning, pass "warnIfMissed: false" to "tap()".
-To make this warning fatal, set WidgetController.hitTestWarningShouldBeFatal to true.
-
-  [PASS] Macros generated
-
-========================================
-STEP: Reviewing Macros
-========================================
-
-
-========================================
-STEP: Viewing Generated Plan
-========================================
-
-01:47 +0: loading /Users/leemartin/development/mealvana_endurance/integration_test/flows/nutrition_plan_flow_test.dart                                                                  
-Some possible finders for the widgets at Offset(309.3, 585.3):
-  find.byType(WillPopScope)
-  find.byType(Form)
-  find.byType(SingleChildScrollView)
-  find.byType(KeyedSubtree)
-  find.byType(ScrollNotificationObserver)
-  find.byElementType(InheritedModelElement<_ModalRouteAspect>)
-  find.byElementType(InheritedModelElement<Object>)
-  find.byKey(const Key('screenshot_id'))
-Some possible finders for the widgets at Offset(296.3, 561.3):
-  find.text('Physical Information')
-  find.widgetWithText(BaseCard, 'Physical Information')
-  find.byType(WillPopScope)
-  find.byType(Form)
-  find.widgetWithText(Scrollable, 'Physical Information')
-  find.byType(SingleChildScrollView)
-  find.widgetWithText(GestureDetector, 'Physical Information')
-  find.byType(KeyedSubtree)
-  find.widgetWithText(NotificationListener<ScrollNotification>, 'Physical Information')
-  find.byType(ScrollNotificationObserver)
-  find.widgetWithText(Scaffold, 'Physical Information')
-  find.byElementType(InheritedModelElement<_ModalRouteAspect>)
-  find.byElementType(InheritedModelElement<Object>)
-  find.byKey(const Key('screenshot_id'))
-03:30 +0: Nutrition Plan Flow User can create activity, generate plan, and modify foods                                                                                                 
---- SCREENSHOT: nutrition_plan_generated ---
-
-========================================
-STEP: Swapping a Food Item
-========================================
-
-
-========================================
-STEP: Editing Food Quantity
-========================================
-
-
-========================================
-STEP: Deleting a Food Item
-========================================
-
-
-========================================
-STEP: Verifying Final State
-========================================
-
---- SCREENSHOT: nutrition_plan_modified ---
-
-========================================
-STEP: Nutrition Plan Flow Complete!
-========================================
-
-03:43 +1: All tests passed!        
+════════ Exception caught by widget inspector ══════════════════════════════════
+Looking up a deactivated widget's ancestor is unsafe.
+════════════════════════════════════════════════════════════════════════════════

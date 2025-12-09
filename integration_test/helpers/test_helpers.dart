@@ -5,12 +5,18 @@
 /// - Tap and interaction helpers
 /// - Wait utilities
 /// - Test data cleanup
+/// - Screenshot capture on failure
+/// - Fail-fast assertions
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'test_config.dart';
+
+/// Global binding reference for screenshots
+IntegrationTestWidgetsFlutterBinding? _binding;
 
 /// Extension methods for WidgetTester to simplify integration testing
 extension IntegrationTestHelpers on WidgetTester {
@@ -152,10 +158,65 @@ extension IntegrationTestHelpers on WidgetTester {
   }
 
   /// Take a screenshot with a label (for debugging)
+  /// Now captures real screenshots using IntegrationTestWidgetsFlutterBinding
   Future<void> screenshot(String label) async {
     debugPrint('--- SCREENSHOT: $label ---');
     await pumpAndSettle();
-    // In a real test environment, you could save actual screenshots here
+
+    // Capture real screenshot if binding is available
+    await ScreenshotHelper.capture(this, label);
+  }
+
+  /// Fail-fast assertion: finds widget or throws with screenshot
+  /// Use this for critical steps where missing widget should fail the test
+  Future<Finder> mustFind(
+    Finder finder, {
+    String? reason,
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    final found = await waitForWidget(finder, timeout: timeout);
+    if (!found) {
+      await screenshot('FAIL_must_find_${reason ?? 'widget'}');
+      throw TestFailure(
+        'FAIL: Required widget not found${reason != null ? ': $reason' : ''}\n'
+        'Finder: $finder',
+      );
+    }
+    return finder;
+  }
+
+  /// Fail-fast tap: tap widget or throw with screenshot
+  Future<void> mustTap(
+    Finder finder, {
+    String? reason,
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    await mustFind(finder, reason: reason, timeout: timeout);
+    await tap(finder.first);
+    await pumpAndSettle();
+  }
+
+  /// Fail-fast text entry: find field and enter text or throw
+  Future<void> mustEnterText(
+    Finder finder,
+    String text, {
+    String? reason,
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    await mustFind(finder, reason: reason, timeout: timeout);
+    await enterText(finder.first, text);
+    await pumpAndSettle();
+  }
+
+  /// Assert condition or fail with screenshot
+  Future<void> mustBeTrue(
+    bool condition, {
+    required String reason,
+  }) async {
+    if (!condition) {
+      await screenshot('FAIL_$reason');
+      throw TestFailure('FAIL: $reason');
+    }
   }
 }
 
@@ -212,5 +273,83 @@ class TestLogger {
 
   static void logInfo(String message) {
     debugPrint('  [INFO] $message');
+  }
+
+  static void logData(String label, dynamic value) {
+    debugPrint('  [DATA] $label: $value');
+  }
+}
+
+/// Screenshot helper for capturing real screenshots during tests
+class ScreenshotHelper {
+  static int _screenshotCounter = 0;
+
+  /// Initialize the binding reference for screenshots
+  /// Call this at the start of your test
+  static void initBinding(IntegrationTestWidgetsFlutterBinding binding) {
+    _binding = binding;
+    _screenshotCounter = 0;
+  }
+
+  /// Capture a screenshot with the given label
+  /// Screenshots are stored in the test output directory
+  static Future<void> capture(WidgetTester tester, String label) async {
+    try {
+      if (_binding == null) {
+        debugPrint('  [SCREENSHOT] Binding not initialized, skipping: $label');
+        return;
+      }
+
+      await tester.pumpAndSettle();
+      _screenshotCounter++;
+
+      // Sanitize label for filename
+      final sanitizedLabel = label
+          .replaceAll(RegExp(r'[^\w\-]'), '_')
+          .replaceAll(RegExp(r'_+'), '_')
+          .toLowerCase();
+
+      final filename = '${_screenshotCounter.toString().padLeft(3, '0')}_$sanitizedLabel';
+
+      // Capture screenshot using the binding
+      final bytes = await _binding!.takeScreenshot(filename);
+
+      if (bytes.isNotEmpty) {
+        debugPrint('  [SCREENSHOT] Captured: $filename (${bytes.length} bytes)');
+      } else {
+        debugPrint('  [SCREENSHOT] Captured: $filename (empty - may be CI environment)');
+      }
+    } catch (e) {
+      debugPrint('  [SCREENSHOT] Failed to capture $label: $e');
+    }
+  }
+
+  /// Capture screenshot on failure and rethrow
+  /// Wraps any async function to capture screenshot on error
+  static Future<T> withScreenshotOnFailure<T>(
+    WidgetTester tester,
+    String context,
+    Future<T> Function() action,
+  ) async {
+    try {
+      return await action();
+    } catch (e) {
+      await capture(tester, 'FAIL_$context');
+      rethrow;
+    }
+  }
+}
+
+/// Test data tracking for sync verification
+/// Captures counts before operations for comparison after
+class SyncTestData {
+  int activityCount = 0;
+  int eventCount = 0;
+  int foodPreferenceCount = 0;
+  String? userId;
+
+  @override
+  String toString() {
+    return 'SyncTestData(userId: $userId, activities: $activityCount, events: $eventCount, foodPrefs: $foodPreferenceCount)';
   }
 }

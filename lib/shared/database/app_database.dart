@@ -284,17 +284,35 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Save food preferences for a user
+  ///
+  /// [mergeMode] controls how existing preferences are handled:
+  /// - `false` (default): Replace all preferences (used when user explicitly saves)
+  /// - `true`: Merge with existing preferences, only updating provided items
+  ///   (used when syncing from server to avoid data loss)
   Future<void> saveFoodPreferences(
     String userId,
     Map<String, domain.FoodPreference> preferences, {
     Map<String, int>? sliderLevels,
+    bool mergeMode = false,
   }) async {
     await ensureUserDataSyncColumns();
-    await batch((batch) {
-      // First delete existing preferences for this user
-      batch.deleteWhere(foodPreferencesTable, (f) => f.userId.equals(userId));
 
-      // Insert new preferences
+    // Get existing preferences to merge metadata properly
+    Map<String, domain.FoodPreference>? existingPrefs;
+    Map<String, int>? existingLevels;
+    if (mergeMode) {
+      existingPrefs = await getUserFoodPreferences(userId);
+      existingLevels = await getUserFoodPreferenceLevels(userId);
+    }
+
+    await batch((batch) {
+      // Only delete all preferences if NOT in merge mode
+      // In merge mode, we upsert individual items to preserve local data
+      if (!mergeMode) {
+        batch.deleteWhere(foodPreferencesTable, (f) => f.userId.equals(userId));
+      }
+
+      // Insert/update preferences using upsert
       for (final entry in preferences.entries) {
         final sliderLevel =
             sliderLevels?[entry.key] ?? _defaultSliderLevel(entry.value);
@@ -316,7 +334,21 @@ class AppDatabase extends _$AppDatabase {
       }
     });
 
+    // Build metadata map, preserving existing entries in merge mode
     final metadata = <String, dynamic>{};
+
+    // In merge mode, start with existing preferences
+    if (mergeMode && existingPrefs != null) {
+      for (final entry in existingPrefs.entries) {
+        final existingLevel = existingLevels?[entry.key] ?? _defaultSliderLevel(entry.value);
+        metadata[entry.key] = {
+          'preference': entry.value.value,
+          'slider_level': existingLevel,
+        };
+      }
+    }
+
+    // Add/update with new preferences (these override existing in merge mode)
     for (final entry in preferences.entries) {
       final sliderLevel = sliderLevels?[entry.key] ?? _defaultSliderLevel(entry.value);
       metadata[entry.key] = {

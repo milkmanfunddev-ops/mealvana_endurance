@@ -140,29 +140,13 @@ class WelcomeScreen extends ConsumerWidget {
   }
 
   Widget _buildWelcomeMessage(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          'Welcome to Your Personal\nNutrition Coach',
-          style: AppTextStyles.sectionTitle.copyWith(
-            color: AppColors.cream,
-            fontSize: 24,
-            height: 1.3,
-          ),
-          textAlign: TextAlign.center,
-        ),
-
-        const SizedBox(height: AppSpacing.lg),
-
-        Text(
-          'Get personalized nutrition plans tailored to your endurance activities. Track your fueling, optimize your performance, and achieve your goals.',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.cream.withOpacity(0.9),
-            height: 1.5,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
+    return Text(
+      'Get personalized nutrition plans tailored to your endurance activities. Track your fueling, optimize your performance, and achieve your goals.',
+      style: AppTextStyles.bodyMedium.copyWith(
+        color: AppColors.cream.withOpacity(0.9),
+        height: 1.5,
+      ),
+      textAlign: TextAlign.center,
     );
   }
 

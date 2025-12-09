@@ -29,6 +29,9 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final now = DateTime.now();
+    final isCurrentMonth = _currentMonth.year == now.year && _currentMonth.month == now.month;
+
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -37,11 +40,39 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _formatMonthYear(_currentMonth),
-            style: AppTextStyles.pageTitle.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+          Row(
+            children: [
+              Text(
+                _formatMonthYear(_currentMonth),
+                style: AppTextStyles.pageTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              // Today button - only shown when not on current month
+              if (!isCurrentMonth) ...[
+                const SizedBox(width: AppSpacing.sm),
+                GestureDetector(
+                  onTap: _goToToday,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      borderRadius: AppRadius.buttonRadius,
+                    ),
+                    child: Text(
+                      'Today',
+                      style: AppTextStyles.buttonTertiary.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: AppSpacing.xs),
           // View toggle
@@ -690,6 +721,12 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
         _currentMonth.year,
         _currentMonth.month + direction,
       );
+    });
+  }
+
+  void _goToToday() {
+    setState(() {
+      _currentMonth = DateTime.now();
     });
   }
 

@@ -59,10 +59,6 @@ Future<void> runEventManagementFlow(WidgetTester tester) async {
     // An event exists - we need to go through Event Details screen
     TestLogger.logSubStep('Event exists - tapping event card to go to Event Details');
 
-    // Try to find the event card by looking for common event indicators
-    // The card will show the event name in uppercase
-    final eventCard = find.byType(GestureDetector);
-
     // First, try tapping the Upcoming Events header area (the whole section might be tappable)
     if (upcomingEventsHeader.evaluate().isNotEmpty) {
       // Look for any text below "Upcoming Events" that might be the event card
