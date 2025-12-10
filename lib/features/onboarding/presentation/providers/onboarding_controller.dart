@@ -5,7 +5,6 @@ import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../application/onboarding_service.dart';
-import '../../../../shared/services/sync/data_sync_service.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'onboarding_controller.g.dart';
@@ -16,7 +15,6 @@ class OnboardingController extends _$OnboardingController {
   OnboardingService get _onboardingService => ref.read(onboardingServiceProvider);
   ContentService get _contentService => ref.read(contentServiceProvider);
   AuthService get _authService => ref.read(authServiceProvider);
-  DataSyncService get _dataSyncService => ref.read(dataSyncServiceProvider);
   UserProfile? _currentUser;
 
   @override
@@ -138,16 +136,10 @@ class OnboardingController extends _$OnboardingController {
       // Update our session user reference
       _currentUser = currentUser;
 
-      // Trigger initial sync to populate local database with reference data
-      // This runs in the background and doesn't block navigation
-      DebugLogger.info('📥 Food preferences - Triggering initial data sync');
-      unawaited(_dataSyncService.syncAllData(currentUser.id).then((success) {
-        if (success) {
-          DebugLogger.info('✅ Initial sync completed successfully');
-        } else {
-          DebugLogger.warning('⚠️ Initial sync failed - app will use fallback data loading');
-        }
-      }));
+      // NOTE: Sync is NOT triggered here - new users don't need to sync yet
+      // (they have no data on server). OAuth-only sync strategy means sync
+      // only happens after OAuth sign-in for existing users on new devices.
+      DebugLogger.info('📥 Food preferences saved');
     });
 
     if (state.hasError) {

@@ -12,7 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase show AuthExc
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sync/data_sync_service.dart';
+import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/preferences_service.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
@@ -425,6 +425,37 @@ class OAuthService extends _$OAuthService {
         'platform': Platform.operatingSystem,
         'migrated_data': anonymousUserId != null && anonymousUserId != oauthUserId,
       });
+
+      // CRITICAL: Explicitly trigger full sync after sign-in
+      if (oauthUserId != null) {
+        _logger.info('Triggering post-sign-in sync', context: 'OAUTH_NATIVE', data: {
+          'user_id': oauthUserId,
+        });
+
+        try {
+          // Clear sync timestamp to force full sync (not incremental)
+          final prefs = await ref.read(sharedPreferencesProvider.future);
+          await prefs.remove('last_sync_timestamp_$oauthUserId');
+
+          // Trigger sync using SyncCoordinator (provides sync lock and logging)
+          await ref.read(syncCoordinatorProvider.notifier).sync(
+            userId: oauthUserId,
+            trigger: SyncTrigger.oauthSignIn,
+            skipInvalidation: true,
+          );
+
+          // Invalidate providers so UI reflects synced data
+          ref.invalidate(userIdProvider);
+          ref.invalidate(activitiesControllerProvider);
+          ref.invalidate(allEventsProvider);
+          ref.invalidate(nextUpcomingEventProvider);
+
+          _logger.info('Post-sign-in sync completed - providers invalidated', context: 'OAUTH_NATIVE');
+        } catch (e) {
+          _logger.error('Post-sign-in sync failed', context: 'OAUTH_NATIVE', error: e);
+          // Don't rethrow - sign-in was successful, sync can be retried
+        }
+      }
     });
 
     if (state.hasError) {
@@ -545,11 +576,17 @@ class OAuthService extends _$OAuthService {
           final prefs = await ref.read(sharedPreferencesProvider.future);
           await prefs.remove('last_sync_timestamp_$oauthUserId');
 
-          // Trigger sync
-          final syncService = ref.read(dataSyncServiceProvider);
-          await syncService.syncAllData(oauthUserId);
+          // Trigger sync using SyncCoordinator (provides sync lock and logging)
+          // Note: We pass skipInvalidation=true and handle invalidation ourselves
+          // to maintain the exact same timing as the original inline code
+          await ref.read(syncCoordinatorProvider.notifier).sync(
+            userId: oauthUserId,
+            trigger: SyncTrigger.oauthSignIn,
+            skipInvalidation: true,
+          );
 
           // Invalidate providers so UI reflects synced data
+          // Done inline here (not in SyncCoordinator) to maintain original timing
           ref.invalidate(userIdProvider);
           ref.invalidate(activitiesControllerProvider);
           ref.invalidate(allEventsProvider);

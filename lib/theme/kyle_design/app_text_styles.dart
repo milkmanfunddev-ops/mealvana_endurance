@@ -73,13 +73,13 @@ class AppTextStyles {
     letterSpacing: 0.5,
   );
 
-  // Food titles (16px)
+  // Food titles (13px) - Uses Compadre wide font, sized for readability in narrow cards
   static const TextStyle foodTitle = TextStyle(
     fontFamily: compadre,
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: FontWeight.w400,
     height: 1.3,
-    letterSpacing: 0.5,
+    letterSpacing: 0,
   );
 
   // === Body & Data (Apercu) ===

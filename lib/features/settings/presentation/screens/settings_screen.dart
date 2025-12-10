@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/settings_controller.dart';
@@ -131,8 +132,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Quick links section (removed label, added preferences link)
           _buildQuickLinksSection(context),
 
+          const SizedBox(height: AppSpacing.xl),
+
+          // Version number
+          _buildVersionInfo(context),
+
           const SizedBox(height: AppSpacing.xxxl),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVersionInfo(BuildContext context) {
+    return Center(
+      child: FutureBuilder<PackageInfo>(
+        future: PackageInfo.fromPlatform(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Text(
+              'Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        },
       ),
     );
   }
@@ -348,14 +373,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (confirmed == true && context.mounted) {
                     await ref.read(settingsControllerProvider.notifier).deleteAccount();
 
-                    // Show success message
+                    // Navigate to welcome screen after account deletion
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Account deleted.'),
-                          backgroundColor: AppColors.electrolyte,
-                        ),
-                      );
+                      context.go('/welcome');
                     }
                   }
                 },

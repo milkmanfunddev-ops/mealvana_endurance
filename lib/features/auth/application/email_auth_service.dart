@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/sync_coordinator.dart';
 import '../data/user_repository.dart';
 
 part 'email_auth_service.g.dart';
@@ -148,6 +147,16 @@ class EmailAuthService extends _$EmailAuthService {
         throw Exception('Password is required');
       }
 
+      // CRITICAL: Capture anonymous user ID BEFORE signing in
+      // This allows us to migrate their data after the session switch
+      final previousUserId = _supabase.auth.currentUser?.id;
+      final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+
+      _logger.info('Capturing user state before sign-in', context: 'EMAIL_AUTH', data: {
+        'previous_user_id': previousUserId,
+        'was_anonymous': wasAnonymous,
+      });
+
       // Sign in with Supabase
       final response = await _supabase.auth.signInWithPassword(
         email: email,
@@ -158,43 +167,48 @@ class EmailAuthService extends _$EmailAuthService {
         throw Exception('Sign in failed - no session returned');
       }
 
+      final newUserId = response.user!.id;
+
       _logger.info('Email sign in successful', context: 'EMAIL_AUTH', data: {
-        'user_id': response.user!.id,
+        'user_id': newUserId,
         'email': response.user!.email,
       });
 
-      // Update local user profile if needed (handled by auth state listener usually)
-      // But we can ensure provider is updated here
+      // Handle post-sign-in completion (data migration + auth provider update)
       final userRepo = await ref.read(userRepositoryProvider.future);
-      
-      // We might want to sync the user profile from Supabase to local DB here
-      // since we just switched users completely
-      String? deviceId;
-      try {
-        final deviceInfo = DeviceInfoPlugin();
-        if (Platform.isIOS) {
-          final iosInfo = await deviceInfo.iosInfo;
-          deviceId = iosInfo.identifierForVendor;
-        } else if (Platform.isAndroid) {
-          final androidInfo = await deviceInfo.androidInfo;
-          deviceId = androidInfo.id;
-        }
-      } catch (e) {
-        // Ignore device ID errors
-      }
+      final dataMigrated = await userRepo.handleSignInCompletion(
+        previousUserId: previousUserId,
+        wasAnonymous: wasAnonymous,
+        newUserId: newUserId,
+        authProvider: 'email',
+      );
 
-      if (deviceId != null) {
-         // Sync down the profile for this user
-         final userProfile = await userRepo.getUserFromSupabase(deviceId);
-         if (userProfile != null) {
-           await userRepo.saveUserProfile(userProfile);
-         }
-      }
+      _logger.info('Sign-in completion handled', context: 'EMAIL_AUTH', data: {
+        'data_migrated': dataMigrated,
+      });
 
       // Track successful sign in
       await _analytics.track('email_sign_in_success', properties: {
-        'user_id': response.user!.id,
+        'user_id': newUserId,
+        'migrated_data': dataMigrated,
       });
+
+      // Trigger sync after sign-in to pull user data from Supabase
+      // This is essential for new device logins where local DB is empty
+      _logger.info('Triggering post-sign-in sync', context: 'EMAIL_AUTH', data: {
+        'user_id': newUserId,
+      });
+
+      try {
+        await ref.read(syncCoordinatorProvider.notifier).sync(
+          userId: newUserId,
+          trigger: SyncTrigger.oauthSignIn,
+        );
+        _logger.info('Post-sign-in sync completed', context: 'EMAIL_AUTH');
+      } catch (e) {
+        _logger.error('Post-sign-in sync failed', context: 'EMAIL_AUTH', error: e);
+        // Don't rethrow - sign-in was successful, user can pull-to-refresh
+      }
     });
 
     // Re-throw errors for UI to handle

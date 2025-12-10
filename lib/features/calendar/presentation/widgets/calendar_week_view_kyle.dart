@@ -52,6 +52,7 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
   late DateTime _baseWeekStart; // Fixed reference point that never changes
   static const int _initialPage = 500; // Start at middle page
   late DateTime _todayWeekStart; // Week start for today (for "Today" button logic)
+  bool _handledFirstPageChange = false;
 
   @override
   void initState() {
@@ -135,10 +136,14 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
               setState(() {
                 _currentWeekStart = newWeekStart;
               });
+              if (!_handledFirstPageChange) {
+                _handledFirstPageChange = true;
+                return;
+              }
               // Auto-select first day of new week if current selection not in view
               final firstDayOfWeek = newWeekStart;
               if (!_isInWeek(widget.selectedDate, firstDayOfWeek)) {
-                widget.onDateSelected(firstDayOfWeek);
+                widget.onDateSelected(_normalize(firstDayOfWeek));
               }
             },
             itemBuilder: (context, index) {
@@ -177,7 +182,7 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
 
                       return Expanded(
                         child: GestureDetector(
-                          onTap: () => widget.onDateSelected(date),
+                          onTap: () => widget.onDateSelected(_normalize(date)),
                           child: Container(
                             height: 60,
                             margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -294,6 +299,10 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
   }
 
   DateTime _dateKey(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  DateTime _normalize(DateTime date) {
     return DateTime(date.year, date.month, date.day);
   }
 }

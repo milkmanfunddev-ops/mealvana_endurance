@@ -65,10 +65,11 @@ class AppStartup extends _$AppStartup {
       debugPrint('[APP_STARTUP] Scheduling deferred initialization (analytics, device info, push)...');
       unawaited(startupService.initializeDeferredServices());
 
-      // 4. Unified data sync - Fire and forget, happens in background
-      unawaited(startupService.syncAllAppData());
+      // NOTE: No sync on app startup - OAuth-only sync strategy
+      // Sync happens after OAuth sign-in (for new device logins)
+      // Returning users see cached data and can pull-to-refresh
 
-      // 5. Get navigation data (fast local DB query)
+      // 3. Get navigation data (fast local DB query)
       debugPrint('[APP_STARTUP] Getting navigation data...');
       final database = ref.read(appDatabaseProvider);
       final user = await database.getCurrentUserProfile();

@@ -207,49 +207,40 @@ async function getFoodsForPhase(supabase, phase, deviceId, likedFoods, willTryFo
     }
   }
   // STEP 2: Get user foods for this phase
+  // User foods now use a categories array column (e.g., ['before_run', 'during_run'])
+  // instead of the old user_food_categories junction table
   let userFoods = [];
-  if (categoryId) {
-    // Get user foods that are assigned to this category
-    const { data: userFoodCategories, error: ufcError } = await supabase.from("user_food_categories").select("user_food_id").eq("category_id", categoryId);
-    if (ufcError) {
-      console.log(`[FOODS-${phase.toUpperCase()}] Error fetching user food categories:`, ufcError);
-    } else if (userFoodCategories && userFoodCategories.length > 0) {
-      const userFoodIds = userFoodCategories.map((ufc)=>ufc.user_food_id);
-      // Get user foods for this category with activity_type filtering
-      // NULL means suitable for all activities (backward compatibility)
-      const { data: categoryUserFoods, error: userFoodsError } = await supabase.from("user_foods").select(`
-          id, name, display_name, display_name_plural, image_address, description,
-          calories_per_serving, carbs_per_serving, protein_per_serving,
-          fat_per_serving, sodium_mg, fluid_ml_per_serving,
-          serving_amount, product_type_id,
-          is_electrolyte, to_exclude_from_solver, is_deleted,
-          suitable_for_activities
-        `).eq("device_id", deviceId).eq("is_deleted", false).in("id", userFoodIds).or(`suitable_for_activities.is.null,suitable_for_activities->${activityType}.eq.true`);
-      if (userFoodsError) {
-        console.log(`[FOODS-${phase.toUpperCase()}] Error fetching categorized user foods:`, userFoodsError);
-      } else if (categoryUserFoods) {
-        userFoods = userFoods.concat(categoryUserFoods);
-      }
-    }
-  }
-  // Get user foods WITHOUT category assignments (available for all phases as requested)
-  // NULL means suitable for all activities (backward compatibility)
-  const { data: uncategorizedUserFoods, error: uncatError } = await supabase.from("user_foods").select(`
+
+  // Get all user foods for this device, then filter by category
+  const { data: allUserFoods, error: userFoodsError } = await supabase.from("user_foods").select(`
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
       fat_per_serving, sodium_mg, fluid_ml_per_serving,
       serving_amount, product_type_id,
       is_electrolyte, to_exclude_from_solver, is_deleted,
-      suitable_for_activities
+      suitable_for_activities, categories
     `).eq("device_id", deviceId).eq("is_deleted", false).or(`suitable_for_activities.is.null,suitable_for_activities->${activityType}.eq.true`);
-  if (uncatError) {
-    console.log(`[FOODS-${phase.toUpperCase()}] Error fetching uncategorized user foods:`, uncatError);
-  } else if (uncategorizedUserFoods) {
-    // Filter out user foods that are already categorized to avoid duplicates
-    const categorizedUserFoodIds = new Set(userFoods.map((f)=>f.id));
-    const filteredUncategorized = uncategorizedUserFoods.filter((f)=>!categorizedUserFoodIds.has(f.id));
-    userFoods = userFoods.concat(filteredUncategorized);
-    console.log(`[FOODS-${phase.toUpperCase()}] Found ${filteredUncategorized.length} uncategorized user foods (${userFoods.length} total user foods)`);
+
+  if (userFoodsError) {
+    console.log(`[FOODS-${phase.toUpperCase()}] Error fetching user foods:`, userFoodsError);
+  } else if (allUserFoods) {
+    // Filter user foods by category using the categories array column
+    // categoryName is 'before_run', 'during_run', or 'after_run'
+    const categorizedUserFoods = allUserFoods.filter((f) => {
+      // If categories array contains this phase's category, include it
+      if (f.categories && Array.isArray(f.categories) && f.categories.includes(categoryName)) {
+        return true;
+      }
+      return false;
+    });
+
+    // Also include uncategorized foods (empty or null categories array) for all phases
+    const uncategorizedUserFoods = allUserFoods.filter((f) => {
+      return !f.categories || !Array.isArray(f.categories) || f.categories.length === 0;
+    });
+
+    userFoods = [...categorizedUserFoods, ...uncategorizedUserFoods];
+    console.log(`[FOODS-${phase.toUpperCase()}] Found ${categorizedUserFoods.length} categorized + ${uncategorizedUserFoods.length} uncategorized = ${userFoods.length} total user foods`);
   }
   // STEP 3: Include essential foods (global) and combine all sources
   const { data: essentialFoods, error: essentialError } = await supabase.from("foods").select(`

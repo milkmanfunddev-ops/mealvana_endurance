@@ -100,7 +100,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context),
       body: activityDetailAsync.when(
         data: (state) => _buildContent(context, state),
@@ -112,7 +111,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.95),
       elevation: 0,
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,

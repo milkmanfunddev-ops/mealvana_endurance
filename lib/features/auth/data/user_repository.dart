@@ -1143,6 +1143,155 @@ class UserRepository {
     // STEP 3: Save the migrated OAuth user profile
     await saveUserProfile(migratedProfile);
   }
+
+  /// Handle post-sign-in completion for all auth methods (Google, Apple, Email)
+  /// This consolidates the common logic that must run after any sign-in:
+  /// 1. Migrate data if coming from anonymous user with data
+  /// 2. Update auth provider and isAnonymous flag
+  ///
+  /// Note: Sync should be triggered by the caller after this method completes
+  /// since UserRepository doesn't have access to Riverpod ref.
+  ///
+  /// Returns true if data was migrated, false if just auth provider was updated
+  Future<bool> handleSignInCompletion({
+    required String? previousUserId,
+    required bool wasAnonymous,
+    required String newUserId,
+    required String authProvider,
+  }) async {
+    try {
+      bool dataMigrated = false;
+
+      // Check if we need to migrate data from anonymous user
+      final needsMigration = previousUserId != null &&
+          previousUserId != newUserId &&
+          wasAnonymous;
+
+      if (needsMigration) {
+        // Check if the anonymous user actually has data worth migrating
+        final hasDataToMigrate = await checkUserHasData(previousUserId);
+
+        if (hasDataToMigrate) {
+          sentry.addBreadcrumb(
+            message: 'Migrating anonymous user data during sign-in',
+            category: 'auth',
+            data: {
+              'from_user_id': previousUserId,
+              'to_user_id': newUserId,
+              'auth_provider': authProvider,
+            },
+          );
+
+          await migrateAnonymousUserData(
+            fromAnonymousUserId: previousUserId,
+            toOAuthUserId: newUserId,
+            authProvider: authProvider,
+          );
+          dataMigrated = true;
+        } else {
+          sentry.addBreadcrumb(
+            message: 'Skipping migration - anonymous user has no data',
+            category: 'auth',
+            data: {
+              'anonymous_user_id': previousUserId,
+              'new_user_id': newUserId,
+            },
+          );
+          // Try to update auth provider, but fallback if user is missing
+          // This handles race conditions where AppStartupService might have cleared the anonymous user
+          try {
+            await updateAuthProvider(
+              authProvider: authProvider,
+              isAnonymous: false,
+            );
+          } catch (e) {
+            if (e.toString().contains('No current user found')) {
+              sentry.addBreadcrumb(
+                message: 'User missing during auth update - treating as fresh login',
+                category: 'auth',
+              );
+              await _handleFreshLogin(newUserId, authProvider);
+            } else {
+              rethrow;
+            }
+          }
+        }
+      } else {
+        // No migration needed - fetch/create user profile then update auth provider
+        // This handles:
+        // - User signing back into their existing account
+        // - User was not anonymous before sign-in
+        sentry.addBreadcrumb(
+          message: 'Updating auth provider (no migration needed)',
+          category: 'auth',
+          data: {
+            'user_id': newUserId,
+            'auth_provider': authProvider,
+            'previous_user_id': previousUserId,
+            'was_anonymous': wasAnonymous,
+          },
+        );
+
+        await _handleFreshLogin(newUserId, authProvider);
+      }
+
+      return dataMigrated;
+    } catch (e, stackTrace) {
+      await sentry.reportDatabaseError(
+        e,
+        operation: 'handleSignInCompletion',
+        table: 'user_profiles',
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Handle fresh login (fetch remote profile or create new local one)
+  Future<void> _handleFreshLogin(String userId, String authProvider) async {
+    // Fetch user profile from Supabase (for existing accounts)
+    // or create new profile (for new sign-ins)
+    final remoteProfile = await fetchAndSaveRemoteProfile(userId);
+
+    if (remoteProfile != null) {
+      // User exists in Supabase - update auth provider locally
+      await updateAuthProvider(
+        authProvider: authProvider,
+        isAnonymous: false,
+      );
+    } else {
+      // New user - create profile locally
+      // This shouldn't normally happen if Supabase triggers are working, but handle it gracefully
+      sentry.addBreadcrumb(
+        message: 'Creating new user profile (not found in Supabase)',
+        category: 'auth',
+        data: {'user_id': userId},
+      );
+
+      final now = DateTime.now();
+      final newProfile = UserProfile(
+        id: userId,
+        deviceId: userId, // Use user ID as device ID for OAuth users
+        authUserId: userId,
+        authProvider: authProvider,
+        isAnonymous: false,
+        // Default values for required fields
+        gender: Gender.other,
+        birthday: DateTime(1990, 1, 1), // Default birthday
+        heightFeet: 5,
+        heightInches: 8,
+        weightPounds: 150.0,
+        runsWithWaterBottle: false,
+        gutTraining: GutTraining.moderate,
+        onboardingCompleted: false,
+        createdAt: now,
+        updatedAt: now,
+        appVersion: '1.0.0',
+      );
+
+      await saveUserProfile(newProfile);
+    }
+  }
 }
 
 /// Repository provider following Andrea's pattern

@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.11.2+41
+version: 1.11.2+43
 
 environment:
   sdk: ^3.8.1
@@ -23,7 +23,7 @@ dependencies:
   drift: ^2.20.0
   sqlite3_flutter_libs: ^0.5.0
   sqlite3: ^2.4.6
-  path_provider: ^2.1.1
+  path_provider: ^2.1.5
   path: ^1.9.0
 
   # Theming & Fonts
@@ -124,7 +124,7 @@ dev_dependencies:
   
   # App Icons & Splash Screen
   flutter_launcher_icons: ^0.14.3
-  flutter_native_splash: ^2.4.1
+  flutter_native_splash: ^2.4.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -243,7 +243,7 @@ flutter_native_splash:
   android_12:
     color: "#3D1F47"
     icon_background_color: "#3D1F47"
-    image: "assets/images/launcher_inverted.png"
+    image: "assets/images/android12_splash.png"
   ios: true
   web: true
 

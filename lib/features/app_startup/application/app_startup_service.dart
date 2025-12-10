@@ -15,7 +15,6 @@ import '../../../shared/services/notification_service.dart';
 import '../../../shared/services/push_notification_service.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/sync/data_sync_service.dart';
 import '../../nutrition_plan/data/food_repository.dart';
 import '../../auth/data/user_repository.dart';
 import '../../settings/presentation/providers/settings_controller.dart';
@@ -301,28 +300,15 @@ class AppStartupService {
 
       // Handle sign-out events
       if (event == AuthChangeEvent.signedOut) {
-        // Get the old user ID before clearing data
-        final oldUserId = session?.user.id;
+        // NOTE: session?.user.id is null here because session is already cleared
+        // Sync timestamp is cleared in SettingsController.signOut() BEFORE sign-out
+        // while we still have access to the user ID
 
         await _analytics.track('user_signed_out', properties: {
-          'old_user_id': oldUserId,
           'timestamp': DateTime.now().toIso8601String(),
         });
 
         try {
-          // CRITICAL: Clear sync timestamp so next sign-in does a FULL sync
-          // Without this, incremental sync returns 0 activities (nothing changed since last sync)
-          // but local DB is empty because clearUserScopedData() deleted everything
-          if (oldUserId != null) {
-            final prefs = await ref.read(sharedPreferencesProvider.future);
-            await prefs.remove('last_sync_timestamp_$oldUserId');
-            _logger.info(
-              'Cleared sync timestamp for signed-out user',
-              context: 'AUTH',
-              data: {'userId': oldUserId},
-            );
-          }
-
           // Clear all local user data - user is fully logged out
           // They will need to go through onboarding again or sign in
           final database = ref.read(appDatabaseProvider);
@@ -331,7 +317,6 @@ class AppStartupService {
           _logger.info(
             'Cleared all local user data on sign-out',
             context: 'AUTH',
-            data: {'old_user_id': oldUserId},
           );
 
           // Ensure providers dependent on user identity refresh immediately
@@ -346,7 +331,6 @@ class AppStartupService {
             message: 'User fully signed out - local data cleared',
             category: 'auth',
             data: {
-              'old_user_id': oldUserId,
               'timestamp': DateTime.now().toIso8601String(),
             },
           );
@@ -389,6 +373,10 @@ class AppStartupService {
 
   /// Perform post-authentication sync operations in the background
   /// This runs AFTER navigation completes to prevent race conditions
+  ///
+  /// NOTE: This method ONLY fetches user-specific data (profile, preferences, foods)
+  /// The main app data sync (activities, events, etc.) is handled by SyncCoordinator
+  /// which is called from OAuth service after sign-in
   Future<void> _performPostAuthSync(String userId) async {
     try {
       final userRepo = await ref.read(userRepositoryProvider.future);
@@ -404,28 +392,14 @@ class AppStartupService {
       // Invalidate settings provider after profile is loaded
       ref.invalidate(settingsControllerProvider);
 
+      _logger.info('Post-auth user data sync completed', context: 'AUTH');
     } catch (e) {
       _logger.error('Failed to sync remote profile on sign in', context: 'AUTH', error: e);
     }
 
-    // CRITICAL: Sync activities/events BEFORE invalidating their providers
-    // This prevents the race condition where UI queries empty local DB
-    try {
-      await syncAllAppData();
-
-      // NOW invalidate providers - data is already in local DB
-      ref.invalidate(activitiesControllerProvider);
-      ref.invalidate(allEventsProvider);
-      ref.invalidate(nextUpcomingEventProvider);
-
-      _logger.info('Post-auth sync completed - providers invalidated', context: 'AUTH');
-    } catch (e) {
-      _logger.error('Failed to sync app data on sign in', context: 'AUTH', error: e);
-      // Still invalidate providers so UI can show whatever local data exists
-      ref.invalidate(activitiesControllerProvider);
-      ref.invalidate(allEventsProvider);
-      ref.invalidate(nextUpcomingEventProvider);
-    }
+    // NOTE: Main app data sync (activities, events, etc.) is NOT called here
+    // It's handled by SyncCoordinator in OAuth service after sign-in
+    // This prevents the triple-sync issue where the same data was synced 3 times
   }
 
   /// Check if user has existing session and restore it
@@ -473,79 +447,6 @@ class AppStartupService {
         error: e
       );
       // Continue - app should work without plans (expected on fresh installs)
-    }
-  }
-
-  /// Unified data sync - single network call to sync-all-data edge function
-  /// Syncs ALL app data: calendar, foods, carb loading foods, meal types
-  /// Returns true if sync was successful, false otherwise
-  /// Non-blocking: app continues with cached data if sync fails
-  ///
-  /// MULTI-DEVICE FIX: Now properly invalidates providers after sync completes
-  /// to ensure UI reflects newly downloaded data
-  Future<bool> syncAllAppData() async {
-    try {
-      final database = ref.read(appDatabaseProvider);
-
-      // CRITICAL: Always prefer Supabase auth user ID over local database
-      // After sign-out, local DB has the anonymous user, but after sign-in
-      // we need to sync with the OAuth user's data
-      final supabaseUser = _supabase.auth.currentUser;
-
-      // Priority: Supabase auth ID > local DB profile ID
-      String? userIdForSync = supabaseUser?.id;
-
-      if (userIdForSync == null) {
-        // Fallback to local DB only if no Supabase session (offline mode)
-        final user = await database.getCurrentUserProfile();
-        userIdForSync = user?.id;
-      }
-
-      if (userIdForSync == null) {
-        // This is normal on fresh install before onboarding
-        // Reference data will be downloaded after onboarding completes
-        _logger.info(
-          'No user ID available for sync - skipping (fresh install)',
-          context: 'APP_STARTUP',
-        );
-        return true;
-      }
-
-      _logger.info(
-        'syncAllAppData using user ID',
-        context: 'APP_STARTUP',
-        data: {
-          'userIdForSync': userIdForSync,
-          'supabaseUserId': supabaseUser?.id,
-        },
-      );
-
-      // Call unified sync service - single network call
-      final dataSyncService = ref.read(dataSyncServiceProvider);
-      final success = await dataSyncService.syncAllData(userIdForSync);
-
-      // MULTI-DEVICE FIX: Invalidate providers AFTER sync completes
-      // This ensures UI reflects the newly downloaded data
-      if (success) {
-        _logger.info(
-          'Sync completed successfully - invalidating providers',
-          context: 'APP_STARTUP',
-        );
-        ref.invalidate(activitiesControllerProvider);
-        ref.invalidate(allEventsProvider);
-        ref.invalidate(nextUpcomingEventProvider);
-        ref.invalidate(settingsControllerProvider);
-      }
-
-      return success;
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Unified data sync error',
-        context: 'APP_STARTUP',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      return false;
     }
   }
 

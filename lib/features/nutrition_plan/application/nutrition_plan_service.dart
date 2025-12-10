@@ -281,6 +281,7 @@ class NutritionPlanService {
   }) {
     final uuid = const Uuid();
     final now = DateTime.now();
+    final activityType = macroTargets.activityType;
 
     final pre = macroTargets.preRun;
     final during = macroTargets.duringRun;
@@ -291,9 +292,9 @@ class NutritionPlanService {
 
     final preSection = PlanSection(
       id: 'before_run',
-      title: 'Before Run',
+      title: activityType.getSectionTitle('before'),
       subtitle: '${timeBeforeRunHours.toStringAsFixed(1)} hours before',
-      timing: 'Finish eating ~60-90 min pre-run',
+      timing: 'Finish eating ~60-90 min before',
       foodItems: [
         FoodItemData(
           id: 'pre-simple-carbs',
@@ -311,9 +312,9 @@ class NutritionPlanService {
 
     final duringSection = PlanSection(
       id: 'during_run',
-      title: 'During Run',
+      title: activityType.getSectionTitle('during'),
       subtitle: 'Every 20-30 min',
-      timing: 'Spread across the run to hit ${during.carbRateGPerH.round()}g carbs/hr',
+      timing: 'Spread across the activity to hit ${during.carbRateGPerH.round()}g carbs/hr',
       foodItems: [
         FoodItemData(
           id: 'during-gels',
@@ -335,7 +336,7 @@ class NutritionPlanService {
 
     final postSection = PlanSection(
       id: 'after_run',
-      title: 'After Run',
+      title: activityType.getSectionTitle('after'),
       subtitle: 'Within 30 minutes',
       timing: 'Refuel quickly, then eat a full meal later',
       foodItems: [

@@ -50,7 +50,7 @@ class ActivitiesService {
 
       final activities = await query.get();
 
-      return activities.map(_mapToActivityDomain).cast<domain.Activity>().toList();
+      return _mapActivitiesAsync(activities);
     } catch (e) {
       _logger.error('Error getting activities for date range', error: e);
       rethrow;
@@ -74,11 +74,28 @@ class ActivitiesService {
 
       final activities = await query.get();
 
-      return activities.map(_mapToActivityDomain).cast<domain.Activity>().toList();
+      return _mapActivitiesAsync(activities);
     } catch (e) {
       _logger.error('Error getting all activities', error: e);
       rethrow;
     }
+  }
+
+  /// Helper to map activities asynchronously yielding to the event loop
+  /// This prevents the main thread from freezing during heavy syncs
+  Future<List<domain.Activity>> _mapActivitiesAsync(List<Activity> activities) async {
+    final result = <domain.Activity>[];
+    final stopwatch = Stopwatch()..start();
+    
+    for (var i = 0; i < activities.length; i++) {
+      // Yield every 5 items OR if we've been processing for more than 16ms (1 frame)
+      if (i > 0 && (i % 5 == 0 || stopwatch.elapsedMilliseconds > 16)) {
+        await Future.delayed(Duration.zero);
+        stopwatch.reset();
+      }
+      result.add(_mapToActivityDomain(activities[i]));
+    }
+    return result;
   }
 
   /// Get a specific activity by ID

@@ -48,21 +48,8 @@ serve(async (req)=>{
         }
       });
     }
-    // Delete category associations first (foreign key constraint)
-    const { error: categoryError } = await supabaseClient.from('user_food_categories').delete().eq('user_food_id', requestData.food_id);
-    if (categoryError) {
-      console.error('❌ Delete User Food - Error deleting categories:', categoryError);
-      return new Response(JSON.stringify({
-        error: 'Failed to delete food categories',
-        details: categoryError.message
-      }), {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
-    }
+    // Categories are now stored as an array column on user_foods table,
+    // so no separate deletion needed (they're deleted with the food row)
     // Delete the user food record
     const { error: deleteError } = await supabaseClient.from('user_foods').delete().eq('id', requestData.food_id).eq('device_id', requestData.device_id);
     if (deleteError) {

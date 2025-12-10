@@ -88,22 +88,24 @@ void main() {
 
           // Check for any of these indicators that app has loaded:
           // 1. Welcome screen (needs onboarding)
-          // 2. BottomNavigationBar (already logged in)
-          // 3. Settings gear icon (already logged in)
+          // 2. FloatingActionButtonsBar icons (already logged in) - calendar, ellipsis, plus
+          // 3. Fallback: BottomNavigationBar (legacy)
           final hasGetStarted = find.text('Get Started').evaluate().isNotEmpty;
-          final hasBottomNav =
-              find.byType(BottomNavigationBar).evaluate().isNotEmpty;
-          final hasSettingsIcon =
-              find.byIcon(Icons.settings).evaluate().isNotEmpty;
           final hasCalendarIcon =
               find.byIcon(FontAwesomeIcons.calendar).evaluate().isNotEmpty;
+          final hasEllipsisIcon =
+              find.byIcon(FontAwesomeIcons.ellipsis).evaluate().isNotEmpty;
+          final hasPlusIcon =
+              find.byIcon(FontAwesomeIcons.plus).evaluate().isNotEmpty;
+          final hasBottomNav =
+              find.byType(BottomNavigationBar).evaluate().isNotEmpty;
 
-          if (hasGetStarted || hasBottomNav || hasSettingsIcon || hasCalendarIcon) {
+          if (hasGetStarted || hasCalendarIcon || hasEllipsisIcon || hasPlusIcon || hasBottomNav) {
             initialScreenFound = true;
             TestLogger.logSubStep(
               'Initial screen found: '
-              'GetStarted=$hasGetStarted, BottomNav=$hasBottomNav, '
-              'Settings=$hasSettingsIcon, Calendar=$hasCalendarIcon',
+              'GetStarted=$hasGetStarted, Calendar=$hasCalendarIcon, '
+              'Ellipsis=$hasEllipsisIcon, Plus=$hasPlusIcon, BottomNav=$hasBottomNav',
             );
             break;
           }
@@ -134,9 +136,12 @@ void main() {
         await tester.pumpAndSettle();
 
         // Check if we're already logged in (no onboarding needed)
+        // The app uses FloatingActionButtonsBar (custom), not BottomNavigationBar
         final isAlreadyLoggedIn =
-            find.byType(BottomNavigationBar).evaluate().isNotEmpty ||
-            find.byIcon(FontAwesomeIcons.calendar).evaluate().isNotEmpty;
+            find.byIcon(FontAwesomeIcons.calendar).evaluate().isNotEmpty ||
+            find.byIcon(FontAwesomeIcons.ellipsis).evaluate().isNotEmpty ||
+            find.byIcon(FontAwesomeIcons.plus).evaluate().isNotEmpty ||
+            find.byType(BottomNavigationBar).evaluate().isNotEmpty;
 
         if (isAlreadyLoggedIn) {
           TestLogger.logSubStep('Already logged in - signing out for clean test state...');
@@ -177,14 +182,19 @@ void main() {
           await tester.pump(const Duration(milliseconds: 500));
 
           // Check for various main app indicators
+          // The app uses FloatingActionButtonsBar with these FontAwesome icons:
+          // - calendar: Activities tab
+          // - clipboardList: Survey tab
+          // - ellipsis: Settings/Menu tab
+          // - plus: Add new activity (orange button)
           final hasCalendarIcon =
               find.byIcon(FontAwesomeIcons.calendar).evaluate().isNotEmpty;
-          final hasSettingsIcon =
-              find.byIcon(Icons.settings).evaluate().isNotEmpty;
-          final hasFAB =
-              find.byType(FloatingActionButton).evaluate().isNotEmpty;
+          final hasEllipsisIcon =
+              find.byIcon(FontAwesomeIcons.ellipsis).evaluate().isNotEmpty;
           final hasPlusIcon =
               find.byIcon(FontAwesomeIcons.plus).evaluate().isNotEmpty;
+          final hasClipboardIcon =
+              find.byIcon(FontAwesomeIcons.clipboardList).evaluate().isNotEmpty;
           final hasUpcomingEvents =
               find.text('Upcoming Events').evaluate().isNotEmpty;
           final hasByWeek = find.text('BY WEEK').evaluate().isNotEmpty;
@@ -192,17 +202,17 @@ void main() {
               find.byType(BottomNavigationBar).evaluate().isNotEmpty;
 
           mainAppReady = hasCalendarIcon ||
-              hasSettingsIcon ||
-              hasFAB ||
+              hasEllipsisIcon ||
               hasPlusIcon ||
+              hasClipboardIcon ||
               hasUpcomingEvents ||
               hasByWeek ||
               hasBottomNav;
 
           if (mainAppReady) {
             TestLogger.logSubStep(
-              'Main app detected: Calendar=$hasCalendarIcon, Settings=$hasSettingsIcon, '
-              'FAB=$hasFAB, Plus=$hasPlusIcon, Events=$hasUpcomingEvents, Week=$hasByWeek',
+              'Main app detected: Calendar=$hasCalendarIcon, Ellipsis=$hasEllipsisIcon, '
+              'Plus=$hasPlusIcon, Clipboard=$hasClipboardIcon, Events=$hasUpcomingEvents, Week=$hasByWeek',
             );
           }
         }
@@ -424,23 +434,18 @@ Future<void> _ensureOnMainScreen(WidgetTester tester) async {
 Future<void> _signOutFromApp(WidgetTester tester) async {
   TestLogger.logSubStep('Navigating to settings to sign out...');
 
-  // Try to find and tap settings icon
-  final settingsIcon = find.byIcon(Icons.settings);
-  if (settingsIcon.evaluate().isNotEmpty) {
-    await tester.tapAndSettle(settingsIcon.first);
+  // The app uses FloatingActionButtonsBar with FontAwesomeIcons.ellipsis for settings/menu
+  // Try to find and tap the ellipsis (menu) icon which goes to Settings
+  final menuIcon = find.byIcon(FontAwesomeIcons.ellipsis);
+  if (menuIcon.evaluate().isNotEmpty) {
+    TestLogger.logSubStep('Found menu icon (ellipsis), tapping...');
+    await tester.tapAndSettle(menuIcon.first);
     await tester.wait(TestConfig.pageTransitionDelay);
   } else {
-    // Try navigating via bottom nav first, then settings
-    final calendarIcon = find.byIcon(FontAwesomeIcons.calendar);
-    if (calendarIcon.evaluate().isNotEmpty) {
-      await tester.tapAndSettle(calendarIcon.first);
-      await tester.wait(TestConfig.pageTransitionDelay);
-    }
-
-    // Now try settings again
-    final settingsRetry = find.byIcon(Icons.settings);
-    if (settingsRetry.evaluate().isNotEmpty) {
-      await tester.tapAndSettle(settingsRetry.first);
+    // Fallback: try Icons.settings or the legacy BottomNavigationBar
+    final settingsIcon = find.byIcon(Icons.settings);
+    if (settingsIcon.evaluate().isNotEmpty) {
+      await tester.tapAndSettle(settingsIcon.first);
       await tester.wait(TestConfig.pageTransitionDelay);
     }
   }

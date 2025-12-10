@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'food_item_data.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 /// Data model for nutrition plans with before/during/after run sections
 class NutritionPlan {
@@ -316,22 +317,24 @@ class PlanSection {
   }
 
   /// Create PlanSection from Edge Function format (before/during/after arrays)
-  factory PlanSection.fromEdgeFunctionJson(String sectionId, List<dynamic> items) {
-    final Map<String, String> sectionTitles = {
-      'before_run': 'Before Run',
-      'during_run': 'During Run',
-      'after_run': 'After Run',
-    };
+  /// [activityType] - Optional activity type for generating correct section titles
+  factory PlanSection.fromEdgeFunctionJson(
+    String sectionId,
+    List<dynamic> items, {
+    ActivityType activityType = ActivityType.running,
+  }) {
+    // Use activity-type-aware section titles
+    final String sectionTitle = activityType.getSectionTitle(sectionId);
 
     final Map<String, String> sectionSubtitles = {
-      'before_run': '30-60 min pre-run',
+      'before_run': '30-60 min before',
       'during_run': 'Every 45-60 minutes',
       'after_run': 'Within 30 minutes',
     };
 
     return PlanSection(
       id: sectionId,
-      title: sectionTitles[sectionId] ?? sectionId,
+      title: sectionTitle,
       subtitle: sectionSubtitles[sectionId],
       timing: null,
       foodItems: items

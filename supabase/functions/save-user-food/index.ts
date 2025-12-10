@@ -34,7 +34,18 @@ serve(async (req)=>{
         }
       });
     }
-    // Start a transaction to save user food and categories
+    // Map category IDs to category enum values
+    // category_ids: 1 = before_run, 2 = during_run, 3 = after_run
+    const categoryIdToEnum: Record<number, string> = {
+      1: 'before_run',
+      2: 'during_run',
+      3: 'after_run'
+    };
+    const categories = requestData.category_ids
+      .map((id: number) => categoryIdToEnum[id])
+      .filter((cat: string | undefined) => cat !== undefined);
+
+    // Save user food with categories as array column
     const { data: userFoodData, error: userFoodError } = await supabaseClient.from('user_foods').upsert({
       id: requestData.id,
       device_id: requestData.device_id,
@@ -55,6 +66,7 @@ serve(async (req)=>{
       sodium_mg: requestData.sodium_mg,
       fluid_ml_per_serving: requestData.fluid_ml_per_serving,
       product_type: requestData.product_type,
+      categories: categories, // Store categories as array column
       updated_at: new Date().toISOString()
     }).select();
     if (userFoodError) {
@@ -62,31 +74,6 @@ serve(async (req)=>{
       return new Response(JSON.stringify({
         error: 'Failed to save user food',
         details: userFoodError.message
-      }), {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
-    }
-    // Delete existing category associations first
-    const { error: deleteError } = await supabaseClient.from('user_food_categories').delete().eq('user_food_id', requestData.id);
-    if (deleteError) {
-      console.error('❌ Save User Food - Error deleting existing categories:', deleteError);
-    // Continue anyway - this might be a new food with no existing categories
-    }
-    // Insert new category associations
-    const categoryInserts = requestData.category_ids.map((categoryId)=>({
-        user_food_id: requestData.id,
-        category_id: categoryId
-      }));
-    const { error: categoryError } = await supabaseClient.from('user_food_categories').insert(categoryInserts);
-    if (categoryError) {
-      console.error('❌ Save User Food - Error saving categories:', categoryError);
-      return new Response(JSON.stringify({
-        error: 'Failed to save food categories',
-        details: categoryError.message
       }), {
         status: 500,
         headers: {

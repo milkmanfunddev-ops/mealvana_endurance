@@ -61,9 +61,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       body: Column(
         children: [
-          // Top padding to account for status bar and position toggle at AppBar level
-          SizedBox(height: MediaQuery.of(context).padding.top),
-          // Calendar view toggle (centered on same row as Pro button)
+          // Top padding to account for status bar
+          SizedBox(height: MediaQuery.of(context).padding.top + 12),
+          // Calendar view toggle
           CalendarViewToggle(
             selectedMode: calendarMode,
             onModeChanged: (mode) {

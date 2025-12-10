@@ -98,4 +98,30 @@ enum ActivityType {
         return ActivityType.running; // Default fallback
     }
   }
+
+  /// Get section title for nutrition plan phases (Before/During/After)
+  /// Returns activity-specific titles like "Before Swim", "During Ride", etc.
+  String getSectionTitle(String phase) {
+    final activityWord = displayName;
+    switch (phase.toLowerCase()) {
+      case 'before':
+      case 'before_run':
+      case 'before-run':
+      case 'pre-run':
+      case 'pre':
+        return 'Before $activityWord';
+      case 'during':
+      case 'during_run':
+      case 'during-run':
+        return 'During $activityWord';
+      case 'after':
+      case 'after_run':
+      case 'after-run':
+      case 'post-run':
+      case 'post':
+        return 'After $activityWord';
+      default:
+        return phase;
+    }
+  }
 }

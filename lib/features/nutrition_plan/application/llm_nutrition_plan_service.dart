@@ -6,6 +6,7 @@ import '../domain/macro_targets.dart' as targets;
 import 'food_data_transformation_service.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
+import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/logging_service.dart';
@@ -395,6 +396,9 @@ class LLMNutritionPlanService {
     final postRunCarbsTarget = inputMacroTargets?.postRun.carbsG ?? postRunCarbs.toDouble();
     final postRunProteinTarget = inputMacroTargets?.postRun.proteinG ?? postRunProtein.toDouble();
 
+    // Get activity type from macro targets, defaulting to running
+    final activityType = inputMacroTargets?.activityType ?? ActivityType.running;
+
     // Create the nutrition plan
     final plan = NutritionPlan(
       id: planId,
@@ -404,7 +408,7 @@ class LLMNutritionPlanService {
       sections: [
         PlanSection(
           id: 'before-run',
-          title: 'Before Run',
+          title: activityType.getSectionTitle('before'),
           subtitle: '${preRunCarbsTarget.round()}g carbs, ${preRunProteinTarget.round()}g protein, ${preRunSodiumTarget.round()}mg sodium',
           timing: 'Before',
           foodItems: beforeItems,
@@ -416,7 +420,7 @@ class LLMNutritionPlanService {
         ),
         PlanSection(
           id: 'during-run',
-          title: 'During Run',
+          title: activityType.getSectionTitle('during'),
           subtitle: 'Total: ${duringRunCarbsTarget.round()}g carbs, ${duringRunFluidsTarget.round()}ml fluids',
           timing: 'During',
           foodItems: duringItems,
@@ -428,7 +432,7 @@ class LLMNutritionPlanService {
         ),
         PlanSection(
           id: 'after-run',
-          title: 'After Run',
+          title: activityType.getSectionTitle('after'),
           subtitle: 'Recovery (${postRunCarbsTarget.round()}g carbs, ${postRunProteinTarget.round()}g protein)',
           timing: 'Within 30min',
           foodItems: afterItems,

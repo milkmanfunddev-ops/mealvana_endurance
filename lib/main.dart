@@ -61,9 +61,16 @@ Future<void> main() async {
         
         // Session Replay configuration
         // Captures video-like replay of user sessions for debugging
-        // Only capture replays when errors occur (not regular sessions)
-        options.replay.sessionSampleRate = 0.0;   // Don't capture regular sessions
-        options.replay.onErrorSampleRate = 1.0;   // 100% of error sessions get replay
+        // Disabled in debug mode to avoid verbose codec initialization logs
+        // Only capture replays when errors occur in production (not regular sessions)
+        if (kDebugMode) {
+          // Completely disable replay in debug to avoid 200+ lines of codec logs
+          options.replay.sessionSampleRate = 0.0;
+          options.replay.onErrorSampleRate = 0.0;
+        } else {
+          options.replay.sessionSampleRate = 0.0;   // Don't capture regular sessions
+          options.replay.onErrorSampleRate = 1.0;   // 100% of error sessions get replay
+        }
         
         // Enhanced error tracking
         options.attachStacktrace = true;

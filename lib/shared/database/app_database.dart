@@ -1336,13 +1336,11 @@ LazyDatabase _openConnection() {
     final cachebase = (await getTemporaryDirectory()).path;
     sqlite3.tempDirectory = cachebase;
 
-    // TEMPORARY FIX: Use synchronous database in debug mode to avoid isolate issues
-    // Background isolates can hang on iOS simulator during development
+    // Use background isolate for database operations in all modes
+    // This prevents blocking the main thread during database init (was causing 7+ second UI freeze)
     // NOTE: SQL logging disabled - was causing 77% of debug log volume
-    // Set to true only when debugging specific database issues
-    final db = kDebugMode
-        ? NativeDatabase(file, logStatements: false)
-        : NativeDatabase.createInBackground(file);
+    // Set logStatements to true only when debugging specific database issues
+    final db = NativeDatabase.createInBackground(file);
 
     return db;
   });

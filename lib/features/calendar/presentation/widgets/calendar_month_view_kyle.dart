@@ -147,9 +147,9 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
 
         const SizedBox(height: 8),
 
-        // Horizontally scrollable month grid
+        // Horizontally scrollable month grid - dynamic height based on weeks
         SizedBox(
-          height: 350, // Height for ~6 weeks of calendar
+          height: _calculateMonthGridHeight(_currentMonth),
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: (index) {
@@ -203,7 +203,7 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
                     );
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: weekDays.map((date) {
@@ -215,7 +215,7 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
                             child: GestureDetector(
                               onTap: () => widget.onDateSelected(date),
                               child: Container(
-                                height: 50,
+                                height: 44,
                                 margin: const EdgeInsets.symmetric(horizontal: 2),
                                 decoration: BoxDecoration(
                                   color: isSelected
@@ -326,5 +326,24 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
 
   DateTime _dateKey(DateTime date) {
     return DateTime(date.year, date.month, date.day);
+  }
+
+  /// Calculate the number of weeks needed to display a month
+  int _getWeeksInMonth(DateTime month) {
+    final firstDay = DateTime(month.year, month.month, 1);
+    final lastDay = DateTime(month.year, month.month + 1, 0);
+
+    // Calculate days from start of week containing first day to end of week containing last day
+    final startWeekday = firstDay.weekday % 7; // Sunday = 0
+    final totalDays = startWeekday + lastDay.day;
+
+    return (totalDays / 7).ceil();
+  }
+
+  /// Calculate dynamic height based on number of weeks
+  double _calculateMonthGridHeight(DateTime month) {
+    final weeks = _getWeeksInMonth(month);
+    // Each row: 44px height + 4px vertical padding (2 top + 2 bottom)
+    return weeks * 48.0;
   }
 }
