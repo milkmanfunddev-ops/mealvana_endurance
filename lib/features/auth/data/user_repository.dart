@@ -752,23 +752,13 @@ class UserRepository {
       // This frees up the device_id for the OAuth user
       await _deleteAnonymousUserFromSupabase(fromAnonymousUserId);
 
-      // STEP 3: Check if OAuth user exists in Supabase public.users
-      final oauthUserExists = await _checkUserExistsInSupabase(toOAuthUserId);
-
-      if (!oauthUserExists) {
-        // OAuth user doesn't exist in public.users - create their record
-        // Use the anonymous user's profile data but with the OAuth user ID
-        await _createOAuthUserFromAnonymousProfile(
-          oauthUserId: toOAuthUserId,
-          anonymousProfile: anonymousProfile,
-        );
-      } else {
-        // OAuth user exists - update their device_id and profile data from anonymous user
-        await _updateOAuthUserWithAnonymousProfile(
-          oauthUserId: toOAuthUserId,
-          anonymousProfile: anonymousProfile,
-        );
-      }
+      // STEP 3: Create or update OAuth user in Supabase public.users
+      // UPSERT handles both new and existing users automatically
+      await _upsertOAuthUserFromAnonymousProfile(
+        oauthUserId: toOAuthUserId,
+        anonymousProfile: anonymousProfile,
+        authProvider: authProvider,
+      );
 
       // STEP 4: Update local database with OAuth user ID
       await _migrateLocalData(
@@ -843,63 +833,22 @@ class UserRepository {
 
   /// Update existing OAuth user in Supabase with anonymous user's profile data
   /// Called when OAuth user already exists but we want to update their device_id and merge profile
-  Future<void> _updateOAuthUserWithAnonymousProfile({
+  /// UNIFIED: Create or update OAuth user in Supabase using anonymous user's profile data
+  /// Uses UPSERT to handle both new and existing OAuth users
+  Future<void> _upsertOAuthUserFromAnonymousProfile({
     required String oauthUserId,
     required UserProfile anonymousProfile,
+    required String authProvider,
   }) async {
     try {
-      await supabase.from('users').update({
-        'device_id': anonymousProfile.deviceId,
-        // Update profile data from anonymous user's onboarding
-        'gender': anonymousProfile.gender.name,
-        'birthday': anonymousProfile.birthday.toIso8601String().split('T')[0],
-        'height_feet': anonymousProfile.heightFeet,
-        'height_inches': anonymousProfile.heightInches,
-        'weight_pounds': anonymousProfile.weightPounds,
-        'runs_with_water_bottle': anonymousProfile.runsWithWaterBottle,
-        'gut_training_level': anonymousProfile.gutTraining.name,
-        'onboarding_completed': anonymousProfile.onboardingCompleted,
-        'app_version': anonymousProfile.appVersion,
-        'gi_sensitivity': anonymousProfile.giSensitivity,
-        'cycling_ftp_watts': anonymousProfile.ftpWatts,
-        'typical_bike_bottles': anonymousProfile.typicalBikeBottles,
-        'has_aero_bottle': anonymousProfile.hasAeroBottle,
-        'has_bento_box': anonymousProfile.hasBentoBox,
-        'swimming_css_seconds_per_100m': anonymousProfile.cssPacePer100mSeconds,
-        'typical_wetsuit': anonymousProfile.typicalWetsuit,
-        'typical_swim_cap_type': anonymousProfile.typicalSwimCapType,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', oauthUserId);
-
-      sentry.addBreadcrumb(
-        message: 'Updated OAuth user in Supabase with anonymous profile data',
-        category: 'auth',
-        data: {'oauth_user_id': oauthUserId},
-      );
-    } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
-        e,
-        url: 'supabase:users:update',
-        method: 'UPDATE',
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Create OAuth user in Supabase using anonymous user's profile data
-  Future<void> _createOAuthUserFromAnonymousProfile({
-    required String oauthUserId,
-    required UserProfile anonymousProfile,
-  }) async {
-    try {
-      // Create new user record with OAuth user ID but anonymous user's data
-      await supabase.from('users').insert({
+      // UPSERT user record with OAuth user ID and anonymous user's data
+      // This works whether the OAuth user exists or not
+      await supabase.from('users').upsert({
         'id': oauthUserId,
         'device_id': anonymousProfile.deviceId,
         'auth_user_id': oauthUserId,
-        'auth_provider': 'google', // Will be updated by caller if Apple
-        'is_anonymous': false,
+        'auth_provider': authProvider, // ✅ Uses parameter (apple, google, email)
+        'is_anonymous': false, // ✅ Always set to false for OAuth users
         'gender': anonymousProfile.gender.name,
         'birthday': anonymousProfile.birthday.toIso8601String().split('T')[0],
         'height_feet': anonymousProfile.heightFeet,
@@ -917,20 +866,22 @@ class UserRepository {
         'swimming_css_seconds_per_100m': anonymousProfile.cssPacePer100mSeconds,
         'typical_wetsuit': anonymousProfile.typicalWetsuit,
         'typical_swim_cap_type': anonymousProfile.typicalSwimCapType,
-        'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
-      });
+      }, onConflict: 'id');
 
       sentry.addBreadcrumb(
-        message: 'Created OAuth user in Supabase from anonymous profile',
+        message: 'Upserted OAuth user in Supabase with anonymous profile data',
         category: 'auth',
-        data: {'oauth_user_id': oauthUserId},
+        data: {
+          'oauth_user_id': oauthUserId,
+          'auth_provider': authProvider,
+        },
       );
     } catch (e, stackTrace) {
       await sentry.reportNetworkError(
         e,
-        url: 'supabase:users:insert',
-        method: 'INSERT',
+        url: 'supabase:users:upsert',
+        method: 'UPSERT',
         stackTrace: stackTrace,
       );
       rethrow;
@@ -1144,6 +1095,106 @@ class UserRepository {
     await saveUserProfile(migratedProfile);
   }
 
+  /// ✨ UNIFIED: Complete authentication for ANY provider (Apple, Google, Email)
+  /// This is the single entry point for all post-authentication logic.
+  ///
+  /// Handles three scenarios:
+  /// 1. Account Linking (preservedUserId=true): User ID stays same, just updates provider
+  /// 2. Sign-In with Migration (ID changed + wasAnonymous): Migrates data from anonymous user
+  /// 3. Fresh Login (no previous user): Fetches/creates profile
+  ///
+  /// @param previousUserId - User ID before authentication (null if fresh install)
+  /// @param wasAnonymous - Whether previous user was anonymous
+  /// @param newUserId - User ID after authentication
+  /// @param authProvider - 'apple', 'google', or 'email'
+  /// @param preservedUserId - true for account linking, false for sign-in
+  ///
+  /// Returns true if data was migrated, false otherwise
+  Future<bool> completeAuthentication({
+    required String? previousUserId,
+    required bool wasAnonymous,
+    required String newUserId,
+    required String authProvider,
+    bool preservedUserId = false,
+  }) async {
+    try {
+      bool dataMigrated = false;
+
+      // Determine if we need to migrate data
+      final needsMigration = previousUserId != null &&
+          previousUserId != newUserId &&
+          wasAnonymous &&
+          !preservedUserId;
+
+      if (needsMigration) {
+        // SCENARIO 1: Sign-In with Migration (user ID changed)
+        sentry.addBreadcrumb(
+          message: 'Auth complete - migrating anonymous user data',
+          category: 'auth',
+          data: {
+            'scenario': 'migration',
+            'from_user_id': previousUserId,
+            'to_user_id': newUserId,
+            'auth_provider': authProvider,
+          },
+        );
+
+        final hasDataToMigrate = await checkUserHasData(previousUserId);
+        if (hasDataToMigrate) {
+          await migrateAnonymousUserData(
+            fromAnonymousUserId: previousUserId,
+            toOAuthUserId: newUserId,
+            authProvider: authProvider,
+          );
+          dataMigrated = true;
+        } else {
+          await _handleFreshLogin(newUserId, authProvider);
+        }
+      } else if (preservedUserId) {
+        // SCENARIO 2: Account Linking (user ID preserved)
+        sentry.addBreadcrumb(
+          message: 'Auth complete - account linked',
+          category: 'auth',
+          data: {
+            'scenario': 'linking',
+            'user_id': newUserId,
+            'auth_provider': authProvider,
+          },
+        );
+
+        // Update both local and remote database
+        await updateAuthProvider(
+          authProvider: authProvider,
+          isAnonymous: false,
+        );
+      } else {
+        // SCENARIO 3: Fresh Login (no migration needed)
+        sentry.addBreadcrumb(
+          message: 'Auth complete - fresh login',
+          category: 'auth',
+          data: {
+            'scenario': 'fresh_login',
+            'user_id': newUserId,
+            'auth_provider': authProvider,
+          },
+        );
+
+        await _handleFreshLogin(newUserId, authProvider);
+      }
+
+      return dataMigrated;
+    } catch (e, stackTrace) {
+      await sentry.reportDatabaseError(
+        e,
+        operation: 'completeAuthentication',
+        table: 'user_profiles',
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// DEPRECATED: Use completeAuthentication() instead
   /// Handle post-sign-in completion for all auth methods (Google, Apple, Email)
   /// This consolidates the common logic that must run after any sign-in:
   /// 1. Migrate data if coming from anonymous user with data
@@ -1247,25 +1298,33 @@ class UserRepository {
     }
   }
 
-  /// Handle fresh login (fetch remote profile or create new local one)
+  /// Handle fresh login (fetch remote profile or create new in Supabase)
   Future<void> _handleFreshLogin(String userId, String authProvider) async {
     // Fetch user profile from Supabase (for existing accounts)
-    // or create new profile (for new sign-ins)
     final remoteProfile = await fetchAndSaveRemoteProfile(userId);
 
     if (remoteProfile != null) {
       // User exists in Supabase - update auth provider locally
+      sentry.addBreadcrumb(
+        message: 'Fresh login - profile found in Supabase',
+        category: 'auth',
+        data: {
+          'user_id': userId,
+          'onboarding_completed': remoteProfile.onboardingCompleted,
+        },
+      );
+
       await updateAuthProvider(
         authProvider: authProvider,
         isAnonymous: false,
       );
     } else {
-      // New user - create profile locally
-      // This shouldn't normally happen if Supabase triggers are working, but handle it gracefully
+      // 🚨 CRITICAL: Profile not found in Supabase - create it NOW
+      // This happens when user signs in for first time or after local DB wipe
       sentry.addBreadcrumb(
-        message: 'Creating new user profile (not found in Supabase)',
+        message: 'Fresh login - profile NOT found in Supabase, creating it',
         category: 'auth',
-        data: {'user_id': userId},
+        data: {'user_id': userId, 'auth_provider': authProvider},
       );
 
       final now = DateTime.now();
@@ -1283,13 +1342,36 @@ class UserRepository {
         weightPounds: 150.0,
         runsWithWaterBottle: false,
         gutTraining: GutTraining.moderate,
-        onboardingCompleted: false,
+        onboardingCompleted: false, // Will need to complete onboarding
         createdAt: now,
         updatedAt: now,
         appVersion: '1.0.0',
       );
 
+      // Save to local database first
       await saveUserProfile(newProfile);
+
+      // 🔧 FIX: Also create profile in Supabase to ensure sync works
+      try {
+        await supabase.from('users').upsert(
+          newProfile.toJson(),
+          onConflict: 'id',
+        );
+
+        sentry.addBreadcrumb(
+          message: 'Created user profile in Supabase for fresh login',
+          category: 'auth',
+          data: {'user_id': userId},
+        );
+      } catch (e, stackTrace) {
+        // Log but don't throw - local profile exists, user can continue
+        await sentry.reportNetworkError(
+          e,
+          url: 'supabase:users:upsert',
+          method: 'UPSERT',
+          stackTrace: stackTrace,
+        );
+      }
     }
   }
 }

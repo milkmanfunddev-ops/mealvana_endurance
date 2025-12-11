@@ -131,7 +131,9 @@ grant_ios_permissions() {
     fi
 }
 
-# Reset app state on simulator (uninstall app to clear all data and permissions)
+# Reset app state on simulator using ERASE for true clean state
+# This clears the iOS Keychain (where Supabase stores auth sessions)
+# which is necessary because uninstall alone doesn't clear keychain data
 reset_app_state() {
     local sim_uuid="$1"
 
@@ -140,14 +142,29 @@ reset_app_state() {
         return
     fi
 
-    print_info "Resetting app state on simulator..."
+    print_info "Factory resetting simulator (clears keychain + all data)..."
 
-    # Uninstall the app if it exists
-    if xcrun simctl uninstall "$sim_uuid" "$APP_BUNDLE_ID" 2>/dev/null; then
-        print_success "Uninstalled existing app"
+    # First shutdown the simulator (required for erase)
+    print_info "Shutting down simulator..."
+    xcrun simctl shutdown "$sim_uuid" 2>/dev/null || true
+    sleep 1
+
+    # Erase (factory reset) the simulator - this clears EVERYTHING including keychain
+    if xcrun simctl erase "$sim_uuid" 2>/dev/null; then
+        print_success "Simulator erased (factory reset complete)"
     else
-        print_info "App was not installed"
+        print_error "Failed to erase simulator - trying uninstall fallback"
+        # Fallback to just uninstalling the app
+        xcrun simctl uninstall "$sim_uuid" "$APP_BUNDLE_ID" 2>/dev/null || true
     fi
+
+    # Boot the simulator back up
+    print_info "Booting simulator..."
+    xcrun simctl boot "$sim_uuid" 2>/dev/null || true
+
+    # Wait for simulator to be ready
+    sleep 3
+    print_success "Simulator ready"
 }
 
 # Run a single test file
@@ -185,19 +202,20 @@ show_usage() {
     echo "  onboarding   - Onboarding & Auth Flow"
     echo ""
     echo "Flags:"
-    echo "  --no-reset        - Skip app uninstall (keep existing data)"
+    echo "  --no-reset        - Skip simulator reset (keep existing data)"
     echo "  --no-permissions  - Skip auto-granting iOS permissions"
     echo ""
     echo "Examples:"
-    echo "  $0 quick            # Clean start: uninstall app, run all tests"
+    echo "  $0 quick            # Clean start: factory reset simulator, run all tests"
     echo "  $0 quick --no-reset # Keep app data, run all tests"
     echo "  $0 nutrition        # Debug: just nutrition plan test"
     echo "  $0 all              # Slow: all tests in separate sessions"
     echo ""
-    echo "Note: By DEFAULT, the app is uninstalled before each test run for"
-    echo "      clean, reproducible results. Use --no-reset to keep app data."
+    echo "Note: By DEFAULT, the simulator is FACTORY RESET (erased) before each test"
+    echo "      to ensure a completely clean state including keychain data."
+    echo "      This clears Supabase auth sessions. Use --no-reset to keep app data."
     echo ""
-    echo "IMPORTANT: On first run after uninstall, iOS will show a notification"
+    echo "IMPORTANT: On first run after reset, iOS will show a notification"
     echo "           permission dialog. You must tap 'Allow' for tests to proceed."
     echo ""
 }

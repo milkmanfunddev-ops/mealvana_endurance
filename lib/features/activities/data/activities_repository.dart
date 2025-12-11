@@ -170,12 +170,29 @@ class ActivitiesRepository {
   /// Get all activities for a device (local-first, returns cached data)
   Future<List<domain.Activity>> getActivities(String userId) async {
     try {
+      _logger.info(
+        '🔍 QUERYING activities',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'userId': userId},
+      );
+
       // CRITICAL FIX: Use case-insensitive comparison for userId
       final query = _database.select(_database.activitiesTable)
         ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()) & tbl.deletedAt.isNull())
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();
+
+      _logger.info(
+        '🔍 QUERY RESULT',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {
+          'userId': userId,
+          'activitiesFound': activities.length,
+          'allActivitiesInDB': await _database.select(_database.activitiesTable).get().then((a) => a.length),
+        },
+      );
+
       return activities.map(_mapToActivityDomain).toList();
     } catch (e, stackTrace) {
       _logger.error(

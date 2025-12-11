@@ -168,11 +168,14 @@ class OAuthService extends _$OAuthService {
         rethrow;
       }
 
-      // Update local user profile with new auth provider
+      // Complete authentication (unified flow for all providers)
       final userRepo = await ref.read(userRepositoryProvider.future);
-      await userRepo.updateAuthProvider(
+      await userRepo.completeAuthentication(
+        previousUserId: anonymousUserId,
+        wasAnonymous: wasAnonymous,
+        newUserId: anonymousUserId, // Same ID for linking
         authProvider: 'apple',
-        isAnonymous: false,
+        preservedUserId: true, // ID was preserved during linking
       );
 
       _logger.info('Apple account linked successfully', context: 'OAUTH_NATIVE', data: {
@@ -306,11 +309,14 @@ class OAuthService extends _$OAuthService {
         rethrow;
       }
 
-      // Update local user profile with new auth provider
+      // Complete authentication (unified flow for all providers)
       final userRepo = await ref.read(userRepositoryProvider.future);
-      await userRepo.updateAuthProvider(
+      await userRepo.completeAuthentication(
+        previousUserId: anonymousUserId,
+        wasAnonymous: wasAnonymous,
+        newUserId: anonymousUserId, // Same ID for linking
         authProvider: 'google',
-        isAnonymous: false,
+        preservedUserId: true, // ID was preserved during linking
       );
 
       _logger.info('Google account linked successfully', context: 'OAUTH_NATIVE', data: {
@@ -403,21 +409,26 @@ class OAuthService extends _$OAuthService {
         'user_id': oauthUserId,
       });
 
-      // CRITICAL: Migrate anonymous user's data to the OAuth account
-      if (anonymousUserId != null && oauthUserId != null && anonymousUserId != oauthUserId) {
-        _logger.info('Migrating anonymous user data to OAuth account', context: 'OAUTH_NATIVE', data: {
-          'from_anonymous_user_id': anonymousUserId,
-          'to_oauth_user_id': oauthUserId,
+      // CRITICAL: Complete authentication (migration + profile update)
+      if (oauthUserId != null) {
+        _logger.info('Completing authentication', context: 'OAUTH_NATIVE', data: {
+          'previous_user_id': anonymousUserId,
+          'new_user_id': oauthUserId,
+          'was_anonymous': wasAnonymous,
         });
 
         final userRepo = await ref.read(userRepositoryProvider.future);
-        await userRepo.migrateAnonymousUserData(
-          fromAnonymousUserId: anonymousUserId,
-          toOAuthUserId: oauthUserId,
+        final dataMigrated = await userRepo.completeAuthentication(
+          previousUserId: anonymousUserId,
+          wasAnonymous: wasAnonymous,
+          newUserId: oauthUserId,
           authProvider: 'apple',
+          preservedUserId: false, // ID changed during sign-in
         );
 
-        _logger.info('Data migration completed successfully', context: 'OAUTH_NATIVE');
+        _logger.info('Authentication completed', context: 'OAUTH_NATIVE', data: {
+          'data_migrated': dataMigrated,
+        });
       }
 
       await _analytics.track('auth_apple_signin_completed', properties: {
@@ -525,35 +536,24 @@ class OAuthService extends _$OAuthService {
       // - The "anonymous" user was just created during sign-out and has no data
       //
       // This prevents the bug where signing back in deletes all user data
-      if (anonymousUserId != null && oauthUserId != null && anonymousUserId != oauthUserId && wasAnonymous) {
-        // Check if the anonymous user actually has data worth migrating
-        final userRepo = await ref.read(userRepositoryProvider.future);
-        final hasDataToMigrate = await userRepo.checkUserHasData(anonymousUserId);
-
-        if (hasDataToMigrate) {
-          _logger.info('Migrating anonymous user data to OAuth account', context: 'OAUTH_NATIVE', data: {
-            'from_anonymous_user_id': anonymousUserId,
-            'to_oauth_user_id': oauthUserId,
-          });
-
-          await userRepo.migrateAnonymousUserData(
-            fromAnonymousUserId: anonymousUserId,
-            toOAuthUserId: oauthUserId,
-            authProvider: 'google',
-          );
-
-          _logger.info('Data migration completed successfully', context: 'OAUTH_NATIVE');
-        } else {
-          _logger.info('Skipping migration - anonymous user has no data to migrate', context: 'OAUTH_NATIVE', data: {
-            'anonymous_user_id': anonymousUserId,
-            'oauth_user_id': oauthUserId,
-          });
-        }
-      } else {
-        _logger.info('Skipping migration - user signing back into existing account', context: 'OAUTH_NATIVE', data: {
-          'anonymous_user_id': anonymousUserId,
-          'oauth_user_id': oauthUserId,
+      if (oauthUserId != null) {
+        _logger.info('Completing authentication', context: 'OAUTH_NATIVE', data: {
+          'previous_user_id': anonymousUserId,
+          'new_user_id': oauthUserId,
           'was_anonymous': wasAnonymous,
+        });
+
+        final userRepo = await ref.read(userRepositoryProvider.future);
+        final dataMigrated = await userRepo.completeAuthentication(
+          previousUserId: anonymousUserId,
+          wasAnonymous: wasAnonymous,
+          newUserId: oauthUserId,
+          authProvider: 'google',
+          preservedUserId: false, // ID changed during sign-in
+        );
+
+        _logger.info('Authentication completed', context: 'OAUTH_NATIVE', data: {
+          'data_migrated': dataMigrated,
         });
       }
 

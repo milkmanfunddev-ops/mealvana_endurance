@@ -629,6 +629,18 @@ class DataSyncService {
   Future<void> _upsertActivity(Map<String, dynamic> data) async {
     try {
       final activityId = data['id'] as int;
+      final userId = data['user_id'] as String;
+
+      _logger.info(
+        '💾 UPSERTING activity from sync',
+        context: 'DATA_SYNC',
+        data: {
+          'activityId': activityId,
+          'userId': userId,
+          'title': data['title'],
+        },
+      );
+
       final existingActivity = await (_database.select(_database.activitiesTable)
             ..where((tbl) => tbl.id.equals(activityId)))
           .getSingleOrNull();
@@ -638,13 +650,18 @@ class DataSyncService {
       // CRITICAL: Preserve local data if it has pending changes (needsUpload = true)
       // Phone data is the source of truth - never overwrite local changes
       if (existingActivity != null && (existingActivity.needsUpload ?? false)) {
+        _logger.info(
+          '⏭️ Skipping activity upsert - has pending local changes',
+          context: 'DATA_SYNC',
+          data: {'activityId': activityId},
+        );
         return; // Keep local version with pending changes
       }
 
       if (existingActivity == null || existingActivity.updatedAt.isBefore(supabaseUpdatedAt)) {
         final companion = ActivitiesTableCompanion.insert(
           id: Value(activityId),
-          userId: data['user_id'] as String,
+          userId: userId,
           activityType: data['activity_type'] as String,
           title: data['title'] as String,
           scheduledDateTime: DateTime.parse(data['scheduled_date_time'] as String),
@@ -679,6 +696,15 @@ class DataSyncService {
         await _database
             .into(_database.activitiesTable)
             .insert(companion, mode: InsertMode.insertOrReplace);
+
+        _logger.info(
+          '✅ Activity upserted successfully',
+          context: 'DATA_SYNC',
+          data: {
+            'activityId': activityId,
+            'userId': userId,
+          },
+        );
       }
     } catch (e, stackTrace) {
       _logger.error(

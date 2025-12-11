@@ -5,6 +5,7 @@ import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
+import '../../../shared/services/preferences_service.dart';
 import '../data/user_repository.dart';
 
 part 'email_auth_service.g.dart';
@@ -89,11 +90,14 @@ class EmailAuthService extends _$EmailAuthService {
         'email_confirmed': response.user!.emailConfirmedAt != null,
       });
 
-      // Update local user profile with new auth provider
+      // Complete authentication (unified flow for all providers)
       final userRepo = await ref.read(userRepositoryProvider.future);
-      await userRepo.updateAuthProvider(
+      await userRepo.completeAuthentication(
+        previousUserId: anonymousUserId,
+        wasAnonymous: currentUser.isAnonymous,
+        newUserId: anonymousUserId, // Same ID for linking
         authProvider: 'email',
-        isAnonymous: false,
+        preservedUserId: true, // ID was preserved during linking
       );
 
       // Track successful linking in analytics
@@ -174,13 +178,14 @@ class EmailAuthService extends _$EmailAuthService {
         'email': response.user!.email,
       });
 
-      // Handle post-sign-in completion (data migration + auth provider update)
+      // Complete authentication (unified flow for all providers)
       final userRepo = await ref.read(userRepositoryProvider.future);
-      final dataMigrated = await userRepo.handleSignInCompletion(
+      final dataMigrated = await userRepo.completeAuthentication(
         previousUserId: previousUserId,
         wasAnonymous: wasAnonymous,
         newUserId: newUserId,
         authProvider: 'email',
+        preservedUserId: false, // ID changed during sign-in
       );
 
       _logger.info('Sign-in completion handled', context: 'EMAIL_AUTH', data: {
@@ -200,6 +205,12 @@ class EmailAuthService extends _$EmailAuthService {
       });
 
       try {
+        // CRITICAL: Clear sync timestamp to force full sync (not incremental)
+        // Otherwise, if user logs out and back in on same device, we might send
+        // an old timestamp and get no data back (because local DB was cleared)
+        final prefs = await ref.read(sharedPreferencesProvider.future);
+        await prefs.remove('last_sync_timestamp_$newUserId');
+
         await ref.read(syncCoordinatorProvider.notifier).sync(
           userId: newUserId,
           trigger: SyncTrigger.oauthSignIn,

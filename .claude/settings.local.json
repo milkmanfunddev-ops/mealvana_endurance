@@ -109,7 +109,13 @@
       "Bash(\"lib/features/carb_loading/presentation/screens/carb_loading_screen.dart\" )",
       "Bash(\"lib/features/nutrition_plan/presentation/screens/activity_detail_screen.dart\" )",
       "Bash(\"lib/features/nutrition_plan/presentation/screens/new_activity_screen.dart\")",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.codemagic.io)",
+      "WebFetch(domain:blog.codemagic.io)",
+      "WebFetch(domain:codewithandrea.com)",
+      "WebFetch(domain:www.ascend.io)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": [],
