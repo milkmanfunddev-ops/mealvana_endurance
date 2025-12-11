@@ -372,6 +372,7 @@ workflows:
         - supabase_prod
         - shorebird_credentials
         - google_play_credentials
+        - firebase_config  # Contains GOOGLE_SERVICES_JSON
       vars:
         FLUTTER_ENV: prod
 
@@ -390,6 +391,14 @@ workflows:
 
       - name: Run code generation
         script: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Load Firebase configuration
+        script: |
+          #!/usr/bin/env sh
+          set -e
+          echo $ANDROID_FIREBASE_JSON | base64 --decode > $CM_BUILD_DIR/android/app/google-services.json
+          echo "✅ google-services.json created"
+          ls -la $CM_BUILD_DIR/android/app/google-services.json
 
       - name: Run unit tests
         script: flutter test
@@ -441,6 +450,7 @@ workflows:
       groups:
         - supabase_prod
         - shorebird_credentials
+        - firebase_config  # Contains GOOGLE_SERVICES_JSON
       vars:
         FLUTTER_ENV: prod
         # Optional: Set to patch a specific version
@@ -456,6 +466,14 @@ workflows:
 
       - name: Run code generation
         script: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Load Firebase configuration
+        script: |
+          #!/usr/bin/env sh
+          set -e
+          echo $ANDROID_FIREBASE_JSON | base64 --decode > $CM_BUILD_DIR/android/app/google-services.json
+          echo "✅ google-services.json created"
+          ls -la $CM_BUILD_DIR/android/app/google-services.json
 
       - name: Run unit tests
         script: flutter test
@@ -609,6 +627,7 @@ workflows:
       groups:
         - supabase_prod
         - google_play_credentials
+        - firebase_config  # Contains GOOGLE_SERVICES_JSON
       vars:
         FLUTTER_ENV: prod
 
@@ -622,6 +641,14 @@ workflows:
 
       - name: Run code generation
         script: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Load Firebase configuration
+        script: |
+          #!/usr/bin/env sh
+          set -e
+          echo $ANDROID_FIREBASE_JSON | base64 --decode > $CM_BUILD_DIR/android/app/google-services.json
+          echo "✅ google-services.json created"
+          ls -la $CM_BUILD_DIR/android/app/google-services.json
 
       - name: Run unit tests
         script: flutter test
