@@ -396,9 +396,9 @@ workflows:
         script: |
           #!/usr/bin/env sh
           set -e
-          echo $ANDROID_FIREBASE_JSON | base64 --decode > $CM_BUILD_DIR/android/app/google-services.json
+          echo "$ANDROID_FIREBASE_JSON" | base64 --decode > android/app/google-services.json
           echo "✅ google-services.json created"
-          ls -la $CM_BUILD_DIR/android/app/google-services.json
+          ls -la android/app/google-services.json
 
       - name: Run unit tests
         script: flutter test
@@ -471,9 +471,9 @@ workflows:
         script: |
           #!/usr/bin/env sh
           set -e
-          echo $ANDROID_FIREBASE_JSON | base64 --decode > $CM_BUILD_DIR/android/app/google-services.json
+          echo "$ANDROID_FIREBASE_JSON" | base64 --decode > android/app/google-services.json
           echo "✅ google-services.json created"
-          ls -la $CM_BUILD_DIR/android/app/google-services.json
+          ls -la android/app/google-services.json
 
       - name: Run unit tests
         script: flutter test
@@ -646,9 +646,9 @@ workflows:
         script: |
           #!/usr/bin/env sh
           set -e
-          echo $ANDROID_FIREBASE_JSON | base64 --decode > $CM_BUILD_DIR/android/app/google-services.json
+          echo "$ANDROID_FIREBASE_JSON" | base64 --decode > android/app/google-services.json
           echo "✅ google-services.json created"
-          ls -la $CM_BUILD_DIR/android/app/google-services.json
+          ls -la android/app/google-services.json
 
       - name: Run unit tests
         script: flutter test
