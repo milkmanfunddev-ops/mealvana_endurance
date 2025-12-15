@@ -12,6 +12,7 @@
 /// 6. Food Preferences Capture - Capture state before sync
 /// 7. SYNC PERSISTENCE FLOW - Logout/login cycles to verify data sync
 /// 8. Food Preferences Verification - Verify preferences weren't reset
+/// 9. Email Auth Flow - Login with email, logout, verify Welcome screen
 ///
 /// FAIL-FAST BEHAVIOR:
 /// - Any flow failure will capture a screenshot and stop the test
@@ -52,6 +53,7 @@ import 'shared/food_management_flow.dart';
 import 'shared/food_manipulation_flow.dart';
 import 'shared/food_preferences_verification_flow.dart';
 import 'shared/sync_flow.dart';
+import 'shared/email_auth_flow.dart';
 
 void main() {
   // Initialize binding for screenshot capture
@@ -361,11 +363,30 @@ void main() {
           },
         );
 
+        await _ensureOnMainScreen(tester);
+
+        // ============================================================
+        // FLOW 9: Email Authentication (Login + Logout) (FAIL-FAST)
+        // Tests email login flow and verifies logout returns to Welcome
+        // This is a critical flow for user account management
+        // ============================================================
+        await ScreenshotHelper.withScreenshotOnFailure(
+          tester,
+          'email_auth_flow',
+          () async {
+            await runEmailAuthCycleFlow(tester);
+            TestLogger.logSuccess('Email Auth Flow: PASSED');
+          },
+        );
+
+        // Note: After logout, we should be at the Welcome screen
+        // No need to call _ensureOnMainScreen since we're logged out
+
         // ============================================================
         // SUMMARY
         // ============================================================
         TestLogger.logStep('All Integration Tests Complete!');
-        TestLogger.logSuccess('All 8 flows passed successfully:');
+        TestLogger.logSuccess('All 9 flows passed successfully:');
         TestLogger.logSuccess('  1. Settings Flow');
         TestLogger.logSuccess('  2. Event Management Flow');
         TestLogger.logSuccess('  3. Food Management Flow');
@@ -374,6 +395,7 @@ void main() {
         TestLogger.logSuccess('  6. Food Preferences Capture');
         TestLogger.logSuccess('  7. Sync Persistence Flow');
         TestLogger.logSuccess('  8. Food Preferences Verification');
+        TestLogger.logSuccess('  9. Email Auth Flow (login + logout)');
         await tester.screenshot('all_flows_complete');
       },
       // Increased timeout to accommodate all flows including sync
