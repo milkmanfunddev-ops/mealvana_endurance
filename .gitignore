@@ -5,13 +5,25 @@
 *.swp
 .DS_Store
 .atom/
-*.env
 .build/
 .buildlog/
 .history
 .svn/
 .swiftpm/
 migrate_working_dir/
+
+# Environment variables (NEVER commit these!)
+.env
+.env.*
+.env.local
+.env.*.local
+.env.dev
+.env.dev.local
+.env.prod
+.env.prod.local
+.env.test
+.env.test_supabase
+!.env.example
 
 # IntelliJ related
 *.iml
