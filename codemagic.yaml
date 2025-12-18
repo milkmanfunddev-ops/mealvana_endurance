@@ -1,10 +1,14 @@
 # Codemagic CI/CD Configuration for Mealvana Endurance
 #
-# This configuration includes:
-# - Integration tests on iOS simulator
-# - Unit tests and PR validation
-# - iOS builds with Shorebird (release + patch)
-# - Android builds with Shorebird (release + patch)
+# Updated: 2025-12-18
+# Changes:
+# - Fixed Firebase variable name (GOOGLE_SERVICES_JSON, no base64 encoding)
+# - Refactored to use YAML anchors (reduced duplication)
+# - Fixed integration test double-running
+# - Added proper test failure handling
+# - Added dev-ios workflow (manual, no Shorebird)
+# - Updated prod triggers to release/* only (removed main)
+# - Changed Android prod to beta track (open testing)
 #
 # Documentation:
 # - Codemagic: https://docs.codemagic.io/yaml-testing/testing/
@@ -12,21 +16,10 @@
 # - Project docs: /docs/ci-cd/README.md
 
 definitions:
-  # Reusable script definitions
+  # ============================================================
+  # Reusable Script Definitions
+  # ============================================================
   scripts:
-    - &install_shorebird
-      name: Install Shorebird CLI
-      script: |
-        # Install Shorebird
-        curl -fsSL https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh | bash
-
-        # Add to PATH for this and subsequent scripts
-        export PATH="$HOME/.shorebird/bin:$PATH"
-        echo "PATH=$HOME/.shorebird/bin:$PATH" >> $CM_ENV
-
-        # Verify installation
-        shorebird doctor
-
     - &flutter_pub_get
       name: Get Flutter dependencies
       script: flutter pub get
@@ -37,175 +30,92 @@ definitions:
 
     - &run_unit_tests
       name: Run unit tests
-      script: flutter test
+      script: |
+        mkdir -p test-results
+        flutter test --machine > test-results/unit-tests.json
+      test_report: test-results/unit-tests.json
+
+    - &run_flutter_analyze
+      name: Analyze code
+      script: flutter analyze
+
+    - &check_formatting
+      name: Check code formatting
+      script: dart format --set-exit-if-changed lib test
+
+    - &install_shorebird
+      name: Install Shorebird CLI
+      script: |
+        curl -fsSL https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh | bash
+        export PATH="$HOME/.shorebird/bin:$PATH"
+        echo "PATH=$HOME/.shorebird/bin:$PATH" >> $CM_ENV
+        shorebird doctor
+
+    - &install_cocoapods
+      name: Install CocoaPods dependencies
+      script: cd ios && pod install
+
+    - &load_firebase_config
+      name: Load Firebase configuration
+      script: |
+        #!/usr/bin/env sh
+        set -e
+        echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+        echo "✅ google-services.json created"
+        ls -la android/app/google-services.json
+
+    - &setup_ios_signing
+      name: Set up iOS code signing
+      script: |
+        keychain initialize
+        xcode-project use-profiles
+
+    - &setup_ios_signing_shorebird
+      name: Set up iOS code signing (Shorebird)
+      script: |
+        keychain initialize
+        # CRITICAL: manageAppVersionAndBuildNumber must be false for Shorebird
+        xcode-project use-profiles --custom-export-options='{"manageAppVersionAndBuildNumber":false}'
+
+    - &boot_ios_simulator
+      name: Boot iOS Simulator
+      script: |
+        # Shutdown any existing simulators
+        xcrun simctl shutdown all || true
+
+        # Find available iPhone simulator runtime
+        RUNTIME=$(xcrun simctl list runtimes | grep -oE 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9]+-[0-9]+' | tail -1)
+        echo "Using runtime: $RUNTIME"
+
+        # Create a test device
+        TEST_DEVICE=$(xcrun simctl create "Test iPhone" "iPhone 15 Pro" "$RUNTIME")
+        echo "Created device: $TEST_DEVICE"
+
+        # Boot the simulator
+        xcrun simctl boot "$TEST_DEVICE"
+
+        # Wait for simulator to be ready
+        sleep 10
+
+        # Export device ID for subsequent scripts
+        echo "TEST_DEVICE=$TEST_DEVICE" >> $CM_ENV
+
+    - &shutdown_ios_simulator
+      name: Shutdown iOS Simulator
+      script: xcrun simctl shutdown all || true
 
 workflows:
   # ============================================================
-  # Integration Tests Workflow
+  # DEV WORKFLOWS (Manual Only)
   # ============================================================
-  # Runs integration tests on iOS simulator
-  # Triggered on PR or manually
-  integration-tests:
-    name: Integration Tests
-    instance_type: mac_mini_m2
-    max_build_duration: 60
 
-    environment:
-      flutter: stable
-      xcode: latest
-      cocoapods: default
-      groups:
-        - supabase_dev  # Contains SUPABASE_URL, SUPABASE_ANON_KEY for dev
-      vars:
-        FLUTTER_ENV: dev
-
-    triggering:
-      events:
-        - pull_request
-      branch_patterns:
-        - pattern: 'develop'
-          include: true
-        - pattern: 'feature/*'
-          include: true
-        - pattern: 'release/*'
-          include: true
-      cancel_previous_builds: true
-
-    scripts:
-      - name: Get Flutter dependencies
-        script: |
-          flutter pub get
-
-      - name: Run code generation
-        script: |
-          dart run build_runner build --delete-conflicting-outputs
-
-      - name: Run unit tests
-        script: |
-          mkdir -p test-results
-          flutter test --machine > test-results/unit-tests.json || true
-        test_report: test-results/unit-tests.json
-
-      - name: Boot iOS Simulator
-        script: |
-          # Shutdown any existing simulators
-          xcrun simctl shutdown all || true
-
-          # Find available iPhone simulator runtime
-          RUNTIME=$(xcrun simctl list runtimes | grep -oE 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9]+-[0-9]+' | tail -1)
-          echo "Using runtime: $RUNTIME"
-
-          # Create a test device
-          TEST_DEVICE=$(xcrun simctl create "Test iPhone" "iPhone 15 Pro" "$RUNTIME")
-          echo "Created device: $TEST_DEVICE"
-
-          # Boot the simulator
-          xcrun simctl boot "$TEST_DEVICE"
-
-          # Wait for simulator to be ready
-          sleep 10
-
-          # Export device ID for subsequent scripts
-          echo "TEST_DEVICE=$TEST_DEVICE" >> $CM_ENV
-
-      - name: Run integration tests
-        script: |
-          mkdir -p test-results
-
-          # Run integration tests with machine-readable output
-          flutter test integration_test/test_runner.dart \
-            -d "$TEST_DEVICE" \
-            --machine \
-            > test-results/integration-tests.json 2>&1 || true
-
-          # Also run with verbose output for logs
-          flutter test integration_test/test_runner.dart \
-            -d "$TEST_DEVICE" \
-            --reporter expanded \
-            2>&1 | tee test-results/integration-tests.log || true
-        test_report: test-results/integration-tests.json
-
-      - name: Shutdown simulator
-        script: |
-          xcrun simctl shutdown all || true
-
-    artifacts:
-      - test-results/**
-
-    publishing:
-      slack:
-        channel: '#builds'
-        notify_on_build_start: false
-        notify:
-          success: true
-          failure: true
-
-  # ============================================================
-  # Quick Integration Test (Single Flow)
-  # ============================================================
-  # Runs a single integration test flow for faster feedback
-  integration-test-quick:
-    name: Quick Integration Test
-    instance_type: mac_mini_m2
-    max_build_duration: 30
-
-    environment:
-      flutter: stable
-      xcode: latest
-      cocoapods: default
-      groups:
-        - supabase_dev
-      vars:
-        FLUTTER_ENV: dev
-        # Default to event management test (fastest)
-        TEST_FLOW: event_management_flow_test.dart
-
-    scripts:
-      - name: Get Flutter dependencies
-        script: |
-          flutter pub get
-
-      - name: Run code generation
-        script: |
-          dart run build_runner build --delete-conflicting-outputs
-
-      - name: Boot iOS Simulator
-        script: |
-          xcrun simctl shutdown all || true
-          RUNTIME=$(xcrun simctl list runtimes | grep -oE 'com.apple.CoreSimulator.SimRuntime.iOS-[0-9]+-[0-9]+' | tail -1)
-          TEST_DEVICE=$(xcrun simctl create "Test iPhone" "iPhone 15 Pro" "$RUNTIME")
-          xcrun simctl boot "$TEST_DEVICE"
-          sleep 10
-          echo "TEST_DEVICE=$TEST_DEVICE" >> $CM_ENV
-
-      - name: Run single integration test
-        script: |
-          mkdir -p test-results
-          flutter test "integration_test/flows/$TEST_FLOW" \
-            -d "$TEST_DEVICE" \
-            --reporter expanded \
-            2>&1 | tee test-results/quick-test.log
-        test_report: test-results/quick-test.log
-
-      - name: Shutdown simulator
-        script: |
-          xcrun simctl shutdown all || true
-
-    artifacts:
-      - test-results/**
-
-  # ============================================================
-  # iOS Shorebird Release Workflow
-  # ============================================================
-  # Creates a new Shorebird release and submits to TestFlight
-  # Use for: New app versions, native code changes, new permissions
-  ios-shorebird-release:
-    name: iOS Shorebird Release
+  dev-ios:
+    name: Dev - iOS TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 120
 
     integrations:
-      app_store_connect: Mealvana  # App Store Connect API key name
+      app_store_connect: Mealvana
 
     environment:
       flutter: stable
@@ -213,66 +123,30 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.mealvana.endurance
+        bundle_identifier: com.mealvana.endurance.dev
       groups:
-        - supabase_prod       # Production Supabase credentials
-        - shorebird_credentials  # Contains SHOREBIRD_TOKEN
-        - app_store_credentials
+        - mealvana_dev  # Dev environment variables
       vars:
-        FLUTTER_ENV: prod
+        FLUTTER_ENV: dev
+        APP_ENVIRONMENT: dev
 
+    # Manual trigger only - no automatic builds for dev
     triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'main'
-          include: true
-        - pattern: 'release/*'
-          include: true
+      events: []
 
     scripts:
-      - name: Get Flutter dependencies
-        script: flutter pub get
+      - *flutter_pub_get
+      - *run_build_runner
+      - *run_unit_tests
+      - *install_cocoapods
+      - *setup_ios_signing
 
-      - name: Run code generation
-        script: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Run unit tests
-        script: flutter test
-
-      - name: Install Shorebird CLI
+      - name: Build dev iOS
         script: |
-          # Install Shorebird
-          curl -fsSL https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh | bash
-
-          # Add to PATH for this and subsequent scripts
-          export PATH="$HOME/.shorebird/bin:$PATH"
-          echo "PATH=$HOME/.shorebird/bin:$PATH" >> $CM_ENV
-
-          # Verify installation
-          shorebird doctor
-
-      - name: Install CocoaPods
-        script: cd ios && pod install
-
-      - name: Set up code signing
-        script: |
-          # Initialize keychain
-          keychain initialize
-
-          # Apply provisioning profiles with Shorebird-compatible export options
-          # CRITICAL: manageAppVersionAndBuildNumber must be false for Shorebird
-          xcode-project use-profiles --custom-export-options='{"manageAppVersionAndBuildNumber":false}'
-
-      - name: Create Shorebird iOS Release
-        script: |
-          # Build with Shorebird - creates OTA-capable release
-          shorebird release ios \
-            --flutter-version=stable \
+          flutter build ipa --release \
+            --flavor dev \
+            --target lib/main_dev.dart \
             --export-options-plist=/Users/builder/export_options.plist
-
-          echo "Shorebird iOS release created successfully!"
-          echo "You can now create patches for this release using ios-shorebird-patch workflow"
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -284,84 +158,17 @@ workflows:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
+        # Internal testers only
+        beta_groups:
+          - Internal Testers
       slack:
         channel: '#builds'
         notify:
           success: true
           failure: true
 
-  # ============================================================
-  # iOS Shorebird Patch Workflow
-  # ============================================================
-  # Creates an OTA patch for an existing release (no App Store review)
-  # Use for: Bug fixes, UI changes, algorithm tweaks, content updates
-  ios-shorebird-patch:
-    name: iOS Shorebird Patch (OTA)
-    instance_type: mac_mini_m2
-    max_build_duration: 60
-
-    environment:
-      flutter: stable
-      xcode: latest
-      cocoapods: default
-      groups:
-        - supabase_prod
-        - shorebird_credentials
-      vars:
-        FLUTTER_ENV: prod
-        # Optional: Set to patch a specific version (e.g., "1.0.0+1")
-        # If empty, patches the latest release
-        RELEASE_VERSION: ""
-
-    # Manual trigger only - patches should be intentional
-    triggering:
-      events: []
-
-    scripts:
-      - name: Get Flutter dependencies
-        script: flutter pub get
-
-      - name: Run code generation
-        script: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Run unit tests
-        script: flutter test
-
-      - name: Install Shorebird CLI
-        script: |
-          curl -fsSL https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh | bash
-          export PATH="$HOME/.shorebird/bin:$PATH"
-          echo "PATH=$HOME/.shorebird/bin:$PATH" >> $CM_ENV
-          shorebird doctor
-
-      - name: Install CocoaPods
-        script: cd ios && pod install
-
-      - name: Create Shorebird iOS Patch
-        script: |
-          if [ -z "$RELEASE_VERSION" ]; then
-            echo "Creating patch for latest iOS release..."
-            shorebird patch ios
-          else
-            echo "Creating patch for iOS release version: $RELEASE_VERSION"
-            shorebird patch ios --release-version="$RELEASE_VERSION"
-          fi
-
-          echo ""
-          echo "=========================================="
-          echo "iOS Patch created successfully!"
-          echo "Users will receive update on next app restart"
-          echo "=========================================="
-
-    # NO publishing block - patches don't go to App Store
-    # They are distributed directly via Shorebird
-
-  # ============================================================
-  # Android Shorebird Release Workflow
-  # ============================================================
-  # Creates a new Shorebird release and submits to Play Store
-  android-shorebird-release:
-    name: Android Shorebird Release
+  dev-android:
+    name: Dev - Android Internal Testing
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -369,55 +176,28 @@ workflows:
       flutter: stable
       java: 17
       groups:
-        - supabase_prod
-        - shorebird_credentials
+        - mealvana_dev
         - google_play_credentials
-        - firebase_config  # Contains GOOGLE_SERVICES_JSON
+        - firebase_config
       vars:
-        FLUTTER_ENV: prod
+        FLUTTER_ENV: dev
+        APP_ENVIRONMENT: dev
 
+    # Manual trigger only
     triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'main'
-          include: true
-        - pattern: 'release/*'
-          include: true
+      events: []
 
     scripts:
-      - name: Get Flutter dependencies
-        script: flutter pub get
+      - *flutter_pub_get
+      - *run_build_runner
+      - *load_firebase_config
+      - *run_unit_tests
 
-      - name: Run code generation
-        script: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Load Firebase configuration
+      - name: Build dev Android
         script: |
-          #!/usr/bin/env sh
-          set -e
-          echo "$ANDROID_FIREBASE_JSON" | base64 --decode > android/app/google-services.json
-          echo "✅ google-services.json created"
-          ls -la android/app/google-services.json
-
-      - name: Run unit tests
-        script: flutter test
-
-      - name: Install Shorebird CLI
-        script: |
-          curl -fsSL https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh | bash
-          export PATH="$HOME/.shorebird/bin:$PATH"
-          echo "PATH=$HOME/.shorebird/bin:$PATH" >> $CM_ENV
-          shorebird doctor
-
-      - name: Create Shorebird Android Release
-        script: |
-          # Build with Shorebird - creates OTA-capable release
-          shorebird release android \
-            --flutter-version=stable \
-            --artifact=aab
-
-          echo "Shorebird Android release created successfully!"
+          flutter build appbundle --release \
+            --flavor dev \
+            --target lib/main_dev.dart
 
     artifacts:
       - build/**/outputs/**/*.aab
@@ -436,11 +216,190 @@ workflows:
           failure: true
 
   # ============================================================
-  # Android Shorebird Patch Workflow
+  # PRODUCTION WORKFLOWS (Automated on release/*)
   # ============================================================
-  # Creates an OTA patch for an existing Android release
-  android-shorebird-patch:
-    name: Android Shorebird Patch (OTA)
+
+  prod-ios:
+    name: Prod - iOS Shorebird Release
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    integrations:
+      app_store_connect: Mealvana
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mealvana.endurance
+      groups:
+        - mealvana_prod
+        - shorebird_credentials
+      vars:
+        FLUTTER_ENV: prod
+        APP_ENVIRONMENT: prod
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'release/*'
+          include: true
+
+    scripts:
+      - *flutter_pub_get
+      - *run_build_runner
+      - *run_unit_tests
+      - *install_shorebird
+      - *install_cocoapods
+      - *setup_ios_signing_shorebird
+
+      - name: Create Shorebird iOS Release
+        script: |
+          shorebird release ios \
+            --flavor prod \
+            --target lib/main_prod.dart \
+            --flutter-version=stable \
+            --export-options-plist=/Users/builder/export_options.plist
+
+          echo ""
+          echo "=========================================="
+          echo "Shorebird iOS release created successfully!"
+          echo "You can now create patches using prod-ios-patch workflow"
+          echo "=========================================="
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
+        beta_groups:
+          - Internal Testers
+      slack:
+        channel: '#builds'
+        notify:
+          success: true
+          failure: true
+
+  prod-android:
+    name: Prod - Android Open Testing
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    environment:
+      flutter: stable
+      java: 17
+      groups:
+        - mealvana_prod
+        - shorebird_credentials
+        - google_play_credentials
+        - firebase_config
+      vars:
+        FLUTTER_ENV: prod
+        APP_ENVIRONMENT: prod
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'release/*'
+          include: true
+
+    scripts:
+      - *flutter_pub_get
+      - *run_build_runner
+      - *load_firebase_config
+      - *run_unit_tests
+      - *install_shorebird
+
+      - name: Create Shorebird Android Release
+        script: |
+          shorebird release android \
+            --flavor prod \
+            --target lib/main_prod.dart \
+            --flutter-version=stable \
+            --artifact=aab
+
+          echo ""
+          echo "=========================================="
+          echo "Shorebird Android release created successfully!"
+          echo "You can now create patches using prod-android-patch workflow"
+          echo "=========================================="
+
+    artifacts:
+      - build/**/outputs/**/*.aab
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/mapping.txt
+      - flutter_drive.log
+
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: beta  # Open testing track
+        submit_as_draft: false
+      slack:
+        channel: '#builds'
+        notify:
+          success: true
+          failure: true
+
+  # ============================================================
+  # SHOREBIRD PATCH WORKFLOWS (Manual Only)
+  # ============================================================
+
+  prod-ios-patch:
+    name: Prod - iOS Shorebird Patch (OTA)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - mealvana_prod
+        - shorebird_credentials
+      vars:
+        FLUTTER_ENV: prod
+        APP_ENVIRONMENT: prod
+        # Set to patch a specific version (e.g., "1.0.0+1") or "latest"
+        RELEASE_VERSION: "latest"
+
+    triggering:
+      events: []
+
+    scripts:
+      - *flutter_pub_get
+      - *run_build_runner
+      - *run_unit_tests
+      - *install_shorebird
+      - *install_cocoapods
+
+      - name: Create Shorebird iOS Patch
+        script: |
+          if [ -z "$RELEASE_VERSION" ] || [ "$RELEASE_VERSION" = "latest" ]; then
+            echo "Creating patch for latest iOS release..."
+            shorebird patch ios --flavor prod --target lib/main_prod.dart
+          else
+            echo "Creating patch for iOS release version: $RELEASE_VERSION"
+            shorebird patch ios --flavor prod --target lib/main_prod.dart --release-version="$RELEASE_VERSION"
+          fi
+
+          echo ""
+          echo "=========================================="
+          echo "iOS Patch created successfully!"
+          echo "Users will receive update on next app restart"
+          echo "=========================================="
+
+  prod-android-patch:
+    name: Prod - Android Shorebird Patch (OTA)
     instance_type: mac_mini_m2
     max_build_duration: 60
 
@@ -448,51 +407,32 @@ workflows:
       flutter: stable
       java: 17
       groups:
-        - supabase_prod
+        - mealvana_prod
         - shorebird_credentials
-        - firebase_config  # Contains GOOGLE_SERVICES_JSON
+        - firebase_config
       vars:
         FLUTTER_ENV: prod
-        # Optional: Set to patch a specific version
-        RELEASE_VERSION: ""
+        APP_ENVIRONMENT: prod
+        RELEASE_VERSION: "latest"
 
-    # Manual trigger only
     triggering:
       events: []
 
     scripts:
-      - name: Get Flutter dependencies
-        script: flutter pub get
-
-      - name: Run code generation
-        script: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Load Firebase configuration
-        script: |
-          #!/usr/bin/env sh
-          set -e
-          echo "$ANDROID_FIREBASE_JSON" | base64 --decode > android/app/google-services.json
-          echo "✅ google-services.json created"
-          ls -la android/app/google-services.json
-
-      - name: Run unit tests
-        script: flutter test
-
-      - name: Install Shorebird CLI
-        script: |
-          curl -fsSL https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh | bash
-          export PATH="$HOME/.shorebird/bin:$PATH"
-          echo "PATH=$HOME/.shorebird/bin:$PATH" >> $CM_ENV
-          shorebird doctor
+      - *flutter_pub_get
+      - *run_build_runner
+      - *load_firebase_config
+      - *run_unit_tests
+      - *install_shorebird
 
       - name: Create Shorebird Android Patch
         script: |
-          if [ -z "$RELEASE_VERSION" ]; then
+          if [ -z "$RELEASE_VERSION" ] || [ "$RELEASE_VERSION" = "latest" ]; then
             echo "Creating patch for latest Android release..."
-            shorebird patch android
+            shorebird patch android --flavor prod --target lib/main_prod.dart
           else
             echo "Creating patch for Android release version: $RELEASE_VERSION"
-            shorebird patch android --release-version="$RELEASE_VERSION"
+            shorebird patch android --flavor prod --target lib/main_prod.dart --release-version="$RELEASE_VERSION"
           fi
 
           echo ""
@@ -501,12 +441,97 @@ workflows:
           echo "Users will receive update on next app restart"
           echo "=========================================="
 
-    # NO publishing block - patches distributed via Shorebird
+  # ============================================================
+  # TESTING WORKFLOWS
+  # ============================================================
 
-  # ============================================================
-  # PR Validation Workflow
-  # ============================================================
-  # Runs on every PR - fast feedback with unit tests only
+  integration-tests:
+    name: Integration Tests
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - mealvana_dev
+      vars:
+        FLUTTER_ENV: dev
+
+    triggering:
+      events:
+        - pull_request
+      branch_patterns:
+        - pattern: 'develop'
+          include: true
+        - pattern: 'feature/*'
+          include: true
+        - pattern: 'release/*'
+          include: true
+      cancel_previous_builds: true
+
+    scripts:
+      - *flutter_pub_get
+      - *run_build_runner
+      - *run_unit_tests
+      - *boot_ios_simulator
+
+      - name: Run integration tests
+        script: |
+          mkdir -p test-results
+
+          # Run integration tests with expanded output (single run)
+          flutter test integration_test/test_runner.dart \
+            -d "$TEST_DEVICE" \
+            --reporter expanded \
+            2>&1 | tee test-results/integration-tests.log
+        test_report: test-results/integration-tests.log
+
+      - *shutdown_ios_simulator
+
+    artifacts:
+      - test-results/**
+
+  integration-test-quick:
+    name: Quick Integration Test
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - mealvana_dev
+      vars:
+        FLUTTER_ENV: dev
+        # Default to event management test (fastest)
+        TEST_FLOW: event_management_flow_test.dart
+
+    # Manual only
+    triggering:
+      events: []
+
+    scripts:
+      - *flutter_pub_get
+      - *run_build_runner
+      - *boot_ios_simulator
+
+      - name: Run single integration test
+        script: |
+          mkdir -p test-results
+          flutter test "integration_test/flows/$TEST_FLOW" \
+            -d "$TEST_DEVICE" \
+            --reporter expanded \
+            2>&1 | tee test-results/quick-test.log
+        test_report: test-results/quick-test.log
+
+      - *shutdown_ios_simulator
+
+    artifacts:
+      - test-results/**
+
   pr-validation:
     name: PR Validation
     instance_type: mac_mini_m2
@@ -522,39 +547,24 @@ workflows:
       cancel_previous_builds: true
 
     scripts:
-      - name: Get Flutter dependencies
-        script: |
-          flutter pub get
-
-      - name: Run code generation
-        script: |
-          dart run build_runner build --delete-conflicting-outputs
-
-      - name: Analyze code
-        script: |
-          flutter analyze
-
-      - name: Check formatting
-        script: |
-          dart format --set-exit-if-changed lib test
-
-      - name: Run unit tests
-        script: |
-          mkdir -p test-results
-          flutter test --machine > test-results/unit-tests.json
-        test_report: test-results/unit-tests.json
+      - *flutter_pub_get
+      - *run_build_runner
+      - *run_flutter_analyze
+      - *check_formatting
+      - *run_unit_tests
 
     artifacts:
       - test-results/**
 
   # ============================================================
-  # Legacy iOS Build (Non-Shorebird)
+  # LEGACY BUILD WORKFLOWS (Fallback without Shorebird)
   # ============================================================
-  # Standard Flutter build without Shorebird - use if Shorebird issues
+
   ios-build-legacy:
-    name: iOS Build (Legacy)
+    name: iOS Build (Legacy - No Shorebird)
     instance_type: mac_mini_m2
     max_build_duration: 120
+
     integrations:
       app_store_connect: Mealvana
 
@@ -566,34 +576,26 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.mealvana.endurance
       groups:
-        - supabase_prod
-        - app_store_credentials
+        - mealvana_prod
       vars:
         FLUTTER_ENV: prod
+        APP_ENVIRONMENT: prod
 
-    # No automatic triggers - manual only
     triggering:
       events: []
 
     scripts:
-      - name: Get Flutter dependencies
-        script: flutter pub get
+      - *flutter_pub_get
+      - *run_build_runner
+      - *run_unit_tests
+      - *install_cocoapods
+      - *setup_ios_signing
 
-      - name: Run code generation
-        script: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Run unit tests
-        script: flutter test
-
-      - name: Install CocoaPods
-        script: cd ios && pod install
-
-      - name: Set up code signing
-        script: keychain initialize
-
-      - name: Build iOS
+      - name: Build iOS (Standard)
         script: |
           flutter build ipa --release \
+            --flavor prod \
+            --target lib/main_prod.dart \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
@@ -612,12 +614,8 @@ workflows:
           success: true
           failure: true
 
-  # ============================================================
-  # Legacy Android Build (Non-Shorebird)
-  # ============================================================
-  # Standard Flutter build without Shorebird - use if Shorebird issues
   android-build-legacy:
-    name: Android Build (Legacy)
+    name: Android Build (Legacy - No Shorebird)
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -625,36 +623,27 @@ workflows:
       flutter: stable
       java: 17
       groups:
-        - supabase_prod
+        - mealvana_prod
         - google_play_credentials
-        - firebase_config  # Contains GOOGLE_SERVICES_JSON
+        - firebase_config
       vars:
         FLUTTER_ENV: prod
+        APP_ENVIRONMENT: prod
 
-    # No automatic triggers - manual only
     triggering:
       events: []
 
     scripts:
-      - name: Get Flutter dependencies
-        script: flutter pub get
+      - *flutter_pub_get
+      - *run_build_runner
+      - *load_firebase_config
+      - *run_unit_tests
 
-      - name: Run code generation
-        script: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Load Firebase configuration
+      - name: Build Android App Bundle (Standard)
         script: |
-          #!/usr/bin/env sh
-          set -e
-          echo "$ANDROID_FIREBASE_JSON" | base64 --decode > android/app/google-services.json
-          echo "✅ google-services.json created"
-          ls -la android/app/google-services.json
-
-      - name: Run unit tests
-        script: flutter test
-
-      - name: Build Android App Bundle
-        script: flutter build appbundle --release
+          flutter build appbundle --release \
+            --flavor prod \
+            --target lib/main_prod.dart
 
     artifacts:
       - build/**/outputs/**/*.aab
