@@ -973,9 +973,26 @@ class DataSyncService {
     }
   }
 
-  Future<void> _uploadDirtyRecords(String userId) async {
+  /// Upload dirty records to Supabase (upload-first pattern)
+  ///
+  /// Returns map of table -> upload success for monitoring/retry logic
+  /// This is the first step in the sync process (upload then download)
+  Future<Map<String, bool>> uploadDirtyRecords(String userId) async {
+    final uploadResults = <String, bool>{};
+
     try {
       await _database.ensureUserDataSyncColumns();
+
+      _logger.info(
+        'Starting upload of dirty records via edge function',
+        context: 'DATA_SYNC',
+        data: {'userId': userId},
+      );
+
+      // Collect dirty records from all tables
+      final dirtyUserProfile = await (_database.select(_database.userProfilesTable)
+            ..where((tbl) => tbl.needsUpload.equals(true)))
+          .getSingleOrNull();
 
       final dirtyActivities = await (_database.select(_database.activitiesTable)
             ..where((tbl) => tbl.needsUpload.equals(true)))
@@ -993,17 +1010,15 @@ class DataSyncService {
             ..where((tbl) => tbl.needsUpload.equals(true)))
           .get();
 
-      // User foods and preferences/feedback/surveys use raw queries for newly added sync columns
+      // User foods use raw queries
       List<QueryRow> dirtyUserFoods = const [];
       try {
         dirtyUserFoods = await _database
             .customSelect('SELECT * FROM user_foods WHERE needs_upload = 1')
             .get();
       } catch (e) {
-        // user_foods table missing - skip upload of custom foods
+        // Table might not exist yet
       }
-
-      // food_preferences is server-managed with immediate sync - no background sync needed
 
       final dirtyFeedback = await _database
           .customSelect('SELECT * FROM feedback WHERE needs_upload = 1')
@@ -1013,49 +1028,202 @@ class DataSyncService {
           .customSelect('SELECT * FROM feature_survey_responses WHERE needs_upload = 1')
           .get();
 
-      final uploadTasks = <Future<void>>[];
-
-      for (final activity in dirtyActivities) {
-        uploadTasks.add(_uploadActivity(userId, activity));
+      // If nothing to upload, return early
+      if (dirtyUserProfile == null &&
+          dirtyActivities.isEmpty &&
+          dirtyEvents.isEmpty &&
+          dirtyCarbLoadingPlans.isEmpty &&
+          dirtyCarbLoadingDays.isEmpty &&
+          dirtyUserFoods.isEmpty &&
+          dirtyFeedback.isEmpty &&
+          dirtyFeatureSurvey.isEmpty) {
+        _logger.info('No dirty records to upload', context: 'DATA_SYNC');
+        return uploadResults;
       }
 
-      for (final event in dirtyEvents) {
-        uploadTasks.add(_uploadEvent(userId, event));
+      // Build request payload
+      final dirtyRecords = <String, dynamic>{};
+
+      if (dirtyActivities.isNotEmpty) {
+        dirtyRecords['activities'] = dirtyActivities.map((a) => _activityToJson(a)).toList();
       }
 
-      for (final plan in dirtyCarbLoadingPlans) {
-        uploadTasks.add(_uploadCarbLoadingPlan(userId, plan));
+      if (dirtyEvents.isNotEmpty) {
+        dirtyRecords['events'] = dirtyEvents.map((e) => _eventToJson(e)).toList();
       }
 
-      for (final day in dirtyCarbLoadingDays) {
-        uploadTasks.add(_uploadCarbLoadingDay(userId, day));
+      if (dirtyCarbLoadingPlans.isNotEmpty) {
+        dirtyRecords['carb_loading_plans'] = dirtyCarbLoadingPlans.map((p) => _carbLoadingPlanToJson(p)).toList();
       }
 
-      for (final row in dirtyUserFoods) {
-        uploadTasks.add(_uploadUserFoodRow(row.data));
+      if (dirtyCarbLoadingDays.isNotEmpty) {
+        dirtyRecords['carb_loading_days'] = dirtyCarbLoadingDays.map((d) => _carbLoadingDayToJson(d)).toList();
       }
 
-      // food_preferences handled by immediate sync - no background upload needed
-
-      for (final row in dirtyFeedback) {
-        uploadTasks.add(_uploadFeedbackRow(row.data));
+      if (dirtyUserFoods.isNotEmpty) {
+        dirtyRecords['user_foods'] = dirtyUserFoods.map((row) => row.data).toList();
       }
 
-      for (final row in dirtyFeatureSurvey) {
-        uploadTasks.add(_uploadFeatureSurveyRow(row.data));
+      if (dirtyFeedback.isNotEmpty) {
+        dirtyRecords['feedback'] = dirtyFeedback.map((row) => row.data).toList();
       }
 
-      await Future.wait(uploadTasks);
+      if (dirtyFeatureSurvey.isNotEmpty) {
+        dirtyRecords['feature_survey_responses'] = dirtyFeatureSurvey.map((row) => row.data).toList();
+      }
+
+      // Call upload-all-data edge function
+      _logger.info(
+        'Calling upload-all-data edge function',
+        context: 'DATA_SYNC',
+        data: {
+          'userId': userId,
+          'tableCount': dirtyRecords.keys.length,
+        },
+      );
+
+      final response = await _supabase.functions.invoke(
+        'upload-all-data',
+        body: {
+          'user_id': userId,
+          'dirty_records': dirtyRecords,
+        },
+      );
+
+      if (response.status != 200) {
+        throw Exception('Edge function returned status ${response.status}');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      final results = data['results'] as Map<String, dynamic>;
+
+      // Process results and clear needs_upload flags for successful uploads
+      for (final entry in results.entries) {
+        final tableName = entry.key;
+        final result = entry.value as Map<String, dynamic>;
+        final success = result['success'] as bool? ?? false;
+
+        uploadResults[tableName] = success;
+
+        if (success) {
+          // Clear needs_upload flag for this table
+          await _clearNeedsUploadFlag(tableName, userId);
+
+          _logger.info(
+            'Successfully uploaded $tableName',
+            context: 'DATA_SYNC',
+            data: {'uploaded': result['uploaded']},
+          );
+        } else {
+          _logger.warning(
+            'Failed to upload $tableName',
+            context: 'DATA_SYNC',
+            data: {'error': result['error']},
+          );
+        }
+      }
+
+      // Upload user profile separately if needed (uses different endpoint)
+      if (dirtyUserProfile != null) {
+        try {
+          await _uploadUserProfile(dirtyUserProfile);
+          uploadResults['users'] = true;
+        } catch (e) {
+          _logger.error('Failed to upload user profile', context: 'DATA_SYNC', error: e);
+          uploadResults['users'] = false;
+        }
+      }
+
+      _logger.info(
+        'Upload completed via edge function',
+        context: 'DATA_SYNC',
+        data: {
+          'userId': userId,
+          'successful': uploadResults.values.where((v) => v).length,
+          'failed': uploadResults.values.where((v) => !v).length,
+        },
+      );
+
+      return uploadResults;
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to upload dirty records',
+        'Upload via edge function failed',
         context: 'DATA_SYNC',
         error: e,
         stackTrace: stackTrace,
       );
+      return uploadResults;
     }
   }
 
+  /// Clear needs_upload flag for successfully uploaded records
+  Future<void> _clearNeedsUploadFlag(String tableName, String userId) async {
+    try {
+      switch (tableName) {
+        case 'activities':
+          await _database.customStatement(
+            'UPDATE activities_table SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
+            [userId],
+          );
+          break;
+        case 'events':
+          await _database.customStatement(
+            'UPDATE events_table SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
+            [userId],
+          );
+          break;
+        case 'carb_loading_plans':
+          await _database.customStatement(
+            'UPDATE carb_loading_plans_table SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
+            [userId],
+          );
+          break;
+        case 'carb_loading_days':
+          await _database.customStatement(
+            '''UPDATE carb_loading_days_table
+               SET needs_upload = 0
+               WHERE carb_loading_plan_id IN (
+                 SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+               ) AND needs_upload = 1''',
+            [userId],
+          );
+          break;
+        case 'user_foods':
+          await _database.customStatement(
+            'UPDATE user_foods SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
+            [userId],
+          );
+          break;
+        case 'feedback':
+          await _database.customStatement(
+            'UPDATE feedback SET needs_upload = 0 WHERE device_id = (SELECT device_id FROM users WHERE id = ?) AND needs_upload = 1',
+            [userId],
+          );
+          break;
+        case 'feature_survey_responses':
+          await _database.customStatement(
+            'UPDATE feature_survey_responses SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
+            [userId],
+          );
+          break;
+      }
+    } catch (e) {
+      _logger.error(
+        'Failed to clear needs_upload flag',
+        context: 'DATA_SYNC',
+        error: e,
+        data: {'table': tableName},
+      );
+    }
+  }
+
+  /// DEPRECATED: Use uploadDirtyRecords() for upload-first pattern
+  Future<void> _uploadDirtyRecords(String userId) async {
+    await uploadDirtyRecords(userId);
+  }
+
+  /// DEPRECATED: Individual uploads replaced by upload-all-data edge function
+  /// Kept for reference only - not called in production code
   Future<void> _uploadActivity(String userId, Activity activity) async {
     try {
       final payload = {
@@ -1146,6 +1314,8 @@ class DataSyncService {
     });
   }
 
+  /// DEPRECATED: Individual uploads replaced by upload-all-data edge function
+  /// Kept for reference only - not called in production code
   Future<void> _uploadEvent(String userId, Event event) async {
     try {
       // For sync, use direct Supabase upsert (event already created locally)
@@ -1191,6 +1361,8 @@ class DataSyncService {
     }
   }
 
+  /// DEPRECATED: Individual uploads replaced by upload-all-data edge function
+  /// Kept for reference only - not called in production code
   Future<void> _uploadCarbLoadingPlan(String userId, CarbLoadingPlan plan) async {
     try {
       final payload = {
@@ -1245,6 +1417,8 @@ class DataSyncService {
     }
   }
 
+  /// DEPRECATED: Individual uploads replaced by upload-all-data edge function
+  /// Kept for reference only - not called in production code
   Future<void> _uploadCarbLoadingDay(String userId, CarbLoadingDay day) async {
     try {
       final payload = {
@@ -1332,6 +1506,116 @@ class DataSyncService {
     });
   }
 
+  /// Convert Activity to JSON for edge function
+  Map<String, dynamic> _activityToJson(Activity activity) {
+    return {
+      'id': activity.id,
+      'user_id': activity.userId,
+      'activity_type': activity.activityType,
+      'title': activity.title,
+      'scheduled_date_time': activity.scheduledDateTime.toIso8601String(),
+      'status': activity.status,
+      'distance_miles': activity.distanceMiles,
+      'duration_minutes': activity.durationMinutes,
+      'pace_target_minutes_per_mile': activity.paceTargetMinutesPerMile,
+      'intensity_level': activity.intensityLevel,
+      'intensity_target': activity.intensityTarget,
+      'time_before_minutes': activity.timeBeforeMinutes,
+      'notes': activity.notes,
+      'cycling_speed_mph': activity.cyclingSpeedMph,
+      'cycling_terrain': activity.cyclingTerrain,
+      'cycling_indoor_outdoor': activity.cyclingIndoorOutdoor,
+      'cycling_elevation_gain_ft': activity.cyclingElevationGainFt,
+      'cycling_session_goal': activity.cyclingSessionGoal,
+      'swimming_pace_per_100m_seconds': activity.swimmingPacePer100mSeconds,
+      'swimming_pool_or_open_water': activity.swimmingPoolOrOpenWater,
+      'swimming_water_temp_c': activity.swimmingWaterTempC,
+      'completed_at': activity.completedAt?.toIso8601String(),
+      'actual_distance_miles': activity.actualDistanceMiles,
+      'actual_duration_minutes': activity.actualDurationMinutes,
+      'completion_rating': activity.completionRating,
+      'completion_notes': activity.completionNotes,
+      'nutrition_plan_data': activity.nutritionPlanData,
+      'created_at': activity.createdAt.toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+  }
+
+  /// Convert Event to JSON for edge function
+  Map<String, dynamic> _eventToJson(Event event) {
+    return {
+      'id': event.id,
+      'user_id': event.userId,
+      'activity_id': event.activityId,
+      'event_type': event.eventType,
+      'event_subtype': event.eventSubtype,
+      'event_name': event.eventName,
+      'location': event.location,
+      'registration_url': event.registrationUrl,
+      'start_time': event.startTime,
+      'goal_time_minutes': event.goalTimeMinutes,
+      'goal_pace_minutes_per_mile': event.goalPaceMinutesPerMile,
+      'predicted_finish_time_minutes': event.predictedFinishTimeMinutes,
+      'has_carb_loading': event.hasCarbLoading,
+      'carb_loading_days': event.carbLoadingDays,
+      'carb_loading_start_date': event.carbLoadingStartDate?.toIso8601String(),
+      'has_nutrition_plan': event.hasNutritionPlan,
+      'bib_number': event.bibNumber,
+      'wave_start_time': event.waveStartTime,
+      'packet_pickup_info': event.packetPickupInfo,
+      'actual_finish_time_minutes': event.actualFinishTimeMinutes,
+      'final_placement': event.finalPlacement,
+      'age_group_placement': event.ageGroupPlacement,
+      'created_at': event.createdAt.toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+  }
+
+  /// Convert CarbLoadingPlan to JSON for edge function
+  Map<String, dynamic> _carbLoadingPlanToJson(CarbLoadingPlan plan) {
+    return {
+      'id': plan.id,
+      'user_id': plan.userId,
+      'event_id': plan.eventId,
+      'start_date': plan.startDate.toIso8601String(),
+      'end_date': plan.endDate.toIso8601String(),
+      'total_days': plan.totalDays,
+      'daily_carb_target_grams': plan.dailyCarbTargetGrams,
+      'daily_calorie_target': plan.dailyCalorieTarget,
+      'generated_at': plan.generatedAt.toIso8601String(),
+      'algorithm_version': plan.algorithmVersion,
+      'adherence_score': plan.adherenceScore,
+      'completed_at': plan.completedAt?.toIso8601String(),
+      'local_updated_at': plan.localUpdatedAt.toIso8601String(),
+    };
+  }
+
+  /// Convert CarbLoadingDay to JSON for edge function
+  Map<String, dynamic> _carbLoadingDayToJson(CarbLoadingDay day) {
+    return {
+      'id': day.id,
+      'carb_loading_plan_id': day.carbLoadingPlanId,
+      'day_number': day.dayNumber,
+      'plan_date': day.planDate.toIso8601String(),
+      'carb_target_grams': day.carbTargetGrams,
+      'carb_protocol_g_per_kg': day.carbProtocolGPerKg,
+      'calorie_target': day.calorieTarget,
+      'meal_count': day.mealCount,
+      'breakfast_percent': day.breakfastPercent,
+      'morning_snack_percent': day.morningSnackPercent,
+      'lunch_percent': day.lunchPercent,
+      'afternoon_snack_percent': day.afternoonSnackPercent,
+      'dinner_percent': day.dinnerPercent,
+      'evening_snack_percent': day.eveningSnackPercent,
+      'logged_carbs_grams': day.loggedCarbsGrams,
+      'logged_calories': day.loggedCalories,
+      'completed': day.completed,
+      'local_updated_at': day.localUpdatedAt.toIso8601String(),
+    };
+  }
+
+  /// DEPRECATED: Individual uploads replaced by upload-all-data edge function
+  /// Kept for reference only - not called in production code
   Future<void> _uploadUserFoodRow(Map<String, dynamic> row) async {
     try {
       final categories = _parsePgArray(row['categories'] as String?);
@@ -1382,6 +1666,8 @@ class DataSyncService {
 
   // food_preferences sync removed - table is server-managed with immediate sync in user_repository.dart
 
+  /// DEPRECATED: Individual uploads replaced by upload-all-data edge function
+  /// Kept for reference only - not called in production code
   Future<void> _uploadFeedbackRow(Map<String, dynamic> row) async {
     try {
       await _supabase.from('feedback').upsert({
@@ -1414,6 +1700,8 @@ class DataSyncService {
     }
   }
 
+  /// DEPRECATED: Individual uploads replaced by upload-all-data edge function
+  /// Kept for reference only - not called in production code
   Future<void> _uploadFeatureSurveyRow(Map<String, dynamic> row) async {
     try {
       await _supabase.from('feature_survey_responses').upsert({
@@ -1432,10 +1720,144 @@ class DataSyncService {
     }
   }
 
+  /// Upload user profile to Supabase (for new user registration)
+  /// Uses consolidated upsert-user-profile edge function
+  Future<void> _uploadUserProfile(UserProfileEntry profile) async {
+    try {
+      _logger.info(
+        'Uploading user profile to Supabase',
+        context: 'USER_SYNC',
+        data: {'userId': profile.id},
+      );
+
+      // Use Supabase direct upsert instead of edge function for simplicity
+      // Edge function can be used later if needed for additional business logic
+      final userData = {
+        'id': profile.id,
+        'device_id': profile.deviceId,
+        'auth_user_id': profile.authUserId,
+        'auth_provider': profile.authProvider,
+        'is_anonymous': profile.isAnonymous,
+        'gender': profile.gender,
+        'birthday': profile.birthday?.toIso8601String().split('T')[0],
+        'height_feet': profile.heightFeet,
+        'height_inches': profile.heightInches,
+        'weight_pounds': profile.weightPounds,
+        'runs_with_water_bottle': profile.runsWithWaterBottle,
+        'food_preferences': profile.foodPreferences, // CRITICAL: Sync food preferences to Supabase
+        'gut_training_level': profile.gutTrainingLevel,
+        'onboarding_completed': profile.onboardingCompleted,
+        'app_version': profile.appVersion,
+        'dietary_preference': profile.dietaryPreference,
+        'allergies': profile.allergies,
+        'created_at': profile.createdAt.toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      // Upsert to Supabase
+      await _supabase.from('users').upsert(
+        userData,
+        onConflict: 'id', // Use id as primary key for conflict resolution
+      );
+
+      // Mark as synced in local database
+      await (_database.update(_database.userProfilesTable)
+            ..where((tbl) => tbl.id.equals(profile.id)))
+          .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
+
+      _logger.info(
+        'User profile uploaded successfully',
+        context: 'USER_SYNC',
+        data: {'userId': profile.id},
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to upload user profile',
+        context: 'USER_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': profile.id},
+      );
+      // Don't rethrow - allow other uploads to continue
+    }
+  }
+
   List<String>? _parsePgArray(String? raw) {
     if (raw == null || raw.isEmpty) return null;
     final trimmed = raw.replaceAll('{', '').replaceAll('}', '');
     if (trimmed.trim().isEmpty) return <String>[];
     return trimmed.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+  }
+
+  /// Detect if this is a fresh device (needs full sync)
+  ///
+  /// Checks:
+  /// 1. User profile exists in local DB
+  /// 2. Last sync timestamp exists
+  /// 3. Sync is not too old (>30 days = treat as fresh)
+  ///
+  /// Returns true if full sync is needed, false otherwise
+  Future<bool> needsFullSync(String userId) async {
+    try {
+      // Check 1: User profile exists?
+      final profileCount = await (_database.select(_database.userProfilesTable)
+            ..where((t) => t.id.equals(userId)))
+          .get();
+
+      if (profileCount.isEmpty) {
+        _logger.info(
+          'Fresh device detected - no user profile',
+          context: 'DATA_SYNC',
+        );
+        return true;
+      }
+
+      // Check 2: Have we ever synced?
+      final prefs = await _ref.read(sharedPreferencesProvider.future);
+      final lastSync = prefs.getString('last_sync_timestamp_$userId');
+
+      if (lastSync == null) {
+        _logger.info(
+          'Fresh device detected - no sync timestamp',
+          context: 'DATA_SYNC',
+        );
+        return true;
+      }
+
+      // Check 3: Is sync very old? (>30 days = treat as fresh)
+      final lastSyncDate = DateTime.tryParse(lastSync);
+      if (lastSyncDate == null) {
+        _logger.info(
+          'Fresh device detected - invalid sync timestamp',
+          context: 'DATA_SYNC',
+        );
+        return true;
+      }
+
+      final daysSinceSync = DateTime.now().difference(lastSyncDate).inDays;
+
+      if (daysSinceSync > 30) {
+        _logger.info(
+          'Sync very old ($daysSinceSync days) - treating as fresh device',
+          context: 'DATA_SYNC',
+        );
+        return true;
+      }
+
+      _logger.info(
+        'Device has recent data - incremental sync',
+        context: 'DATA_SYNC',
+        data: {'daysSinceSync': daysSinceSync},
+      );
+      return false;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error checking fresh device status',
+        context: 'DATA_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return true; // Err on side of full sync
+    }
   }
 }

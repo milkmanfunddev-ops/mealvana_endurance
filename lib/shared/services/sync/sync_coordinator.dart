@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../logging_service.dart';
 import 'data_sync_service.dart';
@@ -17,6 +18,7 @@ enum SyncTrigger {
   oauthSignIn,
   pullToRefresh,
   manual,
+  preLogout,
 }
 
 /// Internal sync status (no UI exposure)
@@ -79,17 +81,37 @@ class SyncCoordinator extends _$SyncCoordinator {
       return true; // Return true since a sync is happening
     }
 
+    // Check network connectivity before attempting sync
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      _logger.info(
+        'Skipping sync - device is offline',
+        context: 'SYNC_COORDINATOR',
+        data: {'trigger': trigger.name, 'userId': userId},
+      );
+      return false; // Return false since sync was skipped (offline-first: user can continue)
+    }
+
     _syncInProgress = true;
     state = SyncState.syncing;
 
     _logger.info(
       'Starting sync',
       context: 'SYNC_COORDINATOR',
-      data: {'trigger': trigger.name, 'userId': userId},
+      data: {
+        'trigger': trigger.name,
+        'userId': userId,
+        'connectivity': connectivityResult.toString(),
+      },
     );
 
     try {
-      // Delegate to DataSyncService for actual sync work
+      // STEP 1: Upload dirty records FIRST (protect user data)
+      _logger.info('Step 1: Uploading dirty records', context: 'SYNC_COORDINATOR');
+      final uploadResults = await _dataSyncService.uploadDirtyRecords(userId);
+
+      // STEP 2: Download fresh data from Supabase (includes user profile sync)
+      _logger.info('Step 2: Downloading fresh data', context: 'SYNC_COORDINATOR');
       final success = await _dataSyncService.syncAllData(userId);
 
       if (success) {
@@ -107,6 +129,7 @@ class SyncCoordinator extends _$SyncCoordinator {
           data: {
             'trigger': trigger.name,
             'userId': userId,
+            'uploadedTables': uploadResults.keys.length,
             'lastSyncTime': _lastSyncTime?.toIso8601String(),
             'skippedInvalidation': skipInvalidation,
           },
@@ -115,7 +138,11 @@ class SyncCoordinator extends _$SyncCoordinator {
         _logger.warning(
           'Sync completed with errors',
           context: 'SYNC_COORDINATOR',
-          data: {'trigger': trigger.name, 'userId': userId},
+          data: {
+            'trigger': trigger.name,
+            'userId': userId,
+            'uploadedTables': uploadResults.keys.length,
+          },
         );
       }
 
