@@ -1,9 +1,10 @@
+import 'dart:math';
 import 'package:drift/drift.dart';
 
 /// Table for all calendar entries including workouts and events
 @DataClassName('Activity')
 class ActivitiesTable extends Table {
-  IntColumn get id => integer().autoIncrement()(); // PRIMARY KEY (autoIncrement = BIGSERIAL)
+  IntColumn get id => integer().clientDefault(() => Random().nextInt(2147483647))(); // PRIMARY KEY (random int - no collision with server)
   TextColumn get userId => text().named('user_id')(); // FOREIGN KEY to user_profiles.id
   
   TextColumn get activityType => text().named('activity_type')(); // 'running', 'cycling', 'swimming'

@@ -415,6 +415,45 @@ class $UserProfilesTableTable extends UserProfilesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _dietaryPreferenceMeta = const VerificationMeta(
+    'dietaryPreference',
+  );
+  @override
+  late final GeneratedColumn<String> dietaryPreference =
+      GeneratedColumn<String>(
+        'dietary_preference',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _allergiesMeta = const VerificationMeta(
+    'allergies',
+  );
+  @override
+  late final GeneratedColumn<String> allergies = GeneratedColumn<String>(
+    'allergies',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -450,6 +489,9 @@ class $UserProfilesTableTable extends UserProfilesTable
     autoGenerateNutrition,
     completionReminders,
     senderName,
+    dietaryPreference,
+    allergies,
+    needsUpload,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -725,6 +767,30 @@ class $UserProfilesTableTable extends UserProfilesTable
         senderName.isAcceptableOrUnknown(data['sender_name']!, _senderNameMeta),
       );
     }
+    if (data.containsKey('dietary_preference')) {
+      context.handle(
+        _dietaryPreferenceMeta,
+        dietaryPreference.isAcceptableOrUnknown(
+          data['dietary_preference']!,
+          _dietaryPreferenceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('allergies')) {
+      context.handle(
+        _allergiesMeta,
+        allergies.isAcceptableOrUnknown(data['allergies']!, _allergiesMeta),
+      );
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -869,6 +935,18 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.string,
         data['${effectivePrefix}sender_name'],
       ),
+      dietaryPreference: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dietary_preference'],
+      ),
+      allergies: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allergies'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      )!,
     );
   }
 
@@ -965,6 +1043,18 @@ class UserProfileEntry extends DataClass
   final bool autoGenerateNutrition;
   final bool completionReminders;
   final String? senderName;
+
+  /// User's dietary preference (single-select, nullable - user can skip in onboarding)
+  /// Values: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb
+  final String? dietaryPreference;
+
+  /// User's allergies stored as PostgreSQL array format (e.g., '{dairy,gluten,peanuts}')
+  /// Values: dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts
+  final String allergies;
+
+  /// Sync tracking: whether this record needs to be uploaded to Supabase
+  /// Used for background sync after onboarding registration
+  final bool needsUpload;
   const UserProfileEntry({
     required this.id,
     required this.deviceId,
@@ -999,6 +1089,9 @@ class UserProfileEntry extends DataClass
     required this.autoGenerateNutrition,
     required this.completionReminders,
     this.senderName,
+    this.dietaryPreference,
+    required this.allergies,
+    required this.needsUpload,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1062,6 +1155,11 @@ class UserProfileEntry extends DataClass
     if (!nullToAbsent || senderName != null) {
       map['sender_name'] = Variable<String>(senderName);
     }
+    if (!nullToAbsent || dietaryPreference != null) {
+      map['dietary_preference'] = Variable<String>(dietaryPreference);
+    }
+    map['allergies'] = Variable<String>(allergies);
+    map['needs_upload'] = Variable<bool>(needsUpload);
     return map;
   }
 
@@ -1118,6 +1216,11 @@ class UserProfileEntry extends DataClass
       senderName: senderName == null && nullToAbsent
           ? const Value.absent()
           : Value(senderName),
+      dietaryPreference: dietaryPreference == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dietaryPreference),
+      allergies: Value(allergies),
+      needsUpload: Value(needsUpload),
     );
   }
 
@@ -1184,6 +1287,11 @@ class UserProfileEntry extends DataClass
         json['completionReminders'],
       ),
       senderName: serializer.fromJson<String?>(json['senderName']),
+      dietaryPreference: serializer.fromJson<String?>(
+        json['dietaryPreference'],
+      ),
+      allergies: serializer.fromJson<String>(json['allergies']),
+      needsUpload: serializer.fromJson<bool>(json['needsUpload']),
     );
   }
   @override
@@ -1227,6 +1335,9 @@ class UserProfileEntry extends DataClass
       'autoGenerateNutrition': serializer.toJson<bool>(autoGenerateNutrition),
       'completionReminders': serializer.toJson<bool>(completionReminders),
       'senderName': serializer.toJson<String?>(senderName),
+      'dietaryPreference': serializer.toJson<String?>(dietaryPreference),
+      'allergies': serializer.toJson<String>(allergies),
+      'needsUpload': serializer.toJson<bool>(needsUpload),
     };
   }
 
@@ -1264,6 +1375,9 @@ class UserProfileEntry extends DataClass
     bool? autoGenerateNutrition,
     bool? completionReminders,
     Value<String?> senderName = const Value.absent(),
+    Value<String?> dietaryPreference = const Value.absent(),
+    String? allergies,
+    bool? needsUpload,
   }) => UserProfileEntry(
     id: id ?? this.id,
     deviceId: deviceId ?? this.deviceId,
@@ -1299,6 +1413,11 @@ class UserProfileEntry extends DataClass
     autoGenerateNutrition: autoGenerateNutrition ?? this.autoGenerateNutrition,
     completionReminders: completionReminders ?? this.completionReminders,
     senderName: senderName.present ? senderName.value : this.senderName,
+    dietaryPreference: dietaryPreference.present
+        ? dietaryPreference.value
+        : this.dietaryPreference,
+    allergies: allergies ?? this.allergies,
+    needsUpload: needsUpload ?? this.needsUpload,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
     return UserProfileEntry(
@@ -1389,6 +1508,13 @@ class UserProfileEntry extends DataClass
       senderName: data.senderName.present
           ? data.senderName.value
           : this.senderName,
+      dietaryPreference: data.dietaryPreference.present
+          ? data.dietaryPreference.value
+          : this.dietaryPreference,
+      allergies: data.allergies.present ? data.allergies.value : this.allergies,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
     );
   }
 
@@ -1427,7 +1553,10 @@ class UserProfileEntry extends DataClass
           ..write('defaultActivityDay: $defaultActivityDay, ')
           ..write('autoGenerateNutrition: $autoGenerateNutrition, ')
           ..write('completionReminders: $completionReminders, ')
-          ..write('senderName: $senderName')
+          ..write('senderName: $senderName, ')
+          ..write('dietaryPreference: $dietaryPreference, ')
+          ..write('allergies: $allergies, ')
+          ..write('needsUpload: $needsUpload')
           ..write(')'))
         .toString();
   }
@@ -1467,6 +1596,9 @@ class UserProfileEntry extends DataClass
     autoGenerateNutrition,
     completionReminders,
     senderName,
+    dietaryPreference,
+    allergies,
+    needsUpload,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1504,7 +1636,10 @@ class UserProfileEntry extends DataClass
           other.defaultActivityDay == this.defaultActivityDay &&
           other.autoGenerateNutrition == this.autoGenerateNutrition &&
           other.completionReminders == this.completionReminders &&
-          other.senderName == this.senderName);
+          other.senderName == this.senderName &&
+          other.dietaryPreference == this.dietaryPreference &&
+          other.allergies == this.allergies &&
+          other.needsUpload == this.needsUpload);
 }
 
 class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
@@ -1541,6 +1676,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<bool> autoGenerateNutrition;
   final Value<bool> completionReminders;
   final Value<String?> senderName;
+  final Value<String?> dietaryPreference;
+  final Value<String> allergies;
+  final Value<bool> needsUpload;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
     this.id = const Value.absent(),
@@ -1576,6 +1714,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.autoGenerateNutrition = const Value.absent(),
     this.completionReminders = const Value.absent(),
     this.senderName = const Value.absent(),
+    this.dietaryPreference = const Value.absent(),
+    this.allergies = const Value.absent(),
+    this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UserProfilesTableCompanion.insert({
@@ -1612,6 +1753,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.autoGenerateNutrition = const Value.absent(),
     this.completionReminders = const Value.absent(),
     this.senderName = const Value.absent(),
+    this.dietaryPreference = const Value.absent(),
+    this.allergies = const Value.absent(),
+    this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        deviceId = Value(deviceId);
@@ -1649,6 +1793,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<bool>? autoGenerateNutrition,
     Expression<bool>? completionReminders,
     Expression<String>? senderName,
+    Expression<String>? dietaryPreference,
+    Expression<String>? allergies,
+    Expression<bool>? needsUpload,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1697,6 +1844,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       if (completionReminders != null)
         'completion_reminders': completionReminders,
       if (senderName != null) 'sender_name': senderName,
+      if (dietaryPreference != null) 'dietary_preference': dietaryPreference,
+      if (allergies != null) 'allergies': allergies,
+      if (needsUpload != null) 'needs_upload': needsUpload,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1735,6 +1885,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<bool>? autoGenerateNutrition,
     Value<bool>? completionReminders,
     Value<String?>? senderName,
+    Value<String?>? dietaryPreference,
+    Value<String>? allergies,
+    Value<bool>? needsUpload,
     Value<int>? rowid,
   }) {
     return UserProfilesTableCompanion(
@@ -1775,6 +1928,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           autoGenerateNutrition ?? this.autoGenerateNutrition,
       completionReminders: completionReminders ?? this.completionReminders,
       senderName: senderName ?? this.senderName,
+      dietaryPreference: dietaryPreference ?? this.dietaryPreference,
+      allergies: allergies ?? this.allergies,
+      needsUpload: needsUpload ?? this.needsUpload,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1895,6 +2051,15 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (senderName.present) {
       map['sender_name'] = Variable<String>(senderName.value);
     }
+    if (dietaryPreference.present) {
+      map['dietary_preference'] = Variable<String>(dietaryPreference.value);
+    }
+    if (allergies.present) {
+      map['allergies'] = Variable<String>(allergies.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1937,6 +2102,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('autoGenerateNutrition: $autoGenerateNutrition, ')
           ..write('completionReminders: $completionReminders, ')
           ..write('senderName: $senderName, ')
+          ..write('dietaryPreference: $dietaryPreference, ')
+          ..write('allergies: $allergies, ')
+          ..write('needsUpload: $needsUpload, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4202,6 +4370,30 @@ class $FoodsTableTable extends FoodsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _allergensMeta = const VerificationMeta(
+    'allergens',
+  );
+  @override
+  late final GeneratedColumn<String> allergens = GeneratedColumn<String>(
+    'allergens',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _excludedDietsMeta = const VerificationMeta(
+    'excludedDiets',
+  );
+  @override
+  late final GeneratedColumn<String> excludedDiets = GeneratedColumn<String>(
+    'excluded_diets',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4240,6 +4432,8 @@ class $FoodsTableTable extends FoodsTable
     purchaseUrl,
     affiliateSource,
     preferencePriority,
+    allergens,
+    excludedDiets,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4558,6 +4752,21 @@ class $FoodsTableTable extends FoodsTable
         ),
       );
     }
+    if (data.containsKey('allergens')) {
+      context.handle(
+        _allergensMeta,
+        allergens.isAcceptableOrUnknown(data['allergens']!, _allergensMeta),
+      );
+    }
+    if (data.containsKey('excluded_diets')) {
+      context.handle(
+        _excludedDietsMeta,
+        excludedDiets.isAcceptableOrUnknown(
+          data['excluded_diets']!,
+          _excludedDietsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4711,6 +4920,14 @@ class $FoodsTableTable extends FoodsTable
         DriftSqlType.int,
         data['${effectivePrefix}preference_priority'],
       ),
+      allergens: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allergens'],
+      )!,
+      excludedDiets: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}excluded_diets'],
+      )!,
     );
   }
 
@@ -4768,6 +4985,14 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
   final String? purchaseUrl;
   final String? affiliateSource;
   final int? preferencePriority;
+
+  /// Allergens contained in this food stored as PostgreSQL array format (e.g., '{dairy,gluten}')
+  /// Values: dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts
+  final String allergens;
+
+  /// Diets that should exclude this food stored as PostgreSQL array format (e.g., '{vegan,vegetarian}')
+  /// Values: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb
+  final String excludedDiets;
   const FoodEntry({
     required this.id,
     this.name,
@@ -4805,6 +5030,8 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     this.purchaseUrl,
     this.affiliateSource,
     this.preferencePriority,
+    required this.allergens,
+    required this.excludedDiets,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4905,6 +5132,8 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     if (!nullToAbsent || preferencePriority != null) {
       map['preference_priority'] = Variable<int>(preferencePriority);
     }
+    map['allergens'] = Variable<String>(allergens);
+    map['excluded_diets'] = Variable<String>(excludedDiets);
     return map;
   }
 
@@ -5004,6 +5233,8 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       preferencePriority: preferencePriority == null && nullToAbsent
           ? const Value.absent()
           : Value(preferencePriority),
+      allergens: Value(allergens),
+      excludedDiets: Value(excludedDiets),
     );
   }
 
@@ -5061,6 +5292,8 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       purchaseUrl: serializer.fromJson<String?>(json['purchaseUrl']),
       affiliateSource: serializer.fromJson<String?>(json['affiliateSource']),
       preferencePriority: serializer.fromJson<int?>(json['preferencePriority']),
+      allergens: serializer.fromJson<String>(json['allergens']),
+      excludedDiets: serializer.fromJson<String>(json['excludedDiets']),
     );
   }
   @override
@@ -5103,6 +5336,8 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       'purchaseUrl': serializer.toJson<String?>(purchaseUrl),
       'affiliateSource': serializer.toJson<String?>(affiliateSource),
       'preferencePriority': serializer.toJson<int?>(preferencePriority),
+      'allergens': serializer.toJson<String>(allergens),
+      'excludedDiets': serializer.toJson<String>(excludedDiets),
     };
   }
 
@@ -5143,6 +5378,8 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     Value<String?> purchaseUrl = const Value.absent(),
     Value<String?> affiliateSource = const Value.absent(),
     Value<int?> preferencePriority = const Value.absent(),
+    String? allergens,
+    String? excludedDiets,
   }) => FoodEntry(
     id: id ?? this.id,
     name: name.present ? name.value : this.name,
@@ -5216,6 +5453,8 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     preferencePriority: preferencePriority.present
         ? preferencePriority.value
         : this.preferencePriority,
+    allergens: allergens ?? this.allergens,
+    excludedDiets: excludedDiets ?? this.excludedDiets,
   );
   FoodEntry copyWithCompanion(FoodsTableCompanion data) {
     return FoodEntry(
@@ -5319,6 +5558,10 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
       preferencePriority: data.preferencePriority.present
           ? data.preferencePriority.value
           : this.preferencePriority,
+      allergens: data.allergens.present ? data.allergens.value : this.allergens,
+      excludedDiets: data.excludedDiets.present
+          ? data.excludedDiets.value
+          : this.excludedDiets,
     );
   }
 
@@ -5360,7 +5603,9 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           ..write('productTypeId: $productTypeId, ')
           ..write('purchaseUrl: $purchaseUrl, ')
           ..write('affiliateSource: $affiliateSource, ')
-          ..write('preferencePriority: $preferencePriority')
+          ..write('preferencePriority: $preferencePriority, ')
+          ..write('allergens: $allergens, ')
+          ..write('excludedDiets: $excludedDiets')
           ..write(')'))
         .toString();
   }
@@ -5403,6 +5648,8 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
     purchaseUrl,
     affiliateSource,
     preferencePriority,
+    allergens,
+    excludedDiets,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -5443,7 +5690,9 @@ class FoodEntry extends DataClass implements Insertable<FoodEntry> {
           other.productTypeId == this.productTypeId &&
           other.purchaseUrl == this.purchaseUrl &&
           other.affiliateSource == this.affiliateSource &&
-          other.preferencePriority == this.preferencePriority);
+          other.preferencePriority == this.preferencePriority &&
+          other.allergens == this.allergens &&
+          other.excludedDiets == this.excludedDiets);
 }
 
 class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
@@ -5483,6 +5732,8 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
   final Value<String?> purchaseUrl;
   final Value<String?> affiliateSource;
   final Value<int?> preferencePriority;
+  final Value<String> allergens;
+  final Value<String> excludedDiets;
   final Value<int> rowid;
   const FoodsTableCompanion({
     this.id = const Value.absent(),
@@ -5521,6 +5772,8 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     this.purchaseUrl = const Value.absent(),
     this.affiliateSource = const Value.absent(),
     this.preferencePriority = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodsTableCompanion.insert({
@@ -5560,6 +5813,8 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     this.purchaseUrl = const Value.absent(),
     this.affiliateSource = const Value.absent(),
     this.preferencePriority = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id);
   static Insertable<FoodEntry> custom({
@@ -5599,6 +5854,8 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     Expression<String>? purchaseUrl,
     Expression<String>? affiliateSource,
     Expression<int>? preferencePriority,
+    Expression<String>? allergens,
+    Expression<String>? excludedDiets,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5640,6 +5897,8 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
       if (purchaseUrl != null) 'purchase_url': purchaseUrl,
       if (affiliateSource != null) 'affiliate_source': affiliateSource,
       if (preferencePriority != null) 'preference_priority': preferencePriority,
+      if (allergens != null) 'allergens': allergens,
+      if (excludedDiets != null) 'excluded_diets': excludedDiets,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5681,6 +5940,8 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     Value<String?>? purchaseUrl,
     Value<String?>? affiliateSource,
     Value<int?>? preferencePriority,
+    Value<String>? allergens,
+    Value<String>? excludedDiets,
     Value<int>? rowid,
   }) {
     return FoodsTableCompanion(
@@ -5720,6 +5981,8 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
       purchaseUrl: purchaseUrl ?? this.purchaseUrl,
       affiliateSource: affiliateSource ?? this.affiliateSource,
       preferencePriority: preferencePriority ?? this.preferencePriority,
+      allergens: allergens ?? this.allergens,
+      excludedDiets: excludedDiets ?? this.excludedDiets,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5835,6 +6098,12 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
     if (preferencePriority.present) {
       map['preference_priority'] = Variable<int>(preferencePriority.value);
     }
+    if (allergens.present) {
+      map['allergens'] = Variable<String>(allergens.value);
+    }
+    if (excludedDiets.present) {
+      map['excluded_diets'] = Variable<String>(excludedDiets.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5880,6 +6149,8 @@ class FoodsTableCompanion extends UpdateCompanion<FoodEntry> {
           ..write('purchaseUrl: $purchaseUrl, ')
           ..write('affiliateSource: $affiliateSource, ')
           ..write('preferencePriority: $preferencePriority, ')
+          ..write('allergens: $allergens, ')
+          ..write('excludedDiets: $excludedDiets, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -8676,12 +8947,9 @@ class $ActivitiesTableTable extends ActivitiesTable
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    clientDefault: () => Random().nextInt(2147483647),
   );
   static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
@@ -9437,7 +9705,7 @@ class $ActivitiesTableTable extends ActivitiesTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => const {};
   @override
   Activity map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -10358,6 +10626,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
   const ActivitiesTableCompanion({
     this.id = const Value.absent(),
     this.userId = const Value.absent(),
@@ -10395,6 +10664,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   ActivitiesTableCompanion.insert({
     this.id = const Value.absent(),
@@ -10433,6 +10703,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   }) : userId = Value(userId),
        activityType = Value(activityType),
        title = Value(title),
@@ -10476,6 +10747,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -10524,6 +10796,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
@@ -10564,6 +10837,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
   }) {
     return ActivitiesTableCompanion(
       id: id ?? this.id,
@@ -10607,6 +10881,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -10735,6 +11010,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
     return map;
   }
 
@@ -10776,7 +11054,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -10794,12 +11073,9 @@ class $EventsTableTable extends EventsTable
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    clientDefault: () => Random().nextInt(2147483647),
   );
   static const VerificationMeta _activityIdMeta = const VerificationMeta(
     'activityId',
@@ -11358,7 +11634,7 @@ class $EventsTableTable extends EventsTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => const {};
   @override
   Event map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -12046,6 +12322,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
   final Value<DateTime> updatedAt;
   final Value<bool?> needsUpload;
   final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
   const EventsTableCompanion({
     this.id = const Value.absent(),
     this.activityId = const Value.absent(),
@@ -12074,6 +12351,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     this.updatedAt = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   EventsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -12103,6 +12381,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     required DateTime updatedAt,
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   }) : userId = Value(userId),
        eventType = Value(eventType),
        createdAt = Value(createdAt),
@@ -12135,6 +12414,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     Expression<DateTime>? updatedAt,
     Expression<bool>? needsUpload,
     Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -12168,6 +12448,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
@@ -12199,6 +12480,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     Value<DateTime>? updatedAt,
     Value<bool?>? needsUpload,
     Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
   }) {
     return EventsTableCompanion(
       id: id ?? this.id,
@@ -12231,6 +12513,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
       updatedAt: updatedAt ?? this.updatedAt,
       needsUpload: needsUpload ?? this.needsUpload,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -12326,6 +12609,9 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     if (localUpdatedAt.present) {
       map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
     }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
     return map;
   }
 
@@ -12358,7 +12644,8 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('needsUpload: $needsUpload, ')
-          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -12376,12 +12663,9 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    clientDefault: () => Random().nextInt(2147483647),
   );
   static const VerificationMeta _eventIdMeta = const VerificationMeta(
     'eventId',
@@ -12679,7 +12963,7 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => const {};
   @override
   CarbLoadingPlan map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -13023,6 +13307,7 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
   final Value<DateTime?> completedAt;
   final Value<bool> needsUpload;
   final Value<DateTime> localUpdatedAt;
+  final Value<int> rowid;
   const CarbLoadingPlansTableCompanion({
     this.id = const Value.absent(),
     this.eventId = const Value.absent(),
@@ -13038,6 +13323,7 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     this.completedAt = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   CarbLoadingPlansTableCompanion.insert({
     this.id = const Value.absent(),
@@ -13054,6 +13340,7 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     this.completedAt = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   }) : userId = Value(userId),
        totalDays = Value(totalDays),
        startDate = Value(startDate),
@@ -13075,6 +13362,7 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     Expression<DateTime>? completedAt,
     Expression<bool>? needsUpload,
     Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -13093,6 +13381,7 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
       if (completedAt != null) 'completed_at': completedAt,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
@@ -13111,6 +13400,7 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     Value<DateTime?>? completedAt,
     Value<bool>? needsUpload,
     Value<DateTime>? localUpdatedAt,
+    Value<int>? rowid,
   }) {
     return CarbLoadingPlansTableCompanion(
       id: id ?? this.id,
@@ -13127,6 +13417,7 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
       completedAt: completedAt ?? this.completedAt,
       needsUpload: needsUpload ?? this.needsUpload,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -13177,6 +13468,9 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
     if (localUpdatedAt.present) {
       map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
     }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
     return map;
   }
 
@@ -13196,7 +13490,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
           ..write('adherenceScore: $adherenceScore, ')
           ..write('completedAt: $completedAt, ')
           ..write('needsUpload: $needsUpload, ')
-          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -13214,12 +13509,9 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    clientDefault: () => Random().nextInt(2147483647),
   );
   static const VerificationMeta _carbLoadingPlanIdMeta = const VerificationMeta(
     'carbLoadingPlanId',
@@ -13638,7 +13930,7 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => const {};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
     {carbLoadingPlanId, planDate},
@@ -14075,6 +14367,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
   final Value<bool> completed;
   final Value<bool> needsUpload;
   final Value<DateTime> localUpdatedAt;
+  final Value<int> rowid;
   const CarbLoadingDaysTableCompanion({
     this.id = const Value.absent(),
     this.carbLoadingPlanId = const Value.absent(),
@@ -14095,6 +14388,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     this.completed = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   CarbLoadingDaysTableCompanion.insert({
     this.id = const Value.absent(),
@@ -14116,6 +14410,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     this.completed = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   }) : carbLoadingPlanId = Value(carbLoadingPlanId),
        planDate = Value(planDate),
        dayNumber = Value(dayNumber),
@@ -14140,6 +14435,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     Expression<bool>? completed,
     Expression<bool>? needsUpload,
     Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -14165,6 +14461,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
       if (completed != null) 'completed': completed,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
@@ -14188,6 +14485,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     Value<bool>? completed,
     Value<bool>? needsUpload,
     Value<DateTime>? localUpdatedAt,
+    Value<int>? rowid,
   }) {
     return CarbLoadingDaysTableCompanion(
       id: id ?? this.id,
@@ -14210,6 +14508,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
       completed: completed ?? this.completed,
       needsUpload: needsUpload ?? this.needsUpload,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -14281,6 +14580,9 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
     if (localUpdatedAt.present) {
       map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
     }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
     return map;
   }
 
@@ -14305,7 +14607,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
           ..write('loggedCalories: $loggedCalories, ')
           ..write('completed: $completed, ')
           ..write('needsUpload: $needsUpload, ')
-          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -15854,12 +16157,9 @@ class $CarbLoadingDayMealsTableTable extends CarbLoadingDayMealsTable
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    clientDefault: () => Random().nextInt(2147483647),
   );
   static const VerificationMeta _carbLoadingDayIdMeta = const VerificationMeta(
     'carbLoadingDayId',
@@ -16074,7 +16374,7 @@ class $CarbLoadingDayMealsTableTable extends CarbLoadingDayMealsTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => const {};
   @override
   CarbLoadingDayMeal map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -16352,6 +16652,7 @@ class CarbLoadingDayMealsTableCompanion
   final Value<double> carbsConsumed;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<int> rowid;
   const CarbLoadingDayMealsTableCompanion({
     this.id = const Value.absent(),
     this.carbLoadingDayId = const Value.absent(),
@@ -16363,6 +16664,7 @@ class CarbLoadingDayMealsTableCompanion
     this.carbsConsumed = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   CarbLoadingDayMealsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -16375,6 +16677,7 @@ class CarbLoadingDayMealsTableCompanion
     required double carbsConsumed,
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   }) : carbLoadingDayId = Value(carbLoadingDayId),
        mealTypeId = Value(mealTypeId),
        carbsConsumed = Value(carbsConsumed);
@@ -16389,6 +16692,7 @@ class CarbLoadingDayMealsTableCompanion
     Expression<double>? carbsConsumed,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -16402,6 +16706,7 @@ class CarbLoadingDayMealsTableCompanion
       if (carbsConsumed != null) 'carbs_consumed': carbsConsumed,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
@@ -16416,6 +16721,7 @@ class CarbLoadingDayMealsTableCompanion
     Value<double>? carbsConsumed,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<int>? rowid,
   }) {
     return CarbLoadingDayMealsTableCompanion(
       id: id ?? this.id,
@@ -16429,6 +16735,7 @@ class CarbLoadingDayMealsTableCompanion
       carbsConsumed: carbsConsumed ?? this.carbsConsumed,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -16467,6 +16774,9 @@ class CarbLoadingDayMealsTableCompanion
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
     return map;
   }
 
@@ -16482,7 +16792,8 @@ class CarbLoadingDayMealsTableCompanion
           ..write('quantity: $quantity, ')
           ..write('carbsConsumed: $carbsConsumed, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -17282,17 +17593,16 @@ class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    clientDefault: () => Random().nextInt(2147483647),
   );
-  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
   @override
-  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
-    'user_id',
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -17350,7 +17660,7 @@ class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    userId,
+    deviceId,
     selectedFeatures,
     votedAt,
     needsUpload,
@@ -17371,13 +17681,13 @@ class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('user_id')) {
+    if (data.containsKey('device_id')) {
       context.handle(
-        _userIdMeta,
-        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
       );
     } else if (isInserting) {
-      context.missing(_userIdMeta);
+      context.missing(_deviceIdMeta);
     }
     if (data.containsKey('selected_features')) {
       context.handle(
@@ -17420,7 +17730,7 @@ class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => const {};
   @override
   FeatureSurveyResponseEntry map(
     Map<String, dynamic> data, {
@@ -17432,9 +17742,9 @@ class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
-      userId: attachedDatabase.typeMapping.read(
+      deviceId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}user_id'],
+        data['${effectivePrefix}device_id'],
       )!,
       selectedFeatures: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -17463,11 +17773,11 @@ class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
 
 class FeatureSurveyResponseEntry extends DataClass
     implements Insertable<FeatureSurveyResponseEntry> {
-  /// Primary key - BIGSERIAL
+  /// Primary key - random integer
   final int id;
 
-  /// User ID (UUID) - references users.id
-  final String userId;
+  /// Device ID - references users.id (unified with user_id)
+  final String deviceId;
 
   /// JSON array of selected feature IDs (exactly 3)
   /// Example: ["shopping_list", "coach_sharing", "recipes"]
@@ -17481,7 +17791,7 @@ class FeatureSurveyResponseEntry extends DataClass
   final DateTime? localUpdatedAt;
   const FeatureSurveyResponseEntry({
     required this.id,
-    required this.userId,
+    required this.deviceId,
     required this.selectedFeatures,
     required this.votedAt,
     required this.needsUpload,
@@ -17491,7 +17801,7 @@ class FeatureSurveyResponseEntry extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['user_id'] = Variable<String>(userId);
+    map['device_id'] = Variable<String>(deviceId);
     map['selected_features'] = Variable<String>(selectedFeatures);
     map['voted_at'] = Variable<DateTime>(votedAt);
     map['needs_upload'] = Variable<bool>(needsUpload);
@@ -17504,7 +17814,7 @@ class FeatureSurveyResponseEntry extends DataClass
   FeatureSurveyResponsesTableCompanion toCompanion(bool nullToAbsent) {
     return FeatureSurveyResponsesTableCompanion(
       id: Value(id),
-      userId: Value(userId),
+      deviceId: Value(deviceId),
       selectedFeatures: Value(selectedFeatures),
       votedAt: Value(votedAt),
       needsUpload: Value(needsUpload),
@@ -17521,7 +17831,7 @@ class FeatureSurveyResponseEntry extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return FeatureSurveyResponseEntry(
       id: serializer.fromJson<int>(json['id']),
-      userId: serializer.fromJson<String>(json['userId']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
       selectedFeatures: serializer.fromJson<String>(json['selectedFeatures']),
       votedAt: serializer.fromJson<DateTime>(json['votedAt']),
       needsUpload: serializer.fromJson<bool>(json['needsUpload']),
@@ -17533,7 +17843,7 @@ class FeatureSurveyResponseEntry extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'userId': serializer.toJson<String>(userId),
+      'deviceId': serializer.toJson<String>(deviceId),
       'selectedFeatures': serializer.toJson<String>(selectedFeatures),
       'votedAt': serializer.toJson<DateTime>(votedAt),
       'needsUpload': serializer.toJson<bool>(needsUpload),
@@ -17543,14 +17853,14 @@ class FeatureSurveyResponseEntry extends DataClass
 
   FeatureSurveyResponseEntry copyWith({
     int? id,
-    String? userId,
+    String? deviceId,
     String? selectedFeatures,
     DateTime? votedAt,
     bool? needsUpload,
     Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => FeatureSurveyResponseEntry(
     id: id ?? this.id,
-    userId: userId ?? this.userId,
+    deviceId: deviceId ?? this.deviceId,
     selectedFeatures: selectedFeatures ?? this.selectedFeatures,
     votedAt: votedAt ?? this.votedAt,
     needsUpload: needsUpload ?? this.needsUpload,
@@ -17563,7 +17873,7 @@ class FeatureSurveyResponseEntry extends DataClass
   ) {
     return FeatureSurveyResponseEntry(
       id: data.id.present ? data.id.value : this.id,
-      userId: data.userId.present ? data.userId.value : this.userId,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
       selectedFeatures: data.selectedFeatures.present
           ? data.selectedFeatures.value
           : this.selectedFeatures,
@@ -17581,7 +17891,7 @@ class FeatureSurveyResponseEntry extends DataClass
   String toString() {
     return (StringBuffer('FeatureSurveyResponseEntry(')
           ..write('id: $id, ')
-          ..write('userId: $userId, ')
+          ..write('deviceId: $deviceId, ')
           ..write('selectedFeatures: $selectedFeatures, ')
           ..write('votedAt: $votedAt, ')
           ..write('needsUpload: $needsUpload, ')
@@ -17593,7 +17903,7 @@ class FeatureSurveyResponseEntry extends DataClass
   @override
   int get hashCode => Object.hash(
     id,
-    userId,
+    deviceId,
     selectedFeatures,
     votedAt,
     needsUpload,
@@ -17604,7 +17914,7 @@ class FeatureSurveyResponseEntry extends DataClass
       identical(this, other) ||
       (other is FeatureSurveyResponseEntry &&
           other.id == this.id &&
-          other.userId == this.userId &&
+          other.deviceId == this.deviceId &&
           other.selectedFeatures == this.selectedFeatures &&
           other.votedAt == this.votedAt &&
           other.needsUpload == this.needsUpload &&
@@ -17614,62 +17924,69 @@ class FeatureSurveyResponseEntry extends DataClass
 class FeatureSurveyResponsesTableCompanion
     extends UpdateCompanion<FeatureSurveyResponseEntry> {
   final Value<int> id;
-  final Value<String> userId;
+  final Value<String> deviceId;
   final Value<String> selectedFeatures;
   final Value<DateTime> votedAt;
   final Value<bool> needsUpload;
   final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
   const FeatureSurveyResponsesTableCompanion({
     this.id = const Value.absent(),
-    this.userId = const Value.absent(),
+    this.deviceId = const Value.absent(),
     this.selectedFeatures = const Value.absent(),
     this.votedAt = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   FeatureSurveyResponsesTableCompanion.insert({
     this.id = const Value.absent(),
-    required String userId,
+    required String deviceId,
     required String selectedFeatures,
     required DateTime votedAt,
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
-  }) : userId = Value(userId),
+    this.rowid = const Value.absent(),
+  }) : deviceId = Value(deviceId),
        selectedFeatures = Value(selectedFeatures),
        votedAt = Value(votedAt);
   static Insertable<FeatureSurveyResponseEntry> custom({
     Expression<int>? id,
-    Expression<String>? userId,
+    Expression<String>? deviceId,
     Expression<String>? selectedFeatures,
     Expression<DateTime>? votedAt,
     Expression<bool>? needsUpload,
     Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (userId != null) 'user_id': userId,
+      if (deviceId != null) 'device_id': deviceId,
       if (selectedFeatures != null) 'selected_features': selectedFeatures,
       if (votedAt != null) 'voted_at': votedAt,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
   FeatureSurveyResponsesTableCompanion copyWith({
     Value<int>? id,
-    Value<String>? userId,
+    Value<String>? deviceId,
     Value<String>? selectedFeatures,
     Value<DateTime>? votedAt,
     Value<bool>? needsUpload,
     Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
   }) {
     return FeatureSurveyResponsesTableCompanion(
       id: id ?? this.id,
-      userId: userId ?? this.userId,
+      deviceId: deviceId ?? this.deviceId,
       selectedFeatures: selectedFeatures ?? this.selectedFeatures,
       votedAt: votedAt ?? this.votedAt,
       needsUpload: needsUpload ?? this.needsUpload,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -17679,8 +17996,8 @@ class FeatureSurveyResponsesTableCompanion
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
-    if (userId.present) {
-      map['user_id'] = Variable<String>(userId.value);
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
     }
     if (selectedFeatures.present) {
       map['selected_features'] = Variable<String>(selectedFeatures.value);
@@ -17694,6 +18011,9 @@ class FeatureSurveyResponsesTableCompanion
     if (localUpdatedAt.present) {
       map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
     }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
     return map;
   }
 
@@ -17701,11 +18021,12 @@ class FeatureSurveyResponsesTableCompanion
   String toString() {
     return (StringBuffer('FeatureSurveyResponsesTableCompanion(')
           ..write('id: $id, ')
-          ..write('userId: $userId, ')
+          ..write('deviceId: $deviceId, ')
           ..write('selectedFeatures: $selectedFeatures, ')
           ..write('votedAt: $votedAt, ')
           ..write('needsUpload: $needsUpload, ')
-          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -17803,6 +18124,9 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<bool> autoGenerateNutrition,
       Value<bool> completionReminders,
       Value<String?> senderName,
+      Value<String?> dietaryPreference,
+      Value<String> allergies,
+      Value<bool> needsUpload,
       Value<int> rowid,
     });
 typedef $$UserProfilesTableTableUpdateCompanionBuilder =
@@ -17840,6 +18164,9 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<bool> autoGenerateNutrition,
       Value<bool> completionReminders,
       Value<String?> senderName,
+      Value<String?> dietaryPreference,
+      Value<String> allergies,
+      Value<bool> needsUpload,
       Value<int> rowid,
     });
 
@@ -18021,6 +18348,21 @@ class $$UserProfilesTableTableFilterComposer
     column: $table.senderName,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get dietaryPreference => $composableBuilder(
+    column: $table.dietaryPreference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allergies => $composableBuilder(
+    column: $table.allergies,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$UserProfilesTableTableOrderingComposer
@@ -18196,6 +18538,21 @@ class $$UserProfilesTableTableOrderingComposer
     column: $table.senderName,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get dietaryPreference => $composableBuilder(
+    column: $table.dietaryPreference,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get allergies => $composableBuilder(
+    column: $table.allergies,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserProfilesTableTableAnnotationComposer
@@ -18360,6 +18717,19 @@ class $$UserProfilesTableTableAnnotationComposer
     column: $table.senderName,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get dietaryPreference => $composableBuilder(
+    column: $table.dietaryPreference,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get allergies =>
+      $composableBuilder(column: $table.allergies, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
 }
 
 class $$UserProfilesTableTableTableManager
@@ -18436,6 +18806,9 @@ class $$UserProfilesTableTableTableManager
                 Value<bool> autoGenerateNutrition = const Value.absent(),
                 Value<bool> completionReminders = const Value.absent(),
                 Value<String?> senderName = const Value.absent(),
+                Value<String?> dietaryPreference = const Value.absent(),
+                Value<String> allergies = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
                 id: id,
@@ -18471,6 +18844,9 @@ class $$UserProfilesTableTableTableManager
                 autoGenerateNutrition: autoGenerateNutrition,
                 completionReminders: completionReminders,
                 senderName: senderName,
+                dietaryPreference: dietaryPreference,
+                allergies: allergies,
+                needsUpload: needsUpload,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -18509,6 +18885,9 @@ class $$UserProfilesTableTableTableManager
                 Value<bool> autoGenerateNutrition = const Value.absent(),
                 Value<bool> completionReminders = const Value.absent(),
                 Value<String?> senderName = const Value.absent(),
+                Value<String?> dietaryPreference = const Value.absent(),
+                Value<String> allergies = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
                 id: id,
@@ -18544,6 +18923,9 @@ class $$UserProfilesTableTableTableManager
                 autoGenerateNutrition: autoGenerateNutrition,
                 completionReminders: completionReminders,
                 senderName: senderName,
+                dietaryPreference: dietaryPreference,
+                allergies: allergies,
+                needsUpload: needsUpload,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -19447,6 +19829,8 @@ typedef $$FoodsTableTableCreateCompanionBuilder =
       Value<String?> purchaseUrl,
       Value<String?> affiliateSource,
       Value<int?> preferencePriority,
+      Value<String> allergens,
+      Value<String> excludedDiets,
       Value<int> rowid,
     });
 typedef $$FoodsTableTableUpdateCompanionBuilder =
@@ -19487,6 +19871,8 @@ typedef $$FoodsTableTableUpdateCompanionBuilder =
       Value<String?> purchaseUrl,
       Value<String?> affiliateSource,
       Value<int?> preferencePriority,
+      Value<String> allergens,
+      Value<String> excludedDiets,
       Value<int> rowid,
     });
 
@@ -19676,6 +20062,16 @@ class $$FoodsTableTableFilterComposer
 
   ColumnFilters<int> get preferencePriority => $composableBuilder(
     column: $table.preferencePriority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -19868,6 +20264,16 @@ class $$FoodsTableTableOrderingComposer
     column: $table.preferencePriority,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodsTableTableAnnotationComposer
@@ -20050,6 +20456,14 @@ class $$FoodsTableTableAnnotationComposer
     column: $table.preferencePriority,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get allergens =>
+      $composableBuilder(column: $table.allergens, builder: (column) => column);
+
+  GeneratedColumn<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => column,
+  );
 }
 
 class $$FoodsTableTableTableManager
@@ -20119,6 +20533,8 @@ class $$FoodsTableTableTableManager
                 Value<String?> purchaseUrl = const Value.absent(),
                 Value<String?> affiliateSource = const Value.absent(),
                 Value<int?> preferencePriority = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodsTableCompanion(
                 id: id,
@@ -20157,6 +20573,8 @@ class $$FoodsTableTableTableManager
                 purchaseUrl: purchaseUrl,
                 affiliateSource: affiliateSource,
                 preferencePriority: preferencePriority,
+                allergens: allergens,
+                excludedDiets: excludedDiets,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -20197,6 +20615,8 @@ class $$FoodsTableTableTableManager
                 Value<String?> purchaseUrl = const Value.absent(),
                 Value<String?> affiliateSource = const Value.absent(),
                 Value<int?> preferencePriority = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodsTableCompanion.insert(
                 id: id,
@@ -20235,6 +20655,8 @@ class $$FoodsTableTableTableManager
                 purchaseUrl: purchaseUrl,
                 affiliateSource: affiliateSource,
                 preferencePriority: preferencePriority,
+                allergens: allergens,
+                excludedDiets: excludedDiets,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -21548,6 +21970,7 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
+      Value<int> rowid,
     });
 typedef $$ActivitiesTableTableUpdateCompanionBuilder =
     ActivitiesTableCompanion Function({
@@ -21587,6 +22010,7 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
+      Value<int> rowid,
     });
 
 class $$ActivitiesTableTableFilterComposer
@@ -22212,6 +22636,7 @@ class $$ActivitiesTableTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => ActivitiesTableCompanion(
                 id: id,
                 userId: userId,
@@ -22249,6 +22674,7 @@ class $$ActivitiesTableTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
@@ -22288,6 +22714,7 @@ class $$ActivitiesTableTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => ActivitiesTableCompanion.insert(
                 id: id,
                 userId: userId,
@@ -22325,6 +22752,7 @@ class $$ActivitiesTableTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -22380,6 +22808,7 @@ typedef $$EventsTableTableCreateCompanionBuilder =
       required DateTime updatedAt,
       Value<bool?> needsUpload,
       Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
     });
 typedef $$EventsTableTableUpdateCompanionBuilder =
     EventsTableCompanion Function({
@@ -22410,6 +22839,7 @@ typedef $$EventsTableTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<bool?> needsUpload,
       Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
     });
 
 class $$EventsTableTableFilterComposer
@@ -22882,6 +23312,7 @@ class $$EventsTableTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool?> needsUpload = const Value.absent(),
                 Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => EventsTableCompanion(
                 id: id,
                 activityId: activityId,
@@ -22910,6 +23341,7 @@ class $$EventsTableTableTableManager
                 updatedAt: updatedAt,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
@@ -22940,6 +23372,7 @@ class $$EventsTableTableTableManager
                 required DateTime updatedAt,
                 Value<bool?> needsUpload = const Value.absent(),
                 Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => EventsTableCompanion.insert(
                 id: id,
                 activityId: activityId,
@@ -22968,6 +23401,7 @@ class $$EventsTableTableTableManager
                 updatedAt: updatedAt,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -23007,6 +23441,7 @@ typedef $$CarbLoadingPlansTableTableCreateCompanionBuilder =
       Value<DateTime?> completedAt,
       Value<bool> needsUpload,
       Value<DateTime> localUpdatedAt,
+      Value<int> rowid,
     });
 typedef $$CarbLoadingPlansTableTableUpdateCompanionBuilder =
     CarbLoadingPlansTableCompanion Function({
@@ -23024,6 +23459,7 @@ typedef $$CarbLoadingPlansTableTableUpdateCompanionBuilder =
       Value<DateTime?> completedAt,
       Value<bool> needsUpload,
       Value<DateTime> localUpdatedAt,
+      Value<int> rowid,
     });
 
 class $$CarbLoadingPlansTableTableFilterComposer
@@ -23314,6 +23750,7 @@ class $$CarbLoadingPlansTableTableTableManager
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<DateTime> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => CarbLoadingPlansTableCompanion(
                 id: id,
                 eventId: eventId,
@@ -23329,6 +23766,7 @@ class $$CarbLoadingPlansTableTableTableManager
                 completedAt: completedAt,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
@@ -23346,6 +23784,7 @@ class $$CarbLoadingPlansTableTableTableManager
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<DateTime> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => CarbLoadingPlansTableCompanion.insert(
                 id: id,
                 eventId: eventId,
@@ -23361,6 +23800,7 @@ class $$CarbLoadingPlansTableTableTableManager
                 completedAt: completedAt,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -23412,6 +23852,7 @@ typedef $$CarbLoadingDaysTableTableCreateCompanionBuilder =
       Value<bool> completed,
       Value<bool> needsUpload,
       Value<DateTime> localUpdatedAt,
+      Value<int> rowid,
     });
 typedef $$CarbLoadingDaysTableTableUpdateCompanionBuilder =
     CarbLoadingDaysTableCompanion Function({
@@ -23434,6 +23875,7 @@ typedef $$CarbLoadingDaysTableTableUpdateCompanionBuilder =
       Value<bool> completed,
       Value<bool> needsUpload,
       Value<DateTime> localUpdatedAt,
+      Value<int> rowid,
     });
 
 class $$CarbLoadingDaysTableTableFilterComposer
@@ -23803,6 +24245,7 @@ class $$CarbLoadingDaysTableTableTableManager
                 Value<bool> completed = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<DateTime> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => CarbLoadingDaysTableCompanion(
                 id: id,
                 carbLoadingPlanId: carbLoadingPlanId,
@@ -23823,6 +24266,7 @@ class $$CarbLoadingDaysTableTableTableManager
                 completed: completed,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
@@ -23845,6 +24289,7 @@ class $$CarbLoadingDaysTableTableTableManager
                 Value<bool> completed = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<DateTime> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => CarbLoadingDaysTableCompanion.insert(
                 id: id,
                 carbLoadingPlanId: carbLoadingPlanId,
@@ -23865,6 +24310,7 @@ class $$CarbLoadingDaysTableTableTableManager
                 completed: completed,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -24652,6 +25098,7 @@ typedef $$CarbLoadingDayMealsTableTableCreateCompanionBuilder =
       required double carbsConsumed,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<int> rowid,
     });
 typedef $$CarbLoadingDayMealsTableTableUpdateCompanionBuilder =
     CarbLoadingDayMealsTableCompanion Function({
@@ -24665,6 +25112,7 @@ typedef $$CarbLoadingDayMealsTableTableUpdateCompanionBuilder =
       Value<double> carbsConsumed,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<int> rowid,
     });
 
 class $$CarbLoadingDayMealsTableTableFilterComposer
@@ -24895,6 +25343,7 @@ class $$CarbLoadingDayMealsTableTableTableManager
                 Value<double> carbsConsumed = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => CarbLoadingDayMealsTableCompanion(
                 id: id,
                 carbLoadingDayId: carbLoadingDayId,
@@ -24906,6 +25355,7 @@ class $$CarbLoadingDayMealsTableTableTableManager
                 carbsConsumed: carbsConsumed,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
@@ -24919,6 +25369,7 @@ class $$CarbLoadingDayMealsTableTableTableManager
                 required double carbsConsumed,
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => CarbLoadingDayMealsTableCompanion.insert(
                 id: id,
                 carbLoadingDayId: carbLoadingDayId,
@@ -24930,6 +25381,7 @@ class $$CarbLoadingDayMealsTableTableTableManager
                 carbsConsumed: carbsConsumed,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -25342,20 +25794,22 @@ typedef $$WeatherForecastsTableTableProcessedTableManager =
 typedef $$FeatureSurveyResponsesTableTableCreateCompanionBuilder =
     FeatureSurveyResponsesTableCompanion Function({
       Value<int> id,
-      required String userId,
+      required String deviceId,
       required String selectedFeatures,
       required DateTime votedAt,
       Value<bool> needsUpload,
       Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
     });
 typedef $$FeatureSurveyResponsesTableTableUpdateCompanionBuilder =
     FeatureSurveyResponsesTableCompanion Function({
       Value<int> id,
-      Value<String> userId,
+      Value<String> deviceId,
       Value<String> selectedFeatures,
       Value<DateTime> votedAt,
       Value<bool> needsUpload,
       Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
     });
 
 class $$FeatureSurveyResponsesTableTableFilterComposer
@@ -25372,8 +25826,8 @@ class $$FeatureSurveyResponsesTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get userId => $composableBuilder(
-    column: $table.userId,
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -25412,8 +25866,8 @@ class $$FeatureSurveyResponsesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get userId => $composableBuilder(
-    column: $table.userId,
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -25450,8 +25904,8 @@ class $$FeatureSurveyResponsesTableTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get userId =>
-      $composableBuilder(column: $table.userId, builder: (column) => column);
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
 
   GeneratedColumn<String> get selectedFeatures => $composableBuilder(
     column: $table.selectedFeatures,
@@ -25519,34 +25973,38 @@ class $$FeatureSurveyResponsesTableTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<String> userId = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
                 Value<String> selectedFeatures = const Value.absent(),
                 Value<DateTime> votedAt = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => FeatureSurveyResponsesTableCompanion(
                 id: id,
-                userId: userId,
+                deviceId: deviceId,
                 selectedFeatures: selectedFeatures,
                 votedAt: votedAt,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required String userId,
+                required String deviceId,
                 required String selectedFeatures,
                 required DateTime votedAt,
                 Value<bool> needsUpload = const Value.absent(),
                 Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => FeatureSurveyResponsesTableCompanion.insert(
                 id: id,
-                userId: userId,
+                deviceId: deviceId,
                 selectedFeatures: selectedFeatures,
                 votedAt: votedAt,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -1,9 +1,10 @@
+import 'dart:math';
 import 'package:drift/drift.dart';
 
 /// Table for specialized event data linked to activities
 @DataClassName('Event')
 class EventsTable extends Table {
-  IntColumn get id => integer().autoIncrement()(); // PRIMARY KEY (BIGSERIAL in Postgres)
+  IntColumn get id => integer().clientDefault(() => Random().nextInt(2147483647))(); // PRIMARY KEY (random int - no collision with server)
   IntColumn get activityId => integer().nullable().named('activity_id')(); // OPTIONAL FOREIGN KEY to activities.id (events may exist without an activity)
   TextColumn get userId => text().named('user_id')(); // FOREIGN KEY to users.id (UUID)
 

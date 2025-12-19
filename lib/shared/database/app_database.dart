@@ -1,14 +1,18 @@
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
-import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
-import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+
+// Platform-specific connection implementations
+import 'connection_native.dart' if (dart.library.html) 'connection_web.dart';
 import '../../features/auth/domain/user_preferences.dart' as domain;
+import '../../features/onboarding/domain/dietary_preference.dart';
+import '../../features/onboarding/domain/allergy.dart';
+import 'schema_versions.dart';
 import 'tables/user_profiles.dart';
 import 'tables/food_preferences.dart';
 import 'tables/feedback.dart';
@@ -76,10 +80,15 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   /// Constructor for testing with in-memory database
-  AppDatabase.memory() : super(NativeDatabase.memory());
+  factory AppDatabase.memory() {
+    return AppDatabase._internal(createNativeMemoryDatabase());
+  }
+
+  /// Internal constructor for factory
+  AppDatabase._internal(QueryExecutor e) : super(e);
 
   @override
-  int get schemaVersion => 1; // v1: Clean baseline schema
+  int get schemaVersion => 2; // v2: Added dietary_preference, allergies, needs_upload to users; preference_level to food_preferences
 
   /// Generate a proper UUID v4 for new records
   /// Uses the uuid package to ensure RFC 4122 compliance and exact 36-character length
@@ -148,8 +157,8 @@ class AppDatabase extends _$AppDatabase {
         // Enable foreign key support (required for Drift)
         await customStatement('PRAGMA foreign_keys = ON');
 
-        // Ensure new preference_level column exists without bumping schema version
-        await _ensureFoodPreferenceLevelColumn();
+        // Note: Column additions moved to proper migrations in onUpgrade
+        // v2 migration handles: preference_level, dietary_preference, allergies, needs_upload
 
         if (kDebugMode) {
           // Enable detailed logging in debug mode
@@ -161,10 +170,64 @@ class AppDatabase extends _$AppDatabase {
         await _normalizeUserFoodTimestamps();
       },
 
-      // Called when upgrading from older version
-      onUpgrade: (Migrator m, int from, int to) async {
-        // Future migrations will go here when we move to v2
-      },
+      // Called when upgrading from older version - uses Drift's official stepByStep migrations
+      onUpgrade: stepByStep(
+        from1To2: (m, schema) async {
+          // V1 -> V2 Migration (December 2025)
+          // Adds: dietary_preference, allergies, needs_upload to users; preference_level to food_preferences
+          //
+          // Note: Migration is idempotent - checks if columns exist before adding.
+
+          // 1. Add preference_level to food_preferences if missing
+          final foodPrefColumns = await customSelect("PRAGMA table_info(food_preferences_table)").get();
+          final foodPrefColumnNames = foodPrefColumns.map((row) => row.read<String>('name')).toSet();
+
+          if (!foodPrefColumnNames.contains('preference_level')) {
+            await m.addColumn(schema.foodPreferencesTable, schema.foodPreferencesTable.preferenceLevel);
+            // Migrate existing preference values to the new numeric scale
+            await customStatement('''
+              UPDATE food_preferences_table
+              SET preference_level = CASE preference
+                WHEN 'like' THEN 3
+                WHEN 'dislike' THEN 1
+                ELSE 2
+              END;
+            ''');
+          }
+
+          // 2. Add dietary columns to users table if missing
+          final usersColumns = await customSelect("PRAGMA table_info(users)").get();
+          final usersColumnNames = usersColumns.map((row) => row.read<String>('name')).toSet();
+
+          if (!usersColumnNames.contains('dietary_preference')) {
+            await m.addColumn(schema.users, schema.users.dietaryPreference);
+          }
+
+          if (!usersColumnNames.contains('allergies')) {
+            await m.addColumn(schema.users, schema.users.allergies);
+          }
+
+          // 3. Add needs_upload to users table for background sync tracking
+          // Note: Using raw SQL because this column is being added in this migration,
+          // so it's not available in the schema.users Shape type yet
+          if (!usersColumnNames.contains('needs_upload')) {
+            await customStatement(
+              'ALTER TABLE users ADD COLUMN needs_upload INTEGER NOT NULL DEFAULT 0'
+            );
+            // Ensure all existing rows have the default value (SQLite doesn't always backfill)
+            await customStatement(
+              'UPDATE users SET needs_upload = 0 WHERE needs_upload IS NULL'
+            );
+          }
+
+          // 4. Fix ID collision risk for activities and events tables
+          // Note: Changed from autoIncrement() to random integers (like carb_loading_plans)
+          // Existing records keep their sequential IDs - only NEW records will use random IDs
+          // No data migration needed: probability of collision between old sequential IDs (1-100)
+          // and new random IDs (0 to 2,147,483,647) is negligible (<0.000005%)
+          // This prevents multi-device sync collisions where two devices create activity with ID=1
+        },
+      ),
     );
   }
 
@@ -228,7 +291,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Save a user profile
-  Future<void> saveUserProfile(domain.UserProfile profile) async {
+  /// [needsUpload] - If true, marks profile for background upload to Supabase (for new registrations)
+  Future<void> saveUserProfile(domain.UserProfile profile, {bool needsUpload = false}) async {
     await into(userProfilesTable).insertOnConflictUpdate(
       UserProfilesTableCompanion.insert(
         id: profile.id,
@@ -247,12 +311,23 @@ class AppDatabase extends _$AppDatabase {
         createdAt: Value(profile.createdAt),
         updatedAt: Value(profile.updatedAt),
         appVersion: Value(profile.appVersion),
+        // Dietary preference and allergies
+        // Convert DietaryPreference.none to null for database (constraint doesn't allow 'none')
+        dietaryPreference: Value(
+          profile.dietaryPreference == null || profile.dietaryPreference == DietaryPreference.none
+            ? null
+            : profile.dietaryPreference!.dbValue
+        ),
+        allergies: Value(Allergy.toDbArray(profile.allergies)),
+        // Background sync tracking
+        needsUpload: Value(needsUpload),
       ),
     );
   }
 
   /// Update user profile
-  Future<void> updateUserProfile(domain.UserProfile profile) async {
+  /// [needsUpload] - If true, marks profile for background upload to Supabase (defaults to true for onboarding updates)
+  Future<void> updateUserProfile(domain.UserProfile profile, {bool needsUpload = true}) async {
     await (update(
       userProfilesTable,
     )..where((u) => u.id.equals(profile.id))).write(
@@ -271,6 +346,16 @@ class AppDatabase extends _$AppDatabase {
         onboardingCompleted: Value(profile.onboardingCompleted),
         updatedAt: Value(DateTime.now()),
         appVersion: Value(profile.appVersion),
+        // Dietary preference and allergies
+        // Convert DietaryPreference.none to null for database (constraint doesn't allow 'none')
+        dietaryPreference: Value(
+          profile.dietaryPreference == null || profile.dietaryPreference == DietaryPreference.none
+            ? null
+            : profile.dietaryPreference!.dbValue
+        ),
+        allergies: Value(Allergy.toDbArray(profile.allergies)),
+        // Background sync tracking
+        needsUpload: Value(needsUpload),
       ),
     );
   }
@@ -512,8 +597,89 @@ class AppDatabase extends _$AppDatabase {
     return await query.get();
   }
 
-  /// Clear all user-scoped tables (profiles, preferences, calendar data, etc.)
-  Future<void> clearUserScopedData() async {
+  /// Clear user-scoped data from local database
+  ///
+  /// **Behavior:**
+  /// - **Logout**: Keeps all data (forceDelete=false) for offline-first architecture
+  /// - **Account Deletion**: Deletes user's data (forceDelete=true)
+  ///
+  /// **Why keep data on logout?**
+  /// - Allows users to sign back in offline and see their data
+  /// - Supports multi-user scenarios (queries filter by current user)
+  /// - Follows offline-first best practices (Linear, Notion, Figma)
+  ///
+  /// **Security:**
+  /// - Queries already filter by getCurrentUserProfile().id
+  /// - Data is isolated between users via user_id
+  /// - For shared devices, use Settings > Clear Local Data
+  ///
+  /// @param userId - Required for account deletion, identifies which user to delete
+  /// @param forceDelete - If true, actually delete data. If false, keep data (no-op)
+  Future<void> clearUserScopedData({
+    String? userId,
+    bool forceDelete = false,
+  }) async {
+    // OPTION B: No-op for logout (keep data for offline-first)
+    // Only delete if explicitly deleting account (forceDelete = true)
+
+    if (!forceDelete) {
+      // Logout scenario - keep all data
+      // Queries already filter by getCurrentUserProfile().id
+      return;
+    }
+
+    // Account deletion scenario - delete this user's data
+    if (userId == null) {
+      throw ArgumentError('userId required for account deletion');
+    }
+
+    await transaction(() async {
+      // Delete with WHERE user_id = userId
+      // Child tables first (foreign key constraints)
+
+      // carb_loading_day_meals (via carb_loading_plans.user_id)
+      await customStatement('''
+        DELETE FROM carb_loading_day_meals_table
+        WHERE carb_loading_plan_id IN (
+          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+        )
+      ''', [userId]);
+
+      // carb_loading_days (via carb_loading_plans.user_id)
+      await customStatement('''
+        DELETE FROM carb_loading_days_table
+        WHERE carb_loading_plan_id IN (
+          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+        )
+      ''', [userId]);
+
+      // Direct user_id filtering
+      await (delete(carbLoadingPlansTable)..where((t) => t.userId.equals(userId))).go();
+      await (delete(eventsTable)..where((t) => t.userId.equals(userId))).go();
+      await (delete(activitiesTable)..where((t) => t.userId.equals(userId))).go();
+      await (delete(carbLoadingUserFoodsTable)..where((t) => t.userId.equals(userId))).go();
+      await (delete(userFoodsTable)..where((t) => t.userId.equals(userId))).go();
+      await (delete(featureSurveyResponsesTable)..where((t) => t.deviceId.equals(userId))).go();
+
+      // feedback uses device_id, need to join with users table
+      await customStatement('''
+        DELETE FROM feedback_table
+        WHERE device_id IN (
+          SELECT device_id FROM users WHERE id = ?
+        )
+      ''', [userId]);
+
+      // food_preferences uses user_id
+      await (delete(foodPreferencesTable)..where((t) => t.userId.equals(userId))).go();
+
+      // Delete user profile last
+      await (delete(userProfilesTable)..where((t) => t.id.equals(userId))).go();
+    });
+  }
+
+  /// Clear all data (for testing/reset)
+  /// This clears ALL data regardless of user - used for testing and full reset
+  Future<void> clearAllData() async {
     await transaction(() async {
       // Child tables first to satisfy foreign key constraints
       await delete(carbLoadingDayMealsTable).go();
@@ -528,11 +694,6 @@ class AppDatabase extends _$AppDatabase {
       await delete(userProfilesTable).go();
       await delete(foodPreferencesTable).go();
     });
-  }
-
-  /// Clear all data (for testing/reset)
-  Future<void> clearAllData() async {
-    await clearUserScopedData();
   }
 
   /// Migrate all user-scoped data from one user ID to another
@@ -1269,6 +1430,10 @@ class AppDatabase extends _$AppDatabase {
       updatedAt: dbUser.updatedAt,
       appVersion: dbUser.appVersion ?? '',
       swipeHintShown: dbUser.swipeHintShown,
+      // Dietary preference and allergies (onboarding revamp)
+      // Convert null to DietaryPreference.none for UI (database stores null, UI uses none enum)
+      dietaryPreference: DietaryPreference.fromDbValue(dbUser.dietaryPreference) ?? DietaryPreference.none,
+      allergies: Allergy.fromDbArray(dbUser.allergies),
     );
   }
 
@@ -1290,58 +1455,85 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Future<void> _ensureFoodPreferenceLevelColumn() async {
-    // Skip if table doesn't exist yet (during initial create on fresh installs)
-    final existingTablesResult = await customSelect(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='food_preferences'",
-    ).get();
-    if (existingTablesResult.isEmpty) {
-      return;
+  // === Database Health & Recovery Methods ===
+
+  /// Check if database is healthy using PRAGMA integrity_check
+  /// Returns true if database passes integrity check, false otherwise
+  Future<bool> isDatabaseHealthy() async {
+    try {
+      final result = await customSelect('PRAGMA integrity_check').get();
+
+      if (result.isEmpty) {
+        return false;
+      }
+
+      final integrityCheck = result.first.data['integrity_check'] as String?;
+      return integrityCheck == 'ok';
+    } catch (e) {
+      // If we can't even run the integrity check, database is unhealthy
+      return false;
+    }
+  }
+
+  /// Quick health check - try to execute a simple query
+  /// Returns true if database can execute basic queries, false otherwise
+  Future<bool> canExecuteQueries() async {
+    try {
+      // Try to count records in users table (always exists)
+      await customSelect('SELECT COUNT(*) FROM users').get();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Delete corrupted database and trigger full resync
+  ///
+  /// This is the safest recovery strategy:
+  /// 1. Close all database connections
+  /// 2. Delete corrupted file
+  /// 3. Re-initialize fresh database
+  /// 4. Trigger full sync from Supabase
+  ///
+  /// Data loss: Only unsynced records (upload-first sync minimizes this)
+  static Future<void> deleteAndResync() async {
+    try {
+      // Get database path before closing
+      final dbPath = await _getDatabasePath();
+
+      // Delete corrupted file
+      final dbFile = File(dbPath);
+      if (await dbFile.exists()) {
+        await dbFile.delete();
+      }
+
+      // Delete WAL and SHM files if they exist
+      final walFile = File('$dbPath-wal');
+      if (await walFile.exists()) {
+        await walFile.delete();
+      }
+
+      final shmFile = File('$dbPath-shm');
+      if (await shmFile.exists()) {
+        await shmFile.delete();
+      }
+    } catch (e) {
+      throw Exception('Database recovery failed: $e');
+    }
+  }
+
+  /// Get the platform-specific database file path
+  static Future<String> _getDatabasePath() async {
+    if (kIsWeb) {
+      // Web uses IndexedDB, no file path needed
+      throw UnsupportedError('Database file path not available on web');
     }
 
-    final columns =
-        await customSelect("PRAGMA table_info(food_preferences)").get();
-    final hasPreferenceLevel =
-        columns.any((row) => row.read<String>('name') == 'preference_level');
-
-    if (!hasPreferenceLevel) {
-      await customStatement(
-        'ALTER TABLE food_preferences ADD COLUMN preference_level INTEGER NOT NULL DEFAULT 2;',
-      );
-      await customStatement('''
-        UPDATE food_preferences
-        SET preference_level = CASE preference
-          WHEN 'like' THEN 3
-          WHEN 'dislike' THEN 1
-          ELSE 2
-        END;
-      ''');
-    }
+    final dir = await getApplicationDocumentsDirectory();
+    return p.join(dir.path, 'mealvana_endurance_db.sqlite');
   }
 }
 
 /// Database connection setup with seed database support
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    // Put the database file in the documents directory
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'mealvana_endurance_db.sqlite'));
-
-    // Also work around limitations on old Android versions
-    if (Platform.isAndroid) {
-      await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
-    }
-
-    // Make sqlite3 pick a more suitable location for temporary files
-    final cachebase = (await getTemporaryDirectory()).path;
-    sqlite3.tempDirectory = cachebase;
-
-    // Use background isolate for database operations in all modes
-    // This prevents blocking the main thread during database init (was causing 7+ second UI freeze)
-    // NOTE: SQL logging disabled - was causing 77% of debug log volume
-    // Set logStatements to true only when debugging specific database issues
-    final db = NativeDatabase.createInBackground(file);
-
-    return db;
-  });
-}
+/// Implementation is platform-specific (see connection_native.dart / connection_web.dart)
+LazyDatabase _openConnection() => openNativeConnection();
