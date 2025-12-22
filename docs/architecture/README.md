@@ -7,7 +7,7 @@ This document outlines the current architecture for the Mealvana Endurance Flutt
 - **Targets:** iOS & Android
 - **Style:** Feature-oriented architecture (FOA) - Andrea Bizzotto patterns
 - **Source of truth:** Supabase PostgreSQL (dual database architecture)
-- **Local storage:** Drift SQLite v2 (10 tables with type-safe migrations)
+- **Local storage:** Drift SQLite v2 (27 tables with proper migrations and idempotent checks)
 - **Authentication:** Device-based (no traditional user accounts)
 - **State management:** Riverpod v2 with `@riverpod` AsyncNotifier pattern
 - **Navigation:** GoRouter with Andrea Bizzotto initialization pattern
@@ -86,20 +86,27 @@ class ScreenController extends _$ScreenController {
 **See [Database Documentation](../database/README.md) for comprehensive details**
 
 ### Dual Database Architecture
-- **Local (Drift SQLite v2)**: 10 tables for offline-first functionality
+- **Local (Drift SQLite v2)**: 27 tables for offline-first functionality
 - **Cloud (Supabase PostgreSQL)**: Mirrors local schema for backup and sync
+- **Migration Strategy**: Proper Drift migrations with schema version bumps and idempotent checks
+- **Rollback**: Simple - delete local DB and resync from Supabase if migration fails
 
-### Current Tables (Schema v2)
+### Schema Version 2 (Current)
+- **Status**: Active with proper migrations
+- **Migration Approach**: Idempotent with column existence checks
+- **Key Changes from v1**: Consolidated preference_level, dietary_preference, and allergies columns
+- **Schema Location**: `/database_schemas/v2/` (v1 preserved in `/database_schemas/v1/`)
+
+### Current Tables (27 Total)
+Core tables including:
 - `user_profiles` - User biometric data and preferences
-- `food_preferences` - Like/dislike food selections with user associations  
-- `nutrition_plans` - Generated nutrition plans with full history
-- `foods` - Cached food database with nutritional information (24-hour refresh)
-- `app_content` - Dynamic content management (replaces SharedPreferences)
+- `food_preferences` - Like/dislike food selections with user associations
+- `foods` - Cached food database with nutritional information
+- `app_content` - Dynamic content management
 - `categories` - Food timing categories (before_run, during_run, after_run)
 - `food_categories` - Many-to-many food-category relationships
-- `brands` - Brand information for affiliate marketing
 - `feedback` - User feedback queue with sync status
-- `macro_targets` - Macro nutrient target tracking
+- Plus 20 additional feature tables (activities, events, carb loading, weather, etc.)
 
 ## Authentication Strategy
 

@@ -10,16 +10,31 @@ part of 'activities_controller.dart';
 // ignore_for_file: type=lint, type=warning
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)
+///
+/// STALE-WHILE-REVALIDATE PATTERN:
+/// - Loads cached Drift data immediately (0-50ms)
+/// - Syncs in background without blocking UI
+/// - UI refreshes when sync completes (via ref.invalidateSelf)
 
 @ProviderFor(ActivitiesController)
 const activitiesControllerProvider = ActivitiesControllerProvider._();
 
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)
+///
+/// STALE-WHILE-REVALIDATE PATTERN:
+/// - Loads cached Drift data immediately (0-50ms)
+/// - Syncs in background without blocking UI
+/// - UI refreshes when sync completes (via ref.invalidateSelf)
 final class ActivitiesControllerProvider
     extends $AsyncNotifierProvider<ActivitiesController, List<Activity>> {
   /// Controller for managing activities
   /// Handles activity CRUD operations (create, read, update, delete)
+  ///
+  /// STALE-WHILE-REVALIDATE PATTERN:
+  /// - Loads cached Drift data immediately (0-50ms)
+  /// - Syncs in background without blocking UI
+  /// - UI refreshes when sync completes (via ref.invalidateSelf)
   const ActivitiesControllerProvider._()
     : super(
         from: null,
@@ -40,10 +55,15 @@ final class ActivitiesControllerProvider
 }
 
 String _$activitiesControllerHash() =>
-    r'8af32fc9d7ce55eac9ed275d29641cff825324bf';
+    r'0dd88bc0f43334ccf9d7f04910f0bc3e4ad74099';
 
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)
+///
+/// STALE-WHILE-REVALIDATE PATTERN:
+/// - Loads cached Drift data immediately (0-50ms)
+/// - Syncs in background without blocking UI
+/// - UI refreshes when sync completes (via ref.invalidateSelf)
 
 abstract class _$ActivitiesController extends $AsyncNotifier<List<Activity>> {
   FutureOr<List<Activity>> build();
@@ -82,7 +102,7 @@ final class ActivityDetailProvider
   /// Provider for getting a specific activity by ID
   const ActivityDetailProvider._({
     required ActivityDetailFamily super.from,
-    required int super.argument,
+    required String super.argument,
   }) : super(
          retry: null,
          name: r'activityDetailProvider',
@@ -108,7 +128,7 @@ final class ActivityDetailProvider
 
   @override
   FutureOr<Activity?> create(Ref ref) {
-    final argument = this.argument as int;
+    final argument = this.argument as String;
     return activityDetail(ref, argument);
   }
 
@@ -123,12 +143,12 @@ final class ActivityDetailProvider
   }
 }
 
-String _$activityDetailHash() => r'a4535335b9a250db2147c14d97c40e729aac5dfe';
+String _$activityDetailHash() => r'2ca5051738620538348cae7e046e00bde88fc3fd';
 
 /// Provider for getting a specific activity by ID
 
 final class ActivityDetailFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<Activity?>, int> {
+    with $FunctionalFamilyOverride<FutureOr<Activity?>, String> {
   const ActivityDetailFamily._()
     : super(
         retry: null,
@@ -140,7 +160,7 @@ final class ActivityDetailFamily extends $Family
 
   /// Provider for getting a specific activity by ID
 
-  ActivityDetailProvider call(int activityId) =>
+  ActivityDetailProvider call(String activityId) =>
       ActivityDetailProvider._(argument: activityId, from: this);
 
   @override

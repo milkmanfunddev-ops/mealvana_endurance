@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthExcep
 import '../../../shared/services/device_info_service.dart';
 import '../data/auth_repository_edge.dart';
 import '../domain/user_preferences.dart';
+import '../../onboarding/domain/dietary_preference.dart';
+import '../../onboarding/domain/allergy.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
@@ -129,16 +131,19 @@ class AuthService {
         typicalSwimCapType: null,
       );
 
-      // Save to Supabase using device_id as conflict target
-      // This ensures existing users get updated rather than causing a duplicate key error
-      await _supabase.from('users').upsert(
-        userProfile.toJson(),
-        onConflict: 'device_id',
+      // Save locally first (offline-first) and mark for background upload
+      // IMPORTANT: needsUpload=true triggers background sync via DataSyncService
+      final userRepo = await _userRepository;
+      await userRepo.saveUserProfile(userProfile, needsUpload: true);
+
+      _logger.info(
+        'User profile saved locally and marked for background upload',
+        context: 'AUTH',
+        data: {'userId': effectiveUserId},
       );
 
-      // Save locally for caching
-      final userRepo = await _userRepository;
-      await userRepo.saveUserProfile(userProfile);
+      // NOTE: Supabase upload is now handled by background sync (DataSyncService)
+      // This allows instant navigation after registration while data syncs in background
 
       // Update Sentry user context with new user details
       await _sentry.setUserContext(
@@ -246,6 +251,7 @@ class AuthService {
   /// Update sport preferences for a user
   Future<void> updateSportPreferences(
     String userId, {
+    UserProfile? currentUser,
     bool? giSensitivity,
     int? ftpWatts,
     int? typicalBikeBottles,
@@ -255,14 +261,14 @@ class AuthService {
     bool? typicalWetsuit,
     String? typicalSwimCapType,
   }) async {
-    // Get current user profile
-    final currentUser = await getCurrentUser();
-    if (currentUser == null) {
+    // Get current user profile (use provided one to avoid redundant DB read)
+    final user = currentUser ?? await getCurrentUser();
+    if (user == null) {
       throw Exception('No user found to update sport preferences');
     }
 
     // Update the user profile with sport preferences
-    final updatedProfile = currentUser.copyWith(
+    final updatedProfile = user.copyWith(
       giSensitivity: giSensitivity,
       ftpWatts: ftpWatts,
       typicalBikeBottles: typicalBikeBottles,
@@ -274,11 +280,74 @@ class AuthService {
       updatedAt: DateTime.now(),
     );
 
-    // Save to local database
+    // Save to local database and mark for background upload
+    // NOTE: Background sync via DataSyncService will upload the complete user profile
     final userRepo = await _userRepository;
-    await userRepo.updateUserProfile(updatedProfile);
+    await userRepo.updateUserProfile(updatedProfile, needsUpload: true);
 
-    // TODO: Sync to Supabase when edge function is ready
+    _logger.info(
+      'Sport preferences saved locally and marked for background upload',
+      context: 'AUTH',
+      data: {'userId': userId},
+    );
+  }
+
+  /// Update dietary preference for a user
+  Future<void> updateDietaryPreference(
+    String userId,
+    DietaryPreference? dietaryPreference,
+  ) async {
+    // Get current user profile
+    final currentUser = await getCurrentUser();
+    if (currentUser == null) {
+      throw Exception('No user found to update dietary preference');
+    }
+
+    // Update the user profile with dietary preference
+    final updatedProfile = currentUser.copyWith(
+      dietaryPreference: dietaryPreference,
+      updatedAt: DateTime.now(),
+    );
+
+    // Save to local database and mark for background upload
+    // NOTE: Background sync via DataSyncService will upload the complete user profile
+    final userRepo = await _userRepository;
+    await userRepo.updateUserProfile(updatedProfile, needsUpload: true);
+
+    _logger.info(
+      'Dietary preference saved locally and marked for background upload',
+      context: 'AUTH',
+      data: {'userId': userId},
+    );
+  }
+
+  /// Update allergies for a user
+  Future<void> updateAllergies(
+    String userId,
+    List<Allergy> allergies,
+  ) async {
+    // Get current user profile
+    final currentUser = await getCurrentUser();
+    if (currentUser == null) {
+      throw Exception('No user found to update allergies');
+    }
+
+    // Update the user profile with allergies
+    final updatedProfile = currentUser.copyWith(
+      allergies: allergies,
+      updatedAt: DateTime.now(),
+    );
+
+    // Save to local database and mark for background upload
+    // NOTE: Background sync via DataSyncService will upload the complete user profile
+    final userRepo = await _userRepository;
+    await userRepo.updateUserProfile(updatedProfile, needsUpload: true);
+
+    _logger.info(
+      'Allergies saved locally and marked for background upload',
+      context: 'AUTH',
+      data: {'userId': userId},
+    );
   }
 
   /// Check if user has completed onboarding
@@ -291,7 +360,7 @@ class AuthService {
   }
 
   /// Save food preferences (typically during onboarding)
-  /// Uses Edge Function for optimized multi-step operation (reduces network roundtrips)
+  /// Uses consolidated Edge Function for optimized multi-step operation (reduces network roundtrips)
   Future<void> saveFoodPreferences(
     String userId,
     Map<String, FoodPreference> preferences, {
@@ -306,35 +375,12 @@ class AuthService {
 
     try {
       _logger.info(
-        'Saving food preferences via edge function',
+        'Saving food preferences via consolidated edge function',
         context: 'AUTH',
         data: {'userId': userId, 'count': preferences.length},
       );
 
-      // Call Edge Function - handles user check, preferences upsert, and onboarding flag in one operation
-      // This reduces 3-5 network roundtrips to 1
-      final result = await _authRepositoryEdge.saveFoodPreferences(
-        userId,
-        preferences,
-        preferenceLevels: normalizedLevels,
-      );
-
-      if (!result.success) {
-        _logger.error(
-          'Edge function food preferences save failed',
-          context: 'AUTH',
-          data: {'userId': userId, 'error': result.message},
-        );
-        throw Exception(result.message ?? 'Failed to save food preferences');
-      }
-
-      _logger.info(
-        'Food preferences saved successfully via edge function',
-        context: 'AUTH',
-        data: {'userId': userId, 'savedCount': result.preferencesCount},
-      );
-
-      // Save locally for offline access
+      // Save locally first (offline-first)
       final userRepo = await _userRepository;
       await userRepo.saveFoodPreferences(
         userId,
@@ -342,14 +388,21 @@ class AuthService {
         sliderLevels: normalizedLevels,
       );
 
-      // Mark user as having completed onboarding locally
+      // Mark user as having completed onboarding locally and queue for background upload
       final user = await getCurrentUser();
       if (user != null) {
         final updatedUser = user.copyWith(
           onboardingCompleted: true,
           updatedAt: DateTime.now(),
         );
-        await userRepo.updateUserProfile(updatedUser);
+        // Mark for background upload - DataSyncService will sync user profile + food preferences
+        await userRepo.updateUserProfile(updatedUser, needsUpload: true);
+
+        _logger.info(
+          'Onboarding completed locally - food preferences and profile marked for background upload',
+          context: 'AUTH',
+          data: {'userId': userId, 'foodPreferencesCount': preferences.length},
+        );
 
         // Update Sentry user context (unawaited for performance)
         unawaited(_sentry.setUserContext(
@@ -360,7 +413,7 @@ class AuthService {
         ));
 
         _sentry.addBreadcrumb(
-          message: 'Onboarding completed - food preferences saved',
+          message: 'Onboarding completed - food preferences saved locally',
           category: 'user_lifecycle',
           data: {
             'user_id': userId,

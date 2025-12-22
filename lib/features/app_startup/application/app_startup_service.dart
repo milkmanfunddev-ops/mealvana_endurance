@@ -15,13 +15,14 @@ import '../../../shared/services/notification_service.dart';
 import '../../../shared/services/push_notification_service.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/database/app_database.dart';
 import '../../nutrition_plan/data/food_repository.dart';
 import '../../auth/data/user_repository.dart';
 import '../../settings/presentation/providers/settings_controller.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
 import '../../events/presentation/providers/events_controller.dart';
 import '../../../shared/providers/user_id_provider.dart';
-import '../../../shared/services/preferences_service.dart';
+import '../../../shared/services/sync/sync_coordinator.dart';
 import 'app_startup_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
@@ -36,7 +37,7 @@ class AppStartupService {
   AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
   SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
   
-  /// Initialize Drift database with v2 migration support
+  /// Initialize Drift database with v2 migration support and corruption detection
   Future<void> initializeDatabase() async {
     try {
       // Touch the database provider so migrations run.
@@ -44,14 +45,122 @@ class AppStartupService {
       // async initialization internally (onCreate, onUpgrade, beforeOpen).
       final db = ref.read(appDatabaseProvider);
 
+      // CRITICAL FIX: Force LazyDatabase initialization before accessing tables
+      // This prevents race condition where background isolate hasn't spawned yet
+      // Use PRAGMA user_version (always works, doesn't require schema)
+      await db.customSelect('PRAGMA user_version').get();
+
       // Trigger lazy initialization by accessing the database
       // This ensures onCreate/migration runs before we proceed
-      // Use a simple table query instead of SELECT 1 to verify schema is ready
+      // Try to read user profiles to verify schema is ready
+      bool needsRecovery = false;
       try {
         await db.select(db.userProfilesTable).get();
       } catch (e) {
-        // On fresh install, table might not exist yet - that's OK
-        // The important part is that onCreate has completed
+        // If we get a null check error, it means the migration didn't backfill properly
+        if (e.toString().contains('Null check operator used on a null value')) {
+          _logger.warning(
+            'Detected null values in database - will attempt recovery',
+            context: 'DATABASE',
+          );
+          needsRecovery = true;
+        }
+        // Otherwise on fresh install, table might not exist yet - that's OK
+      }
+
+      // AGGRESSIVE FIX: If null values detected, fix them immediately
+      if (needsRecovery) {
+        try {
+          _logger.info('Attempting to fix null values in database', context: 'DATABASE');
+
+          // First check which columns exist (migration may have been interrupted)
+          final usersColumns = await db.customSelect("PRAGMA table_info(users)").get();
+          final columnNames = usersColumns.map((row) => row.read<String>('name')).toSet();
+
+          // Add missing columns if needed (interrupted migration recovery)
+          if (!columnNames.contains('allergies')) {
+            await db.customStatement(
+              "ALTER TABLE users ADD COLUMN allergies TEXT NOT NULL DEFAULT '{}'"
+            );
+          }
+          if (!columnNames.contains('dietary_preference')) {
+            await db.customStatement(
+              'ALTER TABLE users ADD COLUMN dietary_preference TEXT'
+            );
+          }
+          if (!columnNames.contains('needs_upload')) {
+            await db.customStatement(
+              'ALTER TABLE users ADD COLUMN needs_upload INTEGER NOT NULL DEFAULT 0'
+            );
+          }
+
+          // Now fix null values that slipped through migration
+          await db.customStatement(
+            "UPDATE users SET allergies = '{}' WHERE allergies IS NULL OR allergies = ''"
+          );
+          await db.customStatement(
+            "UPDATE users SET needs_upload = 0 WHERE needs_upload IS NULL"
+          );
+
+          _logger.info('Successfully fixed null values', context: 'DATABASE');
+
+          // Verify fix worked
+          await db.select(db.userProfilesTable).get();
+          _logger.info('Database verification passed after fix', context: 'DATABASE');
+        } catch (fixError) {
+          _logger.error(
+            'Failed to fix null values - will delete and recreate database',
+            context: 'DATABASE',
+            error: fixError,
+          );
+
+          // Last resort: delete and recreate
+          await db.close();
+          await AppDatabase.deleteAndResync();
+          ref.invalidate(appDatabaseProvider);
+
+          // Re-read the provider to get fresh database
+          final freshDb = ref.read(appDatabaseProvider);
+
+          _logger.info('Database recreated successfully', context: 'DATABASE');
+          return; // Exit early - fresh database is ready
+        }
+      }
+
+      // CRITICAL: Run database health check after initialization
+      // This detects SQLite corruption early before it causes crashes
+      final isHealthy = await db.isDatabaseHealthy();
+
+      if (!isHealthy) {
+        _logger.warning(
+          'Database corruption detected during startup - initiating recovery',
+          context: 'DATABASE',
+        );
+
+        // Close current database connection
+        await db.close();
+
+        // Delete corrupted database files
+        await AppDatabase.deleteAndResync();
+
+        // Re-initialize with fresh database
+        ref.invalidate(appDatabaseProvider);
+        final freshDb = ref.read(appDatabaseProvider);
+
+        // Verify fresh database is healthy
+        final isFreshHealthy = await freshDb.canExecuteQueries();
+        if (!isFreshHealthy) {
+          throw Exception('Fresh database creation failed after corruption recovery');
+        }
+
+        _logger.info(
+          'Database recovered successfully - will sync on next login',
+          context: 'DATABASE',
+        );
+
+        // Trigger full sync will happen automatically when user session is detected
+      } else {
+        _logger.info('Database health check passed', context: 'DATABASE');
       }
 
     } catch (e, stackTrace) {
@@ -60,7 +169,20 @@ class AppStartupService {
         error: e,
         stackTrace: stackTrace
       );
-      rethrow; // Re-throw to trigger error handling in AppStartupWidget
+
+      // Last resort: try to recover from catastrophic failure
+      try {
+        await AppDatabase.deleteAndResync();
+        ref.invalidate(appDatabaseProvider);
+        _logger.info('Database recovered after catastrophic failure', context: 'DATABASE');
+      } catch (recoveryError) {
+        _logger.error(
+          'Database recovery failed - app cannot continue',
+          context: 'DATABASE',
+          error: recoveryError,
+        );
+        rethrow; // Re-throw to trigger error handling in AppStartupWidget
+      }
     }
   }
   
@@ -309,17 +431,11 @@ class AppStartupService {
         });
 
         try {
-          // Clear all local user data - user is fully logged out
-          // They will need to go through onboarding again or sign in
-          final database = ref.read(appDatabaseProvider);
-          await database.clearUserScopedData();
+          // DON'T clear local data - keep for offline-first architecture
+          // This allows users to sign back in offline and see their data
+          // Data is already isolated by user_id via getCurrentUserProfile()
 
-          _logger.info(
-            'Cleared all local user data on sign-out',
-            context: 'AUTH',
-          );
-
-          // Ensure providers dependent on user identity refresh immediately
+          // Just invalidate providers so UI shows login screen
           ref.invalidate(userIdProvider);
           ref.invalidate(activitiesControllerProvider);
           ref.invalidate(allEventsProvider);
@@ -327,16 +443,19 @@ class AppStartupService {
           ref.invalidate(settingsControllerProvider);
           ref.invalidate(appStartupProvider);
 
+          _logger.info(
+            'User signed out - keeping local data for offline access',
+            context: 'AUTH',
+          );
+
           _sentry.addBreadcrumb(
-            message: 'User fully signed out - local data cleared',
+            message: 'User signed out - local data preserved',
             category: 'auth',
-            data: {
-              'timestamp': DateTime.now().toIso8601String(),
-            },
+            data: {'timestamp': DateTime.now().toIso8601String()},
           );
         } catch (e, stackTrace) {
           _logger.error(
-            'Failed to clear local data after sign-out',
+            'Failed to handle sign-out',
             context: 'AUTH',
             error: e,
             stackTrace: stackTrace,
@@ -345,9 +464,9 @@ class AppStartupService {
           await _sentry.reportCriticalError(
             e,
             stackTrace: stackTrace,
-            context: 'sign_out_data_clear_failed',
+            context: 'sign_out_handler_failed',
             tags: {
-              'error_type': 'local_data_clear_failed',
+              'error_type': 'sign_out_handler_failed',
               'operation': 'sign_out_handler',
             },
           );
@@ -374,9 +493,8 @@ class AppStartupService {
   /// Perform post-authentication sync operations in the background
   /// This runs AFTER navigation completes to prevent race conditions
   ///
-  /// NOTE: This method ONLY fetches user-specific data (profile, preferences, foods)
-  /// The main app data sync (activities, events, etc.) is handled by SyncCoordinator
-  /// which is called from OAuth service after sign-in
+  /// UPDATED: Now includes full sync for device-based users who skip OAuth
+  /// OAuth users still get their sync from OAuthService to prevent duplication
   Future<void> _performPostAuthSync(String userId) async {
     try {
       final userRepo = await ref.read(userRepositoryProvider.future);
@@ -397,9 +515,20 @@ class AppStartupService {
       _logger.error('Failed to sync remote profile on sign in', context: 'AUTH', error: e);
     }
 
-    // NOTE: Main app data sync (activities, events, etc.) is NOT called here
-    // It's handled by SyncCoordinator in OAuth service after sign-in
-    // This prevents the triple-sync issue where the same data was synced 3 times
+    // CRITICAL FIX: Trigger full sync for device-based users (anonymous/email)
+    // OAuth users get their sync from OAuthService, but device-based users need it here
+    // This ensures carb loading foods, nutrition foods, and activities are synced
+    try {
+      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+      await syncCoordinator.sync(
+        userId: userId,
+        trigger: SyncTrigger.manual,
+      );
+      _logger.info('Full sync completed for device-based user', context: 'AUTH');
+    } catch (e) {
+      _logger.error('Full sync failed after auth', context: 'AUTH', error: e);
+      // Don't rethrow - user can manually sync later
+    }
   }
 
   /// Check if user has existing session and restore it
@@ -478,19 +607,19 @@ class AppStartupService {
 
   /// Check for activities that need feedback after run time has passed
   /// Also checks for notification-based navigation
-  Future<int?> checkForPendingFeedback() async {
+  Future<String?> checkForPendingFeedback() async {
     try {
       final notificationActivityId = NotificationService.getPendingNavigationActivityId();
       if (notificationActivityId != null) {
         return notificationActivityId;
       }
-      
+
       final database = ref.read(appDatabaseProvider);
-      
+
       // Check if we have a current user
       final user = await database.getCurrentUserProfile();
       if (user == null) return null;
-      
+
       // Get plans that have a run date/time in the past but no feedback yet
       final now = DateTime.now();
       final planActivities = await database.getActivitiesWithNutritionPlans(user.id);
@@ -513,10 +642,10 @@ class AppStartupService {
           return activity.id;
         }
       }
-      
+
       return null; // No plans need feedback
     } catch (e) {
-      _logger.error('Error checking for pending feedback', 
+      _logger.error('Error checking for pending feedback',
         context: 'FEEDBACK_CHECK',
         error: e
       );

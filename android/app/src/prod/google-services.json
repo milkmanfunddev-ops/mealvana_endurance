@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "187980576164",
+    "project_id": "mealvana-endurance-46886",
+    "storage_bucket": "mealvana-endurance-46886.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:187980576164:android:140a82b494da58dc3c3d31",
+        "android_client_info": {
+          "package_name": "com.milkman.mealvanaendurance"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "171527646530-h7omr4i3lgseljh598sdfc1seiqd5eqj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.milkman.mealvanaendurance",
+            "certificate_hash": "7fe943b8cef813e9ea4ea0c95a3d87e8250480b9"
+          }
+        },
+        {
+          "client_id": "171527646530-5sjjs6che5nsl7nom9l8cfh64087aitb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.milkman.mealvanaendurance",
+            "certificate_hash": "ab86c5244dde3e754065b41d7ffc61cb10057a0d"
+          }
+        },
+        {
+          "client_id": "171527646530-d1hr8a9ja4ucqk28cjpcfnlo288qhccn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtTaKfdYfuPzOZacJlnGZrp8ganMLFg-Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "171527646530-d1hr8a9ja4ucqk28cjpcfnlo288qhccn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

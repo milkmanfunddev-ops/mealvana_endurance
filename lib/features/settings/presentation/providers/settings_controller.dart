@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show HttpMethod;
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
+import '../../../onboarding/domain/dietary_preference.dart';
+import '../../../onboarding/domain/allergy.dart';
 import '../../domain/settings_state.dart';
 
 part 'settings_controller.g.dart';
@@ -181,6 +185,9 @@ class SettingsController extends _$SettingsController {
       cssPacePer100mSeconds: displayProfile?.cssPacePer100mSeconds,
       typicalWetsuit: displayProfile?.typicalWetsuit,
       typicalSwimCapType: displayProfile?.typicalSwimCapType,
+      // Dietary preferences and allergies
+      dietaryPreference: displayProfile?.dietaryPreference,
+      allergies: displayProfile?.allergies ?? [],
       // User identity fields (needed for database operations)
       userId: displayProfile?.id,
       createdAt: displayProfile?.createdAt,
@@ -386,6 +393,43 @@ class SettingsController extends _$SettingsController {
     await _saveProfile();
   }
 
+  /// Save all sport settings (consolidated save for sport settings screen)
+  /// This is called when the user clicks the "Save" button on the sport settings screen
+  Future<void> saveSportSettings() async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(currentState.copyWith(isSaving: true));
+
+    // The individual update methods already save to local database
+    // Just need to trigger a final save to ensure everything is persisted
+    await _saveProfile();
+  }
+
+  /// Update dietary preference
+  Future<void> updateDietaryPreference(DietaryPreference? preference) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(dietaryPreference: preference, isSaving: true),
+    );
+
+    await _saveProfile();
+  }
+
+  /// Update allergies
+  Future<void> updateAllergies(List<Allergy> allergies) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(allergies: allergies, isSaving: true),
+    );
+
+    await _saveProfile();
+  }
+
   /// Save profile changes (both local and Supabase)
   Future<void> _saveProfile() async {
     final currentState = state.value;
@@ -415,6 +459,8 @@ class SettingsController extends _$SettingsController {
         cssPacePer100mSeconds: currentState.cssPacePer100mSeconds ?? existingProfile.cssPacePer100mSeconds,
         typicalWetsuit: currentState.typicalWetsuit ?? existingProfile.typicalWetsuit,
         typicalSwimCapType: currentState.typicalSwimCapType ?? existingProfile.typicalSwimCapType,
+        dietaryPreference: currentState.dietaryPreference ?? existingProfile.dietaryPreference,
+        allergies: currentState.allergies.isNotEmpty ? currentState.allergies : existingProfile.allergies,
       );
 
       await userRepository.updateUserProfile(updatedProfile);
@@ -452,9 +498,10 @@ class SettingsController extends _$SettingsController {
 
   /// Sign out the current user
   /// This triggers the auth state listener which will:
-  /// 1. Create a new anonymous session
-  /// 2. Reset local database (preserve food prefs, clear biometric data)
-  /// 3. Invalidate this controller to refresh UI
+  /// 1. Sync all local changes to Supabase (to prevent data loss)
+  /// 2. Create a new anonymous session
+  /// 3. Reset local database (preserve food prefs, clear biometric data)
+  /// 4. Invalidate this controller to refresh UI
   Future<void> signOut() async {
     state = await AsyncValue.guard(() async {
       final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
@@ -462,6 +509,23 @@ class SettingsController extends _$SettingsController {
 
       // Track sign out event
       await analytics.track('settings_sign_out_tapped');
+
+      // CRITICAL: Sync all local changes to Supabase BEFORE sign-out
+      // This prevents data loss when local database is cleared
+      final currentUser = supabaseClient.auth.currentUser;
+      if (currentUser != null) {
+        try {
+          await ref.read(syncCoordinatorProvider.notifier).sync(
+            userId: currentUser.id,
+            trigger: SyncTrigger.preLogout,
+          );
+        } catch (e) {
+          // Log error but continue with sign-out
+          // User has likely already confirmed they want to sign out
+          final logger = ref.read(appExternalDepsProvider).logger;
+          logger.error('Pre-logout sync failed', context: 'SETTINGS', error: e);
+        }
+      }
 
       // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
       await supabaseClient.auth.signOut();
@@ -479,62 +543,67 @@ class SettingsController extends _$SettingsController {
   /// Delete the current user account
   /// This will:
   /// 1. Call delete-user Edge Function to delete from auth.users and public.users
-  /// 2. Clear all local data (reset to fresh state)
+  /// 2. Clear user's local data (with WHERE user_id filter)
   /// 3. Sign out to trigger auth state change which rebuilds UI
   Future<void> deleteAccount() async {
     state = await AsyncValue.guard(() async {
       final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
       final analytics = ref.read(appExternalDepsProvider).analytics;
       final logger = ref.read(appExternalDepsProvider).logger;
-      final userRepository = await _userRepository;
+      final database = ref.read(appDatabaseProvider);
+      final currentUserId = supabaseClient.auth.currentUser?.id;
+
+      if (currentUserId == null) {
+        throw Exception('No user logged in');
+      }
 
       // Track delete account event
       await analytics.track('settings_delete_account_tapped');
 
       // If authenticated, call the delete-user Edge Function
       // This deletes from both auth.users and public.users (with CASCADE)
-      if (supabaseClient.auth.currentUser != null) {
-        try {
-          logger.info('Calling delete-user Edge Function', context: 'SETTINGS');
+      try {
+        logger.info('Calling delete-user Edge Function', context: 'SETTINGS');
 
-          final response = await supabaseClient.functions.invoke(
-            'delete-user',
-            method: HttpMethod.post,
-            body: {}, // No body needed - user ID comes from JWT
-          );
+        final response = await supabaseClient.functions.invoke(
+          'delete-user',
+          method: HttpMethod.post,
+          body: {}, // No body needed - user ID comes from JWT
+        );
 
-          if (response.status != 200) {
-            final errorData = response.data;
-            final errorMessage = errorData?['message'] ?? 'Unknown error';
-            logger.error(
-              'delete-user Edge Function failed',
-              context: 'SETTINGS',
-              data: {'status': response.status, 'message': errorMessage},
-            );
-            // Continue with local cleanup even if server deletion fails
-          } else {
-            logger.info('User deleted from Supabase successfully', context: 'SETTINGS');
-          }
-        } catch (e) {
+        if (response.status != 200) {
+          final errorData = response.data;
+          final errorMessage = errorData?['message'] ?? 'Unknown error';
           logger.error(
-            'Error calling delete-user Edge Function',
+            'delete-user Edge Function failed',
             context: 'SETTINGS',
-            error: e,
+            data: {'status': response.status, 'message': errorMessage},
           );
-          // Continue with local cleanup even if edge function call fails
+          // Continue with local cleanup even if server deletion fails
+        } else {
+          logger.info('User deleted from Supabase successfully', context: 'SETTINGS');
         }
+      } catch (e) {
+        logger.error(
+          'Error calling delete-user Edge Function',
+          context: 'SETTINGS',
+          error: e,
+        );
+        // Continue with local cleanup even if edge function call fails
       }
 
-      // Clear all local data to ensure we don't keep any user data
-      await userRepository.clearAllData();
+      // Clear user's local data with forceDelete = true
+      // This deletes ONLY this user's data (WHERE user_id = currentUserId)
+      await database.clearUserScopedData(
+        userId: currentUserId,
+        forceDelete: true,
+      );
 
       // Sign out to trigger auth state listener to create a new anonymous user
-      if (supabaseClient.auth.currentUser != null) {
-        try {
-          await supabaseClient.auth.signOut();
-        } catch (e) {
-          // Ignore errors during sign out - user is already deleted
-        }
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (e) {
+        // Ignore errors during sign out - user is already deleted
       }
 
       // Wait a moment for auth state listener to complete

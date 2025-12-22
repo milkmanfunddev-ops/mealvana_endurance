@@ -1,3 +1,6 @@
+import 'package:mealvana_endurance/features/onboarding/domain/dietary_preference.dart';
+import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
+
 /// Domain models for user authentication and preferences
 /// Removed Hive dependencies as part of migration to Drift database
 class UserProfile {
@@ -32,6 +35,10 @@ class UserProfile {
   final bool? typicalWetsuit;
   final String? typicalSwimCapType;
 
+  // Dietary preference and allergies (for onboarding revamp)
+  final DietaryPreference? dietaryPreference;
+  final List<Allergy> allergies;
+
   UserProfile({
     required this.id,
     required this.deviceId,
@@ -59,6 +66,9 @@ class UserProfile {
     this.cssPacePer100mSeconds,
     this.typicalWetsuit,
     this.typicalSwimCapType,
+    // Dietary preference and allergies
+    this.dietaryPreference,
+    this.allergies = const [],
   });
 
   /// Calculate age from birthday
@@ -85,6 +95,28 @@ class UserProfile {
       case GutTraining.high:
         return GutTrainingLevel.high;
     }
+  }
+
+  /// Parse allergies from JSON - handles both String and List formats
+  /// - PostgreSQL returns arrays as `List<dynamic>`
+  /// - Drift may return as String in legacy format
+  static List<Allergy> _parseAllergiesFromJson(dynamic allergiesData) {
+    if (allergiesData == null) return [];
+
+    // If it's a List (from Supabase PostgreSQL array)
+    if (allergiesData is List) {
+      return allergiesData
+          .map((item) => Allergy.fromDbValue(item.toString()))
+          .whereType<Allergy>()
+          .toList();
+    }
+
+    // If it's a String (from Drift or legacy format)
+    if (allergiesData is String) {
+      return Allergy.fromDbArray(allergiesData);
+    }
+
+    return [];
   }
 
   /// Create UserProfile from JSON (from Supabase)
@@ -123,6 +155,9 @@ class UserProfile {
       hasBentoBox: null,
       typicalWetsuit: null,
       typicalSwimCapType: null,
+      // Dietary preference and allergies
+      dietaryPreference: DietaryPreference.fromDbValue(json['dietary_preference'] as String?),
+      allergies: _parseAllergiesFromJson(json['allergies']),
     );
   }
 
@@ -148,6 +183,9 @@ class UserProfile {
       // Sport preferences (only include fields that exist in production Supabase)
       'cycling_ftp_watts': ftpWatts,
       'swimming_css_seconds_per_100m': cssPacePer100mSeconds,
+      // Dietary preference and allergies (synced to Supabase)
+      'dietary_preference': dietaryPreference?.dbValue,
+      'allergies': Allergy.toDbArray(allergies),
       // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
       // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields
       // and should not be synced to Supabase production
@@ -180,6 +218,9 @@ class UserProfile {
     int? cssPacePer100mSeconds,
     bool? typicalWetsuit,
     String? typicalSwimCapType,
+    // Dietary preference and allergies
+    DietaryPreference? dietaryPreference,
+    List<Allergy>? allergies,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -208,6 +249,9 @@ class UserProfile {
       cssPacePer100mSeconds: cssPacePer100mSeconds ?? this.cssPacePer100mSeconds,
       typicalWetsuit: typicalWetsuit ?? this.typicalWetsuit,
       typicalSwimCapType: typicalSwimCapType ?? this.typicalSwimCapType,
+      // Dietary preference and allergies
+      dietaryPreference: dietaryPreference ?? this.dietaryPreference,
+      allergies: allergies ?? this.allergies,
     );
   }
 }

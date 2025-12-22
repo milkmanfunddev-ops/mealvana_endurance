@@ -1,18 +1,35 @@
-# Drift Schema V1 - Production Baseline
+# Drift Schema V1 - Historical Baseline
 
 ## Overview
 
-This directory contains the **official v1 schema** for Mealvana Endurance's database. This schema represents the development baseline with authentication support.
+This directory contains the **historical v1 schema** for Mealvana Endurance's database. This schema is preserved for reference but is no longer active.
 
-**Schema Version**: v1
+**Schema Version**: v1 (DEPRECATED)
 **Total Tables**: 16
 **Last Generated**: 2025-11-17 (Phase 0 - Auth Prerequisites)
-**Status**: Development baseline (living v1 - grows until v2 migration needed)
-**Recent Changes**: Added auth columns to `users` table (links to Supabase `auth.users`)
+**Status**: ⚠️ **DEPRECATED** - Preserved for historical reference only
+**Current Version**: See `/database_schemas/v2/` for active schema
 
-## V1 Schema Philosophy
+## Migration to V2
 
-This is a **living v1 schema** that grows with new features until we need breaking changes (which will trigger v2). We are NOT freezing v1 - it will continue to evolve as we add new non-breaking features.
+**As of December 2025**, the project has migrated to schema v2 using proper Drift migrations:
+
+- **New Approach**: Schema version bumps with idempotent migrations
+- **Key Changes**: Consolidated preference_level, dietary_preference, and allergies columns
+- **Migration Type**: Idempotent with column existence checks
+- **Rollback Strategy**: Simple - delete local DB and resync from Supabase
+- **Active Schema**: `/database_schemas/v2/`
+
+## V1 Schema Philosophy (Historical)
+
+V1 used a **"living schema"** approach that attempted to grow without version bumps. This approach had problems:
+
+- ❌ Runtime column additions in `beforeOpen` hook (not tracked by schema version)
+- ❌ No proper migration tracking
+- ❌ Difficult to test and validate changes
+- ❌ Error-prone when migrations failed
+
+**V2 fixes these issues** with proper Drift migrations and schema versioning.
 
 ## Current Schema (16 Tables)
 
@@ -109,26 +126,38 @@ supabase db dump --local -f database_schemas/v1/schema.sql --schema public
 cat database_schemas/v1/drift_schema_v1.json | python3 -c "import json, sys; data=json.load(sys.stdin); print(f'{len([e for e in data[\"entities\"] if e[\"type\"]==\"table\"])} tables')"
 ```
 
-## Migration Strategy for V2
+## Migration Strategy to V2 (COMPLETED)
 
-When we need **breaking changes** (table drops, column renames, etc.):
+The migration from v1 to v2 has been completed using proper Drift migrations:
 
-1. **Create v2 directory**: `database_schemas/v2/`
-2. **Update schema version**: `schemaVersion => 2` in `app_database.dart`
-3. **Generate v2 snapshot**: `dart run drift_dev schema dump`
-4. **Implement migration**:
+1. ✅ **Created v2 directory**: `database_schemas/v2/`
+2. ✅ **Updated schema version**: `schemaVersion => 2` in `app_database.dart`
+3. ✅ **Generated v2 snapshot**: `dart run drift_dev schema dump`
+4. ✅ **Implemented idempotent migration**:
    ```dart
    @override
    MigrationStrategy get migration => MigrationStrategy(
      onUpgrade: (m, from, to) async {
        if (from < 2) {
-         // Add migration logic here
+         // Check column existence before adding
+         await _migrateV1ToV2(m);
        }
      },
    );
    ```
-5. **Test migration**: Use drift_dev schema steps command
-6. **Deploy to Supabase**: Create Supabase migration files
+5. ✅ **Tested migration**: Validated with test database
+6. ✅ **Deployed to Supabase**: Created corresponding Supabase migrations
+
+## Future Schema Changes (V2 → V3)
+
+For future migrations, follow the pattern established in v2:
+
+1. Update table definitions in `lib/shared/database/tables/`
+2. Increment `schemaVersion` to 3 in `app_database.dart`
+3. Create `/database_schemas/v3/` directory
+4. Run `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v3/`
+5. Implement migration with idempotent checks (verify column/table existence)
+6. Test thoroughly before deployment
 
 ## Validation Checklist (Phase 0 Complete)
 

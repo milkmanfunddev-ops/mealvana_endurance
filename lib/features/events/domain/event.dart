@@ -26,9 +26,10 @@ class Event {
     this.carbLoadingDays,
     this.carbLoadingStartDate,
 
-    // Nutrition plan tracking
+    // OBSOLETE: Use activityId != null instead
+    @Deprecated('Use activityId != null to check for nutrition plan')
     this.hasNutritionPlan = false,
-    
+
     // Registration and logistics
     this.bibNumber,
     this.waveStartTime,
@@ -48,9 +49,9 @@ class Event {
     this.localUpdatedAt,
   });
 
-  final int id;
+  final String id;
   final String userId; // User ID for direct filtering (eliminates need for joins)
-  final int? activityId; // Nullable - events can exist without activities
+  final String? activityId; // Nullable - events can exist without activities
   final ActivityType eventType; // Event type: running, cycling, swimming, triathlon, duathlon, multisport
   final String? eventSubtype; // Race distance: 'marathon', 'half_marathon', '10k', etc.
   
@@ -71,9 +72,10 @@ class Event {
   final int? carbLoadingDays;
   final DateTime? carbLoadingStartDate;
 
-  // Nutrition plan tracking
+  // OBSOLETE: Use activityId != null instead
+  @Deprecated('Use activityId != null to check for nutrition plan')
   final bool hasNutritionPlan;
-  
+
   // Registration and logistics
   final String? bibNumber;
   final String? waveStartTime;
@@ -111,7 +113,7 @@ class Event {
       'hasCarbLoading': hasCarbLoading,
       'carbLoadingDays': carbLoadingDays,
       'carbLoadingStartDate': carbLoadingStartDate?.toIso8601String(),
-      'hasNutritionPlan': hasNutritionPlan,
+      'hasNutritionPlan': hasNutritionPlan, // OBSOLETE: kept for backward compatibility
       'bibNumber': bibNumber,
       'waveStartTime': waveStartTime,
       'packetPickupInfo': packetPickupInfo,
@@ -124,9 +126,9 @@ class Event {
   }
 
   Event copyWith({
-    int? id,
+    String? id,
     String? userId,
-    int? activityId,
+    String? activityId,
     ActivityType? eventType,
     String? eventSubtype,
     String? eventName,
@@ -140,6 +142,7 @@ class Event {
     bool? hasCarbLoading,
     int? carbLoadingDays,
     DateTime? carbLoadingStartDate,
+    @Deprecated('Use activityId != null to check for nutrition plan')
     bool? hasNutritionPlan,
     String? bibNumber,
     String? waveStartTime,

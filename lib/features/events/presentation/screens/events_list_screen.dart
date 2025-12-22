@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/utils/location_formatter.dart';
 import '../../../activities/domain/activity.dart';
 import '../../domain/event.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../providers/events_controller.dart';
+import '../widgets/event_list_card.dart';
+import '../widgets/events_empty_state.dart';
 import 'event_form_screen.dart';
 import 'event_detail_screen.dart';
 
@@ -26,11 +26,19 @@ import 'event_detail_screen.dart';
 /// - Past events grayed out
 /// - Upcoming events highlighted
 /// - FAB to create new events
-class EventsListScreen extends ConsumerWidget {
+class EventsListScreen extends ConsumerStatefulWidget {
   const EventsListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EventsListScreen> createState() => _EventsListScreenState();
+}
+
+class _EventsListScreenState extends ConsumerState<EventsListScreen> {
+  // Track dismissed events for optimistic UI updates
+  final Set<String> _dismissedEventIds = {};
+
+  @override
+  Widget build(BuildContext context) {
     // Watch both events and activities controllers
     final eventsState = ref.watch(eventsControllerProvider);
     final activitiesState = ref.watch(activitiesControllerProvider);
@@ -69,8 +77,11 @@ class EventsListScreen extends ConsumerWidget {
       ),
       body: eventsState.when(
         data: (events) {
-          if (events.isEmpty) {
-            return _buildEmptyState(context, ref);
+          // Filter out dismissed events for optimistic UI
+          final visibleEvents = events.where((e) => !_dismissedEventIds.contains(e.id)).toList();
+
+          if (visibleEvents.isEmpty) {
+            return const EventsEmptyState();
           }
 
           // Get activities from activities controller
@@ -86,7 +97,7 @@ class EventsListScreen extends ConsumerWidget {
           final upcomingEvents = <({Event event, Activity? activity, DateTime eventDate})>[];
           final pastEvents = <({Event event, Activity? activity, DateTime eventDate})>[];
 
-          for (final event in events) {
+          for (final event in visibleEvents) {
             // Find corresponding activity if one exists
             final activity = event.activityId != null
                 ? activities.cast<Activity?>().firstWhere(
@@ -144,12 +155,11 @@ class EventsListScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  ...upcomingEvents.map((eventData) => _buildEventCard(
-                        context,
-                        ref,
-                        eventData.activity,
-                        eventData.event,
-                        eventData.eventDate,
+                  ...upcomingEvents.map((eventData) => EventListCard(
+                        event: eventData.event,
+                        activity: eventData.activity,
+                        eventDate: eventData.eventDate,
+                        onDismissed: () => _handleEventDismissed(eventData.event),
                       )),
                 ],
 
@@ -163,12 +173,11 @@ class EventsListScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  ...pastEvents.map((eventData) => _buildEventCard(
-                        context,
-                        ref,
-                        eventData.activity,
-                        eventData.event,
-                        eventData.eventDate,
+                  ...pastEvents.map((eventData) => EventListCard(
+                        event: eventData.event,
+                        activity: eventData.activity,
+                        eventDate: eventData.eventDate,
+                        onDismissed: () => _handleEventDismissed(eventData.event),
                       )),
                 ],
 
@@ -241,7 +250,7 @@ class EventsListScreen extends ConsumerWidget {
                   content: Text(
                     'Event "${result['eventName']}" created successfully!',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white,
+                      // color: Colors.white,
                     ),
                   ),
                   backgroundColor: AppColors.success,
@@ -251,7 +260,7 @@ class EventsListScreen extends ConsumerWidget {
             }
 
             final createdEventId = result['eventId'];
-            if (createdEventId is int && context.mounted) {
+            if (createdEventId is String && context.mounted) {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => EventDetailScreen(
@@ -275,268 +284,53 @@ class EventsListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEventCard(BuildContext context, WidgetRef ref, Activity? activity, Event event, DateTime eventDate) {
-    // Determine if past/upcoming based on provided eventDate
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final eventDateOnly = DateTime(eventDate.year, eventDate.month, eventDate.day);
-    final isPast = eventDateOnly.isBefore(today);
+  /// Handle event dismissal with optimistic UI update
+  void _handleEventDismissed(Event event) {
+    // Immediately mark as dismissed for optimistic UI
+    setState(() {
+      _dismissedEventIds.add(event.id);
+    });
 
-    return Dismissible(
-      key: Key(event.id.toString()), // Use event ID since activity might be null
-      direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.dragonfruit,
-          borderRadius: AppRadius.cardRadius,
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
-        child: const Icon(
-          FontAwesomeIcons.trash,
-          color: Colors.white,
-          size: AppIconSizes.md,
-        ),
-      ),
-      confirmDismiss: (direction) async {
-        return await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              title: Text(
-                'Delete Event',
-                style: AppTextStyles.subtitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              content: Text(
-                'Are you sure you want to delete "${event.eventName ?? event.formattedEventType}"?',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(
-                    'Cancel',
-                    style: AppTextStyles.buttonTertiary.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(
-                    'Delete',
-                    style: AppTextStyles.buttonTertiary.copyWith(
-                      color: AppColors.dragonfruit,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-      onDismissed: (direction) async {
-        // Delete the event (which will also delete linked activity and carb loading plans)
-        try {
-          final eventsController = ref.read(eventsControllerProvider.notifier);
-          await eventsController.deleteEvent(event.id);
+    final eventName = event.eventName ?? event.formattedEventType;
+    final eventsController = ref.read(eventsControllerProvider.notifier);
 
-          // Show confirmation
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Deleted "${event.eventName ?? event.formattedEventType}"',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Colors.white,
-                  ),
-                ),
-                backgroundColor: Theme.of(context).colorScheme.onSurface,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        } catch (e) {
-          // Show error if deletion fails
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Error deleting event: $e',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Colors.white,
-                  ),
-                ),
-                backgroundColor: AppColors.dragonfruit,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        }
-      },
-      child: BaseCard(
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => EventDetailScreen(
-                eventId: event.id,
-              ),
-            ),
-          );
-        },
-        child: Row(
-          children: [
-            // Event icon
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.electrolyte.withValues(
-                  alpha: isPast ? 0.2 : 0.3,
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                FontAwesomeIcons.calendarDay,
-                color: AppColors.electrolyte.withValues(
-                  alpha: isPast ? 0.5 : 1.0,
-                ),
-                size: AppIconSizes.md,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-
-            // Event details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    event.eventName ?? event.formattedEventType,
-                    style: AppTextStyles.activityTitle.copyWith(
-                      color: isPast
-                          ? Theme.of(context).colorScheme.onSurfaceVariant
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxs),
-                  if (event.location != null) ...[
-                    Row(
-                      children: [
-                        Icon(
-                          FontAwesomeIcons.locationDot,
-                          size: AppIconSizes.xs,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: AppSpacing.xxs),
-                        Expanded(
-                          child: Text(
-                            LocationFormatter.parseAndFormatCityState(event.location),
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xxs),
-                  ],
-                  if (event.formattedGoalTime != null) ...[
-                    Row(
-                      children: [
-                        Icon(
-                          FontAwesomeIcons.clock,
-                          size: AppIconSizes.xs,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: AppSpacing.xxs),
-                        Text(
-                          'Goal: ${event.formattedGoalTime}',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // Date display on the right
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  DateFormat('MMM').format(eventDate).toUpperCase(),
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: isPast
-                        ? Theme.of(context).colorScheme.onSurfaceVariant
-                        : AppColors.electrolyte,
-                  ),
-                ),
-                Text(
-                  DateFormat('d').format(eventDate),
-                  style: AppTextStyles.dateTime.copyWith(
-                    color: isPast
-                        ? Theme.of(context).colorScheme.onSurfaceVariant
-                        : AppColors.electrolyte,
-                    height: 1.0,
-                  ),
-                ),
-                Text(
-                  DateFormat('yyyy').format(eventDate),
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Padding(
-        padding: AppSpacing.screenPaddingHorizontal,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              FontAwesomeIcons.calendarDay,
-              size: AppIconSizes.xxl,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'No Events Yet',
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Create your first race event to get started with event-specific nutrition planning!',
+    // Delete the event in the background
+    eventsController.deleteEvent(event.id).then((_) {
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Deleted "$eventName"',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                // color: Colors.white,
               ),
-              textAlign: TextAlign.center,
             ),
-          ],
-        ),
-      ),
-    );
+            backgroundColor: Theme.of(context).colorScheme.onSurface,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }).catchError((e) {
+      // Deletion failed - restore the event in the UI
+      if (mounted) {
+        setState(() {
+          _dismissedEventIds.remove(event.id);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error deleting event: $e',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: AppColors.dragonfruit,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
   }
 }

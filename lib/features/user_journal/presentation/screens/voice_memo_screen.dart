@@ -17,7 +17,7 @@ class VoiceMemoScreen extends ConsumerStatefulWidget {
     this.rating,
   });
 
-  final int activityId;
+  final String activityId;
   final int? rating;
 
   @override
@@ -31,7 +31,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   bool _showNewNoteEntry = false; // Don't show by default when used in tabs
   List<WorkoutNote> _notes = [];
   bool _isLoadingNotes = false;
-  late final int _activityId;
+  late final String _activityId;
 
   @override
   void initState() {

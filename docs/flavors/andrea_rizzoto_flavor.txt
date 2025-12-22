@@ -1,0 +1,3555 @@
+
+
+
+
+
+Intro to Flavors and Environments
+In this module, you’ll learn how to support multiple flavors and environments in your Flutter app.
+
+But what are flavors and environments, and why do we need them?
+
+Let’s break it down by considering the stages of app development:
+
+Development: Code, test, repeat. You run the app directly from the IDE, using hot reload and the debugger to iterate quickly.
+Testing: Quality assurance, user acceptance testing, and bug fixes happen here. The app is distributed internally so stakeholders and beta testers can download and run it on their devices.
+Production: The app is live on the app stores, available to users.
+All these stages are crucial to shipping a robust and high-quality app.
+
+What Are Environments?
+From an engineering perspective, it’s best practice to define separate environments so we can more easily isolate and test our software without impacting end users.
+
+Depending on the organization and project complexity, it is common to have up to four different environments:
+
+The four environments: development, testing, staging, and production
+Each environment includes all the infrastructure needed to run the software in isolation. This may include:
+
+Auth, Database, Storage: Separate database instances prevent test data from mixing with production data.
+Analytics: Keep production analytics clean by isolating data in testing environments.
+Error Monitoring: Monitor crashes and errors per environment to avoid confusion.
+External Services: Use different API keys to ensure the app connects to the right backend for each environment.
+For more on environments and their role within the deployment pipeline, check out the Firebase docs: Overview of environments.
+
+What Are Flavors?
+Environments are mainly related to backend infrastructure.
+
+For the frontend, Flutter offers flavors, which are a way to build distinct versions of your app, each with different identifiers, API keys, assets, or even features.
+
+Example showing how three variants of the same iOS app can be installed on the home screen
+Flavors are particularly useful on iOS and Android since they allow multiple versions of your app to be installed simultaneously, which is extremely valuable for QA and testing purposes.
+
+Common use cases:
+
+Free vs. Paid: Publish different versions with distinct feature sets.
+Whitelabel: Create rebranded versions for multiple clients by customizing assets, theming, etc.
+One Flavor per Environment
+As discussed, each environment comprises multiple services such as a database, storage, analytics, etc.
+
+But how does your Flutter app know which environment to use?
+
+Flavors are the answer. By matching each flavor to the corresponding environment, you can ensure your app always connects to the correct services on the backend.
+
+What things are Flavor-specific inside a Flutter app?
+Here’s a list of flavor-specific things that we will explore in this course:
+
+App Icons and Launch Screens
+Analytics
+Error Monitoring
+Force Update Logic
+API keys for third-party services and backends
+Firebase Initialization
+CI Workflows
+If your app needs any of these, it’s wise to set up flavors from the start. That’s why I decided to cover them early in the course.
+
+Example: Multiple Environments
+
+Show more
+
+
+In what cases are flavors not needed?
+You may not need flavors if your app:
+
+Doesn’t have any user-generated content that requires a remote database
+Doesn’t talk to any 3rd party APIs that require different API keys for testing and production
+Doesn’t use analytics or error monitoring, or if it does, you don’t care if the test and production events or logs get mixed
+Doesn’t have separate free and paid versions
+Doesn’t have any compile-time configurations and parameters that are read at runtime to customize your app’s behavior.
+If that’s the case, you can skip this module altogether and move on to the rest of the course.
+
+Common Flavors and Environment Setups
+When setting up flavors and environments, the approach can vary based on your team size and the complexity of your app. Here’s a quick overview of common flavors and environments and their typical use cases:
+
+
+Show more
+How to Add Flavors to a Flutter App
+If you want to add flavors to a Flutter app, there are two techniques I recommend:
+
+Use flutter_flavorizr: This makes the process much quicker, but it works best on a new Flutter project since it works by modifying some specific project files with a specific folder structure.
+Add Flavors Manually: This is more time-consuming and error-prone, but it may be your only choice if you’re working on an existing project and need to retrofit flavors without breaking things.
+We’ll cover both methods in detail so you can choose the best fit for your needs (or even mix and match them, depending on your requirements). I’ve also included a Flutter Flavors Checklist to guide you through the process. 👍
+
+In this module, we’ll focus on the basic flavor setups for iOS and Android (including Firebase). We will tackle more flavor-specific concerns in the upcoming modules.
+
+Why Use Flutter Flavorizr?
+If you search pub.dev, you’ll find many packages you can use to set up flavors. Additional CLI tools, such as very_good_cli, can be used for the same purpose.
+
+However, adding flavors is a multi-step process, and only flutter_flavorizr allows you to choose which steps to run with fine-grained control. That’s why we’ll be using it.
+
+Benefits of Flavors and Environments
+Keep production and pre-production environments separate
+Develop and test your app without impacting real users
+Install multiple versions of your app on one device
+Work on whitelabel projects and/or support free and paid versions of your app
+Time to test your knowledge by completing the quiz below!
+
+Question 1 of 3
+What things do multiple environments help with?
+
+Isolate and test the software without impacting end users
+
+Catch bugs and regressions early
+
+Prevent test data from being mixed with production data
+
+Use different API keys to ensure the app connects to the right backend for each environment
+
+Submit
+Additional Resources
+The official Flutter docs already have a basic guide on how to create flavors of a Flutter app. The upcoming lessons will cover all the steps in more detail.
+
+
+
+
+
+
+
+The Difference Between Flavors and Dart Defines
+Before we dive deeper into flavors, I want to clarify this statement from the Flutter official docs:
+
+Flavors let you define compile-time configurations and set parameters that are read at runtime to customize your app’s behavior.
+
+Once you’ve set up flavors, you can run your app like this:
+
+
+Copy
+flutter run --flavor prod
+In your code, you can use the top-level appFlavor constant to customize the app behavior based on the current flavor:
+
+
+Copy
+// The appFlavor constant is imported from this file
+import 'package:flutter/services.dart';
+import 'dart:developer';
+ 
+void main() {
+  if (appFlavor == 'prod') {
+    log('Running in production'),
+  } else {
+    log('Not running in production'),
+  }
+  runApp(const MainApp());
+}
+But there’s another way to pass compile-time configurations: using --dart-define.
+
+
+Copy
+flutter run --dart-define API_KEY=some-api-key
+You can retrieve this value in your Dart code with String.fromEnvironment:
+
+
+Copy
+import 'dart:developer';
+ 
+void main() {
+  final apiKey = String.fromEnvironment('API_KEY');
+  log('Do not print API keys such as this: $apiKey');
+  runApp(const MainApp());
+}
+Key Difference: Flavors vs Dart Defines
+Here’s the main distinction:
+
+Flavors: These let you run different variants of your app and require platform-specific setup on iOS and Android. They are only supported on iOS, macOS, and Android.
+Dart Defines: These are compile-time constants that affect only your Dart code and don’t require any platform-specific setup. They are supported on all platforms.
+To summarize:
+
+Flavors: Affect both your Dart code and native platform code (iOS/Android)
+Dart Defines: Affect only your Dart code
+As we have seen, flavors also allow you to install multiple app versions on a device, each connecting to a different environment:
+
+Example showing how three variants of the same iOS app can be installed on the home screen
+When to Use Flavors vs Dart Defines?
+Use Flavors when you need to customize both your Dart code and the native iOS/Android platform side. Flavors allow you to create completely different variants of your app (e.g., separate app icons, package names, and even platform-specific configurations).
+Use Dart Defines when you only need to customize your Dart code and don’t want to worry about platform setup. This is ideal for passing configuration values like API keys, environment variables, or feature flags that are purely relevant to your Dart logic.
+Combining Flavors and Dart Defines
+In more complex setups, you may want to combine both flavors and Dart defines. For instance, you could use flavors to separate environments (e.g., dev, prod) while using Dart defines to pass specific environment variables or configuration files, like in this example:
+
+
+Copy
+flutter run --flavor dev --dart-define-from-file=.env.dev
+In this case:
+
+The flavor (dev) determines platform-specific details like app icon, package name, and platform-specific services.
+The dart-define-from-file passes in environment-specific variables (e.g., API_KEY, BASE_URL) to your Dart code, keeping secrets or other configuration details out of the source code.
+Note about Dart Defines and API Keys
+Dart defines can be used to store non-sensitive API keys in your client app (rather than hardcoding them in the source code), but they should never be used for sensitive data like secret keys. Always store secret keys securely on your server.
+
+For details, see: How to Store API Keys in Flutter: —dart-define vs .env files.
+
+Time to test your knowledge by completing the quiz below!
+
+Question 1 of 2
+What are flavors used for in Flutter?
+
+To install multiple app versions on the same device at the same time
+
+To define different themes and colors in your app
+
+To switch between Cupertino and Material widgets in your app
+
+To define compile-time configurations that customize your app's appearance and behavior
+
+Submit
+Now that we’ve cleared things up, let’s learn how to actually use flavors!
+
+
+
+
+
+
+
+Flutter Flavorizr: Introduction
+In this lesson, we will start adding flavors to the Flutter Ship app using the flutter_flavorizr package.
+
+Here’s what we’ll cover:
+
+Installing flutter_flavorizr and adding flavors to the pubspec.yaml file
+Running flutter_flavorizr from the command line
+Using flutter_flavorizr with custom processors
+We’ll use the official course project as reference, covering all the steps in detail.
+
+Let’s dive in! 🚀
+
+Note about Flutter Flavorizr Support for Flutter 3.29
+New Flutter projects generated with Flutter 3.29 use the .kts extension for their Android gradle files:
+
+android/build.gradle → android/build.gradle.kts
+android/settings.gradle → android/settings.gradle.kts
+android/app/build.gradle → android/app/build.gradle.kts
+Both the old and new syntax are supported as of Flutter Flavorizr 2.3.0, which is used in the Flutter Ship app.
+
+Updated Starter Project
+If you already have the course project up and running, discard the previous changes and switch to the m03-starter branch:
+
+
+Copy
+git reset --hard HEAD && git clean -fd
+git switch m03-starter
+Alternatively, you can do a fresh clone from GitHub:
+
+
+Copy
+git clone https://github.com/bizz84/flutter_ship_app
+cd flutter_ship_app
+git switch m03-starter
+flutter pub get
+# Open in VSCode
+code .
+In addition to the changes we made in the previous module, this starter project contains some flavored app icons that we’ll use later:
+
+How to open the iOS project in Xcode
+Installing Flutter Flavorizr
+First, open a terminal and install the package using dart pub add:
+
+
+Copy
+dart pub add dev:flutter_flavorizr
+flutter pub get
+Check the pubspec.yaml file, and you’ll see flutter_flavorizr under dev_dependencies:
+
+
+Copy
+dev_dependencies:
+  ...
+  flutter_flavorizr: 2.4.1
+Installing additional software for iOS and macOS builds
+To manipulate iOS and macOS projects, install the following tools as per the Flutter Flavorizr prerequisites:
+
+Ruby
+Gem
+Xcodeproj (through RubyGems)
+If you’re only working with Android, you can skip this step.
+
+Adding Flavors to the pubspec.yaml file
+Now, add this entire snippet at the end of the pubspec.yaml file:
+
+
+Copy
+flavorizr:
+  ide: "vscode"
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+    
+  flavors:
+    dev:
+      app:
+        name: "Flutter Ship Dev"
+      android:
+        applicationId: "com.codewithandrea.flutter_ship_app.dev"
+      ios:
+        bundleId: "com.codewithandrea.flutterShipApp.dev"
+    
+    stg:
+      app:
+        name: "Flutter Ship Stg"
+      android:
+        applicationId: "com.codewithandrea.flutter_ship_app.stg"  
+      ios:
+        bundleId: "com.codewithandrea.flutterShipApp.stg"
+    
+    prod:
+      app:
+        name: "Flutter Ship"
+      android:
+        applicationId: "com.codewithandrea.flutter_ship_app"  
+      ios:
+        bundleId: "com.codewithandrea.flutterShipApp"
+This defines three flavors—dev, stg, and prod—each with its own app name, Android applicationId, and iOS bundleId.
+
+Keeping the same production app name and IDs
+In the above snippet, we’ve added a .dev and .stg suffix to the applicationId and bundleId for the corresponding flavors, but we left the production flavor unchanged:
+
+
+Copy
+prod:
+  app:
+    name: "Flutter Ship"
+  android:
+    applicationId: "com.codewithandrea.flutter_ship_app"  
+  ios:
+    bundleId: "com.codewithandrea.flutterShipApp"
+The app stores use the applicationId and bundleId to identify your app, so never change them for production builds of existing apps.
+
+Where to find the applicationId and bundleId
+
+Show more
+
+
+
+Copy
+
+
+Copy
+
+
+
+
+This completes our basic setup. Before moving to the next step, there’s one important thing to do.
+
+Commit all your changes to Git
+As we’re about to see, flutter_flavorizr will change many of the project files. So, ensure you commit your changes to git before doing anything else:
+
+
+Copy
+git add .
+git commit -m "Installed flutter_flavorizr"
+This way, you’ll be able to go back to a working state if anything goes wrong.
+
+Running flutter_flavorizr
+After committing your changes (do not skip this step!), run:
+
+
+Copy
+dart run flutter_flavorizr
+You’ll see output like this in the console:
+
+
+Copy
+Building package executable... (1.3s)
+Built flutter_flavorizr:flutter_flavorizr.
+Executing task assets:download
+ 
+Executing task assets:extract
+ 
+Executing task android:androidManifest
+ 
+Executing task android:buildGradle
+ 
+... many more lines ...
+ 
+Executing task assets:clean
+Running Deleting file from assets.tmp.zip
+Running Deleting file from .tmp
+ 
+Executing task ide:config
+Running NewFolderProcessor: Creating directory .vscode
+Running FileProcessor: writing file .vscode/launch.json with nested VSCodeLaunchProcessor
+What’s more - your source control panel will show over 100 changed files:
+
+Source Control panels showing that over 100 files have been changed
+If you run git status, you’ll see all the files that have been modified and added:
+
+
+Copy
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   .vscode/launch.json
+        modified:   android/app/build.gradle.kts
+        modified:   android/app/src/main/AndroidManifest.xml
+        modified:   ios/Podfile
+        modified:   ios/Runner.xcodeproj/project.pbxproj
+        modified:   ios/Runner/Info.plist
+        modified:   lib/main.dart
+ 
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        android/app/src/dev/
+        android/app/src/prod/
+        android/app/src/stg/
+        ios/Flutter/devDebug.xcconfig
+        ios/Flutter/devProfile.xcconfig
+        ios/Flutter/devRelease.xcconfig
+        ios/Flutter/prodDebug.xcconfig
+        ios/Flutter/prodProfile.xcconfig
+        ios/Flutter/prodRelease.xcconfig
+        ios/Flutter/stgDebug.xcconfig
+        ios/Flutter/stgProfile.xcconfig
+        ios/Flutter/stgRelease.xcconfig
+        ios/Runner.xcodeproj/xcshareddata/xcschemes/dev.xcscheme
+        ios/Runner.xcodeproj/xcshareddata/xcschemes/prod.xcscheme
+        ios/Runner.xcodeproj/xcshareddata/xcschemes/stg.xcscheme
+        ios/Runner/Assets.xcassets/devAppIcon.appiconset/
+        ios/Runner/Assets.xcassets/devLaunchImage.imageset/
+        ios/Runner/Assets.xcassets/prodAppIcon.appiconset/
+        ios/Runner/Assets.xcassets/prodLaunchImage.imageset/
+        ios/Runner/Assets.xcassets/stgAppIcon.appiconset/
+        ios/Runner/Assets.xcassets/stgLaunchImage.imageset/
+        ios/Runner/devLaunchScreen.storyboard
+        ios/Runner/prodLaunchScreen.storyboard
+        ios/Runner/stgLaunchScreen.storyboard
+        lib/app.dart
+        lib/flavors.dart
+        lib/main_dev.dart
+        lib/main_prod.dart
+        lib/main_stg.dart
+        lib/pages/
+Oops! Overwritten Files
+Sadly, the main.dart file has been completely overridden with these contents:
+
+
+Copy
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'app.dart';
+ 
+FutureOr<void> main() async {
+  runApp(const App());
+}
+Ouch! All the app initialization logic has been lost. 😢
+
+If you’re adding flavors to a brand new Flutter project, it’s not a big deal if main.dart gets overridden. However, I think it’s best if we choose how to handle flavors in the Dart code, rather than using the default boilerplate from Flutter Flavorizr.
+
+Using Flutter Flavorizr with Custom Processors
+To avoid dealing with too many changes at once, we can use custom processors.
+
+If you read the usage section, you’ll find this:
+
+You can also run flutter_flavorizr with a custom set of processors by appending the -p (or —processors) param followed by the processor names separated by comma:
+
+flutter pub run flutter_flavorizr -p <processor_1>,<processor_2>
+
+Think of processors as the various stages of the flavoring process. Knowing which ones to run is key if you want to flavor your app correctly.
+
+As it turns out, when we run flutter_flavorizr without the -p option, all the processors are run by default, resulting in many unwanted changes to the project.
+
+If we don’t want to mess up our existing project, we must be very specific about which processors we want to run.
+
+Having been through this process, I can tell you that knowing which processors to run is tricky (as some of them depend on others). But after figuring it out myself, I can share my custom process for running flutter_flavorizr without going crazy.
+
+Rolling Back Changes
+Let’s discard the unwanted changes and start fresh:
+
+
+Copy
+# Discard changes, untracked files and directories
+git reset --hard HEAD && git clean -fd
+In the next lessons, we’ll walk through how to use flutter_flavorizr with custom processors to avoid these issues and complete the flavor setup.
+
+
+
+
+
+
+
+Flutter Flavorizr: Icons Setup
+In the previous lesson, we saw that running flutter_flavorizr all at once causes unwanted changes, like overriding main.dart.
+
+To solve this problem and avoid too many changes at once, we’ll flavor the app in stages by specifying which processors to run from the default processors set.
+
+In this lesson, we’ll focus on setting up flavored app icons for iOS and Android, by updating the flavorizr configuration in the pubspec.yaml file. 🎨
+
+What about flutter_launcher_icons?
+In the previous module, we used flutter_launcher_icons to generate launcher icons. This package also supports flavors.
+
+However, flutter_launcher_icons is limited to launcher icons, while Flutter Flavorizr handles the entire flavoring process—including icons.
+
+Going forward, we’ll use Flutter Flavorizr to meet all our flavoring needs.
+
+Updated Code Snapshot
+Before we continue, make sure to discard all changes from the previous lesson:
+
+
+Copy
+# Discard changes, untracked files and directories
+git reset --hard HEAD && git clean -fd
+Next, we can update the pubspec.yaml file and tell Flutter Flavorizr which icons to use.
+
+Adding flavored icons is an optional step. If you don’t care about this, you can skip to the next lesson.
+
+Updated Icons
+Open the assets folder, and you’ll find flavor-specific icons inside the dev, stg, and prod subfolders:
+
+Asset icons for the dev, stg, and prod flavors
+I’ve created these assets so we can assign a unique app icon to each flavor:
+
+Flavored icons for dev, stg, and prod
+pubspec.yaml Icon Configuration
+To tell Flutter Flavorizr how to use these assets, open the pubspec.yaml and add these additional lines:
+
+
+Copy
+flavorizr:
+  ide: "vscode"
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+    
+  flavors:
+    dev:
+      app:
+        name: "Flutter Ship Dev"
+      android:
+        applicationId: "com.codewithandrea.flutter_ship_app.dev"
+        icon: "assets/dev/app-icon.png"
+        adaptiveIcon:
+          foreground: "assets/dev/app-icon-foreground.png"
+          background: "assets/android/app-icon-background.png"
+      ios:
+        bundleId: "com.codewithandrea.flutterShipApp.dev"
+        icon: "assets/dev/app-icon.png"
+ 
+    stg:
+      app:
+        name: "Flutter Ship Stg"
+      android:
+        applicationId: "com.codewithandrea.flutter_ship_app.stg"  
+        icon: "assets/stg/app-icon.png"
+        adaptiveIcon:
+          foreground: "assets/stg/app-icon-foreground.png"
+          background: "assets/android/app-icon-background.png"
+      ios:
+        bundleId: "com.codewithandrea.flutterShipApp.stg"
+        icon: "assets/stg/app-icon.png"
+ 
+    prod:
+      app:
+        name: "Flutter Ship"
+      android:
+        applicationId: "com.codewithandrea.flutter_ship_app"  
+        icon: "assets/prod/app-icon.png"
+        adaptiveIcon:
+          foreground: "assets/prod/app-icon-foreground.png"
+          background: "assets/android/app-icon-background.png"
+      ios:
+        bundleId: "com.codewithandrea.flutterShipApp"
+        icon: "assets/prod/app-icon.png"
+The flavors setup in the pubspec.yaml file is now complete, and we can move to the next lesson.
+
+What about dark and tinted icons on iOS 18?
+Unfortunately, Flutter Flavorizr doesn’t support this yet.
+
+If you want to generate dark and tinted icons for your flavored app on iOS, you can use the flutter_launcher_icons package, by following these instructions:
+
+flutter_launcher_icons > Flavors Support
+In this course, we’ll keep things simple and stick to Flutter Flavorizr.
+
+
+
+
+
+
+
+Flutter Flavorizr: Android Setup
+Now that we’ve updated the pubspec.yaml file, we can focus on the Android setup.
+
+Android Setup
+To add flavors to the Android app, run this command:
+
+
+Copy
+dart run flutter_flavorizr -p android:buildGradle,android:flavorizrGradle,android:androidManifest
+This will produce the following output:
+
+
+Copy
+Building package executable... 
+Built flutter_flavorizr:flutter_flavorizr.
+Executing task android:buildGradle
+ 
+Executing task android:flavorizrGradle
+ 
+Executing task android:androidManifest
+Run git status and you’ll see this output:
+
+
+Copy
+On branch m03-starter
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   android/app/build.gradle.kts
+        modified:   android/app/src/main/AndroidManifest.xml
+ 
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        android/app/flavorizr.gradle.kts
+ 
+no changes added to commit (use "git add" and/or "git commit -a")
+Time to review these files in detail.
+
+Flavors setup in the build.gradle file
+Open android/app/flavorizr.gradle.kts and you’ll see that the following lines have been added:
+
+
+Copy
+import com.android.build.gradle.AppExtension
+ 
+val android = project.extensions.getByType(AppExtension::class.java)
+ 
+android.apply {
+    flavorDimensions("flavor-type")
+ 
+    productFlavors {
+        create("dev") {
+            dimension = "flavor-type"
+            applicationId = "com.codewithandrea.flutter_ship_app.dev"
+            resValue(type = "string", name = "app_name", value = "Flutter Ship Dev")
+        }
+        create("stg") {
+            dimension = "flavor-type"
+            applicationId = "com.codewithandrea.flutter_ship_app.stg"
+            resValue(type = "string", name = "app_name", value = "Flutter Ship Stg")
+        }
+        create("prod") {
+            dimension = "flavor-type"
+            applicationId = "com.codewithandrea.flutter_ship_app"
+            resValue(type = "string", name = "app_name", value = "Flutter Ship")
+        }
+    }
+}
+These changes are the most important part of the flavoring process. As we will see shortly, this setup allows us to run three different variants of the app on Android.
+
+Note about Flutter Flavorizr Support for Flutter 3.29
+New Flutter projects generated with Flutter 3.29 use the .kts extension for their Android gradle files:
+
+android/build.gradle → android/build.gradle.kts
+android/settings.gradle → android/settings.gradle.kts
+android/app/build.gradle → android/app/build.gradle.kts
+Both the old and new syntax are supported as of Flutter Flavorizr 2.3.0, which is used in the Flutter Ship app.
+
+If you run Flutter Flavorizr on an older project that was generated with Flutter 3.27 or earlier, a android/app/flavorizr.gradle file will be created (instead of the .kts version).
+
+Flavors changes in the AndroidManifest.xml file
+Figuring out what’s changed inside android/app/src/main/AndroidManifest.xml is a bit more tricky because flutter_flavorizr has changed the formatting and inlined all the code:
+
+Changes to the AndroidManifest.xml file
+Formatting aside, the only real difference is the android:label attribute, which is now set to the "@string/app_name" value from the build.gradle.kts file:
+
+
+Copy
+<?xml version="1.0"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application android:label="@string/app_name" android:name="${applicationName}" android:icon="@mipmap/ic_launcher">
+    ...
+  </application>
+  ...
+</manifest>
+How to Format XML documents
+
+Show more
+
+
+
+Copy
+
+
+
+Copy
+Running the android:icons preprocessor
+So far, we’ve only updated the *.gradle.kts and AndroidManifest.xml files. But what about our flavored icons?
+
+To update these, simply run:
+
+
+Copy
+dart run flutter_flavorizr -p android:icons
+As a result, the console will print a bunch of logs:
+
+
+Copy
+Running AndroidIconProcessor
+Running ImageResizerProcessor: Resizing image to Size{width: 48, height: 48} from assets/dev/app-icon.png to android/app/src/dev/res/mipmap-mdpi/ic_launcher.png
+Running ImageResizerProcessor: Resizing image to Size{width: 72, height: 72} from assets/dev/app-icon.png to android/app/src/dev/res/mipmap-hdpi/ic_launcher.png
+Running ImageResizerProcessor: Resizing image to Size{width: 96, height: 96} from assets/dev/app-icon.png to android/app/src/dev/res/mipmap-xhdpi/ic_launcher.png
+... and so on
+This is expected because Android needs to support icons for many different device types.
+
+Running the Android app with multiple flavors
+To test the latest changes, boot up your Android emulator and run:
+
+
+Copy
+flutter run --flavor dev
+If multiple devices are available, choose the correct one:
+
+
+Copy
+[1]: sdk gphone64 arm64 (emulator-5556)
+[2]: iPhone 15 (A56BA8E5-19EC-4007-8261-214D30B230D4)
+[3]: Chrome (chrome)
+[4]: Andrea iPhone XR (00008020-001231380AE1002E)
+Please choose one (or "q" to quit): 1
+If everything goes well, the Flutter Ship app will run, and if you open the settings page, you’ll see that “Flutter Ship Dev” shows as the app name:
+
+The Flutter Ship Android App running with the dev flavor
+Likewise, you can run the app again with --flavor stg or --flavor prod and see that the corresponding app name shows on the settings page.
+
+Not only this, but if you inspect the app info from the Android apps list, you’ll see that the flavored app name and icon are used:
+
+Changes to the AndroidManifest.xml file
+How to read the app name inside Flutter?
+
+Show more
+
+
+Copy
+
+
+
+Copy
+
+
+Copy
+
+
+Copy
+
+
+Saving the changes to Git
+Having verified that the flavors work correctly, we can commit all the latest changes to git:
+
+
+Copy
+git add .
+git commit -m "Added flavors to the Android app"
+Time for a quick quiz to test your knowledge of flavors on Android.
+
+Question 1 of 2
+Which configuration files does flutter_flavorizr edit in the Android project?
+
+android/app/build.gradle.kts
+
+android/app/flavorizr.gradle.kts
+
+android/app/src/main/AndroidManifest.xml
+
+android/build.gradle.kts
+
+Submit
+The Android setup is now complete. In the next lesson, we’ll turn our attention to iOS.
+
+Resources
+Since Flutter 3.29 automatically generates Gradle files with the new Kotlin DSL, it’s a good idea to learn the diffence between the old and new syntax, and this page offers a good overview:
+
+Migrate your build configuration from Groovy to Kotlin
+
+
+
+
+
+
+Flutter Flavorizr: iOS Setup
+In the last lesson, we’ve seen that the Android flavors setup is fairly straightforward.
+
+But on iOS, things are more tricky, and flutter_flavorizr can do most of the heavy lifting for us. So let’s go ahead and use it.
+
+iOS Setup
+To add flavors support to the iOS app, run this command:
+
+
+Copy
+dart run flutter_flavorizr -p assets:download,assets:extract,ios:podfile,ios:xcconfig,ios:buildTargets,ios:schema,ios:plist,ios:dummyAssets,assets:clean
+Once the command completes, run git status to see which files have changed:
+
+
+Copy
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   ios/Podfile
+        modified:   ios/Runner.xcodeproj/project.pbxproj
+        modified:   ios/Runner/Info.plist
+ 
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        ios/Flutter/devDebug.xcconfig
+        ios/Flutter/devProfile.xcconfig
+        ios/Flutter/devRelease.xcconfig
+        ios/Flutter/prodDebug.xcconfig
+        ios/Flutter/prodProfile.xcconfig
+        ios/Flutter/prodRelease.xcconfig
+        ios/Flutter/stgDebug.xcconfig
+        ios/Flutter/stgProfile.xcconfig
+        ios/Flutter/stgRelease.xcconfig
+        ios/Runner.xcodeproj/xcshareddata/xcschemes/dev.xcscheme
+        ios/Runner.xcodeproj/xcshareddata/xcschemes/prod.xcscheme
+        ios/Runner.xcodeproj/xcshareddata/xcschemes/stg.xcscheme
+        ios/Runner/Assets.xcassets/devAppIcon.appiconset/
+        ios/Runner/Assets.xcassets/devLaunchImage.imageset/
+        ios/Runner/Assets.xcassets/prodAppIcon.appiconset/
+        ios/Runner/Assets.xcassets/prodLaunchImage.imageset/
+        ios/Runner/Assets.xcassets/stgAppIcon.appiconset/
+        ios/Runner/Assets.xcassets/stgLaunchImage.imageset/
+ 
+no changes added to commit (use "git add" and/or "git commit -a")
+That’s quite a lot of changes!
+
+To make sense of this, we need to learn a bit about xcconfig files and Xcode schemes.
+
+What are xcconfig files?
+Open ios/Flutter/devDebug.xcconfig and you’ll see the following:
+
+
+Copy
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
+#include "Generated.xcconfig"
+ 
+ASSET_PREFIX=dev
+BUNDLE_NAME=Flutter Ship Dev
+BUNDLE_DISPLAY_NAME=Flutter Ship Dev
+The variables above are known as “User-Defined Build Settings”, and they are used inside ios/Runner.xcodeproj/project.pbxproj, which is the main Xcode project file.
+
+Here’s a comparison of these variables across different xcconfig files:
+
+devDebug.xcconfig
+stgProfile.xcconfig
+prodRelease.xcconfig
+
+Copy
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
+#include "Generated.xcconfig"
+ 
+ASSET_PREFIX=dev
+BUNDLE_NAME=Flutter Ship Dev
+BUNDLE_DISPLAY_NAME=Flutter Ship Dev
+Old versions of Flutter Flavorizr used to add an additional FLUTTER_TARGET variable to each xcconfig file. As of Flutter Flavorizr 2.3.0, this is no longer the case.
+
+As we can see, the variables above differ based on two things:
+
+The build mode: which can be Debug or Release (note: Flutter profile builds use the release mode in Xcode)
+The flavor: which can be dev, stg, or prod
+In total, this gives us 9 combinations, and that’s why we have 9 xcconfig files.
+
+Accordingly, these 9 combinations are now used inside the ios/Podfile:
+
+After
+Before
+
+Copy
+project 'Runner', {
+  'Debug-dev' => :debug,
+  'Profile-dev' => :release,
+  'Release-dev' => :release,
+  'Debug-stg' => :debug,
+  'Profile-stg' => :release,
+  'Release-stg' => :release,
+  'Debug-prod' => :debug,
+  'Profile-prod' => :release,
+  'Release-prod' => :release,
+}
+If you’re not familiar with Debug, Profile, and Release, read: Flutter’s build modes.
+
+Updated Info.plist file
+Open the ios/Runner/Info.plist file, and you’ll see that the CFBundleDisplayName and CFBundleName have been set with the new BUNDLE_NAME and BUNDLE_DISPLAY_NAME variables from the xcconfig files:
+
+After
+Before
+
+Copy
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    ...
+    <key>CFBundleDisplayName</key>
+    <string>$(BUNDLE_DISPLAY_NAME)</string>
+    ...
+    <key>CFBundleName</key>
+    <string>$(BUNDLE_NAME)</string>
+  </dict>
+</plist>
+xcconfig files and Xcode schemes go hand-in-hand. So let’s learn about them. 👇
+
+What are Xcode schemes?
+Xcode schemes are a way to define different settings for building, running, testing, profiling, and archiving your app. Each scheme corresponds to a specific way to use the app during development (such as debugging or release) or for different versions like a free or a pro edition.
+
+While you can view xcscheme files in your editor, opening them visually in Xcode is best. So let’s do this:
+
+How to open the iOS project in Xcode
+Then, from the top app bar, click on the scheme dropdown to reveal all the available schemes:
+
+The Xcode schemes dropdown
+This confirms that flutter_flavorizr has generated the dev, stg, and prod schemes for us (in addition to the default Runner scheme) and that Xcode recognizes them.
+
+We will learn how to create and edit schemes using Xcode in the upcoming lessons about manual flavor setup.
+
+iOS Dummy Assets
+When we ran the flutter_flavorizr earlier, we added ios:dummyAssets as one of the custom processors:
+
+
+Copy
+dart run flutter_flavorizr -p assets:download,assets:extract,ios:dummyAssets,ios:podfile,ios:xcconfig,ios:buildTargets,ios:schema,ios:plist,assets:clean
+This is required if it’s the first time we add flavors to our iOS app. And if we want, we can preview these dummy assets in Xcode by opening the Runner/Assets bundle:
+
+In Xcode, each scheme has its own app icon set
+These icons and other configuration files are all downloaded from a template, and for this reason, the assets:download, assets:extract, and assets:clean processors need to be added when running flutter_flavorizr on iOS.
+
+Flavored app icons
+Dummy assets are only useful as placeholders. If we want to generate our flavored app icons, we can run:
+
+
+Copy
+dart run flutter_flavorizr -p ios:icons
+As a result, the app asset bundles will be updated:
+
+Flavored app asset bundles in Xcode
+ios:icons depends on ios:dummyAssets
+Note that the ios:icons processor will only work if you run ios:dummyAssets beforehand.
+
+This means that if you want to flavor your iOS app with a single command, you need to use both processors in the right order:
+
+
+Copy
+# iOS processors with flavored icons
+dart run flutter_flavorizr -p assets:download,assets:extract,ios:podfile,ios:xcconfig,ios:buildTargets,ios:schema,ios:plist,ios:dummyAssets,ios:icons,assets:clean
+Running the App
+Now that the iOS flavoring process is complete, start your iOS simulator and run:
+
+
+Copy
+flutter run --flavor dev
+If multiple devices are available, choose the correct one:
+
+
+Copy
+[1]: sdk gphone64 arm64 (emulator-5554)
+[2]: iPhone SE (3rd generation) (E868FDBB-79C4-443F-A818-2C0041923F74)
+[3]: Mac Designed for iPad (mac-designed-for-ipad)
+[4]: Chrome (chrome)
+[5]: Andrea iPhone XR (wireless) (00008020-001231380AE1002E)
+Please choose one (or "q" to quit): 2
+If everything goes well, the app will run, and if you open the settings page, you’ll see that “Flutter Ship Dev” shows as the app name:
+
+The Flutter Ship iOS App running with the dev flavor
+Then, run the app with the stg and prod flavors as well:
+
+
+Copy
+# Run on staging
+flutter run --flavor stg
+# Wait for the app to start, then CTRL+C to stop
+# Run on prod
+flutter run --flavor prod
+Finally, get back to the iOS home screen, and you’ll see three versions of the app, each with a different icon and name:
+
+The iOS home screen showing three versions of the app
+Congratulations, you’ve now managed to add multiple flavors to the iOS app! 🎉
+
+Saving the changes to Git
+If you managed to complete the steps above and run the app without errors (for all flavors), go ahead and commit all the latest changes:
+
+
+Copy
+git add .
+git commit -m "Added flavors to the iOS Xcode project"
+Or, if something went wrong, you can run this command to get back to the previous working state, and try again:
+
+
+Copy
+# Discard changes, untracked files and directories
+git reset --hard HEAD && git clean -fd
+What about macOS?
+
+Show more
+
+
+
+Copy
+
+
+
+
+
+
+Copy
+
+
+
+Copy
+
+
+Copy
+
+Copy
+
+
+Copy
+
+Time for a quick quiz to test your knowledge of flavors on iOS.
+
+Question 1 of 2
+What are xcconfig files used for?
+
+To create used-defined build settings for the iOS project
+
+To list the dependencies for the iOS project
+
+To define the app's target platforms
+
+To specify the iOS version required by the app
+
+Submit
+
+
+
+
+
+
+Single or Multiple Entry Points?
+Now that we’ve flavored our iOS app, we can install and launch completely different variants of our app on the same device:
+
+The iOS home screen showing three versions of the app
+As we have seen in the lesson about flavors vs dart-defines, we can use the appFlavor constant to detect the flavor at runtime.
+
+This means that we can customize the behaviour and appearance of the app depending on the flavor. Example:
+
+Settings page of the Flutter Ship iOS App (dev flavor)
+It also means that we only need a single main.dart file, which is the entry point for the app.
+
+However, there are cases where multiple main_*.dart files are necessary, such as when you add Firebase to your Flutter app and you want to import different Firebase config files depending on the flavor (we will explore this at the end of this module).
+
+And in this lesson, we’ll explore how to create multiple main_*.dart files manually.
+
+This lesson is optional. You only need to make the changes below for more advanced setups (e.g. when your app uses Firebase).
+
+Creating multiple main_*.dart files
+Here’s what we want to accomplish:
+
+Multiple entry points
+To do this, open lib/main.dart and rename the old main() function to runMainApp(), ensuring it now returns a Future<void>:
+
+
+Copy
+Future<void> runMainApp() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  ...
+}
+Then, inside lib, create three files called main_dev.dart, main_stg.dart, and main_prod.dart with these contents:
+
+main_dev.dart
+main_stg.dart
+main_prod.dart
+
+Copy
+import 'main.dart';
+ 
+// * Entry point for the dev flavor
+void main() async {
+  await runMainApp();
+}
+These files call runMainApp(), which is the “real” entry point where all the app initialization takes place.
+
+Once you’re done, your lib folder should look like this:
+
+Multiple main files
+Time to test our new setup.
+
+Running the iOS app with the -t argument
+To test the latest changes, boot up your iOS simulator and run:
+
+
+Copy
+flutter run --flavor dev -t lib/main_dev.dart
+If multiple devices are available, choose the correct one:
+
+
+Copy
+[1]: sdk gphone64 arm64 (emulator-5556)
+[2]: iPhone SE (3rd generation) (70BC6613-2548-4442-8C47-735C556161A1)
+[3]: Chrome (chrome)
+[4]: Andrea iPhone XR (00008020-001231380AE1002E)
+Please choose one (or "q" to quit): 2
+If everything goes well, the app will run as intended.
+
+If you want, you can run the app with the stg and prod flavors as well:
+
+
+Copy
+# Run on staging
+flutter run --flavor stg -t lib/main_stg.dart
+# Wait for the app to start, then CTRL+C to stop
+# Run on prod
+flutter run --flavor prod -t lib/main_prod.dart
+Finally, get back to the iOS home screen, and you’ll see three versions of the app, each with a different icon and name:
+
+The iOS home screen showing three versions of the app
+Important: Passing the target entry file
+If you create multiple main_*.dart files, you must pass the target entry file with the -t flag when running the app. Otherwise, Flutter will default to lib/main.dart, which no longer contains the main() function, and the app will remain stuck on the splash screen. This error log will show up in the console:
+
+[ERROR:flutter/runtime/dart_isolate.cc(146)] Could not prepare isolate.
+[ERROR:flutter/runtime/runtime_controller.cc(557)] Could not create root isolate.
+[ERROR:flutter/shell/common/shell.cc(668)] Could not launch engine with configuration.
+Multiple Entry Points: Summary
+In this lesson we’ve seen how to create multiple main_*.dart files manually:
+
+Multiple entry points
+Once again, this is only needed for advanced setups (e.g. when your app uses Firebase).
+
+Here’s a summary of the steps we followed:
+
+Rename main to runMainApp inside main.dart:
+
+Copy
+Future<void> runMainApp() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  ...
+}
+Create main_dev.dart, main_stg.dart, main_prod.dart inside lib with these contents:
+main_dev.dart
+main_stg.dart
+main_prod.dart
+
+Copy
+import 'main.dart';
+ 
+// * Entry point for the dev flavor
+void main() async {
+  await runMainApp();
+}
+Run the app by passing the --flavor and -t arguments:
+
+Copy
+flutter run --flavor dev -t lib/main_dev.dart
+flutter run --flavor stg -t lib/main_stg.dart
+flutter run --flavor prod -t lib/main_prod.dart
+Time for a quick quiz!
+
+Question 1 of 2
+When should you create separate entry points for your app?
+
+To define different compile-time constants (via dart defines) for each flavor
+
+To import different Firebase configuration files for each flavor
+
+To use different app icons and app name for each flavor
+
+To have a separate entry point for each target platform (iOS, Android, Web, etc.)
+
+Submit
+Next Steps
+The Flutter CLI allows you to run your flavored app directly from the command line. But how do you do that from your IDE?
+
+So let’s continue in the next lesson, where you’ll learn how to do that. 👍
+
+
+
+
+
+
+
+Flutter Flavors: IDE Setup (VSCode)
+In the previous lessons, we’ve seen how to run the app with flavors from the command line:
+
+
+Copy
+flutter run --flavor dev -t lib/main_dev.dart
+flutter run --flavor stg -t lib/main_stg.dart
+flutter run --flavor prod -t lib/main_prod.dart
+But when you work with your IDE, creating some launch configurations is more convenient. So here’s how to set them up in VSCode.
+
+If you use IntelliJ Idea or Android Studio as your primary IDE, you can skip to the next lesson.
+
+VSCode Launch Configurations
+When you first create a Flutter app, you can use VSCode to create a launch.json file:
+
+Creating a launch.json file for your Dart & Flutter project in VSCode
+This file contains all the launch configurations you can use to run your app, and it looks like this:
+
+
+Copy
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug",
+      "request": "launch",
+      "type": "dart"
+    },
+    {
+      "name": "Profile",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
+    }
+  ]
+}
+The starter project already contains the .vscode/launch.json file.
+
+Then, you can choose how to run the app with this dropdown:
+
+Default VSCode launch configurations
+After adding flavors, you’ll want to update this file since you now have three configurations for each flavor (9 in total).
+
+Flutter Flavorizr can do this for you, so let’s go ahead and use it. 👇
+
+Updating launch.json with Flutter Flavorizr
+Flutter Flavorizr has a ide:config processor you can use to generate the launch.json file, based on the flavors you defined in the pubspec.yaml file.
+
+To use it, run this command:
+
+
+Copy
+dart run flutter_flavorizr -p ide:config
+This will update the launch.json file:
+
+
+Copy
+{"version":"0.2.0","configurations":[{"name":"dev Debug","request":"launch","type":"dart","flutterMode":"debug","args":["--flavor","dev"],"program":"lib/main.dart"},{"name":"dev Profile","request":"launch","type":"dart","flutterMode":"profile","args":["--flavor","dev"],"program":"lib/main.dart"},{"name":"dev Release","request":"launch","type":"dart","flutterMode":"release","args":["--flavor","dev"],"program":"lib/main.dart"},{"name":"stg Debug","request":"launch","type":"dart","flutterMode":"debug","args":["--flavor","stg"],"program":"lib/main.dart"},{"name":"stg Profile","request":"launch","type":"dart","flutterMode":"profile","args":["--flavor","stg"],"program":"lib/main.dart"},{"name":"stg Release","request":"launch","type":"dart","flutterMode":"release","args":["--flavor","stg"],"program":"lib/main.dart"},{"name":"prod Debug","request":"launch","type":"dart","flutterMode":"debug","args":["--flavor","prod"],"program":"lib/main.dart"},{"name":"prod Profile","request":"launch","type":"dart","flutterMode":"profile","args":["--flavor","prod"],"program":"lib/main.dart"},{"name":"prod Release","request":"launch","type":"dart","flutterMode":"release","args":["--flavor","prod"],"program":"lib/main.dart"}]}
+Inline JSON is not much fun to look at. So let’s fix it with this command:
+
+
+Copy
+jq '.' .vscode/launch.json > .vscode/formatted_launch.json && mv .vscode/formatted_launch.json .vscode/launch.json
+If jq is not installed on your system, follow the instructions on this page.
+
+And voilà! The launch.json is readable again:
+
+
+Copy
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "dev Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--flavor",
+        "dev"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "dev Profile",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": [
+        "--flavor",
+        "dev"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "dev Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": [
+        "--flavor",
+        "dev"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "stg Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--flavor",
+        "stg"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "stg Profile",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": [
+        "--flavor",
+        "stg"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "stg Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": [
+        "--flavor",
+        "stg"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "prod Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--flavor",
+        "prod"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "prod Profile",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": [
+        "--flavor",
+        "prod"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "prod Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": [
+        "--flavor",
+        "prod"
+      ],
+      "program": "lib/main.dart"
+    }
+  ]
+}
+Note how the various configurations specify a program field that is always set to main.dart.
+
+However, in the last lesson, we added three new main_*.dart files:
+
+Multiple main files
+To make everything right, update the program field to match the correct main_*.dart file for each flavor:
+
+
+Copy
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "dev Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--flavor",
+        "dev"
+      ],
+      "program": "lib/main_dev.dart"
+    },
+    {
+      "name": "dev Profile",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": [
+        "--flavor",
+        "dev"
+      ],
+      "program": "lib/main_dev.dart"
+    },
+    {
+      "name": "dev Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": [
+        "--flavor",
+        "dev"
+      ],
+      "program": "lib/main_dev.dart"
+    },
+    {
+      "name": "stg Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--flavor",
+        "stg"
+      ],
+      "program": "lib/main_stg.dart"
+    },
+    {
+      "name": "stg Profile",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": [
+        "--flavor",
+        "stg"
+      ],
+      "program": "lib/main_stg.dart"
+    },
+    {
+      "name": "stg Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": [
+        "--flavor",
+        "stg"
+      ],
+      "program": "lib/main_stg.dart"
+    },
+    {
+      "name": "prod Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--flavor",
+        "prod"
+      ],
+      "program": "lib/main_prod.dart"
+    },
+    {
+      "name": "prod Profile",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": [
+        "--flavor",
+        "prod"
+      ],
+      "program": "lib/main_prod.dart"
+    },
+    {
+      "name": "prod Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": [
+        "--flavor",
+        "prod"
+      ],
+      "program": "lib/main_prod.dart"
+    }
+  ]
+}
+As a result, you can run the app with the correct build mode for each flavor:
+
+VSCode launch configurations with flavors
+In the next lesson, we’ll explore a similar setup with Android Studio.
+
+But first, here’s a quick quiz:
+
+How can you define the correct entry point in each VSCode launch configuration?
+
+By setting the "-t" field to the correct entry point file
+
+By setting the "--flavor" field to the correct flavor
+
+By setting the "--target" field to the correct entry point file
+
+By setting the "program" field to the correct entry point file
+
+Submit
+
+
+
+
+
+
+Flutter Flavors: IDE Setup (Android Studio)
+When you run your app in Android Studio, only one run configuration is available by default:
+
+IDEA run configurations with errors
+This configuration is represented as an xml file that is stored inside .idea/runConfigurations.
+
+Here’s what the default main_dart.xml looks like:
+
+
+Copy
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter">
+    <option name="filePath" value="$PROJECT_DIR$/lib/main.dart" />
+    <method />
+  </configuration>
+</component>
+If you want to support multiple flavors and build modes, you have two options:
+
+Use Flutter Flavorizr with the ide:config processor
+Update the configurations manually
+Let’s see how they work. 👇
+
+Update the configurations with Flutter Flavorizr
+If you remember, when we first configured flutter_flavorizr, we added this setting to specify our IDE:
+
+
+Copy
+flavorizr:
+  ide: "vscode"
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+  ...
+To generate the run configurations, change the ide setting to "idea":
+
+
+Copy
+flavorizr:
+  ide: "idea"
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+  ...
+Then, run this command:
+
+
+Copy
+dart run flutter_flavorizr -p ide:config
+This will generate the following files:
+
+.idea/runConfigurations/main_dev_dart.xml
+.idea/runConfigurations/main_stg_dart.xml
+.idea/runConfigurations/main_prod_dart.xml
+Here’s what the main_dev_dart.xml file looks like:
+
+
+Copy
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="main_dev.dart" type="FlutterRunConfigurationType" factoryName="Flutter">
+    <option name="buildFlavor" value="dev"/>
+    <option name="filePath" value="$PROJECT_DIR$/lib/main_dev.dart"/>
+    <method v="2"/>
+  </configuration>
+</component>
+As a result, you can choose any configuration and run the app as desired:
+
+IDEA run configurations with flavors
+However, these configurations only work for Debug builds, and if you want to support all nine combinations (including Profile and Release), you have more work to do. 👇
+
+Updating the configurations manually with Android Studio
+Setting up all 9 configurations is tedious, so I prepared a zip file to make your life easier:
+
+runConfigurations.zip
+
+After downloading this, extract it and move all the files to .idea/runConfigurations.
+
+Once done, you should see them in the environment dropdown, and you can use them to run your app:
+
+All the IDEA run configurations with flavors
+Job done! 🎉
+
+Saving the changes to Git
+Congratulations! You can now run your flavored app directly from your VSCode and Android Studio! 🎉
+
+If all works well, go ahead and save the latest changes:
+
+
+Copy
+git add .
+git commit -m "Updated IDE launch configurations"
+
+
+
+
+
+
+How to Enable Flavors on Flutter Web
+When we enable flavors on iOS and Android, we can build and run distinct versions of the app on the same device:
+
+Example showing how three variants of the same iOS app can be installed on the home screen
+But what about Flutter web? 🤔
+
+While web apps are deployed to a URL (not installed on a device), you may still want to implement flavor-specific features—like connecting to different backends or displaying different app icons and names. Example:
+
+Settings page for the Flutter Ship app on Flutter web (dev flavor)
+So, in this lesson, I’ll show you a workaround that uses --dart-define to “simulate” flavors on web.
+
+How to Simulate Flavors on Flutter Web
+When working with Flutter web, you can simulate flavors using two strategies:
+
+Multiple entry points: Define a global variable somewhere and set it for each flavor inside different main_*.dart files. This is how Flutter Flavorizr works.
+Using --dart-define: Pass a flavor as a --dart-define flag and read it using String.fromEnvironment. This approach doesn’t require multiple entry points.
+Trade-offs:
+
+Multiple entry points rely on global mutable state and only work if your app has separate main_*.dart files.
+--dart-define is more flexible, avoids mutable state, and allows you to pass any environment variable.
+In this lesson, we’ll focus on option 2: using --dart-define for Flutter web.
+
+Running the app on Flutter web
+To run the Flutter Ship app on Chrome, use this command:
+
+
+Copy
+flutter run -d chrome --flavor dev -t lib/main_dev.dart
+When you run this, you’ll see a warning in the console:
+
+
+Copy
+--flavor is only supported for Android, macOS, and iOS devices.
+Flavor-related features may not function properly and could behave differently in a future release.
+Don’t worry—this is just a warning, and the app will still run:
+
+Command to run the app on Flutter web
+But what happens if you try to build the web app?
+
+
+Copy
+flutter build web --flavor dev -t lib/main_dev.dart
+The command above fails with this error:
+
+
+Copy
+Could not find an option named "flavor".
+This means that when building for the web, you can’t use --flavor.
+
+Flutter Web Flavor Workaround with —dart-define
+To work around this limitation, we can use --dart-define and pass a WEB_FLAVOR argument when running the app:
+
+
+Copy
+flutter run -d chrome --dart-define WEB_FLAVOR=dev -t lib/main_dev.dart
+This runs the app without any issues. If you go to the settings page, you can confirm that the correct flavor is being used:
+
+Settings page for the Flutter Ship app on Flutter web (dev flavor)
+But how does the app know about WEB_FLAVOR and how to use it?
+
+Getting the Current Flavor in Dart
+To handle flavors on iOS, Android, and web, I’ve added a getFlavor() helper function in lib/env/flavor.dart:
+
+
+Copy
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+ 
+enum Flavor { dev, stg, prod }
+ 
+/// Global function to return the current flavor
+Flavor getFlavor() {
+  // * On iOS/Android, appFlavor is supported and set with the --flavor option
+  // * On web, appFlavor is not supported so we read a separate WEB_FLAVOR
+  // * variable and set it with --dart-define WEB_FLAVOR=dev|stg|prod
+  const webFlavor = String.fromEnvironment('WEB_FLAVOR');
+  const flavor = kIsWeb ? webFlavor : appFlavor;
+  return switch (flavor) {
+    'prod' => Flavor.prod,
+    'stg' => Flavor.stg,
+    'dev' => Flavor.dev,
+    null || '' => Flavor.dev, // * if not specified or empty, default to dev
+    _ => throw UnsupportedError('Invalid flavor: $flavor'),
+  };
+}
+ 
+// ignore_for_file:no-equal-switch-expression-cases,avoid-nullable-interpolation
+Here’s how it works:
+
+On web, it reads the WEB_FLAVOR environment variable (set via --dart-define).
+On iOS/Android, it reads the appFlavor constant (set with the --flavor option).
+A switch expression is then used to check the flavor and return a (type-safe) Flavor value, or throw and exception if the flavor is invalid.
+
+Then, getFlavor() is called whenever we need some flavor-specifi app behavior, like in the settings page:
+
+Settings page for the Flutter Ship app on Flutter web (dev flavor)
+This approach works well, but how can we ensure flavors work correctly on iOS, Android, and web?
+
+How to work with Flavors on iOS, Android, Web
+Since flavors aren’t fully supported on web, you’ll need to run different commands depending on the platform:
+
+
+Copy
+# on iOS/Android
+flutter run --flavor dev -t lib/main_dev.dart
+flutter run --flavor stg -t lib/main_stg.dart
+flutter run --flavor prod -t lib/main_prod.dart
+# on web
+flutter run -d chrome --dart-define WEB_FLAVOR=dev -t lib/main_dev.dart
+flutter run -d chrome --dart-define WEB_FLAVOR=stg -t lib/main_stg.dart
+flutter run -d chrome --dart-define WEB_FLAVOR=prod -t lib/main_prod.dart
+Thanks to the getFlavor() function, you can also combine these commands to run the app across platforms:
+
+
+Copy
+# on iOS/Android/web
+flutter run --flavor dev --dart-define WEB_FLAVOR=dev -t lib/main_dev.dart
+flutter run --flavor stg --dart-define WEB_FLAVOR=stg -t lib/main_stg.dart
+flutter run --flavor prod --dart-define WEB_FLAVOR=prod -t lib/main_prod.dart
+Running the app from the command line every time is quite inconvenient. Let’s update the IDE setup so you can run flavors directly from your editor.
+
+Running the App from the IDE
+To update the IDE setup, we need to modify the VSCode launch.json file and the Android Studio run configurations.
+
+Since it’s tedious to do this manually, I prepared a new code snapshot for you:
+
+
+Copy
+# Discard any changes and switch to the new branch
+git reset --hard HEAD && git clean -fd
+git switch m03-flavors-web
+Updated IDE Setup for VSCode
+After switching to the new branch, open .vscode/launch.json. I’ve already updated the arguments for each launch configuration:
+
+
+Copy
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "dev Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [ "--flavor", "dev", "--dart-define", "WEB_FLAVOR=dev" ],
+      "program": "lib/main_dev.dart"
+    },
+    ...
+  ]
+}
+Each configuration now specifies the flavor (dev, stg, prod) as well as the --dart-define flag for web.
+
+Updated IDE Setup for Android Studio
+If you’re on Android Studio, open .idea/runConfigurations/dev_debug.xml (for the dev flavor) and you’ll see the additional --dart-define:
+
+
+Copy
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="DEV | DEBUG" type="FlutterRunConfigurationType" factoryName="Flutter">
+    <option name="buildFlavor" value="dev" />
+    <option name="filePath" value="$PROJECT_DIR$/lib/main_dev.dart" />
+    <option name="additionalArgs" value="--dart-define=WEB_FLAVOR=dev" />
+    <method v="2" />
+  </configuration>
+</component>
+I’ve updated all the 9 configurations in the new branch - feel free to check them.
+
+Voilà! Our flavor setup is now complete you can use it to run the iOS, Android, and web app from the IDE. 🎉
+
+Key Takeaways
+--flavor is not fully supported on Flutter web, but we can simulate flavors using --dart-define with a custom WEB_FLAVOR that is read at runtime.
+The getFlavor() function ensures the correct flavor is returned across iOS, Android, and web.
+Updating your IDE (VSCode or Android Studio) allows you to run flavors directly without manual command line steps.
+Time to test your knowledge with a quiz:
+
+What workarounds exist for simulating different flavors on the web?
+
+Create multiple entry points and set global variables inside them
+
+Pass a --web-flavor flag to the Flutter run command and read it from the appFlavor constant
+
+Pass a --dart-define flag to the Flutter run command and read it with String.fromEnvironment
+
+It's not possible to simulate flavors on the web
+
+Submit
+
+
+
+
+
+
+Flutter Flavors Checklist
+If it was the first time you added flavors to a Flutter app, I bet it took a while to follow all the steps in the previous lessons.
+
+But the process is much faster once you know what you’re doing. And to make your life easier, I prepared this checklist. 👇
+
+Checklist for flavoring your iOS and Android app in 5 minutes. ⏱️
+If you want to repeat all the steps once again, you can do a fresh checkout:
+
+
+Copy
+git clone https://github.com/bizz84/flutter_ship_app
+cd flutter_ship_app
+git switch m03-starter
+flutter pub get
+# Open in VSCode
+code .
+Then, you can complete this checklist by following the steps below.
+
+Flutter Flavors Checklist
+Add flutter_flavorizr and configure your flavors on the pubspec.yaml file
+Add flavors on Android (build.gradle.kts, flavorizr.gradle.kts, AndroidManifest.xml)
+Add flavors on iOS (xcconfig and xcscheme files)
+Create multiple entry points (main_*.dart)
+Dart setup and web support
+Configure your IDE (VSCode or Android Studio)
+1. Initial Setup
+Add flutter_flavorizr as a dev dependency:
+
+
+Copy
+dart pub add dev:flutter_flavorizr
+flutter pub get
+Add this entire snippet at the end of the pubspec.yaml file:
+
+
+Copy
+flavorizr:
+  ide: "vscode"
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+    
+  flavors:
+    dev:
+      app:
+        name: "Flutter Ship Dev"
+      android:
+        applicationId: "com.codewithandrea.flutter_ship_app.dev"
+        icon: "assets/dev/app-icon.png"
+        adaptiveIcon:
+          foreground: "assets/dev/app-icon-foreground.png"
+          background: "assets/android/app-icon-background.png"
+      ios:
+        bundleId: "com.codewithandrea.flutterShipApp.dev"
+        icon: "assets/dev/app-icon.png"
+ 
+    stg:
+      app:
+        name: "Flutter Ship Stg"
+      android:
+        applicationId: "com.codewithandrea.flutter_ship_app.stg"  
+        icon: "assets/stg/app-icon.png"
+        adaptiveIcon:
+          foreground: "assets/stg/app-icon-foreground.png"
+          background: "assets/android/app-icon-background.png"
+      ios:
+        bundleId: "com.codewithandrea.flutterShipApp.stg"
+        icon: "assets/stg/app-icon.png"
+ 
+    prod:
+      app:
+        name: "Flutter Ship"
+      android:
+        applicationId: "com.codewithandrea.flutter_ship_app"  
+        icon: "assets/prod/app-icon.png"
+        adaptiveIcon:
+          foreground: "assets/prod/app-icon-foreground.png"
+          background: "assets/android/app-icon-background.png"
+      ios:
+        bundleId: "com.codewithandrea.flutterShipApp"
+        icon: "assets/prod/app-icon.png"
+If you’re adding flavors to your own projects, update the applicationId and bundleId as needed.
+
+2. Android Setup
+Run this:
+
+
+Copy
+dart run flutter_flavorizr -p android:buildGradle,android:flavorizrGradle,android:androidManifest,android:icons
+This will inline all the attributes in your AndroidManifest.xml. To fix it, do this:
+
+Install the XML Tools extension for VSCode
+Add "xmlTools.splitAttributesOnFormat": true, in your settings.json file
+Open AndroidManifest.xml and hit SHIFT+OPTION+F to format the document
+3. iOS Setup
+Run this:
+
+
+Copy
+dart run flutter_flavorizr -p assets:download,assets:extract,ios:podfile,ios:xcconfig,ios:buildTargets,ios:schema,ios:plist,ios:dummyAssets,ios:icons,assets:clean
+4. Multiple Entry Points
+This step is only needed for more advanced setups (e.g. when your app uses Firebase).
+
+Rename main to runMainApp inside main.dart:
+
+
+Copy
+Future<void> runMainApp() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  ...
+}
+Create main_dev.dart, main_stg.dart, main_prod.dart inside lib with these contents:
+
+main_dev.dart
+main_stg.dart
+main_prod.dart
+
+Copy
+import 'main.dart';
+ 
+// * Entry point for the dev flavor
+void main() async {
+  await runMainApp();
+}
+You can now run the app on both iOS and Android from the terminal:
+
+
+Copy
+flutter run --flavor dev -t lib/main_dev.dart
+flutter run --flavor stg -t lib/main_stg.dart
+flutter run --flavor prod -t lib/main_prod.dart
+5. Dart setup and web support
+Create a flavor.dart file with these contents:
+
+
+Copy
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+ 
+enum Flavor { dev, stg, prod }
+ 
+/// Global function to return the current flavor
+Flavor getFlavor() {
+  // * On iOS/Android, appFlavor is supported and set with the --flavor option
+  // * On web, appFlavor is not supported so we read a separate WEB_FLAVOR
+  // * variable and set it with --dart-define WEB_FLAVOR=dev|stg|prod
+  const webFlavor = String.fromEnvironment('WEB_FLAVOR');
+  const flavor = kIsWeb ? webFlavor : appFlavor;
+  return switch (flavor) {
+    'prod' => Flavor.prod,
+    'stg' => Flavor.stg,
+    'dev' => Flavor.dev,
+    null || '' => Flavor.dev, // * if not specified or empty, default to dev
+    _ => throw UnsupportedError('Invalid flavor: $flavor'),
+  };
+}
+ 
+// ignore_for_file:no-equal-switch-expression-cases,avoid-nullable-interpolation
+Thanks to the getFlavor() function, you can now run the app on iOS, Android, and web:
+
+
+Copy
+# on iOS/Android/web
+flutter run --flavor dev --dart-define WEB_FLAVOR=dev -t lib/main_dev.dart
+flutter run --flavor stg --dart-define WEB_FLAVOR=stg -t lib/main_stg.dart
+flutter run --flavor prod --dart-define WEB_FLAVOR=prod -t lib/main_prod.dart
+Only pass the -t argument if you created multiple main_*.dart files in step 4 above.
+
+6. IDE Setup (VSCode)
+Run this command to update .vscode/launch.json:
+
+
+Copy
+dart run flutter_flavorizr -p ide:config
+This will inline all the JSON. Fix it with this command:
+
+
+Copy
+jq '.' .vscode/launch.json > .vscode/formatted_launch.json && mv .vscode/formatted_launch.json .vscode/launch.json
+If jq is not installed on your system, follow the instructions on this page.
+
+Then, you can run the app on iOS and Android with the correct build mode for each flavor:
+
+VSCode launch configurations with flavors
+Note that the launch.json file may need some adjustments:
+
+If you want to run on Flutter web, add a --dart-define with the correct WEB_FLAVOR
+If you created multiple main_*.dart files, update the program field
+These changes need to be applied to all 9 configurations. Example:
+
+
+Copy
+{
+  "name": "dev Debug",
+  "request": "launch",
+  "type": "dart",
+  "flutterMode": "debug",
+  "args": [ "--flavor", "dev", "--dart-define", "WEB_FLAVOR=dev" ],
+  "program": "lib/main_dev.dart"
+},
+// same for the other 8 configurations...
+7. IDE Setup (Android Studio)
+To generate the run configurations, change the ide setting to "idea" in your pubspec.yaml:
+
+
+Copy
+flavorizr:
+  ide: "idea"
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+  ...
+Then, run this command:
+
+
+Copy
+dart run flutter_flavorizr -p ide:config
+This will generate the Debug configurations only. If you also want the Profile and Release configurations, along with the correct web setup, download this zip file:
+
+runConfigurationsWeb.zip
+
+Then, extract it and move all the files to .idea/runConfigurations.
+
+Once done, you should see them in the environment dropdown, and you can use them to run your app:
+
+All the IDEA run configurations with flavors
+Job done! 🎉
+
+Flavoring your own apps
+You can repeat the flavoring process in your apps by following the steps above.
+
+Just remember to use the correct applicationId and bundleId where needed and double-check the paths to your flavored app icons, and you’ll be good to go!
+
+
+
+
+
+
+
+Manual Flavors: Introduction and Android Setup
+As we’ve seen, adding flavors to a Flutter app is a multi-step process, and Flutter Flavorizr helps us automate much of the work.
+
+However, the documentation warns us:
+
+Side note: this tool works better on a new and clean Flutter project. Since some processors reference some existing files and a specific base structure, it could be possible that running Flutter Flavorizr over an existing project could throw errors.
+
+This means that for existing apps, manually adding flavors may be the best strategy. This process requires more work but gives you complete control when configuring your app’s flavors.
+
+So, let’s learn how to add flavors manually and, in doing so, get a better understanding of how things work on the native side.
+
+Starter Project
+Just as you’ve done before, you can discard the previous changes and switch to the m03-starter branch:
+
+
+Copy
+git reset --hard HEAD && git clean -fd
+git switch m03-starter
+Alternatively, you can do a fresh clone from GitHub:
+
+
+Copy
+git clone https://github.com/bizz84/flutter_ship_app
+cd flutter_ship_app
+git switch m03-starter
+flutter pub get
+# Open in VSCode
+code .
+Then, open it in your favorite editor to get started.
+
+As an alternative to downloading the project again, you can revert the previous commits where you added flavors with Flutter Flavorizr.
+
+Android Setup
+Let’s start with the Android setup since it is the easiest.
+
+Flavors setup in the build.gradle.kts file
+Open android/app/build.gradle.kts and add this line at the very bottom:
+
+
+Copy
+apply { from("flavors.gradle.kts") }
+Then, create a android/app/flavors.gradle.kts file with the following content:
+
+
+Copy
+import com.android.build.gradle.AppExtension
+ 
+val android = project.extensions.getByType(AppExtension::class.java)
+ 
+android.apply {
+    flavorDimensions("flavor-type")
+ 
+    productFlavors {
+        create("dev") {
+            dimension = "flavor-type"
+            applicationId = "com.codewithandrea.flutter_ship_app.dev"
+            resValue(type = "string", name = "app_name", value = "Flutter Ship Dev")
+        }
+        create("stg") {
+            dimension = "flavor-type"
+            applicationId = "com.codewithandrea.flutter_ship_app.stg"
+            resValue(type = "string", name = "app_name", value = "Flutter Ship Stg")
+        }
+        create("prod") {
+            dimension = "flavor-type"
+            applicationId = "com.codewithandrea.flutter_ship_app"
+            resValue(type = "string", name = "app_name", value = "Flutter Ship")
+        }
+    }
+}
+Effectively, this is the same as running dart run flutter_flavorizr -p android:buildGradle,android:flavorizrGradle.
+
+Flavors changes in the AndroidManifest.xml file
+Next up, open android/app/src/main/AndroidManifest.xml and update the android:label attribute:
+
+AndroidManifest.xml (after)
+AndroidManifest.xml (before)
+
+Copy
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application
+    android:label="@string/app_name"
+    android:name="${applicationName}"
+    android:icon="@mipmap/ic_launcher">
+    ...
+  </application>
+  ...
+</manifest>
+This step is the same as running dart run flutter_flavorizr -p android:androidManifest, without any undesired formatting changes.
+
+And voilà! The Android flavors setup is complete!
+
+Flavored app icons
+Manually flavoring your app icons is not recommended since many different files need to be generated. Instead, I recommend following this lesson: Flutter Flavorizr: Icons Setup or using the flutter_launcher_icons package, which does support flavors.
+
+Running the Android app with multiple flavors
+The steps for testing the Android app are the same as before.
+
+
+Show more
+
+
+Copy
+
+
+Copy
+
+
+
+Saving the changes to Git
+Having verified that the flavors work correctly, you can commit all the latest changes to git:
+
+
+Copy
+git add .
+git commit -m "Manually added flavors to the Android project"
+Time for a quick quiz!
+
+Question 1 of 2
+What changes are needed to manually add flavors to an Android project?
+
+Add flavorDimensions and productFlavors sections
+
+Define a different applicationId for each flavor
+
+Set resValue for the app_name string for each flavor
+
+Update the namespace property
+
+Submit
+Next up, let’s turn our attention to iOS.
+
+
+
+
+
+
+
+Manual Flavors: iOS Setup
+If you want to add flavors to your Flutter iOS app, you need to do most of the work inside Xcode, and this lesson will guide you through the manual flavoring process.
+
+The Flutter docs include an official guide on how to set up Flutter flavors for iOS and macOS. Here, we’ll cover similar steps with extra illustrations and screenshots to ensure a smooth experience.
+
+Opening the Xcode project
+You can open Xcode by running this command:
+
+
+Copy
+open ios/Runner.xcworkspace/
+Alternatively, right-click on the ios folder and choose the “Open in Xcode” option:
+
+How to open the iOS project in Xcode
+Creating the Xcode schemes
+From the left pane, go to Project → Runner and open the Info tab:
+
+Select the Runner project in Xcode
+Then, double-click on each of the configurations and rename them to Debug-prod, Release-prod, and Profile-prod:
+
+Renaming the product configurations in Xcode
+Now, click on the small + icon and choose the duplicate option to create the corresponding stg and dev configurations:
+
+Duplicating the product configurations in Xcode
+Once done, you’ll have three configurations for each flavor (9 in total):
+
+All the 9 configurations in Xcode
+Now, click on the Runner dropdown in the top bar and select “Manage Schemes…”:
+
+Manage schemes in Xcode
+This will show all the schemes in your app. Most of them are from the Pods project, but one is from the main Runner project:
+
+All the schemes in Xcode
+Select the Runner scheme, then:
+
+click once on it to enter edit mode
+rename it to prod and press Enter to confirm
+Renaming the scheme to prod
+Click on the three dots icon and select “Duplicate”:
+
+Duplicating the prod scheme
+This will open the scheme editing dialog. From here, do the following:
+
+rename the scheme to stg
+select Release-stg from the “Build Configuration” dropdown
+enable the “Shared” checkbox (this ensures your scheme is saved as an xcscheme file)
+Once done, click on “Close”:
+
+Renaming the scheme to stg and updating the build configuration
+Each Xcode scheme contains Run, Test, Profile, Analyze and Archive settings. The image above shows how to update the Build Configuration for the Archive step, but you should also update the configuration inside Run, Test, Profile, and Analyze.
+
+Now, repeat the same process to create a dev scheme by going to “Manage Schemes…”:
+
+Manage schemes in Xcode
+Click on the three dots icon again and select “Duplicate”:
+
+Duplicating the stg scheme
+Just as before, follow these steps, then close the dialog:
+
+rename the scheme to dev
+select Release-dev from the “Build Configuration” dropdown
+enable the “Shared” checkbox
+Renaming the stg scheme
+Finally, get back to the schemes list and double-check the “Shared” option is checked for all three schemes:
+
+Ensuring the schemes are shared
+Updating the Bundle IDs
+As a next step, we need to ensure each scheme uses the correct bundle ID:
+
+dev → com.codewithandrea.flutterShipApp.dev
+stg → com.codewithandrea.flutterShipApp.stg
+prod → com.codewithandrea.flutterShipApp
+To do this:
+
+go to Targets → Runner → Build Settings
+select the “Combined” option
+enter “Product Bundle Identifier” on the search filter on the right
+click on the small dropdown next to the “Product Bundle Identifier” setting
+This will reveal the bundle IDs for each valid configuration:
+
+Where to find the bundle IDs
+Then, double-click on value for the Debug-dev configuration and add the .dev suffix:
+
+How to edit the bundle ID
+Repeat the process for all the remaining configurations, adding the .dev or .stg suffix as needed:
+
+How to edit the bundle ID
+Note about the production bundle ID
+If your app is already published on the app store, the production bundle IDs should remain the same as before. In other words, do not append .prod to it.
+
+Updating the App Display Name
+The last step is to create a new User Defined Variable called APP_DISPLAY_NAME with a different value for each configuration.
+
+To do this, go to Target → Runner → Build Settings, then click on the + button to add a new User-Defined Setting:
+
+How to edit the bundle ID
+Name the variable APP_DISPLAY_NAME and use the dropdown to reveal all the configurations. Then, set all the values according to the scheme:
+
+dev → Flutter Ship Dev
+stg → Flutter Ship Stg
+prod → Flutter Ship
+Setting the APP_DISPLAY_NAME for each of the configurations
+Final step: open the Info.plist file and set both the “Bundle display name” and “Bundle name” to $(APP_DISPLAY_NAME):
+
+Using the APP_DISPLAY_NAME in the Info.plist file
+Alternatively, you can open the Info.plist file as source code:
+
+Using the APP_DISPLAY_NAME in the Info.plist file
+And from here, you can set the CFBundleDisplayName and CFBundleName to $(APP_DISPLAY_NAME):
+
+
+Copy
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	...
+	<key>CFBundleDisplayName</key>
+	<string>$(APP_DISPLAY_NAME)</string>
+	...
+	<key>CFBundleName</key>
+	<string>$(APP_DISPLAY_NAME)</string>
+  ...
+</dict>
+Phew! That was a lot of work! 🥵
+
+Flavored app icons
+Manually flavoring your app icons is not recommended since many different files need to be generated. Instead, I recommend following this lesson: Flutter Flavorizr: Icons Setup or using the flutter_launcher_icons package, which does support flavors.
+
+Now, let’s check if it all works.
+
+Running the iOS app with multiple flavors
+The steps for testing the iOS app are the same as before.
+
+
+Show more
+
+
+Copy
+
+
+Copy
+
+
+
+Copy
+
+
+Saving the changes to Git
+If you managed to complete the steps above and run the app without errors (for all flavors), go ahead and commit all the latest changes:
+
+
+Copy
+git add .
+git commit -m "Manually added flavors to the iOS Xcode project"
+Time for a quick quiz!
+
+Question 1 of 3
+What steps are needed to set up schemes for iOS flavors?
+
+Duplicate the default build configurations (Debug, Release, Profile) for each flavor
+
+Duplicate the Runner scheme for each flavor (e.g. dev, stg, prod)
+
+Duplicate the Pods-Runner scheme for each flavor (e.g. dev, stg, prod)
+
+Enable the 'Shared' checkbox for all schemes
+
+Submit
+Resources
+Set up Flutter flavors for iOS and macOS
+
+
+
+
+
+
+Whitelabel App: Challenge
+Now that you know how to flavor a Flutter app, your challenge is to create a whitelabel app.
+
+What is a Whitelabel App?
+Whitelabeling is the process of creating a generic app that can be rebranded and customized for multiple clients or customers. Essentially, you build a base app with core functionality and design, and adapt it with different themes, assets, and configurations to suit different clients’ branding and needs without having to rewrite the app from scratch for each one.
+
+For a Flutter app, this involves customizing elements such as colors, logos, and strings, and setting up an efficient way to switch between different clients’ branding packages. The goal is to make the process of rebranding as quick and efficient as possible, often for deployment to multiple app stores under different names and appearances.
+
+Whitelabel App Challenge
+You’ll be given an app which uses the default Flutter logo as the icon:
+
+Non-flavored app icon with the Flutter logo
+Your goal is to add flavors, so that multiple variants can be installed on iOS and Android, each with a different app icon and name:
+
+Flavored app icons with different colors and names
+When each of the variants is run, it shows a different theme, app title, and icon based on the flavor:
+
+Flavored app icons with different colors and names
+Starter Project
+To get started, clone and open this starter project:
+
+
+Copy
+git clone https://github.com/bizz84/ff3_whitelabel_app
+cd ff3_whitelabel_app
+git switch starter-project
+code .
+Once you open it in VSCode, notice how the assets folder contains a set of 12 icons, each with a different folder name:
+
+Preview of the assets folder in the starter project
+At the bottom of the pubspec.yaml file, you’ll find this:
+
+
+Copy
+flutter:
+  uses-material-design: true
+  assets:
+    # How to bundle assets based on flavor
+    # https://github.com/bizz84/flutter-tips-and-tricks/blob/main/tips/0147-bundle-assets-based-on-flavor/index.md
+    - path: assets/blue/
+      flavors:
+        - blue
+    # TODO: add all the remaining paths for each flavor
+ 
+# TODO: Add flutter_flavorizr config for each flavor
+If you try to run the app without flavors, you’ll get this screen:
+
+Preview screen when the app flavor is missing
+But if you run the app with flutter run --flavor blue, you’ll get this error on iOS:
+
+
+Copy
+Error: The Xcode project does not define custom schemes. You cannot use the --flavor option.
+and this error on Android:
+
+
+Copy
+FAILURE: Build failed with an exception.
+ 
+* What went wrong:
+Task 'assembleBlueDebug' not found in root project 'android' and its subprojects.
+That’s because flavors are not implemented yet.
+
+Acceptance Criteria
+Complete the challenge by following these acceptance criteria:
+
+You should be able to run the app on iOS and Android with flutter run --flavor flavorName where flavorName could be any of these values: blue, cyan, deeporange, green (if you want, you can also add indigo, lime, orange, pink, purple, red, teal, and yellow).
+Each variant should show the flavored app icon and name on the iOS and Android home screen:
+Flavored app icons with different colors and names
+Each variant should show a different theme, app title, and icon based on the flavor:
+Flavored app icons with different colors and names
+Ensure you can run the app using VSCode launch configurations or Android Studio run configurations (and not only from the command line).
+A few hints for you
+Here are a few hints that will help you with the challenge:
+
+
+Show more
+
+
+Copy
+
+
+Copy
+
+
+Copy
+
+
+Give it a try and see how you get on. In the next lesson, you’ll find the solution. 🙂
+
+
+
+
+
+
+
+Whitelabel App: Solution and Checklist
+Here’s a step-by-step guide for completing the whitelabel app challenge.
+
+Updated pubspec.yaml
+Here’s the updated pubspec.yaml file with all the highlighted changes (note: I’ve only added four flavors for brevity):
+
+
+Copy
+name: whitelabel_app
+description: "Example Whitelabel App for the Flutter in Production course"
+publish_to: 'none'
+version: 0.1.0
+ 
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+ 
+dependencies:
+  flutter:
+    sdk: flutter
+  flex_color_scheme: 7.3.1
+  package_info_plus: 8.0.0
+ 
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 4.0.0
+  flutter_flavorizr: 2.2.3
+ 
+flutter:
+  uses-material-design: true
+  assets:
+    # How to bundle assets based on flavor
+    # https://github.com/bizz84/flutter-tips-and-tricks/blob/main/tips/0147-bundle-assets-based-on-flavor/index.md
+    - path: assets/blue/
+      flavors:
+        - blue
+    - path: assets/cyan/
+      flavors:
+        - cyan
+    - path: assets/deeporange/
+      flavors:
+        - deeporange
+    - path: assets/green/
+      flavors:
+        - green
+ 
+flavorizr:
+  ide: "vscode"
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+    
+  flavors:
+    blue:
+      app:
+        name: "Blue"
+      android:
+        applicationId: "com.codewithandrea.whitelabel_app.blue"
+        icon: "assets/blue/icon.png"
+      ios:
+        bundleId: "com.codewithandrea.whitelabelApp.blue"
+        icon: "assets/blue/icon.png"
+    cyan:
+      app:
+        name: "Cyan"
+      android:
+        applicationId: "com.codewithandrea.whitelabel_app.cyan"
+        icon: "assets/cyan/icon.png"
+      ios:
+        bundleId: "com.codewithandrea.whitelabelApp.cyan"
+        icon: "assets/cyan/icon.png"
+    deeporange:
+      app:
+        name: "Deep Orange"
+      android:
+        applicationId: "com.codewithandrea.whitelabel_app.deeporange"
+        icon: "assets/deeporange/icon.png"
+      ios:
+        bundleId: "com.codewithandrea.whitelabelApp.deeporange"
+        icon: "assets/deeporange/icon.png"
+    green:
+      app:
+        name: "Green"
+      android:
+        applicationId: "com.codewithandrea.whitelabel_app.green"
+        icon: "assets/green/icon.png"
+      ios:
+        bundleId: "com.codewithandrea.whitelabelApp.green"
+        icon: "assets/green/icon.png"
+Updated main.dart
+Inside lib/main.dart, the app flavors have been mapped to the corresponding flex schemes:
+
+
+Copy
+class MainApp extends StatelessWidget {
+  const MainApp({super.key, required this.packageInfo});
+  final PackageInfo packageInfo;
+ 
+  FlexScheme getScheme() => switch (appFlavor) {
+        'blue' => FlexScheme.blueM3,
+        'cyan' => FlexScheme.cyanM3,
+        'deeporange' => FlexScheme.deepOrangeM3,
+        'green' => FlexScheme.greenM3,
+        // TODO: Add all the remaining flavors
+        // * Fallback options
+        null => FlexScheme.material,
+        _ => throw UnsupportedError('$appFlavor is not recognized as a flavor'),
+      };
+  
+  ...
+}
+Android Setup
+To flavorize the Android app, run this:
+
+
+Copy
+dart run flutter_flavorizr -p android:buildGradle,android:androidManifest,android:icons
+iOS Setup
+To flavorize the iOS app, run this:
+
+
+Copy
+dart run flutter_flavorizr -p assets:download,assets:extract,ios:podfile,ios:xcconfig,ios:buildTargets,ios:schema,ios:plist,ios:dummyAssets,ios:icons,assets:clean
+Note that before running the flavored app on iOS, the FLUTTER_TARGET must be removed from all xcconfig files:
+
+Before running the flavored app on iOS, the FLUTTER_TARGET must be removed from all xcconfig files
+This is because we have only one main.dart file.
+
+Once this is done, you should be able to run the flavored app from the command line on iOS and Android:
+
+
+Copy
+flutter run --flavor cyan
+VSCode setup
+To create the .vscode/launch.json file, run this:
+
+
+Copy
+dart run flutter_flavorizr -p ide:config
+To reformat the JSON file over multiple lines, run this:
+
+
+Copy
+jq '.' .vscode/launch.json > .vscode/formatted_launch.json && mv .vscode/formatted_launch.json .vscode/launch.json
+Then, remove all the program lines pointing to main_*.dart (we only have one main.dart file):
+
+
+Copy
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "blue Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--flavor",
+        "blue"
+      ],
+      "program": "lib/main_blue.dart" <-- REMOVE THIS
+    },
+    ...
+Updating the run configurations in Android Studio takes a bit more work. You can follow the instructions in this lesson for details.
+
+Completed Challenge
+If you followed all the steps above, you should now be able to run the flavored app on iOS and Android:
+
+Flavored app icons with different colors and names
+Inside the app, you should see a different theme, app title, and icon based on the flavor:
+
+Flavored app icons with different colors and names
+If you want to get the source code for the completed challenge, you can stash or save your changes, then run:
+
+
+Copy
+git switch completed-project
+Congratulations! You now have a repeatable process for flavoring whitelabel apps, using the steps above as a checklist! 🚀
+
+
+
+
+
+
+
+Intro to Multiple Flavors with Flutter & Firebase
+If your Flutter app supports multiple flavors and connects to a Firebase backend, you need to do some extra work to ensure each flavor corresponds to a different Firebase environment.
+
+In this scenario, it’s best to create one Firebase project for each flavor since this keeps your development, staging, and production environments separate.
+
+Each Flutter flavor maps to a separate Firebase project
+And in the coming lessons, we’ll learn how to:
+
+create multiple Firebase projects for our Flutter Ship app
+use the FlutterFire CLI to generate all the Firebase config files for each flavor
+write the Dart code for initializing Firebase depending on the flavor
+I’ve also included a Firebase Flavors Checklist, so you can quickly follow all the steps (without the extra explanations).
+
+Do we really need Firebase?
+Many Flutter apps don’t use Firebase at all, and I’m not trying to convince anyone to use Firebase as a backend.
+
+However, Firebase offers services like Crashlytics, Firebase Analytics, and Firebase Remote Config, which can help you add app monitoring, feature flags, and A/B testing to your apps for free.
+
+Specifically, we will use Firebase Analytics and Firebase Remote Config in the Flutter ship app, so the next lessons are a prerequisite for the Firebase-specific lessons in the upcoming modules.
+
+
+
+
+
+
+
+Creating Multiple Firebase Projects
+This lesson is a step-by-step guide for creating a Firebase project from the Firebase Console.
+
+We’ll repeat this process three times since we have separate dev, stg, and prod flavors.
+
+At the end, I’ll show you what to do if you already have an existing Firebase project.
+
+Creating a new Firebase Project
+Head over to the Firebase Console and create a new project:
+
+Creating a new project from the Firebase console
+Next, enter firebase-ship-prod as the project name and click “Continue”:
+
+Choosing the Firebase project name
+We’re using the prod suffix since this project will correspond to the prod flavor. Later, we’ll also create dev and stg projects.
+
+Since we’ll use it in the coming modules, let’s enable Google Analytics for this project:
+
+Enabling Google Analytics
+Enabling Google Analytics is recommended if your project uses Firebase Analytics, Firebase Remote Config, or Crashlitics. Otherwise, you can leave it disabled.
+
+Next, we need to configure Google Analytics:
+
+Configure Google Analytics
+The easiest way is to choose “Default Account for Firebase” and then click on “Create Project”:
+
+Selecting the Default Account for Firebase
+After a short wait, your project should be good to go, and you can click on “Continue”:
+
+Choosing the Firebase project name
+This will take you to the dashboard where you start using some of the Firebase products:
+
+Firebase dashboard
+Creating the additional “dev” and “stg” projects
+Usually, the next step would be to return to the IDE and add Firebase to the Flutter app.
+
+But as we said in the previous lesson, we want to create one Firebase project for each flavor. So let’s tackle that first!
+
+Here are the steps, once again:
+
+Go to the Firebase Console
+Create a new project
+Give it a name: flutter-ship-dev
+Ensure Google Analytics is enabled and choose “Default Account for Firebase” on the next page
+Click “Continue” and wait until the project is ready.
+Finally, repeat these steps one more time, using flutter-ship-stg as the project name.
+
+Once all three projects are ready, you can easily switch between them with the dropdown on the dashboard:
+
+Switching between projects in the Firebase dashboard
+In the next lesson, we’ll get back to the IDE and add Firebase to our Flutter app. 👍
+
+What if your app is already live and you want to add multiple flavors?
+If your Firebase project is already used in production, don’t make any changes to it since your live apps already depend on it.
+
+Instead, simply create additional Firebase projects for your remaining dev and stg flavors and follow the instructions in the coming lessons to complete your setup.
+
+If you’re using Firebase Auth, Firestore, or Storage, you’ll also want to ensure all the project configurations are as close as possible. By running firebase init on the production project, all the Firebase config files (rules, indexes, hosting, etc.) will be saved locally, so you can redeploy them to the other environments using firebase deploy.
+
+For more info, read: Firebase CLI reference.
+
+
+
+
+
+
+
+FlutterFire Setup with Multiple Flavors
+In this lesson, you’ll learn how to use the FlutterFire CLI to generate the Firebase config files, ensuring that each flavor corresponds to a different Firebase environment:
+
+Each Flutter flavor maps to a separate Firebase project
+Here’s what we will cover:
+
+Why do we need FlutterFire?
+Installing the Firebase and FlutterFire CLI
+FlutterFire Config Syntax for Multiple Flavors
+Easier Setup with a Shell Script
+What's hard about configuring Firebase?
+When using custom backends or Dart SDKs like Supabase, you can connect to the correct environment by switching the URL and API key based on the flavor. But Firebase does not offer a Dart SDK and requires some platform-specific setup, making the flavoring process more complex.
+
+Thankfully, the FlutterFire CLI comes to the rescue. I’ll walk you through using it to flavor your Flutter & Firebase apps without losing your mind. 😅
+
+Why do we need FlutterFire?
+Adding Firebase to a Flutter app used to be a tedious process. You’d have to manually download configuration files for each platform (like GoogleService-Info.plist for iOS and google-services.json for Android).
+
+Now, the process is much simpler. You just run flutterfire configure and follow some interactive prompts. Once finished, these files are automatically added to your project:
+
+lib/firebase_options.dart
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+However, when working with multiple flavors, it gets trickier. You’ll need separate versions of these files for each flavor, stored in different locations to avoid overwriting them during the configuration process.
+
+Luckily, FlutterFire 1.0.0 added support for multiple flavors (see this issue for details).
+
+Starter Project
+In the previous lessons, we’ve added multiple flavors to our Flutter Ship app using the Flutter Flavorizr package.
+
+To ensure you’re running on the latest code, run this:
+
+
+Copy
+git reset --hard HEAD && git clean -fd
+git switch m03-firebase
+Or, if you want to do a fresh checkout, run:
+
+
+Copy
+git clone https://github.com/bizz84/flutter_ship_app
+cd flutter_ship_app
+git switch m03-firebase
+flutter pub get
+The latest code includes a new file called flutterfire-config.sh. You’ll see how to use this later.
+
+Installing the Firebase and FlutterFire CLI
+The official docs cover all the steps for installing the Firebase and FlutterFire CLIs.
+
+The Firebase CLI can be installed as a standalone library or via npm. I’ve found the npm approach to be the most reliable:
+
+
+Copy
+npm install -g firebase-tools
+To check your installation, run: firebase --version.
+
+Next, log in by running firebase login. You’ll see this prompt:
+
+? Allow Firebase to collect CLI and Emulator Suite usage and error reporting information? Yes
+This opens a browser window where you can sign in with Google. After selecting your account, you’ll see this:
+
+Firebase CLI wants to access your Google Account
+Click “Allow” and close the window. Now, the Firebase CLI is logged in.
+
+Note: Make sure you use the Google account linked to the Firebase projects you want to work with. If you’re logged in with the wrong account, run firebase logout and firebase login again.
+
+Installing the FlutterFire CLI
+To install the FlutterFire CLI, run:
+
+
+Copy
+dart pub global activate flutterfire_cli
+Then, check that you’re on version 1.1.0 or above by running flutterfire --version.
+
+FlutterFire Config Syntax with Multiple Flavors
+Let’s consider this command, which generates all the config files for the dev flavor:
+
+
+Copy
+flutterfire config \
+  --project=flutter-ship-dev \
+  --out=lib/firebase_options_dev.dart \
+  --ios-bundle-id=com.codewithandrea.flutterShipApp.dev \
+  --ios-out=ios/flavors/dev/GoogleService-Info.plist \
+  --android-package-name=com.codewithandrea.flutter_ship_app.dev \
+  --android-out=android/app/src/dev/google-services.json
+Here’s what each argument does:
+
+--project: The Firebase project to use (note: pass the project ID, not the alias).
+--out: Output path for the Firebase config file.
+--ios-bundle-id: iOS app’s bundle ID. Find it in Xcode under Runner > General > Identity > Bundle Identifier.
+--ios-out: Output path for the iOS GoogleService-Info.plist.
+--android-package-name: Android app’s package name (found as applicationId in android/app/build.gradle.kts).
+--android-out: Output path for the Android google-services.json.
+To learn about all the available options, run flutterfire config --help.
+
+Note that if you’re on Windows and backslashes (\) are not supported, you can remove them and run the command inline.
+
+To use this command, you can:
+
+Copy it into your terminal.
+Update the project, ios-bundle-id, and android-package-name for your app.
+Run it and follow the interactive prompts (we’ll cover these in a moment).
+But you’ll need to repeat this for the stg and prod flavors. That’s time-consuming and error prone.
+
+Let’s see if we can automate the process. 👇
+
+Easier Setup with a Shell Script
+While flutterfire config handles most of the work, you still need to run it for each flavor with different arguments.
+
+To streamline this, I’ve included a script called flutterfire-config-template.sh at the root of the project:
+
+
+Copy
+#!/bin/bash
+# Script to generate Firebase configuration files for different environments/flavors
+# Feel free to reuse and adapt this script for your own projects
+ 
+if [[ $# -eq 0 ]]; then
+  echo "Error: No environment specified. Use 'dev', 'stg', or 'prod'."
+  exit 1
+fi
+ 
+case $1 in
+  dev)
+    flutterfire config \
+      --project=flutter-ship-dev \
+      --out=lib/firebase_options_dev.dart \
+      --ios-bundle-id=com.codewithandrea.flutterShipApp.dev \
+      --ios-out=ios/flavors/dev/GoogleService-Info.plist \
+      --android-package-name=com.codewithandrea.flutter_ship_app.dev \
+      --android-out=android/app/src/dev/google-services.json
+    ;;
+  stg)
+    flutterfire config \
+      --project=flutter-ship-stg \
+      --out=lib/firebase_options_stg.dart \
+      --ios-bundle-id=com.codewithandrea.flutterShipApp.stg \
+      --ios-out=ios/flavors/stg/GoogleService-Info.plist \
+      --android-package-name=com.codewithandrea.flutter_ship_app.stg \
+      --android-out=android/app/src/stg/google-services.json
+    ;;
+  prod)
+    flutterfire config \
+      --project=flutter-ship-prod \
+      --out=lib/firebase_options_prod.dart \
+      --ios-bundle-id=com.codewithandrea.flutterShipApp \
+      --ios-out=ios/flavors/prod/GoogleService-Info.plist \
+      --android-package-name=com.codewithandrea.flutter_ship_app \
+      --android-out=android/app/src/prod/google-services.json
+    ;;
+  *)
+    echo "Error: Invalid environment specified. Use 'dev', 'stg', or 'prod'."
+    exit 1
+    ;;
+esac
+If you use this script in your apps, you still need to set the correct arguments for your project, but you only need to do this once.
+
+Then, generating all the Firebase config files becomes a breeze—no need to remember each argument.
+
+Important note about the Firebase project ID
+The script aboves uses the --project flag to specify the Firebase project IDs, depending on the flavor:
+
+flutter-ship-dev
+flutter-ship-stg
+flutter-ship-prod
+The Firebase project ID is a globally unique identifier, so you need to use your Firebase project IDs, which can be found in the project settings:
+
+Where to find your Firebase project ID
+To do this, run this command:
+
+
+Copy
+cp flutterfire-config-template.sh flutterfire-config.sh
+Then, update the flutterfire-config.sh file with your Firebase project IDs.
+
+And since this file is gitignored, it won’t be overwritten when switching branches in the upcoming modules. 👍
+
+Time to take take the script for a ride. 👇
+
+Running the FlutterFire Script for each Flavor
+To configure the dev flavor, run:
+
+
+Copy
+./flutterfire-config.sh dev
+When prompted, select “Build configuration”:
+
+
+Copy
+? You have to choose a configuration type. Either build configuration (most likely choice) or a target set up. ›                    
+❯ Build configuration
+  Target   
+Then, choose the Debug-dev build configuration:
+
+
+Copy
+? Please choose one of the following build configurations ›
+  Debug                                        
+  Release                                        
+  Profile                                        
+❯ Debug-dev                                      
+  Profile-dev                                        
+  Release-dev                                        
+  Debug-stg                                        
+  Profile-stg                                        
+  Release-stg                                        
+  Debug-prod                                        
+  Profile-prod                                        
+  Release-prod
+Troubleshooting (FirebaseCommandException)
+After choosing the build configuration, you may come across this error:
+
+
+Copy
+⠏ Fetching available Firebase projects...                    
+FirebaseCommandException: An error occured on the Firebase CLI when attempting to run a command.
+COMMAND: firebase projects:list --json 
+ERROR: Failed to list Firebase projects. See firebase-debug.log for more info.
+To solve this, run firebase logout, then firebase login, and try again.
+
+Next, choose the platforms you want to configure:
+
+
+Copy
+? Which platforms should your configuration support (use arrow keys & space to select)? ›
+✔ android                                      
+✔ ios                                      
+  macos                                        
+✔ web                                      
+  windows
+Android, ios, and web are enabled by default since these are the existing top-level folders in the project.
+
+This step may take a bit of time since the CLI needs to register all the necessary apps with Firebase. But if everything goes well, you should see this confirmation:
+
+
+Copy
+✔ You have to choose a configuration type. Either build configuration (most likely choice) or a target set up. · Build configuration
+✔ Please choose one of the following build configurations · Debug-dev
+i Found 40 Firebase projects. Selecting project flutter-ship-dev.         
+✔ Which platforms should your configuration support (use arrow keys & space to select)? · android, ios, web
+i Firebase android app com.codewithandrea.flutter_ship_app.dev is not registered on Firebase project flutter-ship-dev.
+i Registered a new Firebase android app on Firebase project flutter-ship-dev.
+i Firebase ios app com.codewithandrea.flutterShipApp.dev is not registered on Firebase project flutter-ship-dev.
+i Registered a new Firebase ios app on Firebase project flutter-ship-dev. 
+i Firebase web app flutter_ship_app (web) is not registered on Firebase project flutter-ship-dev.
+i Registered a new Firebase web app on Firebase project flutter-ship-dev. 
+ 
+Firebase configuration file lib/firebase_options_dev.dart generated successfully with the following Firebase apps:
+ 
+Platform  Firebase App Id
+web       1:424176442589:web:c86e231d1eeaba0e90cf34
+android   1:424176442589:android:c5841ba53606b4c490cf34
+ios       1:424176442589:ios:592b56a800affa4e90cf34
+ 
+Learn more about using this file and next steps from the documentation:
+ > https://firebase.google.com/docs/flutter/setup
+Running the script for the stg and prod flavors
+Next, repeat the same steps for the stg flavor by running this command and choosing Debug-stg as the build configuration:
+
+
+Copy
+./flutterfire-config.sh stg
+Finally, do this one more time for the prod flavor, choosing Debug-prod as the build configuration:
+
+
+Copy
+./flutterfire-config.sh prod
+Once complete, your project will have these new files:
+
+
+Copy
+lib/firebase_options_dev.dart
+lib/firebase_options_stg.dart
+lib/firebase_options_prod.dart
+ios/flavors/dev/GoogleService-Info.plist
+ios/flavors/stg/GoogleService-Info.plist
+ios/flavors/prod/GoogleService-Info.plist
+android/app/src/dev/google-services.json
+android/app/src/stg/google-services.json
+android/app/src/prod/google-services.json
+Our setup is complete. Let’s review a couple of details, and then we can do a wrap up.
+
+What about all the build configurations?
+In the previous steps, we were prompted to choose a build configuration and we always selected the Debug variants:
+
+
+Copy
+? Please choose one of the following build configurations ›
+  Debug                                        
+  Release                                        
+  Profile                                        
+❯ Debug-dev                                      
+  Profile-dev                                        
+  Release-dev                                        
+  Debug-stg                                        
+  Profile-stg                                        
+  Release-stg                                        
+  Debug-prod                                        
+  Profile-prod                                        
+  Release-prod
+After doing some tests, I’ve been able to verify that the app still works correctly in all modes (Debug, Profile, Release).
+
+As long as we run the configuration at least once on iOS, a build phase will be added to the Xcode project, ensuring the correct service file is bundled as needed:
+
+Firebase CLI wants to access your Google Account
+Should the Firebase config files be added to Git?
+The files above don’t contain sensitive information, so it’s safe to commit them to Git.
+
+However, in open-source projects such as the Flutter Ship app, I prefer to add them to .gitignore:
+
+
+Copy
+# Ignore Firebase configuration files
+lib/firebase_options*.dart
+ios/Runner/GoogleService-Info.plist
+ios/flavors/*/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+macos/flavors/*/GoogleService-Info.plist
+android/app/google-services.json
+android/app/src/*/google-services.json
+This has two implications:
+
+For a fresh checkout, you’ll need to run flutterfire-config.sh again for each flavor.
+On CI, you can store these files as environment secrets and add a pre-build step to restore them to their correct locations (we’ll cover this in detail in the modules about CI/CD).
+FlutterFire setup complete ✅
+If you followed all the steps above without errors, all the Firebase configuration files should now be in your project.
+
+However, these files are showing some errors:
+
+Files with errors in the explorer
+That’s because they import the firebase_core package, which hasn’t been added to our project yet:
+
+
+Copy
+// Target of URI doesn't exist: 'package:firebase_core/firebase_core.dart'.
+// Try creating the file referenced by the URI, or try using a URI for a file that does exist.
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+We’ll complete the Dart setup in the next lesson.
+
+But first, time for a quick quiz!
+
+Question 1 of 4
+What arguments are required when running flutterfire config for a specific flavor?
+
+--project (Firebase project ID)
+
+--out (path for Firebase options file)
+
+--ios-bundle-id and --ios-out (iOS config)
+
+--android-package-name and --android-out (Android config)
+
+Submit
+Resources
+Add Firebase to your Flutter app
+Firebase CLI reference
+
+
+
+
+
+
+Multi-Flavor Firebase Initialization in Dart
+Now that the FlutterFire setup is done, there are a few more steps to tackle:
+
+Install the firebase_core package and verify the app runs on Android and iOS
+Initialize Firebase when the app starts, using the correct config for each flavor
+Let’s walk through them. 👇
+
+Installing the firebase_core package
+To add firebase_core, run this in your terminal:
+
+
+Copy
+flutter pub add firebase_core
+flutter pub get
+Next, try to run the app on each platform.
+
+Running the app on Android
+If your Android app was configured with FlutterFire CLI 1.1.0 or above, it should run without errors.
+
+Troubleshooting: com.google.gms.google-services not found
+If your FlutterFire setup is incorrect, you may encounter this error:
+
+
+Copy
+Plugin [id: 'com.google.gms.google-services'] was not found in any of the following sources:
+ 
+- Gradle Core Plugins (plugin is not in 'org.gradle' namespace)
+- Included Builds (No included builds contain this plugin)
+- Plugin Repositories (plugin dependency must include a version number for this source)
+To fix this, open android/settings.gradle.kts and ensure com.google.gms.google-services is added as a plugin:
+
+
+Copy
+plugins {
+    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+    id("com.android.application") version "8.7.0" apply false
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services") version("4.3.15") apply false
+    // END: FlutterFire Configuration
+    id("org.jetbrains.kotlin.android") version "1.8.22" apply false
+}
+The same plugin should also be listed in the plugins block in android/app/build.gradle.kts:
+
+
+Copy
+plugins {
+    id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
+    id("kotlin-android")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("dev.flutter.flutter-gradle-plugin")
+}
+After applying this fix, the Android app should run correctly.
+
+Note: you can find the latest version of com.google.gms.google-services in Google’s Maven Repository.
+
+Running the app on iOS
+Before running the iOS app, open ios/Podfile and ensure the platform version is set to 16.0 or higher:
+
+
+Copy
+# Uncomment this line to define a global platform for your project
+platform :ios, '16.0'
+Run pod install, and you should be able to run the app on iOS.
+
+Firebase Initialization During App Startup
+According to the official docs, you should add Firebase initialization code to lib/main.dart:
+
+
+Copy
+import 'package:flutter_ship_app/firebase_options.dart';
+ 
+// inside main()
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+However, this default setup won’t work for us because we have a separate configuration file for each flavor:
+
+The Firebase options files
+So how can we account for this?
+
+Solution: Use Multiple Entry Points
+Earlier in this module, we decided to create a separate entry point for each flavor:
+
+Multiple entry points
+This means that we can map each entry point to the the corresponding Firebase config file:
+
+main_dev.dart → firebase_options_dev.dart
+main_stg.dart → firebase_options_stg.dart
+main_prod.dart → firebase_options_prod.dart
+Each main_*.dart file should do two things:
+
+import the correct firebase_options_*.dart file
+pass the config as an argument to the runMainApp function inside main.dart.
+Here’s how:
+
+main_dev.dart
+main_stg.dart
+main_prod.dart
+
+Copy
+import 'firebase_options_dev.dart';
+import 'main.dart';
+ 
+// * Entry point for the dev flavor
+void main() async {
+  await runMainApp(firebaseOptions: DefaultFirebaseOptions.currentPlatform);
+}
+Then, inside lib/main.dart, we can update the runMainApp function to take a FirebaseOptions argument and use it to initialize the Firebase app:
+
+
+Copy
+// All the imports
+ 
+Future<void> runMainApp({required FirebaseOptions firebaseOptions}) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // * Initialize Firebase
+  await Firebase.initializeApp(options: firebaseOptions);
+  final container = ProviderContainer();
+  // * Preload SharedPreferences before calling runApp, as the AppStartupWidget
+  // * depends on it in order to load the themeMode
+  await container.read(sharedPreferencesProvider.future);
+  // run the app
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: AppStartupWidget(
+      onLoaded: (context) => const MainApp(),
+    ),
+  ));
+}
+With this setup, the Flutter app will initialize and connect to the appropriate Firebase project based on the flavor.
+
+This is an great setup for Flutter apps with multiple flavors and Firebase! ✅
+
+Is there an easier way?
+As an alternative to the above, you could create a firebase.dart file and use a switch expression to choose the correct config based on the flavor, like in this example:
+
+
+Copy
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_ship_app/env/flavor.dart';
+import 'package:flutter_ship_app/firebase_options_prod.dart' as prod;
+import 'package:flutter_ship_app/firebase_options_stg.dart' as stg;
+import 'package:flutter_ship_app/firebase_options_dev.dart' as dev;
+ 
+Future<void> initializeFirebaseApp() async {
+  final firebaseOptions = switch (getFlavor()) {
+    Flavor.prod => prod.DefaultFirebaseOptions.currentPlatform,
+    Flavor.stg => stg.DefaultFirebaseOptions.currentPlatform,
+    Flavor.dev => dev.DefaultFirebaseOptions.currentPlatform,
+  };
+  await Firebase.initializeApp(options: firebaseOptions);
+}
+But with this code, all three firebase_options_*.dart files are still imported! ⚠️
+
+This means that all three files are compiled and bundled during the build process because tree-shaking doesn’t work here (the switch happens at runtime).
+
+In theory, this could expose your development or staging environment details (which may be less secure than production) if someone reverse engineers your app.
+
+While this might not be a big issue for apps that don’t handle sensitive data, it’s still a potential risk. By creating separate entry points for each flavor, only the correct config file is imported, eliminating this risk entirely. 👍
+
+Saving the changes to Git
+If you managed to complete all the steps above and your app runs without errors, you can save your changes to Git:
+
+
+Copy
+git add .
+git commit -m "Added Firebase setup"
+Alternatively, you can discard your changes and get the latest working code:
+
+
+Copy
+git reset --hard HEAD && git clean -fd
+git switch m03-firebase-complete
+Wrap Up
+By leveraging FlutterFire alongside a simple shell script, we’ve streamlined what used to be a complex and error-prone flavoring process. Instead of manually configuring Firebase for each flavor, you can now generate the necessary files for all environments with a single script, saving time and reducing the chance of mistakes.
+
+By using multiple entry points, you can ensure that the correct Firebase configuration is included for each flavor, making this a good solution for production-grade apps.
+
+Now, whenever you run your Flutter app, it will automatically connect to the appropriate Firebase environment—whether that’s dev, stg, or prod—ensuring your app behaves as expected in each stage of development and production.
+
+Each Flutter flavor maps to a separate Firebase project
+This setup makes it easier to manage multiple flavors in your Flutter & Firebase apps, and I’ve been happily using it in production for my own apps. ✅
+
+In the next lesson, you’ll find a checklist for adding Firebase to your flavored Flutter apps. 👍
+
+But first, time for a quick quiz!
+
+Question 1 of 3
+What change is needed to run Firebase on Android?
+
+Add firebase_core package to pubspec.yaml
+
+Add com.google.gms.google-services plugin to settings.gradle.kts
+
+Update the Android SDK version
+
+Add Firebase.initializeApp() to main()
+
+Submit
+Resources
+How to Setup Flutter & Firebase with Multiple Flavors using the FlutterFire CLI
+
+
+
+
+
+
+Firebase Flavors Checklist
+As we have seen, adding Firebase to a Flutter app with multiple flavors can be challenging.
+
+To make your life easier, I prepared this checklist. 👇
+
+Checklist for adding Firebase to your Flutter app with multiple flavors. ⏱️
+If you want to repeat all the steps once again, you can start from a fresh checkout:
+
+
+Copy
+git clone https://github.com/bizz84/flutter_ship_app
+cd flutter_ship_app
+git switch m03-firebase
+flutter pub get
+Then, you can complete this checklist by following the steps below.
+
+Firebase Flavors Checklist
+Create Multiple Firebase Projects
+Install the Firebase and FlutterFire CLIs
+Update and run the FlutterFire script
+Install the Firebase packages
+Check the Android build settings
+Check the iOS Podfile
+Add the Firebase initialization code for each flavor
+Run and test the app
+This checklist assumes you have already added flavors to your Flutter app. For more info, see: Flutter Flavors Checklist.
+
+1. Create Multiple Firebase Projects
+Follow the instructions in this lesson to create a Firebase project for each flavor:
+
+Creating Multiple Firebase Projects
+2. Install the Firebase and FlutterFire CLIs
+
+Copy
+# Install the Firebase CLI
+npm install -g firebase-tools
+# Login
+firebase login
+# Install the FlutterFire CLI
+dart pub global activate flutterfire_cli
+3. Update and run the FlutterFire script
+To make life easier, add this flutterfire-config.sh script to your project:
+
+
+Copy
+#!/bin/bash
+# Script to generate Firebase configuration files for different environments/flavors
+# Feel free to reuse and adapt this script for your own projects
+ 
+if [[ $# -eq 0 ]]; then
+  echo "Error: No environment specified. Use 'dev', 'stg', or 'prod'."
+  exit 1
+fi
+ 
+case $1 in
+  dev)
+    flutterfire config \
+      --project=flutter-ship-dev \
+      --out=lib/firebase_options_dev.dart \
+      --ios-bundle-id=com.codewithandrea.flutterShipApp.dev \
+      --ios-out=ios/flavors/dev/GoogleService-Info.plist \
+      --android-package-name=com.codewithandrea.flutter_ship_app.dev \
+      --android-out=android/app/src/dev/google-services.json
+    ;;
+  stg)
+    flutterfire config \
+      --project=flutter-ship-stg \
+      --out=lib/firebase_options_stg.dart \
+      --ios-bundle-id=com.codewithandrea.flutterShipApp.stg \
+      --ios-out=ios/flavors/stg/GoogleService-Info.plist \
+      --android-package-name=com.codewithandrea.flutter_ship_app.stg \
+      --android-out=android/app/src/stg/google-services.json
+    ;;
+  prod)
+    flutterfire config \
+      --project=flutter-ship-prod \
+      --out=lib/firebase_options_prod.dart \
+      --ios-bundle-id=com.codewithandrea.flutterShipApp \
+      --ios-out=ios/flavors/prod/GoogleService-Info.plist \
+      --android-package-name=com.codewithandrea.flutter_ship_app \
+      --android-out=android/app/src/prod/google-services.json
+    ;;
+  *)
+    echo "Error: Invalid environment specified. Use 'dev', 'stg', or 'prod'."
+    exit 1
+    ;;
+esac
+Then, update the --project, --ios-bundle-id, and --android-package-name to use the correct values for our project.
+
+Finally, run the script once for each flavor:
+
+
+Copy
+./flutterfire-config.sh dev
+# Follow all steps on the interactive prompt
+./flutterfire-config.sh stg
+# Follow all steps on the interactive prompt
+./flutterfire-config.sh prod
+# Follow all steps on the interactive prompt
+4. Install the Firebase packages
+Install firebase_core and any other Firebase packages you need:
+
+
+Copy
+flutter pub add firebase_core
+flutter pub get
+5. Check the Android build settings
+To ensure the app builds correctly on Android, check the following settings:
+
+Open android/settings.gradle.kts and verify that com.google.gms.google-services is included:
+
+Copy
+plugins {
+    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+    id("com.android.application") version "8.7.0" apply false
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services") version("4.3.15") apply false
+    // END: FlutterFire Configuration
+    id("org.jetbrains.kotlin.android") version "1.8.22" apply false
+}
+Open android/app/build.gradle.kts and check the same:
+
+Copy
+plugins {
+    id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
+    id("kotlin-android")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("dev.flutter.flutter-gradle-plugin")
+}
+Use the recommended NDK and Java versions in android/app/build.gradle.kts:
+
+Copy
+android {
+    ...
+    ndkVersion = "27.0.12077973"
+ 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+ 
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+    ...
+}
+6. Check the iOS Podfile
+To fix the iOS build, open ios/Podfile and set the platform version to 16.0 or above:
+
+
+Copy
+# Uncomment this line to define a global platform for your project
+platform :ios, '16.0'
+Then, save the file and run:
+
+
+Copy
+cd ios
+pod install
+If your app supports macOS, open macos/Podfile and set platform :osx to version 10.14 or above.
+
+7. Add the Firebase initialization code for each flavor
+To do this, update each of the entry points:
+
+main_dev.dart
+main_stg.dart
+main_prod.dart
+
+Copy
+import 'firebase_options_dev.dart';
+import 'main.dart';
+ 
+// * Entry point for the dev flavor
+void main() async {
+  await runMainApp(firebaseOptions: DefaultFirebaseOptions.currentPlatform);
+}
+Then, inside lib/main.dart, update the runMainApp function to take a FirebaseOptions argument and use it to initialize the Firebase app:
+
+
+Copy
+// All the imports
+ 
+Future<void> runMainApp({required FirebaseOptions firebaseOptions}) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // * Initialize Firebase
+  await Firebase.initializeApp(options: firebaseOptions);
+  ...
+}
+8. Run and test the app
+After following all the steps above, you can run your app with a specific flavor from your IDE or with the flutter CLI:
+
+
+Copy
+flutter run --flavor dev -t lib/main_dev.dart
+flutter run --flavor stg -t lib/main_stg.dart
+flutter run --flavor prod -t lib/main_prod.dart
+This ensures that the correct Firebase environment is used when you launch the app. ✅
+
+When to re-run flutterfire configure
+In some cases, you will need to re-run flutterfire configure (or the helper flutterfire-config.sh script).
+
+This is what the official docs say:
+
+After the initial running of flutterfire configure, you need to re-run the command any time that you:
+
+Start supporting a new platform in your Flutter app.
+Start using a new Firebase service or product in your Flutter app, especially if you start using sign-in with Google, Crashlytics, Performance Monitoring, or Realtime Database.
+Re-running the command ensures that your Flutter app’s Firebase configuration is up-to-date and (for Android) automatically adds any required Gradle plugins to your app.
+
+Source: Configure your apps to use Firebase.
+
+
+
+
+
+
+
+Flutter Flavors: Wrap Up
+We’ve now completed this module about Flutter Flavors!
+
+While the flavoring process can be tedious, it is very much worth it in the following scenarios:
+
+Free and paid variants: publish separate versions of your app and decide which features are available based on the flavor.
+Create whitelabel apps that can be rebranded and customized for multiple customers by applying some cosmetic changes (assets, theming, etc.) for each version.
+Multiple environments: easily develop and test different builds for development, staging, and production, without impacting your end-users.
+The four environments: development, testing, staging, and production
+As we’ve seen, Flutter Flavorizr helps us automate most of the work, and the process is much easier if you follow this checklist:
+
+Flutter Flavors Checklist
+And if your app uses Firebase, this additional checklist will help you:
+
+Firebase Flavors Checklist
+What else can you do with flavors?
+In this module, we’ve already used flavors to:
+
+Customize app icons, assets, and launch screens
+Create white-label apps
+Connect to different Firebase projects depending on the flavor
+But there are many more things you can do, including:
+
+Use separate API keys for connecting to 3rd party services
+Connect to a mock vs real backend
+Customize caching behavior for testing vs production builds
+By exploring these topics in the coming modules, you’ll learn many essential techniques for shipping robust Flutter apps to production.
+
+Happy coding!
+
+
+
+
+
+
+
+Request for Feedback
+How do you rate the lessons in this module?
+
+ 5  4  3  2  1
+Were the lessons clear? Was there something you didn't understand or that should be explained better? Any other feedback (positive or negative)?
+
+Note that I don't usually respond to feedback. If you need an answer to a question, please post it on Discord .
+
+Please share your feedback (optional)
+Submit Feedback
+Questions? Let's chat
+

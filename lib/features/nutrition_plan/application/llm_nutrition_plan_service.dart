@@ -28,7 +28,7 @@ class LLMNutritionPlanService {
     required double paceMinutesPerMile,
     required double timeBeforeRunHours,
     String? sweatRate,
-    int? activityId,
+    String? activityId,
   }) async {
     try {
       // Get current user
@@ -255,7 +255,7 @@ class LLMNutritionPlanService {
   Future<NutritionPlan> convertLLMResponseToPlan(
     Map<String, dynamic> data,
     String userId, {
-    int? activityId,
+    String? activityId,
     targets.MacroTargets? inputMacroTargets,
   }) async {
     final planData = data['plan'] as Map<String, dynamic>;
@@ -475,7 +475,7 @@ class LLMNutritionPlanService {
   /// Generate nutrition plan from adjusted macro targets
   Future<NutritionPlan?> generateLLMNutritionPlanFromMacros({
     required targets.MacroTargets macroTargets,
-    int? activityId,
+    String? activityId,
   }) async {
     try {
       // Get current user

@@ -56,7 +56,7 @@ class VoiceNotesController extends _$VoiceNotesController {
   }
 
   /// Delete a note (clear journal notes and rating)
-  Future<void> deleteNote(int? activityId) async {
+  Future<void> deleteNote(String? activityId) async {
     if (activityId == null) {
       throw Exception('Cannot delete note without activity reference');
     }
@@ -74,7 +74,7 @@ class VoiceNotesController extends _$VoiceNotesController {
   }
 
   /// Update a note
-  Future<void> updateNote(int? activityId, String notes) async {
+  Future<void> updateNote(String? activityId, String notes) async {
     if (activityId == null) {
       throw Exception('Cannot update note without activity reference');
     }

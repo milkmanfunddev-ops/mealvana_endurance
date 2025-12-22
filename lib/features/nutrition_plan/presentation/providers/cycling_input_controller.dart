@@ -270,8 +270,8 @@ class CyclingInputController extends _$CyclingInputController {
 
   /// Delegate to the main controller for macro generation
   Future<void> generateMacros({
-    int? activityId,
-    int? eventId,
+    String? activityId,
+    String? eventId,
   }) async {
     DebugLogger.info('🚴 CYCLING CONTROLLER: generateMacros called - activityId: $activityId');
     final currentState = state;

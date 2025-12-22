@@ -30,12 +30,29 @@ android {
     defaultConfig {
         applicationId = "com.milkman.mealvanaendurance"
         minSdk = flutter.minSdkVersion  // Matches pubspec.yaml flutter_launcher_icons config
-        targetSdk = 34  // Google Play requirement (will require 35 by Aug 2025)
+        targetSdk = 35  // Google Play requirement (updated Dec 2024)
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
         // Enable MultiDex for notification library (may exceed 64K method limit)
         multiDexEnabled = true
+    }
+
+    // Product flavors for dev/prod environments
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            resValue("string", "app_name", "Endurance Dev")
+        }
+
+        create("prod") {
+            dimension = "environment"
+            resValue("string", "app_name", "Endurance")
+        }
     }
 
     // Release signing configuration - must be defined BEFORE buildTypes

@@ -19,7 +19,7 @@ class AppStartupData {
 
   final UserProfile? user;
   final bool hasCompletedOnboarding;
-  final int? activityIdNeedingFeedback;
+  final String? activityIdNeedingFeedback;
 }
 
 /// AsyncNotifier for app startup initialization using Drift

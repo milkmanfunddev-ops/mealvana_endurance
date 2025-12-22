@@ -37,15 +37,12 @@ class CarbLoadingRepository {
   Future<CarbLoadingPlan> createCarbLoadingPlan({
     required String deviceId,
     required String userId,
-    int? eventId,
+    String? eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
     try {
-      // Auto-increment will generate plan ID
-      late int planId;
-
       // OFFLINE-FIRST: Calculate and save to Drift IMMEDIATELY
       final bodyWeightKg = bodyWeightPounds * 0.453592;
       final startDate = raceDate.subtract(Duration(days: protocolDays));
@@ -63,7 +60,7 @@ class CarbLoadingRepository {
       }
       final avgDailyCarbs = (totalCarbs / protocolDays).round();
 
-      // Create the plan locally with dirty flag
+      // Create the plan locally with dirty flag (UUID generated automatically)
       final planCompanion = CarbLoadingPlansTableCompanion.insert(
         eventId: eventId != null ? Value(eventId) : const Value.absent(),
         userId: userId,
@@ -76,7 +73,8 @@ class CarbLoadingRepository {
         localUpdatedAt: Value(DateTime.now()),
       );
 
-      planId = await _database.into(_database.carbLoadingPlansTable).insert(planCompanion);
+      final planId = await _database.into(_database.carbLoadingPlansTable).insertReturning(planCompanion)
+        .then((row) => row.id);
 
       // Generate carb loading day records locally with dirty flags
       for (int dayOffset = 0; dayOffset < protocolDays; dayOffset++) {
@@ -90,7 +88,6 @@ class CarbLoadingRepository {
 
         final targetCarbsGrams = carbProtocolGPerKg * bodyWeightKg;
 
-        // Auto-increment will generate day ID
         final carbDayCompanion = CarbLoadingDaysTableCompanion.insert(
           carbLoadingPlanId: planId,
           planDate: dayDate,
@@ -135,7 +132,7 @@ class CarbLoadingRepository {
   /// Update a carb loading day (offline-first: save to Drift first, background upload)
   Future<CarbLoadingDay> updateCarbLoadingDay({
     required String deviceId,
-    required int carbLoadingDayId,
+    required String carbLoadingDayId,
     required Map<String, dynamic> updates,
   }) async {
     try {
@@ -208,7 +205,7 @@ class CarbLoadingRepository {
 
   Future<void> deleteCarbLoadingPlan({
     required String deviceId,
-    required int planId,
+    required String planId,
   }) async {
     try {
       await _database.transaction(() async {
@@ -247,7 +244,7 @@ class CarbLoadingRepository {
   /// This handles the cascade since Drift doesn't enforce FK constraints like PostgreSQL
   Future<void> deleteCarbLoadingPlanByEventId({
     required String deviceId,
-    required int eventId,
+    required String eventId,
   }) async {
     try {
       // Find the plan for this event
@@ -280,7 +277,7 @@ class CarbLoadingRepository {
   }
 
   /// Get carb loading plan by ID
-  Future<CarbLoadingPlan?> getCarbLoadingPlanById(int planId) async {
+  Future<CarbLoadingPlan?> getCarbLoadingPlanById(String planId) async {
     try {
       final query = _database.select(_database.carbLoadingPlansTable)
         ..where((tbl) => tbl.id.equals(planId));
@@ -298,7 +295,7 @@ class CarbLoadingRepository {
   }
 
   /// Get carb loading plan for an event
-  Future<CarbLoadingPlan?> getCarbLoadingPlanForEvent(int eventId) async {
+  Future<CarbLoadingPlan?> getCarbLoadingPlanForEvent(String eventId) async {
     try {
       final query = _database.select(_database.carbLoadingPlansTable)
         ..where((tbl) => tbl.eventId.equals(eventId));
@@ -316,7 +313,7 @@ class CarbLoadingRepository {
   }
 
   /// Get carb loading days for a plan
-  Future<List<CarbLoadingDay>> getCarbLoadingDaysForPlan(int planId) async {
+  Future<List<CarbLoadingDay>> getCarbLoadingDaysForPlan(String planId) async {
     try {
       final query = _database.select(_database.carbLoadingDaysTable)
         ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))
@@ -335,7 +332,7 @@ class CarbLoadingRepository {
   }
 
   /// Get carb loading day by ID
-  Future<CarbLoadingDay?> getCarbLoadingDayById(int dayId) async {
+  Future<CarbLoadingDay?> getCarbLoadingDayById(String dayId) async{
     try {
       final query = _database.select(_database.carbLoadingDaysTable)
         ..where((tbl) => tbl.id.equals(dayId));
@@ -403,8 +400,8 @@ class CarbLoadingRepository {
 
   Future<void> _uploadCarbLoadingPlanToSupabase({
     required String deviceId,
-    required int planId,
-    int? eventId,
+    required String planId,
+    String? eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -416,13 +413,10 @@ class CarbLoadingRepository {
         throw Exception('Plan not found: $planId');
       }
 
-      // DIRECT FIX: Use userId from plan directly (unified with deviceId)
-      // Skip unnecessary and fragile user lookup
-      final userId = plan.userId;
-
       final planPayload = {
+        'id': plan.id, // UUID is stable - no rekeying needed
         'event_id': plan.eventId,
-        'user_id': userId,
+        'user_id': plan.userId,
         'total_days': plan.totalDays,
         'start_date': plan.startDate.toIso8601String().split('T')[0],
         'end_date': plan.endDate.toIso8601String().split('T')[0],
@@ -432,81 +426,23 @@ class CarbLoadingRepository {
         'adherence_score': plan.adherenceScore,
         'completed_at': plan.completedAt?.toIso8601String(),
         'local_updated_at': DateTime.now().toIso8601String(),
-        // 'needs_upload': false, // Local-only field
-        // 'local_updated_at': DateTime.now().toIso8601String(), // Local-only field
       };
 
-      Map<String, dynamic>? updateResponse;
-      try {
-        updateResponse = await _supabase
-            .from('carb_loading_plans')
-            .update(planPayload)
-            .eq('id', plan.id)
-            .eq('user_id', userId)
-            .select('id')
-            .maybeSingle();
-      } catch (e) {
-        _logger.debug(
-          'Plan update failed, will insert a new server ID',
-          context: 'CARB_LOADING_REPOSITORY',
-          data: {'planId': plan.id, 'error': e.toString()},
-        );
-      }
+      // Simple upsert - UUID is stable so no rekeying needed
+      await _supabase
+          .from('carb_loading_plans')
+          .upsert(planPayload);
 
-      int serverPlanId;
-      if (updateResponse != null && updateResponse['id'] != null) {
-        serverPlanId = updateResponse['id'] as int;
-      } else {
-        // If update returned no rows, check for an existing plan by event/user to avoid duplicate key collisions
-        Map<String, dynamic>? existingPlan;
-        if (plan.eventId != null) {
-          existingPlan = await _supabase
-              .from('carb_loading_plans')
-              .select('id')
-              .eq('user_id', userId)
-              .eq('event_id', plan.eventId!)
-              .maybeSingle();
-        }
-
-        if (existingPlan != null && existingPlan['id'] != null) {
-          serverPlanId = existingPlan['id'] as int;
-          
-          // CRITICAL: Update the existing server plan with the new data from the local plan
-          // This ensures the server reflects the user's latest "Create Plan" action even if we reused the ID
-          try {
-            await _supabase
-                .from('carb_loading_plans')
-                .update(planPayload)
-                .eq('id', serverPlanId);
-          } catch (e) {
-            _logger.warning(
-              'Failed to update existing server plan with new data',
-              context: 'CARB_LOADING_REPOSITORY',
-              data: {'serverPlanId': serverPlanId, 'error': e.toString()},
-            );
-          }
-        } else {
-          final insertResponse = await _supabase
-              .from('carb_loading_plans')
-              .insert(planPayload)
-              .select('id')
-              .single();
-          serverPlanId = insertResponse['id'] as int;
-        }
-      }
-
-      if (serverPlanId != plan.id) {
-        await _rekeyPlanLocally(plan.id, serverPlanId);
-      }
-
-      // Insert all days directly to Supabase (using upsert for idempotency)
-      final updatedDays = await (_database.select(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.carbLoadingPlanId.equals(serverPlanId))
+      // Get all days for this plan
+      final days = await (_database.select(_database.carbLoadingDaysTable)
+            ..where((tbl) => tbl.carbLoadingPlanId.equals(plan.id))
             ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]))
           .get();
 
-      for (final day in updatedDays) {
+      // Upsert all days
+      for (final day in days) {
         final dayPayload = {
+          'id': day.id, // UUID is stable - no rekeying needed
           'carb_loading_plan_id': day.carbLoadingPlanId,
           'plan_date': day.planDate.toIso8601String().split('T')[0],
           'day_number': day.dayNumber,
@@ -523,47 +459,16 @@ class CarbLoadingRepository {
           'logged_calories': day.loggedCalories,
           'completed': day.completed,
           'local_updated_at': DateTime.now().toIso8601String(),
-          // 'needs_upload': false, // Local-only field
-          // 'local_updated_at': DateTime.now().toIso8601String(), // Local-only field
         };
 
-        Map<String, dynamic>? dayUpdate;
-        try {
-          dayUpdate = await _supabase
-              .from('carb_loading_days')
-              .update(dayPayload)
-              .eq('id', day.id)
-              .eq('carb_loading_plan_id', serverPlanId)
-              .select('id')
-              .maybeSingle();
-        } catch (e) {
-          _logger.debug(
-            'Day update failed, inserting with server ID',
-            context: 'CARB_LOADING_REPOSITORY',
-            data: {'dayId': day.id, 'error': e.toString()},
-          );
-        }
-
-        int serverDayId;
-        if (dayUpdate != null && dayUpdate['id'] != null) {
-          serverDayId = dayUpdate['id'] as int;
-        } else {
-          final insertDayResponse = await _supabase
-              .from('carb_loading_days')
-              .insert(dayPayload)
-              .select('id')
-              .single();
-          serverDayId = insertDayResponse['id'] as int;
-        }
-
-        if (serverDayId != day.id) {
-          await _rekeyDayLocally(day.id, serverDayId);
-        }
+        await _supabase
+            .from('carb_loading_days')
+            .upsert(dayPayload);
       }
 
       // Clear dirty flags
-      await _clearPlanDirtyFlag(serverPlanId);
-      for (final day in updatedDays) {
+      await _clearPlanDirtyFlag(plan.id);
+      for (final day in days) {
         await _clearDayDirtyFlag(day.id);
       }
     } catch (e, stackTrace) {
@@ -579,7 +484,7 @@ class CarbLoadingRepository {
 
   Future<void> _uploadCarbLoadingDayToSupabase({
     required String deviceId,
-    required int carbLoadingDayId,
+    required String carbLoadingDayId,
     required Map<String, dynamic> updates,
   }) async {
     try {
@@ -590,6 +495,7 @@ class CarbLoadingRepository {
       }
 
       final payload = {
+        'id': day.id, // UUID is stable - no rekeying needed
         'carb_loading_plan_id': day.carbLoadingPlanId,
         'plan_date': day.planDate.toIso8601String().split('T')[0],
         'day_number': day.dayNumber,
@@ -606,45 +512,15 @@ class CarbLoadingRepository {
         'logged_calories': day.loggedCalories,
         'completed': day.completed,
         'local_updated_at': DateTime.now().toIso8601String(),
-        // 'needs_upload': false, // Local-only field
-        // 'local_updated_at': DateTime.now().toIso8601String(), // Local-only field
       };
 
-      Map<String, dynamic>? updateResponse;
-      try {
-        updateResponse = await _supabase
-            .from('carb_loading_days')
-            .update(payload)
-            .eq('id', day.id)
-            .eq('carb_loading_plan_id', day.carbLoadingPlanId)
-            .select('id')
-            .maybeSingle();
-      } catch (e) {
-        _logger.debug(
-          'Day update failed, will insert new server ID',
-          context: 'CARB_LOADING_REPOSITORY',
-          data: {'dayId': day.id, 'error': e.toString()},
-        );
-      }
-
-      int serverDayId;
-      if (updateResponse != null && updateResponse['id'] != null) {
-        serverDayId = updateResponse['id'] as int;
-      } else {
-        final insertResponse = await _supabase
-            .from('carb_loading_days')
-            .insert(payload)
-            .select('id')
-            .single();
-        serverDayId = insertResponse['id'] as int;
-      }
-
-      if (serverDayId != day.id) {
-        await _rekeyDayLocally(day.id, serverDayId);
-      }
+      // Simple upsert - UUID is stable so no rekeying needed
+      await _supabase
+          .from('carb_loading_days')
+          .upsert(payload);
 
       // Clear dirty flag
-      await _clearDayDirtyFlag(serverDayId);
+      await _clearDayDirtyFlag(day.id);
     } catch (e, stackTrace) {
       _logger.error(
         'Error uploading carb loading day, will retry on next sync',
@@ -658,7 +534,7 @@ class CarbLoadingRepository {
 
   Future<void> _uploadCarbLoadingPlanDeletion({
     required String deviceId,
-    required int planId,
+    required String planId,
   }) async {
     try {
       // Delete days first (cascade handled by database, but doing explicitly for clarity)
@@ -683,86 +559,7 @@ class CarbLoadingRepository {
     }
   }
 
-  Future<void> _rekeyPlanLocally(int oldId, int newId) async {
-    await _database.transaction(() async {
-      // Check if newId already exists (collision with synced data)
-      final existingCollision = await (_database.select(_database.carbLoadingPlansTable)
-            ..where((tbl) => tbl.id.equals(newId)))
-          .getSingleOrNull();
-
-      if (existingCollision != null) {
-        _logger.info(
-          'Collision detected during rekey. Deleting existing plan $newId to replace with $oldId',
-          context: 'CARB_LOADING_REPOSITORY',
-        );
-        // Delete the colliding plan and its days to allow rekey
-        // Days first
-        await (_database.delete(_database.carbLoadingDaysTable)
-              ..where((tbl) => tbl.carbLoadingPlanId.equals(newId)))
-            .go();
-        // Plan
-        await (_database.delete(_database.carbLoadingPlansTable)
-              ..where((tbl) => tbl.id.equals(newId)))
-            .go();
-      }
-
-      // Update child tables first
-      await _database.customStatement(
-        'UPDATE carb_loading_days SET carb_loading_plan_id = ? WHERE carb_loading_plan_id = ?',
-        [newId, oldId],
-      );
-      await _database.customStatement(
-        'UPDATE carb_loading_plans SET id = ? WHERE id = ?',
-        [newId, oldId],
-      );
-    });
-
-    _logger.info(
-      'Rekeyed carb loading plan ID to match Supabase',
-      context: 'CARB_LOADING_REPOSITORY',
-      data: {'oldId': oldId, 'newId': newId},
-    );
-  }
-
-  Future<void> _rekeyDayLocally(int oldId, int newId) async {
-    await _database.transaction(() async {
-      // Check if newId already exists (collision with synced data)
-      final existingCollision = await (_database.select(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.id.equals(newId)))
-          .getSingleOrNull();
-
-      if (existingCollision != null) {
-        _logger.info(
-          'Collision detected during day rekey. Deleting existing day $newId to replace with $oldId',
-          context: 'CARB_LOADING_REPOSITORY',
-        );
-        // Delete the colliding day and its meals
-        await (_database.delete(_database.carbLoadingDayMealsTable)
-              ..where((tbl) => tbl.carbLoadingDayId.equals(newId)))
-            .go();
-        await (_database.delete(_database.carbLoadingDaysTable)
-              ..where((tbl) => tbl.id.equals(newId)))
-            .go();
-      }
-
-      await _database.customStatement(
-        'UPDATE carb_loading_day_meals SET carb_loading_day_id = ? WHERE carb_loading_day_id = ?',
-        [newId, oldId],
-      );
-      await _database.customStatement(
-        'UPDATE carb_loading_days SET id = ? WHERE id = ?',
-        [newId, oldId],
-      );
-    });
-
-    _logger.info(
-      'Rekeyed carb loading day ID to match Supabase',
-      context: 'CARB_LOADING_REPOSITORY',
-      data: {'oldId': oldId, 'newId': newId},
-    );
-  }
-
-  Future<void> _clearPlanDirtyFlag(int planId) async {
+  Future<void> _clearPlanDirtyFlag(String planId) async {
     try {
       await (_database.update(_database.carbLoadingPlansTable)
             ..where((tbl) => tbl.id.equals(planId)))
@@ -779,7 +576,7 @@ class CarbLoadingRepository {
     }
   }
 
-  Future<void> _clearDayDirtyFlag(int dayId) async {
+  Future<void> _clearDayDirtyFlag(String dayId) async {
     try {
       await (_database.update(_database.carbLoadingDaysTable)
             ..where((tbl) => tbl.id.equals(dayId)))

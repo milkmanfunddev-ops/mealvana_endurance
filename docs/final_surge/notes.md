@@ -20,7 +20,7 @@
 | **Synced workout display** | Small badge/icon | Subtle visual indicator |
 | **Conflict resolution** | Keep both entries | Don't merge or replace existing workouts |
 | **Workout changes in FS** | Auto-delete in Mealvana | Regenerate nutrition plan |
-| **Nutrition plan generation** | Background processing | Use Supabase pg_cron + pgmq |
+| **Nutrition plan generation** | Chunked parallel generation | 5 concurrent API calls, 15-20 seconds total |
 | **Settings location** | New "Connected Apps" section | Dedicated section in Settings |
 | **OAuth errors** | Error + retry + skip option | Both options available |
 | **Token expiry** | Silent refresh + banner if needed | Graceful degradation |
@@ -1639,116 +1639,190 @@ bool isLikelyRace(FinalSurgeWorkout workout) {
 
 ---
 
----
+## 11. Nutrition Plan Generation Strategy
 
-## 11. Supabase Background Processing (pg_cron + pgmq)
+### Implementation Decision: Chunked Parallel Generation
 
-### Overview
-For bulk nutrition plan generation after importing Final Surge workouts, we'll use Supabase's native PostgreSQL extensions: **pg_cron** for scheduling and **pgmq** for message queuing.
+**DECISION (2025-12-17)**: Using **chunked parallel generation in Flutter** instead of pg_cron + pgmq background processing.
 
 ### Why This Approach
-- **Zero additional cost** - Uses existing Supabase infrastructure
-- **No cold starts** - Database-native execution
-- **Automatic retries** - pgmq visibility timeout handles failures
-- **Easy monitoring** - Query tables for job status
-- **Scales well** - Process 1 job per minute, or parallelize
+- ✅ **Simpler** - No pg_cron/pgmq infrastructure needed
+- ✅ **Faster** - 15-20 seconds vs 7 minutes with cron
+- ✅ **Better UX** - User sees live progress instead of waiting
+- ✅ **Easier to debug** - All in Flutter code, not distributed across database + edge functions
+- ✅ **Rate limit safe** - Max 5 concurrent API calls at a time
+- ✅ **Real-time feedback** - Calendar updates as each plan completes
 
-### Setup Steps
+### Technical Implementation
 
-**1. Enable Extensions (via Supabase Dashboard or SQL)**
-```sql
--- Enable in Supabase Dashboard → Database → Extensions
--- Or via SQL:
-CREATE EXTENSION IF NOT EXISTS pgmq;
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
+**Chunked Processing:**
+```dart
+const chunkSize = 5; // Process 5 at a time
+for (var i = 0; i < activities.length; i += chunkSize) {
+  final chunk = activities.skip(i).take(chunkSize).toList();
+  await Future.wait(chunk.map((a) => generatePlan(a)));
+  // Update progress UI after each chunk
+}
 ```
 
-**2. Create Queue for Nutrition Plan Jobs**
-```sql
--- Create the queue (done via pgmq API)
-SELECT pgmq.create('nutrition_plan_jobs');
+**Performance:**
+- 14 workouts = 3 chunks of 5 + 1 chunk of 4
+- ~5 seconds per chunk (API calls run in parallel)
+- Total time: ~15-20 seconds
+
+**User Experience:**
+1. User connects Final Surge account
+2. OAuth completes, workouts imported
+3. Progress dialog shows: "Generating plans... 7/14" with progress bar
+4. Calendar updates in real-time as plans complete
+5. Success dialog: "Found 14 workouts, generated 14 nutrition plans"
+
+### Alternative Considered: Background Processing (Rejected)
+
+**Approach:** pg_cron + pgmq with 30-second polling
+- Process 1 plan every 30 seconds
+- 14 workouts = 7 minutes total time
+- No live progress feedback
+- More complex infrastructure
+
+**Why Rejected:**
+- ❌ Too slow - 7 minutes is a poor user experience
+- ❌ No feedback - user doesn't know if it's working
+- ❌ Complex - requires pg_cron, pgmq, and edge function coordination
+- ❌ Harder to debug - distributed across multiple systems
+
+---
+
+## 12. UI Placement & Settings Integration
+
+### Onboarding Flow
+
+**Final Surge Connection Screen:**
+- **Position:** First screen in onboarding (before User Profile)
+- **User Flow:** Welcome → Connect Final Surge → User Profile → Sports Selection → ...
+
+**Sport Auto-Detection:**
+- If user connects Final Surge, analyze workout history
+- Rule: 2+ workouts of a sport type = active sport
+- Pre-populate Sports Selection screen with detected sports
+- Optional: User can skip Final Surge and manually enter sports
+
+**Example User Flow:**
+```
+1. User installs app
+2. Sees "Connect Your Training" screen with Final Surge option
+3. Taps "Connect Final Surge" → OAuth flow
+4. After OAuth success: "Importing workouts..."
+5. Progress dialog: "Generating plans... 7/14"
+6. Success: "Found 14 workouts, generated 14 nutrition plans"
+7. Sports Selection screen pre-populated (Running ✓, Cycling ✓, Swimming ✗)
+8. User confirms or adjusts sports
+9. Continue with rest of onboarding
 ```
 
-**3. Schedule Processing Job**
-```sql
--- Process one job every 30 seconds
-SELECT cron.schedule(
-  'process-nutrition-plans',
-  '30 seconds',
-  $$SELECT process_nutrition_plan_job()$$
-);
+### Settings Integration
+
+**New "Connected Apps" Section:**
+
+Location: Settings → Connected Apps
+
+**Data to Display:**
+```dart
+FinalSurgeConnection {
+  athleteName: "John Doe"           // From Final Surge API
+  athleteId: "12345"                // From athlete.id
+  connectedAt: "Jan 15, 2025"      // integration.created_at
+  lastSyncAt: "2 hours ago"        // integration.last_sync_at
+  lastSyncStatus: "Success - 3 new workouts"  // Computed
+  isActive: true                    // integration.is_active
+}
 ```
 
-**4. Create Processor Function**
-```sql
-CREATE OR REPLACE FUNCTION process_nutrition_plan_job()
-RETURNS void AS $$
-DECLARE
-  job record;
-  result jsonb;
-BEGIN
-  -- Read one message (5 minute visibility timeout for AI generation)
-  SELECT * INTO job FROM pgmq.read('nutrition_plan_jobs', 300, 1);
+**UI Components:**
 
-  IF job IS NULL THEN
-    RETURN; -- No jobs to process
-  END IF;
+1. **Connection Card:**
+   - Final Surge logo
+   - Athlete name: "John Doe"
+   - Connection status badge (Active/Disconnected)
+   - Last sync: "2 hours ago"
+   - Last sync result: "Success - 3 new workouts"
 
-  -- Call Edge Function via pg_net
-  PERFORM net.http_post(
-    url := 'https://your-project.supabase.co/functions/v1/generate-nutrition-plan',
-    headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('app.service_role_key'),
-      'Content-Type', 'application/json'
-    ),
-    body := job.message
-  );
+2. **Actions:**
+   - "Sync Now" button (manual refresh)
+   - "Disconnect" button (with confirmation dialog)
+   - Show sync history (last 5 syncs with timestamps)
 
-  -- Delete job on success
-  PERFORM pgmq.delete('nutrition_plan_jobs', job.msg_id);
+3. **Coming Soon:**
+   - TrainingPeaks card (greyed out, "Coming Soon" badge)
+   - Strava card (greyed out, "Coming Soon" badge)
 
-EXCEPTION WHEN OTHERS THEN
-  -- Job will become visible again after timeout for retry
-  RAISE WARNING 'Job failed: %', SQLERRM;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+**Settings Screen Mockup:**
+```
+┌─────────────────────────────────────┐
+│  Connected Apps                     │
+├─────────────────────────────────────┤
+│  ┌───────────────────────────────┐ │
+│  │ [FS Logo] Final Surge          │ │
+│  │ John Doe • Active              │ │
+│  │ Last sync: 2 hours ago         │ │
+│  │ Success - 3 new workouts       │ │
+│  │                                │ │
+│  │ [Sync Now]  [Disconnect]       │ │
+│  └───────────────────────────────┘ │
+│                                     │
+│  ┌───────────────────────────────┐ │
+│  │ [TP Logo] TrainingPeaks        │ │
+│  │ Coming Soon                    │ │
+│  └───────────────────────────────┘ │
+│                                     │
+│  ┌───────────────────────────────┐ │
+│  │ [ST Logo] Strava               │ │
+│  │ Coming Soon                    │ │
+│  └───────────────────────────────┘ │
+└─────────────────────────────────────┘
 ```
 
-**5. Enqueue Jobs (from import function)**
-```sql
--- Called when importing workouts from Final Surge
-SELECT pgmq.send(
-  'nutrition_plan_jobs',
-  jsonb_build_object(
-    'activity_id', activity_id,
-    'user_id', user_id,
-    'workout_data', workout_json
-  )
-);
+**Disconnect Dialog:**
+```
+┌─────────────────────────────────────┐
+│  Disconnect Final Surge?            │
+│                                     │
+│  Your imported workouts will        │
+│  remain, but automatic syncing      │
+│  will stop.                         │
+│                                     │
+│  [Cancel]  [Disconnect]             │
+└─────────────────────────────────────┘
 ```
 
-### Deployment
-- **Via Supabase CLI**: Add SQL to migration files, run `supabase db push`
-- **Via Dashboard**: Execute SQL in SQL Editor
-- **Via Edge Function**: Cannot enable extensions from Edge Functions, must use SQL
+### Activity Display
 
-### Monitoring
-```sql
--- Check queue depth
-SELECT * FROM pgmq.metrics('nutrition_plan_jobs');
+**Synced Workout Badge:**
+- Show small "Final Surge" badge on synced activities
+- Badge displays provider logo + text
+- Tapping badge opens workout in Final Surge (via deep link)
 
--- Check cron job history
-SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
-
--- Check for failed jobs
-SELECT * FROM pgmq.read('nutrition_plan_jobs', 0, 100)
-WHERE read_ct > 3; -- Jobs that failed multiple times
+**Badge Design:**
+```dart
+Container(
+  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  decoration: BoxDecoration(
+    color: AppColors.electrolyte.withOpacity(0.1),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Row(
+    children: [
+      Icon(Icons.sync, size: 12),
+      SizedBox(width: 4),
+      Text('Final Surge', style: TextStyle(fontSize: 11)),
+    ],
+  ),
+)
 ```
 
 ---
 
-## 12. API Rate Limiting Strategy
+## 13. API Rate Limiting Strategy
 
 ### Sync Frequency
 - **On app open**: Only if >6 hours since last sync (configurable: 3h, 6h, 12h, 24h)
@@ -2044,11 +2118,409 @@ Create tests in `supabase/functions/sync-final-surge/index.test.ts`:
 
 ---
 
+---
+
+## 16. Data Mapping & Schema Decisions
+
+**Last Updated**: December 17, 2025
+
+### Overview
+This section documents the critical data transformation decisions for mapping Final Surge API data to Mealvana's database schema.
+
+---
+
+### Unit Conversions (CONFIRMED)
+
+| Data Type | Final Surge Format | Mealvana Storage | Conversion Logic |
+|-----------|-------------------|------------------|------------------|
+| **Distance** | `PlannedDistance` + `PlannedDistanceType` ("mi" or "km") | Always store in **miles** | If `PlannedDistanceType == "km"`: `miles = km * 0.621371` |
+| **Duration** | `PlannedTime` (seconds) | Store in **minutes** | `minutes = seconds / 60` |
+| **Pace** | `PlannedPace` + `PlannedPaceType` (e.g., "5:40-5:55 min/mi") | Store **midpoint** in `pace_target` | Parse range, calculate midpoint: `(5:40 + 5:55) / 2 = 5:47.5 min/mile` |
+| **Cycling Speed** | `PlannedDistance` ÷ `PlannedTime` | Calculate speed in **mph** or **kph** | `speed = distance / (time / 3600)` |
+| **Swimming Pace** | `PlannedDistance` ÷ `PlannedTime` | Calculate **seconds per 100m** | `pace_per_100m = (time / distance) * 100` |
+
+**Implementation Notes:**
+- Always convert to miles for consistency (US market focus)
+- Store duration in minutes (more human-readable than seconds)
+- For pace ranges, store midpoint as primary value
+- Optional: Add `pace_min` and `pace_max` columns if range precision needed
+
+---
+
+### Intensity Mapping (CONFIRMED)
+
+**Mealvana 4-Level Enum:** `easy`, `moderate`, `hard`, `race`
+
+**Mapping Strategy:**
+
+```dart
+String mapIntensity(FinalSurgeWorkout workout) {
+  final subType = workout.workoutSubTypeName?.toLowerCase() ?? '';
+
+  // Race intensity
+  if (subType.contains('race') || subType.contains('event')) {
+    return 'race';
+  }
+
+  // Hard intensity
+  if (subType.contains('tempo') ||
+      subType.contains('threshold') ||
+      subType.contains('interval') ||
+      subType.contains('speed')) {
+    return 'hard';
+  }
+
+  // Moderate intensity
+  if (subType.contains('steady') ||
+      subType.contains('aerobic') ||
+      subType.contains('marathon pace')) {
+    return 'moderate';
+  }
+
+  // Easy intensity (default)
+  return 'easy'; // Recovery, Long Run (easy pace), Base
+}
+```
+
+**Keyword Mapping Table:**
+
+| Final Surge `WorkoutSubTypeName` | Mealvana Intensity |
+|----------------------------------|-------------------|
+| "Race", "Event", "Marathon", "Half Marathon" | `race` |
+| "Tempo Run", "Threshold", "Intervals", "Speed Work" | `hard` |
+| "Steady State", "Aerobic", "Marathon Pace" | `moderate` |
+| "Recovery", "Long Run", "Base", "Easy" | `easy` |
+
+**Edge Cases:**
+- Missing `WorkoutSubTypeName` → Default to `easy`
+- Walk workouts → Import as `running` with `easy` intensity
+- Cross Training / Strength → Skip import (not supported sports)
+
+---
+
+### Sport Type Mapping (CONFIRMED)
+
+**Final Surge → Mealvana:**
+
+```dart
+String? mapSportType(int workoutIcon) {
+  switch (workoutIcon) {
+    case 1: return 'running';   // Run
+    case 2: return 'cycling';   // Bike
+    case 3: return 'swimming';  // Swim
+    default: return null;       // Unsupported (skip import)
+  }
+}
+```
+
+**Supported Sports:**
+- ✅ Running (WorkoutIcon: 1)
+- ✅ Cycling (WorkoutIcon: 2)
+- ✅ Swimming (WorkoutIcon: 3)
+
+**Unsupported Sports (Skip Import):**
+- ❌ Cross Training (4)
+- ❌ Strength Training (5)
+- ❌ Rest Day (6)
+- ❌ Recovery (7)
+- ❌ Other (8)
+- ❌ Transition (9)
+- ❌ Custom (10)
+- ❌ Walk (11) → **DECISION PENDING**: Import as running with easy intensity?
+
+---
+
+### External Workout ID Extraction (CONFIRMED)
+
+**WorkoutURL Format:**
+```
+https://log.finalsurge.com/WorkoutDetails?s=<WORKOUT_ID>&id=<SECONDARY_ID>
+```
+
+**Extraction Logic:**
+```dart
+String extractWorkoutId(String? workoutUrl) {
+  if (workoutUrl == null || workoutUrl.isEmpty) {
+    return ''; // Handle missing URLs gracefully
+  }
+
+  final uri = Uri.parse(workoutUrl);
+
+  // Primary: Extract 's' parameter (most reliable)
+  final workoutId = uri.queryParameters['s'];
+  if (workoutId != null && workoutId.isNotEmpty) {
+    return workoutId;
+  }
+
+  // Fallback: Extract 'id' parameter
+  final secondaryId = uri.queryParameters['id'];
+  return secondaryId ?? '';
+}
+```
+
+**Storage:**
+- Store in `activities.provider_workout_id`
+- Use for deduplication checks
+- Use for deep linking back to Final Surge
+
+---
+
+### Completed Workouts Sync (CONFIRMED)
+
+**DECISION:** YES, import completed workouts.
+
+**Rationale:**
+- Users may have completed workouts scheduled in next 14 days
+- We can still generate nutrition plans for completed workouts (historical analysis)
+- Helps with training load tracking
+
+**Implementation:**
+```dart
+// Don't filter by WorkoutCompleted status
+final supportedWorkouts = workouts.where((w) =>
+  ['Run', 'Bike', 'Swim'].contains(w.workoutTypeName)
+  // WorkoutCompleted can be true or false
+).toList();
+```
+
+**UI Display:**
+- Show completed badge: "✓ Completed" on activity card
+- Generate nutrition plan anyway (for review/analysis)
+- Don't send reminders for completed workouts
+
+---
+
+### Schema Changes Required
+
+#### 1. Add Sync Tracking Columns (REQUIRED)
+
+```sql
+ALTER TABLE activities
+  ADD COLUMN synced_from_provider TEXT,           -- 'final_surge', 'training_peaks', etc.
+  ADD COLUMN provider_workout_id TEXT,            -- Extracted from WorkoutURL 's' parameter
+  ADD COLUMN provider_workout_url TEXT,           -- Full URL for deep linking
+  ADD COLUMN last_synced_at TIMESTAMPTZ;          -- When last checked/updated
+
+-- Index for fast lookups
+CREATE INDEX idx_activities_provider_workout
+  ON activities(provider_workout_id, synced_from_provider);
+```
+
+**Why These Columns:**
+- `synced_from_provider`: Track which integration imported this workout
+- `provider_workout_id`: Unique identifier for deduplication
+- `provider_workout_url`: Deep link back to Final Surge workout
+- `last_synced_at`: Track when last synchronized (for change detection)
+
+#### 2. Add Pace Range Columns (PENDING DECISION)
+
+**Option A: Store midpoint only (CURRENT)**
+```sql
+-- Use existing pace_target column
+-- Calculate midpoint from "5:40-5:55" → store as "5:47.5"
+```
+
+**Option B: Store full range**
+```sql
+ALTER TABLE activities
+  ADD COLUMN pace_min_minutes_per_mile REAL,
+  ADD COLUMN pace_max_minutes_per_mile REAL;
+
+-- Store "5:40-5:55" as:
+--   pace_min_minutes_per_mile: 5.67 (5 minutes 40 seconds)
+--   pace_max_minutes_per_mile: 5.92 (5 minutes 55 seconds)
+```
+
+**DECISION NEEDED:** Does Mealvana need pace range precision, or is midpoint sufficient?
+
+#### 3. Add Workout Subtype Field (PENDING DECISION)
+
+```sql
+ALTER TABLE activities
+  ADD COLUMN workout_subtype TEXT; -- Store "Tempo Run", "Long Run", etc.
+```
+
+**Why:**
+- Preserve Final Surge's granular workout classification
+- Can use for more intelligent intensity mapping in future
+- Helps with training plan analysis
+
+**DECISION NEEDED:** Is this worth storing, or is intensity enum sufficient?
+
+---
+
+### Sync Strategy (CONFIRMED)
+
+#### Sync Triggers
+
+| Trigger | Frequency | Conditions |
+|---------|-----------|------------|
+| **Initial import** | Once | OAuth connection (import 14 days) |
+| **App startup** | Every open | Max once per 6 hours (check `last_synced_at`) |
+| **Manual refresh** | Unlimited | Settings → Connected Apps → Sync Now |
+| **Pull-to-refresh** | Unlimited | Calendar screen |
+| **Background** | Once per 12 hours | iOS/Android background refresh (WiFi only) |
+
+#### Sync Behavior
+
+```dart
+Future<SyncResult> syncWorkouts(String userId) async {
+  // 1. Fetch 14 days upcoming + completed workouts
+  final workouts = await _apiClient.getUpcomingWorkouts(
+    token,
+    numDays: 7,
+    numWorkouts: 21,
+  );
+
+  // 2. Filter to Run/Bike/Swim only
+  final supported = workouts.where((w) =>
+    [1, 2, 3].contains(w.workoutIcon)
+  ).toList();
+
+  // 3. Check existing by provider_workout_id
+  final newWorkouts = <Activity>[];
+  for (final workout in supported) {
+    final workoutId = extractWorkoutId(workout.workoutUrl);
+
+    final existing = await _repository.findByProviderWorkoutId(
+      'final_surge',
+      workoutId,
+    );
+
+    if (existing != null) {
+      // Skip existing workouts (preserve user customizations)
+      continue;
+    }
+
+    // Import new workout
+    final activity = _mapToActivity(workout, userId);
+    await _repository.insert(activity);
+    newWorkouts.add(activity);
+  }
+
+  // 4. Queue nutrition plan generation for new imports
+  await _generateNutritionPlansInParallel(newWorkouts);
+
+  return SyncResult(newWorkouts: newWorkouts.length);
+}
+```
+
+**Key Decisions:**
+- ✅ Skip existing workouts (don't overwrite user changes)
+- ✅ Import completed workouts (for historical analysis)
+- ✅ Generate nutrition plans for all new imports
+- ✅ Process in chunks (5 concurrent API calls)
+
+---
+
+### Open Questions & Risks
+
+#### 1. Range Columns
+**Question:** Add `pace_min/max`, `distance_min/max`, or just store midpoint?
+
+**Considerations:**
+- **Midpoint only:** Simpler schema, less storage
+- **Full range:** More precision, better for training zones
+
+**Recommendation:** Start with midpoint, add range columns if users request it.
+
+---
+
+#### 2. Workout Subtype Field
+**Question:** Add `workout_subtype` column to preserve Final Surge's granular classification?
+
+**Considerations:**
+- **Yes:** Better training plan analysis, future-proof
+- **No:** Intensity enum may be sufficient
+
+**Recommendation:** Add field (low cost, high future value).
+
+---
+
+#### 3. Swimming Distance Units
+**Question:** Store swimming distance in meters or miles?
+
+**Considerations:**
+- Final Surge uses meters for swimming
+- US market uses yards (1 yard ≈ 0.9144 meters)
+- Mealvana currently stores everything in miles
+
+**Recommendation:** Convert to miles for consistency (with precision warning for users).
+
+---
+
+#### 4. Update Behavior
+**Question:** What happens when a synced workout changes in Final Surge?
+
+**Options:**
+- **A. Skip** - Preserve user customizations (CURRENT)
+- **B. Update** - Overwrite with Final Surge data (lose user changes)
+- **C. Notify** - Show "Workout updated in Final Surge" banner with option to sync
+
+**Recommendation:** Start with **Option A** (skip), add **Option C** (notify) in Phase 2.
+
+---
+
+#### 5. Delete Behavior
+**Question:** Auto-delete activities if removed from Final Surge?
+
+**Options:**
+- **A. Auto-delete** - Keep perfect sync with Final Surge
+- **B. Mark deleted** - Soft delete with `deleted_at` timestamp
+- **C. Keep orphaned** - Leave activities, remove sync link
+
+**Recommendation:** **Option B** (soft delete) - Archive with banner "Workout deleted in Final Surge".
+
+---
+
+#### 6. Walk Workouts
+**Question:** Import walk workouts (WorkoutIcon: 11)?
+
+**Options:**
+- **A. Skip** - Only Run/Bike/Swim (CURRENT)
+- **B. Import as running** - Treat as easy run with walking pace
+- **C. New sport type** - Add "walking" sport (major schema change)
+
+**Recommendation:** Start with **Option A** (skip), consider **Option B** if users request it.
+
+---
+
+#### 7. Missing Data
+**Question:** What if `PlannedDistance` or `PlannedTime` is null?
+
+**Options:**
+- **A. Skip import** - Only import complete workouts
+- **B. Import anyway** - Allow partial data (show "No distance planned")
+- **C. Estimate** - Parse from `WorkoutDescription` or structured workout
+
+**Recommendation:** **Option B** (import anyway) - Users may add details later in Mealvana.
+
+---
+
 ## Changelog
+
+### 2025-12-17 (Update 2)
+- **NEW SECTION:** Added Section 16: Data Mapping & Schema Decisions
+- Documented all unit conversion rules (distance, duration, pace, speed)
+- Defined intensity mapping from WorkoutSubTypeName
+- Confirmed sport type mapping (Run/Bike/Swim only)
+- Specified external workout ID extraction from URL query parameter
+- Documented sync strategy and behavior
+- Added 7 open questions for future decisions
+- Captured schema changes required (4 confirmed columns, 2 pending columns)
+
+### 2025-12-17
+- **MAJOR DECISION:** Switched from pg_cron + pgmq background processing to chunked parallel generation
+- Updated Section 11: Nutrition Plan Generation Strategy with new approach
+- Added Section 12: UI Placement & Settings Integration with detailed mockups
+- Updated User Decisions table to reflect chunked parallel generation
+- Added performance comparison: 15-20 seconds vs 7 minutes
+- Documented Settings screen data structure and UI components
+- Added activity badge design specifications
 
 ### 2025-12-05 (Update 2)
 - Added Section 0: User Decisions (finalized all choices)
-- Added Section 11: Supabase Background Processing (pg_cron + pgmq)
+- Added Section 11: Supabase Background Processing (pg_cron + pgmq) [DEPRECATED - See 2025-12-17]
 - Added Section 12: API Rate Limiting Strategy
 - Added Section 13: Onboarding Screen Changes
 - Added Section 14: Multi-Integration Architecture

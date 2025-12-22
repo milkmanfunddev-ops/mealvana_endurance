@@ -84,6 +84,12 @@ class AppDatabase extends _$AppDatabase {
     return AppDatabase._internal(createNativeMemoryDatabase());
   }
 
+  /// Constructor for migration testing with SchemaVerifier
+  /// Allows injecting a custom QueryExecutor for testing migrations
+  factory AppDatabase.forTesting(QueryExecutor executor) {
+    return AppDatabase._internal(executor);
+  }
+
   /// Internal constructor for factory
   AppDatabase._internal(QueryExecutor e) : super(e);
 
@@ -166,6 +172,21 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA cache_size = 10000');
         }
 
+        // SAFETY NET: Ensure v2 columns have proper default values
+        // This handles edge cases where migration ran but didn't backfill properly
+        try {
+          // Fix null allergies (should be '{}')
+          await customStatement(
+            "UPDATE users SET allergies = '{}' WHERE allergies IS NULL OR allergies = ''"
+          );
+          // Fix null needs_upload (should be 0)
+          await customStatement(
+            "UPDATE users SET needs_upload = 0 WHERE needs_upload IS NULL"
+          );
+        } catch (e) {
+          // Columns don't exist yet - safe to ignore on fresh install
+        }
+
         // Normalize any legacy timestamp strings in user_foods to Unix millis
         await _normalizeUserFoodTimestamps();
       },
@@ -175,6 +196,7 @@ class AppDatabase extends _$AppDatabase {
         from1To2: (m, schema) async {
           // V1 -> V2 Migration (December 2025)
           // Adds: dietary_preference, allergies, needs_upload to users; preference_level to food_preferences
+          // Converts: INTEGER IDs to TEXT (UUID) for offline-first tables
           //
           // Note: Migration is idempotent - checks if columns exist before adding.
 
@@ -200,11 +222,24 @@ class AppDatabase extends _$AppDatabase {
           final usersColumnNames = usersColumns.map((row) => row.read<String>('name')).toSet();
 
           if (!usersColumnNames.contains('dietary_preference')) {
-            await m.addColumn(schema.users, schema.users.dietaryPreference);
+            await customStatement(
+              'ALTER TABLE users ADD COLUMN dietary_preference TEXT'
+            );
+            // Ensure consistency with CHECK constraint
+            await customStatement(
+              "UPDATE users SET dietary_preference = NULL WHERE dietary_preference NOT IN ('omnivore', 'vegetarian', 'pescatarian', 'vegan', 'mediterranean', 'paleo', 'keto', 'low_carb')"
+            );
           }
 
           if (!usersColumnNames.contains('allergies')) {
-            await m.addColumn(schema.users, schema.users.allergies);
+            // Use raw SQL to ensure default value is applied to existing rows
+            await customStatement(
+              "ALTER TABLE users ADD COLUMN allergies TEXT NOT NULL DEFAULT '{}'"
+            );
+            // Explicitly backfill default value (SQLite doesn't always apply defaults to existing rows)
+            await customStatement(
+              "UPDATE users SET allergies = '{}' WHERE allergies IS NULL OR allergies = ''"
+            );
           }
 
           // 3. Add needs_upload to users table for background sync tracking
@@ -220,12 +255,320 @@ class AppDatabase extends _$AppDatabase {
             );
           }
 
-          // 4. Fix ID collision risk for activities and events tables
-          // Note: Changed from autoIncrement() to random integers (like carb_loading_plans)
-          // Existing records keep their sequential IDs - only NEW records will use random IDs
-          // No data migration needed: probability of collision between old sequential IDs (1-100)
-          // and new random IDs (0 to 2,147,483,647) is negligible (<0.000005%)
-          // This prevents multi-device sync collisions where two devices create activity with ID=1
+          // ========================================================================
+          // 4. INTEGER to TEXT (UUID) Migration for Offline-First Tables
+          // ========================================================================
+          // CRITICAL: These tables were created with INTEGER autoincrement IDs but
+          // need TEXT UUIDs to prevent multi-device sync collisions.
+          // Uses temporary table pattern since SQLite doesn't support ALTER COLUMN type changes.
+          // ========================================================================
+
+          try {
+            // 4a. Migrate activities table (id: INTEGER → TEXT)
+            final activitiesColumns = await customSelect("PRAGMA table_info(activities)").get();
+            final actIdCol = activitiesColumns.firstWhere(
+              (r) => r.read<String>('name') == 'id',
+              orElse: () => throw StateError('activities.id column not found'),
+            );
+            final actIdType = actIdCol.read<String>('type');
+
+            if (actIdType.toUpperCase() == 'INTEGER') {
+              // Step 1: Create new table with TEXT id
+              await customStatement('''
+                CREATE TABLE activities_new (
+                  id TEXT PRIMARY KEY NOT NULL,
+                  user_id TEXT NOT NULL,
+                  activity_type TEXT NOT NULL CHECK (activity_type IN ('running', 'cycling', 'swimming')),
+                  title TEXT NOT NULL,
+                  scheduled_date_time INTEGER NOT NULL,
+                  status TEXT DEFAULT 'planned' CHECK (status IN ('planned', 'in_progress', 'completed', 'skipped')),
+                  distance_miles REAL,
+                  duration_minutes INTEGER,
+                  pace_target_minutes_per_mile REAL,
+                  intensity_level TEXT CHECK (intensity_level IS NULL OR intensity_level IN ('easy', 'moderate', 'hard', 'race')),
+                  cycling_speed_mph REAL,
+                  cycling_terrain TEXT CHECK (cycling_terrain IS NULL OR cycling_terrain IN ('flat', 'rolling', 'hilly')),
+                  cycling_indoor_outdoor TEXT CHECK (cycling_indoor_outdoor IS NULL OR cycling_indoor_outdoor IN ('indoor', 'outdoor')),
+                  cycling_elevation_gain_ft INTEGER,
+                  cycling_session_goal TEXT CHECK (cycling_session_goal IS NULL OR cycling_session_goal IN ('endurance', 'tempo', 'intervals')),
+                  swimming_pace_per_100m_seconds INTEGER,
+                  swimming_pool_or_open_water TEXT CHECK (swimming_pool_or_open_water IS NULL OR swimming_pool_or_open_water IN ('pool', 'open_water')),
+                  swimming_water_temp_c REAL,
+                  intensity_target TEXT,
+                  time_before_minutes INTEGER,
+                  reminder_enabled INTEGER DEFAULT 0 NOT NULL,
+                  reminder_days_before INTEGER,
+                  reminder_time_of_day TEXT,
+                  reminder_recurring INTEGER DEFAULT 0 NOT NULL,
+                  needs_upload INTEGER,
+                  local_updated_at INTEGER,
+                  completed_at INTEGER,
+                  completion_rating INTEGER CHECK (completion_rating IS NULL OR (completion_rating >= 1 AND completion_rating <= 5)),
+                  completion_notes TEXT,
+                  actual_distance_miles REAL,
+                  actual_duration_minutes INTEGER,
+                  nutrition_plan_data TEXT,
+                  notes TEXT,
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  deleted_at INTEGER
+                )
+              ''');
+
+              // Step 2: Copy data with CAST (generate UUIDs for existing INTEGER IDs)
+              await customStatement('''
+                INSERT INTO activities_new
+                SELECT
+                  lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+                  user_id, activity_type, title, scheduled_date_time, status,
+                  distance_miles, duration_minutes, pace_target_minutes_per_mile, intensity_level,
+                  cycling_speed_mph, cycling_terrain, cycling_indoor_outdoor, cycling_elevation_gain_ft, cycling_session_goal,
+                  swimming_pace_per_100m_seconds, swimming_pool_or_open_water, swimming_water_temp_c,
+                  intensity_target, time_before_minutes,
+                  reminder_enabled, reminder_days_before, reminder_time_of_day, reminder_recurring,
+                  needs_upload, local_updated_at,
+                  completed_at, completion_rating, completion_notes, actual_distance_miles, actual_duration_minutes,
+                  nutrition_plan_data, notes, created_at, updated_at, deleted_at
+                FROM activities
+              ''');
+
+              // Step 3: Drop old table
+              await customStatement('DROP TABLE activities');
+
+              // Step 4: Rename new table
+              await customStatement('ALTER TABLE activities_new RENAME TO activities');
+
+              // Step 5: Recreate indexes
+              await customStatement('CREATE INDEX idx_activities_user_id ON activities(user_id)');
+              await customStatement('CREATE INDEX idx_activities_scheduled_date_time ON activities(scheduled_date_time)');
+              await customStatement('CREATE INDEX idx_activities_activity_type ON activities(activity_type)');
+              await customStatement('CREATE INDEX idx_activities_status ON activities(status)');
+              await customStatement('CREATE INDEX idx_activities_needs_upload ON activities(needs_upload, user_id) WHERE needs_upload = 1');
+            }
+
+            // 4b. Migrate events table (id: INTEGER → TEXT, activityId: INTEGER → TEXT)
+            final eventsColumns = await customSelect("PRAGMA table_info(events)").get();
+            final evIdCol = eventsColumns.firstWhere(
+              (r) => r.read<String>('name') == 'id',
+              orElse: () => throw StateError('events.id column not found'),
+            );
+            final evIdType = evIdCol.read<String>('type');
+
+            if (evIdType.toUpperCase() == 'INTEGER') {
+              await customStatement('''
+                CREATE TABLE events_new (
+                  id TEXT PRIMARY KEY NOT NULL,
+                  activity_id TEXT,
+                  user_id TEXT NOT NULL,
+                  event_type TEXT NOT NULL,
+                  event_subtype TEXT,
+                  event_name TEXT,
+                  location TEXT,
+                  registration_url TEXT,
+                  event_date INTEGER,
+                  start_time TEXT,
+                  goal_time_minutes INTEGER,
+                  goal_pace_minutes_per_mile REAL,
+                  predicted_finish_time_minutes INTEGER,
+                  has_carb_loading INTEGER DEFAULT 0 NOT NULL,
+                  carb_loading_days INTEGER CHECK (carb_loading_days IS NULL OR carb_loading_days IN (1, 2, 3, 7)),
+                  carb_loading_start_date INTEGER,
+                  has_nutrition_plan INTEGER DEFAULT 0 NOT NULL,
+                  bib_number TEXT,
+                  wave_start_time TEXT,
+                  packet_pickup_info TEXT,
+                  actual_finish_time_minutes INTEGER,
+                  final_placement INTEGER,
+                  age_group_placement INTEGER,
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  needs_upload INTEGER,
+                  local_updated_at INTEGER
+                )
+              ''');
+
+              await customStatement('''
+                INSERT INTO events_new
+                SELECT
+                  lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+                  NULL,
+                  user_id, event_type, event_subtype, event_name, location, registration_url,
+                  event_date, start_time, goal_time_minutes, goal_pace_minutes_per_mile, predicted_finish_time_minutes,
+                  has_carb_loading, carb_loading_days, carb_loading_start_date, has_nutrition_plan,
+                  bib_number, wave_start_time, packet_pickup_info,
+                  actual_finish_time_minutes, final_placement, age_group_placement,
+                  created_at, updated_at, needs_upload, local_updated_at
+                FROM events
+              ''');
+
+              await customStatement('DROP TABLE events');
+              await customStatement('ALTER TABLE events_new RENAME TO events');
+
+              await customStatement('CREATE INDEX idx_events_activity_id ON events(activity_id)');
+              await customStatement('CREATE INDEX idx_events_user_id ON events(user_id)');
+              await customStatement('CREATE INDEX idx_events_event_type ON events(event_type)');
+              await customStatement('CREATE INDEX idx_events_has_carb_loading ON events(has_carb_loading) WHERE has_carb_loading = 1');
+              await customStatement('CREATE INDEX idx_events_needs_upload ON events(needs_upload, user_id) WHERE needs_upload = 1');
+            }
+
+            // 4c. Migrate carb_loading_plans table (id: INTEGER → TEXT, eventId: INTEGER → TEXT)
+            final plansColumns = await customSelect("PRAGMA table_info(carb_loading_plans)").get();
+            final planIdCol = plansColumns.firstWhere(
+              (r) => r.read<String>('name') == 'id',
+              orElse: () => throw StateError('carb_loading_plans.id column not found'),
+            );
+            final planIdType = planIdCol.read<String>('type');
+
+            if (planIdType.toUpperCase() == 'INTEGER') {
+              await customStatement('''
+                CREATE TABLE carb_loading_plans_new (
+                  id TEXT PRIMARY KEY NOT NULL,
+                  event_id TEXT,
+                  user_id TEXT NOT NULL,
+                  total_days INTEGER NOT NULL CHECK (total_days IN (1, 2, 3, 7)),
+                  start_date INTEGER NOT NULL,
+                  end_date INTEGER NOT NULL,
+                  daily_carb_target_grams INTEGER NOT NULL,
+                  daily_calorie_target INTEGER,
+                  generated_at INTEGER NOT NULL,
+                  algorithm_version TEXT DEFAULT 'v1.0' NOT NULL,
+                  adherence_score REAL CHECK (adherence_score IS NULL OR (adherence_score >= 0.0 AND adherence_score <= 1.0)),
+                  completed_at INTEGER,
+                  needs_upload INTEGER DEFAULT 0 NOT NULL,
+                  local_updated_at INTEGER NOT NULL
+                )
+              ''');
+
+              await customStatement('''
+                INSERT INTO carb_loading_plans_new
+                SELECT
+                  lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+                  NULL,
+                  user_id, total_days, start_date, end_date, daily_carb_target_grams, daily_calorie_target,
+                  generated_at, algorithm_version, adherence_score, completed_at, needs_upload, local_updated_at
+                FROM carb_loading_plans
+              ''');
+
+              await customStatement('DROP TABLE carb_loading_plans');
+              await customStatement('ALTER TABLE carb_loading_plans_new RENAME TO carb_loading_plans');
+
+              await customStatement('CREATE INDEX idx_carb_loading_plans_event_id ON carb_loading_plans(event_id)');
+              await customStatement('CREATE INDEX idx_carb_loading_plans_user_id ON carb_loading_plans(user_id)');
+              await customStatement('CREATE INDEX idx_carb_loading_plans_start_date ON carb_loading_plans(start_date, end_date)');
+              await customStatement('CREATE INDEX idx_carb_loading_plans_needs_upload ON carb_loading_plans(needs_upload, user_id) WHERE needs_upload = 1');
+            }
+
+            // 4d. Migrate carb_loading_days table (id: INTEGER → TEXT, carb_loading_plan_id: INTEGER → TEXT)
+            final daysColumns = await customSelect("PRAGMA table_info(carb_loading_days)").get();
+            final dayIdCol = daysColumns.firstWhere(
+              (r) => r.read<String>('name') == 'id',
+              orElse: () => throw StateError('carb_loading_days.id column not found'),
+            );
+            final dayIdType = dayIdCol.read<String>('type');
+
+            if (dayIdType.toUpperCase() == 'INTEGER') {
+              await customStatement('''
+                CREATE TABLE carb_loading_days_new (
+                  id TEXT PRIMARY KEY NOT NULL,
+                  carb_loading_plan_id TEXT NOT NULL,
+                  plan_date INTEGER NOT NULL,
+                  day_number INTEGER NOT NULL CHECK (day_number > 0),
+                  carb_target_grams INTEGER NOT NULL CHECK (carb_target_grams > 0),
+                  carb_protocol_g_per_kg REAL DEFAULT 8.0 NOT NULL,
+                  calorie_target INTEGER,
+                  meal_count INTEGER DEFAULT 6 NOT NULL CHECK (meal_count > 0),
+                  breakfast_percent REAL DEFAULT 0.25 NOT NULL CHECK (breakfast_percent >= 0.0 AND breakfast_percent <= 1.0),
+                  morning_snack_percent REAL DEFAULT 0.10 NOT NULL CHECK (morning_snack_percent >= 0.0 AND morning_snack_percent <= 1.0),
+                  lunch_percent REAL DEFAULT 0.25 NOT NULL CHECK (lunch_percent >= 0.0 AND lunch_percent <= 1.0),
+                  afternoon_snack_percent REAL DEFAULT 0.15 NOT NULL CHECK (afternoon_snack_percent >= 0.0 AND afternoon_snack_percent <= 1.0),
+                  dinner_percent REAL DEFAULT 0.20 NOT NULL CHECK (dinner_percent >= 0.0 AND dinner_percent <= 1.0),
+                  evening_snack_percent REAL DEFAULT 0.05 NOT NULL CHECK (evening_snack_percent >= 0.0 AND evening_snack_percent <= 1.0),
+                  logged_carbs_grams INTEGER DEFAULT 0 NOT NULL CHECK (logged_carbs_grams >= 0),
+                  logged_calories INTEGER DEFAULT 0 NOT NULL CHECK (logged_calories >= 0),
+                  completed INTEGER DEFAULT 0 NOT NULL,
+                  needs_upload INTEGER DEFAULT 0 NOT NULL,
+                  local_updated_at INTEGER NOT NULL,
+                  UNIQUE(carb_loading_plan_id, plan_date)
+                )
+              ''');
+
+              // NOTE: Foreign keys cannot be migrated - plan_id will be NULL after this migration
+              await customStatement('''
+                INSERT INTO carb_loading_days_new
+                SELECT
+                  lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+                  NULL,
+                  plan_date, day_number, carb_target_grams, carb_protocol_g_per_kg, calorie_target, meal_count,
+                  breakfast_percent, morning_snack_percent, lunch_percent, afternoon_snack_percent, dinner_percent, evening_snack_percent,
+                  logged_carbs_grams, logged_calories, completed, needs_upload, local_updated_at
+                FROM carb_loading_days
+              ''');
+
+              await customStatement('DROP TABLE carb_loading_days');
+              await customStatement('ALTER TABLE carb_loading_days_new RENAME TO carb_loading_days');
+
+              await customStatement('CREATE INDEX idx_carb_loading_days_carb_loading_plan_id ON carb_loading_days(carb_loading_plan_id)');
+              await customStatement('CREATE INDEX idx_carb_loading_days_plan_date ON carb_loading_days(plan_date)');
+              await customStatement('CREATE INDEX idx_carb_loading_days_completed ON carb_loading_days(completed)');
+              await customStatement('CREATE INDEX idx_carb_loading_days_needs_upload ON carb_loading_days(needs_upload) WHERE needs_upload = 1');
+            }
+
+            // 4e. Migrate carb_loading_day_meals table (id: UUID already, carb_loading_day_id: INTEGER → TEXT)
+            final mealsColumns = await customSelect("PRAGMA table_info(carb_loading_day_meals)").get();
+            final mealDayIdCol = mealsColumns.firstWhere(
+              (r) => r.read<String>('name') == 'carb_loading_day_id',
+              orElse: () => throw StateError('carb_loading_day_meals.carb_loading_day_id column not found'),
+            );
+            final mealDayIdType = mealDayIdCol.read<String>('type');
+
+            if (mealDayIdType.toUpperCase() == 'INTEGER') {
+              await customStatement('''
+                CREATE TABLE carb_loading_day_meals_new (
+                  id TEXT PRIMARY KEY NOT NULL,
+                  carb_loading_day_id TEXT NOT NULL,
+                  meal_type_id INTEGER NOT NULL,
+                  carb_loading_food_id TEXT,
+                  carb_loading_user_food_id TEXT,
+                  food_display_name TEXT,
+                  quantity INTEGER DEFAULT 1 NOT NULL CHECK (quantity > 0),
+                  carbs_consumed REAL NOT NULL CHECK (carbs_consumed >= 0),
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  CHECK ((carb_loading_food_id IS NOT NULL AND carb_loading_user_food_id IS NULL) OR (carb_loading_food_id IS NULL AND carb_loading_user_food_id IS NOT NULL))
+                )
+              ''');
+
+              // NOTE: Foreign keys cannot be migrated - day_id will be NULL after this migration
+              await customStatement('''
+                INSERT INTO carb_loading_day_meals_new
+                SELECT
+                  lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+                  NULL,
+                  meal_type_id, carb_loading_food_id, carb_loading_user_food_id, food_display_name,
+                  quantity, carbs_consumed, created_at, updated_at
+                FROM carb_loading_day_meals
+              ''');
+
+              await customStatement('DROP TABLE carb_loading_day_meals');
+              await customStatement('ALTER TABLE carb_loading_day_meals_new RENAME TO carb_loading_day_meals');
+
+              await customStatement('CREATE INDEX idx_carb_loading_day_meals_carb_loading_day_id ON carb_loading_day_meals(carb_loading_day_id)');
+              await customStatement('CREATE INDEX idx_carb_loading_day_meals_meal_type_id ON carb_loading_day_meals(meal_type_id)');
+              await customStatement('CREATE INDEX idx_carb_loading_day_meals_carb_loading_food_id ON carb_loading_day_meals(carb_loading_food_id) WHERE carb_loading_food_id IS NOT NULL');
+              await customStatement('CREATE INDEX idx_carb_loading_day_meals_carb_loading_user_food_id ON carb_loading_day_meals(carb_loading_user_food_id) WHERE carb_loading_user_food_id IS NOT NULL');
+            }
+
+            if (kDebugMode) {
+              print('✅ V1→V2 migration completed: INTEGER to TEXT conversion successful');
+            }
+          } catch (e) {
+            // Log error but don't fail - data integrity is more important than migration
+            if (kDebugMode) {
+              print('⚠️ V1→V2 migration warning: $e');
+            }
+            // Rethrow to trigger app restart with fresh database
+            rethrow;
+          }
         },
       ),
     );
@@ -541,7 +884,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Attach a nutrition plan JSON payload directly to an activity row.
   Future<void> setActivityNutritionPlan({
-    required int activityId,
+    required String activityId,
     required String planData,
   }) async {
     await (update(
@@ -557,7 +900,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Clear the nutrition plan fields for an activity.
-  Future<void> clearActivityNutritionPlan(int activityId) async {
+  Future<void> clearActivityNutritionPlan(String activityId) async {
     await (update(
       activitiesTable,
     )..where((tbl) => tbl.id.equals(activityId))).write(
@@ -569,7 +912,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Fetch an activity row by primary key.
-  Future<Activity?> getActivityByIdLocal(int activityId) async {
+  Future<Activity?> getActivityByIdLocal(String activityId) async {
     final query = select(activitiesTable)
       ..where((tbl) => tbl.id.equals(activityId))
       ..limit(1);
@@ -637,11 +980,14 @@ class AppDatabase extends _$AppDatabase {
       // Delete with WHERE user_id = userId
       // Child tables first (foreign key constraints)
 
-      // carb_loading_day_meals (via carb_loading_plans.user_id)
+      // carb_loading_day_meals (via carb_loading_days via carb_loading_plans.user_id)
       await customStatement('''
         DELETE FROM carb_loading_day_meals_table
-        WHERE carb_loading_plan_id IN (
-          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+        WHERE carb_loading_day_id IN (
+          SELECT id FROM carb_loading_days_table
+          WHERE carb_loading_plan_id IN (
+            SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+          )
         )
       ''', [userId]);
 
@@ -756,10 +1102,30 @@ class AppDatabase extends _$AppDatabase {
 
       // ============ CARB LOADING PLANS ============
       // Delete OAuth user's old carb loading plans (if any)
-      // Note: carb_loading_days is a CHILD table with ON DELETE CASCADE,
-      // so deleting plans will automatically delete associated days
+      // Note: Drift doesn't have FK cascades - must manually delete child tables first
+
+      // Step 1: Delete carb_loading_day_meals for OAuth user's plans
+      await customStatement('''
+        DELETE FROM carb_loading_day_meals_table
+        WHERE carb_loading_day_id IN (
+          SELECT id FROM carb_loading_days_table
+          WHERE carb_loading_plan_id IN (
+            SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+          )
+        )
+      ''', [toUserId]);
+
+      // Step 2: Delete carb_loading_days for OAuth user's plans
+      await customStatement('''
+        DELETE FROM carb_loading_days_table
+        WHERE carb_loading_plan_id IN (
+          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+        )
+      ''', [toUserId]);
+
+      // Step 3: Delete carb_loading_plans for OAuth user
       await customStatement(
-        'DELETE FROM carb_loading_plans WHERE user_id = ?',
+        'DELETE FROM carb_loading_plans_table WHERE user_id = ?',
         [toUserId],
       );
       // Migrate anonymous user's carb loading plans to OAuth user

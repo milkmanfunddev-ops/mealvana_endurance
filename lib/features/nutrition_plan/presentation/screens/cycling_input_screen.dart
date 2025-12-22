@@ -24,8 +24,8 @@ class CyclingInputScreen extends ConsumerStatefulWidget {
   final DateTime? initialDate;
   final double? initialDistance;
   final double? initialSpeed;
-  final int? activityId; // Link to calendar activity
-  final int? eventId; // Link to calendar event
+  final String? activityId; // Link to calendar activity
+  final String? eventId; // Link to calendar event
 
   const CyclingInputScreen({
     super.key,

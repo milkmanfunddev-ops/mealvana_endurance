@@ -232,8 +232,8 @@ class RunningInputController extends _$RunningInputController {
 
   /// Delegate to the main controller for macro generation
   Future<void> generateMacros({
-    int? activityId,
-    int? eventId,
+    String? activityId,
+    String? eventId,
   }) async {
     final currentState = state;
 

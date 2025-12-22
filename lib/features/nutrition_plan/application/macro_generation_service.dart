@@ -32,7 +32,7 @@ class MacroGenerationService {
 
   /// Generate running macro targets
   Future<MacroTargets> generateRunningMacros({
-    int? activityId,
+    String? activityId,
     required String deviceId,
     required double distanceMiles,
     required double paceMinutesPerMile,
@@ -78,7 +78,7 @@ class MacroGenerationService {
 
   /// Generate cycling macro targets
   Future<MacroTargets> generateCyclingMacros({
-    int? activityId,
+    String? activityId,
     required String deviceId,
     required double distanceMiles,
     required double speedMph,
@@ -137,7 +137,7 @@ class MacroGenerationService {
 
   /// Generate swimming macro targets
   Future<MacroTargets> generateSwimmingMacros({
-    int? activityId,
+    String? activityId,
     required String deviceId,
     required int distanceMeters,
     required int paceSecondsper100m,
@@ -216,7 +216,7 @@ class MacroGenerationService {
       'run_pace_unit': 'min_per_mile',
       'run_distance_unit': 'mi',
       'time_before_run_min': timeBeforeRunMinutes,
-      'gut_training': userProfile?.gutTraining.name ?? gutTraining.name,
+      'gut_training': gutTraining.name, // Use the gut training level selected on the UI
       'carb_source': 'dual',
       'sweat_sodium': 'medium',
       'drink_sodium_mg_per_l': 500,

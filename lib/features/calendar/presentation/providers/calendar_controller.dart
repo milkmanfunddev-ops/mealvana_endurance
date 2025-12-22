@@ -109,7 +109,7 @@ class CalendarController extends _$CalendarController {
   }
 
   /// Create a new activity
-  Future<int> createActivity({
+  Future<String> createActivity({
     required String title,
     required DateTime scheduledDateTime,
     ActivityType activityType = ActivityType.running,
@@ -189,7 +189,7 @@ class CalendarController extends _$CalendarController {
   }
 
   /// Delete an activity and its associated event/carb loading
-  Future<void> deleteActivity(int activityId) async {
+  Future<void> deleteActivity(String activityId) async {
     try {
       final user = await _authService.getCurrentUser();
       final deviceId = user?.id ?? 'unknown';
@@ -210,7 +210,7 @@ class CalendarController extends _$CalendarController {
   }
 
   /// Delete a carb loading day
-  Future<void> deleteCarbLoadingDay(int carbLoadingDayId) async {
+  Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
     try {
       await _calendarService.deleteCarbLoadingDay(carbLoadingDayId);
 
@@ -224,7 +224,7 @@ class CalendarController extends _$CalendarController {
 
   /// Complete an activity by updating it with completion data
   Future<void> completeActivity({
-    required int activityId,
+    required String activityId,
     required DateTime completedAt,
     int? effortRating,
     int? nutritionRating,
@@ -270,7 +270,7 @@ class CalendarController extends _$CalendarController {
 
   /// Update activity completion notes
   Future<void> updateActivityCompletion({
-    required int activityId,
+    required String activityId,
     String? textNotes,
   }) async {
     try {
@@ -305,7 +305,7 @@ class CalendarController extends _$CalendarController {
 
   /// Create a new event (optionally linked to an activity)
   Future<void> createEvent({
-    int? activityId, // Now optional - events can exist without activities
+    String? activityId, // Now optional - events can exist without activities
     required ActivityType eventType, // Event type: running, cycling, swimming, triathlon, duathlon, multisport
     String? eventSubtype, // Specific race distance/type
     String? eventName,
@@ -389,7 +389,7 @@ class CalendarController extends _$CalendarController {
 
   /// Create a carb loading plan for an event
   Future<void> createCarbLoadingPlan({
-    required int eventId,
+    required String eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -418,7 +418,7 @@ class CalendarController extends _$CalendarController {
 
   /// Update carb loading protocol for an event
   Future<void> updateCarbLoadingProtocol({
-    required int eventId,
+    required String eventId,
     required int newProtocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -495,7 +495,7 @@ class AllEventsController extends _$AllEventsController {
 @riverpod
 Future<({Activity? activity, Event event})> eventDetail(
   Ref ref,
-  int eventId,
+  String eventId,
 ) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);
@@ -533,7 +533,7 @@ Future<({Activity? activity, Event event})> eventDetail(
 @riverpod
 Future<({Activity activity, Event? event})> activityDetail(
   Ref ref,
-  int activityId,
+  String activityId,
 ) async {
   final service = ref.read(calendarServiceProvider);
   final logger = ref.read(appLoggerProvider);

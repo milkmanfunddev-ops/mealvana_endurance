@@ -6,14 +6,27 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/onboarding_controller.dart';
+import '../widgets/onboarding_widgets.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/data/user_repository.dart';
+import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
 
 /// User Profile Screen - Design System
 /// User setup screen during onboarding - RESTORED with database integration
 class UserProfileScreen extends ConsumerStatefulWidget {
-  const UserProfileScreen({super.key});
+  const UserProfileScreen({
+    super.key,
+    this.onContinue,
+    this.onBack,
+  });
+
+  /// Callback to advance to next page (optional for PageView mode)
+  final VoidCallback? onContinue;
+
+  /// Callback to go back to previous page (optional for PageView mode)
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -38,6 +51,19 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Initialize from controller cache if available
+    final controller = ref.read(onboardingControllerProvider.notifier);
+    final cachedData = controller.cachedUserProfileData;
+    if (cachedData != null) {
+      _selectedGender = cachedData['gender'] as Gender;
+      _selectedBirthday = cachedData['birthday'] as DateTime;
+      _heightFeetController.text = cachedData['heightFeet'].toString();
+      _heightInchesController.text = cachedData['heightInches'].toString();
+      _weightController.text = cachedData['weightPounds'].toString();
+      _runsWithWaterBottle = cachedData['runsWithWaterBottle'] as bool;
+    }
+
     ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
       'screen_name': 'User Profile Onboarding',
     });
@@ -57,23 +83,29 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final asyncState = ref.watch(onboardingControllerProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      body: _buildContent(context, asyncState),
-    );
-  }
+      backgroundColor: AppColors.blackberry,
+      body: Column(
+        children: [
+          // Progress bar at the very top (no SafeArea padding)
+          Container(
+            color: AppColors.blackberry,
+            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+            child: const OnboardingProgressBar(
+              currentSegment: 1, // Profile segment
+            ),
+          ),
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      automaticallyImplyLeading: false,
-      title: Text(
-        'Your Profile',
-        style: AppTextStyles.sectionTitle.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
+          // Content
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: _buildContent(context, asyncState),
+            ),
+          ),
+
+          // Footer navigation
+          _buildFooter(asyncState),
+        ],
       ),
     );
   }
@@ -86,26 +118,35 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       },
       behavior: HitTestBehavior.opaque,
       child: SingleChildScrollView(
-        padding: AppSpacing.screenPaddingHorizontal,
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 16),
 
             // Introduction text
-            Text(
+            const Text(
               'Tell us about yourself',
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+              style: TextStyle(
+                fontFamily: 'Sansita',
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: AppColors.orange,
+                height: 1.0,
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
+            const SizedBox(height: 12),
+            const Text(
               'This helps us calculate accurate nutrition plans for your activities.',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              style: TextStyle(
+                fontFamily: 'Apercu',
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textDark,
+                letterSpacing: 0.192,
+                height: 1.0,
               ),
             ),
 
@@ -119,10 +160,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             // Physical information section
             _buildPhysicalInfoSection(context),
 
-            const SizedBox(height: AppSpacing.lg),
+            // const SizedBox(height: AppSpacing.lg),
 
             // Running habits section
-            _buildRunningHabitsSection(context),
+            // _buildRunningHabitsSection(context),
 
             const SizedBox(height: AppSpacing.xxxl),
 
@@ -156,18 +197,19 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   ),
                 ),
               ),
-
-            // Continue button
-            KylePrimaryButton(
-              text: asyncState.isLoading ? 'Saving...' : 'Continue',
-              onPressed: asyncState.isLoading ? null : _submitProfile,
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
           ],
         ),
       ),
       ),
+    );
+  }
+
+  Widget _buildFooter(AsyncValue<void> asyncState) {
+    return FigmaOnboardingFooter(
+      onContinue: _submitProfile,
+      onBack: widget.onBack ?? () => context.pop(),
+      canContinue: !asyncState.isLoading,
+      isLoading: asyncState.isLoading,
     );
   }
 
@@ -295,98 +337,98 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
   }
 
-  Widget _buildRunningHabitsSection(BuildContext context) {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Running Habits',
-            style: AppTextStyles.subtitle.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+  // Widget _buildRunningHabitsSection(BuildContext context) {
+  //   return BaseCard(
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'Running Habits',
+  //           style: AppTextStyles.subtitle.copyWith(
+  //             color: Theme.of(context).colorScheme.onSurface,
+  //           ),
+  //         ),
 
-          const SizedBox(height: AppSpacing.md),
+  //         const SizedBox(height: AppSpacing.md),
 
-          // Water bottle toggle
-          InkWell(
-            onTap: () => setState(() => _runsWithWaterBottle = !_runsWithWaterBottle),
-            borderRadius: AppRadius.cardRadius,
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: _runsWithWaterBottle
-                    ? AppColors.blackberry.withOpacity(0.1)
-                    : Colors.transparent,
-                border: Border.all(
-                  color: _runsWithWaterBottle
-                      ? AppColors.blackberry
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                  width: _runsWithWaterBottle ? 2 : 1,
-                ),
-                borderRadius: AppRadius.cardRadius,
-              ),
-              child: Row(
-                children: [
-                  // Checkbox
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: _runsWithWaterBottle
-                          ? AppColors.blackberry
-                          : Colors.transparent,
-                      border: Border.all(
-                        color: _runsWithWaterBottle
-                            ? AppColors.blackberry
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: _runsWithWaterBottle
-                        ? const Icon(
-                            FontAwesomeIcons.check,
-                            size: 14,
-                            color: AppColors.cream,
-                          )
-                        : null,
-                  ),
+  //         // Water bottle toggle
+  //         InkWell(
+  //           onTap: () => setState(() => _runsWithWaterBottle = !_runsWithWaterBottle),
+  //           borderRadius: AppRadius.cardRadius,
+  //           child: Container(
+  //             padding: const EdgeInsets.all(AppSpacing.md),
+  //             decoration: BoxDecoration(
+  //               color: _runsWithWaterBottle
+  //                   ? AppColors.blackberry.withOpacity(0.1)
+  //                   : Colors.transparent,
+  //               border: Border.all(
+  //                 color: _runsWithWaterBottle
+  //                     ? AppColors.blackberry
+  //                     : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+  //                 width: _runsWithWaterBottle ? 2 : 1,
+  //               ),
+  //               borderRadius: AppRadius.cardRadius,
+  //             ),
+  //             child: Row(
+  //               children: [
+  //                 // Checkbox
+  //                 Container(
+  //                   width: 24,
+  //                   height: 24,
+  //                   decoration: BoxDecoration(
+  //                     color: _runsWithWaterBottle
+  //                         ? AppColors.blackberry
+  //                         : Colors.transparent,
+  //                     border: Border.all(
+  //                       color: _runsWithWaterBottle
+  //                           ? AppColors.blackberry
+  //                           : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+  //                       width: 2,
+  //                     ),
+  //                     borderRadius: BorderRadius.circular(6),
+  //                   ),
+  //                   child: _runsWithWaterBottle
+  //                       ? const Icon(
+  //                           FontAwesomeIcons.check,
+  //                           size: 14,
+  //                           color: AppColors.cream,
+  //                         )
+  //                       : null,
+  //                 ),
 
-                  const SizedBox(width: AppSpacing.md),
+  //                 const SizedBox(width: AppSpacing.md),
 
-                  // Text content
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'I run with a water bottle',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'This helps us estimate your hydration needs',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  //                 // Text content
+  //                 Expanded(
+  //                   child: Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       Text(
+  //                         'I run with a water bottle',
+  //                         style: AppTextStyles.bodyMedium.copyWith(
+  //                           color: Theme.of(context).colorScheme.onSurface,
+  //                           fontWeight: FontWeight.w500,
+  //                         ),
+  //                       ),
+  //                       const SizedBox(height: AppSpacing.xs),
+  //                       Text(
+  //                         'This helps us estimate your hydration needs',
+  //                         style: AppTextStyles.bodyMedium.copyWith(
+  //                           color: Theme.of(context).colorScheme.onSurfaceVariant,
+  //                           fontSize: 14,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildGenderSelector(BuildContext context) {
     return Column(
@@ -654,6 +696,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   Future<void> _submitProfile() async {
+    // Dismiss keyboard first
+    FocusScope.of(context).unfocus();
+
     // Validate form and required fields
     if (!_formKey.currentState!.validate() || _selectedBirthday == null) {
       if (mounted) {
@@ -677,10 +722,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       'weight': _weightController.text,
     });
 
-    // Submit to controller
+    // Cache the data instead of saving to database
     final controller = ref.read(onboardingControllerProvider.notifier);
-
-    final success = await controller.createUserProfile(
+    controller.cacheUserProfileData(
       gender: _selectedGender,
       birthday: _selectedBirthday!,
       heightFeet: int.parse(_heightFeetController.text),
@@ -689,7 +733,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       runsWithWaterBottle: _runsWithWaterBottle,
     );
 
-    if (success && mounted) {
+    if (mounted) {
       // Track successful completion
       await analytics.track('user_profile_completed', properties: {
         'gender': _selectedGender.name,
@@ -697,29 +741,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
       // Track navigation
       await analytics.track('navigation', properties: {
-        'destination': 'Sport Preferences Onboarding',
+        'destination': 'Sports Selection Onboarding',
         'source': 'User Profile Submit',
       });
 
-      // Invalidate providers to refresh user state
-      ref.invalidate(currentUserProvider);
-      ref.invalidate(userRepositoryProvider);
-
-      if (mounted) {
-        context.push('/onboarding/sport-preferences');
+      // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
+      if (widget.onContinue != null) {
+        widget.onContinue!();
+      } else {
+        context.push('/onboarding/sports-selection');
       }
-    } else if (mounted) {
-      // Error is already shown in the UI via asyncState.hasError
-      // Additional SnackBar for user feedback
-      final state = ref.read(onboardingControllerProvider);
-      final errorMessage = state.error?.toString() ?? 'Failed to create profile';
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: AppColors.dragonfruit,
-        ),
-      );
     }
   }
 }

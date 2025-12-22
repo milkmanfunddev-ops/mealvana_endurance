@@ -31,7 +31,7 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanGenerationStarted({
     required String deviceId,
-    int? activityId,
+    String? activityId,
     required double distanceMiles,
     required double paceMinutesPerMile,
     required String gutTrainingLevel,
@@ -48,7 +48,7 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanGenerationFailed({
     required String deviceId,
-    int? activityId,
+    String? activityId,
     required double distanceMiles,
     required double paceMinutesPerMile,
     required String errorMessage,
@@ -65,7 +65,7 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackPlanGenerated({
     required String deviceId,
-    int? activityId,
+    String? activityId,
     required String activityType,
     required double distanceMiles,
     required double paceMinutesPerMile,
@@ -192,7 +192,7 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackReminderSet({
     required String deviceId,
-    required int activityId,
+    required String activityId,
     required DateTime reminderTime,
   }) {
     return track('reminder_set', properties: {
@@ -205,7 +205,7 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackReminderScheduled({
     required String deviceId,
-    required int activityId,
+    required String activityId,
     required DateTime reminderTime,
   }) {
     return track('reminder_scheduled', properties: {
@@ -218,7 +218,7 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   Future<void> trackReminderClicked({
     required String deviceId,
-    required int activityId,
+    required String activityId,
   }) {
     return track('reminder_clicked', properties: {
       'device_id': deviceId,

@@ -201,10 +201,13 @@ Unified dual database architecture with local-first design and cloud synchroniza
 - Row Level Security based on device_id and user_id
 
 **Schema Management**:
-- **Current Version**: v1 (clean baseline, no migrations).  Please stay on v1 as we are in active development and do not start a v2 migration.  
-- **Schema Location**: `/database_schemas/v1/`
-- **Snapshot Command**: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v1/`
-- **Future Migrations**: Will use Drift's built-in migration system when moving to v2.
+- **Current Version**: v2 (migrated from v1 with proper Drift migrations)
+- **Migration Strategy**: Using Drift's built-in migration system with version bumps
+- **Schema Location**: `/database_schemas/v2/` (v1 baseline preserved in `/database_schemas/v1/`)
+- **Snapshot Command**: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v2/`
+- **V2 Migration**: Consolidates preference_level, dietary_preference, and allergies columns with idempotent checks
+- **Rollback Strategy**: If migration fails, delete local DB and resync from Supabase
+- **Future Changes**: Always use proper Drift migrations with schema version bumps
 
 **Development Environments**:
 - **Dev**: Automated deployment on `develop` branch push (tests run first)
@@ -305,21 +308,45 @@ class ScreenController extends _$ScreenController {
 **Local Development**:
 ```bash
 flutter run                              # Run on connected device
+flutter run -d chrome                    # Run web version in Chrome
 /task-checker                            # Run quality checks (CodeRabbit + analyze + tests)
 flutter test                            # Run tests manually if needed
 ```
 
 **Release Builds (HUMAN ONLY)**:
 ```bash
+# Mobile builds
 flutter build ios --release             # iOS build (5-10+ minutes)
 flutter build appbundle --release       # Android build (5-10+ minutes)
+
+# Web build (2025 recommended)
+flutter build web --release --wasm --pwa-strategy=none  # Web build with Skwasm renderer
 ```
+
+**Why `--wasm` for web builds?**
+- The `--web-renderer` flag is deprecated in Flutter 3.24+
+- `--wasm` enables the new Skwasm renderer (faster, smaller at 1.1MB vs 1.5MB)
+- Automatically falls back to CanvasKit on unsupported browsers
 
 **Code Push (Shorebird)**:
 ```bash
 shorebird release ios                   # Create iOS release
 shorebird patch ios                     # Push iOS update
 ```
+
+**Web Deployment Prerequisites:**
+Before implementing web repositories, complete these setup steps:
+1. Add `sqlite3_web: ^0.1.0` and `drift_web: ^2.20.0` to pubspec.yaml
+2. Download `sqlite3.wasm` to `web/` directory:
+   ```bash
+   curl -L -o web/sqlite3.wasm https://github.com/simolus3/sqlite3.dart/releases/download/0.1.0/sqlite3.wasm
+   ```
+3. Update `AppDatabase._openConnection()` with `kIsWeb` check for WebDatabase
+4. Remove `.env` files from web assets (security risk - web bundles are public)
+5. Configure Vercel environment variables for secrets
+6. Create `vercel.json` with proper WASM headers
+
+📚 **Complete Web Setup**: [/docs/web_mode/SETUP.md](/docs/web_mode/SETUP.md)
 
 📚 **Full Documentation**: [/docs/technical/shorebird-code-push.md](/docs/technical/shorebird-code-push.md)
 
@@ -365,6 +392,59 @@ shorebird patch ios                     # Push iOS update
 - [Riverpod Patterns](/docs/technical/andrea/andrea_riverpod_autogenerate_new.txt)
 - [Data Mutations](/docs/technical/andrea/andrea_data_mutations.txt)
 
+### Web Deployment Documentation
+
+**DECISION (2025-12-16 - FINAL)**: Using **drift_web** to leverage existing Drift database on web with minimal changes.
+
+**Implementation Approach:**
+- **Mobile**: 100% unchanged (existing Drift + SQLite)
+- **Web**: Same Drift code using `drift_web` + IndexedDB (transparent)
+- **Code Changes**: 1 file, ~10 lines (add `kIsWeb` check to database initialization)
+- **Controllers/Services**: Zero changes (work on both platforms)
+- **Repositories**: Zero changes (same queries work everywhere)
+- **Timeline**: **1 week (5 days testing)** to production-ready web app
+
+**Why drift_web:**
+1. **Simplest**: 1 code change (10 lines) vs 2000+ lines for web repositories
+2. **Fastest**: 1 week vs 2+ weeks
+3. **Zero duplication**: Same database code works on mobile + web
+4. **Zero risk**: All existing controllers, services, repositories unchanged
+5. **Full offline**: IndexedDB storage included from day 1
+
+**The Math:**
+- Web repositories: 14 repositories × ~150 lines = 2,100+ lines to maintain forever
+- drift_web: 1 conditional statement
+
+**Setup:**
+```bash
+flutter create . --platforms=web
+flutter pub add drift_web
+```
+
+Update `AppDatabase._openConnection()` with `kIsWeb` check (see /docs/web_mode/SETUP.md)
+
+**Note:** drift_web uses sql.js (JavaScript SQLite) built-in. No additional dependencies or WASM downloads needed.
+
+**Build command:**
+```bash
+flutter build web --release --wasm --pwa-strategy=none
+```
+
+**Key distinction:** The `--wasm` flag is for Flutter's Skwasm renderer (faster UI), NOT for SQLite. drift_web uses sql.js by default.
+
+**Timeline:** 30 minutes setup + 5 days testing = 1 week total
+
+**Documentation:**
+- [Web Deployment Overview](/docs/web_mode/README.md) - Complete architecture using drift_web approach
+- [Web Setup Guide](/docs/web_mode/SETUP.md) - Step-by-step drift_web setup (30 minutes)
+- [Web Implementation Roadmap](/docs/web_mode/roadmap-simplified.md) - 1-week deployment plan
+- [Web Caching Strategy](/docs/web_mode/cache-strategy.md) - How drift_web uses IndexedDB
+
+### Feature Documentation
+- [Onboarding Revamp](/docs/features/onboarding-revamp/README.md) - Multi-sport onboarding redesign (Phase 3 - In Progress)
+- [Onboarding Technical Guide](/docs/features/onboarding-revamp/technical-guide.md) - Implementation patterns and code examples
+- [Phase 4 Checklist](/docs/features/onboarding-revamp/phase-4-checklist.md) - Wiring & integration tasks
+
 ### Project Management
 - [Roadmap](/docs/roadmap.md) - Current status and future plans
 - [Features List](/docs/features.md) - Complete feature documentation
@@ -377,8 +457,9 @@ shorebird patch ios                     # Push iOS update
 3. **Use Content Service**: Never hardcode UI text or algorithm parameters
 4. **Maintain Offline-First**: Always write to local storage first
 5. **Run Code Generation**: After adding `@riverpod` or `@DriftDatabase` annotations
-6. **Generate Schema Snapshots**: After database changes: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v1/`
-7. **Follow ContentService Integration**: All controllers must access ContentService for UI text
+6. **Use Proper Drift Migrations**: Always bump schema version and use Drift's migration system for database changes
+7. **Generate Schema Snapshots**: After database changes: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v<version>/`
+8. **Follow ContentService Integration**: All controllers must access ContentService for UI text
 8. **Test on Both Platforms**: iOS and Android have different requirements
 9. **Environment Deployments**: Use GitHub Actions workflows for automated dev/staging deployment
 

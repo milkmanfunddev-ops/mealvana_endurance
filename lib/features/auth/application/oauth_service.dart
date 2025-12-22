@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kReleaseMode;
+import 'package:flutter/foundation.dart' show kReleaseMode, kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -15,6 +14,7 @@ import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/preferences_service.dart';
 import '../../../shared/providers/user_id_provider.dart';
+import '../../../shared/utils/platform_io.dart' if (dart.library.html) '../../../shared/utils/platform_web.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
 import '../../events/presentation/providers/events_controller.dart';
 import '../data/user_repository.dart';
@@ -52,6 +52,11 @@ class OAuthService extends _$OAuthService {
   GoogleSignIn _getGoogleSignIn() {
     if (_googleSignIn != null) return _googleSignIn!;
 
+    // Web platforms use Supabase's web OAuth flow, not native Google Sign-In
+    if (kIsWeb) {
+      throw UnsupportedError('Native Google Sign-In not supported on web. Use Supabase web OAuth flow.');
+    }
+
     // Web Client ID for Supabase OAuth - used as serverClientId to get ID token
     // This is the OAuth 2.0 Client ID for Web Application from Google Cloud Console
     const webClientId = '171527646530-d1hr8a9ja4ucqk28cipcfnlo288qhccn.apps.googleusercontent.com';
@@ -78,13 +83,13 @@ class OAuthService extends _$OAuthService {
     final androidClientId = isReleaseBuild ? androidReleaseClientId : androidDebugClientId;
 
     _logger.info('Initializing Google Sign-In', context: 'OAUTH_NATIVE', data: {
-      'platform': Platform.operatingSystem,
+      'platform': PlatformInfo.operatingSystem,
       'is_release_build': isReleaseBuild,
-      'using_client_id': Platform.isAndroid ? (isReleaseBuild ? 'release' : 'debug') : 'ios_plist',
+      'using_client_id': PlatformInfo.isAndroid ? (isReleaseBuild ? 'release' : 'debug') : 'ios_plist',
     });
 
     _googleSignIn = GoogleSignIn(
-      clientId: Platform.isIOS ? null : androidClientId,
+      clientId: PlatformInfo.isIOS ? null : androidClientId,
       serverClientId: webClientId,
       scopes: ['email', 'profile'],
     );
@@ -95,6 +100,11 @@ class OAuthService extends _$OAuthService {
   /// Link Apple account using native Apple Sign-In
   /// iOS 13+ required, uses AuthenticationServices framework
   Future<void> linkAppleAccount() async {
+    // Web platforms should use Supabase's web OAuth flow
+    if (kIsWeb) {
+      throw UnsupportedError('Native Apple Sign-In not supported on web. Use Supabase web OAuth flow.');
+    }
+
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -102,7 +112,7 @@ class OAuthService extends _$OAuthService {
 
       // Track analytics
       await _analytics.track('auth_apple_native_started', properties: {
-        'platform': Platform.operatingSystem,
+        'platform': PlatformInfo.operatingSystem,
       });
 
       // Get current user before linking
@@ -185,7 +195,7 @@ class OAuthService extends _$OAuthService {
       // Track successful linking
       await _analytics.track('auth_apple_native_linked', properties: {
         'user_id': anonymousUserId,
-        'platform': Platform.operatingSystem,
+        'platform': PlatformInfo.operatingSystem,
       });
     });
 
@@ -209,7 +219,7 @@ class OAuthService extends _$OAuthService {
         wasCancelled ? 'auth_apple_native_cancelled' : 'auth_apple_native_failed',
         properties: {
           'error': errorMessage,
-          'platform': Platform.operatingSystem,
+          'platform': PlatformInfo.operatingSystem,
         },
       );
 
@@ -220,6 +230,11 @@ class OAuthService extends _$OAuthService {
   /// Link Google account using native Google Sign-In
   /// Works on iOS and Android
   Future<void> linkGoogleAccount() async {
+    // Web platforms should use Supabase's web OAuth flow
+    if (kIsWeb) {
+      throw UnsupportedError('Native Google Sign-In not supported on web. Use Supabase web OAuth flow.');
+    }
+
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -227,7 +242,7 @@ class OAuthService extends _$OAuthService {
 
       // Track analytics
       await _analytics.track('auth_google_native_started', properties: {
-        'platform': Platform.operatingSystem,
+        'platform': PlatformInfo.operatingSystem,
       });
 
       // Get current user before linking
@@ -257,7 +272,7 @@ class OAuthService extends _$OAuthService {
       if (account == null) {
         _logger.info('Google Sign-In cancelled by user', context: 'OAUTH_NATIVE');
         await _analytics.track('auth_google_native_cancelled', properties: {
-          'platform': Platform.operatingSystem,
+          'platform': PlatformInfo.operatingSystem,
         });
         throw Exception('Google Sign-In was cancelled');
       }
@@ -328,7 +343,7 @@ class OAuthService extends _$OAuthService {
       await _analytics.track('auth_google_native_linked', properties: {
         'user_id': anonymousUserId,
         'email': account.email,
-        'platform': Platform.operatingSystem,
+        'platform': PlatformInfo.operatingSystem,
       });
     });
 
@@ -352,7 +367,7 @@ class OAuthService extends _$OAuthService {
         wasCancelled ? 'auth_google_native_cancelled' : 'auth_google_native_failed',
         properties: {
           'error': errorMessage,
-          'platform': Platform.operatingSystem,
+          'platform': PlatformInfo.operatingSystem,
         },
       );
 
@@ -364,13 +379,18 @@ class OAuthService extends _$OAuthService {
   /// Used when account linking fails because account already exists
   /// Migrates anonymous user's data to the existing OAuth account
   Future<void> signInWithApple() async {
+    // Web platforms should use Supabase's web OAuth flow
+    if (kIsWeb) {
+      throw UnsupportedError('Native Apple Sign-In not supported on web. Use Supabase web OAuth flow.');
+    }
+
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
       _logger.info('Starting native Apple Sign-In (Sign In mode)', context: 'OAUTH_NATIVE');
 
       await _analytics.track('auth_apple_signin_started', properties: {
-        'platform': Platform.operatingSystem,
+        'platform': PlatformInfo.operatingSystem,
       });
 
       // CRITICAL: Capture anonymous user ID BEFORE signing in
@@ -433,7 +453,7 @@ class OAuthService extends _$OAuthService {
 
       await _analytics.track('auth_apple_signin_completed', properties: {
         'user_id': oauthUserId,
-        'platform': Platform.operatingSystem,
+        'platform': PlatformInfo.operatingSystem,
         'migrated_data': anonymousUserId != null && anonymousUserId != oauthUserId,
       });
 
@@ -479,13 +499,18 @@ class OAuthService extends _$OAuthService {
   /// Used when account linking fails because account already exists
   /// Migrates anonymous user's data to the existing OAuth account
   Future<void> signInWithGoogle() async {
+    // Web platforms should use Supabase's web OAuth flow
+    if (kIsWeb) {
+      throw UnsupportedError('Native Google Sign-In not supported on web. Use Supabase web OAuth flow.');
+    }
+
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
       _logger.info('Starting native Google Sign-In (Sign In mode)', context: 'OAUTH_NATIVE');
 
       await _analytics.track('auth_google_signin_started', properties: {
-        'platform': Platform.operatingSystem,
+        'platform': PlatformInfo.operatingSystem,
       });
 
       // CRITICAL: Capture anonymous user ID BEFORE signing in
@@ -559,7 +584,7 @@ class OAuthService extends _$OAuthService {
 
       await _analytics.track('auth_google_signin_completed', properties: {
         'user_id': oauthUserId,
-        'platform': Platform.operatingSystem,
+        'platform': PlatformInfo.operatingSystem,
         'migrated_data': anonymousUserId != null && anonymousUserId != oauthUserId,
       });
 

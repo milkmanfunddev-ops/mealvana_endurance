@@ -35,7 +35,7 @@ final class ActivityDetailControllerProvider
   /// mismatches that caused food swap/add operations to not persist.
   const ActivityDetailControllerProvider._({
     required ActivityDetailControllerFamily super.from,
-    required ({int activityId, bool isNewActivity}) super.argument,
+    required ({String activityId, bool isNewActivity}) super.argument,
   }) : super(
          retry: null,
          name: r'activityDetailControllerProvider',
@@ -71,7 +71,7 @@ final class ActivityDetailControllerProvider
 }
 
 String _$activityDetailControllerHash() =>
-    r'd824da236de27acdf4985f3f096389fdf3179d86';
+    r'137f232059b90d91c257bea5c662b79465bbe349';
 
 /// Activity Detail Controller
 /// Manages activity viewing, updates, and completion
@@ -87,7 +87,7 @@ final class ActivityDetailControllerFamily extends $Family
           AsyncValue<ActivityDetailState>,
           ActivityDetailState,
           FutureOr<ActivityDetailState>,
-          ({int activityId, bool isNewActivity})
+          ({String activityId, bool isNewActivity})
         > {
   const ActivityDetailControllerFamily._()
     : super(
@@ -106,7 +106,7 @@ final class ActivityDetailControllerFamily extends $Family
   /// mismatches that caused food swap/add operations to not persist.
 
   ActivityDetailControllerProvider call({
-    required int activityId,
+    required String activityId,
     bool isNewActivity = false,
   }) => ActivityDetailControllerProvider._(
     argument: (activityId: activityId, isNewActivity: isNewActivity),
@@ -126,12 +126,12 @@ final class ActivityDetailControllerFamily extends $Family
 
 abstract class _$ActivityDetailController
     extends $AsyncNotifier<ActivityDetailState> {
-  late final _$args = ref.$arg as ({int activityId, bool isNewActivity});
-  int get activityId => _$args.activityId;
+  late final _$args = ref.$arg as ({String activityId, bool isNewActivity});
+  String get activityId => _$args.activityId;
   bool get isNewActivity => _$args.isNewActivity;
 
   FutureOr<ActivityDetailState> build({
-    required int activityId,
+    required String activityId,
     bool isNewActivity = false,
   });
   @$mustCallSuper

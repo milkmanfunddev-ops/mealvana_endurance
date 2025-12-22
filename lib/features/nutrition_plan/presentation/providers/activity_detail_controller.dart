@@ -10,6 +10,7 @@ import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../data/nutrition_plan_repository.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'activity_detail_controller.g.dart';
@@ -89,12 +90,26 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   @override
   FutureOr<ActivityDetailState> build({
-    required int activityId,
+    required String activityId,
     bool isNewActivity = false,
   }) async {
-    // Get current user's ID
-    final user = await _authService.getCurrentUser();
-    final userId = user?.id ?? 'unknown';
+    // CRITICAL FIX: Use userIdProvider (same source as ActivitiesController)
+    // This was causing user ID mismatch bug where activities created with one ID
+    // were being queried with a different ID
+    final userId = await ref.read(userIdProvider.future);
+
+    // DIAGNOSTIC LOGGING: Track user ID source for debugging
+    final authUser = await _authService.getCurrentUser();
+    _logger.info(
+      'Loading activity detail',
+      context: 'ACTIVITY_DETAIL_CONTROLLER',
+      data: {
+        'activityId': activityId,
+        'userIdFromProvider': userId,
+        'authUserId': authUser?.id ?? 'null',
+        'idsMatch': userId == authUser?.id,
+      },
+    );
 
     final activity = await _activitiesService.getActivityById(userId, activityId);
 
@@ -105,6 +120,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         data: {
           'activityId': activityId,
           'userId': userId,
+          'authUserId': authUser?.id,
         },
       );
       throw Exception('Activity not found');
@@ -125,9 +141,13 @@ class ActivityDetailController extends _$ActivityDetailController {
     // Load completion if exists
     ActivityCompletion? completion;
     if (activity.isCompleted && activity.completedAt != null) {
+      // Generate integer IDs from string UUID using hashCode
+      final completionId = activity.id.hashCode;
+      final activityIdInt = activity.id.hashCode;
+
       completion = ActivityCompletion(
-        id: activity.id,
-        activityId: activity.id,
+        id: completionId,
+        activityId: activityIdInt,
         userId: activity.userId,
         completedAt: activity.completedAt!,
         overallSatisfaction: activity.completionRating,
@@ -190,7 +210,7 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   /// Save nutrition plan to activity's nutritionPlanData field
-  Future<void> _saveNutritionPlanToActivity(int activityId, NutritionPlan plan) async {
+  Future<void> _saveNutritionPlanToActivity(String activityId, NutritionPlan plan) async {
     try {
       final user = await _authService.getCurrentUser();
       if (user == null) {

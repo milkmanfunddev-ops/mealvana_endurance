@@ -1,17 +1,17 @@
-import 'dart:math';
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 /// Table for all calendar entries including workouts and events
 @DataClassName('Activity')
 class ActivitiesTable extends Table {
-  IntColumn get id => integer().clientDefault(() => Random().nextInt(2147483647))(); // PRIMARY KEY (random int - no collision with server)
+  TextColumn get id => text().clientDefault(() => const Uuid().v4())(); // PRIMARY KEY (UUID)
   TextColumn get userId => text().named('user_id')(); // FOREIGN KEY to user_profiles.id
   
   TextColumn get activityType => text().named('activity_type')(); // 'running', 'cycling', 'swimming'
   TextColumn get title => text()();
   DateTimeColumn get scheduledDateTime => dateTime().named('scheduled_date_time')(); // TIMESTAMP
   
-  TextColumn get status => text().withDefault(const Constant('planned')).named('status')(); // 'planned', 'in_progress', 'completed', 'skipped'
+  TextColumn get status => text().withDefault(const Constant('planned')).named('status')(); // 'draft', 'planned', 'in_progress', 'completed', 'skipped'
   
   // Activity parameters (nullable)
   RealColumn get distanceMiles => real().nullable().named('distance_miles')();
@@ -60,16 +60,17 @@ class ActivitiesTable extends Table {
   DateTimeColumn get createdAt => dateTime().named('created_at')();
   DateTimeColumn get updatedAt => dateTime().named('updated_at')();
   DateTimeColumn get deletedAt => dateTime().nullable().named('deleted_at')();
-  
-  // Primary key is handled by autoIncrement()
-  
+
+  @override
+  Set<Column> get primaryKey => {id};
+
   @override
   String get tableName => 'activities';
   
   @override
   List<String> get customConstraints => [
     "CHECK (activity_type IN ('running', 'cycling', 'swimming'))",
-    "CHECK (status IN ('planned', 'in_progress', 'completed', 'skipped'))",
+    "CHECK (status IN ('draft', 'planned', 'in_progress', 'completed', 'skipped'))",
     "CHECK (intensity_level IS NULL OR intensity_level IN ('easy', 'moderate', 'hard', 'race'))",
     'CHECK (completion_rating IS NULL OR (completion_rating >= 1 AND completion_rating <= 5))',
   ];

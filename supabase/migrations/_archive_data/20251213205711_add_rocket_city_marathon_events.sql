@@ -1,0 +1,143 @@
+-- Rocket City Marathon Race Weekend Events
+-- Location: Huntsville, Alabama
+-- Website: https://www.rocketcitymarathon.run
+
+-- Saturday, December 13, 2025 Events
+INSERT INTO public_events (
+  event_name,
+  event_type,
+  event_subtype,
+  location,
+  city,
+  state,
+  country,
+  event_date,
+  start_time,
+  registration_url,
+  website_url,
+  description,
+  organizer_name,
+  is_active,
+  source
+) VALUES
+(
+  'Rocket City 10K',
+  'running',
+  '10k',
+  'Downtown Huntsville',
+  'Huntsville',
+  'AL',
+  'USA',
+  '2025-12-13',
+  '07:00:00',
+  'https://www.rocketcitymarathon.run/register',
+  'https://www.rocketcitymarathon.run',
+  'The 10K starts at 7:00 AM in front of the Von Braun Center on Monroe Street, part of the Rocket City Marathon race weekend.',
+  'Rocket City Marathon',
+  true,
+  'manual_entry'
+),
+(
+  'Rocket City 5K',
+  'running',
+  '5k',
+  'Downtown Huntsville',
+  'Huntsville',
+  'AL',
+  'USA',
+  '2025-12-13',
+  '09:00:00',
+  'https://www.rocketcitymarathon.run/register',
+  'https://www.rocketcitymarathon.run',
+  'The 5K begins at 9:00 AM, winding through Downtown Huntsville, part of the Rocket City Marathon race weekend.',
+  'Rocket City Marathon',
+  true,
+  'manual_entry'
+),
+(
+  'Rocket City 1 Mile Family Run/Walk',
+  'running',
+  '1k',
+  'Downtown Huntsville',
+  'Huntsville',
+  'AL',
+  'USA',
+  '2025-12-13',
+  '10:30:00',
+  'https://www.rocketcitymarathon.run/register',
+  'https://www.rocketcitymarathon.run',
+  'The 1 Mile Family Run/Walk starts at 10:30 AM, part of the Rocket City Marathon race weekend.',
+  'Rocket City Marathon',
+  true,
+  'manual_entry'
+);
+
+-- Sunday, December 14, 2025 Events
+INSERT INTO public_events (
+  event_name,
+  event_type,
+  event_subtype,
+  location,
+  city,
+  state,
+  country,
+  event_date,
+  start_time,
+  registration_url,
+  website_url,
+  description,
+  organizer_name,
+  is_active,
+  source
+) VALUES
+(
+  'Rocket City Marathon (Early Start)',
+  'running',
+  'marathon',
+  'Downtown Huntsville',
+  'Huntsville',
+  'AL',
+  'USA',
+  '2025-12-14',
+  '06:00:00',
+  'https://www.rocketcitymarathon.run/register',
+  'https://www.rocketcitymarathon.run',
+  'Early start option for the full marathon at 6:00 AM for those requiring extra time. The race includes running past the U.S. Space and Rocket Center to run beside rockets and the space shuttle, and through the Huntsville Botanical Gardens. All races start and finish in Downtown Huntsville at the VBC.',
+  'Rocket City Marathon',
+  true,
+  'manual_entry'
+),
+(
+  'Rocket City Marathon',
+  'running',
+  'marathon',
+  'Downtown Huntsville',
+  'Huntsville',
+  'AL',
+  'USA',
+  '2025-12-14',
+  '07:00:00',
+  'https://www.rocketcitymarathon.run/register',
+  'https://www.rocketcitymarathon.run',
+  'The full marathon starts at 7:00 AM. The race includes running past the U.S. Space and Rocket Center to run beside rockets and the space shuttle, and through the Huntsville Botanical Gardens. All races start and finish in Downtown Huntsville at the VBC.',
+  'Rocket City Marathon',
+  true,
+  'manual_entry'
+),
+(
+  'Rocket City Half Marathon',
+  'running',
+  'half_marathon',
+  'Downtown Huntsville',
+  'Huntsville',
+  'AL',
+  'USA',
+  '2025-12-14',
+  '09:00:00',
+  'https://www.rocketcitymarathon.run/register',
+  'https://www.rocketcitymarathon.run',
+  'The half marathon starts at 9:00 AM. The race includes running past the U.S. Space and Rocket Center to run beside rockets and the space shuttle, and through the Huntsville Botanical Gardens. All races start and finish in Downtown Huntsville at the VBC.',
+  'Rocket City Marathon',
+  true,
+  'manual_entry'
+);

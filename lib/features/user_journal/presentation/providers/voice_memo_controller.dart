@@ -174,7 +174,7 @@ class VoiceMemoController extends _$VoiceMemoController {
   }
 
   /// Save notes using the proper workout notes repository
-  Future<void> saveNotes(int activityId, String notes) async {
+  Future<void> saveNotes(String activityId, String notes) async {
     final currentState = state.value;
     if (currentState == null) return;
 

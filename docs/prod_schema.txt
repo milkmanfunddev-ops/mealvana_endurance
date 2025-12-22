@@ -62,6 +62,18 @@ alter type auth_provider_enum owner to postgres;
 
 alter type gtrgm owner to supabase_admin;
 
+create type dietary_preference_enum as enum ('omnivore', 'vegetarian', 'pescatarian', 'vegan', 'mediterranean', 'paleo', 'keto', 'low_carb');
+
+comment on type dietary_preference_enum is 'User dietary preference options for food filtering';
+
+alter type dietary_preference_enum owner to postgres;
+
+create type allergy_enum as enum ('dairy', 'eggs', 'fish', 'gluten', 'peanuts', 'sesame', 'shellfish', 'soy', 'tree_nuts');
+
+comment on type allergy_enum is 'Common food allergens for user allergy tracking';
+
+alter type allergy_enum owner to postgres;
+
 create table users
 (
     id                            uuid                     default gen_random_uuid()               not null
@@ -106,7 +118,9 @@ create table users
         constraint check_swim_cap_type
             check ((typical_swim_cap_type IS NULL) OR (typical_swim_cap_type = ANY
                                                        (ARRAY ['none'::text, 'latex'::text, 'silicone'::text, 'neoprene'::text]))),
-    gi_sensitivity                boolean
+    gi_sensitivity                boolean,
+    dietary_preference            dietary_preference_enum,
+    allergies                     allergy_enum[]           default '{}'::allergy_enum[]
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -117,7 +131,7 @@ comment on column users.swimming_css_seconds_per_100m is 'User default CSS (Crit
 
 comment on column users.prefers_swimming_pace is 'Whether user prefers to input pace vs speed for swimming';
 
-comment on column users.typical_bike_bottles is 'Number of water bottles typically carried on bike (1-4)';
+comment on column users.typical_bike_bottles is 'Number of water bottles typically carried on bike (0-6)';
 
 comment on column users.has_aero_bottle is 'Whether cyclist has aero bottle for additional hydration';
 
@@ -128,6 +142,10 @@ comment on column users.typical_wetsuit is 'Whether swimmer typically uses wetsu
 comment on column users.typical_swim_cap_type is 'Typical swim cap type: none, latex, silicone, neoprene';
 
 comment on column users.gi_sensitivity is 'Whether user has GI sensitivity issues during endurance activities';
+
+comment on column users.dietary_preference is 'User dietary preference: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb. NULL means no preference set.';
+
+comment on column users.allergies is 'Array of user allergies for food filtering. Empty array means no allergies.';
 
 alter table users
     owner to postgres;
@@ -143,6 +161,10 @@ create index idx_users_auth_user_id
 
 create index idx_users_auth_provider
     on users (auth_provider);
+
+create index idx_users_dietary_preference
+    on users (dietary_preference)
+    where (dietary_preference IS NOT NULL);
 
 grant delete, insert, references, select, trigger, truncate, update on users to anon;
 
@@ -229,11 +251,11 @@ grant delete, insert, references, select, trigger, truncate, update on feedback 
 
 create table foods
 (
-    id                     uuid                     default gen_random_uuid()     not null
+    id                     uuid                      default gen_random_uuid()     not null
         primary key,
     name                   text,
     image_address          text,
-    created_at             timestamp with time zone default now(),
+    created_at             timestamp with time zone  default now(),
     serving_amount         numeric,
     max_servings_before    integer,
     max_servings_during    integer,
@@ -245,16 +267,16 @@ create table foods
     protein_per_serving    numeric(10, 2),
     calories_per_serving   integer,
     fluid_ml_per_serving   numeric(10, 1),
-    show_in_preferences    boolean                  default false,
+    show_in_preferences    boolean                   default false,
     display_name           varchar(100),
     max_servings_after     integer,
-    is_electrolyte         boolean                  default false,
+    is_electrolyte         boolean                   default false,
     display_name_plural    varchar(100),
-    to_exclude_from_solver boolean                  default false,
+    to_exclude_from_solver boolean                   default false,
     description            text,
     serving_description    text,
     serving_size           varchar(50),
-    is_essential           boolean                  default false,
+    is_essential           boolean                   default false,
     is_other_food          boolean,
     instructions           text,
     nutritional_info       text,
@@ -264,18 +286,24 @@ create table foods
     purchase_url           text,
     affiliate_source       text,
     preference_priority    integer,
-    categories             category_enum[]          default '{}'::category_enum[] not null,
+    categories             category_enum[]           default '{}'::category_enum[] not null,
     product_type           product_type_enum,
     activity_types         activity_type_enum[],
-    before_run_suitable    boolean                  default false,
-    during_run_suitable    boolean                  default false,
-    after_run_suitable     boolean                  default false,
-    updated_at             timestamp with time zone default now()
+    before_run_suitable    boolean                   default false,
+    during_run_suitable    boolean                   default false,
+    after_run_suitable     boolean                   default false,
+    updated_at             timestamp with time zone  default now(),
+    allergens              allergy_enum[]            default '{}'::allergy_enum[],
+    excluded_diets         dietary_preference_enum[] default '{}'::dietary_preference_enum[]
 );
 
 comment on column foods.show_in_preferences is 'Whether this food should be shown in the onboarding food preferences screen';
 
 comment on column foods.is_essential is 'No need to present to user to set preferences';
+
+comment on column foods.allergens is 'Allergens contained in this food (e.g., dairy, gluten, peanuts). Used for filtering foods based on user allergies.';
+
+comment on column foods.excluded_diets is 'Diets that should exclude this food (e.g., vegan excludes meat/dairy). Used for filtering foods based on user dietary preference.';
 
 alter table foods
     owner to postgres;
@@ -300,6 +328,12 @@ create index idx_foods_during_suitable
 create index idx_foods_after_suitable
     on foods (after_run_suitable)
     where (after_run_suitable = true);
+
+create index idx_foods_allergens_gin
+    on foods using gin (allergens);
+
+create index idx_foods_excluded_diets_gin
+    on foods using gin (excluded_diets);
 
 grant delete, insert, references, select, trigger, truncate, update on foods to anon;
 
@@ -417,7 +451,7 @@ create table activities
     user_id                        uuid               not null
         references users
             on delete cascade,
-    id                             bigserial
+    id                             text               not null
         primary key
         constraint activities_id_new_unique
             unique,
@@ -479,12 +513,6 @@ comment on column activities.activity_type is 'Sport category using shared activ
 alter table activities
     owner to postgres;
 
-grant select, update, usage on sequence activities_id_seq to anon;
-
-grant select, update, usage on sequence activities_id_seq to authenticated;
-
-grant select, update, usage on sequence activities_id_seq to service_role;
-
 create index idx_activities_scheduled
     on activities (scheduled_date_time);
 
@@ -531,11 +559,10 @@ create table events
     user_id                       uuid               not null
         references users
             on delete cascade,
-    activity_id                   bigint
-        constraint events_activity_fkey
-            references activities
-            on delete set null,
-    id                            bigserial
+    activity_id                   text
+        references activities
+            on delete cascade,
+    id                            text               not null
         primary key
         constraint events_id_new_unique
             unique,
@@ -561,22 +588,16 @@ comment on column events.event_date is 'Date of the event (DATE type). Use this 
 alter table events
     owner to postgres;
 
-grant select, update, usage on sequence events_id_seq to anon;
-
-grant select, update, usage on sequence events_id_seq to authenticated;
-
-grant select, update, usage on sequence events_id_seq to service_role;
-
 create index idx_events_carb_loading
     on events (has_carb_loading)
     where (has_carb_loading = true);
 
+create index idx_events_event_date
+    on events (event_date);
+
 create index idx_events_activity
     on events (activity_id)
     where (activity_id IS NOT NULL);
-
-create index idx_events_event_date
-    on events (event_date);
 
 grant delete, insert, references, select, trigger, truncate, update on events to anon;
 
@@ -604,10 +625,10 @@ create table carb_loading_plans
         constraint fk_carb_loading_plans_user
             references users
             on delete cascade,
-    event_id                bigint
+    event_id                text
         references events
             on delete cascade,
-    id                      bigserial
+    id                      text      not null
         primary key
         constraint carb_loading_plans_id_new_unique
             unique,
@@ -620,12 +641,6 @@ comment on table carb_loading_plans is 'Carb loading plans linked to specific ev
 
 alter table carb_loading_plans
     owner to postgres;
-
-grant select, update, usage on sequence carb_loading_plans_id_seq to anon;
-
-grant select, update, usage on sequence carb_loading_plans_id_seq to authenticated;
-
-grant select, update, usage on sequence carb_loading_plans_id_seq to service_role;
 
 create index idx_carb_plans_dates
     on carb_loading_plans (start_date, end_date);
@@ -663,11 +678,11 @@ create table carb_loading_days
     logged_calories         integer                  default 0,
     completed               boolean                  default false,
     carb_protocol_g_per_kg  real                     default 8.0 not null,
-    carb_loading_plan_id    bigint
+    carb_loading_plan_id    text
         constraint carb_loading_days_plan_fk
             references carb_loading_plans
             on delete cascade,
-    id                      bigserial
+    id                      text                                 not null
         primary key
         constraint carb_loading_days_id_new_unique
             unique,
@@ -678,12 +693,6 @@ create table carb_loading_days
 
 alter table carb_loading_days
     owner to postgres;
-
-grant select, update, usage on sequence carb_loading_days_id_seq to anon;
-
-grant select, update, usage on sequence carb_loading_days_id_seq to authenticated;
-
-grant select, update, usage on sequence carb_loading_days_id_seq to service_role;
 
 create index idx_carb_days_date
     on carb_loading_days (plan_date);
@@ -809,12 +818,13 @@ create table carb_loading_day_meals
     created_at                timestamp default CURRENT_TIMESTAMP,
     updated_at                timestamp default CURRENT_TIMESTAMP,
     meal_type                 text                                not null,
-    carb_loading_plan_id      bigint                              not null
+    carb_loading_plan_id      text                                not null
         constraint carb_loading_day_meals_plan_fk
             references carb_loading_plans
             on delete cascade,
-    carb_loading_day_id       bigint
-        references carb_loading_days
+    carb_loading_day_id       text
+        constraint carb_loading_day_meals_day_fk
+            references carb_loading_days
             on delete cascade,
     constraint one_food_type
         check (((carb_loading_food_id IS NOT NULL) AND (carb_loading_user_food_id IS NULL)) OR
@@ -848,11 +858,14 @@ create table feature_survey_responses
 (
     id                bigserial
         primary key,
-    user_id           uuid                                   not null
-        references users
+    device_id         uuid                                   not null
+        constraint feature_survey_responses_user_id_fkey
+            references users
             on delete cascade,
     selected_features text                                   not null,
-    voted_at          timestamp with time zone default now() not null
+    voted_at          timestamp with time zone default now() not null,
+    local_updated_at  timestamp                default CURRENT_TIMESTAMP,
+    needs_upload      boolean                  default false
 );
 
 alter table feature_survey_responses
@@ -865,10 +878,14 @@ grant select, update, usage on sequence feature_survey_responses_id_seq to authe
 grant select, update, usage on sequence feature_survey_responses_id_seq to service_role;
 
 create unique index idx_feature_survey_responses_user_id
-    on feature_survey_responses (user_id);
+    on feature_survey_responses (device_id);
 
 create index idx_feature_survey_responses_voted_at
     on feature_survey_responses (voted_at);
+
+create index idx_feature_survey_needs_upload
+    on feature_survey_responses (needs_upload)
+    where (needs_upload = true);
 
 grant delete, insert, references, select, trigger, truncate, update on feature_survey_responses to anon;
 
@@ -2096,6 +2113,30 @@ grant execute on function search_public_events_hybrid(text, integer, text, text,
 grant execute on function search_public_events_hybrid(text, integer, text, text, double precision) to authenticated;
 
 grant execute on function search_public_events_hybrid(text, integer, text, text, double precision) to service_role;
+
+create function update_feature_survey_timestamp() returns trigger
+    language plpgsql
+as
+$$
+  BEGIN
+    NEW.local_updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+  END;
+  $$;
+
+alter function update_feature_survey_timestamp() owner to postgres;
+
+create trigger feature_survey_update_timestamp
+    before update
+    on feature_survey_responses
+    for each row
+execute procedure update_feature_survey_timestamp();
+
+grant execute on function update_feature_survey_timestamp() to anon;
+
+grant execute on function update_feature_survey_timestamp() to authenticated;
+
+grant execute on function update_feature_survey_timestamp() to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 

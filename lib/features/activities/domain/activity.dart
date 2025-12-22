@@ -59,7 +59,7 @@ class Activity {
     this.localUpdatedAt,
   });
 
-  final int id;
+  final String id;
   final String userId;
   final ActivityType activityType;
   final String title;
@@ -155,7 +155,7 @@ class Activity {
   }
 
   Activity copyWith({
-    int? id,
+    String? id,
     String? userId,
     ActivityType? activityType,
     String? title,
@@ -321,10 +321,11 @@ class Activity {
 
 /// Activity status enum
 enum ActivityStatus {
-  planned,
-  inProgress,
-  completed,
-  skipped,
+  draft,       // Activity created but not finalized (no nutrition plan yet)
+  planned,     // Activity finalized with nutrition plan
+  inProgress,  // Activity in progress
+  completed,   // Activity completed
+  skipped,     // Activity skipped/cancelled
 }
 
 /// Intensity level enum
@@ -337,6 +338,7 @@ enum IntensityLevel {
 
 /// Activity extensions for utility methods
 extension ActivityExtensions on Activity {
+  bool get isDraft => status == ActivityStatus.draft;
   bool get isCompleted => status == ActivityStatus.completed;
   bool get isPlanned => status == ActivityStatus.planned;
   bool get isRunning => activityType == ActivityType.running;

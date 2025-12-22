@@ -1,10 +1,11 @@
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 /// Individual day entries within a carb loading plan
 @DataClassName('CarbLoadingDay')
 class CarbLoadingDaysTable extends Table {
-  IntColumn get id => integer().autoIncrement()(); // PRIMARY KEY (BIGSERIAL in Postgres)
-  IntColumn get carbLoadingPlanId => integer().named('carb_loading_plan_id')(); // FOREIGN KEY to carb_loading_plans.id
+  TextColumn get id => text().clientDefault(() => const Uuid().v4())(); // PRIMARY KEY (UUID)
+  TextColumn get carbLoadingPlanId => text().named('carb_loading_plan_id')(); // FOREIGN KEY to carb_loading_plans.id
   
   // Day information
   DateTimeColumn get planDate => dateTime().named('plan_date')();
@@ -36,8 +37,9 @@ class CarbLoadingDaysTable extends Table {
   DateTimeColumn get localUpdatedAt =>
       dateTime().clientDefault(() => DateTime.now()).named('local_updated_at')();
 
-  // Note: Primary key is automatically set by autoIncrement()
-  
+  @override
+  Set<Column> get primaryKey => {id};
+
   @override
   String get tableName => 'carb_loading_days';
   

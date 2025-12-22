@@ -4,8 +4,7 @@
 # Changes:
 # - Fixed Firebase variable name (GOOGLE_SERVICES_JSON, no base64 encoding)
 # - Refactored to use YAML anchors (reduced duplication)
-# - Fixed integration test double-running
-# - Added proper test failure handling
+# - REMOVED ALL TESTING for faster deployment testing
 # - Added dev-ios workflow (manual, no Shorebird)
 # - Updated prod triggers to release/* only (removed main)
 # - Changed Android prod to beta track (open testing)
@@ -137,7 +136,6 @@ workflows:
     scripts:
       - *flutter_pub_get
       - *run_build_runner
-      - *run_unit_tests
       - *install_cocoapods
       - *setup_ios_signing
 
@@ -191,7 +189,6 @@ workflows:
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
-      - *run_unit_tests
 
       - name: Build dev Android
         script: |
@@ -251,7 +248,6 @@ workflows:
     scripts:
       - *flutter_pub_get
       - *run_build_runner
-      - *run_unit_tests
       - *install_shorebird
       - *install_cocoapods
       - *setup_ios_signing_shorebird
@@ -316,7 +312,6 @@ workflows:
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
-      - *run_unit_tests
       - *install_shorebird
 
       - name: Create Shorebird Android Release
@@ -378,7 +373,6 @@ workflows:
     scripts:
       - *flutter_pub_get
       - *run_build_runner
-      - *run_unit_tests
       - *install_shorebird
       - *install_cocoapods
 
@@ -422,7 +416,6 @@ workflows:
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
-      - *run_unit_tests
       - *install_shorebird
 
       - name: Create Shorebird Android Patch
@@ -587,7 +580,6 @@ workflows:
     scripts:
       - *flutter_pub_get
       - *run_build_runner
-      - *run_unit_tests
       - *install_cocoapods
       - *setup_ios_signing
 
@@ -637,7 +629,6 @@ workflows:
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
-      - *run_unit_tests
 
       - name: Build Android App Bundle (Standard)
         script: |

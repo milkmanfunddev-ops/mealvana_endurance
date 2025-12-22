@@ -4,6 +4,8 @@ import '../../auth/application/auth_service.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../domain/dietary_preference.dart';
+import '../domain/allergy.dart';
 
 /// Application service for managing the onboarding flow
 /// Coordinates user creation and food preference collection
@@ -63,8 +65,12 @@ class OnboardingService {
     bool? typicalWetsuit,
     String? typicalSwimCapType,
   }) async {
+    // Get current user once to avoid redundant DB reads
+    final currentUser = await _authService.getCurrentUser();
+
     await _authService.updateSportPreferences(
       userId,
+      currentUser: currentUser,
       giSensitivity: giSensitivity,
       ftpWatts: ftpWatts,
       typicalBikeBottles: typicalBikeBottles,
@@ -80,6 +86,35 @@ class OnboardingService {
       'gi_sensitivity': giSensitivity,
       'has_cycling': ftpWatts != null,
       'has_swimming': cssPacePer100mSeconds != null,
+    });
+  }
+
+  /// Complete dietary preference step
+  Future<void> saveDietaryPreference(
+    String userId,
+    DietaryPreference? dietaryPreference,
+  ) async {
+    await _authService.updateDietaryPreference(userId, dietaryPreference);
+
+    // Track dietary preference saved
+    await _analytics.track('dietary_preference_saved', properties: {
+      'preference': dietaryPreference?.name ?? 'none',
+      'skipped': dietaryPreference == null,
+    });
+  }
+
+  /// Complete allergies step
+  Future<void> saveAllergies(
+    String userId,
+    List<Allergy> allergies,
+  ) async {
+    await _authService.updateAllergies(userId, allergies);
+
+    // Track allergies saved
+    await _analytics.track('allergies_saved', properties: {
+      'allergies': allergies.map((a) => a.name).toList(),
+      'count': allergies.length,
+      'skipped': allergies.isEmpty,
     });
   }
 

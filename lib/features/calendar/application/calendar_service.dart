@@ -41,7 +41,7 @@ class CalendarService {
   }
 
   /// Get a specific activity by ID - delegates to ActivitiesService
-  Future<domain.Activity?> getActivityById(String userId, int activityId) async {
+  Future<domain.Activity?> getActivityById(String userId, String activityId) async {
     return _activitiesService.getActivityById(userId, activityId);
   }
 
@@ -49,7 +49,7 @@ class CalendarService {
   /// Orchestrates the deletion of related entities before delegating activity deletion
   Future<void> deleteActivity({
     required String deviceId,
-    required int activityId,
+    required String activityId,
   }) async {
     try {
       // First, check if this activity has an event
@@ -102,7 +102,7 @@ class CalendarService {
   }
 
   /// Get event for a specific activity
-  Future<domain.Event?> getEventForActivity(int activityId) async {
+  Future<domain.Event?> getEventForActivity(String activityId) async {
     try {
       final query = _database.select(_database.eventsTable)
             ..where((tbl) => tbl.activityId.equals(activityId));
@@ -121,7 +121,7 @@ class CalendarService {
   }
 
   /// Get a specific event by ID
-  Future<domain.Event?> getEventById(String userId, int eventId) async {
+  Future<domain.Event?> getEventById(String userId, String eventId) async {
     try {
       final query = _database.select(_database.eventsTable)
             ..where((tbl) => tbl.id.equals(eventId));
@@ -183,7 +183,7 @@ class CalendarService {
   /// Create an event (optionally linked to an activity)
   Future<domain.Event> createEvent({
     required String userId,
-    int? activityId, // Now nullable - events can exist without activities
+    String? activityId, // Now nullable - events can exist without activities
     required ActivityType eventType, // Event type: running, cycling, swimming, triathlon, duathlon, multisport
     String? eventSubtype,
     String? eventName,
@@ -223,10 +223,11 @@ class CalendarService {
         updatedAt: DateTime.now(),
       );
 
-      final eventId = await _database.into(_database.eventsTable).insert(companion);
+      // Insert and get the full row back (including generated ID)
+      final insertedEvent = await _database.into(_database.eventsTable).insertReturning(companion);
 
       // Get the created event by ID
-      final createdEvent = await getEventById(userId, eventId);
+      final createdEvent = await getEventById(userId, insertedEvent.id);
       if (createdEvent == null) {
         throw Exception('Failed to retrieve created event');
       }
@@ -254,7 +255,7 @@ class CalendarService {
         hasCarbLoading: Value(event.hasCarbLoading),
         carbLoadingDays: Value(event.carbLoadingDays),
         carbLoadingStartDate: Value(event.carbLoadingStartDate),
-        hasNutritionPlan: Value(event.hasNutritionPlan),
+        hasNutritionPlan: Value(event.hasNutritionPlan), // OBSOLETE: kept for backward compatibility
         bibNumber: Value(event.bibNumber),
         waveStartTime: Value(event.waveStartTime),
         packetPickupInfo: Value(event.packetPickupInfo),
@@ -271,38 +272,11 @@ class CalendarService {
     }
   }
 
-  /// Update event's nutrition plan flag
-  Future<void> updateEventNutritionPlanFlag({
-    required int activityId,
-    required bool hasNutritionPlan,
-  }) async {
-    try {
-      // Get the event for this activity
-      final event = await getEventForActivity(activityId);
-
-      if (event == null) {
-        return;
-      }
-
-      await (_database.update(_database.eventsTable)
-            ..where((tbl) => tbl.id.equals(event.id)))
-          .write(EventsTableCompanion(
-            hasNutritionPlan: Value(hasNutritionPlan),
-            updatedAt: Value(DateTime.now()),
-          ));
-
-    } catch (e) {
-      _logger.error('Error updating event nutrition plan flag for activity $activityId', error: e);
-      rethrow;
-    }
-  }
-
-
   /// Create a carb loading plan for an event
   /// This generates day records for each carb loading day based on the protocol
   Future<void> createCarbLoadingPlan({
     required String userId,
-    int? eventId, // Made nullable to support standalone carb loading plans
+    String? eventId, // Made nullable to support standalone carb loading plans
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -340,7 +314,9 @@ class CalendarService {
         generatedAt: DateTime.now(),
       );
 
-      final planId = await _database.into(_database.carbLoadingPlansTable).insert(planCompanion);
+      // Insert and get the full row back (including generated ID)
+      final insertedPlan = await _database.into(_database.carbLoadingPlansTable).insertReturning(planCompanion);
+      final planId = insertedPlan.id;
 
       // Generate carb loading day records
       for (int dayOffset = 0; dayOffset < protocolDays; dayOffset++) {
@@ -415,7 +391,7 @@ class CalendarService {
 
   /// Delete carb loading plan and associated day records
   Future<void> deleteCarbLoadingPlan({
-    required int eventId,
+    required String eventId,
   }) async {
     try {
       // Get the carb loading plan
@@ -465,7 +441,7 @@ class CalendarService {
   }
 
   /// Delete a single carb loading day and its associated meals
-  Future<void> deleteCarbLoadingDay(int carbLoadingDayId) async {
+  Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
     try {
       // Delete all meals for this day
       await (_database.delete(_database.carbLoadingDayMealsTable)
@@ -486,7 +462,7 @@ class CalendarService {
   /// Update carb loading protocol (delete old plan and create new one)
   Future<void> updateCarbLoadingProtocol({
     required String userId,
-    required int eventId,
+    required String eventId,
     required int newProtocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -511,7 +487,7 @@ class CalendarService {
   }
 
   /// Get carb loading plan for an event
-  Future<CarbLoadingPlan?> getCarbLoadingPlan(int eventId) async {
+  Future<CarbLoadingPlan?> getCarbLoadingPlan(String eventId) async {
     try {
       final query = _database.select(_database.carbLoadingPlansTable)
             ..where((tbl) => tbl.eventId.equals(eventId));
@@ -524,7 +500,7 @@ class CalendarService {
   }
 
   /// Get carb loading days for a plan
-  Future<List<CarbLoadingDay>> getCarbLoadingDays(int planId) async {
+  Future<List<CarbLoadingDay>> getCarbLoadingDays(String planId) async {
     try {
       final query = _database.select(_database.carbLoadingDaysTable)
             ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))

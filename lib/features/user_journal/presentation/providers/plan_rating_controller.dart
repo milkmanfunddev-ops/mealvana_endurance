@@ -35,13 +35,13 @@ class PlanRatingController extends _$PlanRatingController {
   }
 
   /// Submit a rating for a nutrition plan
-  Future<void> submitRating(int activityId, int rating) async {
+  Future<void> submitRating(String activityId, int rating) async {
     if (rating < 1 || rating > 3) {
       throw ArgumentError('Rating must be between 1 and 3');
     }
 
     state = const AsyncLoading();
-    
+
     state = await AsyncValue.guard(() async {
       try {
         final repository = await ref.read(nutritionPlanRepositoryProvider.future);
@@ -60,13 +60,13 @@ class PlanRatingController extends _$PlanRatingController {
   }
   
   /// Skip feedback for a nutrition plan - marks it as addressed without rating
-  Future<void> skipFeedback(int activityId) async {
+  Future<void> skipFeedback(String activityId) async {
     state = const AsyncLoading();
-    
+
     state = await AsyncValue.guard(() async {
       try {
         final repository = await ref.read(nutritionPlanRepositoryProvider.future);
-        
+
         // Mark plan as addressed by adding a skip note
         await repository.updatePlanFeedbackForActivity(
           activityId: activityId,

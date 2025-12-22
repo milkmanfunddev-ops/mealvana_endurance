@@ -1,6 +1,8 @@
 // Simplified carb loading plan models - carbs only tracking with 50g increments
 // Based on Featherstone Nutrition methodology (8g carbs/kg body weight)
 
+import 'package:uuid/uuid.dart';
+
 /// Race distance options for carb loading calculations
 enum RaceDistance {
   halfMarathon('half_marathon', 'Half Marathon', 21.1),
@@ -32,7 +34,7 @@ enum TrainingVolume {
 
 /// Simplified carb loading plan focused on carbs-only tracking
 class CarbLoadingPlan {
-  final int id;
+  final String id;
   final String userId;
   final DateTime raceDate;
   final RaceDistance raceDistance;
@@ -79,7 +81,7 @@ class CarbLoadingPlan {
     final dailyServingsTarget = (dailyCarbTargetG / 50).round();
 
     return CarbLoadingPlan(
-      id: DateTime.now().millisecondsSinceEpoch,
+      id: const Uuid().v4(),
       userId: userId,
       raceDate: raceDate,
       raceDistance: raceDistance,
@@ -137,8 +139,8 @@ class CarbLoadingPlan {
     }
 
     return CarbLoadingPlan(
-      id: json['id'] ?? 0,
-      userId: json['userId'] ?? '',
+      id: json['id'] as String? ?? const Uuid().v4(),
+      userId: json['userId'] as String? ?? '',
       raceDate: DateTime.parse(json['raceDate']),
       raceDistance: RaceDistance.values.firstWhere(
         (e) => e.value == json['raceDistance'],
@@ -185,7 +187,7 @@ class CarbLoadingPlan {
 
   /// Create a copy with updated fields
   CarbLoadingPlan copyWith({
-    int? id,
+    String? id,
     String? userId,
     DateTime? raceDate,
     RaceDistance? raceDistance,

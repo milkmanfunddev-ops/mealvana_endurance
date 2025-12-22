@@ -84,8 +84,8 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
   /// Delegates to the appropriate sport-specific controller's generateMacros method,
   /// which in turn calls the main distancePageGutEntryController.
   Future<void> generateMacros({
-    int? activityId,
-    int? eventId,
+    String? activityId,
+    String? eventId,
   }) async {
     DebugLogger.info('🎮 COORDINATOR: generateMacros called for sport: ${state.selectedTab.name}');
 

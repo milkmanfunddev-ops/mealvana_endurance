@@ -34,7 +34,7 @@ class NutritionPlan {
   final DateTime? runDateTime; // Scheduled run date and time
   final int? planRating; // 1=Could be better, 2=Neutral, 3=Satisfied
   final String? journalNotes; // User's feedback notes about the plan
-  final int? activityId; // Foreign key to activities table (calendar integration)
+  final String? activityId; // Foreign key to activities table (calendar integration - UUID)
   
   // Versioning fields
   final int version;
@@ -56,7 +56,7 @@ class NutritionPlan {
     DateTime? runDateTime,
     int? planRating,
     String? journalNotes,
-    int? activityId,
+    String? activityId,
     int? version,
     String? lastModifiedBy,
     DateTime? clientUpdatedAt,
@@ -99,11 +99,11 @@ class NutritionPlan {
   }
 
   /// Create NutritionPlan from Edge Function JSON response
-  static int? _parseActivityId(dynamic value) {
+  static String? _parseActivityId(dynamic value) {
     if (value == null) return null;
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
+    if (value is String) return value;
+    if (value is int) return value.toString();
+    if (value is num) return value.toString();
     return null;
   }
 

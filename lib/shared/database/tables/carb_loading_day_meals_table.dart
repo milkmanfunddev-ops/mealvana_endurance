@@ -1,12 +1,13 @@
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 /// Carb Loading Day Meals table - tracks actual food selections per day/meal
 /// Stores which foods a user selected for each meal on each carb loading day
 /// Example: Day -2, Breakfast: 2x Cereal (28g carbs), 1x Banana (27g carbs)
 @DataClassName('CarbLoadingDayMeal')
 class CarbLoadingDayMealsTable extends Table {
-  IntColumn get id => integer().autoIncrement()(); // PRIMARY KEY (auto-incrementing int)
-  IntColumn get carbLoadingDayId => integer().named('carb_loading_day_id')(); // FK to carb_loading_days.id
+  TextColumn get id => text().clientDefault(() => const Uuid().v4())(); // PRIMARY KEY (UUID)
+  TextColumn get carbLoadingDayId => text().named('carb_loading_day_id')(); // FK to carb_loading_days.id
   IntColumn get mealTypeId => integer().named('meal_type_id')(); // FK to meal_types.id (1=breakfast, 2=lunch, etc.)
 
   // EXACTLY ONE of these must be non-null (enforced by CHECK constraint)
@@ -18,6 +19,9 @@ class CarbLoadingDayMealsTable extends Table {
   RealColumn get carbsConsumed => real().named('carbs_consumed')(); // Calculated: quantity * carbs_per_serving
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
+
+  @override
+  Set<Column> get primaryKey => {id};
 
   @override
   String get tableName => 'carb_loading_day_meals';

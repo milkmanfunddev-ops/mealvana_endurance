@@ -40,7 +40,7 @@ final class VoiceNotesControllerProvider
 }
 
 String _$voiceNotesControllerHash() =>
-    r'64bb4aafdb3d960b008390006e6800d152992615';
+    r'e1c1e7ea33dc6cac615d65eaa23938f3a4057727';
 
 /// Controller for managing voice notes/journal entries list
 /// Following Andrea Bizzotto's FOA AsyncNotifier pattern

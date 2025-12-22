@@ -1,6 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
+import '../../onboarding/domain/dietary_preference.dart';
+import '../../onboarding/domain/allergy.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -22,13 +24,14 @@ class UserRepository {
   final SentryReporter sentry;
 
   /// Save user profile
-  Future<void> saveUserProfile(UserProfile profile) async {
+  /// [needsUpload] - If true, marks profile for background upload to Supabase (for new registrations)
+  Future<void> saveUserProfile(UserProfile profile, {bool needsUpload = false}) async {
     try {
-      await database.saveUserProfile(profile);
+      await database.saveUserProfile(profile, needsUpload: needsUpload);
       sentry.addBreadcrumb(
         message: 'User profile saved successfully',
         category: 'database',
-        data: {'user_id': profile.id},
+        data: {'user_id': profile.id, 'needsUpload': needsUpload},
       );
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
@@ -73,15 +76,21 @@ class UserRepository {
   }
 
   /// Update user profile
-  Future<void> updateUserProfile(UserProfile profile) async {
+  /// [needsUpload] - If true, marks profile for background upload to Supabase (for onboarding updates)
+  Future<void> updateUserProfile(UserProfile profile, {bool needsUpload = false}) async {
     try {
       final updatedProfile = profile.copyWith(updatedAt: DateTime.now());
-      await database.updateUserProfile(updatedProfile);
-      await _syncUserProfileToSupabase(updatedProfile);
+      await database.updateUserProfile(updatedProfile, needsUpload: needsUpload);
+
+      // Skip immediate Supabase sync if marked for background upload
+      if (!needsUpload) {
+        await _syncUserProfileToSupabase(updatedProfile);
+      }
+
       sentry.addBreadcrumb(
         message: 'User profile updated successfully',
         category: 'database',
-        data: {'user_id': profile.id},
+        data: {'user_id': profile.id, 'needsUpload': needsUpload},
       );
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
@@ -96,9 +105,12 @@ class UserRepository {
 
   /// Update auth provider after account linking
   /// Called when user links Apple, Google, or Email account
+  ///
+  /// [authUserId] - Optional Supabase auth user ID to set (for email linking)
   Future<void> updateAuthProvider({
     required String authProvider,
     required bool isAnonymous,
+    String? authUserId,
   }) async {
     try {
       // Get current user profile
@@ -107,10 +119,11 @@ class UserRepository {
         throw Exception('No current user found to update auth provider');
       }
 
-      // Update auth fields
+      // Update auth fields (including authUserId if provided)
       final updatedProfile = currentUser.copyWith(
         authProvider: authProvider,
         isAnonymous: isAnonymous,
+        authUserId: authUserId ?? currentUser.authUserId,
         updatedAt: DateTime.now(),
       );
 
@@ -119,13 +132,20 @@ class UserRepository {
 
       // Sync to Supabase
       try {
+        final updateData = {
+          'auth_provider': authProvider,
+          'is_anonymous': isAnonymous,
+          'updated_at': updatedProfile.updatedAt.toIso8601String(),
+        };
+
+        // Only include auth_user_id if provided
+        if (authUserId != null) {
+          updateData['auth_user_id'] = authUserId;
+        }
+
         await supabase
             .from('users')
-            .update({
-              'auth_provider': authProvider,
-              'is_anonymous': isAnonymous,
-              'updated_at': updatedProfile.updatedAt.toIso8601String(),
-            })
+            .update(updateData)
             .eq('id', currentUser.id);
 
         sentry.addBreadcrumb(
@@ -135,6 +155,7 @@ class UserRepository {
             'user_id': currentUser.id,
             'auth_provider': authProvider,
             'is_anonymous': isAnonymous,
+            'auth_user_id_updated': authUserId != null,
           },
         );
       } catch (e, stackTrace) {
@@ -301,7 +322,9 @@ class UserRepository {
       }
 
       // Clear all persisted user-scoped data before creating the new profile
-      await database.clearUserScopedData();
+      // NOTE: With Option B (offline-first), we keep data on logout by default
+      // This method is currently unused but if re-enabled, it should use forceDelete
+      // await database.clearUserScopedData(userId: oldUserId, forceDelete: true);
 
       // Create new anonymous user profile with minimal data
       final newProfile = UserProfile(
@@ -662,7 +685,35 @@ class UserRepository {
       cssPacePer100mSeconds: userData['swimming_css_seconds_per_100m'] as int?,
       typicalWetsuit: userData['typical_wetsuit'] as bool?,
       typicalSwimCapType: userData['typical_swim_cap_type'] as String?,
+      // Dietary preference and allergies (already parsed by UserProfile.fromJson in some paths)
+      // Convert null to DietaryPreference.none for consistency (database stores null, domain uses none)
+      dietaryPreference: DietaryPreference.fromDbValue(userData['dietary_preference'] as String?) ?? DietaryPreference.none,
+      allergies: _parseAllergiesFromSupabase(userData['allergies']),
     );
+  }
+
+  /// Parse allergies from Supabase response, handling both formats:
+  /// - New format: `List<dynamic>` from PostgreSQL allergy_enum[] array
+  /// - Legacy format: String in PostgreSQL text format like "{dairy,gluten}"
+  List<Allergy> _parseAllergiesFromSupabase(dynamic value) {
+    if (value == null) return [];
+
+    // New format: List<dynamic> from PostgreSQL enum array
+    // This is what Supabase returns after the 20251218 migration
+    if (value is List) {
+      return value
+          .map((item) => Allergy.fromDbValue(item.toString()))
+          .whereType<Allergy>()
+          .toList();
+    }
+
+    // Legacy format: String in PostgreSQL text format
+    // For backwards compatibility with old data
+    if (value is String) {
+      return Allergy.fromDbArray(value);
+    }
+
+    return [];
   }
 
   Future<void> _syncUserProfileToSupabase(UserProfile profile) async {
@@ -710,14 +761,17 @@ class UserRepository {
       // wouldn't be affected by the migration deletion.
 
       return false;
-    } catch (e) {
-      // If we can't check, assume no data to be safe (don't trigger migration)
-      sentry.addBreadcrumb(
-        message: 'Error checking user data - assuming no data',
-        category: 'auth',
-        data: {'user_id': userId, 'error': e.toString()},
+    } catch (e, stackTrace) {
+      // FAIL SAFE: Don't assume - let caller handle retry logic
+      // Returning false on network errors could cause data loss by skipping migration
+      // and triggering _handleFreshLogin, which may overwrite existing server data
+      await sentry.reportNetworkError(
+        e,
+        url: 'supabase:checkUserHasData',
+        method: 'GET',
+        stackTrace: stackTrace,
       );
-      return false;
+      rethrow;  // Let caller decide how to handle this error
     }
   }
 
@@ -741,41 +795,95 @@ class UserRepository {
         return;
       }
 
-      // STEP 1: Migrate all user-scoped data in Supabase (child tables first)
-      // This must happen BEFORE deleting the anonymous user due to foreign key constraints
-      await _migrateSupabaseData(
-        fromUserId: fromAnonymousUserId,
-        toUserId: toOAuthUserId,
-      );
+      // CRITICAL FIX: Check if OAuth user has existing data on server
+      // If they do, we should KEEP their existing data, not replace it with anonymous onboarding data
+      final oauthUserExistsOnServer = await _checkUserExistsInSupabase(toOAuthUserId);
 
-      // STEP 2: Delete anonymous user from Supabase BEFORE creating OAuth user
-      // This frees up the device_id for the OAuth user
-      await _deleteAnonymousUserFromSupabase(fromAnonymousUserId);
+      if (oauthUserExistsOnServer) {
+        // SCENARIO A: EXISTING OAuth user signing in on new device
+        // - OAuth user has historical data on server (e.g., 50 activities from last year)
+        // - Anonymous user has test/onboarding data from new device (e.g., 1 test activity)
+        // - CORRECT BEHAVIOR: Keep OAuth data, discard anonymous data
+        sentry.addBreadcrumb(
+          message: 'OAuth user exists on server - preserving existing data, discarding anonymous data',
+          category: 'auth',
+          data: {
+            'oauth_user_id': toOAuthUserId,
+            'anonymous_user_id': fromAnonymousUserId,
+          },
+        );
 
-      // STEP 3: Create or update OAuth user in Supabase public.users
-      // UPSERT handles both new and existing users automatically
-      await _upsertOAuthUserFromAnonymousProfile(
-        oauthUserId: toOAuthUserId,
-        anonymousProfile: anonymousProfile,
-        authProvider: authProvider,
-      );
+        // Delete anonymous user's local data (will be replaced by server data on next sync)
+        await _clearAnonymousUserLocalData(fromAnonymousUserId);
 
-      // STEP 4: Update local database with OAuth user ID
-      await _migrateLocalData(
-        fromUserId: fromAnonymousUserId,
-        toUserId: toOAuthUserId,
-        anonymousProfile: anonymousProfile,
-        authProvider: authProvider,
-      );
+        // Update local user profile to OAuth user
+        final oauthProfile = anonymousProfile.copyWith(
+          id: toOAuthUserId,
+          authUserId: toOAuthUserId,
+          authProvider: authProvider,
+          isAnonymous: false,
+          updatedAt: DateTime.now(),
+        );
+        await saveUserProfile(oauthProfile);
 
-      sentry.addBreadcrumb(
-        message: 'Successfully migrated anonymous user data to OAuth user',
-        category: 'auth',
-        data: {
-          'from_user_id': fromAnonymousUserId,
-          'to_user_id': toOAuthUserId,
-        },
-      );
+        sentry.addBreadcrumb(
+          message: 'Cleared anonymous data - OAuth user data will sync from server',
+          category: 'auth',
+          data: {
+            'oauth_user_id': toOAuthUserId,
+            'anonymous_user_id': fromAnonymousUserId,
+          },
+        );
+      } else {
+        // SCENARIO B: NEW OAuth account (never used the app before)
+        // - OAuth user has NO data on server
+        // - Anonymous user has fresh onboarding data from this device
+        // - CORRECT BEHAVIOR: Keep anonymous data, migrate it to OAuth user
+        sentry.addBreadcrumb(
+          message: 'New OAuth account - migrating anonymous user data',
+          category: 'auth',
+          data: {
+            'oauth_user_id': toOAuthUserId,
+            'anonymous_user_id': fromAnonymousUserId,
+          },
+        );
+
+        // STEP 1: Migrate all user-scoped data in Supabase (child tables first)
+        // This must happen BEFORE deleting the anonymous user due to foreign key constraints
+        await _migrateSupabaseData(
+          fromUserId: fromAnonymousUserId,
+          toUserId: toOAuthUserId,
+        );
+
+        // STEP 2: Delete anonymous user from Supabase BEFORE creating OAuth user
+        // This frees up the device_id for the OAuth user
+        await _deleteAnonymousUserFromSupabase(fromAnonymousUserId);
+
+        // STEP 3: Create or update OAuth user in Supabase public.users
+        // UPSERT handles both new and existing users automatically
+        await _upsertOAuthUserFromAnonymousProfile(
+          oauthUserId: toOAuthUserId,
+          anonymousProfile: anonymousProfile,
+          authProvider: authProvider,
+        );
+
+        // STEP 4: Update local database with OAuth user ID
+        await _migrateLocalData(
+          fromUserId: fromAnonymousUserId,
+          toUserId: toOAuthUserId,
+          anonymousProfile: anonymousProfile,
+          authProvider: authProvider,
+        );
+
+        sentry.addBreadcrumb(
+          message: 'Successfully migrated anonymous user data to new OAuth user',
+          category: 'auth',
+          data: {
+            'from_user_id': fromAnonymousUserId,
+            'to_user_id': toOAuthUserId,
+          },
+        );
+      }
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -797,7 +905,21 @@ class UserRepository {
           .maybeSingle();
       return response != null;
     } catch (e) {
-      return false;
+      // FAIL SAFE: Assume user exists to prevent data loss
+      // If we can't verify, it's safer to skip deletion than to delete existing data
+      // sentry.addBreadcrumb(
+      //   Breadcrumb(
+      //     message: 'Error checking OAuth user existence - assuming exists to prevent data loss',
+      //     category: 'auth',
+      //     data: {
+      //       'user_id': userId,
+      //       'error': e.toString(),
+      //       'fail_safe_action': 'returning_true_to_prevent_deletion',
+      //     },
+      //     level: SentryLevel.warning,
+      //   ),
+      // );
+      return true; // Conservative: preserve existing data on network errors
     }
   }
 
@@ -1041,31 +1163,10 @@ class UserRepository {
     // No migration needed here
 
     // ============ FEATURE SURVEY RESPONSES ============
-    // Delete OAuth user's survey responses first to prevent conflicts
-    try {
-      await supabase
-          .from('feature_survey_responses')
-          .delete()
-          .eq('user_id', toUserId);
-    } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to delete OAuth user feature_survey_responses (may not exist)',
-        category: 'auth',
-        data: {'error': e.toString()},
-      );
-    }
-    try {
-      await supabase
-          .from('feature_survey_responses')
-          .update({'user_id': toUserId})
-          .eq('user_id', fromUserId);
-    } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to migrate feature_survey_responses (may not exist)',
-        category: 'auth',
-        data: {'error': e.toString()},
-      );
-    }
+    // Note: feature_survey_responses table uses device_id, NOT user_id
+    // Survey responses stay with the device (like feedback), not migrated with user account
+    // The device_id is inherited from anonymous user to OAuth user via users.device_id
+    // No migration needed here
   }
 
   /// Migrate local Drift database data
@@ -1093,6 +1194,93 @@ class UserRepository {
 
     // STEP 3: Save the migrated OAuth user profile
     await saveUserProfile(migratedProfile);
+  }
+
+  /// Clear anonymous user's local data when OAuth user has existing data on server
+  /// This prevents data loss - OAuth user's server data will be downloaded on next sync
+  Future<void> _clearAnonymousUserLocalData(String anonymousUserId) async {
+    await database.transaction(() async {
+      // Delete anonymous user's activities
+      await database.customStatement(
+        'DELETE FROM activities WHERE user_id = ?',
+        [anonymousUserId],
+      );
+
+      // Delete anonymous user's events
+      await database.customStatement(
+        'DELETE FROM events WHERE user_id = ?',
+        [anonymousUserId],
+      );
+
+      // Delete anonymous user's food preferences
+      await database.customStatement(
+        'DELETE FROM food_preferences_table WHERE user_id = ?',
+        [anonymousUserId],
+      );
+
+      // Delete anonymous user's custom foods
+      await database.customStatement(
+        'DELETE FROM user_foods WHERE user_id = ?',
+        [anonymousUserId],
+      );
+
+      // Delete anonymous user's carb loading data (manual cascade - Drift doesn't have FK cascades)
+      // Delete child tables first (carb_loading_day_meals -> carb_loading_days -> carb_loading_plans)
+
+      // Step 1: Delete carb_loading_day_meals via carb_loading_days via carb_loading_plans
+      await database.customStatement('''
+        DELETE FROM carb_loading_day_meals_table
+        WHERE carb_loading_day_id IN (
+          SELECT id FROM carb_loading_days_table
+          WHERE carb_loading_plan_id IN (
+            SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+          )
+        )
+      ''', [anonymousUserId]);
+
+      // Step 2: Delete carb_loading_days via carb_loading_plans
+      await database.customStatement('''
+        DELETE FROM carb_loading_days_table
+        WHERE carb_loading_plan_id IN (
+          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+        )
+      ''', [anonymousUserId]);
+
+      // Step 3: Delete carb_loading_plans
+      await database.customStatement(
+        'DELETE FROM carb_loading_plans_table WHERE user_id = ?',
+        [anonymousUserId],
+      );
+
+      // Delete anonymous user's carb loading user foods
+      await database.customStatement(
+        'DELETE FROM carb_loading_user_foods WHERE user_id = ?',
+        [anonymousUserId],
+      );
+
+      // Note: feature_survey_responses uses device_id, not user_id
+      // Since we're deleting the user profile which has the device_id,
+      // we need to get the device_id first to delete survey responses
+      final anonymousProfile = await getUserProfileById(anonymousUserId);
+      if (anonymousProfile != null) {
+        await database.customStatement(
+          'DELETE FROM feature_survey_responses WHERE device_id = ?',
+          [anonymousProfile.deviceId],
+        );
+      }
+
+      // Delete anonymous user profile
+      await database.customStatement(
+        'DELETE FROM users WHERE id = ?',
+        [anonymousUserId],
+      );
+    });
+
+    sentry.addBreadcrumb(
+      message: 'Cleared anonymous user local data',
+      category: 'auth',
+      data: {'anonymous_user_id': anonymousUserId},
+    );
   }
 
   /// ✨ UNIFIED: Complete authentication for ANY provider (Apple, Google, Email)
@@ -1163,9 +1351,12 @@ class UserRepository {
         );
 
         // Update both local and remote database
+        // CRITICAL: Set authUserId to newUserId for email linking
+        // This ensures userIdProvider can find the profile by authUserId
         await updateAuthProvider(
           authProvider: authProvider,
           isAnonymous: false,
+          authUserId: newUserId,
         );
       } else {
         // SCENARIO 3: Fresh Login (no migration needed)

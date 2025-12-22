@@ -76,7 +76,16 @@ class FoodsTable extends Table {
 
   // Preference priority (matching Supabase schema)
   IntColumn get preferencePriority => integer().nullable().named('preference_priority')();
-  
+
+  // NEW: Allergen and diet exclusion arrays for onboarding revamp
+  /// Allergens contained in this food stored as PostgreSQL array format (e.g., '{dairy,gluten}')
+  /// Values: dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts
+  TextColumn get allergens => text().withDefault(const Constant('{}')).named('allergens')();
+
+  /// Diets that should exclude this food stored as PostgreSQL array format (e.g., '{vegan,vegetarian}')
+  /// Values: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb
+  TextColumn get excludedDiets => text().withDefault(const Constant('{}')).named('excluded_diets')();
+
   @override
   Set<Column> get primaryKey => {id};
 

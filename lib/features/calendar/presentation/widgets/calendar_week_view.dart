@@ -454,6 +454,8 @@ class _CalendarWeekViewState extends ConsumerState<CalendarWeekView> {
         return Colors.grey;
       case ActivityStatus.planned:
         return Theme.of(context).colorScheme.secondary;
+      case ActivityStatus.draft:
+        return Colors.grey.withOpacity(0.5); // Draft activities shown as faded
     }
   }
 

@@ -1,3 +1,6 @@
+import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
+import 'package:mealvana_endurance/features/onboarding/domain/dietary_preference.dart';
+
 class Food {
   final String id;
   final String name;
@@ -12,6 +15,10 @@ class Food {
 
   // Categories array (new approach)
   final List<String> categories; // e.g., ['before_run', 'during_run']
+
+  // Allergen and dietary exclusion data (for food filtering)
+  final List<Allergy> allergens; // e.g., [Allergy.dairy, Allergy.gluten]
+  final List<DietaryPreference> excludedDiets; // e.g., [DietaryPreference.vegan, DietaryPreference.keto]
 
   // Deprecated fields (legacy compatibility)
   final String? servingUnit;
@@ -45,6 +52,8 @@ class Food {
     this.displayName,
     this.displayNamePlural,
     this.categories = const [],
+    this.allergens = const [],
+    this.excludedDiets = const [],
     this.servingUnit,
     this.servingUnitPlural,
     this.servingQualifier,
@@ -80,6 +89,8 @@ class Food {
       categories: json['categories'] != null
         ? List<String>.from(json['categories'])
         : [],
+      allergens: Allergy.fromDbArray(json['allergens'] as String?),
+      excludedDiets: DietaryPreference.fromDbArray(json['excluded_diets'] as String?),
       servingUnit: json['serving_unit'] as String?,
       servingUnitPlural: json['serving_unit_plural'] as String?,
       servingQualifier: json['serving_qualifier'] as String?,
@@ -162,6 +173,8 @@ class Food {
       'display_name': displayName,
       'display_name_plural': displayNamePlural,
       'categories': categories,
+      'allergens': Allergy.toDbArray(allergens),
+      'excluded_diets': DietaryPreference.toDbArray(excludedDiets),
       'serving_unit': servingUnit,
       'serving_unit_plural': servingUnitPlural,
       'serving_qualifier': servingQualifier,

@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/food_selection/food_search_bar.dart';
+import '../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
+import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/widgets/food_selection/recommended_alternatives.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../providers/swap_food_controller.dart';
@@ -24,7 +25,7 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
   final String? foodToSwapId;
   final String? foodToSwapName;
   final String category; // before_run, during_run, after_run
-  final int activityId;
+  final String activityId;
   final bool isNewActivity;
 
   const SwapFoodScreen({
@@ -44,6 +45,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   final TextEditingController _searchController = TextEditingController();
   double _selectedQuantity = 1.0;
   bool _isProcessing = false;
+  bool _isSavingScannedFood = false; // Track when saving barcode/OpenFoodFacts result
 
   late final SwapFoodParams _params;
 
@@ -123,33 +125,46 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     );
 
     if (result != null && mounted) {
-      final food = result as Food;
+      // Show loading state immediately to prevent showing recommendations
+      setState(() {
+        _isSavingScannedFood = true;
+      });
 
-      // Convert category strings to category IDs for saving
-      final categoryIds = food.categories.map((cat) {
-        switch (cat) {
-          case 'before_run':
-            return 1;
-          case 'during_run':
-            return 2;
-          case 'after_run':
-            return 3;
-          default:
-            return 1;
+      try {
+        final food = result as Food;
+
+        // Convert category strings to category IDs for saving
+        final categoryIds = food.categories.map((cat) {
+          switch (cat) {
+            case 'before_run':
+              return 1;
+            case 'during_run':
+              return 2;
+            case 'after_run':
+              return 3;
+            default:
+              return 1;
+          }
+        }).toList();
+
+        // Save to user_foods table (offline-first) - same as Open Food Facts flow
+        final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+        await userFoodCrudService.saveUserFood(food, categoryIds);
+
+        // Refresh controller state and auto-select the food after refresh completes
+        // This prevents race condition where food disappears after being selected
+        await ref.read(swapFoodControllerProvider(_params).notifier)
+            .refreshFoods(selectAfterRefresh: food);
+
+        _searchController.clear();
+        _onSearchChanged('');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSavingScannedFood = false;
+          });
         }
-      }).toList();
-
-      // Save to user_foods table (offline-first) - same as Open Food Facts flow
-      final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
-      await userFoodCrudService.saveUserFood(food, categoryIds);
-
-      // Refresh controller state to include the newly saved food
-      await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
-
-      // Select the food and clear search
-      ref.read(swapFoodControllerProvider(_params).notifier).selectFood(food);
-      _searchController.clear();
-      _onSearchChanged('');
+      }
     }
   }
 
@@ -293,16 +308,29 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         );
 
         if (result is FoodDetailResult && mounted) {
-          await _saveOpenFoodFactsFood(
-            foodItem,
-            result.categoryIds,
-            result.fluidMlPerServing,
-            carbsPerServing: result.carbsPerServing,
-            proteinPerServing: result.proteinPerServing,
-            fatPerServing: result.fatPerServing,
-            sodiumMg: result.sodiumMg.toDouble(),
-            productType: result.productType,
-          );
+          // Show loading state while saving
+          setState(() {
+            _isSavingScannedFood = true;
+          });
+
+          try {
+            await _saveOpenFoodFactsFood(
+              foodItem,
+              result.categoryIds,
+              result.fluidMlPerServing,
+              carbsPerServing: result.carbsPerServing,
+              proteinPerServing: result.proteinPerServing,
+              fatPerServing: result.fatPerServing,
+              sodiumMg: result.sodiumMg.toDouble(),
+              productType: result.productType,
+            );
+          } finally {
+            if (mounted) {
+              setState(() {
+                _isSavingScannedFood = false;
+              });
+            }
+          }
         }
       }
     } catch (e) {
@@ -434,8 +462,10 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       // Save via crud service (offline-first)
       await userFoodCrudService.saveUserFood(food, categoryIds);
 
-      // Refresh controller state and auto-select the food
-      await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
+      // Refresh controller state and auto-select the food after refresh completes
+      // This prevents race condition where food disappears after being selected
+      await ref.read(swapFoodControllerProvider(_params).notifier)
+          .refreshFoods(selectAfterRefresh: food);
 
       // Reset quantity after selection
       setState(() {
@@ -541,26 +571,65 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           // Search bar with barcode - always visible at top
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
-            child: FoodSearchBar(
-              controller: _searchController,
-              onSearch: _onSearchButtonPressed,
-              onChanged: _onSearchChanged,
-              onBarcodeScan: _onBarcodeScan,
-              hintText: 'Search for food...',
-              showClearButton: state.openFoodFactsResults.isNotEmpty,
-              onClear: _onClearSearch,
+            child: Column(
+              children: [
+                FigmaSearchBar(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  onBarcodeScan: _onBarcodeScan,
+                  onSearchSubmit: _onSearchButtonPressed,
+                  enableAutoSearch: false, // Disabled - now handled in controller based on results
+                  hintText: 'Search for food...',
+                ),
+
+                // "Search OpenFoodFacts" button (when 1-3 local results)
+                if (state.searchQuery.isNotEmpty &&
+                    state.searchResults.isNotEmpty &&
+                    state.searchResults.length < 4 &&
+                    state.openFoodFactsResults.isEmpty &&
+                    !state.isSearchingOpenFoodFacts)
+                  SearchOpenFoodFactsButton(
+                    onPressed: () => _onSearchButtonPressed(state.searchQuery),
+                  ),
+
+                // Clear search button (when showing OpenFoodFacts results)
+                if (state.openFoodFactsResults.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: _onClearSearch,
+                      icon: const Icon(
+                        FontAwesomeIcons.xmark,
+                        size: AppIconSizes.sm,
+                        color: AppColors.orange,
+                      ),
+                      label: const Text(
+                        'Clear Search',
+                        style: TextStyle(
+                          fontFamily: 'Apercu',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.orange,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
 
           // Main content area - uses Expanded to fill remaining space
           Expanded(
-            child: hasSelectedFood
-                ? _buildSelectedFoodContent(state.selectedFood!)
-                : _buildContentArea(state),
+            child: _isSavingScannedFood
+                ? _buildSavingIndicator()
+                : (hasSelectedFood
+                    ? _buildSelectedFoodContent(state.selectedFood!)
+                    : _buildContentArea(state)),
           ),
 
           // Confirm button (only when food is selected and no active search)
-          if (hasSelectedFood) ...[
+          if (hasSelectedFood && !_isSavingScannedFood) ...[
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: KylePrimaryButton(
@@ -627,6 +696,28 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
             const SizedBox(height: AppSpacing.lg),
             Text(
               'Searching food database...',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSavingIndicator() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Adding food...',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

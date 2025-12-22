@@ -6,6 +6,7 @@ import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/preferences_service.dart';
+import '../../../shared/providers/user_id_provider.dart';
 import '../data/user_repository.dart';
 
 part 'email_auth_service.g.dart';
@@ -33,19 +34,37 @@ class EmailAuthService extends _$EmailAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
+      // Defensive check - this should never happen but adding for safety
+      if (email.isEmpty || password.isEmpty) {
+        _logger.error('Empty email or password received', context: 'EMAIL_AUTH', data: {
+          'email_length': email.length,
+          'password_length': password.length,
+          'email_value': email,
+        });
+        throw Exception('Email and password are required');
+      }
+
       _logger.info('Starting email account linking', context: 'EMAIL_AUTH', data: {
         'email_length': email.length,
+        'email_value': email,
         'password_length': password.length,
       });
 
       // Validate inputs
       final emailValidation = validateEmail(email);
       if (emailValidation != null) {
+        _logger.error('Email validation failed', context: 'EMAIL_AUTH', data: {
+          'email': email,
+          'validation_error': emailValidation,
+        });
         throw Exception(emailValidation);
       }
 
       final passwordValidation = validatePassword(password);
       if (passwordValidation != null) {
+        _logger.error('Password validation failed', context: 'EMAIL_AUTH', data: {
+          'validation_error': passwordValidation,
+        });
         throw Exception(passwordValidation);
       }
 
@@ -61,18 +80,49 @@ class EmailAuthService extends _$EmailAuthService {
         'is_anonymous': currentUser.isAnonymous,
       });
 
-      // Update user with email and password
-      // This converts the anonymous user to an email-authenticated user
+      // CRITICAL: Supabase requires a two-step process for anonymous users:
+      // 1. First update with email only
+      // 2. Then update with password
+      // If done in one step, email gets stripped (known Supabase behavior)
+
+      _logger.info('Step 1: Setting email address', context: 'EMAIL_AUTH', data: {
+        'email': email,
+        'email_is_empty': email.isEmpty,
+        'email_length': email.length,
+      });
+
+      // Create UserAttributes and log what will be sent
+      final userAttributes = UserAttributes(email: email);
+
+      _logger.info('Step 1: UserAttributes created', context: 'EMAIL_AUTH', data: {
+        'attributes_json': userAttributes.toJson(),
+        'email_param': email,
+      });
+
+      // Step 1: Update user with email only
+      final emailResponse = await _supabase.auth.updateUser(userAttributes);
+
+      if (emailResponse.user == null) {
+        throw Exception('Email linking failed - no user returned');
+      }
+
+      _logger.info('Step 1 complete: Email set successfully', context: 'EMAIL_AUTH', data: {
+        'user_id': emailResponse.user!.id,
+        'email': emailResponse.user!.email,
+      });
+
+      // Step 2: Update user with password
+      _logger.info('Step 2: Setting password', context: 'EMAIL_AUTH');
+
       final response = await _supabase.auth.updateUser(
-        UserAttributes(
-          email: email,
-          password: password,
-        ),
+        UserAttributes(password: password),
       );
 
       if (response.user == null) {
-        throw Exception('Email account linking failed - no user returned');
+        throw Exception('Password linking failed - no user returned');
       }
+
+      _logger.info('Step 2 complete: Password set successfully', context: 'EMAIL_AUTH');
 
       // Verify the user ID didn't change (critical for data preservation)
       if (response.user!.id != anonymousUserId) {
@@ -100,6 +150,11 @@ class EmailAuthService extends _$EmailAuthService {
         preservedUserId: true, // ID was preserved during linking
       );
 
+      // CRITICAL: Invalidate userIdProvider to force re-read with updated authUserId
+      // Without this, the provider remains cached with old data
+      ref.invalidate(userIdProvider);
+      _logger.info('Invalidated userIdProvider after auth update', context: 'EMAIL_AUTH');
+
       // Track successful linking in analytics
       await _analytics.track('email_account_linked', properties: {
         'user_id': response.user!.id,
@@ -117,14 +172,28 @@ class EmailAuthService extends _$EmailAuthService {
 
     // Re-throw errors for UI to handle
     if (state.hasError) {
-      _logger.error('Email account linking failed', context: 'EMAIL_AUTH', error: state.error);
+      final error = state.error;
+      _logger.error('Email account linking failed', context: 'EMAIL_AUTH', error: error);
 
       // Track failure in analytics
       await _analytics.track('email_account_linking_failed', properties: {
-        'error': state.error.toString(),
+        'error': error.toString(),
       });
 
-      throw state.error!;
+      // Provide user-friendly error messages
+      String userMessage = 'Account creation failed. Please try again.';
+
+      if (error is AuthApiException) {
+        if (error.message.contains('already registered')) {
+          userMessage = 'This email is already registered. Please sign in instead.';
+        } else if (error.message.contains('invalid')) {
+          userMessage = 'Please enter a valid email address.';
+        } else if (error.message.contains('weak password')) {
+          userMessage = 'Please use a stronger password (at least 8 characters).';
+        }
+      }
+
+      throw Exception(userMessage);
     }
   }
 
@@ -187,6 +256,10 @@ class EmailAuthService extends _$EmailAuthService {
         authProvider: 'email',
         preservedUserId: false, // ID changed during sign-in
       );
+
+      // CRITICAL: Invalidate userIdProvider to force re-read after auth change
+      ref.invalidate(userIdProvider);
+      _logger.info('Invalidated userIdProvider after sign-in', context: 'EMAIL_AUTH');
 
       _logger.info('Sign-in completion handled', context: 'EMAIL_AUTH', data: {
         'data_migrated': dataMigrated,

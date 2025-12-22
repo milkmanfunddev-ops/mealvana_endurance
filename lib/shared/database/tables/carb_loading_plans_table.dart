@@ -1,10 +1,11 @@
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 /// Enhanced carb loading plans table for events
 @DataClassName('CarbLoadingPlan')
 class CarbLoadingPlansTable extends Table {
-  IntColumn get id => integer().autoIncrement()(); // PRIMARY KEY (BIGSERIAL in Postgres)
-  IntColumn get eventId => integer().nullable().named('event_id')(); // FOREIGN KEY to events.id (nullable: can have standalone plans)
+  TextColumn get id => text().clientDefault(() => const Uuid().v4())(); // PRIMARY KEY (UUID)
+  TextColumn get eventId => text().nullable().named('event_id')(); // FOREIGN KEY to events.id (nullable: can have standalone plans)
   TextColumn get userId => text().named('user_id')(); // FOREIGN KEY to users.id (UUID)
   
   // Plan configuration
@@ -30,8 +31,9 @@ class CarbLoadingPlansTable extends Table {
   DateTimeColumn get localUpdatedAt =>
       dateTime().clientDefault(() => DateTime.now()).named('local_updated_at')();
 
-  // Note: Primary key is automatically set by autoIncrement()
-  
+  @override
+  Set<Column> get primaryKey => {id};
+
   @override
   String get tableName => 'carb_loading_plans';
   

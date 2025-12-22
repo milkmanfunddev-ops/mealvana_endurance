@@ -1,0 +1,115 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Dev Flavor",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "args": [
+        "--flavor",
+        "dev"
+      ]
+    },
+    {
+      "name": "Prod Flavor",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_prod.dart",
+      "args": [
+        "--flavor",
+        "prod"
+      ]
+    },
+    {
+      "name": "Dev Flavor (Profile Mode)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "args": [
+        "--flavor",
+        "dev",
+        "--profile"
+      ],
+      "flutterMode": "profile"
+    },
+    {
+      "name": "Prod Flavor (Profile Mode)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_prod.dart",
+      "args": [
+        "--flavor",
+        "prod",
+        "--profile"
+      ],
+      "flutterMode": "profile"
+    },
+    {
+      "name": "Dev Flavor (Release Mode)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "args": [
+        "--flavor",
+        "dev",
+        "--release"
+      ],
+      "flutterMode": "release"
+    },
+    {
+      "name": "Prod Flavor (Release Mode)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_prod.dart",
+      "args": [
+        "--flavor",
+        "prod",
+        "--release"
+      ],
+      "flutterMode": "release"
+    },
+    {
+      "name": "Dev Flavor (Web - Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "args": [
+        "-d",
+        "chrome"
+      ]
+    },
+    {
+      "name": "Prod Flavor (Web - Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_prod.dart",
+      "args": [
+        "-d",
+        "chrome"
+      ]
+    },
+    {
+      "name": "Dev Flavor (Web - Edge)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "args": [
+        "-d",
+        "edge"
+      ]
+    },
+    {
+      "name": "Dev Flavor (Web Server)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "args": [
+        "-d",
+        "web-server",
+        "--web-port",
+        "8080"
+      ]
+    }
+  ]
+}

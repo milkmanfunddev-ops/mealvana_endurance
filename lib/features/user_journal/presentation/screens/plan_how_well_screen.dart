@@ -15,7 +15,7 @@ class PlanHowWellScreen extends ConsumerStatefulWidget {
     required this.activityId,
   });
 
-  final int activityId;
+  final String activityId;
 
   @override
   ConsumerState<PlanHowWellScreen> createState() => _PlanHowWellScreenState();
@@ -232,16 +232,16 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
 
   Future<void> _handleSubmit() async {
     if (selectedRating == null) return;
-    
+
     try {
       await ref.read(planRatingControllerProvider.notifier)
           .submitRating(widget.activityId, selectedRating!);
-      
+
       if (!mounted) return;
 
       await context.pushNamed(
         'voice-memo',
-        pathParameters: {'activityId': widget.activityId.toString()},
+        pathParameters: {'activityId': widget.activityId},
         extra: {'rating': selectedRating},
       );
 

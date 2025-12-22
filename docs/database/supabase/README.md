@@ -12,6 +12,24 @@ Supabase provides the PostgreSQL cloud backend for data synchronization and back
 
 ## Recent Schema Changes
 
+### December 14, 2025: Dietary Preferences & Allergies
+- **Tables**: `users`, `foods`
+- **New Enum Types**:
+  - `dietary_preference_enum`: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb
+  - `allergy_enum`: dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts
+- **Users Table Changes**:
+  - Added `dietary_preference` (dietary_preference_enum, nullable)
+  - Added `allergies` (allergy_enum[], default '{}')
+  - Added index on `dietary_preference` (partial index where not null)
+- **Foods Table Changes**:
+  - Added `allergens` (allergy_enum[], default '{}')
+  - Added `excluded_diets` (dietary_preference_enum[], default '{}')
+  - Added GIN indexes on both array columns for efficient filtering
+- **Purpose**: Supports onboarding revamp with dietary preferences and allergy tracking
+- **Benefit**: Enables personalized food filtering based on user diet and allergies
+- **Migration**: `/supabase/migrations/20251214120000_add_dietary_preference_and_allergies.sql`
+- **Schema Version**: Still v1 (non-breaking field additions)
+
 ### October 9, 2025: Events Nutrition Plan Tracking
 - **Table**: `events`
 - **Change**: Added `has_nutrition_plan` field (BOOLEAN DEFAULT FALSE)
@@ -68,10 +86,26 @@ Serverless functions for complex operations:
 ### Via Supabase Client
 ```dart
 final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+
+// Basic food query
 final data = await supabase
   .from('foods')
   .select()
   .eq('category', 'before_run');
+
+// Filter foods by user allergies (exclude foods containing allergens)
+final userAllergies = ['dairy', 'gluten'];
+final safeFood s = await supabase
+  .from('foods')
+  .select()
+  .not('allergens', 'cs', '{${userAllergies.join(',')}}'); // contains (cs) operator
+
+// Filter foods by dietary preference (exclude foods not suitable for diet)
+final userDiet = 'vegan';
+final suitableFoods = await supabase
+  .from('foods')
+  .select()
+  .not('excluded_diets', 'cs', '{$userDiet}'); // contains (cs) operator
 ```
 
 ### Via Edge Functions

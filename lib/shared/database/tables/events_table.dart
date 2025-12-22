@@ -1,11 +1,11 @@
-import 'dart:math';
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 /// Table for specialized event data linked to activities
 @DataClassName('Event')
 class EventsTable extends Table {
-  IntColumn get id => integer().clientDefault(() => Random().nextInt(2147483647))(); // PRIMARY KEY (random int - no collision with server)
-  IntColumn get activityId => integer().nullable().named('activity_id')(); // OPTIONAL FOREIGN KEY to activities.id (events may exist without an activity)
+  TextColumn get id => text().clientDefault(() => const Uuid().v4())(); // PRIMARY KEY (UUID)
+  TextColumn get activityId => text().nullable().named('activity_id')(); // OPTIONAL FOREIGN KEY to activities.id (events may exist without an activity)
   TextColumn get userId => text().named('user_id')(); // FOREIGN KEY to users.id (UUID)
 
   // Event classification
@@ -33,9 +33,10 @@ class EventsTable extends Table {
   IntColumn get carbLoadingDays => integer().nullable().named('carb_loading_days')(); // 1, 2, 3, 7
   DateTimeColumn get carbLoadingStartDate => dateTime().nullable().named('carb_loading_start_date')();
 
-  // Nutrition plan tracking
+  // OBSOLETE: Nutrition plan tracking (use activityId != null instead)
+  // Keeping column for backward compatibility - do not use in new code
   BoolColumn get hasNutritionPlan => boolean().withDefault(const Constant(false)).named('has_nutrition_plan')();
-  
+
   // Registration and logistics
   TextColumn get bibNumber => text().nullable().named('bib_number')();
   TextColumn get waveStartTime => text().nullable().named('wave_start_time')();
@@ -54,8 +55,9 @@ class EventsTable extends Table {
   BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
   DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
 
-  // Note: Primary key is automatically set by autoIncrement()
-  
+  @override
+  Set<Column> get primaryKey => {id};
+
   @override
   String get tableName => 'events';
   

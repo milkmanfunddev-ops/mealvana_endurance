@@ -10,7 +10,13 @@ import '../../../../shared/services/app_external_deps.dart';
 /// Welcome Screen - Design System
 /// First screen in onboarding flow
 class WelcomeScreen extends ConsumerWidget {
-  const WelcomeScreen({super.key});
+  const WelcomeScreen({
+    super.key,
+    this.onContinue,
+  });
+
+  /// Callback to advance to next page (optional for standalone use)
+  final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -155,8 +161,12 @@ class WelcomeScreen extends ConsumerWidget {
     final analytics = ref.read(appExternalDepsProvider);
     analytics.analytics.track('welcome_get_started_tapped');
 
-    // Navigate to profile setup
-    context.push('/onboarding/profile');
+    // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
+    if (onContinue != null) {
+      onContinue!();
+    } else {
+      context.push('/onboarding');
+    }
   }
 
   void _goToLogin(BuildContext context, WidgetRef ref) {

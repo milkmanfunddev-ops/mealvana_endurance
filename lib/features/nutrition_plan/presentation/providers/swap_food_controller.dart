@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/food.dart';
 import '../../domain/food_item.dart';
@@ -10,6 +9,7 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../../shared/services/food_management/food_recommendation_service.dart';
 import '../../../../shared/services/food_management/shared_food_search_service.dart';
+import '../../../../shared/utils/search_strategy.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
 
@@ -28,7 +28,7 @@ class SwapFoodParams {
     this.isNewActivity = false,
   });
 
-  final int activityId; // Activity ID - matches ActivityDetailController provider
+  final String activityId; // Activity ID - matches ActivityDetailController provider
   final String category; // Keep for context (before_run, during_run, after_run)
   final String? originalFoodId; // Food being swapped (for product type matching)
   final String? originalFoodName; // Food name being swapped (fallback if ID lookup fails)
@@ -107,6 +107,9 @@ class SwapFoodController extends _$SwapFoodController {
   /// Cached logger instance - avoids accessing ref after disposal
   /// Note: Using `late` (not `late final`) because build() can be called multiple times
   late AppLogger _logger;
+
+  /// Search strategy helper for managing local vs OpenFoodFacts search
+  final _searchStrategy = SearchStrategy();
 
   /// Helper to check if provider is still mounted before state updates
   bool get _isMounted {
@@ -278,10 +281,12 @@ class SwapFoodController extends _$SwapFoodController {
 
     if (query.isEmpty) {
       // No search - show recommendations
+      _searchStrategy.cancelAutoSearch();
       state = AsyncValue.data(currentState.copyWith(
         searchQuery: '',
         searchResults: currentState.recommendations,
         isSearching: false,
+        openFoodFactsResults: [], // Clear OpenFoodFacts results
         // Keep selected food when clearing search
       ));
     } else {
@@ -307,6 +312,19 @@ class SwapFoodController extends _$SwapFoodController {
         isSearching: true,
         clearSelectedFood: true, // Clear selected food when starting new search
       ));
+
+      // Use search strategy to determine if we should auto-search OpenFoodFacts
+      if (_searchStrategy.shouldAutoSearch(sortedResults.length)) {
+        _searchStrategy.scheduleAutoSearch(
+          query: query,
+          getCurrentQuery: () => state.value?.searchQuery ?? '',
+          onSearch: (q) {
+            if (_isMounted) {
+              searchOpenFoodFacts(q);
+            }
+          },
+        );
+      }
     }
   }
   
@@ -564,8 +582,12 @@ class SwapFoodController extends _$SwapFoodController {
     ));
   }
 
-  /// Refresh foods list (called after adding new user food)
-  Future<void> refreshFoods() async {
+  /// Refresh foods list and optionally select a food after refresh completes
+  ///
+  /// This method is called after adding a new user food (barcode scan or OpenFoodFacts import).
+  /// If [selectAfterRefresh] is provided, the food will be selected after the rebuild completes.
+  /// This prevents race conditions where the food is selected before the state is rebuilt.
+  Future<void> refreshFoods({Food? selectAfterRefresh}) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -579,5 +601,13 @@ class SwapFoodController extends _$SwapFoodController {
 
     // Invalidate and rebuild to refresh food data
     ref.invalidateSelf();
+
+    // Wait for rebuild to complete before selecting food
+    await future;
+
+    // Select food after rebuild if provided
+    if (selectAfterRefresh != null && _isMounted) {
+      selectFood(selectAfterRefresh);
+    }
   }
 }

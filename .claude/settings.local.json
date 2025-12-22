@@ -115,7 +115,8 @@
       "WebFetch(domain:blog.codemagic.io)",
       "WebFetch(domain:codewithandrea.com)",
       "WebFetch(domain:www.ascend.io)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docs.coderabbit.ai)"
     ],
     "deny": [],
     "ask": [],

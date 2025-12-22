@@ -1,8 +1,8 @@
 # Final Surge Integration - Implementation Roadmap
 
-**Last Updated**: December 8, 2025
+**Last Updated**: December 17, 2025
 **Status**: Ready for Implementation
-**Reference**: [/docs/final_surge/notes.md](./notes.md)
+**Reference**: [Notes](./notes.md) | [Technical Architecture](./technical-architecture.md)
 
 ---
 
@@ -23,7 +23,7 @@ This roadmap details the implementation of Final Surge integration for Mealvana 
 | **Sports supported** | Running, Cycling, Swimming |
 | **Import range** | 14 days upcoming only |
 | **Onboarding placement** | First screen (before User Profile) |
-| **Nutrition plan generation** | Background processing (pg_cron + pgmq) |
+| **Nutrition plan generation** | Chunked parallel generation (5 concurrent) |
 | **Conflict resolution** | Keep both entries (don't merge/replace) |
 | **Token expiry** | Silent refresh + banner if needed |
 | **Premium gating** | Free for testing phase |
@@ -887,113 +887,222 @@ GoRoute(
 
 ---
 
-## Phase 4: Background Processing (pg_cron + pgmq)
+## Phase 4: Nutrition Plan Generation
 
 ### Objective
-Generate nutrition plans for imported workouts using Supabase background jobs.
+Generate nutrition plans for imported workouts using chunked parallel processing in Flutter.
+
+### Approach: Chunked Parallel Generation
+
+Instead of background processing with pg_cron + pgmq, we'll use a simpler, faster approach:
+- Process nutrition plans immediately after import
+- Generate in parallel chunks (5 concurrent API calls at a time)
+- Total time: ~15-20 seconds for 14 workouts
+- Live progress UI with real-time calendar updates
+
+**Why This Approach:**
+- ✅ Simpler - no pg_cron/pgmq infrastructure needed
+- ✅ Faster - 15-20 seconds vs 7 minutes with cron
+- ✅ Better UX - user sees live progress
+- ✅ Easier to debug - all in Flutter code
+- ✅ Rate limit safe - max 5 concurrent calls
 
 ### Tasks
 
-#### 4.1 Enable PostgreSQL Extensions
-
-```sql
--- Run in Supabase SQL Editor (one-time setup)
-
-CREATE EXTENSION IF NOT EXISTS pgmq;
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
-```
-
-#### 4.2 Create Job Queue
-
-```sql
--- Create queue for nutrition plan jobs
-SELECT pgmq.create('nutrition_plan_jobs');
-```
-
-#### 4.3 Create Processor Function
-
-```sql
--- supabase/migrations/YYYYMMDDHHMMSS_create_nutrition_plan_processor.sql
-
-CREATE OR REPLACE FUNCTION process_nutrition_plan_job()
-RETURNS void AS $$
-DECLARE
-  job record;
-BEGIN
-  -- Read one message (5 minute visibility timeout)
-  SELECT * INTO job FROM pgmq.read('nutrition_plan_jobs', 300, 1);
-
-  IF job IS NULL THEN
-    RETURN; -- No jobs
-  END IF;
-
-  -- Call Edge Function
-  PERFORM net.http_post(
-    url := current_setting('app.supabase_url') || '/functions/v1/generate-nutrition-plan',
-    headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('app.service_role_key'),
-      'Content-Type', 'application/json'
-    ),
-    body := job.message
-  );
-
-  -- Delete job on success
-  PERFORM pgmq.delete('nutrition_plan_jobs', job.msg_id);
-
-EXCEPTION WHEN OTHERS THEN
-  RAISE WARNING 'Nutrition plan job failed: %', SQLERRM;
-  -- Job will become visible again after timeout for retry
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```
-
-#### 4.4 Schedule Cron Job
-
-```sql
--- Process one job every 30 seconds
-SELECT cron.schedule(
-  'process-nutrition-plans',
-  '30 seconds',
-  $$SELECT process_nutrition_plan_job()$$
-);
-```
-
-#### 4.5 Enqueue Jobs from Sync Service
+#### 4.1 Create Progress UI Component
 
 ```dart
-// In FinalSurgeSyncService._queueNutritionPlanGeneration()
+// lib/features/integrations/presentation/widgets/nutrition_plan_progress.dart
 
-Future<void> _queueNutritionPlanGeneration(String activityId) async {
-  await _supabaseClient.rpc('enqueue_nutrition_plan_job', params: {
-    'activity_id': activityId,
+class NutritionPlanProgress extends StatelessWidget {
+  final int totalWorkouts;
+  final int completedWorkouts;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = completedWorkouts / totalWorkouts;
+
+    return Column(
+      children: [
+        Text(
+          'Generating nutrition plans... $completedWorkouts/$totalWorkouts',
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        const SizedBox(height: 16),
+        LinearProgressIndicator(value: progress),
+        const SizedBox(height: 8),
+        Text(
+          '${(progress * 100).toInt()}% complete',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+}
+```
+
+#### 4.2 Implement Chunked Processing Service
+
+```dart
+// In FinalSurgeSyncService
+
+Future<void> generateNutritionPlansInParallel(List<Activity> activities) async {
+  const chunkSize = 5; // Process 5 at a time
+  final totalWorkouts = activities.length;
+  var completedWorkouts = 0;
+
+  // Update progress callback
+  void updateProgress() {
+    completedWorkouts++;
+    _progressController.add(completedWorkouts / totalWorkouts);
+  }
+
+  // Process in chunks
+  for (var i = 0; i < activities.length; i += chunkSize) {
+    final chunk = activities.skip(i).take(chunkSize).toList();
+
+    // Generate plans in parallel for this chunk
+    await Future.wait(
+      chunk.map((activity) async {
+        try {
+          await _nutritionPlanService.generatePlan(activity);
+          updateProgress();
+        } catch (e) {
+          _logger.error('Failed to generate plan for activity ${activity.id}',
+            error: e);
+          updateProgress(); // Still update progress even on error
+        }
+      }),
+    );
+  }
+}
+```
+
+#### 4.3 Update Sync Service to Generate Plans
+
+```dart
+// In FinalSurgeSyncService.syncWorkouts()
+
+Future<SyncResult> syncWorkouts(String userId) async {
+  // ... existing sync code ...
+
+  // After importing activities, generate nutrition plans
+  if (newActivities.isNotEmpty) {
+    _logger.info('Generating nutrition plans for ${newActivities.length} workouts');
+
+    await generateNutritionPlansInParallel(newActivities);
+
+    _logger.info('Nutrition plan generation complete');
+  }
+
+  return SyncResult(
+    success: true,
+    newWorkouts: newWorkouts,
+    plansGenerated: newActivities.length,
+  );
+}
+```
+
+#### 4.4 Add Progress Stream to Controller
+
+```dart
+// In FinalSurgeController
+
+final _progressController = StreamController<double>.broadcast();
+Stream<double> get progressStream => _progressController.stream;
+
+Future<void> connect() async {
+  state = const AsyncLoading();
+
+  state = await AsyncValue.guard(() async {
+    final integration = await _oauthService.authenticate();
+
+    // Trigger sync with progress updates
+    final syncResult = await _syncService.syncWorkouts(integration.userId);
+
+    return FinalSurgeState(
+      isConnected: true,
+      lastSyncAt: DateTime.now(),
+      syncStatus: 'success',
+      workoutCount: syncResult.newWorkouts,
+      plansGenerated: syncResult.plansGenerated,
+    );
   });
 }
 ```
 
-```sql
--- SQL function to enqueue job
-CREATE OR REPLACE FUNCTION enqueue_nutrition_plan_job(activity_id UUID)
-RETURNS void AS $$
-BEGIN
-  PERFORM pgmq.send(
-    'nutrition_plan_jobs',
-    jsonb_build_object(
-      'activity_id', activity_id,
-      'queued_at', NOW()
-    )
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+#### 4.5 Show Progress Dialog During Generation
+
+```dart
+// In ConnectIntegrationsScreen._connectFinalSurge()
+
+Future<void> _connectFinalSurge() async {
+  final controller = ref.read(finalSurgeControllerProvider.notifier);
+
+  try {
+    await controller.connect();
+
+    // Show progress dialog
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Importing Workouts'),
+          content: StreamBuilder<double>(
+            stream: controller.progressStream,
+            builder: (context, snapshot) {
+              final progress = snapshot.data ?? 0.0;
+              return NutritionPlanProgress(
+                totalWorkouts: controller.totalWorkouts,
+                completedWorkouts: (progress * controller.totalWorkouts).round(),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    // Wait for completion, then show success
+    final syncResult = await controller.syncComplete;
+
+    if (mounted) {
+      Navigator.of(context).pop(); // Close progress dialog
+
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Connected!'),
+          content: Text(
+            'Found ${syncResult.newWorkouts} workouts for the next 2 weeks\n'
+            'Generated ${syncResult.plansGenerated} nutrition plans'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _proceedToNextScreen();
+              },
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      );
+    }
+  } catch (e) {
+    // Error handling...
+  }
+}
 ```
 
 ### Deliverables
-- [ ] pgmq extension enabled
-- [ ] pg_cron extension enabled
-- [ ] Nutrition plan job queue created
-- [ ] Processor function deployed
-- [ ] Cron job scheduled
-- [ ] Jobs automatically enqueued after workout import
+- [ ] Progress UI component created
+- [ ] Chunked parallel processing implemented
+- [ ] Progress stream added to controller
+- [ ] Progress dialog shown during generation
+- [ ] Calendar updates in real-time as plans complete
+- [ ] Error handling for failed generations
+- [ ] Success dialog shows workout count and plans generated
 
 ---
 

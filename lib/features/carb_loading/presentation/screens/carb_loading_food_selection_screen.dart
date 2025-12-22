@@ -10,7 +10,8 @@ import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/cards/base_card.dart';
 import '../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../shared/widgets/food_icon.dart';
-import '../../../../shared/widgets/food_selection/food_search_bar.dart';
+import '../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
+import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../providers/carb_loading_food_selection_controller.dart';
 import '../../domain/meal_type.dart';
@@ -23,7 +24,7 @@ import '../../../../shared/services/food_management/user_food_crud_service.dart'
 /// Screen for selecting foods to add to a carb loading meal
 /// Searches across all food sources and handles importing from nutrition plan
 class CarbLoadingFoodSelectionScreen extends ConsumerStatefulWidget {
-  final int dayId;
+  final String dayId;
   final MealType mealType;
 
   const CarbLoadingFoodSelectionScreen({
@@ -224,14 +225,51 @@ class _CarbLoadingFoodSelectionScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Search bar with barcode scanner
-                FoodSearchBar(
-                  controller: _searchController,
-                  onSearch: _onSearchButtonPressed,
-                  onChanged: _onSearchChanged,
-                  onBarcodeScan: _onBarcodeScan,
-                  hintText: 'Search foods...',
-                  showClearButton: state.openFoodFactsResults.isNotEmpty,
-                  onClear: _onClearSearch,
+                Column(
+                  children: [
+                    FigmaSearchBar(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      onBarcodeScan: _onBarcodeScan,
+                      onSearchSubmit: _onSearchButtonPressed,
+                      enableAutoSearch: false, // Disabled - now handled in controller based on results
+                      hintText: 'Search foods...',
+                    ),
+
+                    // "Search OpenFoodFacts" button (when 1-3 local results)
+                    if (state.searchQuery.isNotEmpty &&
+                        state.searchResults.isNotEmpty &&
+                        state.searchResults.length < 4 &&
+                        state.openFoodFactsResults.isEmpty &&
+                        !state.isSearchingOpenFoodFacts)
+                      SearchOpenFoodFactsButton(
+                        onPressed: () => _onSearchButtonPressed(state.searchQuery),
+                      ),
+
+                    // Clear search button (when showing OpenFoodFacts results)
+                    if (state.openFoodFactsResults.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _onClearSearch,
+                          icon: const Icon(
+                            FontAwesomeIcons.xmark,
+                            size: AppIconSizes.sm,
+                            color: AppColors.orange,
+                          ),
+                          label: const Text(
+                            'Clear Search',
+                            style: TextStyle(
+                              fontFamily: 'Apercu',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.orange,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
 
                 const SizedBox(height: AppSpacing.md),

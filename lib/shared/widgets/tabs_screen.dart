@@ -8,6 +8,7 @@ import '../../features/feature_survey/presentation/screens/feature_survey_screen
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
 import 'kyle_design/navigation/floating_action_buttons_bar.dart';
+import 'sync_status_indicator.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({
@@ -50,9 +51,17 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       ),
       body: Stack(
         children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: _screens,
+          Column(
+            children: [
+              // Background sync status indicator (shows when uploading to Supabase)
+              const SyncStatusIndicator(),
+              Expanded(
+                child: IndexedStack(
+                  index: _currentIndex,
+                  children: _screens,
+                ),
+              ),
+            ],
           ),
           FloatingActionButtonsBar(
             activeButton: _currentIndex,

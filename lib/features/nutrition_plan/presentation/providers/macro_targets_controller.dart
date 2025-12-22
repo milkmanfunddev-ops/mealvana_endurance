@@ -4,10 +4,12 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../activities/domain/activity.dart' as domain;
+import '../../../activities/application/activities_service.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/macro_targets.dart';
 import '../../data/macro_repository.dart';
-import '../../data/nutrition_plan_repository.dart';
 import '../../application/macro_generation_service.dart';
 import '../../application/nutrition_plan_service.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -17,8 +19,8 @@ import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../events/presentation/providers/events_controller.dart';
+import '../../../events/data/events_repository.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
-import '../../domain/pending_activity_data.dart';
 
 part 'macro_targets_controller.g.dart';
 
@@ -62,9 +64,8 @@ class MacroTargetsState {
   
   // Shared fields
   final String? errorMessage;
-  final int? activityId; // Calendar activity ID (links nutrition plan to activity)
-  final int? eventId; // Calendar event ID (for provider invalidation after plan creation)
-  final PendingActivityData? pendingActivityData; // Activity data (not yet created)
+  final String? activityId; // Calendar activity ID (links nutrition plan to activity) - ALWAYS exists after macro generation
+  final String? eventId; // Calendar event ID (for provider invalidation after plan creation)
 
   const MacroTargetsState({
     // Distance page fields
@@ -107,7 +108,6 @@ class MacroTargetsState {
     this.errorMessage,
     this.activityId,
     this.eventId,
-    this.pendingActivityData,
   });
 
   MacroTargetsState copyWith({
@@ -149,12 +149,10 @@ class MacroTargetsState {
     
     // Shared fields
     String? errorMessage,
-    int? activityId,
-    int? eventId,
-    PendingActivityData? pendingActivityData,
+    String? activityId,
+    String? eventId,
     bool overrideActivityId = false,
     bool overrideEventId = false,
-    bool overridePendingActivityData = false,
   }) {
     return MacroTargetsState(
       title: title ?? this.title,
@@ -196,9 +194,6 @@ class MacroTargetsState {
       errorMessage: errorMessage ?? this.errorMessage,
       activityId: overrideActivityId ? activityId : activityId ?? this.activityId,
       eventId: overrideEventId ? eventId : eventId ?? this.eventId,
-      pendingActivityData: overridePendingActivityData
-          ? pendingActivityData
-          : pendingActivityData ?? this.pendingActivityData,
     );
   }
 }
@@ -214,7 +209,13 @@ class MacroTargetsController extends _$MacroTargetsController {
   @override
   FutureOr<MacroTargetsState> build() async {
     // Screen views not tracked per README spec
-    
+
+    // ✨ DRAFT ACTIVITY CLEANUP (Andrea Bizzotto FOA Pattern)
+    // Register cleanup when provider is disposed to handle abandoned drafts
+    ref.onDispose(() {
+      _scheduleCleanupIfNeeded();
+    });
+
     // Load content synchronously from in-memory cache
     final title = _contentService.getValue(ContentKeys.mainScreenTitle, defaultValue: 'Mealvana Endurance');
     final distanceLabel = _contentService.getValue(ContentKeys.mainScreenDistanceLabel, defaultValue: 'Distance');
@@ -302,11 +303,9 @@ class MacroTargetsController extends _$MacroTargetsController {
 
     state = AsyncData(currentState.copyWith(
       macroTargets: null,
-      pendingActivityData: null,
       activityId: null,
       eventId: null,
       overrideActivityId: true,
-      overridePendingActivityData: true,
       overrideEventId: true,
     ));
 
@@ -329,20 +328,16 @@ class MacroTargetsController extends _$MacroTargetsController {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
-    int? activityId, // Link to calendar activity/event
-    int? eventId, // Link to calendar event (for provider invalidation)
+    String? activityId, // Link to calendar activity/event
+    String? eventId, // Link to calendar event (for provider invalidation)
   }) async {
     // CRITICAL FIX: Ensure state is loaded before proceeding
     // state.value can be null if build() hasn't completed yet
-    DebugLogger.info('🔍 MAIN CONTROLLER: Checking if state is loaded...');
-    DebugLogger.info('🔍 MAIN CONTROLLER: state.value is null? ${state.value == null}');
-
     final currentState = state.value;
     if (currentState == null) {
       DebugLogger.error('❌ MAIN CONTROLLER: state.value is NULL - state not loaded yet! Waiting for state...');
       // Wait for the async build to complete
       await future;
-      DebugLogger.info('✅ MAIN CONTROLLER: State loaded successfully');
       // Now recursively call with loaded state
       return generateMacros(
         distanceText: distanceText,
@@ -361,17 +356,6 @@ class MacroTargetsController extends _$MacroTargetsController {
       );
     }
 
-    DebugLogger.info('✅ MAIN CONTROLLER: State is loaded, proceeding with macro generation');
-
-    DebugLogger.info('🚀 DEBUG: Starting macro generation...');
-    DebugLogger.info('🔍 DEBUG: Distance: $distanceText ${distanceUnit.name}');
-    DebugLogger.info('🔍 DEBUG: Pace: $paceText ${paceUnit.name}');
-    DebugLogger.info('🔍 DEBUG: Time before run: ${timeBeforeRunMinutes}min');
-    DebugLogger.info('🔍 DEBUG: Gut training: ${gutTraining.name}');
-    DebugLogger.info('🔍 DEBUG: Temperature: $temperatureC°C');
-    DebugLogger.info('🔍 DEBUG: Humidity: $humidityPct%');
-    DebugLogger.info('🔍 DEBUG: Sweat rate: ${sweatRateCat?.name}');
-
     // Set loading state
     state = AsyncData(currentState.copyWith(
       isGeneratingMacros: true, 
@@ -388,13 +372,10 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Parse pace (e.g., "8:30" -> 8.5 minutes per mile)
         final paceParts = paceString.split(':');
         final paceMinutes = paceParts.length == 2
-            ? (double.tryParse(paceParts[0]) ?? 8.0) + 
+            ? (double.tryParse(paceParts[0]) ?? 8.0) +
               ((double.tryParse(paceParts[1]) ?? 30.0) / 60.0)
             : double.tryParse(paceString) ?? 8.5;
 
-        DebugLogger.info('📊 DEBUG: Parsed distance: ${distance}mi');
-        DebugLogger.info('📊 DEBUG: Parsed pace: ${paceMinutes}min/mi');
-        
         // Track plan generation started - entry point for North-Star metrics
         final user = await _authService.getCurrentUser();
         deviceId = user?.id ?? 'unknown';
@@ -407,8 +388,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           gutTrainingLevel: gutTraining.name,
         );
 
-        // 🆕 STORE PENDING ACTIVITY DATA (don't create yet)
-        DebugLogger.info('📅 DEBUG: Storing pending activity data...');
+        // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist
         final scheduledDateTime = DateTime(
           scheduledDate.year,
           scheduledDate.month,
@@ -417,17 +397,22 @@ class MacroTargetsController extends _$MacroTargetsController {
           scheduledTime.minute,
         );
 
-        final pendingActivityData = PendingActivityData.running(
-          distanceMiles: distance,
-          paceMinutesPerMile: paceMinutes,
-          scheduledDateTime: scheduledDateTime,
-          timeBeforeMinutes: timeBeforeRunMinutes,
-          notes: 'Created from nutrition plan generation',
-        );
+        String finalActivityId = activityId ?? '';
 
-        DebugLogger.info('✅ DEBUG: Activity data stored (not created yet)');
+        if (finalActivityId.isEmpty) {
+          final activitiesController = ref.read(activitiesControllerProvider.notifier);
 
-        DebugLogger.info('🎯 DEBUG: Calling generateMacroTargets directly...');
+          finalActivityId = await activitiesController.createActivity(
+            title: "$distance mi Run",
+            scheduledDateTime: scheduledDateTime,
+            activityType: ActivityType.running,
+            distanceMiles: distance,
+            paceTargetMinutesPerMile: paceMinutes,
+            intensityLevel: domain.IntensityLevel.moderate, // Default
+            timeBeforeMinutes: timeBeforeRunMinutes,
+            notes: 'Draft activity - nutrition plan being generated',
+          );
+        }
 
         // Call generate-macros edge function directly
         await _generateMacroTargets(
@@ -442,25 +427,19 @@ class MacroTargetsController extends _$MacroTargetsController {
           humidityPct: humidityPct,
         );
 
-        DebugLogger.info('💾 DEBUG: MacroTargets generated successfully');
-
         // Get the generated macro targets from cache to track analytics
         final repository = await ref.read(macroRepositoryProvider.future);
         final macroTargets = await repository.getCachedMacroTargets();
-        
-        DebugLogger.info('✅ DEBUG: Macro targets generated successfully!');
 
-        // Update state to not generating and include macro targets with pendingActivityData
+        // Update state to not generating and include macro targets with finalActivityId
         return currentState.copyWith(
           isGeneratingMacros: false,
           errorMessage: null,
           macroTargets: macroTargets,
-          activityId: activityId, // Store activity ID if provided (clear prior IDs)
+          activityId: finalActivityId, // Always has a value now (draft created if needed)
           eventId: eventId, // Store event ID for provider invalidation
-          pendingActivityData: pendingActivityData, // Store activity data (not created yet)
           overrideActivityId: true,
           overrideEventId: true,
-          overridePendingActivityData: true,
         );
 
       } catch (error) {
@@ -503,17 +482,11 @@ class MacroTargetsController extends _$MacroTargetsController {
     required TimeOfDay scheduledTime,
     required double temperatureC,
     required double humidityPct,
-    int? activityId,
-    int? eventId,
+    String? activityId,
+    String? eventId,
   }) async {
     final currentState = state.value;
     if (currentState == null) return;
-
-    DebugLogger.info('🚀 DEBUG: Starting cycling macro generation...');
-    DebugLogger.info('🔍 DEBUG: Distance: $distanceMiles mi');
-    DebugLogger.info('🔍 DEBUG: Speed: $speedMph mph');
-    DebugLogger.info('🔍 DEBUG: Terrain: $terrain');
-    DebugLogger.info('🔍 DEBUG: Indoor/Outdoor: $indoorOutdoor');
 
     // Set loading state
     state = AsyncData(currentState.copyWith(
@@ -537,8 +510,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           gutTrainingLevel: user?.gutTraining.name ?? 'medium',
         );
 
-        // Store pending activity data (don't create yet)
-        DebugLogger.info('📅 DEBUG: Storing pending cycling activity data...');
+        // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist
         final scheduledDateTime = DateTime(
           scheduledDate.year,
           scheduledDate.month,
@@ -547,20 +519,27 @@ class MacroTargetsController extends _$MacroTargetsController {
           scheduledTime.minute,
         );
 
-        final pendingActivityData = PendingActivityData.cycling(
-          distanceMiles: distanceMiles,
-          speedMph: speedMph,
-          scheduledDateTime: scheduledDateTime,
-          timeBeforeMinutes: timeBeforeMinutes,
-          terrain: terrain,
-          indoorOutdoor: indoorOutdoor,
-          elevationGainFt: elevationGainFt,
-          sessionGoal: sessionGoal,
-          intensityTarget: intensityTarget,
-          notes: 'Created from cycling nutrition plan generation',
-        );
+        String finalActivityId = activityId ?? '';
 
-        DebugLogger.info('✅ DEBUG: Activity data stored (not created yet)');
+        if (finalActivityId.isEmpty) {
+          final activitiesController = ref.read(activitiesControllerProvider.notifier);
+
+          finalActivityId = await activitiesController.createActivity(
+            title: "$distanceMiles mi Ride",
+            scheduledDateTime: scheduledDateTime,
+            activityType: ActivityType.cycling,
+            distanceMiles: distanceMiles,
+            cyclingSpeedMph: speedMph,
+            cyclingTerrain: terrain,
+            cyclingIndoorOutdoor: indoorOutdoor,
+            cyclingElevationGainFt: elevationGainFt,
+            cyclingSessionGoal: sessionGoal,
+            intensityTarget: intensityTarget,
+            intensityLevel: domain.IntensityLevel.moderate, // Default
+            timeBeforeMinutes: timeBeforeMinutes,
+            notes: 'Draft cycling activity - nutrition plan being generated',
+          );
+        }
 
         // Create the service instance
         final macroService = MacroGenerationService(
@@ -569,8 +548,6 @@ class MacroTargetsController extends _$MacroTargetsController {
           authService: _authService,
           analytics: _analytics,
         );
-
-        DebugLogger.info('🎯 DEBUG: Calling MacroGenerationService...');
 
         // Call the service
         final macroTargets = await macroService.generateCyclingMacros(
@@ -588,17 +565,13 @@ class MacroTargetsController extends _$MacroTargetsController {
           humidityPct: humidityPct,
         );
 
-        DebugLogger.info('✅ DEBUG: Successfully generated cycling macro targets');
-
         return currentState.copyWith(
           isGeneratingMacros: false,
           macroTargets: macroTargets,
-          activityId: activityId,
+          activityId: finalActivityId, // Always has a value now (draft created if needed)
           eventId: eventId,
-          pendingActivityData: pendingActivityData,
           overrideActivityId: true,
           overrideEventId: true,
-          overridePendingActivityData: true,
         );
 
       } catch (error) {
@@ -629,7 +602,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
   /// Generate macro targets by calling the generate-macros edge function
   Future<void> _generateMacroTargets({
-    int? activityId,
+    String? activityId,
     required String deviceId,
     required double distanceMiles,
     required double paceMinutesPerMile,
@@ -649,11 +622,9 @@ class MacroTargetsController extends _$MacroTargetsController {
         ? userProfile.weightPounds * 0.453592  // Convert lbs to kg
         : 70.0; // Default 70kg if no profile
     final heightCm = userProfile != null
-        ? userProfile.totalHeightInches * 2.54  // Convert inches to cm  
+        ? userProfile.totalHeightInches * 2.54  // Convert inches to cm
         : 170.0; // Default 170cm if no profile
-        
-    DebugLogger.info('🔍 DEBUG: User profile - Age: $age, Gender: $gender, Weight: ${weightKg.toStringAsFixed(1)}kg, Height: ${heightCm.toStringAsFixed(0)}cm');
-    
+
     final requestData = {
       'activity_type': 'running', // Explicitly set activity type
       'age': age,
@@ -667,7 +638,7 @@ class MacroTargetsController extends _$MacroTargetsController {
       'run_pace_unit': 'min_per_mile',
       'run_distance_unit': 'mi',
       'time_before_run_min': timeBeforeRunMinutes,
-      'gut_training': userProfile?.gutTraining.name ?? gutTraining.name, // Use user's preference if available
+      'gut_training': gutTraining.name, // Use the gut training level selected on the UI
       'carb_source': 'dual', // Default to dual-source carbs
       'sweat_sodium': 'medium', // Default sweat sodium
       'drink_sodium_mg_per_l': 500, // Default sports drink sodium
@@ -697,17 +668,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     }
 
     final macrosData = data['macros'] as Map<String, dynamic>;
-    
-    // Debug: Log the raw response data to help identify type issues
-    DebugLogger.info('🔍 DEBUG: Edge function response keys: ${macrosData.keys.toList()}');
-    DebugLogger.info('🔍 DEBUG: Sample values and types:');
-    final sampleKeys = ['pre_run_carbs_g', 'during_rate_g_per_h', 'duration_h', 'MET'];
-    for (final key in sampleKeys) {
-      if (macrosData.containsKey(key)) {
-        DebugLogger.debug('  $key: ${macrosData[key]} (${macrosData[key].runtimeType})');
-      }
-    }
-    
+
     // Helper function to safely convert to double
     double toDouble(dynamic value, [String fieldName = 'unknown']) {
       try {
@@ -809,8 +770,8 @@ class MacroTargetsController extends _$MacroTargetsController {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
-    int? activityId,
-    int? eventId,
+    String? activityId,
+    String? eventId,
   }) async {
     // Delegate to the main generateMacros method
     await generateMacros(
@@ -841,16 +802,11 @@ class MacroTargetsController extends _$MacroTargetsController {
     required int timeBeforeMinutes,
     required DateTime scheduledDate,
     required TimeOfDay scheduledTime,
-    int? activityId,
-    int? eventId,
+    String? activityId,
+    String? eventId,
   }) async {
     final currentState = state.value;
     if (currentState == null) return;
-
-    DebugLogger.info('🚀 DEBUG: Starting swimming macro generation...');
-    DebugLogger.info('🔍 DEBUG: Distance: $distanceMeters meters');
-    DebugLogger.info('🔍 DEBUG: Pace: $paceSecondsper100m sec/100m');
-    DebugLogger.info('🔍 DEBUG: Environment: $poolOrOpenWater');
 
     // Set loading state
     state = AsyncData(currentState.copyWith(
@@ -879,8 +835,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           gutTrainingLevel: user?.gutTraining.name ?? 'medium',
         );
 
-        // Store pending activity data (don't create yet)
-        DebugLogger.info('📅 DEBUG: Storing pending swimming activity data...');
+        // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist
         final scheduledDateTime = DateTime(
           scheduledDate.year,
           scheduledDate.month,
@@ -889,19 +844,25 @@ class MacroTargetsController extends _$MacroTargetsController {
           scheduledTime.minute,
         );
 
-        final pendingActivityData = PendingActivityData.swimming(
-          distanceMeters: distanceMeters,
-          paceSecondsper100m: paceSecondsper100m,
-          scheduledDateTime: scheduledDateTime,
-          timeBeforeMinutes: timeBeforeMinutes,
-          poolOrOpenWater: poolOrOpenWater,
-          waterTempC: waterTempC,
-          intensityTarget: intensityTarget,
-          sessionGoal: sessionGoal,
-          notes: 'Created from swimming nutrition plan generation',
-        );
+        String finalActivityId = activityId ?? '';
 
-        DebugLogger.info('✅ DEBUG: Activity data stored (not created yet)');
+        if (finalActivityId.isEmpty) {
+          final activitiesController = ref.read(activitiesControllerProvider.notifier);
+
+          finalActivityId = await activitiesController.createActivity(
+            title: "$distanceMeters m Swim",
+            scheduledDateTime: scheduledDateTime,
+            activityType: ActivityType.swimming,
+            distanceMiles: distanceMiles,
+            swimmingPacePer100mSeconds: paceSecondsper100m,
+            swimmingPoolOrOpenWater: poolOrOpenWater,
+            swimmingWaterTempC: waterTempC,
+            intensityTarget: intensityTarget,
+            intensityLevel: domain.IntensityLevel.moderate, // Default
+            timeBeforeMinutes: timeBeforeMinutes,
+            notes: 'Draft swimming activity - nutrition plan being generated',
+          );
+        }
 
         // Create the service instance
         final macroService = MacroGenerationService(
@@ -910,8 +871,6 @@ class MacroTargetsController extends _$MacroTargetsController {
           authService: _authService,
           analytics: _analytics,
         );
-
-        DebugLogger.info('🎯 DEBUG: Calling MacroGenerationService...');
 
         // Call the service
         final macroTargets = await macroService.generateSwimmingMacros(
@@ -926,17 +885,13 @@ class MacroTargetsController extends _$MacroTargetsController {
           waterTempC: waterTempC,
         );
 
-        DebugLogger.info('✅ DEBUG: Successfully generated swimming macro targets');
-
         return currentState.copyWith(
           isGeneratingMacros: false,
           macroTargets: macroTargets,
-          activityId: activityId,
+          activityId: finalActivityId, // Always has a value now (draft created if needed)
           eventId: eventId,
-          pendingActivityData: pendingActivityData,
           overrideActivityId: true,
           overrideEventId: true,
-          overridePendingActivityData: true,
         );
 
       } catch (error) {
@@ -1067,7 +1022,6 @@ class MacroTargetsController extends _$MacroTargetsController {
         }
       } else {
         // Fallback: if no original targets found, just clear modification flags
-        DebugLogger.debug('DEBUG: No original targets found, falling back to clearing modification flags');
         final fallbackTargets = cachedTargets.copyWith(
           isUserModified: false,
           modifiedFields: [],
@@ -1188,14 +1142,15 @@ class MacroTargetsController extends _$MacroTargetsController {
   }
 
   /// Create nutrition plan with adjusted values
-  Future<void> createNutritionPlan() async {
+  /// Returns the activityId of the created/updated activity
+  Future<String?> createNutritionPlan() async {
     final repository = await ref.read(macroRepositoryProvider.future);
     final macroTargets = await repository.getCachedMacroTargets();
-    
-    if (macroTargets == null) return;
+
+    if (macroTargets == null) return null;
 
     final currentState = state.value;
-    if (currentState == null) return;
+    if (currentState == null) return null;
 
     // Set creating plan state
     state = AsyncData(currentState.copyWith(isCreatingPlan: true));
@@ -1216,7 +1171,6 @@ class MacroTargetsController extends _$MacroTargetsController {
         final nutritionPlanService = ref.read(nutritionPlanServiceProvider);
         final currentStateValue = state.value;
 
-        DebugLogger.info('🔄 Generating nutrition plan with automatic fallback...');
         final nutritionPlan = await nutritionPlanService.generatePlanFromMacrosWithFallback(
           macroTargets: macroTargets,
           activityId: currentStateValue?.activityId, // Link to calendar activity/event if provided
@@ -1234,102 +1188,69 @@ class MacroTargetsController extends _$MacroTargetsController {
           'plan_type': 'with_fallback', // Could be either LLM or algorithmic
         });
 
-        // Save the nutrition plan to the activity
-        int? finalActivityId = currentStateValue?.activityId;
+        // activityId should ALWAYS exist now (created during macro generation as draft)
+        String? finalActivityId = currentStateValue?.activityId;
 
-        // If no activityId exists, try to create activity from pendingActivityData
-        if (finalActivityId == null) {
-          if (currentStateValue?.pendingActivityData != null) {
-            DebugLogger.info('📝 Creating new activity from pendingActivityData...');
-            final pendingData = currentStateValue!.pendingActivityData!;
-            final activitiesController = ref.read(activitiesControllerProvider.notifier);
+        if (finalActivityId == null || finalActivityId.isEmpty) {
+          DebugLogger.error('❌ No draft activity found - cannot finalize plan');
+          throw Exception('No draft activity found - cannot finalize plan. This should not happen.');
+        }
 
-            try {
-              finalActivityId = await activitiesController.createActivity(
-                title: pendingData.title,
-                scheduledDateTime: pendingData.scheduledDateTime,
-                activityType: pendingData.activityType,
-                distanceMiles: pendingData.distanceMiles,
-                paceTargetMinutesPerMile: pendingData.paceMinutesPerMile,
-                intensityLevel: pendingData.intensityLevel,
-                notes: pendingData.notes,
-                cyclingSpeedMph: pendingData.cyclingSpeedMph,
-                cyclingTerrain: pendingData.cyclingTerrain,
-                cyclingIndoorOutdoor: pendingData.cyclingIndoorOutdoor,
-                cyclingElevationGainFt: pendingData.cyclingElevationGainFt,
-                cyclingSessionGoal: pendingData.cyclingSessionGoal,
-                swimmingPacePer100mSeconds: pendingData.swimmingPacePer100mSeconds,
-                swimmingPoolOrOpenWater: pendingData.swimmingPoolOrOpenWater,
-                swimmingWaterTempC: pendingData.swimmingWaterTempC,
-                intensityTarget: pendingData.intensityTarget,
-                timeBeforeMinutes: pendingData.timeBeforeMinutes,
-                nutritionPlanData: nutritionPlan.toJson(),
+        // Get the existing draft activity and update it
+        try {
+          final activitiesController = ref.read(activitiesControllerProvider.notifier);
+          final userId = await ref.read(userIdProvider.future);
+          final activitiesService = ref.read(activitiesServiceProvider);
+          final existingActivity = await activitiesService.getActivityById(userId, finalActivityId);
+
+          if (existingActivity == null) {
+            DebugLogger.error('❌ Draft activity $finalActivityId not found in database');
+            throw Exception('Draft activity not found - cannot finalize plan');
+          }
+
+          // Update the DRAFT activity to PLANNED status with nutrition plan
+          final updatedActivity = existingActivity.copyWith(
+            status: domain.ActivityStatus.planned, // Promote from draft to planned
+            nutritionPlanData: nutritionPlan.toJson(),
+            notes: 'Finalized nutrition plan',
+            updatedAt: DateTime.now(),
+          );
+
+          await activitiesController.updateActivity(updatedActivity);
+
+          // 🔗 Link activity to event if eventId exists
+          if (currentStateValue?.eventId != null) {
+            // Get the events repository directly to avoid provider lifecycle issues
+            final eventsRepository = ref.read(eventsRepositoryProvider);
+            final event = await eventsRepository.getEventById(currentStateValue!.eventId!);
+
+            if (event != null) {
+              await eventsRepository.updateEvent(
+                deviceId: event.userId, // Using userId as deviceId for event updates
+                event: event.copyWith(activityId: finalActivityId),
               );
-              DebugLogger.info('✅ Activity created successfully with nutrition plan, ID: $finalActivityId');
-
-              // 🔗 Link new activity to event if eventId exists
-              if (currentStateValue.eventId != null) {
-                DebugLogger.info('🔗 Linking new activity $finalActivityId to event ${currentStateValue.eventId}');
-                final eventsController = ref.read(eventsControllerProvider.notifier);
-                final event = await eventsController.getEventById(currentStateValue.eventId!);
-                if (event != null) {
-                  await eventsController.updateEvent(event.copyWith(activityId: finalActivityId));
-                  // Also update the flag since we just created a plan
-                  await eventsController.updateEventNutritionPlanFlag(
-                      activityId: finalActivityId, 
-                      hasNutritionPlan: true
-                  );
-                }
-              }
-            } catch (e) {
-              DebugLogger.error('❌ Failed to create activity from pendingActivityData: $e');
-              // Continue anyway - the plan was generated successfully
             }
-          } else {
-            DebugLogger.warning('⚠️ No activityId available and no pendingActivityData to create activity from');
           }
-        } else {
-          DebugLogger.info('ℹ️ Using existing activityId=$finalActivityId; updating activity with nutrition plan.');
-          
-          // Ensure the plan is saved to the existing activity
-          try {
-            final planRepository = await ref.read(nutritionPlanRepositoryProvider.future);
-            final user = await _authService.getCurrentUser();
-            if (user != null) {
-              final planWithActivityId = nutritionPlan.copyWith(activityId: finalActivityId);
-              await planRepository.cachePlanLocally(user.id, planWithActivityId);
-              DebugLogger.info('💾 Saved nutrition plan to existing activity $finalActivityId');
-              
-              // Also ensure event flag is updated if eventId exists
-              if (currentStateValue?.eventId != null) {
-                 final eventsController = ref.read(eventsControllerProvider.notifier);
-                 await eventsController.updateEventNutritionPlanFlag(
-                    activityId: finalActivityId, 
-                    hasNutritionPlan: true
-                 );
-              }
-            }
-          } catch (e) {
-            DebugLogger.error('❌ Failed to save nutrition plan to existing activity: $e');
-          }
+        } catch (e) {
+          DebugLogger.error('❌ Failed to update draft activity: $e');
+          rethrow;
         }
 
         // Invalidate eventDetailProvider if eventId exists (to refresh "Create Nutrition Plan" button)
         if (currentStateValue?.eventId != null) {
-          DebugLogger.info('🔄 DEBUG: Invalidating eventDetailProvider for eventId: ${currentStateValue!.eventId}');
-          ref.invalidate(eventDetailProvider(currentStateValue.eventId!));
+          ref.invalidate(eventDetailProvider(currentStateValue!.eventId!));
         }
 
         // Invalidate activities provider to refresh the list with the newly created activity
         ref.invalidate(activitiesControllerProvider);
-        DebugLogger.info('🔄 Invalidated activitiesControllerProvider after activity creation');
-
+        
+        // Return the updated state with the activity ID
         return currentState.copyWith(
           isCreatingPlan: false,
-          activityId: finalActivityId, // Update state with new activity ID
+          activityId: finalActivityId,
           overrideActivityId: true,
         );
-        
+
       } catch (error) {
         // Track error
         await _analytics.track('app_error', properties: {
@@ -1343,6 +1264,43 @@ class MacroTargetsController extends _$MacroTargetsController {
         rethrow;
       }
     });
+
+    // Return the activityId from the updated state
+    return state.value?.activityId;
+  }
+
+  /// Schedule cleanup of draft activity if provider is being disposed
+  /// This handles the case where user navigates away before finalizing the plan
+  void _scheduleCleanupIfNeeded() {
+    final currentState = state.value;
+    final activityId = currentState?.activityId;
+
+    // Only cleanup if we have a draft activity ID
+    if (activityId != null && activityId.isNotEmpty) {
+      // Schedule cleanup after a delay to allow navigation to complete
+      Future.delayed(const Duration(seconds: 2), () async {
+        await _cleanupDraftActivityIfNeeded(activityId);
+      });
+    }
+  }
+
+  /// Clean up draft activity if it's still in draft status
+  /// This is safe to call from ref.onDispose() because we're using Future.delayed
+  Future<void> _cleanupDraftActivityIfNeeded(String activityId) async {
+    try {
+      // Safe to use ref.read here - we're in a delayed Future, not dispose() itself
+      final userId = await ref.read(userIdProvider.future);
+      final activitiesService = ref.read(activitiesServiceProvider);
+
+      final activity = await activitiesService.getActivityById(userId, activityId);
+
+      if (activity != null && activity.status == domain.ActivityStatus.draft) {
+        await ref.read(activitiesControllerProvider.notifier).deleteActivity(activityId);
+      }
+    } catch (e) {
+      DebugLogger.error('Failed to cleanup draft activity: $e');
+      // Don't rethrow - cleanup failure is acceptable
+    }
   }
 
   /// Helper method to get current value of a field

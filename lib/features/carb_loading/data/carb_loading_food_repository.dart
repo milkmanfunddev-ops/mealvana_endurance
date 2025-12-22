@@ -26,9 +26,12 @@ class CarbLoadingFoodRepository {
   /// Get foods suitable for a specific meal type
   /// REFACTORED: More forgiving filtering - includes foods with null/empty meal_types
   Future<List<domain.CarbLoadingFood>> getFoodsByMealType(int mealTypeId) async {
+    print('[CarbLoadingFoodRepository] Querying foods for meal type ID: $mealTypeId');
+
     // Query foods and filter by meal_types array column
     final query = _database.select(_database.carbLoadingFoodsTable);
     final allFoods = await query.get();
+    print('[CarbLoadingFoodRepository] Found ${allFoods.length} total foods in database');
 
     // Filter foods that have this meal type in their array
     final filteredFoods = allFoods.where((food) {
@@ -42,6 +45,11 @@ class CarbLoadingFoodRepository {
 
       return matches;
     }).map((food) => _convertToFoodDomain(food)).toList();
+
+    print('[CarbLoadingFoodRepository] After filtering: ${filteredFoods.length} foods match meal type $mealTypeId');
+    if (filteredFoods.isEmpty && allFoods.isNotEmpty) {
+      print('[CarbLoadingFoodRepository] WARNING: No foods matched filter! Sample food meal_types: ${allFoods.take(3).map((f) => f.mealTypes).toList()}');
+    }
 
     return filteredFoods;
   }

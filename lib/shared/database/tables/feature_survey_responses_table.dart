@@ -1,17 +1,18 @@
+import 'dart:math';
 import 'package:drift/drift.dart';
 
 /// Feature survey responses table
-/// Stores user votes for feature requests (one vote per user)
+/// Stores user votes for feature requests (one vote per device)
 @DataClassName('FeatureSurveyResponseEntry')
 class FeatureSurveyResponsesTable extends Table {
   @override
   String get tableName => 'feature_survey_responses';
 
-  /// Primary key - BIGSERIAL
-  IntColumn get id => integer().autoIncrement()();
+  /// Primary key - random integer
+  IntColumn get id => integer().clientDefault(() => Random().nextInt(2147483647))();
 
-  /// User ID (UUID) - references users.id
-  TextColumn get userId => text().named('user_id')();
+  /// Device ID - references users.id (unified with user_id)
+  TextColumn get deviceId => text().named('device_id')();
 
   /// JSON array of selected feature IDs (exactly 3)
   /// Example: ["shopping_list", "coach_sharing", "recipes"]
@@ -24,10 +25,8 @@ class FeatureSurveyResponsesTable extends Table {
   BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();
   DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
 
-  // Note: Primary key is automatically set by autoIncrement()
-
   @override
   List<String> get customConstraints => [
-    'UNIQUE(user_id)', // One vote per user
+    'UNIQUE(device_id)', // One vote per device
   ];
 }

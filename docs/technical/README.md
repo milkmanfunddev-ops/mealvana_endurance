@@ -437,7 +437,12 @@ final preferences = foodPreferences.map(
 
 ## Data Persistence with Drift (Schema v2)
 
-### Database Setup and Configuration  
+### Current Status
+- **Schema Version**: 2 (migrated from v1 using proper Drift migrations)
+- **Migration Strategy**: Idempotent with column existence checks
+- **Rollback**: Simple - delete local DB and resync from Supabase
+
+### Database Setup and Configuration
 ```dart
 // lib/shared/database/app_database.dart
 import 'package:drift/drift.dart';
@@ -446,16 +451,15 @@ import 'package:drift_flutter/drift_flutter.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(tables: [
-  // Core v1 tables
-  UsersTable, FoodPreferencesTable, NutritionPlans, MacroTargetsTable, FeedbackTable,
-  // New v2 tables
+  UsersTable, FoodPreferencesTable, MacroTargetsTable, FeedbackTable,
   FoodsTable, CategoriesTable, FoodCategoriesTable, BrandsTable, AppContentTable,
+  // ... all 27 tables
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2; // Current version with v1→v2 migration
+  int get schemaVersion => 2; // Current version (was 1)
 
   @override
   MigrationStrategy get migration {
@@ -464,16 +468,37 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
         await _populateDefaultData();
       },
-      onUpgrade: stepByStep(
-        from1To2: (m, schema) async {
-          // Big Bang migration: Add all v2 tables
-          await _migrateV1ToV2(m, schema);
-        },
-      ),
+      onUpgrade: (m, from, to) async {
+        // V1 to V2 migration with idempotent checks
+        if (from < 2) {
+          await _migrateV1ToV2(m);
+        }
+        // Future migrations would go here
+        // if (from < 3) { await _migrateV2ToV3(m); }
+      },
       beforeOpen: (details) async {
         await customStatement('PRAGMA foreign_keys = ON');
+        // NO runtime column additions - all done via proper migrations
       },
     );
+  }
+
+  // Idempotent migration implementation
+  Future<void> _migrateV1ToV2(Migrator m) async {
+    // Check for column existence before adding
+    final userColumns = await customSelect("PRAGMA table_info(users)").get();
+
+    if (!userColumns.any((row) => row.data['name'] == 'preference_level')) {
+      await m.addColumn(usersTable, usersTable.preferenceLevel);
+    }
+
+    if (!userColumns.any((row) => row.data['name'] == 'dietary_preference')) {
+      await m.addColumn(usersTable, usersTable.dietaryPreference);
+    }
+
+    if (!userColumns.any((row) => row.data['name'] == 'allergies')) {
+      await m.addColumn(usersTable, usersTable.allergies);
+    }
   }
 
   static QueryExecutor _openConnection() {
@@ -551,24 +576,30 @@ class DriftUserRepository implements UserRepository {
 ### Migration Management (Schema v2)
 ```bash
 # Current migration status: v1 → v2 COMPLETED
-# - Added 5 new tables: foods, categories, food_categories, brands, app_content  
-# - Used "Big Bang" migration approach for all v2 changes
+# - Consolidated preference_level, dietary_preference, and allergies columns
+# - Used idempotent migration with column existence checks
+# - Simple rollback: delete DB and resync from Supabase
 
-# For future schema changes:
+# For future schema changes (v2 → v3):
 # 1. Update table definitions in lib/shared/database/tables/
-# 2. Increment schemaVersion in AppDatabase (currently = 2)
-# 3. Generate new migration
-dart run drift_dev make-migrations
+# 2. Increment schemaVersion in AppDatabase (from 2 to 3)
+# 3. Export new schema snapshot
+dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v3/
 
-# Export schema for version control  
-dart run drift_dev schema dump lib/shared/database/app_database.dart drift_schemas/
+# 4. Generate migration steps (compare v2 to v3)
+dart run drift_dev schema steps database_schemas/v2/drift_schema_v2.json database_schemas/v3/drift_schema_v3.json
 
-# Generate migration test code
-dart run drift_dev schema generate drift_schemas/ test/generated_migrations/
-
-# Test migrations before deployment
-dart test test/generated_migrations/
+# 5. Implement migration in app_database.dart with idempotent checks
+# 6. Test migrations before deployment
+dart test test/database/migration_test.dart
 ```
+
+### Key Migration Principles
+1. **Always bump schema version** - Required for Drift to trigger onUpgrade
+2. **Use idempotent checks** - Verify column/table existence before creating
+3. **Avoid beforeOpen schema changes** - All modifications via proper migrations
+4. **Simple rollback** - Delete local DB and resync is acceptable for this architecture
+5. **Test thoroughly** - Use Drift's schema validation tools
 
 ## App Icons and Splash Screens
 
@@ -812,28 +843,28 @@ Each specialized guide contains comprehensive examples, best practices, and prod
 
 ### Database Schema Evolution
 
-**Current Status**: ✅ **Drift v2 Active** - Dual database architecture implemented
+**Current Status**: ✅ **Drift v2 Active** - Proper migrations with idempotent checks
 
-**Schema v2 Benefits Achieved**:
-- **Comprehensive Food Caching**: 24-hour refresh cycles for food data
-- **Content Management**: Dynamic UI text stored in app_content table  
-- **Brand Integration**: Affiliate marketing support with brands table
-- **Type-Safe Relationships**: Many-to-many food-category relationships
-- **Migration Safety**: Big Bang v1→v2 migration completed successfully
+**Schema v2 Migration Completed (December 2025)**:
+- **Migration Strategy**: Idempotent with column existence checks
+- **Key Changes**: Consolidated preference_level, dietary_preference, and allergies columns
+- **Rollback Strategy**: Simple - delete local DB and resync from Supabase
+- **Schema Version**: Bumped from 1 to 2 using Drift's built-in migration system
 
-**v1 → v2 Migration Completed**:
-1. ✅ **5 New Tables Added**: foods, categories, food_categories, brands, app_content
-2. ✅ **schemaVersion Updated**: From 1 to 2 with automated migration
-3. ✅ **Big Bang Approach**: All v2 changes deployed simultaneously
-4. ✅ **Content Migration**: Moved from SharedPreferences to Drift app_content table
-5. ✅ **Food Caching**: Implemented 24-hour sync cycles for reference data
+**v1 → v2 Migration Details**:
+1. ✅ **Proper Schema Versioning**: Bumped schemaVersion from 1 to 2
+2. ✅ **Idempotent Checks**: All migrations verify column existence before adding
+3. ✅ **No Runtime Changes**: Removed all beforeOpen column additions
+4. ✅ **Simple Rollback**: Delete DB and resync if migration fails
+5. ✅ **Schema Snapshots**: V1 preserved in `/database_schemas/v1/`, V2 in `/database_schemas/v2/`
 
 **For Future Schema Changes (v2 → v3)**:
 1. Update table definitions in `lib/shared/database/tables/`
-2. Increment `schemaVersion` in `AppDatabase` (currently = 2)
-3. Run `dart run drift_dev make-migrations`
-4. Add migration logic in `from2To3` method
-5. Test with generated migration test suite
+2. Increment `schemaVersion` in `AppDatabase` (from 2 to 3)
+3. Create `/database_schemas/v3/` directory
+4. Run `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v3/`
+5. Implement migration in `onUpgrade` with idempotent checks
+6. Test with migration validation
 
 ### Other Common Issues
 

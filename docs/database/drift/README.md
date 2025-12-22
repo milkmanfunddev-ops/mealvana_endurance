@@ -7,12 +7,13 @@ Mealvana Endurance uses Drift (formerly Moor) as its local SQLite database solut
 ## Database Architecture
 
 ### Schema Version
-- **Current Version**: 1
+- **Current Version**: 2 (migrated from v1 using proper Drift migrations)
 - **Total Tables**: 27
 - **Synced Tables**: 13 (sync with Supabase)
 - **Local-Only Tables**: 7 (exist only in Drift, includes weather cache)
 - **Calendar Feature Tables**: 7 (activities, events, carb_loading_plans, carb_loading_days, plus food system tables — completion data now lives on `activities`)
 - **Weather Table**: 1 (weather_forecasts for API response caching)
+- **Migration Strategy**: Idempotent migrations with column existence checks
 
 ### Database Location
 - **Database Class**: `/lib/shared/database/app_database.dart`
@@ -240,19 +241,25 @@ Performance indexes are created for:
 
 ## Migration Strategy
 
-### Current Implementation (v1)
-All 27 tables are implemented in schema version 1. This serves as the baseline for future migrations.
+### Current Implementation (v2)
+Schema version 2 with proper Drift migrations implemented. V1 baseline is preserved for reference.
 
-**Recent Schema Changes (Still v1)**:
-- Added `carb_protocol_g_per_kg` field to `carb_loading_days` table (October 2025)
-  - Purpose: Stores the carbohydrate protocol formula (e.g., 8.0 for 8g/kg bodyweight)
-  - Benefit: UI can display "8g/kg bodyweight" instead of just absolute grams
-  - Migration: `/supabase/migrations/20251008233419_add_carb_protocol_g_per_kg_to_carb_loading_days.sql`
+**V2 Migration Details (December 2025)**:
+- **Migration Type**: Idempotent with column existence checks
+- **Key Changes**: Consolidated preference_level, dietary_preference, and allergies columns
+- **Rollback Strategy**: Simple - delete local DB and resync from Supabase if migration fails
+- **Migration File**: See `app_database.dart` onUpgrade method
+
+**Previous Schema (V1 - October 2025)**:
+- Baseline with 27 tables
+- Used runtime column additions in beforeOpen hook (deprecated approach)
+- Preserved in `/database_schemas/v1/` for reference
 
 ### Schema Files
 - **SQL Documentation**: `/docs/database/drift/schema.sql` - Human-readable DDL
-- **Drift Schema Snapshot**: `/drift_schemas/v1/drift_schema_v1.json` - Machine-readable for migrations
-- **Generation Command**: `dart run drift_dev schema dump lib/shared/database/app_database.dart drift_schemas/v1/`
+- **V2 Drift Schema Snapshot**: `/database_schemas/v2/drift_schema_v2.json` - Current version
+- **V1 Drift Schema Snapshot**: `/database_schemas/v1/drift_schema_v1.json` - Baseline (preserved)
+- **Generation Command**: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v2/`
 
 ### How Migrations Work in Drift
 
@@ -268,7 +275,7 @@ All 27 tables are implemented in schema version 1. This serves as the baseline f
 @DriftDatabase(tables: [...])
 class AppDatabase extends _$AppDatabase {
   @override
-  int get schemaVersion => 1; // Current version
+  int get schemaVersion => 2; // Current version (was 1)
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -276,19 +283,22 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll(); // Fresh install
     },
     onUpgrade: (Migrator m, int from, int to) async {
-      // Runs when version increases
-      // Currently empty since we're on v1
+      // V1 to V2 migration
+      if (from < 2) {
+        // Idempotent migration with column checks
+        await _migrateV1ToV2(m);
+      }
     },
   );
 }
 ```
 
-### Step-by-Step Migration Guide (v1 → v2)
+### Step-by-Step Migration Guide (v2 → v3 Example)
 
 #### Step 1: Before Making Changes
 ```bash
-# Ensure v1 snapshot exists (already done)
-ls drift_schemas/v1/drift_schema_v1.json
+# Ensure v2 snapshot exists (already done)
+ls database_schemas/v2/drift_schema_v2.json
 ```
 
 #### Step 2: Modify Your Tables
@@ -310,24 +320,24 @@ class NewFeatureTable extends Table {
 ```dart
 // In app_database.dart
 @override
-int get schemaVersion => 2; // Increment from 1 to 2
+int get schemaVersion => 3; // Increment from 2 to 3
 ```
 
-#### Step 4: Generate v2 Snapshot
+#### Step 4: Generate v3 Snapshot
 ```bash
 # Generate new schema snapshot
-dart run drift_dev schema dump lib/shared/database/app_database.dart drift_schemas/v2/
+dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v3/
 ```
 
 #### Step 5: Generate Migration Code
 ```bash
-# Compare v1 and v2 to generate migration steps
-dart run drift_dev schema steps drift_schemas/v1/drift_schema_v1.json drift_schemas/v2/drift_schema_v2.json
+# Compare v2 and v3 to generate migration steps
+dart run drift_dev schema steps database_schemas/v2/drift_schema_v2.json database_schemas/v3/drift_schema_v3.json
 
 # This outputs migration code you can use
 ```
 
-#### Step 6: Implement Migration
+#### Step 6: Implement Migration (Idempotent Pattern)
 ```dart
 @override
 MigrationStrategy get migration => MigrationStrategy(
@@ -336,14 +346,26 @@ MigrationStrategy get migration => MigrationStrategy(
   },
   onUpgrade: (Migrator m, int from, int to) async {
     if (from < 2) {
-      // Add new column to existing table
-      await m.addColumn(userProfilesTable, userProfilesTable.newField);
+      await _migrateV1ToV2(m);
+    }
+    if (from < 3) {
+      // New v2 to v3 migration
+      // Use idempotent pattern - check if column exists first
+      final result = await customSelect(
+        "PRAGMA table_info(users)"
+      ).get();
 
-      // Create new table
+      final hasNewField = result.any((row) => row.data['name'] == 'new_field');
+
+      if (!hasNewField) {
+        await m.addColumn(userProfilesTable, userProfilesTable.newField);
+      }
+
+      // Create new table if it doesn't exist
       await m.createTable(newFeatureTable);
 
       // Run custom SQL if needed
-      await customStatement('UPDATE users SET new_field = "default"');
+      await customStatement('UPDATE users SET new_field = "default" WHERE new_field IS NULL');
     }
   },
 );
@@ -352,16 +374,46 @@ MigrationStrategy get migration => MigrationStrategy(
 ### Migration Best Practices
 
 #### Safe Migrations
-- ✅ Adding nullable columns
+- ✅ Adding nullable columns with idempotent checks
 - ✅ Adding new tables
 - ✅ Adding indexes
 - ✅ Removing constraints
+- ✅ Using PRAGMA table_info to check column existence
 
 #### Risky Migrations (Require Care)
-- ⚠️ Adding non-nullable columns (provide defaults)
+- ⚠️ Adding non-nullable columns (provide defaults + check existence first)
 - ⚠️ Changing column types (may lose data)
-- ⚠️ Renaming columns (use ALTER TABLE)
-- ⚠️ Removing columns (data loss)
+- ⚠️ Renaming columns (use ALTER TABLE + check existence)
+- ⚠️ Removing columns (data loss - consider soft deletes instead)
+
+#### Idempotent Migration Pattern (RECOMMENDED)
+```dart
+// Always check if changes already exist before applying
+Future<void> _migrateV2ToV3(Migrator m) async {
+  // Check column existence
+  final result = await customSelect("PRAGMA table_info(users)").get();
+  final hasColumn = result.any((row) => row.data['name'] == 'new_column');
+
+  if (!hasColumn) {
+    await m.addColumn(usersTable, usersTable.newColumn);
+  }
+
+  // For tables, catch exceptions if table already exists
+  try {
+    await m.createTable(newTable);
+  } catch (e) {
+    // Table might already exist from failed previous migration
+    print('Table may already exist: $e');
+  }
+}
+```
+
+#### Simple Rollback Strategy
+If migration fails:
+1. Delete the local database file
+2. Restart the app
+3. Database will be recreated from scratch
+4. Sync from Supabase to restore user data
 
 #### Testing Migrations
 ```dart

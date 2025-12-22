@@ -64,7 +64,7 @@ class UpcomingEventCardKyle extends ConsumerWidget {
             // Navigate to event detail screen if event was created successfully
             if (result != null && result['success'] == true) {
               final createdEventId = result['eventId'];
-              if (createdEventId is int && context.mounted) {
+              if (createdEventId is String && context.mounted) {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => EventDetailScreen(

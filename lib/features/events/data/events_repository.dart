@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -58,21 +59,20 @@ class EventsRepository {
       // Update event with the generated ID
       var createdEvent = eventWithDirtyFlag.copyWith(id: generatedId);
 
-      // Attempt upload immediately so the UI gets the final server ID (auth assigns new IDs)
-      final serverId = await _uploadEventToSupabase(deviceId, createdEvent, 'create');
-
-      // If Supabase assigned a new ID, return the re-keyed event
-      if (serverId != null && serverId != createdEvent.id) {
+      // Attempt upload immediately to sync with Supabase
+      try {
+        await _uploadEventToSupabase(deviceId, createdEvent, 'create');
+        // Upload succeeded - clear dirty flag on the returned model
         createdEvent = createdEvent.copyWith(
-          id: serverId,
           needsUpload: false,
           localUpdatedAt: DateTime.now(),
         );
-      } else if (serverId != null) {
-        // Upload succeeded without re-key - clear dirty flag on the returned model
-        createdEvent = createdEvent.copyWith(
-          needsUpload: false,
-          localUpdatedAt: DateTime.now(),
+      } catch (uploadError) {
+        // Upload failed but local save succeeded - event will sync later
+        _logger.warning(
+          'Supabase upload failed during create, event will sync later',
+          context: 'EVENTS_REPOSITORY',
+          data: {'eventId': createdEvent.id, 'error': uploadError.toString()},
         );
       }
 
@@ -105,7 +105,7 @@ class EventsRepository {
       await _saveToDrift(eventWithDirtyFlag);
 
       // Attempt background upload (non-blocking)
-      unawaited(_uploadEventToSupabase(deviceId, eventWithDirtyFlag, 'update').then((_) {}));
+      unawaited(_uploadEventToSupabase(deviceId, eventWithDirtyFlag, 'update'));
 
       return eventWithDirtyFlag;
     } catch (e, stackTrace) {
@@ -120,18 +120,33 @@ class EventsRepository {
   }
 
   /// Delete an event (offline-first: hard delete from Drift first, background upload)
-  /// Also cascade deletes any associated carb loading plan
+  /// Also cascade deletes any associated carb loading plan and activity
   Future<void> deleteEvent({
     required String deviceId,
-    required int eventId,
+    required String eventId,
   }) async {
     try {
+      // Get the event first to check for associated activity
+      final event = await getEventById(eventId);
+
       // CASCADE: Delete carb loading plan first (Drift doesn't enforce FK constraints)
       // This must happen BEFORE deleting the event so we can find the plan by eventId
       await _carbLoadingRepository.deleteCarbLoadingPlanByEventId(
         deviceId: deviceId,
         eventId: eventId,
       );
+
+      // CASCADE: Delete associated activity if exists
+      if (event != null && event.activityId != null) {
+        final activityId = event.activityId!;
+        await (_database.delete(_database.activitiesTable)
+              ..where((tbl) => tbl.id.equals(activityId)))
+            .go();
+        _logger.info(
+          'CASCADE deleted activity $activityId for event $eventId',
+          context: 'EVENTS_REPOSITORY',
+        );
+      }
 
       // OFFLINE-FIRST: Hard delete event from Drift IMMEDIATELY
       await (_database.delete(_database.eventsTable)
@@ -172,13 +187,23 @@ class EventsRepository {
   }
 
   /// Get a specific event by ID
-  Future<domain.Event?> getEventById(int eventId) async {
+  /// Note: If duplicate events exist with the same ID, returns the first one
+  Future<domain.Event?> getEventById(String eventId) async {
     try {
       final query = _database.select(_database.eventsTable)
         ..where((tbl) => tbl.id.equals(eventId));
 
-      final event = await query.getSingleOrNull();
-      return event != null ? _mapToEventDomain(event) : null;
+      final events = await query.get();
+
+      if (events.length > 1) {
+        _logger.warning(
+          'Found duplicate events with same ID',
+          context: 'EVENTS_REPOSITORY',
+          data: {'eventId': eventId, 'count': events.length},
+        );
+      }
+
+      return events.isNotEmpty ? _mapToEventDomain(events.first) : null;
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get event by ID',
@@ -191,7 +216,7 @@ class EventsRepository {
   }
 
   /// Get event for a specific activity
-  Future<domain.Event?> getEventForActivity(int activityId) async {
+  Future<domain.Event?> getEventForActivity(String activityId) async {
     try {
       final query = _database.select(_database.eventsTable)
         ..where((tbl) => tbl.activityId.equals(activityId));
@@ -209,131 +234,135 @@ class EventsRepository {
     }
   }
 
-  /// Update event's nutrition plan flag
-  Future<void> updateEventNutritionPlanFlag({
-    required int activityId,
-    required bool hasNutritionPlan,
-  }) async{
-    try {
-      // Get the event for this activity
-      final event = await getEventForActivity(activityId);
+  /// Save event to Drift database (offline-first pattern)
+  Future<String> _saveToDrift(domain.Event event) async {
+    if (event.id.isEmpty) {
+      // CREATE: New event - let database generate UUID
+      final companion = EventsTableCompanion.insert(
+        id: const Value.absent(), // Trigger auto-generation
+        userId: event.userId,
+        activityId: Value(event.activityId),
+        eventType: event.eventType.dbValue,
+        eventSubtype: Value(event.eventSubtype),
+        eventName: Value(event.eventName),
+        location: Value(event.location),
+        registrationUrl: Value(event.registrationUrl),
+        eventDate: Value(event.eventDate),
+        startTime: Value(event.startTime),
+        goalTimeMinutes: Value(event.goalTimeMinutes),
+        goalPaceMinutesPerMile: Value(event.goalPaceMinutesPerMile),
+        predictedFinishTimeMinutes: Value(event.predictedFinishTimeMinutes),
+        hasCarbLoading: Value(event.hasCarbLoading),
+        carbLoadingDays: Value(event.carbLoadingDays),
+        carbLoadingStartDate: Value(event.carbLoadingStartDate),
+        hasNutritionPlan: Value(event.hasNutritionPlan), // OBSOLETE: kept for backward compatibility
+        bibNumber: Value(event.bibNumber),
+        waveStartTime: Value(event.waveStartTime),
+        packetPickupInfo: Value(event.packetPickupInfo),
+        actualFinishTimeMinutes: Value(event.actualFinishTimeMinutes),
+        finalPlacement: Value(event.finalPlacement),
+        ageGroupPlacement: Value(event.ageGroupPlacement),
+        // Sync tracking
+        needsUpload: Value(event.needsUpload ?? false),
+        localUpdatedAt: Value(event.localUpdatedAt ?? DateTime.now()),
+        // Metadata
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+      );
 
-      if (event == null) {
-        return;
-      }
+      final insertedRow = await _database
+          .into(_database.eventsTable)
+          .insertReturning(companion);
 
-      // Update the event with the new nutrition plan flag
+      _logger.debug(
+        'Created new event',
+        context: 'EVENTS_REPOSITORY',
+        data: {'eventId': insertedRow.id},
+      );
+
+      return insertedRow.id;
+    } else {
+      // UPDATE: Existing event - update by ID
       final companion = EventsTableCompanion(
-        hasNutritionPlan: Value(hasNutritionPlan),
-        updatedAt: Value(DateTime.now()),
+        id: Value(event.id), // Preserve existing ID
+        userId: Value(event.userId),
+        activityId: Value(event.activityId),
+        eventType: Value(event.eventType.dbValue),
+        eventSubtype: Value(event.eventSubtype),
+        eventName: Value(event.eventName),
+        location: Value(event.location),
+        registrationUrl: Value(event.registrationUrl),
+        eventDate: Value(event.eventDate),
+        startTime: Value(event.startTime),
+        goalTimeMinutes: Value(event.goalTimeMinutes),
+        goalPaceMinutesPerMile: Value(event.goalPaceMinutesPerMile),
+        predictedFinishTimeMinutes: Value(event.predictedFinishTimeMinutes),
+        hasCarbLoading: Value(event.hasCarbLoading),
+        carbLoadingDays: Value(event.carbLoadingDays),
+        carbLoadingStartDate: Value(event.carbLoadingStartDate),
+        hasNutritionPlan: Value(event.hasNutritionPlan), // OBSOLETE: kept for backward compatibility
+        bibNumber: Value(event.bibNumber),
+        waveStartTime: Value(event.waveStartTime),
+        packetPickupInfo: Value(event.packetPickupInfo),
+        actualFinishTimeMinutes: Value(event.actualFinishTimeMinutes),
+        finalPlacement: Value(event.finalPlacement),
+        ageGroupPlacement: Value(event.ageGroupPlacement),
+        // Sync tracking
+        needsUpload: Value(event.needsUpload ?? false),
+        localUpdatedAt: Value(event.localUpdatedAt ?? DateTime.now()),
+        // Metadata
+        createdAt: Value(event.createdAt),
+        updatedAt: Value(event.updatedAt),
       );
 
       await (_database.update(_database.eventsTable)
             ..where((tbl) => tbl.id.equals(event.id)))
           .write(companion);
 
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update event nutrition plan flag',
+      _logger.debug(
+        'Updated existing event',
         context: 'EVENTS_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
+        data: {'eventId': event.id},
       );
-      rethrow;
+
+      return event.id;
     }
   }
 
-  /// Save event to Drift database (offline-first pattern)
-  Future<int> _saveToDrift(domain.Event event) async {
-    final companion = EventsTableCompanion.insert(
-      // Use Value.absent() for new events (id = 0) to let auto-increment work
-      // Use Value(event.id) for existing events (id > 0) to preserve the ID
-      id: event.id == 0 ? const Value.absent() : Value(event.id),
-      userId: event.userId,
-      activityId: Value(event.activityId),
-      eventType: event.eventType.dbValue,
-      eventSubtype: Value(event.eventSubtype),
-      eventName: Value(event.eventName),
-      location: Value(event.location),
-      registrationUrl: Value(event.registrationUrl),
-      eventDate: Value(event.eventDate),
-      startTime: Value(event.startTime),
-      goalTimeMinutes: Value(event.goalTimeMinutes),
-      goalPaceMinutesPerMile: Value(event.goalPaceMinutesPerMile),
-      predictedFinishTimeMinutes: Value(event.predictedFinishTimeMinutes),
-      hasCarbLoading: Value(event.hasCarbLoading),
-      carbLoadingDays: Value(event.carbLoadingDays),
-      carbLoadingStartDate: Value(event.carbLoadingStartDate),
-      hasNutritionPlan: Value(event.hasNutritionPlan),
-      bibNumber: Value(event.bibNumber),
-      waveStartTime: Value(event.waveStartTime),
-      packetPickupInfo: Value(event.packetPickupInfo),
-      actualFinishTimeMinutes: Value(event.actualFinishTimeMinutes),
-      finalPlacement: Value(event.finalPlacement),
-      ageGroupPlacement: Value(event.ageGroupPlacement),
-      // Sync tracking
-      needsUpload: Value(event.needsUpload ?? false),
-      localUpdatedAt: Value(event.localUpdatedAt ?? DateTime.now()),
-      // Metadata
-      createdAt: event.createdAt,
-      updatedAt: event.updatedAt,
-    );
-
-    // Insert and return the generated ID
-    return await _database
-        .into(_database.eventsTable)
-        .insert(companion, mode: InsertMode.insertOrReplace);
-  }
-
-  /// Upload event to Supabase directly (returns server ID if it changed)
-  Future<int?> _uploadEventToSupabase(
+  /// Upload event to Supabase directly
+  Future<void> _uploadEventToSupabase(
     String deviceId, // acts as userId
     domain.Event event,
     String operation,
   ) async {
     try {
-      // DIRECT FIX: Use userId from event directly (unified with deviceId)
-      // Skip unnecessary and fragile user lookup
+      // Use userId from event directly
       final userUuid = event.userId;
 
-      // 2. Prepare data
+      // Prepare data with explicit UUID from Drift
       final eventData = _toSupabaseJson(event, userUuid);
+      eventData['id'] = event.id; // Use same UUID from Drift
 
       if (operation == 'create') {
-        // Create: Insert and return ID
-        // Ensure we don't send the local ID (0 or temporary)
-        final response = await _supabase
-            .from('events')
-            .insert(eventData)
-            .select('id')
-            .single();
-        
-        final serverId = response['id'];
-        if (serverId is int && serverId != event.id) {
-          await _updateLocalId(event.id, serverId);
-          // Clear dirty flag for the NEW ID
-          await _clearDirtyFlag(serverId);
-          return serverId;
-        } else if (serverId is int) {
-          await _clearDirtyFlag(event.id);
-          return serverId;
-        }
-
-      } else {
-        // Update: Update by ID
-        // We assume event.id is already the server ID if it was synced
-        // If it's still a local ID that hasn't synced, this might fail/update wrong row if collision
-        // Ideally we rely on create succeeding first. 
-        // If this is a retry, upsert might be safer but 'id' is serial.
-        
-        // If we have a valid server ID (sync previously succeeded)
+        // Insert with explicit UUID from Drift
         await _supabase
             .from('events')
-            .update(eventData)
-            .eq('id', event.id);
-            
+            .insert(eventData);
+
+        _logger.info(
+          'Event uploaded to Supabase with UUID',
+          context: 'EVENTS_REPOSITORY',
+          data: {'eventId': event.id},
+        );
+
         await _clearDirtyFlag(event.id);
-        return event.id;
+      } else {
+        // Update existing record by UUID
+        await _supabase
+            .from('events')
+            .upsert(eventData);
+
+        await _clearDirtyFlag(event.id);
       }
 
     } catch (e) {
@@ -345,13 +374,12 @@ class EventsRepository {
       );
       // Don't rethrow - keep dirty flag, will retry on next sync
     }
-    return null;
   }
 
   /// Upload event deletion to Supabase directly (non-blocking)
   Future<void> _uploadEventDeletion(
     String deviceId, // acts as userId
-    int eventId,
+    String eventId,
   ) async {
     try {
       await _supabase
@@ -389,7 +417,7 @@ class EventsRepository {
       'has_carb_loading': event.hasCarbLoading,
       'carb_loading_days': event.carbLoadingDays,
       'carb_loading_start_date': event.carbLoadingStartDate?.toIso8601String(),
-      'has_nutrition_plan': event.hasNutritionPlan,
+      'has_nutrition_plan': event.hasNutritionPlan, // OBSOLETE: kept for backward compatibility
       'bib_number': event.bibNumber,
       'wave_start_time': event.waveStartTime,
       'packet_pickup_info': event.packetPickupInfo,
@@ -404,7 +432,7 @@ class EventsRepository {
   }
 
   /// Clear dirty flag after successful upload
-  Future<void> _clearDirtyFlag(int eventId) async {
+  Future<void> _clearDirtyFlag(String eventId) async {
     await (_database.update(_database.eventsTable)
           ..where((tbl) => tbl.id.equals(eventId)))
         .write(const EventsTableCompanion(needsUpload: Value(false)));
@@ -429,7 +457,7 @@ class EventsRepository {
       hasCarbLoading: event.hasCarbLoading,
       carbLoadingDays: event.carbLoadingDays,
       carbLoadingStartDate: event.carbLoadingStartDate,
-      hasNutritionPlan: event.hasNutritionPlan,
+      hasNutritionPlan: event.hasNutritionPlan, // OBSOLETE: kept for backward compatibility
       bibNumber: event.bibNumber,
       waveStartTime: event.waveStartTime,
       packetPickupInfo: event.packetPickupInfo,
@@ -461,20 +489,4 @@ class EventsRepository {
     }
   }
 
-  /// Update local event ID to match server ID
-  Future<void> _updateLocalId(int localId, int serverId) async {
-    await _database.transaction(() async {
-      // Update carb_loading_plans referencing this event
-      await _database.customStatement(
-        'UPDATE carb_loading_plans SET event_id = ? WHERE event_id = ?',
-        [serverId, localId],
-      );
-
-      // Update the event ID itself
-      await _database.customStatement(
-        'UPDATE events SET id = ? WHERE id = ?',
-        [serverId, localId],
-      );
-    });
-  }
 }

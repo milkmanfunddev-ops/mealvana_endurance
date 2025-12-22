@@ -22,9 +22,11 @@ Future<String> userId(Ref ref) async {
 
   // If Supabase already has an authenticated user, prefer that ID immediately.
   if (supabaseUser != null) {
-    // Ensure the local profile matches the authenticated Supabase user.
+    // CRITICAL FIX: Look up user by authUserId, not by id
+    // During guest flow, the user's id (primary key) may differ from authUserId
+    // Example: id=23a9302f..., authUserId=4ecdb31c...
     final existingProfile =
-        await database.getUserProfileById(supabaseUser.id);
+        await database.getUserProfileByAuthUserId(supabaseUser.id);
     if (existingProfile != null) {
       return existingProfile.id;
     }

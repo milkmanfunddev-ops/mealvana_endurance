@@ -10,6 +10,16 @@ import '../../features/nutrition_plan/presentation/screens/new_activity_screen.d
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/sport_preferences_screen.dart';
 import '../../features/onboarding/presentation/screens/food_preferences_screen.dart' as onboarding;
+// New onboarding PageView (December 2025 redesign)
+import '../../features/onboarding/presentation/screens/onboarding_pageview_screen.dart';
+import '../../features/onboarding/domain/dietary_preference.dart';
+import '../../features/onboarding/domain/allergy.dart';
+// Onboarding screens that support both onboarding and settings modes
+import '../../features/onboarding/presentation/screens/dietary_preference_screen.dart';
+import '../../features/onboarding/presentation/screens/allergies_screen.dart';
+import '../../features/onboarding/presentation/screens/running_details_screen.dart';
+import '../../features/onboarding/presentation/screens/cycling_details_screen.dart';
+import '../../features/onboarding/presentation/screens/swimming_details_screen.dart';
 import '../../features/auth/presentation/screens/post_onboarding_auth_screen.dart';
 import '../../features/auth/presentation/screens/email_signup_screen.dart';
 import '../../features/auth/presentation/screens/email_login_screen.dart';
@@ -21,7 +31,11 @@ import '../../features/barcode_scanning/presentation/screens/barcode_scanner_scr
 import '../../features/settings/presentation/screens/sport_settings_screen.dart';
 import '../../features/settings/presentation/screens/preferences_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_screen.dart' as settings;
+import '../../features/settings/presentation/screens/food_settings_consolidated_screen.dart';
+import '../../features/settings/presentation/screens/food_preferences_hub_screen.dart';
+import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
+import '../core/screen_mode.dart';
 import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
 import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
 import '../../features/user_journal/presentation/screens/voice_notes_list_screen.dart';
@@ -60,9 +74,9 @@ class AppRouter {
             if (appStartupData.user == null) {
               return '/welcome';
             }
-            // User exists but hasn't completed onboarding
+            // User exists but hasn't completed onboarding - start over from welcome
             if (!appStartupData.hasCompletedOnboarding) {
-              return '/onboarding/food-preferences';
+              return '/welcome';
             }
             // User has pending feedback to provide
             if (appStartupData.activityIdNeedingFeedback != null) {
@@ -83,29 +97,11 @@ class AppRouter {
         builder: (context, state) => const WelcomeScreen(),
       ),
       
-      // Onboarding Flow
+      // Onboarding Flow (PageView-based with swipe navigation)
       GoRoute(
         path: '/onboarding',
         name: 'onboarding',
-        redirect: (context, state) => '/onboarding/profile',
-      ),
-      
-      GoRoute(
-        path: '/onboarding/profile',
-        name: 'onboarding-profile',
-        builder: (context, state) => const UserProfileScreen(),
-      ),
-
-      GoRoute(
-        path: '/onboarding/sport-preferences',
-        name: 'onboarding-sport-preferences',
-        builder: (context, state) => const SportPreferencesScreen(),
-      ),
-
-      GoRoute(
-        path: '/onboarding/food-preferences',
-        name: 'onboarding-food-preferences',
-        builder: (context, state) => const onboarding.FoodPreferencesScreen(),
+        builder: (context, state) => const OnboardingPageViewScreen(),
       ),
 
       // Authentication Flow (Post-Onboarding)
@@ -140,8 +136,8 @@ class AppRouter {
             initialDate: extra?['initialDate'] as DateTime?,
             initialDistance: extra?['distance'] as double?,
             initialPace: extra?['goalPace'] as double?,
-            activityId: extra?['activityId'] as int?,
-            eventId: extra?['eventId'] as int?,
+            activityId: extra?['activityId'] as String?,
+            eventId: extra?['eventId'] as String?,
           );
         },
       ),
@@ -157,8 +153,8 @@ class AppRouter {
             initialDate: extra?['initialDate'] as DateTime?,
             initialDistance: extra?['distance'] as double?,
             initialPace: extra?['goalPace'] as double?,
-            activityId: extra?['activityId'] as int?,
-            eventId: extra?['eventId'] as int?,
+            activityId: extra?['activityId'] as String?,
+            eventId: extra?['eventId'] as String?,
           );
         },
       ),
@@ -197,7 +193,7 @@ class AppRouter {
         name: 'plan',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          final activityId = extra?['activityId'] as int?;
+          final activityId = extra?['activityId'] as String?;
           if (activityId == null) {
             return const Scaffold(
               body: Center(
@@ -218,7 +214,7 @@ class AppRouter {
         name: 'current-plan',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          final activityId = extra?['activityId'] as int?;
+          final activityId = extra?['activityId'] as String?;
           if (activityId == null) {
             return const Scaffold(
               body: Center(
@@ -275,11 +271,67 @@ class AppRouter {
         builder: (context, state) => const SportSettingsScreen(),
       ),
 
+      // Food Preferences Hub - 2-tier navigation hub for all food settings
+      GoRoute(
+        path: '/settings/food-preferences-hub',
+        name: 'settings-food-preferences-hub',
+        builder: (context, state) => const FoodPreferencesHubScreen(),
+      ),
+
+      // Sport Preferences Hub - 2-tier navigation hub for all sport settings
+      GoRoute(
+        path: '/settings/sport-preferences-hub',
+        name: 'settings-sport-preferences-hub',
+        builder: (context, state) => const SportPreferencesHubScreen(),
+      ),
+
+      // Food Preferences Consolidated Screen - All food-related settings in one place (DEPRECATED - kept for backward compatibility)
+      GoRoute(
+        path: '/settings/food-preferences-consolidated',
+        name: 'settings-food-preferences-consolidated',
+        builder: (context, state) => const FoodSettingsConsolidatedScreen(),
+      ),
+
       // Food Preferences Screen - Edit food preferences from settings
       GoRoute(
         path: '/settings/food-preferences',
         name: 'settings-food-preferences',
         builder: (context, state) => const settings.FoodPreferencesScreen(),
+      ),
+
+      // Dietary Preference Settings Screen - Reuses onboarding screen with settings mode
+      GoRoute(
+        path: '/settings/dietary-preference',
+        name: 'settings-dietary-preference',
+        builder: (context, state) => const DietaryPreferenceScreen(mode: ScreenMode.settings),
+      ),
+
+      // Allergies Settings Screen - Reuses onboarding screen with settings mode
+      GoRoute(
+        path: '/settings/allergies',
+        name: 'settings-allergies',
+        builder: (context, state) => const AllergiesScreen(mode: ScreenMode.settings),
+      ),
+
+      // Running Details Settings Screen - Reuses onboarding screen with settings mode
+      GoRoute(
+        path: '/settings/running-details',
+        name: 'settings-running-details',
+        builder: (context, state) => const RunningDetailsScreen(mode: ScreenMode.settings),
+      ),
+
+      // Cycling Details Settings Screen - Reuses onboarding screen with settings mode
+      GoRoute(
+        path: '/settings/cycling-details',
+        name: 'settings-cycling-details',
+        builder: (context, state) => const CyclingDetailsScreen(mode: ScreenMode.settings),
+      ),
+
+      // Swimming Details Settings Screen - Reuses onboarding screen with settings mode
+      GoRoute(
+        path: '/settings/swimming-details',
+        name: 'settings-swimming-details',
+        builder: (context, state) => const SwimmingDetailsScreen(mode: ScreenMode.settings),
       ),
 
       // Add Food Screen - Add foods from settings food preferences
@@ -303,7 +355,7 @@ class AppRouter {
         name: 'swap-food',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          final activityId = extra?['activityId'] as int?;
+          final activityId = extra?['activityId'] as String?;
           final isNewActivity = extra?['isNewActivity'] as bool? ?? false;
           if (activityId == null) {
             return const Scaffold(
@@ -367,7 +419,7 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return CarbLoadingFoodSelectionScreen(
-            dayId: extra?['dayId'] as int,
+            dayId: extra?['dayId'] as String,
             mealType: extra?['mealType'] as MealType,
           );
         },
@@ -393,13 +445,7 @@ class AppRouter {
         path: '/plan-how-well/:activityId',
         name: 'plan-how-well',
         builder: (context, state) {
-          final activityIdParam = state.pathParameters['activityId']!;
-          final activityId = int.tryParse(activityIdParam);
-          if (activityId == null) {
-            return const Scaffold(
-              body: Center(child: Text('Invalid activity ID')),
-            );
-          }
+          final activityId = state.pathParameters['activityId']!;
           return PlanHowWellScreen(activityId: activityId);
         },
       ),
@@ -417,13 +463,7 @@ class AppRouter {
         path: '/voice-memo/:activityId',
         name: 'voice-memo',
         builder: (context, state) {
-          final activityIdParam = state.pathParameters['activityId']!;
-          final activityId = int.tryParse(activityIdParam);
-          if (activityId == null) {
-            return const Scaffold(
-              body: Center(child: Text('Invalid activity ID')),
-            );
-          }
+          final activityId = state.pathParameters['activityId']!;
           int? rating;
           final extra = state.extra;
           if (extra is Map<String, dynamic>) {

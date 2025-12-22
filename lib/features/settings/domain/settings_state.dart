@@ -1,5 +1,7 @@
 import '../../auth/domain/user_preferences.dart';
 import '../../nutrition_plan/domain/run_parameters.dart';
+import '../../onboarding/domain/dietary_preference.dart';
+import '../../onboarding/domain/allergy.dart';
 
 /// State for the settings screen
 class SettingsState {
@@ -44,6 +46,10 @@ class SettingsState {
   final int? cssPacePer100mSeconds;
   final bool? typicalWetsuit;
   final String? typicalSwimCapType;
+
+  // Dietary preferences and allergies
+  final DietaryPreference? dietaryPreference;
+  final List<Allergy> allergies;
 
   // User identity fields (needed for database operations)
   final String? userId;
@@ -99,6 +105,8 @@ class SettingsState {
     this.cssPacePer100mSeconds,
     this.typicalWetsuit,
     this.typicalSwimCapType,
+    this.dietaryPreference,
+    this.allergies = const [],
     this.userId,
     this.createdAt,
     this.updatedAt,
@@ -149,6 +157,8 @@ class SettingsState {
     int? cssPacePer100mSeconds,
     bool? typicalWetsuit,
     String? typicalSwimCapType,
+    DietaryPreference? dietaryPreference,
+    List<Allergy>? allergies,
     String? userId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -198,6 +208,8 @@ class SettingsState {
       cssPacePer100mSeconds: cssPacePer100mSeconds ?? this.cssPacePer100mSeconds,
       typicalWetsuit: typicalWetsuit ?? this.typicalWetsuit,
       typicalSwimCapType: typicalSwimCapType ?? this.typicalSwimCapType,
+      dietaryPreference: dietaryPreference ?? this.dietaryPreference,
+      allergies: allergies ?? this.allergies,
       userId: userId ?? this.userId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

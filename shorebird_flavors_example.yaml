@@ -1,0 +1,15 @@
+# Shorebird configuration with flavors
+# You need to create separate app_ids for each flavor
+
+# Default app_id (typically used for prod)
+app_id: 16f10ae3-5b24-4e65-81cd-917f904f50d6
+
+# Flavor-specific configurations
+flavors:
+  dev:
+    # You need to create this app_id by running: shorebird init with dev flavor
+    # For now, you'll need to create a new Shorebird app for dev
+    app_id: YOUR_DEV_APP_ID_HERE
+  prod:
+    # Use the existing app_id
+    app_id: 16f10ae3-5b24-4e65-81cd-917f904f50d6

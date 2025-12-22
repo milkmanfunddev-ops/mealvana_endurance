@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
-import '../../../../theme/kyle_design/app_spacing.dart';
-import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../providers/new_activity_coordinator.dart';
 import '../providers/running_input_controller.dart';
 import '../widgets/new_activity/shared/sport_selector.dart';
+import '../widgets/new_activity/shared/new_activity_app_bar.dart';
+import '../widgets/new_activity/shared/new_activity_hero_section.dart';
+import '../widgets/new_activity/shared/new_activity_date_time_section.dart';
+import '../widgets/new_activity/shared/new_activity_generate_button.dart';
 import '../widgets/new_activity/running_tab_content.dart';
 import '../widgets/new_activity/cycling_tab_content.dart';
 import '../widgets/new_activity/swimming_tab_content.dart';
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/widgets/app_date_picker.dart';
+import '../providers/macro_targets_controller.dart';
+import '../../../../shared/providers/user_id_provider.dart';
+import '../../../activities/application/activities_service.dart';
+import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../activities/domain/activity.dart' as domain;
 
 /// New Activity Screen - Kyle's Unified Design
 ///
@@ -48,8 +53,8 @@ class NewActivityScreen extends ConsumerStatefulWidget {
   final DateTime? initialDate;
   final double? initialDistance;
   final double? initialPace;
-  final int? activityId;
-  final int? eventId;
+  final String? activityId;
+  final String? eventId;
 
   @override
   ConsumerState<NewActivityScreen> createState() => _NewActivityScreenState();
@@ -65,6 +70,14 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     Future.microtask(() {
       _initializeFromEventData();
     });
+  }
+
+  @override
+  void dispose() {
+    // ⚠️ IMPORTANT: Cannot use ref.read() in dispose() - violates Riverpod safety
+    // Draft cleanup is now handled by MacroTargetsController.ref.onDispose()
+    // See: macro_targets_controller.dart for cleanup implementation
+    super.dispose();
   }
 
   /// Initialize form controllers with data from event navigation
@@ -124,7 +137,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      appBar: _buildAppBar(context, isDark),
+      appBar: NewActivityAppBar(isDark: isDark),
       body: Column(
         children: [
           // Main scrollable content
@@ -134,211 +147,83 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: 20),
 
                   // Sport Selector Buttons (center these)
                   const Center(child: SportSelector()),
 
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: 24),
 
                   // Hero Image Section (center this)
-                  _buildHeroSection(coordinator, isDark),
+                  NewActivityHeroSection(
+                    heroImagePath: coordinator.getHeroImagePath(),
+                  ),
 
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: 24),
 
                   // Date and Time Section (center this)
-                  _buildDateTimeSection(coordinatorState, coordinator, isDark),
+                  NewActivityDateTimeSection(
+                    selectedDate: coordinatorState.selectedDate,
+                    selectedTime: coordinatorState.selectedTime,
+                    onEditTapped: () => _showDateTimePicker(coordinatorState, coordinator),
+                    isDark: isDark,
+                  ),
 
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: 32),
 
                   // Sport-specific form fields (full width)
                   _buildFormFields(coordinatorState),
 
-                  const SizedBox(height: AppSpacing.xxl),
+                  const SizedBox(height: 48),
                 ],
               ),
             ),
           ),
 
           // Generate Button (fixed at bottom)
-          _buildGenerateButton(coordinatorState, coordinator, isDark),
+          NewActivityGenerateButton(
+            isGenerating: coordinatorState.isGenerating,
+            onPressed: () => _handleGeneratePlan(coordinator),
+          ),
         ],
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, bool isDark) {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      automaticallyImplyLeading: false,
-      centerTitle: true,
-      title: Text(
-        'Create New Activity Plan',
-        style: AppTextStyles.sectionTitle.copyWith(
-          color: isDark ? AppColors.cream : AppColors.blackberry,
+  /// Handles the Generate Plan button press
+  ///
+  /// Triggers macro generation through the coordinator and navigates
+  /// to the adjust macros screen on success, or shows error snackbar on failure
+  Future<void> _handleGeneratePlan(NewActivityCoordinator coordinator) async {
+    try {
+      DebugLogger.info('🎯 NEW ACTIVITY: Starting macro generation from UI...');
+      DebugLogger.info('🔗 NEW ACTIVITY: activityId=${widget.activityId}, eventId=${widget.eventId}');
+      await coordinator.generateMacros(
+        activityId: widget.activityId,
+        eventId: widget.eventId,
+      );
+      DebugLogger.info('✅ NEW ACTIVITY: Coordinator generateMacros completed');
+
+      // Coordinator now waits for state to update - no need for manual checks
+      if (!mounted) return;
+
+      DebugLogger.info('🚀 NEW ACTIVITY: Navigating to adjust-macros screen');
+      context.pushNamed('adjust-macros');
+    } catch (e) {
+      DebugLogger.error('❌ NEW ACTIVITY: Error in macro generation flow: $e');
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error generating plan: $e'),
+          backgroundColor: Colors.red,
         ),
-      ),
-      leading: Container(
-        margin: const EdgeInsets.only(left: AppSpacing.md),
-        child: Center(
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.cream.withValues(alpha: 0.1)
-                  : AppColors.blackberry.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: 16,
-                color: isDark ? AppColors.cream : AppColors.blackberry,
-              ),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ),
-        ),
-      ),
-    );
+      );
+    }
   }
 
-  Widget _buildHeroSection(NewActivityCoordinator coordinator, bool isDark) {
-    return SizedBox(
-      height: 200,
-      width: double.infinity,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Hero image
-          Image.asset(
-            coordinator.getHeroImagePath(),
-            height: 180,
-            fit: BoxFit.contain,
-          ),
-
-          // Pink star overlay
-          // TODO: Uncomment when Vector.png is extracted from Figma
-          // Positioned(
-          //   top: 0,
-          //   right: 60,
-          //   child: Image.asset(
-          //     'assets/images/Vector.png',
-          //     width: 80,
-          //     height: 80,
-          //   ),
-          // ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateTimeSection(
-    NewActivityCoordinatorState coordinatorState,
-    NewActivityCoordinator coordinator,
-    bool isDark,
-  ) {
-    // Format date: "Nov 9, 2025"
-    final dateStr =
-        '${_getMonthName(coordinatorState.selectedDate)} ${coordinatorState.selectedDate.day}, ${coordinatorState.selectedDate.year}';
-
-    // Format time: "12:00 pm"
-    final hour = coordinatorState.selectedTime.hourOfPeriod == 0
-        ? 12
-        : coordinatorState.selectedTime.hourOfPeriod;
-    final minute = coordinatorState.selectedTime.minute
-        .toString()
-        .padLeft(2, '0');
-    final period = coordinatorState.selectedTime.period == DayPeriod.am ? 'am' : 'pm';
-    final timeStr = '$hour:$minute $period';
-
-    return Column(
-      children: [
-        // Date and Time side-by-side
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // DATE section
-            Column(
-              children: [
-                Text(
-                  'DATE',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  dateStr,
-                  style: AppTextStyles.dataNumber.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(width: AppSpacing.xxl),
-
-            // TIME section
-            Column(
-              children: [
-                Text(
-                  'TIME',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  timeStr,
-                  style: AppTextStyles.dataNumber.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        // Edit link (centered)
-        GestureDetector(
-          onTap: () => _showDateTimePicker(coordinatorState, coordinator),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                FontAwesomeIcons.penToSquare,
-                size: 14,
-                color: AppColors.dragonfruit,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Edit',
-                style: AppTextStyles.smallLabel.copyWith(
-                  color: AppColors.dragonfruit,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
+  /// Show different sport-specific form content based on selected tab
   Widget _buildFormFields(NewActivityCoordinatorState coordinatorState) {
-    // Show different content based on selected sport
     switch (coordinatorState.selectedTab) {
       case SportTab.running:
         return const RunningTabContent();
@@ -349,49 +234,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     }
   }
 
-  Widget _buildGenerateButton(
-    NewActivityCoordinatorState coordinatorState,
-    NewActivityCoordinator coordinator,
-    bool isDark,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: AppSpacing.lg),
-      child: KylePrimaryButton(
-        text: 'Generate Plan',
-        onPressed: coordinatorState.isGenerating
-            ? null
-            : () async {
-                try {
-                  DebugLogger.info('🎯 NEW ACTIVITY: Starting macro generation from UI...');
-                  DebugLogger.info('🔗 NEW ACTIVITY: activityId=${widget.activityId}, eventId=${widget.eventId}');
-                  await coordinator.generateMacros(
-                    activityId: widget.activityId,
-                    eventId: widget.eventId,
-                  );
-                  DebugLogger.info('✅ NEW ACTIVITY: Coordinator generateMacros completed');
-
-                  // Coordinator now waits for state to update - no need for manual checks
-                  if (!mounted) return;
-
-                  DebugLogger.info('🚀 NEW ACTIVITY: Navigating to adjust-macros screen');
-                  context.pushNamed('adjust-macros');
-                } catch (e) {
-                  DebugLogger.error('❌ NEW ACTIVITY: Error in macro generation flow: $e');
-                  if (!mounted) return;
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error generating plan: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-        isLoading: coordinatorState.isGenerating,
-      ),
-    );
-  }
-
+  /// Show date and time picker dialogs
+  ///
+  /// First shows date picker, then if a date is selected, shows time picker.
+  /// Updates coordinator state with both date and time when complete.
   void _showDateTimePicker(
     NewActivityCoordinatorState state,
     NewActivityCoordinator coordinator,
@@ -413,23 +259,5 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         coordinator.updateDateTime(date, time);
       }
     }
-  }
-
-  String _getMonthName(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return months[date.month - 1];
   }
 }

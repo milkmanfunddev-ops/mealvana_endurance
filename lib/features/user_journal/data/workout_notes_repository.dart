@@ -41,7 +41,7 @@ class WorkoutNotesRepository {
     return notes;
   }
 
-  Future<WorkoutNote?> getNoteById(int noteId) async {
+  Future<WorkoutNote?> getNoteById(String noteId) async {
     final userId = await _requireUserId();
     final activity = await _calendarService.getActivityById(userId, noteId);
     if (activity == null || !_activityHasNotes(activity)) {
@@ -50,14 +50,14 @@ class WorkoutNotesRepository {
     return _mapActivityToNote(activity);
   }
 
-  Future<List<WorkoutNote>> getNotesForActivity(int activityId) async {
+  Future<List<WorkoutNote>> getNotesForActivity(String activityId) async {
     final note = await getNoteById(activityId);
     if (note == null) return [];
     return [note];
   }
 
   Future<WorkoutNote> saveNote({
-    required int activityId,
+    required String activityId,
     required String noteText,
     int? rating,
   }) async {
@@ -93,7 +93,7 @@ class WorkoutNotesRepository {
   }
 
   Future<WorkoutNote?> updateNote({
-    required int noteId,
+    required String noteId,
     String? noteText,
     int? rating,
   }) async {
@@ -130,7 +130,7 @@ class WorkoutNotesRepository {
     return updated == null ? null : _mapActivityToNote(updated);
   }
 
-  Future<bool> deleteNote(int noteId) async {
+  Future<bool> deleteNote(String noteId) async {
     final user = await _authService.getCurrentUser();
     if (user == null) throw Exception('No user session found');
     final userId = user.id;
@@ -188,7 +188,7 @@ class WorkoutNotesRepository {
   }
 
   Future<void> _maybeUpdateRating({
-    required int activityId,
+    required String activityId,
     int? rating,
     DateTime? fallbackCompletedAt,
   }) async {

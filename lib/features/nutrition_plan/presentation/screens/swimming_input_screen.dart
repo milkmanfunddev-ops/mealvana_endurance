@@ -24,8 +24,8 @@ class SwimmingInputScreen extends ConsumerStatefulWidget {
   final DateTime? initialDate;
   final int? initialDistanceMeters;
   final int? initialPacePer100mSeconds;
-  final int? activityId; // Link to calendar activity
-  final int? eventId; // Link to calendar event
+  final String? activityId; // Link to calendar activity
+  final String? eventId; // Link to calendar event
 
   const SwimmingInputScreen({
     super.key,

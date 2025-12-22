@@ -40,7 +40,7 @@ final class CarbLoadingControllerProvider
 }
 
 String _$carbLoadingControllerHash() =>
-    r'5504d90dac5f04fea2e5e1b28bf03b7d554936b7';
+    r'0354ed7b5d49d345bc7b35934f63480bba1b491f';
 
 /// Controller for managing carb loading plans
 /// Handles carb loading protocol creation, updates, and queries
@@ -80,7 +80,7 @@ final class CarbLoadingPlanProvider
   /// Returns CarbLoadingPlan? from the database
   const CarbLoadingPlanProvider._({
     required CarbLoadingPlanFamily super.from,
-    required int super.argument,
+    required String super.argument,
   }) : super(
          retry: null,
          name: r'carbLoadingPlanProvider',
@@ -106,7 +106,7 @@ final class CarbLoadingPlanProvider
 
   @override
   FutureOr<dynamic> create(Ref ref) {
-    final argument = this.argument as int;
+    final argument = this.argument as String;
     return carbLoadingPlan(ref, argument);
   }
 
@@ -121,13 +121,13 @@ final class CarbLoadingPlanProvider
   }
 }
 
-String _$carbLoadingPlanHash() => r'a86d3a3f797be6f6a115b8b12b9fa0cf92acc44a';
+String _$carbLoadingPlanHash() => r'e66e01a2070b341f6d32bf2a2bb8c5d8d9dfdd31';
 
 /// Provider for getting carb loading plan for a specific event
 /// Returns CarbLoadingPlan? from the database
 
 final class CarbLoadingPlanFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<dynamic>, int> {
+    with $FunctionalFamilyOverride<FutureOr<dynamic>, String> {
   const CarbLoadingPlanFamily._()
     : super(
         retry: null,
@@ -140,7 +140,7 @@ final class CarbLoadingPlanFamily extends $Family
   /// Provider for getting carb loading plan for a specific event
   /// Returns CarbLoadingPlan? from the database
 
-  CarbLoadingPlanProvider call(int eventId) =>
+  CarbLoadingPlanProvider call(String eventId) =>
       CarbLoadingPlanProvider._(argument: eventId, from: this);
 
   @override
@@ -168,7 +168,7 @@ final class CarbLoadingDaysForPlanProvider
   /// Returns List<CarbLoadingDay> from the database
   const CarbLoadingDaysForPlanProvider._({
     required CarbLoadingDaysForPlanFamily super.from,
-    required int super.argument,
+    required String super.argument,
   }) : super(
          retry: null,
          name: r'carbLoadingDaysForPlanProvider',
@@ -195,7 +195,7 @@ final class CarbLoadingDaysForPlanProvider
 
   @override
   FutureOr<List<dynamic>> create(Ref ref) {
-    final argument = this.argument as int;
+    final argument = this.argument as String;
     return carbLoadingDaysForPlan(ref, argument);
   }
 
@@ -212,13 +212,13 @@ final class CarbLoadingDaysForPlanProvider
 }
 
 String _$carbLoadingDaysForPlanHash() =>
-    r'd332506f61dcce89607c231d0ff0e248075acc86';
+    r'e147a6366a5e86db491ed8275064c546c4af4fbd';
 
 /// Provider for getting carb loading days for a plan
 /// Returns List<CarbLoadingDay> from the database
 
 final class CarbLoadingDaysForPlanFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<List<dynamic>>, int> {
+    with $FunctionalFamilyOverride<FutureOr<List<dynamic>>, String> {
   const CarbLoadingDaysForPlanFamily._()
     : super(
         retry: null,
@@ -231,7 +231,7 @@ final class CarbLoadingDaysForPlanFamily extends $Family
   /// Provider for getting carb loading days for a plan
   /// Returns List<CarbLoadingDay> from the database
 
-  CarbLoadingDaysForPlanProvider call(int planId) =>
+  CarbLoadingDaysForPlanProvider call(String planId) =>
       CarbLoadingDaysForPlanProvider._(argument: planId, from: this);
 
   @override

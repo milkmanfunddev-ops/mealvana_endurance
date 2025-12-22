@@ -107,7 +107,7 @@ void main() {
               goalTimeMinutes: const Value(240), // 4 hours
               goalPaceMinutesPerMile: const Value(9.09),
               hasCarbLoading: const Value(false),
-              hasNutritionPlan: const Value(false),
+              hasNutritionPlan: const Value(false), // OBSOLETE: kept for test compatibility
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
             ),
@@ -208,7 +208,6 @@ void main() {
               hasCarbLoading: const Value(true),
               carbLoadingDays: const Value(3),
               carbLoadingStartDate: Value(carbLoadingStartDate),
-              hasNutritionPlan: const Value(false),
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
             ),
@@ -305,7 +304,6 @@ void main() {
             eventName: const Value('Spring 10K'),
             eventDate: Value(futureEvent1),
             hasCarbLoading: const Value(false),
-            hasNutritionPlan: const Value(true),
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
@@ -320,7 +318,7 @@ void main() {
             eventDate: Value(futureEvent2),
             hasCarbLoading: const Value(true),
             carbLoadingDays: const Value(3),
-            hasNutritionPlan: const Value(true),
+            hasNutritionPlan: const Value(false), // OBSOLETE: kept for test compatibility
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),

@@ -49,13 +49,17 @@ serve(async (req)=>{
       // 0. User Profile (PHASE 1: Added to ensure user exists before dependent records)
       // FIXED: Query by 'id' instead of 'device_id' (user_id is now the auth UUID)
       // Note: User profile sync always fetches latest if updated
+      // Includes: dietary_preference, allergies, and all sport-specific fields
       addFilter(supabaseClient.from('users').select('*').eq('id', user_id)).maybeSingle(),
       // 1. Nutrition Plan Foods (all foods with categories and activity_types as arrays)
-      // Reference data - sync if updated
-      addFilter(supabaseClient.from('foods').select('*')),
+      // CRITICAL FIX: Always fetch ALL nutrition foods (reference data, not user-specific)
+      // Bug: Was using addFilter() which caused empty results for incremental syncs
+      supabaseClient.from('foods').select('*'),
       // 2. Carb Loading Foods (meal_types is now a text[] column)
-      // Reference data - sync if updated
-      addFilter(supabaseClient.from('carb_loading_foods').select('*')),
+      // CRITICAL FIX: Always fetch ALL carb loading foods (reference data, not user-specific)
+      // Bug: Was using addFilter() which caused empty results for incremental syncs
+      // since the 27 default foods haven't been updated since 2025-12-04
+      supabaseClient.from('carb_loading_foods').select('*'),
       // 3. Activities (exclude soft-deleted, explicitly include nutrition_plan_data)
       addFilter(supabaseClient.from('activities').select(`
           *,

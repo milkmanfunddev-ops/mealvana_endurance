@@ -2,6 +2,6 @@
 #include "Generated.xcconfig"
 
 // Prod flavor configuration for Debug mode
-PRODUCT_BUNDLE_IDENTIFIER = com.mealvana.endurance
+PRODUCT_BUNDLE_IDENTIFIER = com.milkman.mealvanaendurance
 BUNDLE_DISPLAY_NAME = Mealvana Endurance
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon

@@ -34,7 +34,7 @@ class CarbLoadingService {
   Future<void> createCarbLoadingPlan({
     required String deviceId,
     required String userId,
-    int? eventId,
+    String? eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -73,7 +73,7 @@ class CarbLoadingService {
   /// Delete carb loading plan and associated day records
   Future<void> deleteCarbLoadingPlan({
     required String deviceId,
-    required int eventId,
+    required String eventId,
   }) async {
     try {
       await _carbLoadingRepository.deleteCarbLoadingPlan(
@@ -95,7 +95,7 @@ class CarbLoadingService {
   }
 
   /// Delete a single carb loading day and its associated meals
-  Future<void> deleteCarbLoadingDay(int carbLoadingDayId) async {
+  Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
     try {
       // Delete all meals for this day
       await (_database.delete(_database.carbLoadingDayMealsTable)
@@ -116,7 +116,7 @@ class CarbLoadingService {
   Future<void> updateCarbLoadingProtocol({
     required String deviceId,
     required String userId,
-    required int eventId,
+    required String eventId,
     required int newProtocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -142,7 +142,7 @@ class CarbLoadingService {
   }
 
   /// Get carb loading plan for an event
-  Future<CarbLoadingPlan?> getCarbLoadingPlan(int eventId) async{
+  Future<CarbLoadingPlan?> getCarbLoadingPlan(String eventId) async{
     try {
       final query = _database.select(_database.carbLoadingPlansTable)
             ..where((tbl) => tbl.eventId.equals(eventId));
@@ -155,7 +155,7 @@ class CarbLoadingService {
   }
 
   /// Get carb loading days for a plan
-  Future<List<CarbLoadingDay>> getCarbLoadingDays(int planId) async {
+  Future<List<CarbLoadingDay>> getCarbLoadingDays(String planId) async {
     try {
       final query = _database.select(_database.carbLoadingDaysTable)
             ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))

@@ -9,6 +9,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'shared/services/app_config.dart';
 import 'shared/widgets/root_app_widget.dart';
 
+/// Default entry point (Production fallback)
+///
+/// IMPORTANT: This file is a fallback and should NOT be used directly.
+/// Instead, use flavor-specific entry points:
+/// - Development: lib/main_dev.dart (loads .env.dev.local)
+/// - Production: lib/main_prod.dart (loads .env.prod.local)
+///
+/// Run commands:
+/// - Dev: flutter run --flavor dev -t lib/main_dev.dart
+/// - Prod: flutter run --flavor prod -t lib/main_prod.dart
+///
+/// This file defaults to production environment for safety.
+
 /// Global navigator key for Sentry feedback widget screenshot capture
 /// This key is used by SentryFeedbackWidget to navigate and capture screenshots
 final GlobalKey<NavigatorState> sentryNavigatorKey = GlobalKey<NavigatorState>();
@@ -21,17 +34,10 @@ Future<void> main() async {
     SentryWidgetsFlutterBinding.ensureInitialized();
     debugPrint('[STARTUP] Widget binding initialized: ${mainStopwatch.elapsedMilliseconds}ms');
 
-    // Load dev mode override from SharedPreferences BEFORE loading env
-    await AppConfig.loadDevModeOverride();
-    debugPrint('[STARTUP] Dev mode override loaded: ${mainStopwatch.elapsedMilliseconds}ms');
-
-    // Determine which env file to load based on dev mode
-    final isDevMode = AppConfig.effectiveDevMode;
-    final envFileName = isDevMode ? '.env.dev.local' : '.env.prod.local';
-
-    // Load environment variables from appropriate file
-    await dotenv.load(fileName: envFileName);
-    debugPrint('[STARTUP] dotenv loaded ($envFileName): ${mainStopwatch.elapsedMilliseconds}ms');
+    // Load production environment variables by default
+    // NOTE: Use main_dev.dart or main_prod.dart with flavors for environment-specific builds
+    await dotenv.load(fileName: '.env.prod.local');
+    debugPrint('[STARTUP] dotenv loaded (.env.prod.local): ${mainStopwatch.elapsedMilliseconds}ms');
 
     // Create app configuration from loaded env
     final config = AppConfig.fromEnv();

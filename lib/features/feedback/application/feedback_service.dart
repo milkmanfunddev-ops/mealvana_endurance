@@ -93,7 +93,7 @@ class FeedbackService {
 
       // Get the latest plan ID for notification tracking
       // Since notifications are for "how did your plan work", we need a plan ID for analytics
-      int? activityId;
+      String? activityId;
       try {
         final database = ref.read(appDatabaseProvider);
         final currentUser = await database.getCurrentUserProfile();

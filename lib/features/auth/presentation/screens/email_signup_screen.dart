@@ -26,14 +26,24 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _hasTrackedScreenView = false;
 
   @override
   void initState() {
     super.initState();
+    // Analytics tracking moved to didChangeDependencies for safety
+  }
 
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': 'Email Signup',
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Track screen view only once
+    if (!_hasTrackedScreenView) {
+      _hasTrackedScreenView = true;
+      ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
+        'screen_name': 'Email Signup',
+      });
+    }
   }
 
   @override
@@ -49,12 +59,41 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
       return;
     }
 
+    // Get trimmed values
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    // Additional validation as safety check
+    if (email.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter your email address'),
+            backgroundColor: AppColors.dragonfruit,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (password.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter your password'),
+            backgroundColor: AppColors.dragonfruit,
+          ),
+        );
+      }
+      return;
+    }
+
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
 
     final success = await controller.linkEmailAccount(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
+      email: email,
+      password: password,
     );
 
     if (success && mounted) {
@@ -142,6 +181,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   autocorrect: false,
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: contentService.getValue(
                       'auth.email_signup.email_label',
@@ -162,7 +202,8 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                   ),
                   style: AppTextStyles.bodyMedium,
                   validator: (value) {
-                    return emailAuthService.validateEmail(value ?? '');
+                    final trimmedValue = value?.trim() ?? '';
+                    return emailAuthService.validateEmail(trimmedValue);
                   },
                 ),
 

@@ -1,10 +1,14 @@
+import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
+import '../../../onboarding/presentation/providers/onboarding_controller.dart';
+import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
 
@@ -34,18 +38,23 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
   Future<void> _handleAppleSignIn() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
-    
+
     // If we are in login mode, we should sign in (replace user)
     // If we are in signup mode (default), we should try to link first
-    final success = isLogin 
+    final success = isLogin
         ? await controller.signInWithApple()
         : await controller.linkAppleAccount();
 
     if (!mounted) return;
 
     if (success) {
-      // Navigate to main app after successful authentication
-      context.go('/main');
+      // Login mode: Navigate directly (no onboarding data to save)
+      // Signup mode: Save cached onboarding data before navigating
+      if (isLogin) {
+        await _navigateToMain();
+      } else {
+        await _saveOnboardingDataAndNavigate();
+      }
     } else {
       _handleError(context, 'Apple');
     }
@@ -54,7 +63,7 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
   Future<void> _handleGoogleSignIn() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
-    
+
     // If we are in login mode, we should sign in (replace user)
     // If we are in signup mode (default), we should try to link first
     final success = isLogin
@@ -64,8 +73,13 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     if (!mounted) return;
 
     if (success) {
-      // Navigate to main app after successful authentication
-      context.go('/main');
+      // Login mode: Navigate directly (no onboarding data to save)
+      // Signup mode: Save cached onboarding data before navigating
+      if (isLogin) {
+        await _navigateToMain();
+      } else {
+        await _saveOnboardingDataAndNavigate();
+      }
     } else {
       _handleError(context, 'Google');
     }
@@ -146,7 +160,8 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final success = await controller.signInWithGoogle();
     if (success && mounted) {
-      context.go('/main');
+      // This is always a sign-in (orphaning anonymous user), so navigate directly
+      await _navigateToMain();
     }
   }
 
@@ -154,7 +169,8 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final success = await controller.signInWithApple();
     if (success && mounted) {
-      context.go('/main');
+      // This is always a sign-in (orphaning anonymous user), so navigate directly
+      await _navigateToMain();
     }
   }
 
@@ -162,9 +178,9 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     // Navigate to email signup screen
     final result = await context.push('/auth/email-signup');
 
-    // If email signup successful, navigate to main app
+    // If email signup successful, save onboarding data and navigate to main app
     if (result == true && mounted) {
-      context.go('/main');
+      await _saveOnboardingDataAndNavigate();
     }
   }
 
@@ -172,9 +188,9 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     // Navigate to email login screen
     final result = await context.push('/auth/email-login');
 
-    // If email login successful, navigate to main app
+    // If email login successful, navigate directly (no onboarding data to save)
     if (result == true && mounted) {
-      context.go('/main');
+      await _navigateToMain();
     }
   }
 
@@ -183,7 +199,58 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     await controller.skipAuthentication();
 
     if (mounted) {
+      // Save all cached onboarding data before navigating as guest
+      await _saveOnboardingDataAndNavigate();
+    }
+  }
+
+  /// Navigate directly to main app (for login mode - no onboarding data to save)
+  Future<void> _navigateToMain() async {
+    if (!mounted) return;
+    context.go('/main');
+  }
+
+  /// Save all cached onboarding data and navigate to main app
+  /// IMPORTANT: This now saves locally only and triggers background sync for Supabase upload
+  Future<void> _saveOnboardingDataAndNavigate() async {
+    final onboardingController = ref.read(onboardingControllerProvider.notifier);
+    final contentService = ref.read(contentServiceProvider);
+
+    // Save all cached onboarding data (saves to Drift only, marks for background upload)
+    final success = await onboardingController.saveAllOnboardingData();
+
+    if (!mounted) return;
+
+    if (success) {
+      // Get current user ID for background sync
+      final authService = ref.read(authServiceProvider);
+      final currentUser = await authService.getCurrentUser();
+
+      // Navigate to main app immediately after local save
       context.go('/main');
+
+      // Trigger background sync to upload data to Supabase (non-blocking)
+      if (currentUser != null) {
+        unawaited(
+          ref.read(syncCoordinatorProvider.notifier).sync(
+            userId: currentUser.id,
+            trigger: SyncTrigger.manual, // Using manual trigger for post-onboarding sync
+          ),
+        );
+      }
+    } else {
+      // Show error if save failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            contentService.getValue(
+              'auth.post_onboarding.error_save_failed',
+              defaultValue: 'Failed to save your preferences. Please try again.',
+            ),
+          ),
+          backgroundColor: AppColors.dragonfruit,
+        ),
+      );
     }
   }
 

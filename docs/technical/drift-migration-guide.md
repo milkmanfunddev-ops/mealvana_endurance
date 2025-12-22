@@ -2,9 +2,32 @@
 
 > **Note (2025‑11‑09):** Supabase follow-ups removed the `nutrition_plans` table (see migration `20251109000000_embed_nutrition_plan_on_activities.sql`). The Flutter app now stores plan JSON directly on `activities_table` (`nutrition_plan_data`), so references to the standalone table below describe the deprecated approach.
 
+> **Current Status (December 2025):** Schema v2 is active with proper Drift migrations. We now use idempotent migrations with column existence checks instead of runtime additions in beforeOpen.
+
 ## Overview
 
-This guide covers the migration from Hive to Drift and provides comprehensive information on managing database schema changes using Drift's built-in migration system.
+This guide covers comprehensive database migration management using Drift's built-in migration system. The app has migrated from v1 to v2 using proper schema versioning.
+
+## Current Migration Status (V1 → V2)
+
+### Schema Version 2 Implementation
+- **Status**: ✅ Active in production
+- **Migration Approach**: Idempotent with column existence checks
+- **Key Changes**: Consolidated preference_level, dietary_preference, and allergies columns
+- **Rollback Strategy**: Delete local DB and resync from Supabase if migration fails
+- **Schema Location**: `/database_schemas/v2/`
+
+### Migration Best Practices Learned
+1. **Always use idempotent migrations**: Check if columns/tables exist before creating
+2. **Avoid runtime schema changes**: No more `beforeOpen` column additions
+3. **Bump schema version**: Required for Drift to trigger migrations
+4. **Simple rollback**: Delete DB and resync is acceptable for this app's architecture
+5. **Test migrations thoroughly**: Use Drift's schema testing tools
+
+### V1 Baseline (Deprecated)
+- **Approach**: Runtime column additions in `beforeOpen` hook
+- **Problem**: Not tracked by schema version, caused migration issues
+- **Status**: Preserved in `/database_schemas/v1/` for reference only
 
 ## Why Drift Over Hive?
 

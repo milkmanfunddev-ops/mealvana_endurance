@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/services/app_external_deps.dart';
@@ -29,7 +28,6 @@ class NutritionPlanService {
   LLMNutritionPlanService get _llmService => ref.read(llmNutritionPlanServiceProvider);
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
-  SupabaseClient get _supabase => Supabase.instance.client;
 
   // Nutrition calculator removed - all logic moved to Edge Functions
 
@@ -44,7 +42,7 @@ class NutritionPlanService {
     String? sweatRate,
     String? giSensitivity,
     bool? allowHighCarbRun,
-    int? activityId,
+    String? activityId,
     bool debug = false,
   }) async {
     final user = await _authService.getCurrentUser();
@@ -143,7 +141,7 @@ class NutritionPlanService {
     required double paceMinutesPerMile,
     required double timeBeforeRunHours,
     String? sweatRate,
-    int? activityId,
+    String? activityId,
     bool debug = false,
     MacroTargets? macroTargets, // Optional: use adjusted macro targets if available
   }) async {
@@ -276,7 +274,7 @@ class NutritionPlanService {
   NutritionPlan _buildOfflinePlanFromTargets({
     required String userId,
     required MacroTargets macroTargets,
-    int? activityId,
+    String? activityId,
     required double timeBeforeRunHours,
   }) {
     final uuid = const Uuid();
@@ -389,7 +387,7 @@ class NutritionPlanService {
   /// Generate nutrition plan from adjusted macro targets with fallback
   Future<NutritionPlan> generatePlanFromMacrosWithFallback({
     required MacroTargets macroTargets,
-    int? activityId,
+    String? activityId,
   }) async {
     try {
       // FIRST: Try LLM-based generation using the adjusted macros
@@ -427,51 +425,6 @@ class NutritionPlanService {
     }
   }
 
-  /// Get nutrition plans for the current user
-  Future<List<NutritionPlan>> getUserNutritionPlans() async {
-    final user = await _authService.getCurrentUser();
-    if (user == null) return [];
-    
-    final planRepository = await _planRepository;
-    return await planRepository.getNutritionPlans(user.id);
-  }
-
-  /// Get the most recent nutrition plan for current user
-  /// Checks local cache first, falls back to Supabase
-  Future<NutritionPlan?> getLatestNutritionPlan() async {
-    final user = await _authService.getCurrentUser();
-    if (user == null) return null;
-    
-    // Repository handles local caching internally
-    final planRepository = await _planRepository;
-    return await planRepository.getLatestNutritionPlan(user.id);
-  }
-
-  /// Update an existing nutrition plan via Edge Function
-  Future<NutritionPlan> updateNutritionPlan({
-    required double distanceMiles,
-    required double paceMinutesPerMile,
-    double timeBeforeRunHours = 2.0,
-    String? gutTrainingLevel,
-  }) async {
-    // Updates now follow the exact same flow as fresh generations:
-    // try LLM first, fall back to offline builder, and cache on the activity.
-    return await generateNutritionPlan(
-      distanceMiles: distanceMiles,
-      paceMinutesPerMile: paceMinutesPerMile,
-      timeBeforeRunHours: timeBeforeRunHours,
-      gutTrainingLevel: gutTrainingLevel,
-    );
-  }
-
-  /// Delete a nutrition plan for a specific activity
-  Future<bool> deleteNutritionPlan(int activityId) async {
-    final planRepository = await _planRepository;
-    return await planRepository.deleteNutritionPlanForActivity(activityId);
-  }
-
-  // deleteNutritionPlan method defined above
-
   /// Get all available foods from the database
   Future<List<FoodItem>> getAllFoods() async {
     return await _foodRepository.getAllFoods();
@@ -502,129 +455,10 @@ class NutritionPlanService {
     return await _foodRepository.searchFoods(query);
   }
 
-  /// Get nutrition plan statistics for current user
-  Future<Map<String, dynamic>> getNutritionPlanStatistics() async {
-    final user = await _authService.getCurrentUser();
-    if (user == null) {
-      return {
-        'totalPlans': 0,
-        'averageDistance': 0.0,
-        'averageDuration': 0.0,
-        'averagePace': 0.0,
-        'averageCarbs': 0.0,
-        'averageSodium': 0.0,
-        'averageFluids': 0.0,
-      };
-    }
-    
-    // Statistics method not implemented in repository yet
-    return {
-      'totalPlans': 0,
-      'averageDistance': 0.0,
-      'averageDuration': 0.0,
-      'averagePace': 0.0,
-      'averageCarbs': 0.0,
-      'averageSodium': 0.0,
-      'averageFluids': 0.0,
-    };
-  }
-
-  /// Validate a nutrition plan for safety
-  bool validateNutritionPlan(NutritionPlan plan) {
-    // Simple validation since Edge Function handles complex logic
-    return plan.sections.isNotEmpty && plan.macroTargets != null;
-  }
-
-  /// Get nutrition recommendations for a plan
-  List<String> getNutritionRecommendations(NutritionPlan plan) {
-    // Simple recommendations since Edge Function provides comprehensive plan
-    List<String> recommendations = [];
-    
-    if (plan.sections.length >= 3) {
-      recommendations.add('Follow the timing guidelines for optimal performance');
-    }
-    
-    final duringSection = plan.sections.where((s) => s.title.contains('During')).firstOrNull;
-    if (duringSection != null && duringSection.foodItems.isNotEmpty) {
-      recommendations.add('Start fueling within the first 30-45 minutes of your run');
-    }
-    
-    recommendations.add('Monitor hydration levels and adjust intake based on conditions');
-    
-    return recommendations;
-  }
-
-  /// Calculate pre-run nutrition requirements (simplified)
-  Future<int> calculatePreRunNutrition(double timeBeforeRunHours) async {
-    // Simplified calculation - Edge Function handles full logic
-    final user = await _authService.getCurrentUser();
-    if (user == null) throw Exception('No user found');
-    
-    final bodyWeightKg = user.weightPounds * 0.453592;
-    
-    if (timeBeforeRunHours >= 1.0) {
-      return (timeBeforeRunHours.clamp(1.0, 4.0) * bodyWeightKg).round();
-    } else {
-      return (0.5 * bodyWeightKg).round();
-    }
-  }
-
-  /// Calculate pre-run hydration requirements (simplified)
-  Future<int> calculatePreRunHydration(double timeBeforeRunHours) async {
-    // Simplified calculation - Edge Function handles full logic
-    final user = await _authService.getCurrentUser();
-    if (user == null) throw Exception('No user found');
-    
-    final bodyWeightKg = user.weightPounds * 0.453592;
-    
-    if (timeBeforeRunHours >= 2.0) {
-      return (bodyWeightKg * 6.0).round(); // 6ml per kg
-    } else if (timeBeforeRunHours >= 1.0) {
-      return (bodyWeightKg * 4.0).round(); // 4ml per kg
-    } else {
-      return (bodyWeightKg * 2.0).round(); // 2ml per kg
-    }
-  }
-
-  /// Get nutrition plan summary for dashboard/overview
-  Future<Map<String, dynamic>> getNutritionSummary() async {
-    final plans = await getUserNutritionPlans();
-    final statistics = await getNutritionPlanStatistics();
-    final latestPlan = await getLatestNutritionPlan();
-
-    return {
-      'totalPlans': plans.length,
-      'statistics': statistics,
-      'latestPlan': latestPlan,
-      'hasRecentPlan': latestPlan != null,
-    };
-  }
-
-  /// Clear all nutrition plans (for testing)
-  Future<bool> clearAllPlans() async {
-    final user = await _authService.getCurrentUser();
-    if (user == null) return false;
-    
-    final planRepository = await _planRepository;
-    return await planRepository.clearAllNutritionPlans(user.id);
-  }
-
   // All sync and versioning logic removed - Edge Functions handle storage directly
 }
 
 /// Provider for NutritionPlanService
 final nutritionPlanServiceProvider = Provider<NutritionPlanService>((ref) {
   return NutritionPlanService(ref);
-});
-
-/// Provider for user's nutrition plans
-final userNutritionPlansProvider = FutureProvider<List<NutritionPlan>>((ref) async {
-  final service = ref.watch(nutritionPlanServiceProvider);
-  return await service.getUserNutritionPlans();
-});
-
-/// Provider for latest nutrition plan
-final latestNutritionPlanProvider = FutureProvider<NutritionPlan?>((ref) async {
-  final service = ref.watch(nutritionPlanServiceProvider);
-  return await service.getLatestNutritionPlan();
 });

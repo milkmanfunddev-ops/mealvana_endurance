@@ -19,6 +19,9 @@ import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
+import '../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
+import '../../../../shared/widgets/inputs/figma_search_bar.dart';
+import '../../../../shared/utils/search_strategy.dart';
 
 /// Food Preferences Screen - Kyle's Design System (Settings)
 /// Settings version with search bar, barcode scanning, and 5-point slider system
@@ -54,6 +57,44 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   bool _showSearchResults = false;
   String? _searchErrorMessage;
 
+  // Search strategy helper for managing local vs OpenFoodFacts search
+  final _searchStrategy = SearchStrategy();
+
+  void _handleSearchChanged(String value) {
+    setState(() {
+      _searchQuery = value;
+
+      // Clear OpenFoodFacts results when search is cleared
+      if (value.isEmpty) {
+        _showSearchResults = false;
+        _searchResults = [];
+        _searchErrorMessage = null;
+        _searchStrategy.cancelAutoSearch();
+      }
+    });
+
+    if (value.trim().isNotEmpty) {
+      // Count total local results across all lists
+      final totalLocalResults = _filteredFoods.length +
+          _filteredAdditionalFoods.length +
+          _filteredUserFoods.length;
+
+      // Use search strategy to determine if we should auto-search OpenFoodFacts
+      if (_searchStrategy.shouldAutoSearch(totalLocalResults)) {
+        _searchStrategy.scheduleAutoSearch(
+          query: value,
+          getCurrentQuery: () => _searchController.text.trim(),
+          onSearch: (_) {
+            if (mounted) {
+              _performSearch();
+            }
+          },
+          debounceDuration: const Duration(milliseconds: 1500),
+        );
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +108,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchStrategy.dispose();
     super.dispose();
   }
 
@@ -811,94 +853,65 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
               const SizedBox(height: AppSpacing.md),
 
               // Search bar with barcode button and search icon
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search foods...',
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Column(
+                children: [
+                  FigmaSearchBar(
+                    controller: _searchController,
+                    onChanged: _handleSearchChanged,
+                    onBarcodeScan: () {
+                      final analytics = ref.read(appExternalDepsProvider);
+                      analytics.analytics.track('barcode_scanner_opened', properties: {
+                        'source': 'food_preferences_settings',
+                      });
+                      _handleBarcodeScan();
+                    },
+                    onSearchSubmit: (query) => _performSearch(),
+                    enableAutoSearch: false, // Disabled - now handled in _handleSearchChanged based on results
+                    autoSearchDebounceMs: 1500,
+                    hintText: 'Search foods...',
                   ),
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Barcode button
-                      IconButton(
-                        icon: Icon(
-                          FontAwesomeIcons.barcode,
-                          size: AppIconSizes.controlIcon,
-                          color: AppColors.electrolyte,
+
+                  // "Search OpenFoodFacts" button (when 1-3 local results)
+                  if (_searchQuery.isNotEmpty && !_showSearchResults && !_isSearching)
+                    Builder(
+                      builder: (context) {
+                        final totalLocalResults = _filteredFoods.length +
+                            _filteredAdditionalFoods.length +
+                            _filteredUserFoods.length;
+
+                        if (totalLocalResults > 0 && totalLocalResults < 4) {
+                          return SearchOpenFoodFactsButton(
+                            onPressed: _performSearch,
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+
+                  // Clear search button (when showing search query or results)
+                  if (_searchQuery.isNotEmpty || _showSearchResults) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: _clearSearch,
+                        icon: const Icon(
+                          FontAwesomeIcons.xmark,
+                          size: 16,
+                          color: AppColors.orange,
                         ),
-                        onPressed: () {
-                          final analytics = ref.read(appExternalDepsProvider);
-                          analytics.analytics.track('barcode_scanner_opened', properties: {
-                            'source': 'food_preferences_settings',
-                          });
-                          _handleBarcodeScan();
-                        },
-                      ),
-                      // Search button with white circular background
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: GestureDetector(
-                          onTap: _performSearch,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              FontAwesomeIcons.magnifyingGlass,
-                              size: AppIconSizes.controlIcon,
-                              color: AppColors.blackberry,
-                            ),
+                        label: const Text(
+                          'Clear Search',
+                          style: TextStyle(
+                            fontFamily: 'Apercu',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.orange,
                           ),
                         ),
                       ),
-                      // Clear button (if search query is not empty)
-                      if (_searchQuery.isNotEmpty)
-                        IconButton(
-                          icon: Icon(
-                            FontAwesomeIcons.xmark,
-                            size: AppIconSizes.controlIcon,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          onPressed: _clearSearch,
-                        ),
-                    ],
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: AppRadius.inputRadius,
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                     ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: AppRadius.inputRadius,
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: AppRadius.inputRadius,
-                    borderSide: const BorderSide(
-                      color: AppColors.electrolyte,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                ),
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-                onSubmitted: (_) => _performSearch(),
+                  ],
+                ],
               ),
 
               const SizedBox(height: AppSpacing.lg),

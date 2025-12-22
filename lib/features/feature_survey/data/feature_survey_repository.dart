@@ -19,7 +19,7 @@ class FeatureSurveyRepository {
   Future<bool> hasVoted(String deviceId) async {
     try {
       final query = _database.select(_database.featureSurveyResponsesTable)
-        ..where((row) => row.userId.equals(deviceId));
+        ..where((row) => row.deviceId.equals(deviceId));
 
       final results = await query.get();
       return results.isNotEmpty;
@@ -27,7 +27,7 @@ class FeatureSurveyRepository {
       // Legacy rows may have TEXT timestamps; normalize and retry
       await _normalizeTimestamps();
       final query = _database.select(_database.featureSurveyResponsesTable)
-        ..where((row) => row.userId.equals(deviceId));
+        ..where((row) => row.deviceId.equals(deviceId));
       final results = await query.get();
       return results.isNotEmpty;
     }
@@ -47,7 +47,7 @@ class FeatureSurveyRepository {
   Future<FeatureSurveyResponse?> _getPreviousVotesInternal(
       String deviceId) async {
     final query = _database.select(_database.featureSurveyResponsesTable)
-      ..where((row) => row.userId.equals(deviceId));
+      ..where((row) => row.deviceId.equals(deviceId));
 
     final results = await query.get();
     if (results.isEmpty) return null;
@@ -56,7 +56,7 @@ class FeatureSurveyRepository {
     return FeatureSurveyResponse.fromDatabase(
       {
         'id': entry.id.toString(),
-        'device_id': entry.userId,
+        'device_id': entry.deviceId,
         'selected_features': entry.selectedFeatures,
         'voted_at': entry.votedAt.toIso8601String(),
       },
@@ -92,7 +92,7 @@ class FeatureSurveyRepository {
     // 1. Save to local Drift database first (offline-first)
     await _database.into(_database.featureSurveyResponsesTable).insert(
           FeatureSurveyResponsesTableCompanion(
-            userId: Value(response.deviceId),
+            deviceId: Value(response.deviceId),
             selectedFeatures: Value(
               jsonEncode(response.selectedFeatures.map((f) => f.id).toList()),
             ),
@@ -105,23 +105,27 @@ class FeatureSurveyRepository {
     // (CURRENT_TIMESTAMP produces text format which Drift can't parse)
     final nowMillis = DateTime.now().millisecondsSinceEpoch;
     await _database.customStatement(
-      'UPDATE feature_survey_responses SET needs_upload = 1, local_updated_at = ? WHERE user_id = ?',
+      'UPDATE feature_survey_responses SET needs_upload = 1, local_updated_at = ? WHERE device_id = ?',
       [nowMillis, response.deviceId],
     );
 
     // 2. Sync to Supabase (best-effort, don't block on failure)
     try {
       final supabase = ref.read(supabaseClientProvider);
-      await supabase.from('feature_survey_responses').upsert({
-        'id': response.id,
-        'device_id': response.deviceId,
-        'selected_features':
-            jsonEncode(response.selectedFeatures.map((f) => f.id).toList()),
-        'voted_at': response.votedAt.toIso8601String(),
-      });
+      // Don't send 'id' - let Supabase auto-generate it with bigserial
+      // Use device_id as the unique key (has unique constraint in Supabase)
+      await supabase.from('feature_survey_responses').upsert(
+        {
+          'device_id': response.deviceId,
+          'selected_features':
+              jsonEncode(response.selectedFeatures.map((f) => f.id).toList()),
+          'voted_at': response.votedAt.toIso8601String(),
+        },
+        onConflict: 'device_id', // Upsert on unique constraint
+      );
 
       await _database.customStatement(
-        'UPDATE feature_survey_responses SET needs_upload = 0 WHERE user_id = ?',
+        'UPDATE feature_survey_responses SET needs_upload = 0 WHERE device_id = ?',
         [response.deviceId],
       );
     } catch (e) {
@@ -134,7 +138,7 @@ class FeatureSurveyRepository {
   /// Delete survey response (for testing or future "reset vote" feature)
   Future<void> deleteSurveyResponse(String deviceId) async {
     await (_database.delete(_database.featureSurveyResponsesTable)
-          ..where((row) => row.userId.equals(deviceId)))
+          ..where((row) => row.deviceId.equals(deviceId)))
         .go();
   }
 
@@ -146,7 +150,7 @@ class FeatureSurveyRepository {
       return FeatureSurveyResponse.fromDatabase(
         {
           'id': entry.id.toString(),
-          'device_id': entry.userId,
+          'device_id': entry.deviceId,
           'selected_features': entry.selectedFeatures,
           'voted_at': entry.votedAt.toIso8601String(),
         },

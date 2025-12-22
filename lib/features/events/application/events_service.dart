@@ -36,7 +36,7 @@ class EventsService {
   );
 
   /// Get event for a specific activity
-  Future<domain.Event?> getEventForActivity(int activityId) async {
+  Future<domain.Event?> getEventForActivity(String activityId) async {
     try {
       final query = _database.select(_database.eventsTable)
             ..where((tbl) => tbl.activityId.equals(activityId));
@@ -56,8 +56,10 @@ class EventsService {
   }
 
   /// Get a specific event by ID
-  Future<domain.Event?> getEventById(String userId, int eventId) async {
+  Future<domain.Event?> getEventById(String userId, String eventId) async {
     try {
+      //show all events
+      final events = await getAllEvents(userId);
       final query = _database.select(_database.eventsTable)
             ..where((tbl) => tbl.id.equals(eventId));
 
@@ -116,7 +118,7 @@ class EventsService {
   /// Create an event (optionally linked to an activity)
   Future<domain.Event> createEvent({
     required String deviceId,
-    int? activityId,
+    String? activityId,
     required ActivityType eventType,
     String? eventSubtype,
     String? eventName,
@@ -153,7 +155,7 @@ class EventsService {
       }
 
       final event = domain.Event(
-        id: 0, // Placeholder - repository will assign actual ID via autoIncrement
+        id: '', // Empty string - repository will assign actual ID
         userId: deviceId,
         activityId: activityId,
         eventType: eventType,
@@ -207,7 +209,7 @@ class EventsService {
   /// Delete an event
   Future<void> deleteEvent({
     required String deviceId,
-    required int eventId,
+    required String eventId,
   }) async {
     try {
       await _eventsRepository.deleteEvent(
@@ -216,23 +218,6 @@ class EventsService {
       );
     } catch (e, stackTrace) {
       _logger.error('Error deleting event', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  /// Update event's nutrition plan flag
-  Future<void> updateEventNutritionPlanFlag({
-    required int activityId,
-    required bool hasNutritionPlan,
-  }) async {
-    try {
-      await _eventsRepository.updateEventNutritionPlanFlag(
-        activityId: activityId,
-        hasNutritionPlan: hasNutritionPlan,
-      );
-
-    } catch (e) {
-      _logger.error('Error updating event nutrition plan flag', error: e);
       rethrow;
     }
   }
@@ -256,7 +241,7 @@ class EventsService {
       hasCarbLoading: event.hasCarbLoading,
       carbLoadingDays: event.carbLoadingDays,
       carbLoadingStartDate: event.carbLoadingStartDate,
-      hasNutritionPlan: event.hasNutritionPlan,
+      hasNutritionPlan: event.hasNutritionPlan, // OBSOLETE: kept for backward compatibility
       bibNumber: event.bibNumber,
       waveStartTime: event.waveStartTime,
       packetPickupInfo: event.packetPickupInfo,

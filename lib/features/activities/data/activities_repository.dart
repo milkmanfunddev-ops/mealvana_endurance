@@ -53,6 +53,9 @@ class ActivitiesRepository {
         localUpdatedAt: DateTime.now(),
       ));
 
+      //get all Activities
+      final activities = await _database.select(_database.activitiesTable).get();
+
       // Get the activity back from the database with the generated ID
       final savedActivity = await (_database.select(_database.activitiesTable)
             ..where((tbl) => tbl.id.equals(generatedId)))
@@ -60,40 +63,25 @@ class ActivitiesRepository {
 
       var activityWithId = _mapToActivityDomain(savedActivity);
 
-      // STEP 2: Upload to Supabase SYNCHRONOUSLY to get server ID
-      // This ensures the returned activity has the correct server-assigned ID,
-      // preventing race conditions with food swapping and other operations.
+      // STEP 2: Upload to Supabase SYNCHRONOUSLY
+      // This ensures sync completes before returning, preventing race conditions
       _logger.info(
         'Uploading new activity to Supabase (sync)',
         context: 'ACTIVITIES_REPOSITORY',
         data: {
-          'localActivityId': activityWithId.id,
+          'activityId': activityWithId.id,
           'hasNutritionPlan': activityWithId.nutritionPlanData != null,
         },
       );
 
       try {
-        final serverId = await _uploadActivityToSupabaseSync(deviceId, activityWithId);
-        if (serverId != null && serverId != activityWithId.id) {
-          // Fetch the activity with the new server ID
-          final rekeyedActivity = await (_database.select(_database.activitiesTable)
-                ..where((tbl) => tbl.id.equals(serverId)))
-              .getSingleOrNull();
-          if (rekeyedActivity != null) {
-            activityWithId = _mapToActivityDomain(rekeyedActivity);
-            _logger.info(
-              'Activity created with server ID',
-              context: 'ACTIVITIES_REPOSITORY',
-              data: {'serverId': serverId},
-            );
-          }
-        }
+        await _uploadActivityToSupabaseSync(deviceId, activityWithId);
       } catch (uploadError) {
         // Upload failed but local save succeeded - activity will sync later
         _logger.warning(
           'Supabase upload failed during create, activity will sync later',
           context: 'ACTIVITIES_REPOSITORY',
-          data: {'localActivityId': activityWithId.id, 'error': uploadError.toString()},
+          data: {'activityId': activityWithId.id, 'error': uploadError.toString()},
         );
       }
 
@@ -142,7 +130,7 @@ class ActivitiesRepository {
   /// Delete an activity (offline-first: mark deleted in Drift first, background upload)
   Future<void> deleteActivity({
     required String deviceId,
-    required int activityId,
+    required String activityId,
   }) async {
     try {
       // OFFLINE-FIRST: Mark as deleted in Drift IMMEDIATELY with dirty flag
@@ -206,7 +194,7 @@ class ActivitiesRepository {
   }
 
   /// Get a specific activity by ID
-  Future<domain.Activity?> getActivityById(String userId, int activityId) async {
+  Future<domain.Activity?> getActivityById(String userId, String activityId) async {
     try {
       // CRITICAL FIX: Use case-insensitive comparison for userId
       final query = _database.select(_database.activitiesTable)
@@ -258,59 +246,7 @@ class ActivitiesRepository {
 
   /// Save activity to Drift database (offline-first pattern)
   /// Returns the ID of the saved activity (auto-generated if creating new)
-  Future<int> _saveToDrift(domain.Activity activity) async {
-    final companion = ActivitiesTableCompanion.insert(
-      // Use Value.absent() for new activities (id=0) to trigger auto-increment
-      // Use Value(id) for existing activities to preserve their ID
-      id: activity.id == 0 ? const Value.absent() : Value(activity.id),
-      userId: activity.userId,
-      activityType: activity.activityType.name,
-      title: activity.title,
-      scheduledDateTime: activity.scheduledDateTime,
-      status: Value(activity.status.name),
-      distanceMiles: Value(activity.distanceMiles),
-      durationMinutes: Value(activity.durationMinutes),
-      paceTargetMinutesPerMile: Value(activity.paceTargetMinutesPerMile),
-      intensityLevel: Value(activity.intensityLevel?.name),
-      notes: Value(activity.notes),
-      // Cycling-specific fields
-      cyclingSpeedMph: Value(activity.cyclingSpeedMph),
-      cyclingTerrain: Value(activity.cyclingTerrain),
-      cyclingIndoorOutdoor: Value(activity.cyclingIndoorOutdoor),
-      cyclingElevationGainFt: Value(activity.cyclingElevationGainFt),
-      cyclingSessionGoal: Value(activity.cyclingSessionGoal),
-      // Swimming-specific fields
-      swimmingPacePer100mSeconds: Value(activity.swimmingPacePer100mSeconds),
-      swimmingPoolOrOpenWater: Value(activity.swimmingPoolOrOpenWater),
-      swimmingWaterTempC: Value(activity.swimmingWaterTempC),
-      // Shared fields
-      intensityTarget: Value(activity.intensityTarget),
-      timeBeforeMinutes: Value(activity.timeBeforeMinutes),
-      // Completion data
-      completedAt: Value(activity.completedAt),
-      actualDistanceMiles: Value(activity.actualDistanceMiles),
-      actualDurationMinutes: Value(activity.actualDurationMinutes),
-      completionRating: Value(activity.completionRating),
-      completionNotes: Value(activity.completionNotes),
-      // Nutrition plan data (embedded JSON)
-      nutritionPlanData: Value(
-        activity.nutritionPlanData != null
-            ? jsonEncode(activity.nutritionPlanData)
-            : null,
-      ),
-      // Reminder fields
-      reminderEnabled: Value(activity.reminderEnabled),
-      reminderDaysBefore: Value(activity.reminderDaysBefore),
-      reminderTimeOfDay: Value(activity.reminderTimeOfDay),
-      reminderRecurring: Value(activity.reminderRecurring),
-      // Sync tracking
-      needsUpload: Value(activity.needsUpload ?? false),
-      localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
-      // Metadata
-      createdAt: activity.createdAt,
-      updatedAt: activity.updatedAt,
-    );
-
+  Future<String> _saveToDrift(domain.Activity activity) async {
     // Log nutrition plan data presence for debugging
     if (activity.nutritionPlanData != null) {
       final jsonString = jsonEncode(activity.nutritionPlanData);
@@ -331,10 +267,135 @@ class ActivitiesRepository {
       );
     }
 
-    final id = await _database
-        .into(_database.activitiesTable)
-        .insert(companion, mode: InsertMode.insertOrReplace);
-    return id;
+    if (activity.id.isEmpty) {
+      // CREATE: New activity - let database generate UUID
+      final companion = ActivitiesTableCompanion.insert(
+        id: const Value.absent(), // Trigger auto-generation
+        userId: activity.userId,
+        activityType: activity.activityType.name,
+        title: activity.title,
+        scheduledDateTime: activity.scheduledDateTime,
+        status: Value(activity.status.name),
+        distanceMiles: Value(activity.distanceMiles),
+        durationMinutes: Value(activity.durationMinutes),
+        paceTargetMinutesPerMile: Value(activity.paceTargetMinutesPerMile),
+        intensityLevel: Value(activity.intensityLevel?.name),
+        notes: Value(activity.notes),
+        // Cycling-specific fields
+        cyclingSpeedMph: Value(activity.cyclingSpeedMph),
+        cyclingTerrain: Value(activity.cyclingTerrain),
+        cyclingIndoorOutdoor: Value(activity.cyclingIndoorOutdoor),
+        cyclingElevationGainFt: Value(activity.cyclingElevationGainFt),
+        cyclingSessionGoal: Value(activity.cyclingSessionGoal),
+        // Swimming-specific fields
+        swimmingPacePer100mSeconds: Value(activity.swimmingPacePer100mSeconds),
+        swimmingPoolOrOpenWater: Value(activity.swimmingPoolOrOpenWater),
+        swimmingWaterTempC: Value(activity.swimmingWaterTempC),
+        // Shared fields
+        intensityTarget: Value(activity.intensityTarget),
+        timeBeforeMinutes: Value(activity.timeBeforeMinutes),
+        // Completion data
+        completedAt: Value(activity.completedAt),
+        actualDistanceMiles: Value(activity.actualDistanceMiles),
+        actualDurationMinutes: Value(activity.actualDurationMinutes),
+        completionRating: Value(activity.completionRating),
+        completionNotes: Value(activity.completionNotes),
+        // Nutrition plan data (embedded JSON)
+        nutritionPlanData: Value(
+          activity.nutritionPlanData != null
+              ? jsonEncode(activity.nutritionPlanData)
+              : null,
+        ),
+        // Reminder fields
+        reminderEnabled: Value(activity.reminderEnabled),
+        reminderDaysBefore: Value(activity.reminderDaysBefore),
+        reminderTimeOfDay: Value(activity.reminderTimeOfDay),
+        reminderRecurring: Value(activity.reminderRecurring),
+        // Sync tracking
+        needsUpload: Value(activity.needsUpload ?? false),
+        localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
+        deletedAt: const Value.absent(), // Soft delete support
+        // Metadata
+        createdAt: activity.createdAt,
+        updatedAt: activity.updatedAt,
+      );
+
+      final insertedRow = await _database
+          .into(_database.activitiesTable)
+          .insertReturning(companion);
+
+      _logger.debug(
+        'Created new activity',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'activityId': insertedRow.id},
+      );
+
+      return insertedRow.id;
+    } else {
+      // UPDATE: Existing activity - update by ID
+      final companion = ActivitiesTableCompanion(
+        id: Value(activity.id), // Preserve existing ID
+        userId: Value(activity.userId),
+        activityType: Value(activity.activityType.name),
+        title: Value(activity.title),
+        scheduledDateTime: Value(activity.scheduledDateTime),
+        status: Value(activity.status.name),
+        distanceMiles: Value(activity.distanceMiles),
+        durationMinutes: Value(activity.durationMinutes),
+        paceTargetMinutesPerMile: Value(activity.paceTargetMinutesPerMile),
+        intensityLevel: Value(activity.intensityLevel?.name),
+        notes: Value(activity.notes),
+        // Cycling-specific fields
+        cyclingSpeedMph: Value(activity.cyclingSpeedMph),
+        cyclingTerrain: Value(activity.cyclingTerrain),
+        cyclingIndoorOutdoor: Value(activity.cyclingIndoorOutdoor),
+        cyclingElevationGainFt: Value(activity.cyclingElevationGainFt),
+        cyclingSessionGoal: Value(activity.cyclingSessionGoal),
+        // Swimming-specific fields
+        swimmingPacePer100mSeconds: Value(activity.swimmingPacePer100mSeconds),
+        swimmingPoolOrOpenWater: Value(activity.swimmingPoolOrOpenWater),
+        swimmingWaterTempC: Value(activity.swimmingWaterTempC),
+        // Shared fields
+        intensityTarget: Value(activity.intensityTarget),
+        timeBeforeMinutes: Value(activity.timeBeforeMinutes),
+        // Completion data
+        completedAt: Value(activity.completedAt),
+        actualDistanceMiles: Value(activity.actualDistanceMiles),
+        actualDurationMinutes: Value(activity.actualDurationMinutes),
+        completionRating: Value(activity.completionRating),
+        completionNotes: Value(activity.completionNotes),
+        // Nutrition plan data (embedded JSON)
+        nutritionPlanData: Value(
+          activity.nutritionPlanData != null
+              ? jsonEncode(activity.nutritionPlanData)
+              : null,
+        ),
+        // Reminder fields
+        reminderEnabled: Value(activity.reminderEnabled),
+        reminderDaysBefore: Value(activity.reminderDaysBefore),
+        reminderTimeOfDay: Value(activity.reminderTimeOfDay),
+        reminderRecurring: Value(activity.reminderRecurring),
+        // Sync tracking
+        needsUpload: Value(activity.needsUpload ?? false),
+        localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
+        deletedAt: Value(activity.deletedAt), // Soft delete support
+        // Metadata
+        createdAt: Value(activity.createdAt),
+        updatedAt: Value(activity.updatedAt),
+      );
+
+      await (_database.update(_database.activitiesTable)
+            ..where((tbl) => tbl.id.equals(activity.id)))
+          .write(companion);
+
+      _logger.debug(
+        'Updated existing activity',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'activityId': activity.id},
+      );
+
+      return activity.id;
+    }
   }
 
   /// Upload activity to Supabase in background (non-blocking)
@@ -345,11 +406,11 @@ class ActivitiesRepository {
     String operation,
   ) async {
     try {
-      // DIRECT FIX: Use userId from activity directly
-      // Do not look up via device_id as that adds a point of failure
+      // Use userId from activity directly
       final userId = activity.userId;
 
       final payload = {
+        'id': activity.id, // Use same UUID from Drift
         'user_id': userId,
         'activity_type': activity.activityType.name,
         'title': activity.title,
@@ -387,69 +448,26 @@ class ActivitiesRepository {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      int serverId;
-
       if (operation == 'create') {
-        // NEW ACTIVITY: Let server generate ID (avoids local/server ID collision)
-        // Local autoincrement IDs (1, 2, 3...) would collide with server bigserial
-        final insertResponse = await _supabase
+        // Insert with explicit UUID from Drift
+        await _supabase
             .from('activities')
-            .insert(payload) // No 'id' field - server generates it
-            .select('id')
-            .single();
-        serverId = insertResponse['id'] as int;
+            .insert(payload);
 
         _logger.info(
-          'Activity uploaded to Supabase with server-generated ID',
+          'Activity uploaded to Supabase with UUID',
           context: 'ACTIVITIES_REPOSITORY',
-          data: {'localId': activity.id, 'serverId': serverId},
+          data: {'activityId': activity.id},
         );
 
-        // Rekey local ID to match server ID for consistency
-        if (serverId != activity.id) {
-          await _replaceActivityIdLocal(activity.id, serverId);
-        }
-
-        await _clearDirtyFlag(serverId);
+        await _clearDirtyFlag(activity.id);
       } else {
-        // UPDATE: Try to update existing server record by ID
-        Map<String, dynamic>? updateResponse;
+        // Update existing record by UUID
+        await _supabase
+            .from('activities')
+            .upsert(payload);
 
-        try {
-          updateResponse = await _supabase
-              .from('activities')
-              .update(payload)
-              .eq('id', activity.id)
-              .eq('user_id', userId)
-              .select('id')
-              .maybeSingle();
-        } catch (e) {
-          _logger.debug(
-            'Activity update attempt failed',
-            context: 'ACTIVITIES_REPOSITORY',
-            data: {'activityId': activity.id, 'error': e.toString()},
-          );
-        }
-
-        if (updateResponse != null && updateResponse['id'] != null) {
-          serverId = updateResponse['id'] as int;
-          await _clearDirtyFlag(activity.id);
-        } else {
-          // Record doesn't exist on server yet - insert without ID
-          final insertResponse = await _supabase
-              .from('activities')
-              .insert(payload)
-              .select('id')
-              .single();
-          serverId = insertResponse['id'] as int;
-
-          // Rekey local ID if needed
-          if (serverId != activity.id) {
-            await _replaceActivityIdLocal(activity.id, serverId);
-          }
-
-          await _clearDirtyFlag(serverId);
-        }
+        await _clearDirtyFlag(activity.id);
       }
     } catch (e) {
       _logger.warning(
@@ -462,9 +480,9 @@ class ActivitiesRepository {
     }
   }
 
-  /// Upload activity to Supabase SYNCHRONOUSLY and return server ID
-  /// Used during activity creation to ensure we return with the correct server ID
-  Future<int?> _uploadActivityToSupabaseSync(
+  /// Upload activity to Supabase SYNCHRONOUSLY
+  /// Used during activity creation to ensure upload completes before returning
+  Future<void> _uploadActivityToSupabaseSync(
     String deviceId,
     domain.Activity activity,
   ) async {
@@ -472,6 +490,7 @@ class ActivitiesRepository {
     final userId = activity.userId;
 
     final payload = {
+      'id': activity.id, // Use same UUID from Drift
       'user_id': userId,
       'activity_type': activity.activityType.name,
       'title': activity.title,
@@ -509,58 +528,25 @@ class ActivitiesRepository {
       'updated_at': DateTime.now().toIso8601String(),
     };
 
-    // NEW ACTIVITY: Let server generate ID (avoids local/server ID collision)
-    final insertResponse = await _supabase
+    // Insert with explicit UUID from Drift
+    await _supabase
         .from('activities')
-        .insert(payload) // No 'id' field - server generates it
-        .select('id')
-        .single();
-    final serverId = insertResponse['id'] as int;
+        .insert(payload);
 
     _logger.info(
-      'Activity uploaded to Supabase with server-generated ID (sync)',
+      'Activity uploaded to Supabase with UUID (sync)',
       context: 'ACTIVITIES_REPOSITORY',
-      data: {'localId': activity.id, 'serverId': serverId},
+      data: {'activityId': activity.id},
     );
 
-    // Rekey local ID to match server ID for consistency
-    if (serverId != activity.id) {
-      await _replaceActivityIdLocal(activity.id, serverId);
-    }
-
-    await _clearDirtyFlag(serverId);
-
-    return serverId;
-  }
-
-  /// Update local references when Supabase assigns a new global activity ID
-  Future<void> _replaceActivityIdLocal(int oldId, int newId) async {
-    await _database.transaction(() async {
-      // Update foreign keys first (events referencing activity)
-      await _database.customStatement(
-        'UPDATE events SET activity_id = ? WHERE activity_id = ?',
-        [newId, oldId],
-      );
-
-      // Update the activity primary key itself
-      await _database.customStatement(
-        'UPDATE activities SET id = ? WHERE id = ?',
-        [newId, oldId],
-      );
-    });
-
-    _logger.info(
-      'Rekeyed local activity ID to match Supabase',
-      context: 'ACTIVITIES_REPOSITORY',
-      data: {'oldId': oldId, 'newId': newId},
-    );
+    await _clearDirtyFlag(activity.id);
   }
 
   /// Upload activity deletion to Supabase in background (non-blocking)
   /// Uses direct Supabase delete instead of edge function for better reliability
   Future<void> _uploadActivityDeletion(
     String deviceId, // acts as userId in new architecture
-    int activityId,
+    String activityId,
   ) async {
     try {
       // DIRECT FIX: Use deviceId as userId directly
@@ -590,7 +576,7 @@ class ActivitiesRepository {
   }
 
   /// Clear dirty flag after successful upload
-  Future<void> _clearDirtyFlag(int activityId) async {
+  Future<void> _clearDirtyFlag(String activityId) async {
     await (_database.update(_database.activitiesTable)
           ..where((tbl) => tbl.id.equals(activityId)))
         .write(const ActivitiesTableCompanion(needsUpload: Value(false)));

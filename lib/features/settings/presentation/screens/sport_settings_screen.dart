@@ -91,20 +91,26 @@ class SportSettingsScreen extends ConsumerWidget {
           _buildSwimCapSelector(ref, state),
           SizedBox(height: 32.h),
 
-          // Save button
+          // Save button - actually triggers save to Supabase
           PrimaryButton(
-            text: state.saveButtonText,
+            text: state.isSaving ? 'Saving...' : state.saveButtonText,
             onPressed: state.isSaving
                 ? null
-                : () {
-                    // Show save confirmation
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('✅ Sport settings saved!'),
-                        backgroundColor: AppTheme.primary600,
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
+                : () async {
+                    // Call controller to save all sport preferences to Supabase
+                    final controller = ref.read(settingsControllerProvider.notifier);
+                    await controller.saveSportSettings();
+
+                    if (context.mounted) {
+                      // Show success confirmation
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Sport settings saved!'),
+                          backgroundColor: AppTheme.primary600,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
             width: double.infinity,
           ),

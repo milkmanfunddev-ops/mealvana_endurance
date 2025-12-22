@@ -27,8 +27,8 @@ class EventsController extends _$EventsController {
 
   /// Create a new event
   /// Note: Does NOT invalidate the provider - calling code should handle refresh
-  Future<int> createEvent({
-    int? activityId,
+  Future<String> createEvent({
+    String? activityId,
     required ActivityType eventType,
     String? eventSubtype,
     String? eventName,
@@ -130,7 +130,7 @@ class EventsController extends _$EventsController {
 
   /// Delete an event
   /// Also cascade deletes any associated carb loading plan and invalidates related providers
-  Future<void> deleteEvent(int eventId) async {
+  Future<void> deleteEvent(String eventId) async {
     final keepAliveLink = ref.keepAlive();
 
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
@@ -166,7 +166,7 @@ class EventsController extends _$EventsController {
   }
 
   /// Get event by ID
-  Future<Event?> getEventById(int eventId) async {
+  Future<Event?> getEventById(String eventId) async {
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     final service = ref.read(eventsServiceProvider);
     final logger = ref.read(appLoggerProvider);
@@ -181,7 +181,7 @@ class EventsController extends _$EventsController {
   }
 
   /// Get event for a specific activity
-  Future<Event?> getEventForActivity(int activityId) async {
+  Future<Event?> getEventForActivity(String activityId) async {
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     final service = ref.read(eventsServiceProvider);
     final logger = ref.read(appLoggerProvider);
@@ -194,27 +194,6 @@ class EventsController extends _$EventsController {
     }
   }
 
-  /// Update event's nutrition plan flag
-  /// Note: Does NOT invalidate the provider - calling code should handle refresh
-  Future<void> updateEventNutritionPlanFlag({
-    required int activityId,
-    required bool hasNutritionPlan,
-  }) async {
-    // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
-    final service = ref.read(eventsServiceProvider);
-    final logger = ref.read(appLoggerProvider);
-
-    try {
-      await service.updateEventNutritionPlanFlag(
-        activityId: activityId,
-        hasNutritionPlan: hasNutritionPlan,
-      );
-    } catch (e) {
-      logger.error('Error updating event nutrition plan flag', error: e);
-      rethrow;
-    }
-  }
-
   /// Refresh events list
   Future<void> refresh() async {
     ref.invalidateSelf();
@@ -223,13 +202,17 @@ class EventsController extends _$EventsController {
 
 /// Provider for getting event detail with associated activity
 @riverpod
-Future<({Activity? activity, Event event})> eventDetail(Ref ref, int eventId) async {
+Future<({Activity? activity, Event event})> eventDetail(Ref ref, String eventId) async {
+  final logger = ref.read(appLoggerProvider);
   final userId = await ref.read(userIdProvider.future);
+
   final eventsService = ref.read(eventsServiceProvider);
   final activitiesService = ref.read(activitiesServiceProvider);
-
+  //get all events
+  final events = await eventsService.getAllEvents(userId);
   final event = await eventsService.getEventById(userId, eventId);
   if (event == null) {
+    logger.error('EventDetail: Event not found', context: 'EVENT_DETAIL', data: {'eventId': eventId});
     throw Exception('Event not found: $eventId');
   }
 

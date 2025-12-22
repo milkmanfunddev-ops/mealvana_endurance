@@ -373,13 +373,13 @@ class DataSyncService {
   /// Sync data from edge function response to local database
   Future<void> _syncDataFromEdgeFunction(Map<String, dynamic> data) async {
     try {
-      // Sync foods (nutrition_foods from edge function)
+      // // Sync foods (nutrition_foods from edge function)
       final nutritionFoods = data['nutrition_foods'] as List<dynamic>?;
       if (nutritionFoods != null && nutritionFoods.isNotEmpty) {
         await _foodRepository.syncFromDownloadedData(foods: nutritionFoods);
       }
 
-      // Sync carb loading foods
+      // // Sync carb loading foods
       final carbLoadingFoods = data['carb_loading_foods'] as List<dynamic>?;
       if (carbLoadingFoods != null && carbLoadingFoods.isNotEmpty) {
         await _carbLoadingFoodSyncService.syncFromDownloadedData(
@@ -390,10 +390,10 @@ class DataSyncService {
       // Sync activities
       final activities = data['activities'] as List<dynamic>?;
       if (activities != null) {
-        _logger.info(
-          'Syncing ${activities.length} activities from edge function',
-          context: 'EDGE_SYNC',
-        );
+        // _logger.info(
+        //   'Syncing ${activities.length} activities from edge function',
+        //   context: 'EDGE_SYNC',
+        // );
         for (final activityData in activities) {
           await _upsertActivity(activityData as Map<String, dynamic>);
         }
@@ -402,10 +402,10 @@ class DataSyncService {
       // Sync events
       final events = data['events'] as List<dynamic>?;
       if (events != null) {
-        _logger.info(
-          'Syncing ${events.length} events from edge function',
-          context: 'EDGE_SYNC',
-        );
+        // _logger.info(
+        //   'Syncing ${events.length} events from edge function',
+        //   context: 'EDGE_SYNC',
+        // );
         for (final eventData in events) {
           final eventMap = eventData as Map<String, dynamic>;
           await _upsertEvent(eventMap, eventMap['user_id'] as String);
@@ -415,10 +415,10 @@ class DataSyncService {
       // Sync carb loading plans
       final carbLoadingPlans = data['carb_loading_plans'] as List<dynamic>?;
       if (carbLoadingPlans != null) {
-        _logger.info(
-          'Syncing ${carbLoadingPlans.length} carb loading plans from edge function',
-          context: 'EDGE_SYNC',
-        );
+        // _logger.info(
+        //   'Syncing ${carbLoadingPlans.length} carb loading plans from edge function',
+        //   context: 'EDGE_SYNC',
+        // );
         for (final planData in carbLoadingPlans) {
           await _upsertCarbLoadingPlan(planData as Map<String, dynamic>);
         }
@@ -427,10 +427,10 @@ class DataSyncService {
       // Sync carb loading days
       final carbLoadingDays = data['carb_loading_days'] as List<dynamic>?;
       if (carbLoadingDays != null) {
-        _logger.info(
-          'Syncing ${carbLoadingDays.length} carb loading days from edge function',
-          context: 'EDGE_SYNC',
-        );
+        // _logger.info(
+        //   'Syncing ${carbLoadingDays.length} carb loading days from edge function',
+        //   context: 'EDGE_SYNC',
+        // );
         for (final dayData in carbLoadingDays) {
           await _upsertCarbLoadingDay(dayData as Map<String, dynamic>);
         }
@@ -439,24 +439,25 @@ class DataSyncService {
       // Sync food preferences
       final foodPreferences = data['food_preferences'] as List<dynamic>?;
       if (foodPreferences != null && foodPreferences.isNotEmpty) {
-        _logger.info(
-          'Syncing ${foodPreferences.length} food preferences from edge function',
-          context: 'EDGE_SYNC',
-        );
+      //   _logger.info(
+      //     'Syncing ${foodPreferences.length} food preferences from edge function',
+      //     context: 'EDGE_SYNC',
+      //   );
         await _syncFoodPreferencesFromEdgeFunction(foodPreferences);
       }
 
-      _logger.info(
-        'Edge function data sync to local DB completed',
-        context: 'EDGE_SYNC',
-        data: {
-          'activities': activities?.length ?? 0,
-          'events': events?.length ?? 0,
-          'carbLoadingPlans': carbLoadingPlans?.length ?? 0,
-          'carbLoadingDays': carbLoadingDays?.length ?? 0,
-          'foodPreferences': foodPreferences?.length ?? 0,
-        },
-      );
+      // _logger.info(
+      //   'Edge function data sync to local DB completed',
+      //   context: 'EDGE_SYNC',
+      //   data: {
+      //     'activities': activities?.length ?? 0,
+      //     'events': events?.length ?? 0,
+      //     'carbLoadingPlans': carbLoadingPlans?.length ?? 0,
+      //     'carbLoadingDays': carbLoadingDays?.length ?? 0,
+      //     'foodPreferences': foodPreferences?.length ?? 0,
+      //   },
+      // );
+  
     } catch (e, stackTrace) {
       _logger.error('[EDGE_SYNC] Failed to sync edge function data to local DB',
         context: 'EDGE_SYNC',
@@ -628,7 +629,7 @@ class DataSyncService {
 
   Future<void> _upsertActivity(Map<String, dynamic> data) async {
     try {
-      final activityId = data['id'] as int;
+      final activityId = data['id'] as String;
       final userId = data['user_id'] as String;
 
       _logger.info(
@@ -719,7 +720,7 @@ class DataSyncService {
 
   Future<void> _upsertEvent(Map<String, dynamic> data, String userId) async {
     try {
-      final eventId = data['id'] as int;
+      final eventId = data['id'] as String;
       final existingEvent = await (_database.select(_database.eventsTable)
             ..where((tbl) => tbl.id.equals(eventId)))
           .getSingleOrNull();
@@ -727,10 +728,10 @@ class DataSyncService {
       final supabaseUpdatedAt = DateTime.parse(data['updated_at'] as String);
 
       if (existingEvent == null || existingEvent.updatedAt.isBefore(supabaseUpdatedAt)) {
-        int? activityId;
+        String? activityId;
         if (data['activity_id'] != null) {
           final activity = await (_database.select(_database.activitiesTable)
-                ..where((tbl) => tbl.id.equals(data['activity_id'] as int)))
+                ..where((tbl) => tbl.id.equals(data['activity_id'] as String)))
               .getSingleOrNull();
           if (activity == null || activity.userId != userId) {
             return;
@@ -786,7 +787,7 @@ class DataSyncService {
 
   Future<void> _upsertCarbLoadingPlan(Map<String, dynamic> data) async {
     try {
-      final planId = data['id'] as int;
+      final planId = data['id'] as String;
       final existingPlan = await (_database.select(_database.carbLoadingPlansTable)
             ..where((tbl) => tbl.id.equals(planId)))
           .getSingleOrNull();
@@ -803,7 +804,7 @@ class DataSyncService {
       if (shouldUpsert) {
         final companion = CarbLoadingPlansTableCompanion.insert(
           id: Value(planId),
-          eventId: Value(data['event_id'] as int?),
+          eventId: Value(data['event_id'] as String?),
           userId: data['user_id'] as String,
           totalDays: data['total_days'] as int,
           startDate: DateTime.parse(data['start_date'] as String),
@@ -837,7 +838,7 @@ class DataSyncService {
 
   Future<void> _upsertCarbLoadingDay(Map<String, dynamic> data) async {
     try {
-      final dayId = data['id'] as int;
+      final dayId = data['id'] as String;
       final existingDay = await (_database.select(_database.carbLoadingDaysTable)
             ..where((tbl) => tbl.id.equals(dayId)))
           .getSingleOrNull();
@@ -853,7 +854,7 @@ class DataSyncService {
       if (shouldUpsert) {
         final companion = CarbLoadingDaysTableCompanion.insert(
           id: Value(dayId),
-          carbLoadingPlanId: data['carb_loading_plan_id'] as int,
+          carbLoadingPlanId: data['carb_loading_plan_id'] as String,
           planDate: DateTime.parse(data['plan_date'] as String),
           dayNumber: data['day_number'] as int,
           carbTargetGrams: data['carb_target_grams'] as int,
@@ -989,6 +990,9 @@ class DataSyncService {
         data: {'userId': userId},
       );
 
+      // Clean duplicates from Drift before collecting records
+      await _cleanDuplicatesFromDrift(userId);
+
       // Collect dirty records from all tables
       final dirtyUserProfile = await (_database.select(_database.userProfilesTable)
             ..where((tbl) => tbl.needsUpload.equals(true)))
@@ -1028,16 +1032,40 @@ class DataSyncService {
           .customSelect('SELECT * FROM feature_survey_responses WHERE needs_upload = 1')
           .get();
 
-      // If nothing to upload, return early
-      if (dirtyUserProfile == null &&
-          dirtyActivities.isEmpty &&
-          dirtyEvents.isEmpty &&
-          dirtyCarbLoadingPlans.isEmpty &&
-          dirtyCarbLoadingDays.isEmpty &&
-          dirtyUserFoods.isEmpty &&
-          dirtyFeedback.isEmpty &&
-          dirtyFeatureSurvey.isEmpty) {
-        _logger.info('No dirty records to upload', context: 'DATA_SYNC');
+      // Check if there are any dirty records for edge function (user profile handled separately)
+      final hasEdgeFunctionRecords = dirtyActivities.isNotEmpty ||
+          dirtyEvents.isNotEmpty ||
+          dirtyCarbLoadingPlans.isNotEmpty ||
+          dirtyCarbLoadingDays.isNotEmpty ||
+          dirtyUserFoods.isNotEmpty ||
+          dirtyFeedback.isNotEmpty ||
+          dirtyFeatureSurvey.isNotEmpty;
+
+      // If nothing to upload via edge function, handle user profile separately and return
+      if (!hasEdgeFunctionRecords) {
+        _logger.info(
+          'No dirty records for edge function upload (user profile handled separately)',
+          context: 'DATA_SYNC',
+          data: {'hasUserProfile': dirtyUserProfile != null},
+        );
+
+        // Upload user profile separately if needed
+        if (dirtyUserProfile != null) {
+          try {
+            await _uploadUserProfile(dirtyUserProfile);
+            uploadResults['users'] = true;
+            _logger.info('User profile uploaded successfully', context: 'DATA_SYNC');
+          } catch (e, stackTrace) {
+            _logger.error(
+              'Failed to upload user profile',
+              context: 'DATA_SYNC',
+              error: e,
+              stackTrace: stackTrace,
+            );
+            uploadResults['users'] = false;
+          }
+        }
+
         return uploadResults;
       }
 
@@ -1069,10 +1097,10 @@ class DataSyncService {
       }
 
       if (dirtyFeatureSurvey.isNotEmpty) {
-        dirtyRecords['feature_survey_responses'] = dirtyFeatureSurvey.map((row) => row.data).toList();
+        dirtyRecords['feature_survey_responses'] = dirtyFeatureSurvey.map((row) => _featureSurveyToJson(row)).toList();
       }
 
-      // Call upload-all-data edge function
+      // Call upload-all-data edge function (duplicates already cleaned from Drift)
       _logger.info(
         'Calling upload-all-data edge function',
         context: 'DATA_SYNC',
@@ -1156,34 +1184,217 @@ class DataSyncService {
     }
   }
 
+  /// Clean duplicate records from Drift database
+  /// Keeps the record with the most recent local_updated_at timestamp
+  /// Deletes older duplicates permanently from the local database
+  Future<void> _cleanDuplicatesFromDrift(String userId) async {
+    try {
+      _logger.info('Scanning for duplicate records in Drift', context: 'DATA_SYNC');
+      int totalDuplicatesDeleted = 0;
+
+      // Clean each table (using actual SQLite table names, not Drift class names)
+      totalDuplicatesDeleted += await _cleanTableDuplicates(
+        tableName: 'activities',
+        userId: userId,
+      );
+
+      totalDuplicatesDeleted += await _cleanTableDuplicates(
+        tableName: 'events',
+        userId: userId,
+      );
+
+      totalDuplicatesDeleted += await _cleanTableDuplicates(
+        tableName: 'carb_loading_plans',
+        userId: userId,
+      );
+
+      totalDuplicatesDeleted += await _cleanTableDuplicates(
+        tableName: 'carb_loading_days',
+        userId: userId,
+        userIdColumn: null, // Uses carb_loading_plan_id foreign key
+      );
+
+      totalDuplicatesDeleted += await _cleanTableDuplicates(
+        tableName: 'user_foods',
+        userId: userId,
+      );
+
+      totalDuplicatesDeleted += await _cleanTableDuplicates(
+        tableName: 'feedback',
+        userId: userId,
+        userIdColumn: 'device_id', // Uses device_id, not user_id
+      );
+
+      totalDuplicatesDeleted += await _cleanTableDuplicates(
+        tableName: 'feature_survey_responses',
+        userId: userId,
+        userIdColumn: 'device_id', // Uses device_id, not user_id
+      );
+
+      if (totalDuplicatesDeleted > 0) {
+        _logger.warning(
+          'Cleaned duplicate records from Drift',
+          context: 'DATA_SYNC',
+          data: {
+            'total_duplicates_deleted': totalDuplicatesDeleted,
+            'user_id': userId,
+          },
+        );
+      } else {
+        _logger.info('No duplicate records found in Drift', context: 'DATA_SYNC');
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to clean duplicates from Drift',
+        context: 'DATA_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't throw - allow sync to continue even if cleanup fails
+    }
+  }
+
+  /// Clean duplicates from a specific table
+  /// Returns the number of duplicates deleted
+  Future<int> _cleanTableDuplicates({
+    required String tableName,
+    required String userId,
+    String? userIdColumn,
+  }) async {
+    try {
+      // Use user_id by default, or provided column, or skip filtering for carb_loading_days
+      final userFilter = userIdColumn == null
+          ? '' // carb_loading_days doesn't filter by user
+          : userIdColumn == 'device_id'
+              ? 'device_id = (SELECT device_id FROM users WHERE id = ?)' // feedback uses device_id
+              : 'user_id = ?'; // default
+
+      // Find duplicate IDs (IDs that appear more than once)
+      final duplicateQuery = '''
+        SELECT id, COUNT(*) as count
+        FROM $tableName
+        ${userFilter.isEmpty ? '' : 'WHERE $userFilter'}
+        GROUP BY id
+        HAVING COUNT(*) > 1
+      ''';
+
+      final duplicates = await _database.customSelect(
+        duplicateQuery,
+        variables: userFilter.isEmpty ? [] : [Variable(userId)],
+      ).get();
+
+      if (duplicates.isEmpty) {
+        return 0;
+      }
+
+      int deletedCount = 0;
+
+      for (final duplicate in duplicates) {
+        // Convert ID to string - handles both int and text IDs
+        final id = duplicate.data['id'].toString();
+        final count = duplicate.data['count'] as int;
+
+        _logger.warning(
+          'Found duplicate records in $tableName',
+          context: 'DATA_SYNC',
+          data: {
+            'id': id,
+            'count': count,
+            'table': tableName,
+          },
+        );
+
+        // Find all records with this ID, ordered by local_updated_at DESC
+        // Keep the most recent one, delete the rest
+        final allRecordsQuery = '''
+          SELECT rowid, id, local_updated_at
+          FROM $tableName
+          WHERE id = ?
+          ORDER BY local_updated_at DESC
+        ''';
+
+        final allRecords = await _database.customSelect(
+          allRecordsQuery,
+          variables: [Variable(id)],
+        ).get();
+
+        // Skip the first one (most recent), delete the rest
+        for (int i = 1; i < allRecords.length; i++) {
+          final rowid = allRecords[i].data['rowid'] as int;
+          final updatedAt = allRecords[i].data['local_updated_at'];
+
+          await _database.customStatement(
+            'DELETE FROM $tableName WHERE rowid = ?',
+            [rowid],
+          );
+
+          _logger.warning(
+            'Deleted duplicate record from $tableName',
+            context: 'DATA_SYNC',
+            data: {
+              'id': id,
+              'rowid': rowid,
+              'local_updated_at': updatedAt?.toString(),
+              'kept_most_recent': true,
+            },
+          );
+
+          deletedCount++;
+        }
+      }
+
+      if (deletedCount > 0) {
+        _logger.warning(
+          'Cleaned duplicates from $tableName',
+          context: 'DATA_SYNC',
+          data: {
+            'table': tableName,
+            'duplicates_deleted': deletedCount,
+          },
+        );
+      }
+
+      return deletedCount;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to clean duplicates from $tableName',
+        context: 'DATA_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'table': tableName},
+      );
+      return 0; // Return 0 on error, don't block sync
+    }
+  }
+
   /// Clear needs_upload flag for successfully uploaded records
   Future<void> _clearNeedsUploadFlag(String tableName, String userId) async {
     try {
       switch (tableName) {
         case 'activities':
           await _database.customStatement(
-            'UPDATE activities_table SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
+            'UPDATE activities SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
             [userId],
           );
           break;
         case 'events':
           await _database.customStatement(
-            'UPDATE events_table SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
+            'UPDATE events SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
             [userId],
           );
           break;
         case 'carb_loading_plans':
           await _database.customStatement(
-            'UPDATE carb_loading_plans_table SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
+            'UPDATE carb_loading_plans SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
             [userId],
           );
           break;
         case 'carb_loading_days':
           await _database.customStatement(
-            '''UPDATE carb_loading_days_table
+            '''UPDATE carb_loading_days
                SET needs_upload = 0
                WHERE carb_loading_plan_id IN (
-                 SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+                 SELECT id FROM carb_loading_plans WHERE user_id = ?
                ) AND needs_upload = 1''',
             [userId],
           );
@@ -1202,7 +1413,7 @@ class DataSyncService {
           break;
         case 'feature_survey_responses':
           await _database.customStatement(
-            'UPDATE feature_survey_responses SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
+            'UPDATE feature_survey_responses SET needs_upload = 0 WHERE device_id = (SELECT device_id FROM users WHERE id = ?) AND needs_upload = 1',
             [userId],
           );
           break;
@@ -1277,16 +1488,16 @@ class DataSyncService {
         // Activity update attempt failed, will fall back to insert
       }
 
-      int serverId;
+      String serverId;
       if (updateResponse != null && updateResponse['id'] != null) {
-        serverId = updateResponse['id'] as int;
+        serverId = updateResponse['id'] as String;
       } else {
         final insertResponse = await _supabase
             .from('activities')
             .insert(payload)
             .select('id')
             .single();
-        serverId = insertResponse['id'] as int;
+        serverId = insertResponse['id'] as String;
       }
 
       if (serverId != activity.id) {
@@ -1301,7 +1512,7 @@ class DataSyncService {
     }
   }
 
-  Future<void> _rekeyActivityLocally(int oldId, int newId) async {
+  Future<void> _rekeyActivityLocally(String oldId, String newId) async {
     await _database.transaction(() async {
       await _database.customStatement(
         'UPDATE events SET activity_id = ? WHERE activity_id = ?',
@@ -1393,16 +1604,16 @@ class DataSyncService {
         // Carb plan update failed, will insert new server ID
       }
 
-      int serverPlanId;
+      String serverPlanId;
       if (updateResponse != null && updateResponse['id'] != null) {
-        serverPlanId = updateResponse['id'] as int;
+        serverPlanId = updateResponse['id'] as String;
       } else {
         final insertResponse = await _supabase
             .from('carb_loading_plans')
             .insert(payload)
             .select('id')
             .single();
-        serverPlanId = insertResponse['id'] as int;
+        serverPlanId = insertResponse['id'] as String;
       }
 
       if (serverPlanId != plan.id) {
@@ -1453,16 +1664,16 @@ class DataSyncService {
         // Carb day update failed, will insert new server ID
       }
 
-      int serverDayId;
+      String serverDayId;
       if (updateResponse != null && updateResponse['id'] != null) {
-        serverDayId = updateResponse['id'] as int;
+        serverDayId = updateResponse['id'] as String;
       } else {
         final insertResponse = await _supabase
             .from('carb_loading_days')
             .insert(payload)
             .select('id')
             .single();
-        serverDayId = insertResponse['id'] as int;
+        serverDayId = insertResponse['id'] as String;
       }
 
       if (serverDayId != day.id) {
@@ -1480,7 +1691,7 @@ class DataSyncService {
   // _uploadUserFood method removed - UserFoodsTable doesn't have needsUpload column
   // User foods are synced via other mechanisms (barcode scanning service, etc.)
 
-  Future<void> _rekeyPlanLocally(int oldId, int newId) async {
+  Future<void> _rekeyPlanLocally(String oldId, String newId) async {
     await _database.transaction(() async {
       await _database.customStatement(
         'UPDATE carb_loading_days SET carb_loading_plan_id = ? WHERE carb_loading_plan_id = ?',
@@ -1493,7 +1704,7 @@ class DataSyncService {
     });
   }
 
-  Future<void> _rekeyDayLocally(int oldId, int newId) async {
+  Future<void> _rekeyDayLocally(String oldId, String newId) async {
     await _database.transaction(() async {
       await _database.customStatement(
         'UPDATE carb_loading_day_meals SET carb_loading_day_id = ? WHERE carb_loading_day_id = ?',
@@ -1588,6 +1799,26 @@ class DataSyncService {
       'completed_at': plan.completedAt?.toIso8601String(),
       'local_updated_at': plan.localUpdatedAt.toIso8601String(),
     };
+  }
+
+  /// Convert feature survey response QueryRow to JSON for edge function
+  /// Converts timestamp integers to ISO 8601 strings
+  Map<String, dynamic> _featureSurveyToJson(QueryRow row) {
+    final data = Map<String, dynamic>.from(row.data);
+
+    // Convert voted_at timestamp (int milliseconds) to ISO 8601 string
+    if (data['voted_at'] is int) {
+      final votedAt = DateTime.fromMillisecondsSinceEpoch(data['voted_at'] as int);
+      data['voted_at'] = votedAt.toIso8601String();
+    }
+
+    // Convert local_updated_at timestamp if it exists
+    if (data['local_updated_at'] is int) {
+      final localUpdatedAt = DateTime.fromMillisecondsSinceEpoch(data['local_updated_at'] as int);
+      data['local_updated_at'] = localUpdatedAt.toIso8601String();
+    }
+
+    return data;
   }
 
   /// Convert CarbLoadingDay to JSON for edge function

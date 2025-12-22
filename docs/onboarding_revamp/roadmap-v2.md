@@ -214,38 +214,70 @@ Update `lib/shared/database/app_database.dart`:
 
 ### Phase 1: Database & Foundation (Day 1-2)
 
-#### 1.1 Database Schema
-- [ ] Create `dietary_preference_enum` in Supabase (dev + prod)
-- [ ] Create `allergy_enum` in Supabase (dev + prod)
-- [ ] Add `dietary_preference` column to users table
-- [ ] Add `allergies` column to users table
-- [ ] Add `allergens` column to foods table
-- [ ] Add `excluded_diets` column to foods table
-- [ ] Update Drift database schema
-- [ ] Run `dart run build_runner build`
+#### 1.1 Database Schema ✅ COMPLETED (Dec 14, 2025)
+- [x] Create `dietary_preference_enum` in Supabase (dev + prod)
+- [x] Create `allergy_enum` in Supabase (dev + prod)
+- [x] Add `dietary_preference` column to users table
+- [x] Add `allergies` column to users table
+- [x] Add `allergens` column to foods table
+- [x] Add `excluded_diets` column to foods table
+- [x] Update Drift database schema (`user_profiles.dart`, `foods_table.dart`)
+- [x] Run `dart run build_runner build`
+- [x] Update database documentation
 
-#### 1.2 Food Data Population (LLM Task)
-- [ ] Pull all foods from Supabase `foods` table
-- [ ] Use LLM to analyze each food and determine:
+**Migration file**: `/supabase/migrations/20251214120000_add_dietary_preference_and_allergies.sql`
+
+#### 1.2 Food Data Population (LLM Task) ✅ COMPLETED (Dec 14, 2025)
+- [x] Pull all foods from Supabase `foods` table (31 foods)
+- [x] Use LLM to analyze each food and determine:
   - Which allergens it contains (dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts)
   - Which diets should exclude it (vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb)
-- [ ] Update `allergens` and `excluded_diets` columns for each food
-- [ ] Verify data accuracy with spot checks
+- [x] Update `allergens` and `excluded_diets` columns for each food
+- [x] Verify data accuracy with spot checks
 
-#### 1.3 Domain Models
-- [ ] Create `DietaryPreference` enum in Dart
-- [ ] Create `Allergy` enum in Dart
-- [ ] Update `UserProfile` model with new fields
-- [ ] Update `Food` model with allergen/diet fields
+**Migration file**: `/supabase/migrations/20251214130000_populate_food_allergens_and_diets.sql`
 
-#### 1.4 Shared Widgets
-- [ ] Create `OnboardingProgressBar` widget
-- [ ] Create `OnboardingNavigationFooter` widget
-- [ ] Create `SelectableCard` widget (checkbox style)
-- [ ] Create `RadioOptionCard` widget (radio style)
-- [ ] Create `ToggleCard` widget
-- [ ] Create `FoodChip` widget
-- [ ] Create `SegmentedSelector` widget
+**Summary of populated data:**
+- Foods with dairy: Yogurt, Chocolate milk, Protein powder, Protein shake, Protein bar, Energy waffle
+- Foods with gluten: Oatmeal, Bagel, Toast, Pretzels, Energy waffle, Fig bar, Energy bar, Protein bar
+- Foods with peanuts: Peanut butter, Trail mix
+- Foods with tree_nuts: Trail mix
+- Foods with soy: Protein bar, Protein shake
+- Foods with eggs: Energy waffle
+- Vegan-excluded: All dairy products + Energy waffle
+- Paleo-excluded: Grains, legumes (peanuts), dairy, processed sugars
+- Keto/Low-carb-excluded: High-carb foods (fruits, grains, sugary drinks)
+
+#### 1.3 Domain Models ✅ COMPLETED (Dec 14, 2025)
+- [x] Create `DietaryPreference` enum in Dart
+- [x] Create `Allergy` enum in Dart
+- [x] Update `UserProfile` model with new fields
+- [x] Update `Food` model with allergen/diet fields
+
+**Files created/modified:**
+- `/lib/features/onboarding/domain/dietary_preference.dart` - NEW enum with dbValue, displayName, fromDbValue, fromDbArray, toDbArray
+- `/lib/features/onboarding/domain/allergy.dart` - NEW enum with dbValue, displayName, fromDbValue, fromDbArray, toDbArray
+- `/lib/features/auth/domain/user_preferences.dart` - Added dietaryPreference, allergies fields + toJson/fromJson/copyWith
+- `/lib/features/nutrition_plan/domain/food.dart` - Added allergens, excludedDiets fields + toJson/fromJson
+
+#### 1.4 Shared Widgets ✅ COMPLETED (Dec 15, 2025)
+- [x] Create `OnboardingProgressBar` widget
+- [x] Create `OnboardingNavigationFooter` widget
+- [x] Create `SelectableCard` widget (checkbox style)
+- [x] Create `RadioOptionCard` widget (radio style)
+- [x] Create `ToggleCard` widget
+- [x] Create `FoodChip` widget
+- [x] Create `SegmentedSelector` widget
+
+**Files created:**
+- `/lib/features/onboarding/presentation/widgets/onboarding_progress_bar.dart` - 4-segment progress indicator
+- `/lib/features/onboarding/presentation/widgets/onboarding_navigation_footer.dart` - Back/Continue/Skip buttons
+- `/lib/features/onboarding/presentation/widgets/selectable_card.dart` - Multi-select checkbox cards + grid
+- `/lib/features/onboarding/presentation/widgets/radio_option_card.dart` - Single-select radio cards + list
+- `/lib/features/onboarding/presentation/widgets/toggle_card.dart` - Boolean toggle cards + rows
+- `/lib/features/onboarding/presentation/widgets/food_chip.dart` - Food selection chips + grid + selected section
+- `/lib/features/onboarding/presentation/widgets/segmented_selector.dart` - Segmented control selector
+- `/lib/features/onboarding/presentation/widgets/onboarding_widgets.dart` - Export file for all widgets
 
 ### Phase 2: New Screens (Day 3-5)
 
@@ -319,6 +351,29 @@ Update `lib/shared/database/app_database.dart`:
 - [ ] Update `UserRepository` for new fields
 - [ ] Update `FoodRepository` for allergen/diet queries
 - [ ] Add sync logic for new fields to Supabase
+
+#### 3.5 Edge Function Update (Backward Compatible)
+Update `generate-nutrition-plan` edge function to filter foods by dietary preference and allergies.
+
+**Decision**: Use backward-compatible approach (NOT v2) because:
+- Follows existing pattern (how `activity_type` was added)
+- No breaking changes to API contract
+- Optional parameters default to no filtering
+- Single deployment, no coordination needed
+
+**Implementation**:
+- [ ] Add optional `dietary_preference` parameter parsing
+- [ ] Add optional `allergies` array parameter parsing
+- [ ] Update `getFoodsForPhase()` to filter by dietary preference
+- [ ] Update `getFoodsForPhase()` to filter by allergens
+- [ ] Update SELECT statements to include `allergens` and `excluded_diets` columns
+- [ ] Add logging for filtered food counts
+- [ ] Test with various diet/allergy combinations
+- [ ] Deploy to dev, then prod
+
+**Flutter Service Updates**:
+- [ ] Update `LLMNutritionPlanService` to pass `dietary_preference`
+- [ ] Update `LLMNutritionPlanService` to pass `allergies` array
 
 ### Phase 4: Navigation & Routing (Day 8)
 
@@ -604,9 +659,11 @@ Add to `content_defaults.json`:
 
 1. **Food allergen data**: LLM will populate the `allergens` and `excluded_diets` columns by pulling existing foods from Supabase, analyzing each food, and updating the columns accordingly. This is a one-time data migration task.
 
-2. **Nutrition plan integration**: Dietary preference and allergies will be used for **food filtering in the UI only**. The generate-nutrition-plan edge function (not AI-based) does not need these parameters - filtering happens before plan generation.
+2. **Edge function versioning**: Use **backward-compatible updates** to `generate-nutrition-plan` (NOT a v2). Add optional `dietary_preference` and `allergies` parameters that default to no filtering. This follows the existing pattern used for `activity_type` and avoids code duplication, deployment complexity, and breaking changes.
 
-3. **Edge cases**: No warning or auto-correct needed. If a user selects Vegan but manually likes dairy foods, we respect their explicit choice. The filtering only affects which foods are shown by default; user selections override filters.
+3. **Nutrition plan integration**: The `generate-nutrition-plan` edge function WILL receive dietary preference and allergies parameters for server-side food filtering. This ensures nutrition plans respect user dietary restrictions even if the Flutter app's local filtering is bypassed.
+
+4. **Edge cases**: No warning or auto-correct needed. If a user selects Vegan but manually likes dairy foods, we respect their explicit choice. The filtering only affects which foods are shown by default; user selections override filters.
 
 ---
 

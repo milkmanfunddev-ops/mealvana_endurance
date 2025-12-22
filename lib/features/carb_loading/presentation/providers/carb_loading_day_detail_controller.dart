@@ -73,7 +73,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   CarbLoadingRepository get _repository => ref.read(carbLoadingRepositoryProvider);
 
   @override
-  Future<CarbLoadingDayDetailState> build(int carbLoadingDayId) async {
+  Future<CarbLoadingDayDetailState> build(String carbLoadingDayId) async {
     // Fetch fresh data from repository
     final carbLoadingDay = await _repository.getCarbLoadingDayById(carbLoadingDayId);
     if (carbLoadingDay == null) {
@@ -166,7 +166,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   }
 
   /// Update quantity for a meal
-  Future<void> updateQuantity(int mealId, int newQuantity) async {
+  Future<void> updateQuantity(String mealId, int newQuantity) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -194,7 +194,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   }
 
   /// Increment quantity for a meal
-  Future<void> incrementQuantity(int mealId) async {
+  Future<void> incrementQuantity(String mealId) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -203,7 +203,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   }
 
   /// Decrement quantity for a meal
-  Future<void> decrementQuantity(int mealId) async {
+  Future<void> decrementQuantity(String mealId) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -212,7 +212,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   }
 
   /// Remove a meal
-  Future<void> removeMeal(int mealId) async {
+  Future<void> removeMeal(String mealId) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -296,10 +296,17 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
       // Get device ID for the repository
       final deviceId = await ref.read(userIdProvider.future);
 
-      // Update the carb loading day in the repository
+      // CRITICAL FIX: Fetch the latest day from repository to get current ID
+      // (ID may have changed due to background sync rekeying)
+      final latestDay = await _repository.getCarbLoadingDayById(currentState.carbLoadingDay.id);
+      if (latestDay == null) {
+        throw Exception('Carb loading day not found - it may have been deleted');
+      }
+
+      // Update the carb loading day in the repository using the latest ID
       final updatedDay = await _repository.updateCarbLoadingDay(
         deviceId: deviceId,
-        carbLoadingDayId: currentState.carbLoadingDay.id,
+        carbLoadingDayId: latestDay.id,
         updates: {
           'carbTargetGrams': dailyTargetG,
           'carbProtocolGPerKg': carbsPerKg,

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Centralized application configuration loaded from .env files
 class AppConfig {
@@ -54,63 +53,17 @@ class AppConfig {
   final bool enableDebugLogging;
   final bool enableSentryProfiling;
 
-  // Environment control - CHANGE THIS TO false FOR PRODUCTION RELEASE BUILDS
-  // When true: loads .env.dev.local (dev Supabase, dev Mixpanel)
-  // When false: loads .env.prod.local (prod Supabase, prod Mixpanel)
-  // ignore: constant_identifier_names
-  static const bool _DEFAULT_DEV_MODE = false;
-
-  // Runtime override (persisted in SharedPreferences)
-  static bool? _runtimeOverride;
-
-  /// Get the effective dev mode setting
-  /// Priority order:
-  /// 1. Runtime override (if set via SharedPreferences)
-  /// 2. kDebugMode (debug builds always use dev environment as safety net)
-  /// 3. _DEFAULT_DEV_MODE (fallback for release builds)
-  static bool get effectiveDevMode {
-    // Runtime override takes highest priority
-    if (_runtimeOverride != null) {
-      return _runtimeOverride!;
-    }
-    // Debug builds always use dev environment (safety net)
-    // if (kDebugMode) {
-    //   return true;
-    // }
-    // Release builds use the configured default
-    return _DEFAULT_DEV_MODE;
-  }
-
-  /// Override dev mode at runtime (requires app restart to take effect)
-  static Future<void> setDevModeOverride(bool value) async {
-    _runtimeOverride = value;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('dev_mode_override', value);
-  } 
-
-  /// Clear runtime override (revert to default)
-  static Future<void> clearDevModeOverride() async {
-    _runtimeOverride = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('dev_mode_override');
-  }
-
-  /// Initialize runtime override from SharedPreferences
-  static Future<void> loadDevModeOverride() async {
-    final prefs = await SharedPreferences.getInstance();
-    _runtimeOverride = prefs.getBool('dev_mode_override');
-  }
-
   /// Helper methods
   bool get isProduction => appEnvironment == 'prod' && !devModeEnabled;
   bool get isDevelopment => appEnvironment == 'dev' || devModeEnabled;
 
   /// Factory for loading configuration from .env file
   /// Must call dotenv.load() before using this factory
-  /// Now reads from .env.dev.local or .env.prod.local based on dev mode
+  /// Environment is determined from the loaded .env file (dev or prod)
   factory AppConfig.fromEnv() {
-    final isDevMode = effectiveDevMode;
-    final appEnv = isDevMode ? 'dev' : 'prod';
+    // Read environment from .env file (should be 'dev' or 'prod')
+    final appEnv = dotenv.get('APP_ENVIRONMENT', fallback: 'prod');
+    final isDevMode = appEnv == 'dev';
 
     // Read all configuration from loaded .env file
     final supabaseUrl = dotenv.get('SUPABASE_URL', fallback: '');

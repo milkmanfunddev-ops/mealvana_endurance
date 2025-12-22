@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/services/app_config.dart';
-import '../../../../shared/widgets/environment_switcher_dialog.dart';
 
 /// Main Settings Menu - Category selection screen
 class SettingsMenuScreen extends ConsumerWidget {
@@ -20,20 +19,11 @@ class SettingsMenuScreen extends ConsumerWidget {
         backgroundColor: AppTheme.baseCream,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: GestureDetector(
-          onLongPress: () {
-            // Secret environment switcher - activated by long-pressing the title
-            showDialog(
-              context: context,
-              builder: (context) => EnvironmentSwitcherDialog(config: config),
-            );
-          },
-          child: Text(
-            'Settings',
-            style: AppTheme.titleStyle.copyWith(
-              color: AppTheme.baseBlack,
-              fontSize: 18.sp,
-            ),
+        title: Text(
+          'Settings',
+          style: AppTheme.titleStyle.copyWith(
+            color: AppTheme.baseBlack,
+            fontSize: 18.sp,
           ),
         ),
         centerTitle: true,
@@ -68,7 +58,7 @@ class SettingsMenuScreen extends ConsumerWidget {
               icon: Icons.directions_bike_outlined,
               title: 'Sport Settings',
               description: 'Cycling, swimming, GI sensitivity',
-              onTap: () => context.push('/settings/sports'),
+              onTap: () => context.push('/settings/sport-settings'),
             ),
             SizedBox(height: 16.h),
 

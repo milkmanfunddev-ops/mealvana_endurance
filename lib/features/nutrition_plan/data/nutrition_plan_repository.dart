@@ -4,7 +4,6 @@ import 'package:drift/drift.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
@@ -13,7 +12,6 @@ import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../calendar/application/calendar_service.dart';
 import '../application/food_data_transformation_service.dart';
-import '../domain/food_item_data.dart';
 import '../domain/nutrition_plan.dart' as domain;
 
 part 'nutrition_plan_repository.g.dart';
@@ -37,7 +35,7 @@ class NutritionPlanRepository {
   final FoodDataTransformationService transformationService;
   final ActivitiesRepository activitiesRepository;
 
-  Future<Activity?> _getActivityRowWithPlan(int activityId) async {
+  Future<Activity?> _getActivityRowWithPlan(String activityId) async {
     final activity = await database.getActivityByIdLocal(activityId);
     if (activity == null || activity.nutritionPlanData == null) {
       return null;
@@ -55,29 +53,6 @@ class NutritionPlanRepository {
       // Ignore parse errors and fall back to empty map.
     }
     return {};
-  }
-
-  // Deprecated: run-plan edge function removed
-  Future<CreateNutritionPlanResult> createNutritionPlanV2({
-    required String deviceId,
-    required double weightKg,
-    required int durationMin,
-    int? preWindowMin,
-    String? gutTraining,
-    String? giSensitivity,
-    double? tempF,
-    double? humidity,
-    String? sweatRate,
-    bool? allowHighCarbRun,
-    int? intervalMinutes,
-    double? paceMinPerKm,
-    bool debug = false,
-  }) async {
-    DebugLogger.error('❌ createNutritionPlanV2 called but run-plan is deprecated');
-    return CreateNutritionPlanResult(
-      success: false,
-      message: 'Algorithmic plan generation is deprecated. Please use LLM generation.',
-    );
   }
 
   /// Cache nutrition plan locally in Drift database
@@ -99,15 +74,6 @@ class NutritionPlanRepository {
         planData: planJson,
       );
       DebugLogger.info('✅ Plan cached on activity row');
-
-      try {
-        await calendarService.updateEventNutritionPlanFlag(
-          activityId: activityId,
-          hasNutritionPlan: true,
-        );
-      } catch (e) {
-        DebugLogger.error('⚠️ Failed to update event nutrition plan flag', error: e);
-      }
     } catch (e, stackTrace) {
       DebugLogger.error('❌ Error caching plan locally', error: e, stackTrace: stackTrace);
       await sentry.reportDatabaseError(
@@ -119,29 +85,12 @@ class NutritionPlanRepository {
     }
   }
 
-  // TODO: DEPRECATED - Remove temp plan system in favor of activity-owned plans
-  // These methods are kept temporarily for backward compatibility but do nothing
-  Future<void> saveTempPlan(String deviceId, domain.NutritionPlan plan) async {
-    DebugLogger.warning('⚠️ saveTempPlan called but is deprecated - plans should be activity-owned');
-    // No-op: Plans are now saved immediately with activity ID
-  }
-
-  Future<domain.NutritionPlan?> getTempPlan(String deviceId) async {
-    DebugLogger.warning('⚠️ getTempPlan called but is deprecated - plans should be activity-owned');
-    return null; // Always return null - no temp plans
-  }
-
-  Future<void> clearTempPlan(String deviceId) async {
-    DebugLogger.warning('⚠️ clearTempPlan called but is deprecated - plans should be activity-owned');
-    // No-op: No temp plans to clear
-  }
-
   /// Get nutrition plan by activity ID
   ///
   /// Retrieves nutrition plan from activity's embedded nutrition_plan_data JSON
   Future<domain.NutritionPlan?> getNutritionPlanByActivityId(
     String userId,
-    int activityId,
+    String activityId,
   ) async {
     DebugLogger.info('🔍 Getting nutrition plan for activityId: $activityId, userId: $userId');
 
@@ -175,37 +124,15 @@ class NutritionPlanRepository {
   }
 
   /// Delete nutrition plan data for an activity (soft delete)
-  Future<bool> deleteNutritionPlanForActivity(int activityId) async {
+  Future<bool> deleteNutritionPlanForActivity(String activityId) async {
     try {
       DebugLogger.info('🗑️ Clearing nutrition plan for activity $activityId');
 
       await database.clearActivityNutritionPlan(activityId);
-      try {
-        await calendarService.updateEventNutritionPlanFlag(
-          activityId: activityId,
-          hasNutritionPlan: false,
-        );
-      } catch (e) {
-        DebugLogger.warning('⚠️ Failed to update event flag during plan delete: $e');
-      }
 
       return true;
     } catch (e, stackTrace) {
       DebugLogger.error('Error deleting nutrition plan', error: e, stackTrace: stackTrace);
-      return false;
-    }
-  }
-
-  /// Clear all nutrition plans for a user (primarily for testing)
-  Future<bool> clearAllNutritionPlans(String userId) async {
-    try {
-      final activities = await database.getActivitiesWithNutritionPlans(userId);
-      for (final activity in activities) {
-        await database.clearActivityNutritionPlan(activity.id);
-      }
-      return true;
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error clearing nutrition plans', error: e, stackTrace: stackTrace);
       return false;
     }
   }
@@ -225,138 +152,9 @@ class NutritionPlanRepository {
     }
   }
 
-  /// Clear local cache only
-  Future<void> clearLocalCache() async {
-    try {
-      await database.clearAllData();
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error clearing local cache', error: e, stackTrace: stackTrace);
-    }
-  }
-
-  /// Convert new edge function format to existing NutritionPlan format
-  /// Now handles food_id + quantity format with database lookups
-  Future<domain.NutritionPlan> _convertNewPlanFormat(Map<String, dynamic> data, String deviceId) async {
-    final plan = data['plan'] as Map<String, dynamic>;
-    final targets = data['targets'] as Map<String, dynamic>?;
-
-    // Generate plan ID using UUID to match Supabase schema
-    final planId = const Uuid().v4();
-
-    // Convert before section - transform each item using the service
-    final beforeData = plan['before'] as Map<String, dynamic>?;
-    final beforeItems = <FoodItemData>[];
-    if (beforeData != null && beforeData['items'] is List) {
-      for (final item in beforeData['items'] as List<dynamic>) {
-        final itemMap = item as Map<String, dynamic>;
-        final foodItemData = await transformationService.transformEdgeFunctionItem(itemMap);
-        beforeItems.add(foodItemData);
-      }
-    }
-
-    // Convert during section - handle events array
-    final duringData = plan['during'] as Map<String, dynamic>?;
-    final duringItems = <FoodItemData>[];
-    if (duringData != null && duringData['events'] is List) {
-      for (final event in duringData['events'] as List<dynamic>) {
-        final eventMap = event as Map<String, dynamic>;
-        // Add timing information for during-run items
-        eventMap['timing'] = 'At ${eventMap['at_min']} minutes';
-        final foodItemData = await transformationService.transformEdgeFunctionItem(eventMap);
-        duringItems.add(foodItemData);
-      }
-    }
-
-    // Convert after section
-    final afterData = plan['after'] as Map<String, dynamic>?;
-    final afterItems = <FoodItemData>[];
-    if (afterData != null && afterData['items'] is List) {
-      for (final item in afterData['items'] as List<dynamic>) {
-        final itemMap = item as Map<String, dynamic>;
-        final foodItemData = await transformationService.transformEdgeFunctionItem(itemMap);
-        afterItems.add(foodItemData);
-      }
-    }
-
-    // Calculate macro targets if available
-    domain.PlanMacroSummary? macroTargets;
-    if (targets != null) {
-      final beforeTargets = targets['before'] as Map<String, dynamic>?;
-      final duringTargets = targets['during'] as Map<String, dynamic>?;
-      final afterTargets = targets['after'] as Map<String, dynamic>?;
-
-      if (beforeTargets != null && duringTargets != null && afterTargets != null) {
-        final totalCarbs = (beforeTargets['carbs_g'] as num? ?? 0).toDouble() +
-                          (duringTargets['carbs_g_total'] as num? ?? 0).toDouble() +
-                          (afterTargets['carbs_g'] as num? ?? 0).toDouble();
-
-        // Calculate total sodium and fluids
-        final beforeSodium = beforeTargets['sodium_mg'] as num? ?? 0;
-        final duringSodium = duringTargets['sodium_mg_per_h'] as num? ?? 0;
-        final afterSodium = afterTargets['sodium_mg'] as num? ?? 0;
-
-        final beforeFluids = beforeTargets['fluid_ml'] as num? ?? 0;
-        final duringFluidsPerH = duringTargets['fluid_ml_per_h'] as num? ?? 0;
-        final afterFluids = afterTargets['fluid_ml'] as num? ?? 0;
-
-        // Estimate duration (fallback to reasonable default)
-        final durationH = 2.0; // Default 2 hours if not provided
-
-        // Convert fluids from ml to oz (1 ml = 0.033814 oz)
-        final mlToOz = 0.033814;
-        final totalFluidsOz = (beforeFluids + (duringFluidsPerH * durationH) + afterFluids) * mlToOz;
-        final totalSodiumMg = beforeSodium + (duringSodium * durationH) + afterSodium;
-
-        macroTargets = domain.PlanMacroSummary(
-          calories: 0, // Will be calculated from food items
-          carbs: totalCarbs.round(),
-          protein: (afterTargets['protein_g'] as num? ?? 0).toDouble().round(),
-          fat: 0, // Not provided in current format
-          sodium: totalSodiumMg.round(),
-          fluids: totalFluidsOz.round(),
-          carbsRange: '80-90%',
-          proteinRange: '10-15%',
-          fatRange: '5-10%',
-        );
-      }
-    }
-
-    return domain.NutritionPlan(
-      id: planId,
-      name: 'Personalized Nutrition Plan',
-      totalCalories: null, // Calculate from food items if needed
-      macroTargets: macroTargets,
-      sections: [
-        domain.PlanSection.withDefaults(
-          id: 'before-run',
-          title: 'Before Run',
-          subtitle: 'Fuel your performance',
-          timing: '2h before',
-          foodItems: beforeItems,
-        ),
-        domain.PlanSection.withDefaults(
-          id: 'during-run',
-          title: 'During Run',
-          subtitle: 'Maintain energy',
-          timing: 'Every 30min',
-          foodItems: duringItems,
-        ),
-        domain.PlanSection.withDefaults(
-          id: 'after-run',
-          title: 'After Run',
-          subtitle: 'Recover strong',
-          timing: '30min after',
-          foodItems: afterItems,
-        ),
-      ],
-      notes: 'Generated using AI-powered nutrition planning',
-      createdAt: DateTime.now(),
-    );
-  }
-
   /// Update plan feedback (rating and journal notes) by activity ID.
   Future<void> updatePlanFeedbackForActivity({
-    required int activityId,
+    required String activityId,
     int? rating,
     String? notes,
   }) async {
@@ -387,7 +185,7 @@ class NutritionPlanRepository {
   }
 
   /// Update plan run date/time (store in JSON planData since runDateTime field doesn't exist)
-  Future<void> updatePlanRunDateTimeForActivity(int activityId, DateTime runDateTime) async {
+  Future<void> updatePlanRunDateTimeForActivity(String activityId, DateTime runDateTime) async {
     try {
       final activity = await _getActivityRowWithPlan(activityId);
       if (activity == null) {

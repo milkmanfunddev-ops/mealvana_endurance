@@ -12,13 +12,13 @@ class WorkoutNote {
   });
 
   /// Unique identifier for the note
-  final int id;
+  final String id;
 
   /// User ID (UUID-based identifier)
   final String userId;
 
   /// Optional reference to activity ID
-  final int? activityId;
+  final String? activityId;
   
   /// The text content of the note
   final String noteText;
@@ -34,9 +34,9 @@ class WorkoutNote {
 
   /// Creates a copy of this workout note with the given fields replaced
   WorkoutNote copyWith({
-    int? id,
+    String? id,
     String? userId,
-    int? activityId,
+    String? activityId,
     String? noteText,
     int? rating,
     DateTime? createdAt,

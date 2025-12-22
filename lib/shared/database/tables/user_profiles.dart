@@ -92,6 +92,19 @@ class UserProfilesTable extends Table {
   // Sharing preferences
   TextColumn get senderName => text().nullable().named('sender_name')(); // Name used when sharing plans
 
+  // NEW: Dietary preference and allergies for onboarding revamp
+  /// User's dietary preference (single-select, nullable - user can skip in onboarding)
+  /// Values: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb
+  TextColumn get dietaryPreference => text().nullable().named('dietary_preference')();
+
+  /// User's allergies stored as PostgreSQL array format (e.g., '{dairy,gluten,peanuts}')
+  /// Values: dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts
+  TextColumn get allergies => text().withDefault(const Constant('{}')).named('allergies')();
+
+  /// Sync tracking: whether this record needs to be uploaded to Supabase
+  /// Used for background sync after onboarding registration
+  BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();
+
   @override
   Set<Column> get primaryKey => {id};
 
@@ -108,6 +121,7 @@ class UserProfilesTable extends Table {
     "CHECK (calendar_week_start IN ('sunday', 'monday'))",
     "CHECK (default_activity_day IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'))",
     "CHECK (auth_provider IN ('anonymous', 'email', 'google', 'apple'))",
+    "CHECK (dietary_preference IN ('omnivore', 'vegetarian', 'pescatarian', 'vegan', 'mediterranean', 'paleo', 'keto', 'low_carb') OR dietary_preference IS NULL)",
   ];
 }
 

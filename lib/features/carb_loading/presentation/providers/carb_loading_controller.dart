@@ -22,7 +22,7 @@ class CarbLoadingController extends _$CarbLoadingController {
 
   /// Create a carb loading plan for an event
   Future<void> createCarbLoadingPlan({
-    required int eventId,
+    required String eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -51,7 +51,7 @@ class CarbLoadingController extends _$CarbLoadingController {
   }
 
   /// Delete carb loading plan and associated days
-  Future<void> deleteCarbLoadingPlan(int eventId) async {
+  Future<void> deleteCarbLoadingPlan(String eventId) async {
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
@@ -71,7 +71,7 @@ class CarbLoadingController extends _$CarbLoadingController {
   }
 
   /// Delete a single carb loading day
-  Future<void> deleteCarbLoadingDay(int carbLoadingDayId) async {
+  Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
     try {
       await _service.deleteCarbLoadingDay(carbLoadingDayId);
 
@@ -87,7 +87,7 @@ class CarbLoadingController extends _$CarbLoadingController {
 
   /// Update carb loading protocol (delete old plan and create new one)
   Future<void> updateCarbLoadingProtocol({
-    required int eventId,
+    required String eventId,
     required int newProtocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
@@ -121,7 +121,7 @@ class CarbLoadingController extends _$CarbLoadingController {
 /// Provider for getting carb loading plan for a specific event
 /// Returns CarbLoadingPlan? from the database
 @riverpod
-Future<dynamic> carbLoadingPlan(Ref ref, int eventId) async {
+Future<dynamic> carbLoadingPlan(Ref ref, String eventId) async {
   final service = ref.read(carbLoadingServiceProvider);
   return await service.getCarbLoadingPlan(eventId);
 }
@@ -129,7 +129,7 @@ Future<dynamic> carbLoadingPlan(Ref ref, int eventId) async {
 /// Provider for getting carb loading days for a plan
 /// Returns List<CarbLoadingDay> from the database
 @riverpod
-Future<List<dynamic>> carbLoadingDaysForPlan(Ref ref, int planId) async {
+Future<List<dynamic>> carbLoadingDaysForPlan(Ref ref, String planId) async {
   final service = ref.read(carbLoadingServiceProvider);
   return await service.getCarbLoadingDays(planId);
 }

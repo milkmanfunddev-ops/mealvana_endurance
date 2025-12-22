@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/carb_loading_food_service.dart';
@@ -14,6 +13,7 @@ import '../../../barcode_scanning/application/open_food_facts_search_service.dar
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/utils/search_strategy.dart';
 
 part 'carb_loading_food_selection_controller.g.dart';
 
@@ -34,7 +34,7 @@ class CarbLoadingFoodSelectionState {
     this.isSearchingOpenFoodFacts = false,
   });
 
-  final int carbLoadingDayId;
+  final String carbLoadingDayId;
   final MealType mealType;
 
   // All available food sources
@@ -54,7 +54,7 @@ class CarbLoadingFoodSelectionState {
   final bool isSearchingOpenFoodFacts;
 
   CarbLoadingFoodSelectionState copyWith({
-    int? carbLoadingDayId,
+    String? carbLoadingDayId,
     MealType? mealType,
     List<CarbLoadingFood>? carbLoadingFoods,
     List<CarbLoadingUserFood>? carbLoadingUserFoods,
@@ -92,7 +92,7 @@ class CarbLoadingFoodSelectionParams {
     required this.mealType,
   });
 
-  final int carbLoadingDayId;
+  final String carbLoadingDayId;
   final MealType mealType;
 
   @override
@@ -119,6 +119,9 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
       ref.read(foodRepositoryProvider);
   OpenFoodFactsSearchService get _openFoodFactsService =>
       ref.read(openFoodFactsSearchServiceProvider);
+
+  // Search strategy helper for managing local vs OpenFoodFacts search
+  final _searchStrategy = SearchStrategy();
 
   @override
   Future<CarbLoadingFoodSelectionState> build(CarbLoadingFoodSelectionParams params) async {
@@ -203,6 +206,14 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
       filteredFoods.addAll(currentState.carbLoadingUserFoods.where((f) => !f.isDeleted));
       filteredFoods.addAll(currentState.nutritionPlanFoods);
       filteredFoods.addAll(currentState.nutritionPlanUserFoods);
+
+      // Clear OpenFoodFacts results and cancel any pending search
+      _searchStrategy.cancelAutoSearch();
+      state = AsyncData(currentState.copyWith(
+        searchQuery: query,
+        searchResults: filteredFoods,
+        openFoodFactsResults: [],
+      ));
     } else {
       // Filter carb loading foods
       filteredFoods.addAll(
@@ -236,12 +247,21 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
           food.name.toLowerCase().contains(lowerQuery)
         ),
       );
-    }
 
-    state = AsyncData(currentState.copyWith(
-      searchQuery: query,
-      searchResults: filteredFoods,
-    ));
+      state = AsyncData(currentState.copyWith(
+        searchQuery: query,
+        searchResults: filteredFoods,
+      ));
+
+      // Use search strategy to determine if we should auto-search OpenFoodFacts
+      if (_searchStrategy.shouldAutoSearch(filteredFoods.length)) {
+        _searchStrategy.scheduleAutoSearch(
+          query: query,
+          getCurrentQuery: () => state.value?.searchQuery ?? '',
+          onSearch: searchOpenFoodFacts,
+        );
+      }
+    }
   }
 
   /// Search Open Food Facts API

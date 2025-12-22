@@ -251,8 +251,17 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
 }
 
 /// Provider exposing the default analytics tracker.
+/// In development environment, returns NoopAnalyticsTracker (no tracking).
+/// In production environment, returns MixpanelAnalyticsTracker.
 final analyticsTrackerProvider = Provider<AnalyticsTracker>((ref) {
   final config = ref.watch(appConfigProvider);
+
+  // Disable analytics in development environment
+  if (config.devModeEnabled) {
+    return const NoopAnalyticsTracker();
+  }
+
+  // Enable analytics in production environment
   final logger = ref.watch(appLoggerProvider);
   return MixpanelAnalyticsTracker(
     config: config,

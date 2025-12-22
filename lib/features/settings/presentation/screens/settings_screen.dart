@@ -433,16 +433,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.sm),
 
-          // Food preferences
+          // Food Preferences Hub (NEW 2-tier navigation)
           _buildQuickLink(
             context: context,
             icon: FontAwesomeIcons.utensils,
             title: 'Food Preferences',
-            subtitle: 'Manage your food likes & dislikes',
+            subtitle: 'Diet, allergies, and food choices',
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
-              analytics.analytics.track('settings_food_preferences_tapped');
-              context.push('/settings/food-preferences');
+              analytics.analytics.track('settings_food_preferences_hub_tapped');
+              context.push('/settings/food-preferences-hub');
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Sport Preferences Hub (NEW 2-tier navigation)
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.personRunning,
+            title: 'Sport Preferences',
+            subtitle: 'Running, cycling, and swimming',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_sport_preferences_hub_tapped');
+              context.push('/settings/sport-preferences-hub');
             },
           ),
 

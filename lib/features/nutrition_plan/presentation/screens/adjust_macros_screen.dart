@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../widgets/adjust_macros/edit_macros_dialog_widget.dart';
+import '../widgets/adjust_macros/help_bottom_sheet_widget.dart';
+import '../utils/macro_helpers.dart';
 import '../../../../shared/widgets/generating_plan_overlay.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/domain/activity_type.dart';
 import '../providers/macro_targets_controller.dart';
 import '../../domain/macro_targets.dart' as domain;
 import '../../../../core/utils/debug_logger.dart';
+import '../../../../shared/providers/user_id_provider.dart';
+import '../../../activities/application/activities_service.dart';
+import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../activities/domain/activity.dart' as activity_domain;
 
-/// Adjust Macros Screen - Simplified Kyle's Design
-/// Refactored from 1,151 lines to match Figma design exactly
+/// Adjust Macros Screen - Refactored with extracted widgets
+/// Simplified from 1,005 lines using extracted components
 class AdjustMacrosScreen extends ConsumerStatefulWidget {
   const AdjustMacrosScreen({super.key});
 
@@ -23,21 +29,17 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
   int _buildCount = 0;
 
   @override
+  void dispose() {
+    // ⚠️ IMPORTANT: Cannot use ref.read() in dispose() - violates Riverpod safety
+    // Draft cleanup is now handled by MacroTargetsController.ref.onDispose()
+    // See: macro_targets_controller.dart for cleanup implementation
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     _buildCount++;
     final asyncState = ref.watch(macroTargetsControllerProvider);
-
-    DebugLogger.info('🎬 ADJUST MACROS: Screen building (build #$_buildCount), asyncState type: ${asyncState.runtimeType}');
-    asyncState.when(
-      data: (state) {
-        DebugLogger.info('📊 ADJUST MACROS: Has data - macroTargets null? ${state.macroTargets == null}');
-        if (state.macroTargets != null) {
-          DebugLogger.info('✅ ADJUST MACROS: MacroTargets present - preRun carbs: ${state.macroTargets!.preRun.carbsG}g');
-        }
-      },
-      loading: () => DebugLogger.info('⏳ ADJUST MACROS: State is loading...'),
-      error: (e, st) => DebugLogger.error('❌ ADJUST MACROS: State has error: $e'),
-    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -68,7 +70,6 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          // Circular back button
           Container(
             width: 40,
             height: 40,
@@ -87,7 +88,6 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          // Title from ContentService
           Text(
             state?.adjustMacrosTitle ?? 'Adjust Your Macros',
             style: AppTextStyles.sectionTitle.copyWith(
@@ -105,45 +105,25 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     WidgetRef ref,
     MacroTargetsState state,
   ) {
-    DebugLogger.info('📝 ADJUST MACROS: _buildContent called - macroTargets null? ${state.macroTargets == null}');
-
     if (state.macroTargets == null) {
       DebugLogger.error('❌ ADJUST MACROS: Showing NO DATA state - this should not happen!');
       return _buildNoDataState(context);
     }
 
-    DebugLogger.info('✅ ADJUST MACROS: Rendering content with macros - preRun carbs: ${state.macroTargets!.preRun.carbsG}g');
     final macros = state.macroTargets!;
 
     return SingleChildScrollView(
       child: Column(
         children: [
-          const SizedBox(height: 12), // Top padding
-
-          // "During this Run" dynamic header
-          _buildActivityHeader(context, state),
-
-          // const SizedBox(height: 12),
-
-          // PACE and TOTAL BURN stats
-          _buildPaceBurnStats(context, state, macros),
-
-          // const SizedBox(height: 12),
-
-          // "Your Nutritional Targets" with table
-          _buildMacroTargetsSection(context, ref, state, macros),
-
           const SizedBox(height: 12),
-
-          // Edit Macros + Reset All buttons
+          _buildActivityHeader(context, state),
+          _buildPaceBurnStats(context, state, macros),
+          _buildMacroTargetsSection(context, ref, state, macros),
+          const SizedBox(height: 12),
           _buildActionButtons(context, ref, state, macros),
-
           const SizedBox(height: 16),
-
-          // Create Plan button
           _buildCreatePlanButton(context, ref, state),
-
-          const SizedBox(height: 40), // Bottom padding
+          const SizedBox(height: 40),
         ],
       ),
     );
@@ -153,17 +133,13 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     BuildContext context,
     MacroTargetsState state,
   ) {
-    // Get dynamic activity type text
-    final activityTypeText = _getActivityTypeText(state.pendingActivityData?.activityType);
-
-    // Format activity info (duration • distance)
-    final activityInfo = _formatActivityInfo(state);
+    final activityTypeText = MacroHelpers.getActivityTypeText(state.macroTargets);
+    final activityInfo = MacroHelpers.formatActivityInfo(state);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 17),
       child: Column(
         children: [
-          // "During this Run" (dynamic based on activity type)
           Text(
             activityTypeText,
             style: AppTextStyles.sectionTitle.copyWith(
@@ -172,10 +148,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
             ),
             textAlign: TextAlign.center,
           ),
-
           const SizedBox(height: 4),
-
-          // "1.8 h • 12MI"
           if (activityInfo.isNotEmpty)
             Text(
               activityInfo,
@@ -191,53 +164,12 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     );
   }
 
-  String _getActivityTypeText(ActivityType? type) {
-    switch (type) {
-      case ActivityType.running:
-        return 'During this Run';
-      case ActivityType.cycling:
-        return 'During this Ride';
-      case ActivityType.swimming:
-        return 'During this Swim';
-      default:
-        return 'During this Activity';
-    }
-  }
-
-  String _formatActivityInfo(MacroTargetsState state) {
-    final pendingData = state.pendingActivityData;
-    if (pendingData == null) return '';
-
-    // Calculate duration from distance and pace
-    final distance = pendingData.distanceMiles;
-    final pace = pendingData.paceMinutesPerMile;
-    final duration = (distance * pace) / 60.0; // Convert to hours
-
-    // Format duration (hours with 1 decimal)
-    final durationStr = '${duration.toStringAsFixed(1)} h';
-
-    // Format distance based on activity type
-    String distanceStr;
-    if (pendingData.activityType == ActivityType.swimming) {
-      // Convert miles to meters for swimming
-      final meters = (distance * 1609.34).round();
-      distanceStr = '${meters}m';
-    } else {
-      distanceStr = '${distance.toStringAsFixed(0)}MI';
-    }
-
-    return '$durationStr  •  $distanceStr';
-  }
-
   Widget _buildPaceBurnStats(
     BuildContext context,
     MacroTargetsState state,
     domain.MacroTargets macros,
   ) {
-    // Format pace value based on activity type
-    final pace = _formatPaceValue(state);
-
-    // Format total burn (calories)
+    final pace = MacroHelpers.formatPaceValue(state);
     final totalBurn = '${macros.metrics.caloriesNetKcal.round().toString()} kcal';
 
     return Padding(
@@ -248,32 +180,6 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         backgroundColor: Colors.transparent,
       ),
     );
-  }
-
-  String _formatPaceValue(MacroTargetsState state) {
-    final pendingData = state.pendingActivityData;
-    if (pendingData == null) return '--';
-
-    switch (pendingData.activityType) {
-      case ActivityType.running:
-        final pace = pendingData.paceMinutesPerMile;
-        final minutes = pace.floor();
-        final seconds = ((pace - minutes) * 60).round();
-        return '$minutes:${seconds.toString().padLeft(2, '0')}/mi';
-
-      case ActivityType.cycling:
-        final speed = pendingData.cyclingSpeedMph ?? 0;
-        return '${speed.toStringAsFixed(1)} mph';
-
-      case ActivityType.swimming:
-        final paceSeconds = pendingData.swimmingPacePer100mSeconds ?? 0;
-        final minutes = paceSeconds ~/ 60;
-        final seconds = paceSeconds % 60;
-        return '$minutes:${seconds.toString().padLeft(2, '0')}/100m';
-
-      default:
-        return '--';
-    }
   }
 
   Widget _buildMacroTargetsSection(
@@ -291,7 +197,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           duringCarbs: macros.duringRun.carbTotalG.round(),
           postCarbs: macros.postRun.carbsG.round(),
           preProtein: macros.preRun.proteinG.round(),
-          duringProtein: 0, // No protein during activity
+          duringProtein: 0,
           postProtein: macros.postRun.proteinG.round(),
           preFluids: macros.preRun.fluidsMl.round(),
           duringFluids: macros.duringRun.fluidTotalMl.round(),
@@ -316,7 +222,6 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 17),
       child: Row(
         children: [
-          // Edit Macros button (left)
           Expanded(
             child: KyleSecondaryButton(
               text: 'Edit Macros',
@@ -325,10 +230,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
               variant: SecondaryButtonVariant.orange,
             ),
           ),
-
-          const SizedBox(width: 16), // Gap between buttons
-
-          // Reset All button (right)
+          const SizedBox(width: 16),
           Expanded(
             child: KyleSecondaryButton(
               text: state.resetAllButton,
@@ -418,7 +320,6 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
   }
 
   Widget _buildNoDataState(BuildContext context) {
-    DebugLogger.error('🚨 ADJUST MACROS: _buildNoDataState being rendered - USER SEES "No macro data available"');
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -459,7 +360,6 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
 
   // Action handlers
   Future<void> _handleResetAll(BuildContext context, WidgetRef ref) async {
-    // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -509,23 +409,19 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       'screen': 'adjust_macros',
     });
 
-    await ref
+    // CRITICAL FIX: Get activityId directly from return value instead of state
+    // This prevents race conditions where state hasn't propagated yet
+    final activityId = await ref
         .read(macroTargetsControllerProvider.notifier)
         .createNutritionPlan();
 
-    // Wait a brief moment for state updates to propagate through Riverpod
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    // Navigate to activity detail screen after plan creation
-    // SIMPLIFIED: Only activityId is needed - isNewActivity=true shows "Save Workout" button
-    if (context.mounted) {
-      final state = ref.read(macroTargetsControllerProvider).value;
-      if (state != null && state.activityId != null) {
-        context.push('/current-plan', extra: {
-          'activityId': state.activityId,
-          'isNewActivity': true, // Shows "Save Workout" button for first-time viewing
-        });
-      }
+    if (context.mounted && activityId != null) {
+      context.push('/current-plan', extra: {
+        'activityId': activityId,
+        'isNewActivity': true,
+      });
+    } else if (activityId == null) {
+      DebugLogger.error('🚫 ADJUST_MACROS: Cannot navigate - activityId is null!');
     }
   }
 
@@ -544,7 +440,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => _EditMacrosDialog(
+      builder: (context) => EditMacrosDialogWidget(
         macros: macros,
         activityId: state.activityId,
       ),
@@ -570,435 +466,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
-      builder: (context) => _HelpBottomSheet(state: state),
+      builder: (context) => HelpBottomSheetWidget(state: state),
     );
-  }
-}
-
-/// Edit Macros Dialog
-class _EditMacrosDialog extends ConsumerStatefulWidget {
-  const _EditMacrosDialog({
-    required this.macros,
-    this.activityId,
-  });
-
-  final domain.MacroTargets macros;
-  final int? activityId;
-
-  @override
-  ConsumerState<_EditMacrosDialog> createState() => _EditMacrosDialogState();
-}
-
-class _EditMacrosDialogState extends ConsumerState<_EditMacrosDialog> {
-  late Map<String, TextEditingController> _controllers;
-
-  @override
-  void initState() {
-    super.initState();
-    _controllers = {
-      'preCarbs': TextEditingController(text: widget.macros.preRun.carbsG.round().toString()),
-      'duringCarbs': TextEditingController(text: widget.macros.duringRun.carbTotalG.round().toString()),
-      'postCarbs': TextEditingController(text: widget.macros.postRun.carbsG.round().toString()),
-      'preProtein': TextEditingController(text: widget.macros.preRun.proteinG.round().toString()),
-      'duringProtein': TextEditingController(text: '0'),
-      'postProtein': TextEditingController(text: widget.macros.postRun.proteinG.round().toString()),
-      'preFluids': TextEditingController(text: widget.macros.preRun.fluidsMl.round().toString()),
-      'duringFluids': TextEditingController(text: widget.macros.duringRun.fluidTotalMl.round().toString()),
-      'postFluids': TextEditingController(text: widget.macros.postRun.fluidsMl.round().toString()),
-      'preSodium': TextEditingController(text: widget.macros.preRun.sodiumMg.round().toString()),
-      'duringSodium': TextEditingController(text: widget.macros.duringRun.sodiumTotalMg.round().toString()),
-      'postSodium': TextEditingController(text: widget.macros.postRun.sodiumMg.round().toString()),
-    };
-  }
-
-  @override
-  void dispose() {
-    for (final controller in _controllers.values) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        'Edit Macro Targets',
-        style: AppTextStyles.sectionTitle.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildMacroSection('CARBS (g)', 'preCarbs', 'duringCarbs', 'postCarbs'),
-            const SizedBox(height: AppSpacing.md),
-            _buildMacroSection('PROTEIN (g)', 'preProtein', 'duringProtein', 'postProtein'),
-            const SizedBox(height: AppSpacing.md),
-            _buildMacroSection('FLUIDS (mL)', 'preFluids', 'duringFluids', 'postFluids'),
-            const SizedBox(height: AppSpacing.md),
-            _buildMacroSection('SODIUM (mg)', 'preSodium', 'duringSodium', 'postSodium'),
-          ],
-        ),
-      ),
-      actions: [
-        KyleSecondaryButton(
-          text: 'Cancel',
-          onPressed: () => Navigator.of(context).pop(),
-          // variant: SecondaryButtonVariant.blackberry,
-        ),
-            const SizedBox(height: AppSpacing.lg),
-        KylePrimaryButton(
-          text: 'Save Changes',
-          onPressed: _saveChanges,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMacroSection(String label, String preKey, String duringKey, String postKey) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.smallLabel.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          children: [
-            Expanded(child: _buildTextField('PRE', preKey)),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(child: _buildTextField('DURING', duringKey)),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(child: _buildTextField('POST', postKey)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTextField(String label, String key) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.smallLabel.copyWith(
-            fontSize: 10,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 4),
-        TextField(
-          controller: _controllers[key],
-          keyboardType: TextInputType.number,
-          style: AppTextStyles.bodyLarge,
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 8,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _saveChanges() async {
-    try {
-      // Parse values
-      final preCarbs = double.parse(_controllers['preCarbs']!.text);
-      final duringCarbs = double.parse(_controllers['duringCarbs']!.text);
-      final postCarbs = double.parse(_controllers['postCarbs']!.text);
-      final preProtein = double.parse(_controllers['preProtein']!.text);
-      // Note: duringProtein is not used as there's no protein during activity
-      final postProtein = double.parse(_controllers['postProtein']!.text);
-      final preFluids = double.parse(_controllers['preFluids']!.text);
-      final duringFluids = double.parse(_controllers['duringFluids']!.text);
-      final postFluids = double.parse(_controllers['postFluids']!.text);
-      final preSodium = double.parse(_controllers['preSodium']!.text);
-      final duringSodium = double.parse(_controllers['duringSodium']!.text);
-      final postSodium = double.parse(_controllers['postSodium']!.text);
-
-      // Save to controller
-      await ref
-          .read(macroTargetsControllerProvider.notifier)
-          .saveAllMacroChanges(
-            preRunCarbs: preCarbs,
-            duringRunCarbs: duringCarbs,
-            postRunCarbs: postCarbs,
-            preRunProtein: preProtein,
-            postRunProtein: postProtein,
-            preRunFluids: preFluids,
-            duringRunFluids: duringFluids,
-            postRunFluids: postFluids,
-            preRunSodium: preSodium,
-            duringRunSodium: duringSodium,
-            postRunSodium: postSodium,
-          );
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      // Show error
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Invalid input: ${e.toString()}'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
-      }
-    }
-  }
-}
-
-/// Help Bottom Sheet with detailed nutrition science
-class _HelpBottomSheet extends ConsumerStatefulWidget {
-  const _HelpBottomSheet({required this.state});
-
-  final MacroTargetsState state;
-
-  @override
-  ConsumerState<_HelpBottomSheet> createState() => _HelpBottomSheetState();
-}
-
-class _HelpBottomSheetState extends ConsumerState<_HelpBottomSheet> {
-  String? _expandedSection = 'Carbohydrates'; // Default expanded
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      builder: (context, scrollController) => Container(
-        padding: EdgeInsets.only(
-          left: AppSpacing.lg,
-          right: AppSpacing.lg,
-          top: AppSpacing.lg,
-          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
-        ),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(15),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // Title
-            Text(
-              'Nutrition Guidelines',
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // Scrollable content
-            Expanded(
-              child: SingleChildScrollView(
-                controller: scrollController,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Carbohydrates
-                    _buildAccordionSection(
-                      title: 'Carbohydrates',
-                      content: '**How we calculate it:** Duration establishes a safe **absorption band**. We adjust for **intensity (MET)**, **gut training**, **body size**, and fuel mix—then **cap** based on what your gut can process.\n\nReplenish with high-quality carbs immediately after exercise to jumpstart recovery and restore glycogen.',
-                      isExpanded: _expandedSection == 'Carbohydrates',
-                      onTap: () {
-                        setState(() {
-                          _expandedSection = _expandedSection == 'Carbohydrates' ? null : 'Carbohydrates';
-                        });
-                      },
-                    ),
-
-                    // Sodium
-                    _buildAccordionSection(
-                      title: 'Sodium',
-                      content: '**How we calculate it:** If you know your **sweat rate**, we estimate hourly sodium loss (**sweat sodium × sweat rate**) and target **~50–70%** of that (clamped at **300–1200 mg/h**). If not, we determine needs based on your **sweater type** (low/medium/high) and adjust for **heat/humidity**.\n\nInclude sodium in your **pre-run** and **post-run** drinks to enhance fluid retention and improve rehydration.',
-                      isExpanded: _expandedSection == 'Sodium',
-                      onTap: () {
-                        setState(() {
-                          _expandedSection = _expandedSection == 'Sodium' ? null : 'Sodium';
-                        });
-                      },
-                    ),
-
-                    // Fluids
-                    _buildAccordionSection(
-                      title: 'Fluids',
-                      content: '**How we calculate it:** We begin with a running-friendly range (**~0.4–0.8 L/h**), adjust for **body size** and **intensity (MET)**, then modify based on **weather** (less in cool conditions, more in hot/humid). For those with a **measured sweat rate**, we target **~70–80%** of that rate, staying within the safe range to prevent overhydration.\n\nPost-run, replenish approximately **125%** of your **estimated fluid deficit** using a drink containing **~500–700 mg/L sodium**.',
-                      isExpanded: _expandedSection == 'Fluids',
-                      onTap: () {
-                        setState(() {
-                          _expandedSection = _expandedSection == 'Fluids' ? null : 'Fluids';
-                        });
-                      },
-                    ),
-
-                    // Protein
-                    _buildAccordionSection(
-                      title: 'Protein',
-                      content: '**How we calculate it:**\n\n- **Pre-run:** small amount, **~0.15–0.25 g/kg** (varies with timing) for satiety without digestive discomfort.\n- **During:** **0 g/h** for runs ≤3.5 h (minimal amounts only for ultramarathons).\n- **After:** **~0.3 g/kg** within the first hour; 20–40 g high-quality protein containing **~2–3 g leucine**.\n\nRemember: "carbs first, protein **right after**" for optimal recovery.',
-                      isExpanded: _expandedSection == 'Protein',
-                      onTap: () {
-                        setState(() {
-                          _expandedSection = _expandedSection == 'Protein' ? null : 'Protein';
-                        });
-                      },
-                    ),
-
-                    // Fats
-                    _buildAccordionSection(
-                      title: 'Fats',
-                      content: '**How we calculate it:**\n\n- **Pre-run:** modest intake, **~0.1–0.2 g/kg** (reduce fiber/fat closer to start time).\n- **During:** **0–2 g/h** maximum (minimized to protect gut function).\n- **After:** approximately **~0.2 g/kg** as part of your recovery meal—supports satiety and overall energy intake.\n\nPrioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.',
-                      isExpanded: _expandedSection == 'Fats',
-                      onTap: () {
-                        setState(() {
-                          _expandedSection = _expandedSection == 'Fats' ? null : 'Fats';
-                        });
-                      },
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Key References section
-                    BaseCard(
-                      padding: const EdgeInsets.all(16),
-                      backgroundColor: AppColors.orange.withOpacity(0.1),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Key References',
-                            style: AppTextStyles.subtitle.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '• ACSM Metabolic Calculations Handbook; ACSM Guidelines 10e\n'
-                            '• Jeukendrup AE (2004, 2011)\n'
-                            '• ACSM/AND/DC 2016; NATA & ACSM hydration position stands\n'
-                            '• Thomas et al., JAND 2016\n'
-                            '• IOC/consensus updates on recovery protein\n'
-                            '• Burke et al., IOC consensus on athlete nutrition',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAccordionSection({
-    required String title,
-    required String content,
-    required bool isExpanded,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isExpanded
-              ? AppColors.orange.withOpacity(0.3)
-              : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: AppTextStyles.subtitle.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    isExpanded
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-              if (isExpanded) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _formatMarkdownText(content),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.6,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Helper to render simple markdown-like bold text
-  String _formatMarkdownText(String text) {
-    // Remove markdown ** symbols for now (could add RichText support later)
-    return text.replaceAll('**', '');
   }
 }

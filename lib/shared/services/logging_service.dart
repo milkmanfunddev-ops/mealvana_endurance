@@ -349,8 +349,13 @@ class PrettyAppLogger implements AppLogger {
         ? contextualMessage
         : '$contextualMessage\nData: $data';
 
+    // Only include stack traces for warning, error, and fatal logs
+    // Debug and info logs should not have stack traces as they create excessive noise
+    final shouldIncludeStackTrace = level.index >= Level.warning.index;
+    final effectiveStackTrace = shouldIncludeStackTrace ? stackTrace : null;
+
     try {
-      _logger.log(level, payload, error: error, stackTrace: stackTrace);
+      _logger.log(level, payload, error: error, stackTrace: effectiveStackTrace);
     } catch (e) {
       // Fallback if logger itself fails - silently ignore to avoid infinite recursion
     }

@@ -1,9 +1,9 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../utils/platform_io.dart' if (dart.library.html) '../utils/platform_web.dart';
 import 'analytics/analytics_events.dart';
 import 'analytics/analytics_tracker.dart';
 
@@ -11,7 +11,7 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
-  static int? _pendingNavigationActivityId;
+  static String? _pendingNavigationActivityId;
   static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
 
   static void configure(AnalyticsTracker tracker) {
@@ -21,10 +21,16 @@ class NotificationService {
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
+    // Web platform doesn't support local notifications
+    if (kIsWeb) {
+      _isInitialized = true;
+      return;
+    }
+
     tz.initializeTimeZones();
 
     // Create Android notification channels
-    if (Platform.isAndroid) {
+    if (!kIsWeb && PlatformInfo.isAndroid) {
       await _createAndroidNotificationChannels();
     }
 
@@ -98,8 +104,8 @@ class NotificationService {
   static void _onNotificationTapped(NotificationResponse response) {
     if (response.payload == null) return;
 
-    final activityId = int.tryParse(response.payload!);
-    if (activityId == null) return;
+    final activityId = response.payload!;
+    if (activityId.isEmpty) return;
 
     _analytics.trackReminderClicked(
       deviceId: 'unknown', // Will be set properly when app identifies user
@@ -113,7 +119,12 @@ class NotificationService {
       await initialize();
     }
 
-    if (Platform.isIOS) {
+    // Web platform doesn't support local notifications
+    if (kIsWeb) {
+      return false;
+    }
+
+    if (!kIsWeb && PlatformInfo.isIOS) {
       final iosPlugin = _plugin
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       if (iosPlugin != null) {
@@ -124,7 +135,7 @@ class NotificationService {
             ) ??
             false;
       }
-    } else if (Platform.isAndroid) {
+    } else if (!kIsWeb && PlatformInfo.isAndroid) {
       // Android 13+ (API 33+) requires runtime permission for notifications
       final androidPlugin = _plugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -143,14 +154,19 @@ class NotificationService {
       await initialize();
     }
 
-    if (Platform.isIOS) {
+    // Web platform doesn't support local notifications
+    if (kIsWeb) {
+      return false;
+    }
+
+    if (!kIsWeb && PlatformInfo.isIOS) {
       final iosPlugin = _plugin
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       if (iosPlugin != null) {
         final result = await iosPlugin.checkPermissions();
         return result?.isEnabled ?? false;
       }
-    } else if (Platform.isAndroid) {
+    } else if (!kIsWeb && PlatformInfo.isAndroid) {
       final androidPlugin = _plugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
@@ -168,10 +184,15 @@ class NotificationService {
     required bool recurring,
     required String title,
     required String body,
-    int? activityId,
+    String? activityId,
   }) async {
     if (!_isInitialized) {
       await initialize();
+    }
+
+    // Web platform doesn't support local notifications
+    if (kIsWeb) {
+      return;
     }
 
     final hasPermission = await areNotificationsEnabled();
@@ -255,7 +276,7 @@ class NotificationService {
     return await _plugin.pendingNotificationRequests();
   }
 
-  static int? getPendingNavigationActivityId() {
+  static String? getPendingNavigationActivityId() {
     final activityId = _pendingNavigationActivityId;
     _pendingNavigationActivityId = null;
     return activityId;

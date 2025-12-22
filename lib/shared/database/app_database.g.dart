@@ -8943,13 +8943,13 @@ class $ActivitiesTableTable extends ActivitiesTable
   $ActivitiesTableTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
-    clientDefault: () => Random().nextInt(2147483647),
+    clientDefault: () => const Uuid().v4(),
   );
   static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
@@ -9705,13 +9705,13 @@ class $ActivitiesTableTable extends ActivitiesTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   Activity map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Activity(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
       userId: attachedDatabase.typeMapping.read(
@@ -9864,7 +9864,7 @@ class $ActivitiesTableTable extends ActivitiesTable
 }
 
 class Activity extends DataClass implements Insertable<Activity> {
-  final int id;
+  final String id;
   final String userId;
   final String activityType;
   final String title;
@@ -9941,7 +9941,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    map['id'] = Variable<String>(id);
     map['user_id'] = Variable<String>(userId);
     map['activity_type'] = Variable<String>(activityType);
     map['title'] = Variable<String>(title);
@@ -10138,7 +10138,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Activity(
-      id: serializer.fromJson<int>(json['id']),
+      id: serializer.fromJson<String>(json['id']),
       userId: serializer.fromJson<String>(json['userId']),
       activityType: serializer.fromJson<String>(json['activityType']),
       title: serializer.fromJson<String>(json['title']),
@@ -10204,7 +10204,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
+      'id': serializer.toJson<String>(id),
       'userId': serializer.toJson<String>(userId),
       'activityType': serializer.toJson<String>(activityType),
       'title': serializer.toJson<String>(title),
@@ -10250,7 +10250,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   }
 
   Activity copyWith({
-    int? id,
+    String? id,
     String? userId,
     String? activityType,
     String? title,
@@ -10590,7 +10590,7 @@ class Activity extends DataClass implements Insertable<Activity> {
 }
 
 class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
-  final Value<int> id;
+  final Value<String> id;
   final Value<String> userId;
   final Value<String> activityType;
   final Value<String> title;
@@ -10711,7 +10711,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
   static Insertable<Activity> custom({
-    Expression<int>? id,
+    Expression<String>? id,
     Expression<String>? userId,
     Expression<String>? activityType,
     Expression<String>? title,
@@ -10801,7 +10801,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   }
 
   ActivitiesTableCompanion copyWith({
-    Value<int>? id,
+    Value<String>? id,
     Value<String>? userId,
     Value<String>? activityType,
     Value<String>? title,
@@ -10889,7 +10889,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
     }
     if (userId.present) {
       map['user_id'] = Variable<String>(userId.value);
@@ -11069,23 +11069,23 @@ class $EventsTableTable extends EventsTable
   $EventsTableTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
-    clientDefault: () => Random().nextInt(2147483647),
+    clientDefault: () => const Uuid().v4(),
   );
   static const VerificationMeta _activityIdMeta = const VerificationMeta(
     'activityId',
   );
   @override
-  late final GeneratedColumn<int> activityId = GeneratedColumn<int>(
+  late final GeneratedColumn<String> activityId = GeneratedColumn<String>(
     'activity_id',
     aliasedName,
     true,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
   static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
@@ -11634,17 +11634,17 @@ class $EventsTableTable extends EventsTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   Event map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Event(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
       activityId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}activity_id'],
       ),
       userId: attachedDatabase.typeMapping.read(
@@ -11757,8 +11757,8 @@ class $EventsTableTable extends EventsTable
 }
 
 class Event extends DataClass implements Insertable<Event> {
-  final int id;
-  final int? activityId;
+  final String id;
+  final String? activityId;
   final String userId;
   final String eventType;
   final String? eventSubtype;
@@ -11816,9 +11816,9 @@ class Event extends DataClass implements Insertable<Event> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    map['id'] = Variable<String>(id);
     if (!nullToAbsent || activityId != null) {
-      map['activity_id'] = Variable<int>(activityId);
+      map['activity_id'] = Variable<String>(activityId);
     }
     map['user_id'] = Variable<String>(userId);
     map['event_type'] = Variable<String>(eventType);
@@ -11971,8 +11971,8 @@ class Event extends DataClass implements Insertable<Event> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Event(
-      id: serializer.fromJson<int>(json['id']),
-      activityId: serializer.fromJson<int?>(json['activityId']),
+      id: serializer.fromJson<String>(json['id']),
+      activityId: serializer.fromJson<String?>(json['activityId']),
       userId: serializer.fromJson<String>(json['userId']),
       eventType: serializer.fromJson<String>(json['eventType']),
       eventSubtype: serializer.fromJson<String?>(json['eventSubtype']),
@@ -12012,8 +12012,8 @@ class Event extends DataClass implements Insertable<Event> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'activityId': serializer.toJson<int?>(activityId),
+      'id': serializer.toJson<String>(id),
+      'activityId': serializer.toJson<String?>(activityId),
       'userId': serializer.toJson<String>(userId),
       'eventType': serializer.toJson<String>(eventType),
       'eventSubtype': serializer.toJson<String?>(eventSubtype),
@@ -12051,8 +12051,8 @@ class Event extends DataClass implements Insertable<Event> {
   }
 
   Event copyWith({
-    int? id,
-    Value<int?> activityId = const Value.absent(),
+    String? id,
+    Value<String?> activityId = const Value.absent(),
     String? userId,
     String? eventType,
     Value<String?> eventSubtype = const Value.absent(),
@@ -12295,8 +12295,8 @@ class Event extends DataClass implements Insertable<Event> {
 }
 
 class EventsTableCompanion extends UpdateCompanion<Event> {
-  final Value<int> id;
-  final Value<int?> activityId;
+  final Value<String> id;
+  final Value<String?> activityId;
   final Value<String> userId;
   final Value<String> eventType;
   final Value<String?> eventSubtype;
@@ -12387,8 +12387,8 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
   static Insertable<Event> custom({
-    Expression<int>? id,
-    Expression<int>? activityId,
+    Expression<String>? id,
+    Expression<String>? activityId,
     Expression<String>? userId,
     Expression<String>? eventType,
     Expression<String>? eventSubtype,
@@ -12453,8 +12453,8 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
   }
 
   EventsTableCompanion copyWith({
-    Value<int>? id,
-    Value<int?>? activityId,
+    Value<String>? id,
+    Value<String?>? activityId,
     Value<String>? userId,
     Value<String>? eventType,
     Value<String?>? eventSubtype,
@@ -12521,10 +12521,10 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
     }
     if (activityId.present) {
-      map['activity_id'] = Variable<int>(activityId.value);
+      map['activity_id'] = Variable<String>(activityId.value);
     }
     if (userId.present) {
       map['user_id'] = Variable<String>(userId.value);
@@ -12659,23 +12659,23 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
   $CarbLoadingPlansTableTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
-    clientDefault: () => Random().nextInt(2147483647),
+    clientDefault: () => const Uuid().v4(),
   );
   static const VerificationMeta _eventIdMeta = const VerificationMeta(
     'eventId',
   );
   @override
-  late final GeneratedColumn<int> eventId = GeneratedColumn<int>(
+  late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
     'event_id',
     aliasedName,
     true,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
   static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
@@ -12963,17 +12963,17 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   CarbLoadingPlan map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CarbLoadingPlan(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
       eventId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}event_id'],
       ),
       userId: attachedDatabase.typeMapping.read(
@@ -13034,8 +13034,8 @@ class $CarbLoadingPlansTableTable extends CarbLoadingPlansTable
 }
 
 class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
-  final int id;
-  final int? eventId;
+  final String id;
+  final String? eventId;
   final String userId;
   final int totalDays;
   final DateTime startDate;
@@ -13067,9 +13067,9 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    map['id'] = Variable<String>(id);
     if (!nullToAbsent || eventId != null) {
-      map['event_id'] = Variable<int>(eventId);
+      map['event_id'] = Variable<String>(eventId);
     }
     map['user_id'] = Variable<String>(userId);
     map['total_days'] = Variable<int>(totalDays);
@@ -13125,8 +13125,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return CarbLoadingPlan(
-      id: serializer.fromJson<int>(json['id']),
-      eventId: serializer.fromJson<int?>(json['eventId']),
+      id: serializer.fromJson<String>(json['id']),
+      eventId: serializer.fromJson<String?>(json['eventId']),
       userId: serializer.fromJson<String>(json['userId']),
       totalDays: serializer.fromJson<int>(json['totalDays']),
       startDate: serializer.fromJson<DateTime>(json['startDate']),
@@ -13147,8 +13147,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'eventId': serializer.toJson<int?>(eventId),
+      'id': serializer.toJson<String>(id),
+      'eventId': serializer.toJson<String?>(eventId),
       'userId': serializer.toJson<String>(userId),
       'totalDays': serializer.toJson<int>(totalDays),
       'startDate': serializer.toJson<DateTime>(startDate),
@@ -13165,8 +13165,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
   }
 
   CarbLoadingPlan copyWith({
-    int? id,
-    Value<int?> eventId = const Value.absent(),
+    String? id,
+    Value<String?> eventId = const Value.absent(),
     String? userId,
     int? totalDays,
     DateTime? startDate,
@@ -13293,8 +13293,8 @@ class CarbLoadingPlan extends DataClass implements Insertable<CarbLoadingPlan> {
 }
 
 class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
-  final Value<int> id;
-  final Value<int?> eventId;
+  final Value<String> id;
+  final Value<String?> eventId;
   final Value<String> userId;
   final Value<int> totalDays;
   final Value<DateTime> startDate;
@@ -13348,8 +13348,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
        dailyCarbTargetGrams = Value(dailyCarbTargetGrams),
        generatedAt = Value(generatedAt);
   static Insertable<CarbLoadingPlan> custom({
-    Expression<int>? id,
-    Expression<int>? eventId,
+    Expression<String>? id,
+    Expression<String>? eventId,
     Expression<String>? userId,
     Expression<int>? totalDays,
     Expression<DateTime>? startDate,
@@ -13386,8 +13386,8 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
   }
 
   CarbLoadingPlansTableCompanion copyWith({
-    Value<int>? id,
-    Value<int?>? eventId,
+    Value<String>? id,
+    Value<String?>? eventId,
     Value<String>? userId,
     Value<int>? totalDays,
     Value<DateTime>? startDate,
@@ -13425,10 +13425,10 @@ class CarbLoadingPlansTableCompanion extends UpdateCompanion<CarbLoadingPlan> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
     }
     if (eventId.present) {
-      map['event_id'] = Variable<int>(eventId.value);
+      map['event_id'] = Variable<String>(eventId.value);
     }
     if (userId.present) {
       map['user_id'] = Variable<String>(userId.value);
@@ -13505,25 +13505,26 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
   $CarbLoadingDaysTableTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
-    clientDefault: () => Random().nextInt(2147483647),
+    clientDefault: () => const Uuid().v4(),
   );
   static const VerificationMeta _carbLoadingPlanIdMeta = const VerificationMeta(
     'carbLoadingPlanId',
   );
   @override
-  late final GeneratedColumn<int> carbLoadingPlanId = GeneratedColumn<int>(
-    'carb_loading_plan_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
+  late final GeneratedColumn<String> carbLoadingPlanId =
+      GeneratedColumn<String>(
+        'carb_loading_plan_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
   static const VerificationMeta _planDateMeta = const VerificationMeta(
     'planDate',
   );
@@ -13930,7 +13931,7 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
     {carbLoadingPlanId, planDate},
@@ -13940,11 +13941,11 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CarbLoadingDay(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
       carbLoadingPlanId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}carb_loading_plan_id'],
       )!,
       planDate: attachedDatabase.typeMapping.read(
@@ -14025,8 +14026,8 @@ class $CarbLoadingDaysTableTable extends CarbLoadingDaysTable
 }
 
 class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
-  final int id;
-  final int carbLoadingPlanId;
+  final String id;
+  final String carbLoadingPlanId;
   final DateTime planDate;
   final int dayNumber;
   final int carbTargetGrams;
@@ -14068,8 +14069,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['carb_loading_plan_id'] = Variable<int>(carbLoadingPlanId);
+    map['id'] = Variable<String>(id);
+    map['carb_loading_plan_id'] = Variable<String>(carbLoadingPlanId);
     map['plan_date'] = Variable<DateTime>(planDate);
     map['day_number'] = Variable<int>(dayNumber);
     map['carb_target_grams'] = Variable<int>(carbTargetGrams);
@@ -14124,8 +14125,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return CarbLoadingDay(
-      id: serializer.fromJson<int>(json['id']),
-      carbLoadingPlanId: serializer.fromJson<int>(json['carbLoadingPlanId']),
+      id: serializer.fromJson<String>(json['id']),
+      carbLoadingPlanId: serializer.fromJson<String>(json['carbLoadingPlanId']),
       planDate: serializer.fromJson<DateTime>(json['planDate']),
       dayNumber: serializer.fromJson<int>(json['dayNumber']),
       carbTargetGrams: serializer.fromJson<int>(json['carbTargetGrams']),
@@ -14157,8 +14158,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'carbLoadingPlanId': serializer.toJson<int>(carbLoadingPlanId),
+      'id': serializer.toJson<String>(id),
+      'carbLoadingPlanId': serializer.toJson<String>(carbLoadingPlanId),
       'planDate': serializer.toJson<DateTime>(planDate),
       'dayNumber': serializer.toJson<int>(dayNumber),
       'carbTargetGrams': serializer.toJson<int>(carbTargetGrams),
@@ -14180,8 +14181,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
   }
 
   CarbLoadingDay copyWith({
-    int? id,
-    int? carbLoadingPlanId,
+    String? id,
+    String? carbLoadingPlanId,
     DateTime? planDate,
     int? dayNumber,
     int? carbTargetGrams,
@@ -14348,8 +14349,8 @@ class CarbLoadingDay extends DataClass implements Insertable<CarbLoadingDay> {
 }
 
 class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
-  final Value<int> id;
-  final Value<int> carbLoadingPlanId;
+  final Value<String> id;
+  final Value<String> carbLoadingPlanId;
   final Value<DateTime> planDate;
   final Value<int> dayNumber;
   final Value<int> carbTargetGrams;
@@ -14392,7 +14393,7 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
   });
   CarbLoadingDaysTableCompanion.insert({
     this.id = const Value.absent(),
-    required int carbLoadingPlanId,
+    required String carbLoadingPlanId,
     required DateTime planDate,
     required int dayNumber,
     required int carbTargetGrams,
@@ -14416,8 +14417,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
        dayNumber = Value(dayNumber),
        carbTargetGrams = Value(carbTargetGrams);
   static Insertable<CarbLoadingDay> custom({
-    Expression<int>? id,
-    Expression<int>? carbLoadingPlanId,
+    Expression<String>? id,
+    Expression<String>? carbLoadingPlanId,
     Expression<DateTime>? planDate,
     Expression<int>? dayNumber,
     Expression<int>? carbTargetGrams,
@@ -14466,8 +14467,8 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
   }
 
   CarbLoadingDaysTableCompanion copyWith({
-    Value<int>? id,
-    Value<int>? carbLoadingPlanId,
+    Value<String>? id,
+    Value<String>? carbLoadingPlanId,
     Value<DateTime>? planDate,
     Value<int>? dayNumber,
     Value<int>? carbTargetGrams,
@@ -14516,10 +14517,10 @@ class CarbLoadingDaysTableCompanion extends UpdateCompanion<CarbLoadingDay> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
     }
     if (carbLoadingPlanId.present) {
-      map['carb_loading_plan_id'] = Variable<int>(carbLoadingPlanId.value);
+      map['carb_loading_plan_id'] = Variable<String>(carbLoadingPlanId.value);
     }
     if (planDate.present) {
       map['plan_date'] = Variable<DateTime>(planDate.value);
@@ -16153,23 +16154,23 @@ class $CarbLoadingDayMealsTableTable extends CarbLoadingDayMealsTable
   $CarbLoadingDayMealsTableTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
-    clientDefault: () => Random().nextInt(2147483647),
+    clientDefault: () => const Uuid().v4(),
   );
   static const VerificationMeta _carbLoadingDayIdMeta = const VerificationMeta(
     'carbLoadingDayId',
   );
   @override
-  late final GeneratedColumn<int> carbLoadingDayId = GeneratedColumn<int>(
+  late final GeneratedColumn<String> carbLoadingDayId = GeneratedColumn<String>(
     'carb_loading_day_id',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
   static const VerificationMeta _mealTypeIdMeta = const VerificationMeta(
@@ -16374,17 +16375,17 @@ class $CarbLoadingDayMealsTableTable extends CarbLoadingDayMealsTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   CarbLoadingDayMeal map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CarbLoadingDayMeal(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
       carbLoadingDayId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}carb_loading_day_id'],
       )!,
       mealTypeId: attachedDatabase.typeMapping.read(
@@ -16430,8 +16431,8 @@ class $CarbLoadingDayMealsTableTable extends CarbLoadingDayMealsTable
 
 class CarbLoadingDayMeal extends DataClass
     implements Insertable<CarbLoadingDayMeal> {
-  final int id;
-  final int carbLoadingDayId;
+  final String id;
+  final String carbLoadingDayId;
   final int mealTypeId;
   final String? carbLoadingFoodId;
   final String? carbLoadingUserFoodId;
@@ -16455,8 +16456,8 @@ class CarbLoadingDayMeal extends DataClass
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['carb_loading_day_id'] = Variable<int>(carbLoadingDayId);
+    map['id'] = Variable<String>(id);
+    map['carb_loading_day_id'] = Variable<String>(carbLoadingDayId);
     map['meal_type_id'] = Variable<int>(mealTypeId);
     if (!nullToAbsent || carbLoadingFoodId != null) {
       map['carb_loading_food_id'] = Variable<String>(carbLoadingFoodId);
@@ -16503,8 +16504,8 @@ class CarbLoadingDayMeal extends DataClass
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return CarbLoadingDayMeal(
-      id: serializer.fromJson<int>(json['id']),
-      carbLoadingDayId: serializer.fromJson<int>(json['carbLoadingDayId']),
+      id: serializer.fromJson<String>(json['id']),
+      carbLoadingDayId: serializer.fromJson<String>(json['carbLoadingDayId']),
       mealTypeId: serializer.fromJson<int>(json['mealTypeId']),
       carbLoadingFoodId: serializer.fromJson<String?>(
         json['carbLoadingFoodId'],
@@ -16523,8 +16524,8 @@ class CarbLoadingDayMeal extends DataClass
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'carbLoadingDayId': serializer.toJson<int>(carbLoadingDayId),
+      'id': serializer.toJson<String>(id),
+      'carbLoadingDayId': serializer.toJson<String>(carbLoadingDayId),
       'mealTypeId': serializer.toJson<int>(mealTypeId),
       'carbLoadingFoodId': serializer.toJson<String?>(carbLoadingFoodId),
       'carbLoadingUserFoodId': serializer.toJson<String?>(
@@ -16539,8 +16540,8 @@ class CarbLoadingDayMeal extends DataClass
   }
 
   CarbLoadingDayMeal copyWith({
-    int? id,
-    int? carbLoadingDayId,
+    String? id,
+    String? carbLoadingDayId,
     int? mealTypeId,
     Value<String?> carbLoadingFoodId = const Value.absent(),
     Value<String?> carbLoadingUserFoodId = const Value.absent(),
@@ -16642,8 +16643,8 @@ class CarbLoadingDayMeal extends DataClass
 
 class CarbLoadingDayMealsTableCompanion
     extends UpdateCompanion<CarbLoadingDayMeal> {
-  final Value<int> id;
-  final Value<int> carbLoadingDayId;
+  final Value<String> id;
+  final Value<String> carbLoadingDayId;
   final Value<int> mealTypeId;
   final Value<String?> carbLoadingFoodId;
   final Value<String?> carbLoadingUserFoodId;
@@ -16668,7 +16669,7 @@ class CarbLoadingDayMealsTableCompanion
   });
   CarbLoadingDayMealsTableCompanion.insert({
     this.id = const Value.absent(),
-    required int carbLoadingDayId,
+    required String carbLoadingDayId,
     required int mealTypeId,
     this.carbLoadingFoodId = const Value.absent(),
     this.carbLoadingUserFoodId = const Value.absent(),
@@ -16682,8 +16683,8 @@ class CarbLoadingDayMealsTableCompanion
        mealTypeId = Value(mealTypeId),
        carbsConsumed = Value(carbsConsumed);
   static Insertable<CarbLoadingDayMeal> custom({
-    Expression<int>? id,
-    Expression<int>? carbLoadingDayId,
+    Expression<String>? id,
+    Expression<String>? carbLoadingDayId,
     Expression<int>? mealTypeId,
     Expression<String>? carbLoadingFoodId,
     Expression<String>? carbLoadingUserFoodId,
@@ -16711,8 +16712,8 @@ class CarbLoadingDayMealsTableCompanion
   }
 
   CarbLoadingDayMealsTableCompanion copyWith({
-    Value<int>? id,
-    Value<int>? carbLoadingDayId,
+    Value<String>? id,
+    Value<String>? carbLoadingDayId,
     Value<int>? mealTypeId,
     Value<String?>? carbLoadingFoodId,
     Value<String?>? carbLoadingUserFoodId,
@@ -16743,10 +16744,10 @@ class CarbLoadingDayMealsTableCompanion
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
     }
     if (carbLoadingDayId.present) {
-      map['carb_loading_day_id'] = Variable<int>(carbLoadingDayId.value);
+      map['carb_loading_day_id'] = Variable<String>(carbLoadingDayId.value);
     }
     if (mealTypeId.present) {
       map['meal_type_id'] = Variable<int>(mealTypeId.value);
@@ -21934,7 +21935,7 @@ typedef $$EdgeFunctionsTableTableProcessedTableManager =
     >;
 typedef $$ActivitiesTableTableCreateCompanionBuilder =
     ActivitiesTableCompanion Function({
-      Value<int> id,
+      Value<String> id,
       required String userId,
       required String activityType,
       required String title,
@@ -21974,7 +21975,7 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
     });
 typedef $$ActivitiesTableTableUpdateCompanionBuilder =
     ActivitiesTableCompanion Function({
-      Value<int> id,
+      Value<String> id,
       Value<String> userId,
       Value<String> activityType,
       Value<String> title,
@@ -22022,7 +22023,7 @@ class $$ActivitiesTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
   );
@@ -22212,7 +22213,7 @@ class $$ActivitiesTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
   );
@@ -22402,7 +22403,7 @@ class $$ActivitiesTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<String> get userId =>
@@ -22600,7 +22601,7 @@ class $$ActivitiesTableTableTableManager
               $$ActivitiesTableTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                Value<String> id = const Value.absent(),
                 Value<String> userId = const Value.absent(),
                 Value<String> activityType = const Value.absent(),
                 Value<String> title = const Value.absent(),
@@ -22678,7 +22679,7 @@ class $$ActivitiesTableTableTableManager
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                Value<String> id = const Value.absent(),
                 required String userId,
                 required String activityType,
                 required String title,
@@ -22781,8 +22782,8 @@ typedef $$ActivitiesTableTableProcessedTableManager =
     >;
 typedef $$EventsTableTableCreateCompanionBuilder =
     EventsTableCompanion Function({
-      Value<int> id,
-      Value<int?> activityId,
+      Value<String> id,
+      Value<String?> activityId,
       required String userId,
       required String eventType,
       Value<String?> eventSubtype,
@@ -22812,8 +22813,8 @@ typedef $$EventsTableTableCreateCompanionBuilder =
     });
 typedef $$EventsTableTableUpdateCompanionBuilder =
     EventsTableCompanion Function({
-      Value<int> id,
-      Value<int?> activityId,
+      Value<String> id,
+      Value<String?> activityId,
       Value<String> userId,
       Value<String> eventType,
       Value<String?> eventSubtype,
@@ -22851,12 +22852,12 @@ class $$EventsTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get activityId => $composableBuilder(
+  ColumnFilters<String> get activityId => $composableBuilder(
     column: $table.activityId,
     builder: (column) => ColumnFilters(column),
   );
@@ -22996,12 +22997,12 @@ class $$EventsTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get activityId => $composableBuilder(
+  ColumnOrderings<String> get activityId => $composableBuilder(
     column: $table.activityId,
     builder: (column) => ColumnOrderings(column),
   );
@@ -23141,10 +23142,10 @@ class $$EventsTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<int> get activityId => $composableBuilder(
+  GeneratedColumn<String> get activityId => $composableBuilder(
     column: $table.activityId,
     builder: (column) => column,
   );
@@ -23285,8 +23286,8 @@ class $$EventsTableTableTableManager
               $$EventsTableTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                Value<int?> activityId = const Value.absent(),
+                Value<String> id = const Value.absent(),
+                Value<String?> activityId = const Value.absent(),
                 Value<String> userId = const Value.absent(),
                 Value<String> eventType = const Value.absent(),
                 Value<String?> eventSubtype = const Value.absent(),
@@ -23345,8 +23346,8 @@ class $$EventsTableTableTableManager
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                Value<int?> activityId = const Value.absent(),
+                Value<String> id = const Value.absent(),
+                Value<String?> activityId = const Value.absent(),
                 required String userId,
                 required String eventType,
                 Value<String?> eventSubtype = const Value.absent(),
@@ -23427,8 +23428,8 @@ typedef $$EventsTableTableProcessedTableManager =
     >;
 typedef $$CarbLoadingPlansTableTableCreateCompanionBuilder =
     CarbLoadingPlansTableCompanion Function({
-      Value<int> id,
-      Value<int?> eventId,
+      Value<String> id,
+      Value<String?> eventId,
       required String userId,
       required int totalDays,
       required DateTime startDate,
@@ -23445,8 +23446,8 @@ typedef $$CarbLoadingPlansTableTableCreateCompanionBuilder =
     });
 typedef $$CarbLoadingPlansTableTableUpdateCompanionBuilder =
     CarbLoadingPlansTableCompanion Function({
-      Value<int> id,
-      Value<int?> eventId,
+      Value<String> id,
+      Value<String?> eventId,
       Value<String> userId,
       Value<int> totalDays,
       Value<DateTime> startDate,
@@ -23471,12 +23472,12 @@ class $$CarbLoadingPlansTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get eventId => $composableBuilder(
+  ColumnFilters<String> get eventId => $composableBuilder(
     column: $table.eventId,
     builder: (column) => ColumnFilters(column),
   );
@@ -23551,12 +23552,12 @@ class $$CarbLoadingPlansTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get eventId => $composableBuilder(
+  ColumnOrderings<String> get eventId => $composableBuilder(
     column: $table.eventId,
     builder: (column) => ColumnOrderings(column),
   );
@@ -23631,10 +23632,10 @@ class $$CarbLoadingPlansTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<int> get eventId =>
+  GeneratedColumn<String> get eventId =>
       $composableBuilder(column: $table.eventId, builder: (column) => column);
 
   GeneratedColumn<String> get userId =>
@@ -23736,8 +23737,8 @@ class $$CarbLoadingPlansTableTableTableManager
               ),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                Value<int?> eventId = const Value.absent(),
+                Value<String> id = const Value.absent(),
+                Value<String?> eventId = const Value.absent(),
                 Value<String> userId = const Value.absent(),
                 Value<int> totalDays = const Value.absent(),
                 Value<DateTime> startDate = const Value.absent(),
@@ -23770,8 +23771,8 @@ class $$CarbLoadingPlansTableTableTableManager
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                Value<int?> eventId = const Value.absent(),
+                Value<String> id = const Value.absent(),
+                Value<String?> eventId = const Value.absent(),
                 required String userId,
                 required int totalDays,
                 required DateTime startDate,
@@ -23833,8 +23834,8 @@ typedef $$CarbLoadingPlansTableTableProcessedTableManager =
     >;
 typedef $$CarbLoadingDaysTableTableCreateCompanionBuilder =
     CarbLoadingDaysTableCompanion Function({
-      Value<int> id,
-      required int carbLoadingPlanId,
+      Value<String> id,
+      required String carbLoadingPlanId,
       required DateTime planDate,
       required int dayNumber,
       required int carbTargetGrams,
@@ -23856,8 +23857,8 @@ typedef $$CarbLoadingDaysTableTableCreateCompanionBuilder =
     });
 typedef $$CarbLoadingDaysTableTableUpdateCompanionBuilder =
     CarbLoadingDaysTableCompanion Function({
-      Value<int> id,
-      Value<int> carbLoadingPlanId,
+      Value<String> id,
+      Value<String> carbLoadingPlanId,
       Value<DateTime> planDate,
       Value<int> dayNumber,
       Value<int> carbTargetGrams,
@@ -23887,12 +23888,12 @@ class $$CarbLoadingDaysTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get carbLoadingPlanId => $composableBuilder(
+  ColumnFilters<String> get carbLoadingPlanId => $composableBuilder(
     column: $table.carbLoadingPlanId,
     builder: (column) => ColumnFilters(column),
   );
@@ -23992,12 +23993,12 @@ class $$CarbLoadingDaysTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get carbLoadingPlanId => $composableBuilder(
+  ColumnOrderings<String> get carbLoadingPlanId => $composableBuilder(
     column: $table.carbLoadingPlanId,
     builder: (column) => ColumnOrderings(column),
   );
@@ -24097,10 +24098,10 @@ class $$CarbLoadingDaysTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<int> get carbLoadingPlanId => $composableBuilder(
+  GeneratedColumn<String> get carbLoadingPlanId => $composableBuilder(
     column: $table.carbLoadingPlanId,
     builder: (column) => column,
   );
@@ -24226,8 +24227,8 @@ class $$CarbLoadingDaysTableTableTableManager
               ),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                Value<int> carbLoadingPlanId = const Value.absent(),
+                Value<String> id = const Value.absent(),
+                Value<String> carbLoadingPlanId = const Value.absent(),
                 Value<DateTime> planDate = const Value.absent(),
                 Value<int> dayNumber = const Value.absent(),
                 Value<int> carbTargetGrams = const Value.absent(),
@@ -24270,8 +24271,8 @@ class $$CarbLoadingDaysTableTableTableManager
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                required int carbLoadingPlanId,
+                Value<String> id = const Value.absent(),
+                required String carbLoadingPlanId,
                 required DateTime planDate,
                 required int dayNumber,
                 required int carbTargetGrams,
@@ -25088,8 +25089,8 @@ typedef $$CarbLoadingUserFoodsTableTableProcessedTableManager =
     >;
 typedef $$CarbLoadingDayMealsTableTableCreateCompanionBuilder =
     CarbLoadingDayMealsTableCompanion Function({
-      Value<int> id,
-      required int carbLoadingDayId,
+      Value<String> id,
+      required String carbLoadingDayId,
       required int mealTypeId,
       Value<String?> carbLoadingFoodId,
       Value<String?> carbLoadingUserFoodId,
@@ -25102,8 +25103,8 @@ typedef $$CarbLoadingDayMealsTableTableCreateCompanionBuilder =
     });
 typedef $$CarbLoadingDayMealsTableTableUpdateCompanionBuilder =
     CarbLoadingDayMealsTableCompanion Function({
-      Value<int> id,
-      Value<int> carbLoadingDayId,
+      Value<String> id,
+      Value<String> carbLoadingDayId,
       Value<int> mealTypeId,
       Value<String?> carbLoadingFoodId,
       Value<String?> carbLoadingUserFoodId,
@@ -25124,12 +25125,12 @@ class $$CarbLoadingDayMealsTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get carbLoadingDayId => $composableBuilder(
+  ColumnFilters<String> get carbLoadingDayId => $composableBuilder(
     column: $table.carbLoadingDayId,
     builder: (column) => ColumnFilters(column),
   );
@@ -25184,12 +25185,12 @@ class $$CarbLoadingDayMealsTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get carbLoadingDayId => $composableBuilder(
+  ColumnOrderings<String> get carbLoadingDayId => $composableBuilder(
     column: $table.carbLoadingDayId,
     builder: (column) => ColumnOrderings(column),
   );
@@ -25244,10 +25245,10 @@ class $$CarbLoadingDayMealsTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<int> get carbLoadingDayId => $composableBuilder(
+  GeneratedColumn<String> get carbLoadingDayId => $composableBuilder(
     column: $table.carbLoadingDayId,
     builder: (column) => column,
   );
@@ -25333,8 +25334,8 @@ class $$CarbLoadingDayMealsTableTableTableManager
               ),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                Value<int> carbLoadingDayId = const Value.absent(),
+                Value<String> id = const Value.absent(),
+                Value<String> carbLoadingDayId = const Value.absent(),
                 Value<int> mealTypeId = const Value.absent(),
                 Value<String?> carbLoadingFoodId = const Value.absent(),
                 Value<String?> carbLoadingUserFoodId = const Value.absent(),
@@ -25359,8 +25360,8 @@ class $$CarbLoadingDayMealsTableTableTableManager
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                required int carbLoadingDayId,
+                Value<String> id = const Value.absent(),
+                required String carbLoadingDayId,
                 required int mealTypeId,
                 Value<String?> carbLoadingFoodId = const Value.absent(),
                 Value<String?> carbLoadingUserFoodId = const Value.absent(),

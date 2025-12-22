@@ -35,7 +35,11 @@ create table public.users
     cycling_ftp_watts             integer,
     prefers_cycling_power         boolean                  default false,
     swimming_css_seconds_per_100m integer,
-    prefers_swimming_pace         boolean                  default false
+    prefers_swimming_pace         boolean                  default false,
+    dietary_preference            text
+        constraint users_dietary_preference_check
+            check (dietary_preference IN ('omnivore', 'vegetarian', 'pescatarian', 'vegan', 'mediterranean', 'paleo', 'keto', 'low_carb') OR dietary_preference IS NULL),
+    allergies                     text                     default '{}'::text
 );
 
 comment on column public.users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -45,6 +49,10 @@ comment on column public.users.prefers_cycling_power is 'Whether user prefers to
 comment on column public.users.swimming_css_seconds_per_100m is 'User default CSS (Critical Swim Speed) in seconds per 100m';
 
 comment on column public.users.prefers_swimming_pace is 'Whether user prefers to input pace vs speed for swimming';
+
+comment on column public.users.dietary_preference is 'User dietary preference (omnivore, vegetarian, vegan, etc.) - nullable for users who skip during onboarding';
+
+comment on column public.users.allergies is 'User food allergies stored as PostgreSQL text array format (e.g., {dairy,gluten,peanuts})';
 
 alter table public.users
     owner to postgres;

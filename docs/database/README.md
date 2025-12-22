@@ -17,6 +17,12 @@ Mealvana Endurance uses a unified database architecture with local-first design:
 - Foods table includes sport-specific suitability filtering (dev and prod)
 - User profiles store sport-specific preferences - FTP, CSS (dev only)
 
+**Dietary Preferences & Allergies (Added 2025-12-14 to Prod):**
+- User profiles store dietary preference (omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb)
+- User profiles store allergies array (dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts)
+- Foods table includes allergens and excluded_diets arrays for filtering
+- GIN indexes for efficient array-based filtering queries
+
 **Weather Integration (Added 2025-10-28):**
 - Weather forecasts table for caching weather data
 - Supports 3-tier caching: in-memory, database (1-24hr), API fallback
@@ -25,12 +31,13 @@ Mealvana Endurance uses a unified database architecture with local-first design:
 ## Architecture
 
 ### Local Database (Drift)
-- **Schema Version**: 1
+- **Schema Version**: 2 (migrated from v1 using Drift's migration system)
 - **Tables**: 27 total
 - **Location**: `/lib/shared/database/`
 - **Purpose**: Offline functionality, fast local access
 - **Multi-Sport**: Full support - cycling/swimming columns in activities, users, foods tables
 - **Weather Caching**: weather_forecasts_table for API response caching
+- **Migration Strategy**: Proper Drift migrations with version bumps and idempotent checks
 
 ### Cloud Database (Supabase)
 - **Dev Environment**: 27 tables with full multi-sport support
@@ -38,10 +45,12 @@ Mealvana Endurance uses a unified database architecture with local-first design:
 - **Schema Dumps**:
   - Dev: `/docs/dev_schema.txt` (full multi-sport)
   - Prod: `/docs/prod_schema.txt` (partial multi-sport)
-  - V1 Baseline: `/database_schemas/v1/schema.sql` (from dev)
+  - V2 Current: `/database_schemas/v2/` (current schema with migrations)
+  - V1 Baseline: `/database_schemas/v1/` (original baseline, preserved)
 - **Purpose**: Data backup, cross-device sync, content management
 - **Multi-Sport Migration**: Applied to dev, pending for prod
 - **Weather Support**: Local-only table, not synced to Supabase
+- **Migration Approach**: Idempotent migrations with column existence checks
 
 ## Table Structure
 
@@ -86,7 +95,9 @@ Some synced tables have extra Drift-only columns:
 1. **Device-Based Authentication**: No traditional user accounts, uses `device_id`
 2. **Offline-First**: Full functionality without internet
 3. **Selective Sync**: Only core tables sync to Supabase
-4. **Incremental Migration**: Drift's built-in migration system for v1→v2 and beyond
+4. **Proper Drift Migrations**: Using Drift's built-in migration system with schema version bumps
+5. **Idempotent Migrations**: All migrations check column existence before adding to prevent errors
+6. **Simple Rollback**: If migration fails, delete local DB and resync from Supabase
 
 ## Critical Schema Notes
 
@@ -95,16 +106,33 @@ Some synced tables have extra Drift-only columns:
 - Foods reference `product_type_id` (UUID to product_types.id)
 - All foreign keys are enforced in both databases
 
-### Check Constraints
-The following enum constraints are enforced:
+### Enum Types
+
+**Supabase (PostgreSQL):**
+Supabase uses native PostgreSQL enum types:
+- `dietary_preference_enum`: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb
+- `allergy_enum`: dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts
+- `gender_enum`: male, female, other, unknown
+- `gut_training_enum`: low, moderate, high
+- `activity_type_enum`: running, cycling, swimming, triathlon, duathlon, multisport
+- `category_enum`: before_run, during_run, after_run
+- `product_type_enum`: gel, bar, chew, drink_mix, etc.
+
+**Drift (SQLite):**
+SQLite doesn't support native enums, so Drift uses TEXT columns with CHECK constraints:
 ```sql
 -- Users table
-CHECK (gender IN ('male', 'female', 'other'))
+CHECK (gender IN ('male', 'female', 'other') OR gender IS NULL)
 CHECK (gut_training_level IN ('low', 'moderate', 'high'))
+CHECK (dietary_preference IN ('omnivore', 'vegetarian', 'pescatarian', 'vegan', 'mediterranean', 'paleo', 'keto', 'low_carb') OR dietary_preference IS NULL)
 
 -- Food preferences
 CHECK (preference IN ('like', 'dislike', 'willing_to_try'))
 ```
+
+**Array Storage:**
+- **Supabase**: Native PostgreSQL arrays (e.g., `allergy_enum[]`)
+- **Drift**: PostgreSQL-compatible text format (e.g., `'{dairy,gluten,peanuts}'`)
 
 ### Data Type Mappings
 | Supabase Type | Drift Type | Notes |
@@ -255,5 +283,20 @@ Added sport suitability filtering:
 
 **Migration:** `/supabase/migrations/20251015000000_add_cycling_swimming_support.sql`
 
+## Schema Version History
+
+### V2 (Current - December 2025)
+- **Migration Approach**: Proper Drift migrations with version bumps
+- **Key Changes**:
+  - Consolidated preference_level, dietary_preference, and allergies columns
+  - Added idempotent migration checks (verifies column existence before adding)
+  - Implemented simple rollback strategy (delete DB and resync)
+- **Schema Location**: `/database_schemas/v2/`
+
+### V1 (Baseline - October 2025)
+- **Initial Implementation**: 27 tables with multi-sport support
+- **Approach**: Runtime column additions in beforeOpen hook (deprecated)
+- **Schema Location**: `/database_schemas/v1/` (preserved for reference)
+
 ---
-*Last updated: October 2025 - Schema Version 1*
+*Last updated: December 2025 - Schema Version 2*

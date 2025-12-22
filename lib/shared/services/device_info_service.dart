@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../utils/platform_io.dart' if (dart.library.html) '../utils/platform_web.dart';
 
 /// Cached device information for analytics and telemetry.
 ///
@@ -31,14 +31,22 @@ class DeviceInfoService {
     try {
       final deviceInfo = DeviceInfoPlugin();
 
-      if (Platform.isIOS) {
+      // Web platform uses browser-based device info
+      if (kIsWeb) {
+        final webInfo = await deviceInfo.webBrowserInfo;
+        _cachedDeviceId = 'web-${webInfo.userAgent?.hashCode.abs() ?? DateTime.now().millisecondsSinceEpoch}';
+        _cachedDeviceInfo = {
+          'os_version': webInfo.platform ?? 'unknown',
+          'device_model': webInfo.browserName.name,
+        };
+      } else if (PlatformInfo.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
         _cachedDeviceId = iosInfo.identifierForVendor ?? _generateFallbackId();
         _cachedDeviceInfo = {
           'os_version': iosInfo.systemVersion,
           'device_model': iosInfo.model,
         };
-      } else if (Platform.isAndroid) {
+      } else if (PlatformInfo.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
         _cachedDeviceId = androidInfo.id.isNotEmpty
             ? androidInfo.id
