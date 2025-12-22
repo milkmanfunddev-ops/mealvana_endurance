@@ -93,15 +93,18 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: AppSpacing.screenPaddingHorizontal,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+      appBar: _buildAppBar(context, isLoading: asyncState.isLoading),
+      body: Stack(
+        children: [
+          // Main content
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: AppSpacing.screenPaddingHorizontal,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                 const SizedBox(height: AppSpacing.xl),
 
                 // Title
@@ -234,15 +237,45 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                 ),
 
                 const SizedBox(height: AppSpacing.xxl),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+
+          // Loading overlay
+          if (asyncState.isLoading)
+            Container(
+              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: AppColors.electrolyte,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      contentService.getValue(
+                        'auth.login.syncing_message',
+                        defaultValue: 'Signing in and syncing your data...',
+                      ),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, {bool isLoading = false}) {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -250,21 +283,24 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          // Custom back button
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: AppIconSizes.controlIcon,
-                color: Theme.of(context).colorScheme.onSurface,
+          // Custom back button (disabled during loading)
+          Opacity(
+            opacity: isLoading ? 0.5 : 1.0,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              onPressed: () => context.pop(),
+              child: IconButton(
+                icon: Icon(
+                  FontAwesomeIcons.arrowLeft,
+                  size: AppIconSizes.controlIcon,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                onPressed: isLoading ? null : () => context.pop(),
+              ),
             ),
           ),
         ],

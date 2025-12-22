@@ -48,6 +48,37 @@ class DataSyncService {
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+
+  /// Helper to safely convert ID from server (may be int or String) to String
+  /// This handles the transition from BIGINT to UUID schema
+  static String? _toStringId(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    if (value is int) return value.toString();
+    return value.toString();
+  }
+
+  /// Helper to safely convert required ID (throws if null)
+  static String _toRequiredStringId(dynamic value, String fieldName) {
+    final result = _toStringId(value);
+    if (result == null) {
+      throw ArgumentError('$fieldName cannot be null');
+    }
+    return result;
+  }
+
+  /// Helper to safely convert boolean from server (may be bool, int 0/1, or String)
+  /// This handles various representations that different DB drivers might return
+  static bool _toBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is int) return value != 0;
+    if (value is String) {
+      return value.toLowerCase() == 'true' || value == '1';
+    }
+    return false;
+  }
+
   final FoodRepository _foodRepository;
   final CarbLoadingFoodSyncService _carbLoadingFoodSyncService;
 
@@ -629,8 +660,8 @@ class DataSyncService {
 
   Future<void> _upsertActivity(Map<String, dynamic> data) async {
     try {
-      final activityId = data['id'] as String;
-      final userId = data['user_id'] as String;
+      final activityId = _toRequiredStringId(data['id'], 'activity.id');
+      final userId = _toRequiredStringId(data['user_id'], 'activity.user_id');
 
       _logger.info(
         '💾 UPSERTING activity from sync',
@@ -720,7 +751,7 @@ class DataSyncService {
 
   Future<void> _upsertEvent(Map<String, dynamic> data, String userId) async {
     try {
-      final eventId = data['id'] as String;
+      final eventId = _toRequiredStringId(data['id'], 'event.id');
       final existingEvent = await (_database.select(_database.eventsTable)
             ..where((tbl) => tbl.id.equals(eventId)))
           .getSingleOrNull();
@@ -729,9 +760,10 @@ class DataSyncService {
 
       if (existingEvent == null || existingEvent.updatedAt.isBefore(supabaseUpdatedAt)) {
         String? activityId;
-        if (data['activity_id'] != null) {
+        final rawActivityId = _toStringId(data['activity_id']);
+        if (rawActivityId != null) {
           final activity = await (_database.select(_database.activitiesTable)
-                ..where((tbl) => tbl.id.equals(data['activity_id'] as String)))
+                ..where((tbl) => tbl.id.equals(rawActivityId)))
               .getSingleOrNull();
           if (activity == null || activity.userId != userId) {
             return;
@@ -741,7 +773,7 @@ class DataSyncService {
 
         final companion = EventsTableCompanion.insert(
           id: Value(eventId),
-          userId: data['user_id'] as String? ?? userId,
+          userId: _toStringId(data['user_id']) ?? userId,
           activityId: Value(activityId),
           eventType: data['event_type'] as String,
           eventSubtype: Value(data['event_subtype'] as String?),
@@ -752,14 +784,14 @@ class DataSyncService {
           goalTimeMinutes: Value(data['goal_time_minutes'] as int?),
           goalPaceMinutesPerMile: Value((data['goal_pace_minutes_per_mile'] as num?)?.toDouble()),
           predictedFinishTimeMinutes: Value(data['predicted_finish_time_minutes'] as int?),
-          hasCarbLoading: Value(data['has_carb_loading'] as bool? ?? false),
+          hasCarbLoading: Value(_toBool(data['has_carb_loading'])),
           carbLoadingDays: Value(data['carb_loading_days'] as int?),
           carbLoadingStartDate: Value(
             data['carb_loading_start_date'] != null
                 ? DateTime.parse(data['carb_loading_start_date'] as String)
                 : null,
           ),
-          hasNutritionPlan: Value(data['has_nutrition_plan'] as bool? ?? false),
+          hasNutritionPlan: Value(_toBool(data['has_nutrition_plan'])),
           bibNumber: Value(data['bib_number'] as String?),
           waveStartTime: Value(data['wave_start_time'] as String?),
           packetPickupInfo: Value(data['packet_pickup_info'] as String?),
@@ -787,7 +819,7 @@ class DataSyncService {
 
   Future<void> _upsertCarbLoadingPlan(Map<String, dynamic> data) async {
     try {
-      final planId = data['id'] as String;
+      final planId = _toRequiredStringId(data['id'], 'carb_loading_plan.id');
       final existingPlan = await (_database.select(_database.carbLoadingPlansTable)
             ..where((tbl) => tbl.id.equals(planId)))
           .getSingleOrNull();
@@ -804,8 +836,8 @@ class DataSyncService {
       if (shouldUpsert) {
         final companion = CarbLoadingPlansTableCompanion.insert(
           id: Value(planId),
-          eventId: Value(data['event_id'] as String?),
-          userId: data['user_id'] as String,
+          eventId: Value(_toStringId(data['event_id'])),
+          userId: _toRequiredStringId(data['user_id'], 'carb_loading_plan.user_id'),
           totalDays: data['total_days'] as int,
           startDate: DateTime.parse(data['start_date'] as String),
           endDate: DateTime.parse(data['end_date'] as String),
@@ -824,6 +856,29 @@ class DataSyncService {
         await _database
             .into(_database.carbLoadingPlansTable)
             .insert(companion, mode: InsertMode.insertOrReplace);
+
+        // CRITICAL FIX: Update the linked event's has_carb_loading flag
+        // This ensures event.hasCarbLoading is true even if it wasn't synced correctly from server
+        final eventId = _toStringId(data['event_id']);
+        if (eventId != null) {
+          final totalDays = data['total_days'] as int;
+          final startDate = DateTime.parse(data['start_date'] as String);
+
+          await (_database.update(_database.eventsTable)
+                ..where((tbl) => tbl.id.equals(eventId)))
+              .write(EventsTableCompanion(
+                hasCarbLoading: const Value(true),
+                carbLoadingDays: Value(totalDays),
+                carbLoadingStartDate: Value(startDate),
+                // Don't mark as needsUpload since we're syncing FROM server
+              ));
+
+          _logger.info(
+            'Updated event has_carb_loading flag during carb plan sync',
+            context: 'CARB_PLAN_SYNC',
+            data: {'eventId': eventId, 'planId': data['id']},
+          );
+        }
       }
     } catch (e, stackTrace) {
       _logger.error(
@@ -838,7 +893,7 @@ class DataSyncService {
 
   Future<void> _upsertCarbLoadingDay(Map<String, dynamic> data) async {
     try {
-      final dayId = data['id'] as String;
+      final dayId = _toRequiredStringId(data['id'], 'carb_loading_day.id');
       final existingDay = await (_database.select(_database.carbLoadingDaysTable)
             ..where((tbl) => tbl.id.equals(dayId)))
           .getSingleOrNull();
@@ -854,7 +909,7 @@ class DataSyncService {
       if (shouldUpsert) {
         final companion = CarbLoadingDaysTableCompanion.insert(
           id: Value(dayId),
-          carbLoadingPlanId: data['carb_loading_plan_id'] as String,
+          carbLoadingPlanId: _toRequiredStringId(data['carb_loading_plan_id'], 'carb_loading_day.carb_loading_plan_id'),
           planDate: DateTime.parse(data['plan_date'] as String),
           dayNumber: data['day_number'] as int,
           carbTargetGrams: data['carb_target_grams'] as int,

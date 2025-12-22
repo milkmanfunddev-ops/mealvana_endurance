@@ -1,6 +1,6 @@
 # Final Surge Integration - Implementation Roadmap
 
-**Last Updated**: December 17, 2025
+**Last Updated**: December 22, 2025
 **Status**: Ready for Implementation
 **Reference**: [Notes](./notes.md) | [Technical Architecture](./technical-architecture.md)
 
@@ -12,32 +12,508 @@ This roadmap details the implementation of Final Surge integration for Mealvana 
 - Add Final Surge as the **first screen** in onboarding (with TrainingPeaks + Strava as "Coming Soon")
 - Import **upcoming workouts** (14 days) for running, cycling, and swimming
 - **Auto-detect** user's sports from workout history and pre-populate onboarding
-- Generate **nutrition plans** for imported workouts via background processing
+- Generate **nutrition plans** for imported workouts via chunked parallel processing
 - Design for **multiple integrations** (extensible architecture)
 
-### Key User Decisions
+### Key User Decisions (Finalized December 2025)
 
 | Decision | Choice |
 |----------|--------|
-| **Workout change detection** | Only check for NEW workouts (not updates) |
-| **Sports supported** | Running, Cycling, Swimming |
-| **Import range** | 14 days upcoming only |
+| **Update behavior** | Manual sync only (no auto-checking) |
+| **Deleted workouts** | Keep in Mealvana if deleted in Final Surge |
+| **Walk workouts** | Import as ActivityType.running + IntensityLevel.easy |
+| **Missing data** | Apply sensible defaults (see below) |
+| **Pace ranges** | Store min/max separately, display midpoint |
+| **Swimming units** | Store in meters (industry standard) |
+| **Sync triggers** | Manual sync button + initial onboarding |
+| **Plan generation** | Immediate chunked parallel (5 concurrent) |
+| **Range columns** | Add to schema (pace_min, pace_max) |
+| **Workout subtype** | Add field (e.g., "Long Run", "Walk", "Recovery") |
 | **Onboarding placement** | First screen (before User Profile) |
-| **Nutrition plan generation** | Chunked parallel generation (5 concurrent) |
-| **Conflict resolution** | Keep both entries (don't merge/replace) |
-| **Token expiry** | Silent refresh + banner if needed |
-| **Premium gating** | Free for testing phase |
+| **Settings display** | Show Final Surge athlete info |
+
+### Sensible Defaults for Missing Data
+
+When Final Surge workouts are missing distance/duration/pace:
+
+| Sport | Distance | Duration | Pace |
+|-------|----------|----------|------|
+| **Running** | 3 miles | 30 min | 10:00/mile |
+| **Cycling** | 10 miles | 45 min | 13.3 mph |
+| **Swimming** | 1000 meters | 30 min | 180 sec/100m |
 
 ---
 
-## Phase 0: Database & Schema Setup
+## Phase 0: API Testing & Validation
+
+### Objective
+**CRITICAL**: Thoroughly test Final Surge API before any implementation. Validate data formats, transformations, and edge cases.
+
+### Why Testing First?
+- Final Surge API documentation may not match reality
+- Data transformation bugs are expensive to fix later
+- Establishes confidence in all data flowing into our system
+- Discovers edge cases (empty fields, unexpected formats, etc.)
+
+### Tasks
+
+#### 0.1 Create Test Fixtures from Real API Data
+
+```dart
+// test/fixtures/final_surge_fixtures.dart
+
+/// Real workout data captured from Final Surge API
+/// Used to validate transformations and edge cases
+
+class FinalSurgeFixtures {
+  /// Running workout with all fields populated
+  static const runningWorkoutComplete = {
+    'WorkoutId': 12345,
+    'WorkoutDate': '2025-01-15',
+    'WorkoutTitle': 'Marathon Tempo',
+    'WorkoutTypeName': 'Run',
+    'WorkoutIcon': 1,
+    'PlannedDistance': 10.0,
+    'PlannedDistanceType': 'mi',
+    'PlannedTime': 4800, // 80 minutes in SECONDS
+    'TargetPace': '8:00',
+    'WorkoutDesc': 'Easy warmup, then marathon pace',
+    'workout_url': 'https://log.finalsurge.com/workout?id=12345',
+  };
+
+  /// Running workout with pace RANGE
+  static const runningWorkoutPaceRange = {
+    'WorkoutId': 12346,
+    'WorkoutDate': '2025-01-16',
+    'WorkoutTitle': 'Easy Recovery',
+    'WorkoutTypeName': 'Run',
+    'PlannedDistance': 5.0,
+    'PlannedDistanceType': 'mi',
+    'PlannedTime': 2700, // 45 minutes
+    'TargetPace': '8:30-9:30', // RANGE format
+  };
+
+  /// Walk workout - should map to running/easy
+  static const walkWorkout = {
+    'WorkoutId': 12347,
+    'WorkoutDate': '2025-01-17',
+    'WorkoutTitle': 'Active Recovery Walk',
+    'WorkoutTypeName': 'Walk',
+    'WorkoutIcon': 11, // Walk icon
+    'PlannedDistance': 2.0,
+    'PlannedDistanceType': 'mi',
+    'PlannedTime': 2400, // 40 minutes
+  };
+
+  /// Swimming workout with meters
+  static const swimmingWorkout = {
+    'WorkoutId': 12348,
+    'WorkoutDate': '2025-01-18',
+    'WorkoutTitle': 'Pool Intervals',
+    'WorkoutTypeName': 'Swim',
+    'WorkoutIcon': 3,
+    'PlannedDistance': 2000.0,
+    'PlannedDistanceType': 'm', // meters
+    'PlannedTime': 2400, // 40 minutes
+  };
+
+  /// Cycling workout
+  static const cyclingWorkout = {
+    'WorkoutId': 12349,
+    'WorkoutDate': '2025-01-19',
+    'WorkoutTitle': 'Endurance Ride',
+    'WorkoutTypeName': 'Bike',
+    'WorkoutIcon': 2,
+    'PlannedDistance': 30.0,
+    'PlannedDistanceType': 'mi',
+    'PlannedTime': 5400, // 90 minutes
+  };
+
+  /// Workout with MISSING data - tests defaults
+  static const workoutMissingData = {
+    'WorkoutId': 12350,
+    'WorkoutDate': '2025-01-20',
+    'WorkoutTitle': 'Run TBD',
+    'WorkoutTypeName': 'Run',
+    // Missing: PlannedDistance, PlannedTime, TargetPace
+  };
+
+  /// Workout with null/empty fields
+  static const workoutNullFields = {
+    'WorkoutId': 12351,
+    'WorkoutDate': '2025-01-21',
+    'WorkoutTitle': null, // null title
+    'WorkoutTypeName': 'Run',
+    'PlannedDistance': null,
+    'PlannedDistanceType': null,
+    'PlannedTime': null,
+    'TargetPace': '',
+  };
+}
+```
+
+#### 0.2 Data Transformation Tests
+
+```dart
+// test/features/integrations/final_surge_transformer_test.dart
+
+import 'package:flutter_test/flutter_test.dart';
+import '../fixtures/final_surge_fixtures.dart';
+
+void main() {
+  group('FinalSurgeTransformer', () {
+    late FinalSurgeTransformer transformer;
+
+    setUp(() {
+      transformer = FinalSurgeTransformer();
+    });
+
+    group('Time conversion', () {
+      test('converts PlannedTime seconds to minutes', () {
+        final workout = FinalSurgeFixtures.runningWorkoutComplete;
+        final result = transformer.transform(workout);
+
+        // 4800 seconds = 80 minutes
+        expect(result.durationMinutes, equals(80));
+      });
+
+      test('handles null PlannedTime with default', () {
+        final workout = FinalSurgeFixtures.workoutMissingData;
+        final result = transformer.transform(workout);
+
+        // Default: 30 minutes for running
+        expect(result.durationMinutes, equals(30));
+      });
+    });
+
+    group('Pace parsing', () {
+      test('parses single pace value', () {
+        final workout = FinalSurgeFixtures.runningWorkoutComplete;
+        final result = transformer.transform(workout);
+
+        expect(result.paceTargetMinutesPerMile, equals(8.0));
+        expect(result.paceMinMinutesPerMile, isNull);
+        expect(result.paceMaxMinutesPerMile, isNull);
+      });
+
+      test('parses pace RANGE correctly', () {
+        final workout = FinalSurgeFixtures.runningWorkoutPaceRange;
+        final result = transformer.transform(workout);
+
+        // "8:30-9:30" should give us min=8.5, max=9.5
+        expect(result.paceMinMinutesPerMile, equals(8.5));
+        expect(result.paceMaxMinutesPerMile, equals(9.5));
+        // Midpoint for display
+        expect(result.paceTargetMinutesPerMile, equals(9.0));
+      });
+
+      test('handles empty pace with default', () {
+        final workout = FinalSurgeFixtures.workoutNullFields;
+        final result = transformer.transform(workout);
+
+        // Default: 10:00/mile for running
+        expect(result.paceTargetMinutesPerMile, equals(10.0));
+      });
+    });
+
+    group('Sport type mapping', () {
+      test('maps Run to ActivityType.running', () {
+        final workout = FinalSurgeFixtures.runningWorkoutComplete;
+        final result = transformer.transform(workout);
+
+        expect(result.activityType, equals(ActivityType.running));
+      });
+
+      test('maps Walk to ActivityType.running with easy intensity', () {
+        final workout = FinalSurgeFixtures.walkWorkout;
+        final result = transformer.transform(workout);
+
+        expect(result.activityType, equals(ActivityType.running));
+        expect(result.intensityLevel, equals(IntensityLevel.easy));
+        expect(result.workoutSubtype, equals('Walk'));
+      });
+
+      test('maps Swim to ActivityType.swimming', () {
+        final workout = FinalSurgeFixtures.swimmingWorkout;
+        final result = transformer.transform(workout);
+
+        expect(result.activityType, equals(ActivityType.swimming));
+      });
+
+      test('maps Bike to ActivityType.cycling', () {
+        final workout = FinalSurgeFixtures.cyclingWorkout;
+        final result = transformer.transform(workout);
+
+        expect(result.activityType, equals(ActivityType.cycling));
+      });
+    });
+
+    group('Distance conversion', () {
+      test('converts miles to stored value', () {
+        final workout = FinalSurgeFixtures.runningWorkoutComplete;
+        final result = transformer.transform(workout);
+
+        expect(result.distanceMiles, equals(10.0));
+      });
+
+      test('stores swimming distance in meters', () {
+        final workout = FinalSurgeFixtures.swimmingWorkout;
+        final result = transformer.transform(workout);
+
+        expect(result.distanceMeters, equals(2000.0));
+      });
+
+      test('applies default distance when missing', () {
+        final workout = FinalSurgeFixtures.workoutMissingData;
+        final result = transformer.transform(workout);
+
+        // Default: 3 miles for running
+        expect(result.distanceMiles, equals(3.0));
+      });
+    });
+
+    group('Sensible defaults', () {
+      test('applies running defaults for missing data', () {
+        final workout = FinalSurgeFixtures.workoutMissingData;
+        final result = transformer.transform(workout);
+
+        expect(result.distanceMiles, equals(3.0));
+        expect(result.durationMinutes, equals(30));
+        expect(result.paceTargetMinutesPerMile, equals(10.0));
+      });
+    });
+
+    group('Workout ID extraction', () {
+      test('extracts workout ID from URL', () {
+        final workout = FinalSurgeFixtures.runningWorkoutComplete;
+        final id = transformer.extractWorkoutId(workout['workout_url'] as String);
+
+        expect(id, equals('12345'));
+      });
+    });
+  });
+}
+```
+
+#### 0.3 Live API Integration Tests
+
+```dart
+// test/integration/final_surge_api_test.dart
+
+/// These tests hit the REAL Final Surge API
+/// Run manually with: flutter test test/integration/final_surge_api_test.dart
+
+@Tags(['integration'])
+void main() {
+  group('Final Surge Live API', () {
+    late FinalSurgeApiClient client;
+    late String accessToken;
+
+    setUpAll(() async {
+      // Load cached token from previous OAuth
+      final tokenFile = File('.final_surge_token.json');
+      if (!tokenFile.existsSync()) {
+        throw Exception('Run tool/final_surge_api_test.dart auth first');
+      }
+      final tokenJson = jsonDecode(tokenFile.readAsStringSync());
+      accessToken = tokenJson['access_token'];
+
+      client = FinalSurgeApiClient();
+    });
+
+    test('fetches upcoming workouts', () async {
+      final workouts = await client.getUpcomingWorkouts(
+        accessToken,
+        numDays: 7,
+        numWorkouts: 21,
+      );
+
+      logTestHeading('Upcoming Workouts');
+      logTestResult('Total workouts', workouts.length);
+
+      expect(workouts, isNotEmpty);
+    });
+
+    test('validates workout structure matches expected fields', () async {
+      final workouts = await client.getUpcomingWorkouts(
+        accessToken,
+        numDays: 7,
+        numWorkouts: 21,
+      );
+
+      if (workouts.isNotEmpty) {
+        final workout = workouts.first;
+
+        logTestHeading('Workout Structure Validation');
+        logTestInput({
+          'WorkoutId': workout.workoutId,
+          'WorkoutTypeName': workout.workoutTypeName,
+          'PlannedTime type': workout.plannedTime?.runtimeType,
+          'PlannedDistance type': workout.plannedDistance?.runtimeType,
+          'TargetPace': workout.targetPace,
+        });
+
+        // Validate required fields exist
+        expect(workout.workoutId, isNotNull);
+        expect(workout.workoutDate, isNotNull);
+      }
+    });
+
+    test('validates time is in SECONDS (not minutes)', () async {
+      final workouts = await client.getUpcomingWorkouts(
+        accessToken,
+        numDays: 7,
+        numWorkouts: 21,
+      );
+
+      final workoutWithTime = workouts.firstWhere(
+        (w) => w.plannedTime != null && w.plannedTime! > 0,
+        orElse: () => throw Exception('No workout with time found'),
+      );
+
+      logTestHeading('Time Format Validation');
+      logTestResult('PlannedTime raw value', workoutWithTime.plannedTime);
+
+      // If PlannedTime > 200, it's likely seconds (30 min = 1800 sec)
+      // If PlannedTime < 200, it might be minutes
+      logAssertion(
+        'PlannedTime appears to be in seconds',
+        passed: workoutWithTime.plannedTime! > 200,
+        reason: 'Value ${workoutWithTime.plannedTime} should be > 200 for seconds',
+      );
+    });
+
+    test('validates pace range format', () async {
+      final workouts = await client.getUpcomingWorkouts(
+        accessToken,
+        numDays: 7,
+        numWorkouts: 21,
+      );
+
+      final pacesFound = workouts
+          .where((w) => w.targetPace != null && w.targetPace!.isNotEmpty)
+          .map((w) => w.targetPace!)
+          .toList();
+
+      logTestHeading('Pace Format Analysis');
+      for (final pace in pacesFound.take(5)) {
+        final isRange = pace.contains('-');
+        logTestResult('Pace', pace, expected: isRange ? 'RANGE' : 'SINGLE');
+      }
+    });
+  });
+}
+```
+
+#### 0.4 Edge Function Tests
+
+```typescript
+// supabase/functions/sync-final-surge/index.test.ts
+
+import { assertEquals, assertExists } from 'std/assert/mod.ts';
+import { describe, it } from 'std/testing/bdd.ts';
+
+describe('Final Surge Sync Edge Function', () => {
+  describe('Sport mapping', () => {
+    it('maps Run to running', () => {
+      const result = mapSportType('Run');
+      assertEquals(result, 'running');
+    });
+
+    it('maps Walk to running (with easy intensity)', () => {
+      const result = mapWorkoutToActivity({ WorkoutTypeName: 'Walk' });
+      assertEquals(result.activity_type, 'running');
+      assertEquals(result.intensity_level, 'easy');
+      assertEquals(result.workout_subtype, 'Walk');
+    });
+
+    it('maps Bike to cycling', () => {
+      const result = mapSportType('Bike');
+      assertEquals(result, 'cycling');
+    });
+
+    it('maps Swim to swimming', () => {
+      const result = mapSportType('Swim');
+      assertEquals(result, 'swimming');
+    });
+  });
+
+  describe('Time conversion', () => {
+    it('converts seconds to minutes', () => {
+      const result = convertPlannedTime(1800); // 30 min in seconds
+      assertEquals(result, 30);
+    });
+
+    it('applies running default for null', () => {
+      const result = convertPlannedTime(null, 'running');
+      assertEquals(result, 30); // default
+    });
+  });
+
+  describe('Pace parsing', () => {
+    it('parses single pace "8:00"', () => {
+      const result = parsePace('8:00');
+      assertEquals(result.target, 8.0);
+      assertEquals(result.min, null);
+      assertEquals(result.max, null);
+    });
+
+    it('parses range pace "8:30-9:30"', () => {
+      const result = parsePace('8:30-9:30');
+      assertEquals(result.min, 8.5);
+      assertEquals(result.max, 9.5);
+      assertEquals(result.target, 9.0); // midpoint
+    });
+
+    it('handles empty pace with default', () => {
+      const result = parsePace('', 'running');
+      assertEquals(result.target, 10.0); // default
+    });
+  });
+
+  describe('Sensible defaults', () => {
+    it('applies running defaults', () => {
+      const result = applyDefaults({}, 'running');
+      assertEquals(result.distance_miles, 3.0);
+      assertEquals(result.duration_minutes, 30);
+      assertEquals(result.pace_target, 10.0);
+    });
+
+    it('applies cycling defaults', () => {
+      const result = applyDefaults({}, 'cycling');
+      assertEquals(result.distance_miles, 10.0);
+      assertEquals(result.duration_minutes, 45);
+    });
+
+    it('applies swimming defaults', () => {
+      const result = applyDefaults({}, 'swimming');
+      assertEquals(result.distance_meters, 1000.0);
+      assertEquals(result.duration_minutes, 30);
+    });
+  });
+});
+```
+
+### Deliverables
+- [ ] Test fixtures created from real API data
+- [ ] Data transformation tests passing
+- [ ] Live API integration tests passing
+- [ ] Edge function tests passing
+- [ ] All edge cases documented and handled
+- [ ] Time format confirmed (seconds vs minutes)
+- [ ] Pace range format confirmed
+- [ ] All supported workout types mapped
+
+---
+
+## Phase 1: Database & Schema Setup
 
 ### Objective
 Create database infrastructure to support Final Surge and future integrations.
 
 ### Tasks
 
-#### 0.1 Create `integrations` Table (Drift + Supabase)
+#### 1.1 Create `integrations` Table (Drift + Supabase)
 
 ```sql
 -- supabase/migrations/YYYYMMDDHHMMSS_create_integrations_table.sql
@@ -52,9 +528,10 @@ CREATE TABLE integrations (
   refresh_token TEXT,
   token_expires_at TIMESTAMPTZ,
 
-  -- Provider-specific data
+  -- Provider-specific data (displayed in Settings)
   provider_athlete_id TEXT NOT NULL,
   provider_athlete_name TEXT,
+  provider_athlete_email TEXT,
 
   -- Sync metadata
   is_active BOOLEAN DEFAULT true,
@@ -83,23 +560,34 @@ CREATE POLICY "Users can manage own integrations"
   ));
 ```
 
-#### 0.2 Add Sync Columns to `activities` Table
+#### 1.2 Add Sync & Range Columns to `activities` Table
 
 ```sql
 -- supabase/migrations/YYYYMMDDHHMMSS_add_activity_sync_columns.sql
 
+-- External sync tracking
 ALTER TABLE activities ADD COLUMN IF NOT EXISTS synced_from_provider TEXT;
 ALTER TABLE activities ADD COLUMN IF NOT EXISTS provider_workout_id TEXT;
 ALTER TABLE activities ADD COLUMN IF NOT EXISTS provider_workout_url TEXT;
 ALTER TABLE activities ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMPTZ;
 
+-- Workout subtype (e.g., "Long Run", "Walk", "Recovery", "Intervals")
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS workout_subtype TEXT;
+
+-- Pace ranges (for workouts with "8:30-9:30" style paces)
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS pace_min_minutes_per_mile REAL;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS pace_max_minutes_per_mile REAL;
+
+-- Swimming distance in meters (industry standard)
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS distance_meters REAL;
+
 -- Index for finding synced activities
-CREATE INDEX idx_activities_provider_sync
+CREATE INDEX IF NOT EXISTS idx_activities_provider_sync
   ON activities(synced_from_provider, provider_workout_id)
   WHERE synced_from_provider IS NOT NULL;
 ```
 
-#### 0.3 Update Drift Schema
+#### 1.3 Update Drift Schema
 
 ```dart
 // lib/shared/database/tables/integrations.dart
@@ -116,6 +604,7 @@ class Integrations extends Table {
 
   TextColumn get providerAthleteId => text()();
   TextColumn get providerAthleteName => text().nullable()();
+  TextColumn get providerAthleteEmail => text().nullable()();
 
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get lastSyncAt => dateTime().nullable()();
@@ -130,7 +619,24 @@ class Integrations extends Table {
 }
 ```
 
-#### 0.4 Create FOA Directory Structure
+```dart
+// Update lib/shared/database/tables/activities_table.dart
+
+// Add new columns:
+TextColumn get syncedFromProvider => text().nullable()();
+TextColumn get providerWorkoutId => text().nullable()();
+TextColumn get providerWorkoutUrl => text().nullable()();
+DateTimeColumn get lastSyncedAt => dateTime().nullable()();
+
+TextColumn get workoutSubtype => text().nullable()();
+
+RealColumn get paceMinMinutesPerMile => real().nullable()();
+RealColumn get paceMaxMinutesPerMile => real().nullable()();
+
+RealColumn get distanceMeters => real().nullable()();
+```
+
+#### 1.4 Create FOA Directory Structure
 
 ```
 lib/features/integrations/
@@ -138,9 +644,10 @@ lib/features/integrations/
 │   ├── widgets/
 │   │   ├── integration_card.dart
 │   │   ├── final_surge_connect_button.dart
-│   │   └── sync_status_badge.dart
+│   │   ├── sync_status_badge.dart
+│   │   └── nutrition_plan_progress.dart
 │   ├── screens/
-│   │   ├── connect_integrations_screen.dart     # New onboarding screen
+│   │   ├── connect_integrations_screen.dart     # Onboarding screen
 │   │   └── connected_apps_screen.dart           # Settings screen
 │   └── providers/
 │       ├── final_surge_controller.dart
@@ -148,10 +655,12 @@ lib/features/integrations/
 ├── application/
 │   ├── final_surge_oauth_service.dart
 │   ├── final_surge_sync_service.dart
+│   ├── final_surge_transformer.dart             # Data transformation logic
 │   └── integration_manager_service.dart
 ├── domain/
 │   ├── integration.dart
 │   ├── final_surge_workout.dart
+│   ├── final_surge_defaults.dart                # Sensible defaults
 │   └── sync_result.dart
 └── data/
     ├── integration_repository.dart
@@ -160,29 +669,26 @@ lib/features/integrations/
 
 ### Deliverables
 - [ ] `integrations` table created in Supabase (dev + prod)
-- [ ] Activity sync columns added
+- [ ] Activity sync & range columns added
 - [ ] Drift schema updated and code generated
 - [ ] FOA directory structure created
 - [ ] Domain models defined
+- [ ] Drift migration created and tested
 
 ---
 
-## Phase 1: OAuth Implementation
+## Phase 2: OAuth Implementation
 
 ### Objective
 Enable users to connect their Final Surge account via OAuth 2.0.
 
 ### Approach: flutter_web_auth_2
 
-Unlike Google/Apple sign-in which have native SDKs, Final Surge requires web-based OAuth. We'll use `flutter_web_auth_2` which:
-- Opens a secure in-app browser (ASWebAuthenticationSession on iOS, Custom Tabs on Android)
-- Handles the callback automatically via custom URL scheme
-- Returns the auth code without requiring manual deep linking setup
-- Same UX pattern as our Google/Apple native flows
+Uses `flutter_web_auth_2` which opens a secure in-app browser (ASWebAuthenticationSession on iOS, Custom Tabs on Android).
 
 ### Tasks
 
-#### 1.1 Add flutter_web_auth_2 Dependency
+#### 2.1 Add flutter_web_auth_2 Dependency
 
 ```yaml
 # pubspec.yaml
@@ -190,9 +696,7 @@ dependencies:
   flutter_web_auth_2: ^3.1.2
 ```
 
-**Note**: No manual deep linking configuration needed - the package handles callback URLs internally using the app's bundle ID.
-
-#### 1.2 FinalSurgeApiClient (Data Layer)
+#### 2.2 FinalSurgeApiClient (Data Layer)
 
 ```dart
 // lib/features/integrations/data/final_surge_api_client.dart
@@ -234,9 +738,7 @@ class FinalSurgeApiClient {
 }
 ```
 
-#### 1.3 FinalSurgeOAuthService (Application Layer)
-
-Uses `flutter_web_auth_2` to handle OAuth flow - same pattern as Google/Apple native SDKs but for web OAuth.
+#### 2.3 FinalSurgeOAuthService (Application Layer)
 
 ```dart
 // lib/features/integrations/application/final_surge_oauth_service.dart
@@ -244,17 +746,9 @@ Uses `flutter_web_auth_2` to handle OAuth flow - same pattern as Google/Apple na
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
 class FinalSurgeOAuthService {
-  static const _clientId = String.fromEnvironment('FINAL_SURGE_CLIENT_ID');
-  static const _clientSecret = String.fromEnvironment('FINAL_SURGE_CLIENT_SECRET');
-
-  // Callback URL uses app bundle ID - handled automatically by flutter_web_auth_2
-  // iOS: com.mealvana.endurance://callback
-  // Android: com.mealvana.endurance://callback
   static const _callbackUrlScheme = 'com.mealvana.endurance';
 
   Future<Integration> authenticate() async {
-    _logger.info('Starting Final Surge OAuth flow', context: 'FINAL_SURGE');
-
     // 1. Generate state for CSRF protection
     final state = _generateState();
 
@@ -266,31 +760,19 @@ class FinalSurgeOAuthService {
     });
 
     // 3. Launch OAuth flow via flutter_web_auth_2
-    // Opens secure browser (ASWebAuthenticationSession/Custom Tabs)
-    // Returns callback URL with auth code - no manual deep linking needed!
     final result = await FlutterWebAuth2.authenticate(
       url: authUrl.toString(),
       callbackUrlScheme: _callbackUrlScheme,
-      options: const FlutterWebAuth2Options(
-        preferEphemeral: true,  // Don't save cookies between sessions
-      ),
+      options: const FlutterWebAuth2Options(preferEphemeral: true),
     );
 
-    // 4. Extract authorization code from callback URL
+    // 4. Extract authorization code
     final callbackUri = Uri.parse(result);
     final code = callbackUri.queryParameters['code'];
-    final returnedState = callbackUri.queryParameters['state'];
-
-    // Verify state to prevent CSRF attacks
-    if (returnedState != state) {
-      throw Exception('OAuth state mismatch - possible CSRF attack');
-    }
 
     if (code == null) {
       throw Exception('No authorization code received from Final Surge');
     }
-
-    _logger.info('OAuth code received, exchanging for token', context: 'FINAL_SURGE');
 
     // 5. Exchange code for access token
     final tokenResponse = await _apiClient.exchangeCodeForToken(code);
@@ -303,123 +785,194 @@ class FinalSurgeOAuthService {
       accessToken: tokenResponse.accessToken,
       providerAthleteId: tokenResponse.athlete.id,
       providerAthleteName: '${tokenResponse.athlete.firstname} ${tokenResponse.athlete.lastname}',
+      providerAthleteEmail: tokenResponse.athlete.email,
       isActive: true,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
 
     await _repository.saveIntegration(integration);
-
-    _logger.info('Final Surge connected successfully', context: 'FINAL_SURGE', data: {
-      'athlete_id': tokenResponse.athlete.id,
-      'athlete_name': integration.providerAthleteName,
-    });
-
     return integration;
-  }
-
-  String _generateState() {
-    final random = Random.secure();
-    final values = List<int>.generate(32, (i) => random.nextInt(256));
-    return base64Url.encode(values);
-  }
-
-  Future<void> disconnect(String userId) async {
-    await _repository.deleteIntegration(userId, 'final_surge');
-    _logger.info('Final Surge disconnected', context: 'FINAL_SURGE');
-  }
-}
-```
-
-#### 1.4 IntegrationRepository (Data Layer)
-
-```dart
-// lib/features/integrations/data/integration_repository.dart
-
-class IntegrationRepository {
-  Future<Integration?> getIntegration(String userId, String provider) async {
-    return _db.select(_db.integrations)
-        .where((t) => t.userId.equals(userId) & t.provider.equals(provider))
-        .getSingleOrNull();
-  }
-
-  Future<void> saveIntegration(Integration integration) async {
-    await _db.into(_db.integrations).insertOnConflictUpdate(integration);
-    await _supabaseClient.from('integrations').upsert(integration.toJson());
-  }
-
-  Future<void> deleteIntegration(String userId, String provider) async {
-    await (_db.delete(_db.integrations)
-        ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
-        .go();
-    await _supabaseClient
-        .from('integrations')
-        .delete()
-        .eq('user_id', userId)
-        .eq('provider', provider);
   }
 }
 ```
 
 ### Deliverables
-- [ ] `flutter_web_auth_2` package added to pubspec.yaml
+- [ ] `flutter_web_auth_2` package added
 - [ ] `FinalSurgeApiClient` implemented
-- [ ] `FinalSurgeOAuthService` implemented (using flutter_web_auth_2)
+- [ ] `FinalSurgeOAuthService` implemented
 - [ ] `IntegrationRepository` implemented
 - [ ] OAuth flow tested on iOS + Android
 - [ ] Token stored securely in Drift database
 
 ---
 
-## Phase 2: Workout Sync
+## Phase 3: Workout Sync & Data Transformation
 
 ### Objective
-Import upcoming workouts (running, cycling, swimming) from Final Surge.
+Import upcoming workouts with proper data transformation and sensible defaults.
+
+### Key Decision: Manual Sync Only
+
+For MVP, sync is **MANUAL ONLY**:
+- User clicks "Sync Now" button
+- Initial sync during onboarding
+- No automatic background checking
 
 ### Tasks
 
-#### 2.1 Update sync-final-surge Edge Function for Multi-Sport
+#### 3.1 Create FinalSurgeDefaults
 
-**Current Issue**: Line 332-342 filters to running only. Needs to support all sports.
+```dart
+// lib/features/integrations/domain/final_surge_defaults.dart
 
-```typescript
-// supabase/functions/sync-final-surge/index.ts
+class FinalSurgeDefaults {
+  // Running defaults
+  static const double runningDistanceMiles = 3.0;
+  static const int runningDurationMinutes = 30;
+  static const double runningPaceMinPerMile = 10.0;
 
-// BEFORE (running only):
-const runningWorkouts = (result.workouts || [])
-  .filter((w) => w.sport === 'RUNNING')
+  // Cycling defaults
+  static const double cyclingDistanceMiles = 10.0;
+  static const int cyclingDurationMinutes = 45;
+  static const double cyclingSpeedMph = 13.3;
 
-// AFTER (all sports):
-const supportedSports = ['RUNNING', 'CYCLING', 'SWIMMING'];
-
-const allWorkouts = (result.workouts || [])
-  .filter((w) => supportedSports.includes(w.sport?.toUpperCase()))
-  .map((w) => ({
-    ...w,
-    sport_type: mapSportType(w.sport),
-  }));
-
-function mapSportType(finalSurgeSport: string): string {
-  const sportMap: Record<string, string> = {
-    'RUNNING': 'running',
-    'RUN': 'running',
-    'CYCLING': 'cycling',
-    'BIKE': 'cycling',
-    'SWIMMING': 'swimming',
-    'SWIM': 'swimming',
-  };
-  return sportMap[finalSurgeSport?.toUpperCase()] || 'running';
+  // Swimming defaults (in meters - industry standard)
+  static const double swimmingDistanceMeters = 1000.0;
+  static const int swimmingDurationMinutes = 30;
+  static const int swimmingPacePer100mSeconds = 180; // 3 min per 100m
 }
 ```
 
-#### 2.2 FinalSurgeSyncService (Application Layer)
+#### 3.2 Create FinalSurgeTransformer
+
+```dart
+// lib/features/integrations/application/final_surge_transformer.dart
+
+class FinalSurgeTransformer {
+  /// Transforms a Final Surge workout to a Mealvana Activity
+  Activity transform(Map<String, dynamic> workout, String userId) {
+    final sportType = _mapSportType(workout['WorkoutTypeName']);
+    final isWalk = workout['WorkoutTypeName']?.toLowerCase() == 'walk';
+
+    return Activity(
+      id: const Uuid().v4(),
+      userId: userId,
+      name: workout['WorkoutTitle'] ?? workout['WorkoutTypeName'] ?? 'Workout',
+      activityType: sportType,
+      intensityLevel: isWalk ? IntensityLevel.easy : _inferIntensity(workout),
+      workoutSubtype: isWalk ? 'Walk' : workout['WorkoutDesc'],
+      scheduledDate: DateTime.parse(workout['WorkoutDate']),
+
+      // Distance
+      distanceMiles: sportType != ActivityType.swimming
+          ? _getDistanceMiles(workout, sportType)
+          : null,
+      distanceMeters: sportType == ActivityType.swimming
+          ? _getDistanceMeters(workout)
+          : null,
+
+      // Duration (PlannedTime is in SECONDS, convert to minutes)
+      durationMinutes: _getDurationMinutes(workout, sportType),
+
+      // Pace (handle ranges)
+      ...(_parsePace(workout['TargetPace'], sportType)),
+
+      // Sync metadata
+      syncedFromProvider: 'final_surge',
+      providerWorkoutId: _extractWorkoutId(workout['workout_url']),
+      providerWorkoutUrl: workout['workout_url'],
+      lastSyncedAt: DateTime.now(),
+
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  ActivityType _mapSportType(String? workoutTypeName) {
+    switch (workoutTypeName?.toLowerCase()) {
+      case 'run':
+      case 'walk': // Walk maps to running with easy intensity
+        return ActivityType.running;
+      case 'bike':
+        return ActivityType.cycling;
+      case 'swim':
+        return ActivityType.swimming;
+      default:
+        return ActivityType.running;
+    }
+  }
+
+  int _getDurationMinutes(Map<String, dynamic> workout, ActivityType sport) {
+    final plannedTimeSeconds = workout['PlannedTime'] as int?;
+    if (plannedTimeSeconds != null && plannedTimeSeconds > 0) {
+      return plannedTimeSeconds ~/ 60; // Convert seconds to minutes
+    }
+
+    // Apply sensible defaults
+    switch (sport) {
+      case ActivityType.running:
+        return FinalSurgeDefaults.runningDurationMinutes;
+      case ActivityType.cycling:
+        return FinalSurgeDefaults.cyclingDurationMinutes;
+      case ActivityType.swimming:
+        return FinalSurgeDefaults.swimmingDurationMinutes;
+    }
+  }
+
+  Map<String, double?> _parsePace(String? targetPace, ActivityType sport) {
+    if (targetPace == null || targetPace.isEmpty) {
+      // Return default pace
+      return {
+        'paceTargetMinutesPerMile': sport == ActivityType.running
+            ? FinalSurgeDefaults.runningPaceMinPerMile
+            : null,
+        'paceMinMinutesPerMile': null,
+        'paceMaxMinutesPerMile': null,
+      };
+    }
+
+    // Check for range format "8:30-9:30"
+    if (targetPace.contains('-')) {
+      final parts = targetPace.split('-');
+      final minPace = _parsePaceString(parts[0]);
+      final maxPace = _parsePaceString(parts[1]);
+      final midpoint = (minPace + maxPace) / 2;
+
+      return {
+        'paceTargetMinutesPerMile': midpoint,
+        'paceMinMinutesPerMile': minPace,
+        'paceMaxMinutesPerMile': maxPace,
+      };
+    }
+
+    // Single pace value
+    return {
+      'paceTargetMinutesPerMile': _parsePaceString(targetPace),
+      'paceMinMinutesPerMile': null,
+      'paceMaxMinutesPerMile': null,
+    };
+  }
+
+  double _parsePaceString(String pace) {
+    // Parse "8:30" to 8.5
+    final parts = pace.trim().split(':');
+    final minutes = int.parse(parts[0]);
+    final seconds = parts.length > 1 ? int.parse(parts[1]) : 0;
+    return minutes + (seconds / 60);
+  }
+}
+```
+
+#### 3.3 FinalSurgeSyncService
 
 ```dart
 // lib/features/integrations/application/final_surge_sync_service.dart
 
 class FinalSurgeSyncService {
   /// Syncs upcoming workouts from Final Surge.
-  /// Only imports NEW workouts (does not check for updates).
+  /// MANUAL SYNC ONLY - called when user taps "Sync Now"
+  /// Does NOT update existing workouts - only imports NEW ones
   Future<SyncResult> syncWorkouts(String userId) async {
     final integration = await _repository.getIntegration(userId, 'final_surge');
     if (integration == null || !integration.isActive) {
@@ -427,41 +980,39 @@ class FinalSurgeSyncService {
     }
 
     try {
-      // Fetch workouts for next 14 days (API max)
+      // Fetch workouts for next 7-14 days
       final workouts = await _apiClient.getUpcomingWorkouts(
         integration.accessToken,
-        numDays: 7,  // API max per request
+        numDays: 7,
         numWorkouts: 21,
       );
 
       // Filter to supported sports
       final supportedWorkouts = workouts.where((w) =>
-        ['Run', 'Bike', 'Swim'].contains(w.workoutTypeName)
+        ['Run', 'Walk', 'Bike', 'Swim'].contains(w.workoutTypeName)
       ).toList();
 
       int newWorkouts = 0;
       int skipped = 0;
+      final newActivities = <Activity>[];
 
       for (final workout in supportedWorkouts) {
         final workoutId = _extractWorkoutId(workout.workoutUrl);
 
-        // Check if we already have this workout
-        final existingActivity = await _activityRepository
+        // Check if already imported (we don't update existing)
+        final exists = await _activityRepository
             .findByProviderWorkoutId('final_surge', workoutId);
 
-        if (existingActivity != null) {
-          // Already imported - skip (we don't update)
+        if (exists != null) {
           skipped++;
           continue;
         }
 
-        // Create new activity
-        final activity = _mapToActivity(workout, userId);
+        // Transform and save
+        final activity = _transformer.transform(workout.toJson(), userId);
         await _activityRepository.insert(activity);
+        newActivities.add(activity);
         newWorkouts++;
-
-        // Queue nutrition plan generation (background)
-        await _queueNutritionPlanGeneration(activity.id);
       }
 
       // Update sync metadata
@@ -476,7 +1027,7 @@ class FinalSurgeSyncService {
         success: true,
         newWorkouts: newWorkouts,
         skipped: skipped,
-        message: 'Found $newWorkouts new workouts',
+        activities: newActivities,
       );
     } catch (e) {
       await _repository.updateSyncStatus(
@@ -488,310 +1039,73 @@ class FinalSurgeSyncService {
       return SyncResult.error(e.toString());
     }
   }
-
-  String _extractWorkoutId(String? workoutUrl) {
-    if (workoutUrl == null) return '';
-    final uri = Uri.parse(workoutUrl);
-    return uri.queryParameters['id'] ??
-           '${uri.queryParameters['s']}_${uri.path}';
-  }
-
-  Activity _mapToActivity(FinalSurgeWorkout workout, String userId) {
-    return Activity(
-      id: const Uuid().v4(),
-      userId: userId,
-      name: workout.workoutTitle ?? workout.workoutTypeName ?? 'Workout',
-      sportType: _mapSportType(workout.workoutTypeName),
-      scheduledDate: DateTime.parse(workout.workoutDate),
-      distanceKm: _convertToKm(workout.plannedDistance, workout.plannedDistanceType),
-      durationMinutes: (workout.plannedTime ?? 0) ~/ 60,
-      syncedFromProvider: 'final_surge',
-      providerWorkoutId: _extractWorkoutId(workout.workoutUrl),
-      providerWorkoutUrl: workout.workoutUrl,
-      lastSyncedAt: DateTime.now(),
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-  }
-
-  String _mapSportType(String? workoutTypeName) {
-    switch (workoutTypeName?.toLowerCase()) {
-      case 'run': return 'running';
-      case 'bike': return 'cycling';
-      case 'swim': return 'swimming';
-      default: return 'running';
-    }
-  }
-
-  double? _convertToKm(double? distance, String? distanceType) {
-    if (distance == null) return null;
-    if (distanceType == 'mi') return distance * 1.60934;
-    if (distanceType == 'km') return distance;
-    return distance; // Assume km if not specified
-  }
-}
-```
-
-#### 2.3 New Workout Detection Logic
-
-```dart
-/// Checks if a workout is new (not already imported).
-/// We only care about NEW workouts - we don't update existing ones.
-Future<bool> isNewWorkout(String workoutId) async {
-  final existing = await _db.select(_db.activities)
-      .where((t) =>
-        t.syncedFromProvider.equals('final_surge') &
-        t.providerWorkoutId.equals(workoutId)
-      )
-      .getSingleOrNull();
-
-  return existing == null;
 }
 ```
 
 ### Deliverables
-- [ ] sync-final-surge edge function updated for multi-sport
+- [ ] `FinalSurgeDefaults` class created
+- [ ] `FinalSurgeTransformer` implemented with all mappings
 - [ ] `FinalSurgeSyncService` implemented
-- [ ] Sport type mapping (Run/Bike/Swim to running/cycling/swimming)
-- [ ] Distance unit conversion (miles to km)
-- [ ] New workout detection working
-- [ ] Sync button in UI triggers refresh
-- [ ] Synced activities display badge
+- [ ] Walk workouts map to running/easy
+- [ ] Pace ranges stored correctly
+- [ ] Swimming distances in meters
+- [ ] Sensible defaults applied
+- [ ] Only NEW workouts imported (no updates)
 
 ---
 
-## Phase 3: Onboarding Integration
+## Phase 4: Onboarding Integration
 
 ### Objective
-Add Final Surge as the first screen in onboarding flow.
+Add Final Surge as the **FIRST** screen in onboarding flow.
 
 ### Tasks
 
-#### 3.1 Create ConnectIntegrationsScreen
+#### 4.1 Create ConnectIntegrationsScreen
+
+First screen in onboarding - before user profile.
 
 ```dart
 // lib/features/integrations/presentation/screens/connect_integrations_screen.dart
 
 class ConnectIntegrationsScreen extends ConsumerStatefulWidget {
   @override
-  ConsumerState<ConnectIntegrationsScreen> createState() => _ConnectIntegrationsScreenState();
-}
-
-class _ConnectIntegrationsScreenState extends ConsumerState<ConnectIntegrationsScreen> {
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 48),
+        child: Column(
+          children: [
+            // Header
+            Text('Connect Your Training'),
+            Text('Import your workouts to get personalized nutrition plans'),
 
-              // Header
-              Text(
-                'Connect Your Training',
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Import your workouts to get personalized nutrition plans',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 48),
-
-              // Final Surge (Active)
-              _IntegrationCard(
-                name: 'Final Surge',
-                logoAsset: 'assets/images/final_surge_logo.png',
-                description: 'Import workouts & detect your sports',
-                isActive: true,
-                onConnect: _connectFinalSurge,
-              ),
-
-              const SizedBox(height: 16),
-
-              // TrainingPeaks (Coming Soon)
-              _IntegrationCard(
-                name: 'TrainingPeaks',
-                logoAsset: 'assets/images/trainingpeaks_logo.png',
-                description: 'Coming Soon',
-                isActive: false,
-                isComingSoon: true,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Strava (Coming Soon)
-              _IntegrationCard(
-                name: 'Strava',
-                logoAsset: 'assets/images/strava_logo.png',
-                description: 'Coming Soon',
-                isActive: false,
-                isComingSoon: true,
-              ),
-
-              const Spacer(),
-
-              // Skip button
-              TextButton(
-                onPressed: _skipIntegrations,
-                child: Text('Skip - Enter Manually'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _connectFinalSurge() async {
-    final controller = ref.read(finalSurgeControllerProvider.notifier);
-
-    try {
-      await controller.connect();
-
-      // Show summary dialog
-      final syncResult = await controller.syncWorkouts();
-
-      if (mounted) {
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Connected!'),
-            content: Text('Found ${syncResult.newWorkouts} workouts for the next 2 weeks'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _proceedToNextScreen();
-                },
-                child: const Text('Continue'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Connection failed: ${e.toString()}'),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: _connectFinalSurge,
+            // Final Surge (Active)
+            IntegrationCard(
+              name: 'Final Surge',
+              logoAsset: 'assets/images/final_surge_logo.png',
+              description: 'Import workouts & detect your sports',
+              isActive: true,
+              onConnect: _connectFinalSurge,
             ),
-          ),
-        );
-      }
-    }
-  }
 
-  void _skipIntegrations() {
-    context.go('/onboarding/user-profile');
-  }
-
-  void _proceedToNextScreen() {
-    context.go('/onboarding/user-profile');
-  }
-}
-```
-
-#### 3.2 Integration Card Widget
-
-```dart
-class _IntegrationCard extends StatelessWidget {
-  final String name;
-  final String logoAsset;
-  final String description;
-  final bool isActive;
-  final bool isComingSoon;
-  final VoidCallback? onConnect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isComingSoon ? Colors.grey[100] : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isComingSoon ? Colors.grey[300]! : AppColors.primary,
-          width: isComingSoon ? 1 : 2,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isActive ? onConnect : null,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                // Logo
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Image.asset(logoAsset, fit: BoxFit.contain),
-                ),
-
-                const SizedBox(width: 16),
-
-                // Text
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: isComingSoon ? Colors.grey : Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        description,
-                        style: TextStyle(
-                          color: isComingSoon ? Colors.grey : Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Action
-                if (isActive)
-                  Icon(Icons.chevron_right, color: AppColors.primary)
-                else if (isComingSoon)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      'Coming Soon',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-              ],
+            // TrainingPeaks (Coming Soon)
+            IntegrationCard(
+              name: 'TrainingPeaks',
+              isComingSoon: true,
             ),
-          ),
+
+            // Strava (Coming Soon)
+            IntegrationCard(
+              name: 'Strava',
+              isComingSoon: true,
+            ),
+
+            // Skip button
+            TextButton(
+              onPressed: () => context.go('/onboarding/user-profile'),
+              child: Text('Skip - Enter Manually'),
+            ),
+          ],
         ),
       ),
     );
@@ -799,178 +1113,66 @@ class _IntegrationCard extends StatelessWidget {
 }
 ```
 
-#### 3.3 Sport Detection from Workout History
+#### 4.2 Update Onboarding Router
 
 ```dart
-// In FinalSurgeSyncService
-
-/// Analyzes workout history and returns detected sports.
-/// Sports with 2+ workouts are considered active.
-Future<DetectedSports> detectSportsFromWorkouts(String userId) async {
-  final integration = await _repository.getIntegration(userId, 'final_surge');
-  if (integration == null) return DetectedSports.none();
-
-  final workouts = await _apiClient.getUpcomingWorkouts(
-    integration.accessToken,
-    numDays: 7,
-    numWorkouts: 21,
-  );
-
-  final sportCounts = <String, int>{
-    'running': 0,
-    'cycling': 0,
-    'swimming': 0,
-  };
-
-  for (final workout in workouts) {
-    final sport = _mapSportType(workout.workoutTypeName);
-    sportCounts[sport] = (sportCounts[sport] ?? 0) + 1;
-  }
-
-  return DetectedSports(
-    doesRunning: (sportCounts['running'] ?? 0) >= 2,
-    doesCycling: (sportCounts['cycling'] ?? 0) >= 2,
-    doesSwimming: (sportCounts['swimming'] ?? 0) >= 2,
-    detectedFromFinalSurge: true,
-  );
-}
-```
-
-#### 3.4 Update Sport Preferences Screen
-
-```dart
-// In SportPreferencesScreen
-
-@override
-FutureOr<SportPreferencesState> build() async {
-  // Check if connected to Final Surge
-  final integration = await ref.read(integrationRepositoryProvider)
-      .getIntegration(_userId, 'final_surge');
-
-  if (integration != null && integration.isActive) {
-    // Detect sports from Final Surge
-    final detected = await ref.read(finalSurgeSyncServiceProvider)
-        .detectSportsFromWorkouts(_userId);
-
-    return SportPreferencesState(
-      doesRunning: detected.doesRunning,
-      doesCycling: detected.doesCycling,
-      doesSwimming: detected.doesSwimming,
-      detectedFromFinalSurge: detected.detectedFromFinalSurge,
-    );
-  }
-
-  // Default state for manual entry
-  return SportPreferencesState.initial();
-}
-```
-
-#### 3.5 Update Onboarding Router
-
-```dart
-// Add new route BEFORE user-profile
+// In app_router.dart - add as FIRST onboarding screen
 
 GoRoute(
-  path: 'connect-integrations',
+  path: '/onboarding',
+  redirect: (context, state) => '/onboarding/connect-integrations',
+),
+GoRoute(
+  path: '/onboarding/connect-integrations',  // NEW FIRST SCREEN
   builder: (context, state) => const ConnectIntegrationsScreen(),
 ),
+GoRoute(
+  path: '/onboarding/user-profile',
+  builder: (context, state) => const UserProfileScreen(),
+),
+// ... rest of onboarding
 ```
 
 ### Deliverables
 - [ ] ConnectIntegrationsScreen created
-- [ ] Integration card widgets created
-- [ ] Sport detection from workout history implemented
-- [ ] Sport Preferences screen pre-populates from Final Surge
-- [ ] Onboarding flow updated (integrations as first screen)
-- [ ] "Skip" flow still works
-- [ ] Success summary dialog shows workout count
+- [ ] Onboarding flow updated (integrations first)
+- [ ] "Skip" flow works correctly
+- [ ] Sport detection pre-populates onboarding
 
 ---
 
-## Phase 4: Nutrition Plan Generation
+## Phase 5: Nutrition Plan Generation
 
 ### Objective
-Generate nutrition plans for imported workouts using chunked parallel processing in Flutter.
+Generate nutrition plans immediately using chunked parallel processing.
 
 ### Approach: Chunked Parallel Generation
 
-Instead of background processing with pg_cron + pgmq, we'll use a simpler, faster approach:
-- Process nutrition plans immediately after import
-- Generate in parallel chunks (5 concurrent API calls at a time)
+- Process 5 API calls concurrently
 - Total time: ~15-20 seconds for 14 workouts
-- Live progress UI with real-time calendar updates
-
-**Why This Approach:**
-- ✅ Simpler - no pg_cron/pgmq infrastructure needed
-- ✅ Faster - 15-20 seconds vs 7 minutes with cron
-- ✅ Better UX - user sees live progress
-- ✅ Easier to debug - all in Flutter code
-- ✅ Rate limit safe - max 5 concurrent calls
+- Live progress UI
+- Better UX than background jobs
 
 ### Tasks
 
-#### 4.1 Create Progress UI Component
-
-```dart
-// lib/features/integrations/presentation/widgets/nutrition_plan_progress.dart
-
-class NutritionPlanProgress extends StatelessWidget {
-  final int totalWorkouts;
-  final int completedWorkouts;
-
-  @override
-  Widget build(BuildContext context) {
-    final progress = completedWorkouts / totalWorkouts;
-
-    return Column(
-      children: [
-        Text(
-          'Generating nutrition plans... $completedWorkouts/$totalWorkouts',
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-        const SizedBox(height: 16),
-        LinearProgressIndicator(value: progress),
-        const SizedBox(height: 8),
-        Text(
-          '${(progress * 100).toInt()}% complete',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ],
-    );
-  }
-}
-```
-
-#### 4.2 Implement Chunked Processing Service
+#### 5.1 Implement Chunked Processing
 
 ```dart
 // In FinalSurgeSyncService
 
 Future<void> generateNutritionPlansInParallel(List<Activity> activities) async {
-  const chunkSize = 5; // Process 5 at a time
-  final totalWorkouts = activities.length;
-  var completedWorkouts = 0;
+  const chunkSize = 5;
 
-  // Update progress callback
-  void updateProgress() {
-    completedWorkouts++;
-    _progressController.add(completedWorkouts / totalWorkouts);
-  }
-
-  // Process in chunks
   for (var i = 0; i < activities.length; i += chunkSize) {
     final chunk = activities.skip(i).take(chunkSize).toList();
 
-    // Generate plans in parallel for this chunk
     await Future.wait(
       chunk.map((activity) async {
         try {
           await _nutritionPlanService.generatePlan(activity);
-          updateProgress();
+          _progressController.add((i + chunk.indexOf(activity) + 1) / activities.length);
         } catch (e) {
-          _logger.error('Failed to generate plan for activity ${activity.id}',
-            error: e);
-          updateProgress(); // Still update progress even on error
+          _logger.error('Failed to generate plan for ${activity.id}', error: e);
         }
       }),
     );
@@ -978,241 +1180,103 @@ Future<void> generateNutritionPlansInParallel(List<Activity> activities) async {
 }
 ```
 
-#### 4.3 Update Sync Service to Generate Plans
+#### 5.2 Progress UI
 
 ```dart
-// In FinalSurgeSyncService.syncWorkouts()
+class NutritionPlanProgress extends StatelessWidget {
+  final int totalWorkouts;
+  final int completedWorkouts;
 
-Future<SyncResult> syncWorkouts(String userId) async {
-  // ... existing sync code ...
-
-  // After importing activities, generate nutrition plans
-  if (newActivities.isNotEmpty) {
-    _logger.info('Generating nutrition plans for ${newActivities.length} workouts');
-
-    await generateNutritionPlansInParallel(newActivities);
-
-    _logger.info('Nutrition plan generation complete');
-  }
-
-  return SyncResult(
-    success: true,
-    newWorkouts: newWorkouts,
-    plansGenerated: newActivities.length,
-  );
-}
-```
-
-#### 4.4 Add Progress Stream to Controller
-
-```dart
-// In FinalSurgeController
-
-final _progressController = StreamController<double>.broadcast();
-Stream<double> get progressStream => _progressController.stream;
-
-Future<void> connect() async {
-  state = const AsyncLoading();
-
-  state = await AsyncValue.guard(() async {
-    final integration = await _oauthService.authenticate();
-
-    // Trigger sync with progress updates
-    final syncResult = await _syncService.syncWorkouts(integration.userId);
-
-    return FinalSurgeState(
-      isConnected: true,
-      lastSyncAt: DateTime.now(),
-      syncStatus: 'success',
-      workoutCount: syncResult.newWorkouts,
-      plansGenerated: syncResult.plansGenerated,
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('Generating nutrition plans... $completedWorkouts/$totalWorkouts'),
+        LinearProgressIndicator(value: completedWorkouts / totalWorkouts),
+      ],
     );
-  });
-}
-```
-
-#### 4.5 Show Progress Dialog During Generation
-
-```dart
-// In ConnectIntegrationsScreen._connectFinalSurge()
-
-Future<void> _connectFinalSurge() async {
-  final controller = ref.read(finalSurgeControllerProvider.notifier);
-
-  try {
-    await controller.connect();
-
-    // Show progress dialog
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Text('Importing Workouts'),
-          content: StreamBuilder<double>(
-            stream: controller.progressStream,
-            builder: (context, snapshot) {
-              final progress = snapshot.data ?? 0.0;
-              return NutritionPlanProgress(
-                totalWorkouts: controller.totalWorkouts,
-                completedWorkouts: (progress * controller.totalWorkouts).round(),
-              );
-            },
-          ),
-        ),
-      );
-    }
-
-    // Wait for completion, then show success
-    final syncResult = await controller.syncComplete;
-
-    if (mounted) {
-      Navigator.of(context).pop(); // Close progress dialog
-
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Connected!'),
-          content: Text(
-            'Found ${syncResult.newWorkouts} workouts for the next 2 weeks\n'
-            'Generated ${syncResult.plansGenerated} nutrition plans'
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _proceedToNextScreen();
-              },
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
-      );
-    }
-  } catch (e) {
-    // Error handling...
   }
 }
 ```
 
 ### Deliverables
-- [ ] Progress UI component created
 - [ ] Chunked parallel processing implemented
-- [ ] Progress stream added to controller
-- [ ] Progress dialog shown during generation
-- [ ] Calendar updates in real-time as plans complete
+- [ ] Progress UI shows real-time updates
 - [ ] Error handling for failed generations
-- [ ] Success dialog shows workout count and plans generated
+- [ ] Plans generate immediately after sync
 
 ---
 
-## Phase 5: Settings & Management
+## Phase 6: Settings & Management
 
 ### Objective
-Allow users to manage their Final Surge connection in Settings.
+Allow users to manage Final Surge in Settings and display athlete info.
 
 ### Tasks
 
-#### 5.1 Create Connected Apps Screen
+#### 6.1 Connected Apps Screen
+
+Shows:
+- Final Surge athlete name + email
+- Last sync time
+- Sync Now button
+- Disconnect button
 
 ```dart
-// lib/features/integrations/presentation/screens/connected_apps_screen.dart
-
 class ConnectedAppsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final integrationState = ref.watch(finalSurgeControllerProvider);
+    final state = ref.watch(finalSurgeControllerProvider);
+    final integration = state.valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Connected Apps')),
+      appBar: AppBar(title: Text('Connected Apps')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
         children: [
-          // Final Surge
-          _ConnectedAppTile(
-            name: 'Final Surge',
-            logoAsset: 'assets/images/final_surge_logo.png',
-            isConnected: integrationState.valueOrNull?.isConnected ?? false,
-            lastSyncAt: integrationState.valueOrNull?.lastSyncAt,
-            onConnect: () => ref.read(finalSurgeControllerProvider.notifier).connect(),
-            onDisconnect: () => _showDisconnectDialog(context, ref),
-            onSyncNow: () => ref.read(finalSurgeControllerProvider.notifier).syncNow(),
-          ),
-
-          const SizedBox(height: 16),
-
-          // TrainingPeaks (Coming Soon)
-          _ConnectedAppTile(
-            name: 'TrainingPeaks',
-            logoAsset: 'assets/images/trainingpeaks_logo.png',
-            isComingSoon: true,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Strava (Coming Soon)
-          _ConnectedAppTile(
-            name: 'Strava',
-            logoAsset: 'assets/images/strava_logo.png',
-            isComingSoon: true,
-          ),
+          if (integration?.isConnected == true) ...[
+            // Athlete info section
+            ListTile(
+              title: Text(integration!.providerAthleteName ?? 'Unknown'),
+              subtitle: Text(integration.providerAthleteEmail ?? ''),
+              leading: Icon(Icons.person),
+            ),
+            ListTile(
+              title: Text('Last Synced'),
+              subtitle: Text(integration.lastSyncAt?.toString() ?? 'Never'),
+            ),
+            // Actions
+            ElevatedButton(
+              onPressed: () => ref.read(finalSurgeControllerProvider.notifier).syncNow(),
+              child: Text('Sync Now'),
+            ),
+            TextButton(
+              onPressed: () => _showDisconnectDialog(context, ref),
+              child: Text('Disconnect', style: TextStyle(color: Colors.red)),
+            ),
+          ] else ...[
+            // Not connected - show connect button
+            ElevatedButton(
+              onPressed: () => ref.read(finalSurgeControllerProvider.notifier).connect(),
+              child: Text('Connect Final Surge'),
+            ),
+          ],
         ],
       ),
     );
-  }
-
-  Future<void> _showDisconnectDialog(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Disconnect Final Surge?'),
-        content: const Text('Your imported workouts will remain, but automatic syncing will stop.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Disconnect', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await ref.read(finalSurgeControllerProvider.notifier).disconnect();
-    }
   }
 }
 ```
 
-#### 5.2 Add to Settings Screen
+#### 6.2 Synced Activity Badge
 
 ```dart
-// In SettingsScreen, add new section
-
-ListTile(
-  leading: const Icon(Icons.apps),
-  title: const Text('Connected Apps'),
-  subtitle: Text(_getConnectedAppsSubtitle()),
-  trailing: const Icon(Icons.chevron_right),
-  onTap: () => context.push('/settings/connected-apps'),
-),
-```
-
-#### 5.3 Sync Status Badge on Activities
-
-```dart
-// Widget to show on synced activities
-
 class SyncedFromBadge extends StatelessWidget {
   final String provider;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.electrolyte.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -1220,163 +1284,40 @@ class SyncedFromBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.sync, size: 12, color: AppColors.electrolyte),
-          const SizedBox(width: 4),
-          Text(
-            _formatProviderName(provider),
-            style: TextStyle(
-              fontSize: 11,
-              color: AppColors.electrolyte,
-            ),
-          ),
+          Icon(Icons.sync, size: 12),
+          SizedBox(width: 4),
+          Text('Final Surge', style: TextStyle(fontSize: 11)),
         ],
       ),
     );
-  }
-
-  String _formatProviderName(String provider) {
-    switch (provider) {
-      case 'final_surge': return 'Final Surge';
-      case 'training_peaks': return 'TrainingPeaks';
-      default: return provider;
-    }
   }
 }
 ```
 
 ### Deliverables
 - [ ] Connected Apps screen created
-- [ ] Settings screen links to Connected Apps
-- [ ] Disconnect functionality working
-- [ ] Manual "Sync Now" button
-- [ ] Last sync time displayed
+- [ ] Athlete info displayed (name, email)
+- [ ] Last sync time shown
+- [ ] Manual "Sync Now" works
+- [ ] Disconnect functionality works
 - [ ] Synced activities show badge
+- [ ] Settings menu links to Connected Apps
 
 ---
 
-## Phase 6: Polish & Testing
+## Phase 7: Polish & Testing
 
 ### Objective
-Ensure production-ready quality with comprehensive error handling and testing.
+Production-ready quality with comprehensive testing.
 
 ### Tasks
 
-#### 6.1 Error Handling
-
-```dart
-// Comprehensive error handling in controller
-
-Future<void> connect() async {
-  state = const AsyncLoading();
-
-  state = await AsyncValue.guard(() async {
-    try {
-      final integration = await _oauthService.authenticate();
-      final syncResult = await _syncService.syncWorkouts(integration.userId);
-
-      return FinalSurgeState(
-        isConnected: true,
-        lastSyncAt: DateTime.now(),
-        syncStatus: 'success',
-        workoutCount: syncResult.newWorkouts,
-      );
-    } on SocketException {
-      throw IntegrationException('No internet connection');
-    } on FormatException {
-      throw IntegrationException('Invalid response from Final Surge');
-    } on TimeoutException {
-      throw IntegrationException('Connection timed out');
-    } catch (e) {
-      throw IntegrationException('Connection failed: ${e.toString()}');
-    }
-  });
-}
-```
-
-#### 6.2 Token Refresh Handling
-
-```dart
-// Silent token refresh with banner fallback
-
-Future<void> _refreshTokenIfNeeded() async {
-  final integration = await _repository.getIntegration(_userId, 'final_surge');
-
-  if (integration == null) return;
-
-  // Check if token is expired or expiring soon
-  if (integration.tokenExpiresAt != null &&
-      integration.tokenExpiresAt!.isBefore(DateTime.now().add(Duration(hours: 1)))) {
-
-    try {
-      // Try silent refresh (Final Surge may not require this)
-      await _oauthService.refreshToken(integration);
-    } catch (e) {
-      // Show banner to user
-      _showReconnectBanner();
-    }
-  }
-}
-```
-
-#### 6.3 Integration Tests
-
-**Edge Function Tests** (`supabase/functions/sync-final-surge/index.test.ts`):
-
-```typescript
-Deno.test('multi-sport filtering - running', async () => {
-  const result = await syncFinalSurge({ sport: 'RUNNING' });
-  assertEquals(result.sport_type, 'running');
-});
-
-Deno.test('multi-sport filtering - cycling', async () => {
-  const result = await syncFinalSurge({ sport: 'CYCLING' });
-  assertEquals(result.sport_type, 'cycling');
-});
-
-Deno.test('multi-sport filtering - swimming', async () => {
-  const result = await syncFinalSurge({ sport: 'SWIMMING' });
-  assertEquals(result.sport_type, 'swimming');
-});
-
-Deno.test('only detects new workouts', async () => {
-  // First sync
-  const result1 = await syncFinalSurge({ workouts: [{ id: '123' }] });
-  assertEquals(result1.newWorkouts, 1);
-
-  // Second sync with same workout
-  const result2 = await syncFinalSurge({ workouts: [{ id: '123' }] });
-  assertEquals(result2.newWorkouts, 0);
-  assertEquals(result2.skipped, 1);
-});
-```
-
-**Flutter Tests**:
-
-```dart
-testWidgets('OAuth flow completes successfully', (tester) async {
-  // Test OAuth flow end-to-end
-});
-
-testWidgets('Sync button triggers refresh', (tester) async {
-  // Test manual sync
-});
-
-testWidgets('Synced activities show badge', (tester) async {
-  // Test badge display
-});
-
-testWidgets('Disconnect clears connection', (tester) async {
-  // Test disconnect functionality
-});
-```
-
-### Deliverables
-- [ ] Comprehensive error handling implemented
-- [ ] Token refresh with fallback banner
-- [ ] Edge function tests passing
-- [ ] Flutter integration tests passing
-- [ ] All edge cases handled
-- [ ] Security audit complete (no token logging)
+- [ ] Comprehensive error handling
+- [ ] Token refresh with reconnect banner
+- [ ] All edge function tests passing
+- [ ] All Flutter integration tests passing
+- [ ] Security audit (no token logging)
+- [ ] Performance testing (sync + generation times)
 
 ---
 
@@ -1384,34 +1325,35 @@ testWidgets('Disconnect clears connection', (tester) async {
 
 | Metric | Target |
 |--------|--------|
-| OAuth completion rate | >80% of users who start OAuth |
+| OAuth completion rate | >80% |
 | Sync success rate | >95% |
-| Error rate | <1% |
-| User retention (7-day) | >80% for connected users |
-| Workout import accuracy | 100% of supported sports |
+| Plan generation success | >90% |
+| Time to generate 14 plans | <25 seconds |
 
 ---
 
-## Risk Mitigation
+## Timeline Summary
 
-| Risk | Mitigation |
-|------|------------|
-| Final Surge API changes | Version-lock API calls, monitor for breaking changes |
-| Token expiry unknown | Implement proactive refresh, reconnect banner fallback |
-| Rate limiting | Conservative sync intervals, ETag caching |
-| Multi-device conflicts | Server-side deduplication by `provider_workout_id` |
-| OAuth user cancellation | Graceful error + retry + skip options |
+| Phase | Description | Dependency |
+|-------|-------------|------------|
+| **Phase 0** | API Testing & Validation | None |
+| **Phase 1** | Database Schema Setup | Phase 0 |
+| **Phase 2** | OAuth Implementation | Phase 1 |
+| **Phase 3** | Workout Sync & Transform | Phase 2 |
+| **Phase 4** | Onboarding Integration | Phase 3 |
+| **Phase 5** | Nutrition Plan Generation | Phase 4 |
+| **Phase 6** | Settings & Management | Phase 5 |
+| **Phase 7** | Polish & Testing | Phase 6 |
 
 ---
 
 ## References
 
-- [Final Surge Integration Notes](./notes.md) - Comprehensive research and decisions
-- [Final Surge Partner API PDF](./Final-Surge-Partner-API-Uploads.pdf) - Official API documentation
+- [Final Surge Integration Notes](./notes.md) - API documentation and research
+- [Final Surge Partner API PDF](./Final-Surge-Partner-API-Uploads.pdf) - Official docs
 - [Test Script](../../tool/final_surge_api_test.dart) - Working OAuth implementation
-- [FOA Architecture](../technical/foa-architecture.md) - Flutter architecture patterns
-- [Supabase Background Processing](../database/supabase/README.md) - pg_cron + pgmq setup
+- [FOA Architecture](../technical/foa-architecture.md) - Flutter patterns
 
 ---
 
-*This roadmap is a living document. Update as implementation progresses.*
+*This roadmap reflects all finalized decisions from December 2025 planning sessions.*
