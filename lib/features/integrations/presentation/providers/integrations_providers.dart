@@ -1,7 +1,9 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../shared/database/database_provider.dart';
+import '../../../activities/data/activities_repository.dart';
 import '../../application/final_surge_oauth_service.dart';
+import '../../application/final_surge_sync_service.dart';
 import '../../application/final_surge_transformer.dart';
 import '../../data/final_surge_api_client.dart';
 import '../../data/integrations_repository.dart';
@@ -51,6 +53,22 @@ FinalSurgeOAuthService finalSurgeOAuthService(Ref ref) {
 @Riverpod(keepAlive: true)
 FinalSurgeTransformer finalSurgeTransformer(Ref ref) {
   return const FinalSurgeTransformer();
+}
+
+/// Provider for Final Surge sync service
+@Riverpod(keepAlive: true)
+FinalSurgeSyncService finalSurgeSyncService(Ref ref) {
+  final apiClient = ref.watch(finalSurgeApiClientProvider);
+  final integrationsRepository = ref.watch(integrationsRepositoryProvider);
+  final activitiesRepository = ref.watch(activitiesRepositoryProvider);
+  final transformer = ref.watch(finalSurgeTransformerProvider);
+
+  return FinalSurgeSyncService(
+    apiClient: apiClient,
+    integrationsRepository: integrationsRepository,
+    activitiesRepository: activitiesRepository,
+    transformer: transformer,
+  );
 }
 
 // =============================================================================

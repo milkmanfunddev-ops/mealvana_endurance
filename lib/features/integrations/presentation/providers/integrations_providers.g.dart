@@ -220,6 +220,59 @@ final class FinalSurgeTransformerProvider
 String _$finalSurgeTransformerHash() =>
     r'a4b7b7b85ef111098bae59045c76fc70a96a57da';
 
+/// Provider for Final Surge sync service
+
+@ProviderFor(finalSurgeSyncService)
+const finalSurgeSyncServiceProvider = FinalSurgeSyncServiceProvider._();
+
+/// Provider for Final Surge sync service
+
+final class FinalSurgeSyncServiceProvider
+    extends
+        $FunctionalProvider<
+          FinalSurgeSyncService,
+          FinalSurgeSyncService,
+          FinalSurgeSyncService
+        >
+    with $Provider<FinalSurgeSyncService> {
+  /// Provider for Final Surge sync service
+  const FinalSurgeSyncServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'finalSurgeSyncServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$finalSurgeSyncServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<FinalSurgeSyncService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  FinalSurgeSyncService create(Ref ref) {
+    return finalSurgeSyncService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FinalSurgeSyncService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FinalSurgeSyncService>(value),
+    );
+  }
+}
+
+String _$finalSurgeSyncServiceHash() =>
+    r'5777e7c9be73cd48d5094da30971b420104c8755';
+
 /// Provider to get Final Surge integration for a user
 
 @ProviderFor(finalSurgeIntegration)

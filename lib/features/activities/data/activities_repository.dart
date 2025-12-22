@@ -244,6 +244,73 @@ class ActivitiesRepository {
     }
   }
 
+  /// Find activity by external provider workout ID
+  ///
+  /// Used to check if a workout has already been imported from Final Surge, etc.
+  Future<domain.Activity?> findByProviderWorkoutId(
+    String provider,
+    String providerWorkoutId,
+  ) async {
+    try {
+      final query = _database.select(_database.activitiesTable)
+        ..where((tbl) =>
+            tbl.syncedFromProvider.equals(provider) &
+            tbl.providerWorkoutId.equals(providerWorkoutId) &
+            tbl.deletedAt.isNull());
+
+      final activity = await query.getSingleOrNull();
+      return activity != null ? _mapToActivityDomain(activity) : null;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to find activity by provider workout ID',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'provider': provider, 'providerWorkoutId': providerWorkoutId},
+      );
+      return null; // Return null on error to allow sync to continue
+    }
+  }
+
+  /// Insert a new activity directly (used by sync services)
+  ///
+  /// Unlike createActivity, this method doesn't immediately upload to Supabase.
+  /// Used for batch imports from external providers.
+  Future<domain.Activity> insertActivity(domain.Activity activity) async {
+    try {
+      final activityWithFlags = activity.copyWith(
+        needsUpload: true,
+        localUpdatedAt: DateTime.now(),
+      );
+
+      final generatedId = await _saveToDrift(activityWithFlags);
+
+      final savedActivity = await (_database.select(_database.activitiesTable)
+            ..where((tbl) => tbl.id.equals(generatedId)))
+          .getSingle();
+
+      _logger.info(
+        'Inserted activity from sync',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {
+          'activityId': generatedId,
+          'provider': activity.syncedFromProvider,
+          'providerWorkoutId': activity.providerWorkoutId,
+        },
+      );
+
+      return _mapToActivityDomain(savedActivity);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to insert activity',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   /// Save activity to Drift database (offline-first pattern)
   /// Returns the ID of the saved activity (auto-generated if creating new)
   Future<String> _saveToDrift(domain.Activity activity) async {
@@ -315,6 +382,15 @@ class ActivitiesRepository {
         needsUpload: Value(activity.needsUpload ?? false),
         localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
         deletedAt: const Value.absent(), // Soft delete support
+        // External provider sync fields
+        syncedFromProvider: Value(activity.syncedFromProvider),
+        providerWorkoutId: Value(activity.providerWorkoutId),
+        providerWorkoutUrl: Value(activity.providerWorkoutUrl),
+        lastSyncedAt: Value(activity.lastSyncedAt),
+        workoutSubtype: Value(activity.workoutSubtype),
+        paceMinMinutesPerMile: Value(activity.paceMinMinutesPerMile),
+        paceMaxMinutesPerMile: Value(activity.paceMaxMinutesPerMile),
+        distanceMeters: const Value.absent(), // Calculated from distanceMiles if needed
         // Metadata
         createdAt: activity.createdAt,
         updatedAt: activity.updatedAt,
@@ -379,6 +455,14 @@ class ActivitiesRepository {
         needsUpload: Value(activity.needsUpload ?? false),
         localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
         deletedAt: Value(activity.deletedAt), // Soft delete support
+        // External provider sync fields
+        syncedFromProvider: Value(activity.syncedFromProvider),
+        providerWorkoutId: Value(activity.providerWorkoutId),
+        providerWorkoutUrl: Value(activity.providerWorkoutUrl),
+        lastSyncedAt: Value(activity.lastSyncedAt),
+        workoutSubtype: Value(activity.workoutSubtype),
+        paceMinMinutesPerMile: Value(activity.paceMinMinutesPerMile),
+        paceMaxMinutesPerMile: Value(activity.paceMaxMinutesPerMile),
         // Metadata
         createdAt: Value(activity.createdAt),
         updatedAt: Value(activity.updatedAt),
@@ -641,6 +725,14 @@ class ActivitiesRepository {
       // Sync fields
       needsUpload: activity.needsUpload,
       localUpdatedAt: activity.localUpdatedAt,
+      // External provider sync fields
+      syncedFromProvider: activity.syncedFromProvider,
+      providerWorkoutId: activity.providerWorkoutId,
+      providerWorkoutUrl: activity.providerWorkoutUrl,
+      lastSyncedAt: activity.lastSyncedAt,
+      workoutSubtype: activity.workoutSubtype,
+      paceMinMinutesPerMile: activity.paceMinMinutesPerMile,
+      paceMaxMinutesPerMile: activity.paceMaxMinutesPerMile,
     );
   }
 
