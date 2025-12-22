@@ -45,6 +45,22 @@ class ActivitiesTable extends Table {
   BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
   DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
 
+  // External provider sync tracking (Final Surge, TrainingPeaks, Strava, etc.)
+  TextColumn get syncedFromProvider => text().nullable().named('synced_from_provider')(); // 'final_surge', 'training_peaks', etc.
+  TextColumn get providerWorkoutId => text().nullable().named('provider_workout_id')(); // External workout ID
+  TextColumn get providerWorkoutUrl => text().nullable().named('provider_workout_url')(); // Link to view in provider
+  DateTimeColumn get lastSyncedAt => dateTime().nullable().named('last_synced_at')();
+
+  // Workout subtype from external provider (e.g., "Long Run", "Walk", "Recovery", "Tempo", "Intervals")
+  TextColumn get workoutSubtype => text().nullable().named('workout_subtype')();
+
+  // Pace ranges (for workouts with "8:30-9:30" style paces from Final Surge)
+  RealColumn get paceMinMinutesPerMile => real().nullable().named('pace_min_minutes_per_mile')();
+  RealColumn get paceMaxMinutesPerMile => real().nullable().named('pace_max_minutes_per_mile')();
+
+  // Swimming distance in meters (industry standard for swimming)
+  RealColumn get distanceMeters => real().nullable().named('distance_meters')();
+
   // Completion data (nullable)
   DateTimeColumn get completedAt => dateTime().nullable().named('completed_at')();
   IntColumn get completionRating => integer().nullable().named('completion_rating')(); // 1-5

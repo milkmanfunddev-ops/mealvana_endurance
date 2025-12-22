@@ -9233,6 +9233,95 @@ class $ActivitiesTableTable extends ActivitiesTable
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _syncedFromProviderMeta =
+      const VerificationMeta('syncedFromProvider');
+  @override
+  late final GeneratedColumn<String> syncedFromProvider =
+      GeneratedColumn<String>(
+        'synced_from_provider',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _providerWorkoutIdMeta = const VerificationMeta(
+    'providerWorkoutId',
+  );
+  @override
+  late final GeneratedColumn<String> providerWorkoutId =
+      GeneratedColumn<String>(
+        'provider_workout_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _providerWorkoutUrlMeta =
+      const VerificationMeta('providerWorkoutUrl');
+  @override
+  late final GeneratedColumn<String> providerWorkoutUrl =
+      GeneratedColumn<String>(
+        'provider_workout_url',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _lastSyncedAtMeta = const VerificationMeta(
+    'lastSyncedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+    'last_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _workoutSubtypeMeta = const VerificationMeta(
+    'workoutSubtype',
+  );
+  @override
+  late final GeneratedColumn<String> workoutSubtype = GeneratedColumn<String>(
+    'workout_subtype',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _paceMinMinutesPerMileMeta =
+      const VerificationMeta('paceMinMinutesPerMile');
+  @override
+  late final GeneratedColumn<double> paceMinMinutesPerMile =
+      GeneratedColumn<double>(
+        'pace_min_minutes_per_mile',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _paceMaxMinutesPerMileMeta =
+      const VerificationMeta('paceMaxMinutesPerMile');
+  @override
+  late final GeneratedColumn<double> paceMaxMinutesPerMile =
+      GeneratedColumn<double>(
+        'pace_max_minutes_per_mile',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _distanceMetersMeta = const VerificationMeta(
+    'distanceMeters',
+  );
+  @override
+  late final GeneratedColumn<double> distanceMeters = GeneratedColumn<double>(
+    'distance_meters',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _completedAtMeta = const VerificationMeta(
     'completedAt',
   );
@@ -9369,6 +9458,14 @@ class $ActivitiesTableTable extends ActivitiesTable
     reminderRecurring,
     needsUpload,
     localUpdatedAt,
+    syncedFromProvider,
+    providerWorkoutId,
+    providerWorkoutUrl,
+    lastSyncedAt,
+    workoutSubtype,
+    paceMinMinutesPerMile,
+    paceMaxMinutesPerMile,
+    distanceMeters,
     completedAt,
     completionRating,
     completionNotes,
@@ -9619,6 +9716,78 @@ class $ActivitiesTableTable extends ActivitiesTable
         ),
       );
     }
+    if (data.containsKey('synced_from_provider')) {
+      context.handle(
+        _syncedFromProviderMeta,
+        syncedFromProvider.isAcceptableOrUnknown(
+          data['synced_from_provider']!,
+          _syncedFromProviderMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_workout_id')) {
+      context.handle(
+        _providerWorkoutIdMeta,
+        providerWorkoutId.isAcceptableOrUnknown(
+          data['provider_workout_id']!,
+          _providerWorkoutIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_workout_url')) {
+      context.handle(
+        _providerWorkoutUrlMeta,
+        providerWorkoutUrl.isAcceptableOrUnknown(
+          data['provider_workout_url']!,
+          _providerWorkoutUrlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+        _lastSyncedAtMeta,
+        lastSyncedAt.isAcceptableOrUnknown(
+          data['last_synced_at']!,
+          _lastSyncedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('workout_subtype')) {
+      context.handle(
+        _workoutSubtypeMeta,
+        workoutSubtype.isAcceptableOrUnknown(
+          data['workout_subtype']!,
+          _workoutSubtypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pace_min_minutes_per_mile')) {
+      context.handle(
+        _paceMinMinutesPerMileMeta,
+        paceMinMinutesPerMile.isAcceptableOrUnknown(
+          data['pace_min_minutes_per_mile']!,
+          _paceMinMinutesPerMileMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pace_max_minutes_per_mile')) {
+      context.handle(
+        _paceMaxMinutesPerMileMeta,
+        paceMaxMinutesPerMile.isAcceptableOrUnknown(
+          data['pace_max_minutes_per_mile']!,
+          _paceMaxMinutesPerMileMeta,
+        ),
+      );
+    }
+    if (data.containsKey('distance_meters')) {
+      context.handle(
+        _distanceMetersMeta,
+        distanceMeters.isAcceptableOrUnknown(
+          data['distance_meters']!,
+          _distanceMetersMeta,
+        ),
+      );
+    }
     if (data.containsKey('completed_at')) {
       context.handle(
         _completedAtMeta,
@@ -9814,6 +9983,38 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}local_updated_at'],
       ),
+      syncedFromProvider: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}synced_from_provider'],
+      ),
+      providerWorkoutId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_workout_id'],
+      ),
+      providerWorkoutUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_workout_url'],
+      ),
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_synced_at'],
+      ),
+      workoutSubtype: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workout_subtype'],
+      ),
+      paceMinMinutesPerMile: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pace_min_minutes_per_mile'],
+      ),
+      paceMaxMinutesPerMile: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pace_max_minutes_per_mile'],
+      ),
+      distanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}distance_meters'],
+      ),
       completedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}completed_at'],
@@ -9890,6 +10091,14 @@ class Activity extends DataClass implements Insertable<Activity> {
   final bool reminderRecurring;
   final bool? needsUpload;
   final DateTime? localUpdatedAt;
+  final String? syncedFromProvider;
+  final String? providerWorkoutId;
+  final String? providerWorkoutUrl;
+  final DateTime? lastSyncedAt;
+  final String? workoutSubtype;
+  final double? paceMinMinutesPerMile;
+  final double? paceMaxMinutesPerMile;
+  final double? distanceMeters;
   final DateTime? completedAt;
   final int? completionRating;
   final String? completionNotes;
@@ -9927,6 +10136,14 @@ class Activity extends DataClass implements Insertable<Activity> {
     required this.reminderRecurring,
     this.needsUpload,
     this.localUpdatedAt,
+    this.syncedFromProvider,
+    this.providerWorkoutId,
+    this.providerWorkoutUrl,
+    this.lastSyncedAt,
+    this.workoutSubtype,
+    this.paceMinMinutesPerMile,
+    this.paceMaxMinutesPerMile,
+    this.distanceMeters,
     this.completedAt,
     this.completionRating,
     this.completionNotes,
@@ -10008,6 +10225,34 @@ class Activity extends DataClass implements Insertable<Activity> {
     }
     if (!nullToAbsent || localUpdatedAt != null) {
       map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
+    if (!nullToAbsent || syncedFromProvider != null) {
+      map['synced_from_provider'] = Variable<String>(syncedFromProvider);
+    }
+    if (!nullToAbsent || providerWorkoutId != null) {
+      map['provider_workout_id'] = Variable<String>(providerWorkoutId);
+    }
+    if (!nullToAbsent || providerWorkoutUrl != null) {
+      map['provider_workout_url'] = Variable<String>(providerWorkoutUrl);
+    }
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    if (!nullToAbsent || workoutSubtype != null) {
+      map['workout_subtype'] = Variable<String>(workoutSubtype);
+    }
+    if (!nullToAbsent || paceMinMinutesPerMile != null) {
+      map['pace_min_minutes_per_mile'] = Variable<double>(
+        paceMinMinutesPerMile,
+      );
+    }
+    if (!nullToAbsent || paceMaxMinutesPerMile != null) {
+      map['pace_max_minutes_per_mile'] = Variable<double>(
+        paceMaxMinutesPerMile,
+      );
+    }
+    if (!nullToAbsent || distanceMeters != null) {
+      map['distance_meters'] = Variable<double>(distanceMeters);
     }
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
@@ -10103,6 +10348,30 @@ class Activity extends DataClass implements Insertable<Activity> {
       localUpdatedAt: localUpdatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(localUpdatedAt),
+      syncedFromProvider: syncedFromProvider == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncedFromProvider),
+      providerWorkoutId: providerWorkoutId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerWorkoutId),
+      providerWorkoutUrl: providerWorkoutUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerWorkoutUrl),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
+      workoutSubtype: workoutSubtype == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workoutSubtype),
+      paceMinMinutesPerMile: paceMinMinutesPerMile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paceMinMinutesPerMile),
+      paceMaxMinutesPerMile: paceMaxMinutesPerMile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paceMaxMinutesPerMile),
+      distanceMeters: distanceMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanceMeters),
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
@@ -10182,6 +10451,24 @@ class Activity extends DataClass implements Insertable<Activity> {
       reminderRecurring: serializer.fromJson<bool>(json['reminderRecurring']),
       needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
       localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+      syncedFromProvider: serializer.fromJson<String?>(
+        json['syncedFromProvider'],
+      ),
+      providerWorkoutId: serializer.fromJson<String?>(
+        json['providerWorkoutId'],
+      ),
+      providerWorkoutUrl: serializer.fromJson<String?>(
+        json['providerWorkoutUrl'],
+      ),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+      workoutSubtype: serializer.fromJson<String?>(json['workoutSubtype']),
+      paceMinMinutesPerMile: serializer.fromJson<double?>(
+        json['paceMinMinutesPerMile'],
+      ),
+      paceMaxMinutesPerMile: serializer.fromJson<double?>(
+        json['paceMaxMinutesPerMile'],
+      ),
+      distanceMeters: serializer.fromJson<double?>(json['distanceMeters']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
       completionRating: serializer.fromJson<int?>(json['completionRating']),
       completionNotes: serializer.fromJson<String?>(json['completionNotes']),
@@ -10236,6 +10523,18 @@ class Activity extends DataClass implements Insertable<Activity> {
       'reminderRecurring': serializer.toJson<bool>(reminderRecurring),
       'needsUpload': serializer.toJson<bool?>(needsUpload),
       'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+      'syncedFromProvider': serializer.toJson<String?>(syncedFromProvider),
+      'providerWorkoutId': serializer.toJson<String?>(providerWorkoutId),
+      'providerWorkoutUrl': serializer.toJson<String?>(providerWorkoutUrl),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+      'workoutSubtype': serializer.toJson<String?>(workoutSubtype),
+      'paceMinMinutesPerMile': serializer.toJson<double?>(
+        paceMinMinutesPerMile,
+      ),
+      'paceMaxMinutesPerMile': serializer.toJson<double?>(
+        paceMaxMinutesPerMile,
+      ),
+      'distanceMeters': serializer.toJson<double?>(distanceMeters),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
       'completionRating': serializer.toJson<int?>(completionRating),
       'completionNotes': serializer.toJson<String?>(completionNotes),
@@ -10276,6 +10575,14 @@ class Activity extends DataClass implements Insertable<Activity> {
     bool? reminderRecurring,
     Value<bool?> needsUpload = const Value.absent(),
     Value<DateTime?> localUpdatedAt = const Value.absent(),
+    Value<String?> syncedFromProvider = const Value.absent(),
+    Value<String?> providerWorkoutId = const Value.absent(),
+    Value<String?> providerWorkoutUrl = const Value.absent(),
+    Value<DateTime?> lastSyncedAt = const Value.absent(),
+    Value<String?> workoutSubtype = const Value.absent(),
+    Value<double?> paceMinMinutesPerMile = const Value.absent(),
+    Value<double?> paceMaxMinutesPerMile = const Value.absent(),
+    Value<double?> distanceMeters = const Value.absent(),
     Value<DateTime?> completedAt = const Value.absent(),
     Value<int?> completionRating = const Value.absent(),
     Value<String?> completionNotes = const Value.absent(),
@@ -10347,6 +10654,28 @@ class Activity extends DataClass implements Insertable<Activity> {
     localUpdatedAt: localUpdatedAt.present
         ? localUpdatedAt.value
         : this.localUpdatedAt,
+    syncedFromProvider: syncedFromProvider.present
+        ? syncedFromProvider.value
+        : this.syncedFromProvider,
+    providerWorkoutId: providerWorkoutId.present
+        ? providerWorkoutId.value
+        : this.providerWorkoutId,
+    providerWorkoutUrl: providerWorkoutUrl.present
+        ? providerWorkoutUrl.value
+        : this.providerWorkoutUrl,
+    lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+    workoutSubtype: workoutSubtype.present
+        ? workoutSubtype.value
+        : this.workoutSubtype,
+    paceMinMinutesPerMile: paceMinMinutesPerMile.present
+        ? paceMinMinutesPerMile.value
+        : this.paceMinMinutesPerMile,
+    paceMaxMinutesPerMile: paceMaxMinutesPerMile.present
+        ? paceMaxMinutesPerMile.value
+        : this.paceMaxMinutesPerMile,
+    distanceMeters: distanceMeters.present
+        ? distanceMeters.value
+        : this.distanceMeters,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
     completionRating: completionRating.present
         ? completionRating.value
@@ -10440,6 +10769,30 @@ class Activity extends DataClass implements Insertable<Activity> {
       localUpdatedAt: data.localUpdatedAt.present
           ? data.localUpdatedAt.value
           : this.localUpdatedAt,
+      syncedFromProvider: data.syncedFromProvider.present
+          ? data.syncedFromProvider.value
+          : this.syncedFromProvider,
+      providerWorkoutId: data.providerWorkoutId.present
+          ? data.providerWorkoutId.value
+          : this.providerWorkoutId,
+      providerWorkoutUrl: data.providerWorkoutUrl.present
+          ? data.providerWorkoutUrl.value
+          : this.providerWorkoutUrl,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
+      workoutSubtype: data.workoutSubtype.present
+          ? data.workoutSubtype.value
+          : this.workoutSubtype,
+      paceMinMinutesPerMile: data.paceMinMinutesPerMile.present
+          ? data.paceMinMinutesPerMile.value
+          : this.paceMinMinutesPerMile,
+      paceMaxMinutesPerMile: data.paceMaxMinutesPerMile.present
+          ? data.paceMaxMinutesPerMile.value
+          : this.paceMaxMinutesPerMile,
+      distanceMeters: data.distanceMeters.present
+          ? data.distanceMeters.value
+          : this.distanceMeters,
       completedAt: data.completedAt.present
           ? data.completedAt.value
           : this.completedAt,
@@ -10494,6 +10847,14 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('reminderRecurring: $reminderRecurring, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('syncedFromProvider: $syncedFromProvider, ')
+          ..write('providerWorkoutId: $providerWorkoutId, ')
+          ..write('providerWorkoutUrl: $providerWorkoutUrl, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('workoutSubtype: $workoutSubtype, ')
+          ..write('paceMinMinutesPerMile: $paceMinMinutesPerMile, ')
+          ..write('paceMaxMinutesPerMile: $paceMaxMinutesPerMile, ')
+          ..write('distanceMeters: $distanceMeters, ')
           ..write('completedAt: $completedAt, ')
           ..write('completionRating: $completionRating, ')
           ..write('completionNotes: $completionNotes, ')
@@ -10536,6 +10897,14 @@ class Activity extends DataClass implements Insertable<Activity> {
     reminderRecurring,
     needsUpload,
     localUpdatedAt,
+    syncedFromProvider,
+    providerWorkoutId,
+    providerWorkoutUrl,
+    lastSyncedAt,
+    workoutSubtype,
+    paceMinMinutesPerMile,
+    paceMaxMinutesPerMile,
+    distanceMeters,
     completedAt,
     completionRating,
     completionNotes,
@@ -10577,6 +10946,14 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.reminderRecurring == this.reminderRecurring &&
           other.needsUpload == this.needsUpload &&
           other.localUpdatedAt == this.localUpdatedAt &&
+          other.syncedFromProvider == this.syncedFromProvider &&
+          other.providerWorkoutId == this.providerWorkoutId &&
+          other.providerWorkoutUrl == this.providerWorkoutUrl &&
+          other.lastSyncedAt == this.lastSyncedAt &&
+          other.workoutSubtype == this.workoutSubtype &&
+          other.paceMinMinutesPerMile == this.paceMinMinutesPerMile &&
+          other.paceMaxMinutesPerMile == this.paceMaxMinutesPerMile &&
+          other.distanceMeters == this.distanceMeters &&
           other.completedAt == this.completedAt &&
           other.completionRating == this.completionRating &&
           other.completionNotes == this.completionNotes &&
@@ -10616,6 +10993,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<bool> reminderRecurring;
   final Value<bool?> needsUpload;
   final Value<DateTime?> localUpdatedAt;
+  final Value<String?> syncedFromProvider;
+  final Value<String?> providerWorkoutId;
+  final Value<String?> providerWorkoutUrl;
+  final Value<DateTime?> lastSyncedAt;
+  final Value<String?> workoutSubtype;
+  final Value<double?> paceMinMinutesPerMile;
+  final Value<double?> paceMaxMinutesPerMile;
+  final Value<double?> distanceMeters;
   final Value<DateTime?> completedAt;
   final Value<int?> completionRating;
   final Value<String?> completionNotes;
@@ -10654,6 +11039,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.reminderRecurring = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
+    this.syncedFromProvider = const Value.absent(),
+    this.providerWorkoutId = const Value.absent(),
+    this.providerWorkoutUrl = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.workoutSubtype = const Value.absent(),
+    this.paceMinMinutesPerMile = const Value.absent(),
+    this.paceMaxMinutesPerMile = const Value.absent(),
+    this.distanceMeters = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.completionRating = const Value.absent(),
     this.completionNotes = const Value.absent(),
@@ -10693,6 +11086,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.reminderRecurring = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
+    this.syncedFromProvider = const Value.absent(),
+    this.providerWorkoutId = const Value.absent(),
+    this.providerWorkoutUrl = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.workoutSubtype = const Value.absent(),
+    this.paceMinMinutesPerMile = const Value.absent(),
+    this.paceMaxMinutesPerMile = const Value.absent(),
+    this.distanceMeters = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.completionRating = const Value.absent(),
     this.completionNotes = const Value.absent(),
@@ -10737,6 +11138,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<bool>? reminderRecurring,
     Expression<bool>? needsUpload,
     Expression<DateTime>? localUpdatedAt,
+    Expression<String>? syncedFromProvider,
+    Expression<String>? providerWorkoutId,
+    Expression<String>? providerWorkoutUrl,
+    Expression<DateTime>? lastSyncedAt,
+    Expression<String>? workoutSubtype,
+    Expression<double>? paceMinMinutesPerMile,
+    Expression<double>? paceMaxMinutesPerMile,
+    Expression<double>? distanceMeters,
     Expression<DateTime>? completedAt,
     Expression<int>? completionRating,
     Expression<String>? completionNotes,
@@ -10784,6 +11193,18 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (reminderRecurring != null) 'reminder_recurring': reminderRecurring,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (syncedFromProvider != null)
+        'synced_from_provider': syncedFromProvider,
+      if (providerWorkoutId != null) 'provider_workout_id': providerWorkoutId,
+      if (providerWorkoutUrl != null)
+        'provider_workout_url': providerWorkoutUrl,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (workoutSubtype != null) 'workout_subtype': workoutSubtype,
+      if (paceMinMinutesPerMile != null)
+        'pace_min_minutes_per_mile': paceMinMinutesPerMile,
+      if (paceMaxMinutesPerMile != null)
+        'pace_max_minutes_per_mile': paceMaxMinutesPerMile,
+      if (distanceMeters != null) 'distance_meters': distanceMeters,
       if (completedAt != null) 'completed_at': completedAt,
       if (completionRating != null) 'completion_rating': completionRating,
       if (completionNotes != null) 'completion_notes': completionNotes,
@@ -10827,6 +11248,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<bool>? reminderRecurring,
     Value<bool?>? needsUpload,
     Value<DateTime?>? localUpdatedAt,
+    Value<String?>? syncedFromProvider,
+    Value<String?>? providerWorkoutId,
+    Value<String?>? providerWorkoutUrl,
+    Value<DateTime?>? lastSyncedAt,
+    Value<String?>? workoutSubtype,
+    Value<double?>? paceMinMinutesPerMile,
+    Value<double?>? paceMaxMinutesPerMile,
+    Value<double?>? distanceMeters,
     Value<DateTime?>? completedAt,
     Value<int?>? completionRating,
     Value<String?>? completionNotes,
@@ -10870,6 +11299,16 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       reminderRecurring: reminderRecurring ?? this.reminderRecurring,
       needsUpload: needsUpload ?? this.needsUpload,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      syncedFromProvider: syncedFromProvider ?? this.syncedFromProvider,
+      providerWorkoutId: providerWorkoutId ?? this.providerWorkoutId,
+      providerWorkoutUrl: providerWorkoutUrl ?? this.providerWorkoutUrl,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      workoutSubtype: workoutSubtype ?? this.workoutSubtype,
+      paceMinMinutesPerMile:
+          paceMinMinutesPerMile ?? this.paceMinMinutesPerMile,
+      paceMaxMinutesPerMile:
+          paceMaxMinutesPerMile ?? this.paceMaxMinutesPerMile,
+      distanceMeters: distanceMeters ?? this.distanceMeters,
       completedAt: completedAt ?? this.completedAt,
       completionRating: completionRating ?? this.completionRating,
       completionNotes: completionNotes ?? this.completionNotes,
@@ -10976,6 +11415,34 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     if (localUpdatedAt.present) {
       map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
     }
+    if (syncedFromProvider.present) {
+      map['synced_from_provider'] = Variable<String>(syncedFromProvider.value);
+    }
+    if (providerWorkoutId.present) {
+      map['provider_workout_id'] = Variable<String>(providerWorkoutId.value);
+    }
+    if (providerWorkoutUrl.present) {
+      map['provider_workout_url'] = Variable<String>(providerWorkoutUrl.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
+    if (workoutSubtype.present) {
+      map['workout_subtype'] = Variable<String>(workoutSubtype.value);
+    }
+    if (paceMinMinutesPerMile.present) {
+      map['pace_min_minutes_per_mile'] = Variable<double>(
+        paceMinMinutesPerMile.value,
+      );
+    }
+    if (paceMaxMinutesPerMile.present) {
+      map['pace_max_minutes_per_mile'] = Variable<double>(
+        paceMaxMinutesPerMile.value,
+      );
+    }
+    if (distanceMeters.present) {
+      map['distance_meters'] = Variable<double>(distanceMeters.value);
+    }
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
     }
@@ -11045,6 +11512,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('reminderRecurring: $reminderRecurring, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('syncedFromProvider: $syncedFromProvider, ')
+          ..write('providerWorkoutId: $providerWorkoutId, ')
+          ..write('providerWorkoutUrl: $providerWorkoutUrl, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('workoutSubtype: $workoutSubtype, ')
+          ..write('paceMinMinutesPerMile: $paceMinMinutesPerMile, ')
+          ..write('paceMaxMinutesPerMile: $paceMaxMinutesPerMile, ')
+          ..write('distanceMeters: $distanceMeters, ')
           ..write('completedAt: $completedAt, ')
           ..write('completionRating: $completionRating, ')
           ..write('completionNotes: $completionNotes, ')
@@ -18033,6 +18508,927 @@ class FeatureSurveyResponsesTableCompanion
   }
 }
 
+class $IntegrationsTableTable extends IntegrationsTable
+    with TableInfo<$IntegrationsTableTable, Integration> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $IntegrationsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _providerMeta = const VerificationMeta(
+    'provider',
+  );
+  @override
+  late final GeneratedColumn<String> provider = GeneratedColumn<String>(
+    'provider',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accessTokenMeta = const VerificationMeta(
+    'accessToken',
+  );
+  @override
+  late final GeneratedColumn<String> accessToken = GeneratedColumn<String>(
+    'access_token',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _refreshTokenMeta = const VerificationMeta(
+    'refreshToken',
+  );
+  @override
+  late final GeneratedColumn<String> refreshToken = GeneratedColumn<String>(
+    'refresh_token',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tokenExpiresAtMeta = const VerificationMeta(
+    'tokenExpiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> tokenExpiresAt =
+      GeneratedColumn<DateTime>(
+        'token_expires_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _providerAthleteIdMeta = const VerificationMeta(
+    'providerAthleteId',
+  );
+  @override
+  late final GeneratedColumn<String> providerAthleteId =
+      GeneratedColumn<String>(
+        'provider_athlete_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _providerAthleteNameMeta =
+      const VerificationMeta('providerAthleteName');
+  @override
+  late final GeneratedColumn<String> providerAthleteName =
+      GeneratedColumn<String>(
+        'provider_athlete_name',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _providerAthleteEmailMeta =
+      const VerificationMeta('providerAthleteEmail');
+  @override
+  late final GeneratedColumn<String> providerAthleteEmail =
+      GeneratedColumn<String>(
+        'provider_athlete_email',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _lastSyncAtMeta = const VerificationMeta(
+    'lastSyncAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncAt = GeneratedColumn<DateTime>(
+    'last_sync_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastSyncStatusMeta = const VerificationMeta(
+    'lastSyncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> lastSyncStatus = GeneratedColumn<String>(
+    'last_sync_status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastSyncErrorMeta = const VerificationMeta(
+    'lastSyncError',
+  );
+  @override
+  late final GeneratedColumn<String> lastSyncError = GeneratedColumn<String>(
+    'last_sync_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    provider,
+    accessToken,
+    refreshToken,
+    tokenExpiresAt,
+    providerAthleteId,
+    providerAthleteName,
+    providerAthleteEmail,
+    isActive,
+    lastSyncAt,
+    lastSyncStatus,
+    lastSyncError,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'integrations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Integration> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('provider')) {
+      context.handle(
+        _providerMeta,
+        provider.isAcceptableOrUnknown(data['provider']!, _providerMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_providerMeta);
+    }
+    if (data.containsKey('access_token')) {
+      context.handle(
+        _accessTokenMeta,
+        accessToken.isAcceptableOrUnknown(
+          data['access_token']!,
+          _accessTokenMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_accessTokenMeta);
+    }
+    if (data.containsKey('refresh_token')) {
+      context.handle(
+        _refreshTokenMeta,
+        refreshToken.isAcceptableOrUnknown(
+          data['refresh_token']!,
+          _refreshTokenMeta,
+        ),
+      );
+    }
+    if (data.containsKey('token_expires_at')) {
+      context.handle(
+        _tokenExpiresAtMeta,
+        tokenExpiresAt.isAcceptableOrUnknown(
+          data['token_expires_at']!,
+          _tokenExpiresAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_athlete_id')) {
+      context.handle(
+        _providerAthleteIdMeta,
+        providerAthleteId.isAcceptableOrUnknown(
+          data['provider_athlete_id']!,
+          _providerAthleteIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_providerAthleteIdMeta);
+    }
+    if (data.containsKey('provider_athlete_name')) {
+      context.handle(
+        _providerAthleteNameMeta,
+        providerAthleteName.isAcceptableOrUnknown(
+          data['provider_athlete_name']!,
+          _providerAthleteNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_athlete_email')) {
+      context.handle(
+        _providerAthleteEmailMeta,
+        providerAthleteEmail.isAcceptableOrUnknown(
+          data['provider_athlete_email']!,
+          _providerAthleteEmailMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('last_sync_at')) {
+      context.handle(
+        _lastSyncAtMeta,
+        lastSyncAt.isAcceptableOrUnknown(
+          data['last_sync_at']!,
+          _lastSyncAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_sync_status')) {
+      context.handle(
+        _lastSyncStatusMeta,
+        lastSyncStatus.isAcceptableOrUnknown(
+          data['last_sync_status']!,
+          _lastSyncStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_sync_error')) {
+      context.handle(
+        _lastSyncErrorMeta,
+        lastSyncError.isAcceptableOrUnknown(
+          data['last_sync_error']!,
+          _lastSyncErrorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Integration map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Integration(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      provider: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider'],
+      )!,
+      accessToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}access_token'],
+      )!,
+      refreshToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}refresh_token'],
+      ),
+      tokenExpiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}token_expires_at'],
+      ),
+      providerAthleteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_athlete_id'],
+      )!,
+      providerAthleteName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_athlete_name'],
+      ),
+      providerAthleteEmail: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_athlete_email'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      lastSyncAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_sync_at'],
+      ),
+      lastSyncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_sync_status'],
+      ),
+      lastSyncError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_sync_error'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $IntegrationsTableTable createAlias(String alias) {
+    return $IntegrationsTableTable(attachedDatabase, alias);
+  }
+}
+
+class Integration extends DataClass implements Insertable<Integration> {
+  final String id;
+  final String userId;
+
+  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin'
+  final String provider;
+  final String accessToken;
+  final String? refreshToken;
+  final DateTime? tokenExpiresAt;
+  final String providerAthleteId;
+  final String? providerAthleteName;
+  final String? providerAthleteEmail;
+  final bool isActive;
+  final DateTime? lastSyncAt;
+  final String? lastSyncStatus;
+  final String? lastSyncError;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Integration({
+    required this.id,
+    required this.userId,
+    required this.provider,
+    required this.accessToken,
+    this.refreshToken,
+    this.tokenExpiresAt,
+    required this.providerAthleteId,
+    this.providerAthleteName,
+    this.providerAthleteEmail,
+    required this.isActive,
+    this.lastSyncAt,
+    this.lastSyncStatus,
+    this.lastSyncError,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['provider'] = Variable<String>(provider);
+    map['access_token'] = Variable<String>(accessToken);
+    if (!nullToAbsent || refreshToken != null) {
+      map['refresh_token'] = Variable<String>(refreshToken);
+    }
+    if (!nullToAbsent || tokenExpiresAt != null) {
+      map['token_expires_at'] = Variable<DateTime>(tokenExpiresAt);
+    }
+    map['provider_athlete_id'] = Variable<String>(providerAthleteId);
+    if (!nullToAbsent || providerAthleteName != null) {
+      map['provider_athlete_name'] = Variable<String>(providerAthleteName);
+    }
+    if (!nullToAbsent || providerAthleteEmail != null) {
+      map['provider_athlete_email'] = Variable<String>(providerAthleteEmail);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    if (!nullToAbsent || lastSyncAt != null) {
+      map['last_sync_at'] = Variable<DateTime>(lastSyncAt);
+    }
+    if (!nullToAbsent || lastSyncStatus != null) {
+      map['last_sync_status'] = Variable<String>(lastSyncStatus);
+    }
+    if (!nullToAbsent || lastSyncError != null) {
+      map['last_sync_error'] = Variable<String>(lastSyncError);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  IntegrationsTableCompanion toCompanion(bool nullToAbsent) {
+    return IntegrationsTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      provider: Value(provider),
+      accessToken: Value(accessToken),
+      refreshToken: refreshToken == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refreshToken),
+      tokenExpiresAt: tokenExpiresAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokenExpiresAt),
+      providerAthleteId: Value(providerAthleteId),
+      providerAthleteName: providerAthleteName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerAthleteName),
+      providerAthleteEmail: providerAthleteEmail == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerAthleteEmail),
+      isActive: Value(isActive),
+      lastSyncAt: lastSyncAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncAt),
+      lastSyncStatus: lastSyncStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncStatus),
+      lastSyncError: lastSyncError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncError),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Integration.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Integration(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      provider: serializer.fromJson<String>(json['provider']),
+      accessToken: serializer.fromJson<String>(json['accessToken']),
+      refreshToken: serializer.fromJson<String?>(json['refreshToken']),
+      tokenExpiresAt: serializer.fromJson<DateTime?>(json['tokenExpiresAt']),
+      providerAthleteId: serializer.fromJson<String>(json['providerAthleteId']),
+      providerAthleteName: serializer.fromJson<String?>(
+        json['providerAthleteName'],
+      ),
+      providerAthleteEmail: serializer.fromJson<String?>(
+        json['providerAthleteEmail'],
+      ),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      lastSyncAt: serializer.fromJson<DateTime?>(json['lastSyncAt']),
+      lastSyncStatus: serializer.fromJson<String?>(json['lastSyncStatus']),
+      lastSyncError: serializer.fromJson<String?>(json['lastSyncError']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'provider': serializer.toJson<String>(provider),
+      'accessToken': serializer.toJson<String>(accessToken),
+      'refreshToken': serializer.toJson<String?>(refreshToken),
+      'tokenExpiresAt': serializer.toJson<DateTime?>(tokenExpiresAt),
+      'providerAthleteId': serializer.toJson<String>(providerAthleteId),
+      'providerAthleteName': serializer.toJson<String?>(providerAthleteName),
+      'providerAthleteEmail': serializer.toJson<String?>(providerAthleteEmail),
+      'isActive': serializer.toJson<bool>(isActive),
+      'lastSyncAt': serializer.toJson<DateTime?>(lastSyncAt),
+      'lastSyncStatus': serializer.toJson<String?>(lastSyncStatus),
+      'lastSyncError': serializer.toJson<String?>(lastSyncError),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Integration copyWith({
+    String? id,
+    String? userId,
+    String? provider,
+    String? accessToken,
+    Value<String?> refreshToken = const Value.absent(),
+    Value<DateTime?> tokenExpiresAt = const Value.absent(),
+    String? providerAthleteId,
+    Value<String?> providerAthleteName = const Value.absent(),
+    Value<String?> providerAthleteEmail = const Value.absent(),
+    bool? isActive,
+    Value<DateTime?> lastSyncAt = const Value.absent(),
+    Value<String?> lastSyncStatus = const Value.absent(),
+    Value<String?> lastSyncError = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => Integration(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    provider: provider ?? this.provider,
+    accessToken: accessToken ?? this.accessToken,
+    refreshToken: refreshToken.present ? refreshToken.value : this.refreshToken,
+    tokenExpiresAt: tokenExpiresAt.present
+        ? tokenExpiresAt.value
+        : this.tokenExpiresAt,
+    providerAthleteId: providerAthleteId ?? this.providerAthleteId,
+    providerAthleteName: providerAthleteName.present
+        ? providerAthleteName.value
+        : this.providerAthleteName,
+    providerAthleteEmail: providerAthleteEmail.present
+        ? providerAthleteEmail.value
+        : this.providerAthleteEmail,
+    isActive: isActive ?? this.isActive,
+    lastSyncAt: lastSyncAt.present ? lastSyncAt.value : this.lastSyncAt,
+    lastSyncStatus: lastSyncStatus.present
+        ? lastSyncStatus.value
+        : this.lastSyncStatus,
+    lastSyncError: lastSyncError.present
+        ? lastSyncError.value
+        : this.lastSyncError,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Integration copyWithCompanion(IntegrationsTableCompanion data) {
+    return Integration(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      provider: data.provider.present ? data.provider.value : this.provider,
+      accessToken: data.accessToken.present
+          ? data.accessToken.value
+          : this.accessToken,
+      refreshToken: data.refreshToken.present
+          ? data.refreshToken.value
+          : this.refreshToken,
+      tokenExpiresAt: data.tokenExpiresAt.present
+          ? data.tokenExpiresAt.value
+          : this.tokenExpiresAt,
+      providerAthleteId: data.providerAthleteId.present
+          ? data.providerAthleteId.value
+          : this.providerAthleteId,
+      providerAthleteName: data.providerAthleteName.present
+          ? data.providerAthleteName.value
+          : this.providerAthleteName,
+      providerAthleteEmail: data.providerAthleteEmail.present
+          ? data.providerAthleteEmail.value
+          : this.providerAthleteEmail,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      lastSyncAt: data.lastSyncAt.present
+          ? data.lastSyncAt.value
+          : this.lastSyncAt,
+      lastSyncStatus: data.lastSyncStatus.present
+          ? data.lastSyncStatus.value
+          : this.lastSyncStatus,
+      lastSyncError: data.lastSyncError.present
+          ? data.lastSyncError.value
+          : this.lastSyncError,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Integration(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('provider: $provider, ')
+          ..write('accessToken: $accessToken, ')
+          ..write('refreshToken: $refreshToken, ')
+          ..write('tokenExpiresAt: $tokenExpiresAt, ')
+          ..write('providerAthleteId: $providerAthleteId, ')
+          ..write('providerAthleteName: $providerAthleteName, ')
+          ..write('providerAthleteEmail: $providerAthleteEmail, ')
+          ..write('isActive: $isActive, ')
+          ..write('lastSyncAt: $lastSyncAt, ')
+          ..write('lastSyncStatus: $lastSyncStatus, ')
+          ..write('lastSyncError: $lastSyncError, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    provider,
+    accessToken,
+    refreshToken,
+    tokenExpiresAt,
+    providerAthleteId,
+    providerAthleteName,
+    providerAthleteEmail,
+    isActive,
+    lastSyncAt,
+    lastSyncStatus,
+    lastSyncError,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Integration &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.provider == this.provider &&
+          other.accessToken == this.accessToken &&
+          other.refreshToken == this.refreshToken &&
+          other.tokenExpiresAt == this.tokenExpiresAt &&
+          other.providerAthleteId == this.providerAthleteId &&
+          other.providerAthleteName == this.providerAthleteName &&
+          other.providerAthleteEmail == this.providerAthleteEmail &&
+          other.isActive == this.isActive &&
+          other.lastSyncAt == this.lastSyncAt &&
+          other.lastSyncStatus == this.lastSyncStatus &&
+          other.lastSyncError == this.lastSyncError &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> provider;
+  final Value<String> accessToken;
+  final Value<String?> refreshToken;
+  final Value<DateTime?> tokenExpiresAt;
+  final Value<String> providerAthleteId;
+  final Value<String?> providerAthleteName;
+  final Value<String?> providerAthleteEmail;
+  final Value<bool> isActive;
+  final Value<DateTime?> lastSyncAt;
+  final Value<String?> lastSyncStatus;
+  final Value<String?> lastSyncError;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const IntegrationsTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.accessToken = const Value.absent(),
+    this.refreshToken = const Value.absent(),
+    this.tokenExpiresAt = const Value.absent(),
+    this.providerAthleteId = const Value.absent(),
+    this.providerAthleteName = const Value.absent(),
+    this.providerAthleteEmail = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.lastSyncAt = const Value.absent(),
+    this.lastSyncStatus = const Value.absent(),
+    this.lastSyncError = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  IntegrationsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    required String provider,
+    required String accessToken,
+    this.refreshToken = const Value.absent(),
+    this.tokenExpiresAt = const Value.absent(),
+    required String providerAthleteId,
+    this.providerAthleteName = const Value.absent(),
+    this.providerAthleteEmail = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.lastSyncAt = const Value.absent(),
+    this.lastSyncStatus = const Value.absent(),
+    this.lastSyncError = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       provider = Value(provider),
+       accessToken = Value(accessToken),
+       providerAthleteId = Value(providerAthleteId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Integration> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? provider,
+    Expression<String>? accessToken,
+    Expression<String>? refreshToken,
+    Expression<DateTime>? tokenExpiresAt,
+    Expression<String>? providerAthleteId,
+    Expression<String>? providerAthleteName,
+    Expression<String>? providerAthleteEmail,
+    Expression<bool>? isActive,
+    Expression<DateTime>? lastSyncAt,
+    Expression<String>? lastSyncStatus,
+    Expression<String>? lastSyncError,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (provider != null) 'provider': provider,
+      if (accessToken != null) 'access_token': accessToken,
+      if (refreshToken != null) 'refresh_token': refreshToken,
+      if (tokenExpiresAt != null) 'token_expires_at': tokenExpiresAt,
+      if (providerAthleteId != null) 'provider_athlete_id': providerAthleteId,
+      if (providerAthleteName != null)
+        'provider_athlete_name': providerAthleteName,
+      if (providerAthleteEmail != null)
+        'provider_athlete_email': providerAthleteEmail,
+      if (isActive != null) 'is_active': isActive,
+      if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
+      if (lastSyncStatus != null) 'last_sync_status': lastSyncStatus,
+      if (lastSyncError != null) 'last_sync_error': lastSyncError,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  IntegrationsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? provider,
+    Value<String>? accessToken,
+    Value<String?>? refreshToken,
+    Value<DateTime?>? tokenExpiresAt,
+    Value<String>? providerAthleteId,
+    Value<String?>? providerAthleteName,
+    Value<String?>? providerAthleteEmail,
+    Value<bool>? isActive,
+    Value<DateTime?>? lastSyncAt,
+    Value<String?>? lastSyncStatus,
+    Value<String?>? lastSyncError,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return IntegrationsTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      provider: provider ?? this.provider,
+      accessToken: accessToken ?? this.accessToken,
+      refreshToken: refreshToken ?? this.refreshToken,
+      tokenExpiresAt: tokenExpiresAt ?? this.tokenExpiresAt,
+      providerAthleteId: providerAthleteId ?? this.providerAthleteId,
+      providerAthleteName: providerAthleteName ?? this.providerAthleteName,
+      providerAthleteEmail: providerAthleteEmail ?? this.providerAthleteEmail,
+      isActive: isActive ?? this.isActive,
+      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      lastSyncStatus: lastSyncStatus ?? this.lastSyncStatus,
+      lastSyncError: lastSyncError ?? this.lastSyncError,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (provider.present) {
+      map['provider'] = Variable<String>(provider.value);
+    }
+    if (accessToken.present) {
+      map['access_token'] = Variable<String>(accessToken.value);
+    }
+    if (refreshToken.present) {
+      map['refresh_token'] = Variable<String>(refreshToken.value);
+    }
+    if (tokenExpiresAt.present) {
+      map['token_expires_at'] = Variable<DateTime>(tokenExpiresAt.value);
+    }
+    if (providerAthleteId.present) {
+      map['provider_athlete_id'] = Variable<String>(providerAthleteId.value);
+    }
+    if (providerAthleteName.present) {
+      map['provider_athlete_name'] = Variable<String>(
+        providerAthleteName.value,
+      );
+    }
+    if (providerAthleteEmail.present) {
+      map['provider_athlete_email'] = Variable<String>(
+        providerAthleteEmail.value,
+      );
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (lastSyncAt.present) {
+      map['last_sync_at'] = Variable<DateTime>(lastSyncAt.value);
+    }
+    if (lastSyncStatus.present) {
+      map['last_sync_status'] = Variable<String>(lastSyncStatus.value);
+    }
+    if (lastSyncError.present) {
+      map['last_sync_error'] = Variable<String>(lastSyncError.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('IntegrationsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('provider: $provider, ')
+          ..write('accessToken: $accessToken, ')
+          ..write('refreshToken: $refreshToken, ')
+          ..write('tokenExpiresAt: $tokenExpiresAt, ')
+          ..write('providerAthleteId: $providerAthleteId, ')
+          ..write('providerAthleteName: $providerAthleteName, ')
+          ..write('providerAthleteEmail: $providerAthleteEmail, ')
+          ..write('isActive: $isActive, ')
+          ..write('lastSyncAt: $lastSyncAt, ')
+          ..write('lastSyncStatus: $lastSyncStatus, ')
+          ..write('lastSyncError: $lastSyncError, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -18066,6 +19462,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WeatherForecastsTableTable(this);
   late final $FeatureSurveyResponsesTableTable featureSurveyResponsesTable =
       $FeatureSurveyResponsesTableTable(this);
+  late final $IntegrationsTableTable integrationsTable =
+      $IntegrationsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -18087,6 +19485,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     carbLoadingDayMealsTable,
     weatherForecastsTable,
     featureSurveyResponsesTable,
+    integrationsTable,
   ];
 }
 
@@ -21961,6 +23360,14 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<bool> reminderRecurring,
       Value<bool?> needsUpload,
       Value<DateTime?> localUpdatedAt,
+      Value<String?> syncedFromProvider,
+      Value<String?> providerWorkoutId,
+      Value<String?> providerWorkoutUrl,
+      Value<DateTime?> lastSyncedAt,
+      Value<String?> workoutSubtype,
+      Value<double?> paceMinMinutesPerMile,
+      Value<double?> paceMaxMinutesPerMile,
+      Value<double?> distanceMeters,
       Value<DateTime?> completedAt,
       Value<int?> completionRating,
       Value<String?> completionNotes,
@@ -22001,6 +23408,14 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<bool> reminderRecurring,
       Value<bool?> needsUpload,
       Value<DateTime?> localUpdatedAt,
+      Value<String?> syncedFromProvider,
+      Value<String?> providerWorkoutId,
+      Value<String?> providerWorkoutUrl,
+      Value<DateTime?> lastSyncedAt,
+      Value<String?> workoutSubtype,
+      Value<double?> paceMinMinutesPerMile,
+      Value<double?> paceMaxMinutesPerMile,
+      Value<double?> distanceMeters,
       Value<DateTime?> completedAt,
       Value<int?> completionRating,
       Value<String?> completionNotes,
@@ -22150,6 +23565,46 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
     column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncedFromProvider => $composableBuilder(
+    column: $table.syncedFromProvider,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerWorkoutId => $composableBuilder(
+    column: $table.providerWorkoutId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerWorkoutUrl => $composableBuilder(
+    column: $table.providerWorkoutUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get workoutSubtype => $composableBuilder(
+    column: $table.workoutSubtype,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get paceMinMinutesPerMile => $composableBuilder(
+    column: $table.paceMinMinutesPerMile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get paceMaxMinutesPerMile => $composableBuilder(
+    column: $table.paceMaxMinutesPerMile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22343,6 +23798,46 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get syncedFromProvider => $composableBuilder(
+    column: $table.syncedFromProvider,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerWorkoutId => $composableBuilder(
+    column: $table.providerWorkoutId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerWorkoutUrl => $composableBuilder(
+    column: $table.providerWorkoutUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get workoutSubtype => $composableBuilder(
+    column: $table.workoutSubtype,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get paceMinMinutesPerMile => $composableBuilder(
+    column: $table.paceMinMinutesPerMile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get paceMaxMinutesPerMile => $composableBuilder(
+    column: $table.paceMaxMinutesPerMile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
     builder: (column) => ColumnOrderings(column),
@@ -22525,6 +24020,46 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get syncedFromProvider => $composableBuilder(
+    column: $table.syncedFromProvider,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get providerWorkoutId => $composableBuilder(
+    column: $table.providerWorkoutId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get providerWorkoutUrl => $composableBuilder(
+    column: $table.providerWorkoutUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get workoutSubtype => $composableBuilder(
+    column: $table.workoutSubtype,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get paceMinMinutesPerMile => $composableBuilder(
+    column: $table.paceMinMinutesPerMile,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get paceMaxMinutesPerMile => $composableBuilder(
+    column: $table.paceMaxMinutesPerMile,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
     builder: (column) => column,
@@ -22627,6 +24162,14 @@ class $$ActivitiesTableTableTableManager
                 Value<bool> reminderRecurring = const Value.absent(),
                 Value<bool?> needsUpload = const Value.absent(),
                 Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<String?> syncedFromProvider = const Value.absent(),
+                Value<String?> providerWorkoutId = const Value.absent(),
+                Value<String?> providerWorkoutUrl = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<String?> workoutSubtype = const Value.absent(),
+                Value<double?> paceMinMinutesPerMile = const Value.absent(),
+                Value<double?> paceMaxMinutesPerMile = const Value.absent(),
+                Value<double?> distanceMeters = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int?> completionRating = const Value.absent(),
                 Value<String?> completionNotes = const Value.absent(),
@@ -22665,6 +24208,14 @@ class $$ActivitiesTableTableTableManager
                 reminderRecurring: reminderRecurring,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                syncedFromProvider: syncedFromProvider,
+                providerWorkoutId: providerWorkoutId,
+                providerWorkoutUrl: providerWorkoutUrl,
+                lastSyncedAt: lastSyncedAt,
+                workoutSubtype: workoutSubtype,
+                paceMinMinutesPerMile: paceMinMinutesPerMile,
+                paceMaxMinutesPerMile: paceMaxMinutesPerMile,
+                distanceMeters: distanceMeters,
                 completedAt: completedAt,
                 completionRating: completionRating,
                 completionNotes: completionNotes,
@@ -22705,6 +24256,14 @@ class $$ActivitiesTableTableTableManager
                 Value<bool> reminderRecurring = const Value.absent(),
                 Value<bool?> needsUpload = const Value.absent(),
                 Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<String?> syncedFromProvider = const Value.absent(),
+                Value<String?> providerWorkoutId = const Value.absent(),
+                Value<String?> providerWorkoutUrl = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<String?> workoutSubtype = const Value.absent(),
+                Value<double?> paceMinMinutesPerMile = const Value.absent(),
+                Value<double?> paceMaxMinutesPerMile = const Value.absent(),
+                Value<double?> distanceMeters = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int?> completionRating = const Value.absent(),
                 Value<String?> completionNotes = const Value.absent(),
@@ -22743,6 +24302,14 @@ class $$ActivitiesTableTableTableManager
                 reminderRecurring: reminderRecurring,
                 needsUpload: needsUpload,
                 localUpdatedAt: localUpdatedAt,
+                syncedFromProvider: syncedFromProvider,
+                providerWorkoutId: providerWorkoutId,
+                providerWorkoutUrl: providerWorkoutUrl,
+                lastSyncedAt: lastSyncedAt,
+                workoutSubtype: workoutSubtype,
+                paceMinMinutesPerMile: paceMinMinutesPerMile,
+                paceMaxMinutesPerMile: paceMaxMinutesPerMile,
+                distanceMeters: distanceMeters,
                 completedAt: completedAt,
                 completionRating: completionRating,
                 completionNotes: completionNotes,
@@ -26036,6 +27603,419 @@ typedef $$FeatureSurveyResponsesTableTableProcessedTableManager =
       FeatureSurveyResponseEntry,
       PrefetchHooks Function()
     >;
+typedef $$IntegrationsTableTableCreateCompanionBuilder =
+    IntegrationsTableCompanion Function({
+      Value<String> id,
+      required String userId,
+      required String provider,
+      required String accessToken,
+      Value<String?> refreshToken,
+      Value<DateTime?> tokenExpiresAt,
+      required String providerAthleteId,
+      Value<String?> providerAthleteName,
+      Value<String?> providerAthleteEmail,
+      Value<bool> isActive,
+      Value<DateTime?> lastSyncAt,
+      Value<String?> lastSyncStatus,
+      Value<String?> lastSyncError,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$IntegrationsTableTableUpdateCompanionBuilder =
+    IntegrationsTableCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> provider,
+      Value<String> accessToken,
+      Value<String?> refreshToken,
+      Value<DateTime?> tokenExpiresAt,
+      Value<String> providerAthleteId,
+      Value<String?> providerAthleteName,
+      Value<String?> providerAthleteEmail,
+      Value<bool> isActive,
+      Value<DateTime?> lastSyncAt,
+      Value<String?> lastSyncStatus,
+      Value<String?> lastSyncError,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$IntegrationsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $IntegrationsTableTable> {
+  $$IntegrationsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get provider => $composableBuilder(
+    column: $table.provider,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get tokenExpiresAt => $composableBuilder(
+    column: $table.tokenExpiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerAthleteId => $composableBuilder(
+    column: $table.providerAthleteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerAthleteName => $composableBuilder(
+    column: $table.providerAthleteName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerAthleteEmail => $composableBuilder(
+    column: $table.providerAthleteEmail,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncAt => $composableBuilder(
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastSyncStatus => $composableBuilder(
+    column: $table.lastSyncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastSyncError => $composableBuilder(
+    column: $table.lastSyncError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$IntegrationsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $IntegrationsTableTable> {
+  $$IntegrationsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get provider => $composableBuilder(
+    column: $table.provider,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get tokenExpiresAt => $composableBuilder(
+    column: $table.tokenExpiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerAthleteId => $composableBuilder(
+    column: $table.providerAthleteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerAthleteName => $composableBuilder(
+    column: $table.providerAthleteName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerAthleteEmail => $composableBuilder(
+    column: $table.providerAthleteEmail,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSyncAt => $composableBuilder(
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastSyncStatus => $composableBuilder(
+    column: $table.lastSyncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastSyncError => $composableBuilder(
+    column: $table.lastSyncError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$IntegrationsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $IntegrationsTableTable> {
+  $$IntegrationsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => column);
+
+  GeneratedColumn<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get tokenExpiresAt => $composableBuilder(
+    column: $table.tokenExpiresAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get providerAthleteId => $composableBuilder(
+    column: $table.providerAthleteId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get providerAthleteName => $composableBuilder(
+    column: $table.providerAthleteName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get providerAthleteEmail => $composableBuilder(
+    column: $table.providerAthleteEmail,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSyncAt => $composableBuilder(
+    column: $table.lastSyncAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastSyncStatus => $composableBuilder(
+    column: $table.lastSyncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastSyncError => $composableBuilder(
+    column: $table.lastSyncError,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$IntegrationsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $IntegrationsTableTable,
+          Integration,
+          $$IntegrationsTableTableFilterComposer,
+          $$IntegrationsTableTableOrderingComposer,
+          $$IntegrationsTableTableAnnotationComposer,
+          $$IntegrationsTableTableCreateCompanionBuilder,
+          $$IntegrationsTableTableUpdateCompanionBuilder,
+          (
+            Integration,
+            BaseReferences<_$AppDatabase, $IntegrationsTableTable, Integration>,
+          ),
+          Integration,
+          PrefetchHooks Function()
+        > {
+  $$IntegrationsTableTableTableManager(
+    _$AppDatabase db,
+    $IntegrationsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$IntegrationsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$IntegrationsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$IntegrationsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> provider = const Value.absent(),
+                Value<String> accessToken = const Value.absent(),
+                Value<String?> refreshToken = const Value.absent(),
+                Value<DateTime?> tokenExpiresAt = const Value.absent(),
+                Value<String> providerAthleteId = const Value.absent(),
+                Value<String?> providerAthleteName = const Value.absent(),
+                Value<String?> providerAthleteEmail = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime?> lastSyncAt = const Value.absent(),
+                Value<String?> lastSyncStatus = const Value.absent(),
+                Value<String?> lastSyncError = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => IntegrationsTableCompanion(
+                id: id,
+                userId: userId,
+                provider: provider,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                tokenExpiresAt: tokenExpiresAt,
+                providerAthleteId: providerAthleteId,
+                providerAthleteName: providerAthleteName,
+                providerAthleteEmail: providerAthleteEmail,
+                isActive: isActive,
+                lastSyncAt: lastSyncAt,
+                lastSyncStatus: lastSyncStatus,
+                lastSyncError: lastSyncError,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String userId,
+                required String provider,
+                required String accessToken,
+                Value<String?> refreshToken = const Value.absent(),
+                Value<DateTime?> tokenExpiresAt = const Value.absent(),
+                required String providerAthleteId,
+                Value<String?> providerAthleteName = const Value.absent(),
+                Value<String?> providerAthleteEmail = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime?> lastSyncAt = const Value.absent(),
+                Value<String?> lastSyncStatus = const Value.absent(),
+                Value<String?> lastSyncError = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => IntegrationsTableCompanion.insert(
+                id: id,
+                userId: userId,
+                provider: provider,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                tokenExpiresAt: tokenExpiresAt,
+                providerAthleteId: providerAthleteId,
+                providerAthleteName: providerAthleteName,
+                providerAthleteEmail: providerAthleteEmail,
+                isActive: isActive,
+                lastSyncAt: lastSyncAt,
+                lastSyncStatus: lastSyncStatus,
+                lastSyncError: lastSyncError,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$IntegrationsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $IntegrationsTableTable,
+      Integration,
+      $$IntegrationsTableTableFilterComposer,
+      $$IntegrationsTableTableOrderingComposer,
+      $$IntegrationsTableTableAnnotationComposer,
+      $$IntegrationsTableTableCreateCompanionBuilder,
+      $$IntegrationsTableTableUpdateCompanionBuilder,
+      (
+        Integration,
+        BaseReferences<_$AppDatabase, $IntegrationsTableTable, Integration>,
+      ),
+      Integration,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -26082,4 +28062,6 @@ class $AppDatabaseManager {
         _db,
         _db.featureSurveyResponsesTable,
       );
+  $$IntegrationsTableTableTableManager get integrationsTable =>
+      $$IntegrationsTableTableTableManager(_db, _db.integrationsTable);
 }

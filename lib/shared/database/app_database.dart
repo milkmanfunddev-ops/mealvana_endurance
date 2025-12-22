@@ -33,6 +33,8 @@ import 'tables/carb_loading_day_meals_table.dart';
 import 'tables/weather_forecasts_table.dart';
 // NEW: Feature survey table
 import 'tables/feature_survey_responses_table.dart';
+// NEW: External integrations (Final Surge, TrainingPeaks, etc.)
+import 'tables/integrations_table.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
 
 part 'app_database.g.dart';
@@ -74,6 +76,9 @@ part 'app_database.g.dart';
 
     // Feature survey tables
     FeatureSurveyResponsesTable,
+
+    // External integrations (Final Surge, TrainingPeaks, Strava, etc.)
+    IntegrationsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -94,7 +99,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(QueryExecutor e) : super(e);
 
   @override
-  int get schemaVersion => 2; // v2: Added dietary_preference, allergies, needs_upload to users; preference_level to food_preferences
+  int get schemaVersion => 3; // v3: Added integrations table and sync columns to activities for Final Surge integration
 
   /// Generate a proper UUID v4 for new records
   /// Uses the uuid package to ensure RFC 4122 compliance and exact 36-character length
@@ -580,6 +585,72 @@ class AppDatabase extends _$AppDatabase {
             }
             // Rethrow to trigger app restart with fresh database
             rethrow;
+          }
+        },
+        from2To3: (m, schema) async {
+          // V2 -> V3 Migration (December 2025)
+          // Adds: integrations table, sync columns to activities for Final Surge integration
+          //
+          // Note: Migration is idempotent - checks if columns/tables exist before adding.
+
+          if (kDebugMode) {
+            print('🔄 Running V2→V3 migration: Final Surge integration schema');
+          }
+
+          // 1. Create integrations table if it doesn't exist
+          await m.createTable(schema.integrationsTable);
+
+          // 2. Add sync columns to activities table
+          final activitiesColumns = await customSelect("PRAGMA table_info(activities)").get();
+          final activitiesColumnNames = activitiesColumns.map((row) => row.read<String>('name')).toSet();
+
+          // External provider sync tracking
+          if (!activitiesColumnNames.contains('synced_from_provider')) {
+            await customStatement('ALTER TABLE activities ADD COLUMN synced_from_provider TEXT');
+          }
+          if (!activitiesColumnNames.contains('provider_workout_id')) {
+            await customStatement('ALTER TABLE activities ADD COLUMN provider_workout_id TEXT');
+          }
+          if (!activitiesColumnNames.contains('provider_workout_url')) {
+            await customStatement('ALTER TABLE activities ADD COLUMN provider_workout_url TEXT');
+          }
+          if (!activitiesColumnNames.contains('last_synced_at')) {
+            await customStatement('ALTER TABLE activities ADD COLUMN last_synced_at INTEGER');
+          }
+
+          // Workout subtype
+          if (!activitiesColumnNames.contains('workout_subtype')) {
+            await customStatement('ALTER TABLE activities ADD COLUMN workout_subtype TEXT');
+          }
+
+          // Pace ranges
+          if (!activitiesColumnNames.contains('pace_min_minutes_per_mile')) {
+            await customStatement('ALTER TABLE activities ADD COLUMN pace_min_minutes_per_mile REAL');
+          }
+          if (!activitiesColumnNames.contains('pace_max_minutes_per_mile')) {
+            await customStatement('ALTER TABLE activities ADD COLUMN pace_max_minutes_per_mile REAL');
+          }
+
+          // Swimming distance in meters
+          if (!activitiesColumnNames.contains('distance_meters')) {
+            await customStatement('ALTER TABLE activities ADD COLUMN distance_meters REAL');
+          }
+
+          // 3. Create index for synced activities (if not exists)
+          try {
+            await customStatement('''
+              CREATE INDEX IF NOT EXISTS idx_activities_provider_sync
+              ON activities(synced_from_provider, provider_workout_id)
+            ''');
+          } catch (e) {
+            // Index may already exist - safe to ignore
+            if (kDebugMode) {
+              print('⚠️ Index creation note: $e');
+            }
+          }
+
+          if (kDebugMode) {
+            print('✅ V2→V3 migration completed: Final Surge integration schema added');
           }
         },
       ),
