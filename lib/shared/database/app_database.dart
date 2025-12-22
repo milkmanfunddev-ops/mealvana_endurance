@@ -255,6 +255,18 @@ class AppDatabase extends _$AppDatabase {
             );
           }
 
+          // 3b. Rename user_id to device_id in feature_survey_responses table
+          // This table was originally designed with user_id but should use device_id
+          // to match the feedback table pattern (one vote per device, not per user)
+          final featureSurveyColumns = await customSelect("PRAGMA table_info(feature_survey_responses)").get();
+          final featureSurveyColumnNames = featureSurveyColumns.map((row) => row.read<String>('name')).toSet();
+
+          if (featureSurveyColumnNames.contains('user_id') && !featureSurveyColumnNames.contains('device_id')) {
+            // SQLite 3.25+ supports RENAME COLUMN
+            await customStatement('ALTER TABLE feature_survey_responses RENAME COLUMN user_id TO device_id');
+            print('✅ Renamed feature_survey_responses.user_id to device_id');
+          }
+
           // ========================================================================
           // 4. INTEGER to TEXT (UUID) Migration for Offline-First Tables
           // ========================================================================
