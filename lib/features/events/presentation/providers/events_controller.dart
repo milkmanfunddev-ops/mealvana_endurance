@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/events_service.dart';
 import '../../../activities/application/activities_service.dart';
+import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../domain/event.dart';
 import '../../../activities/domain/activity.dart';
@@ -157,6 +158,10 @@ class EventsController extends _$EventsController {
       // The event deletion cascades to carb loading data in the repository layer
       ref.invalidate(carbLoadingDaysForRangeProvider);
       ref.invalidate(carbLoadingPlanProvider(eventId));
+
+      // Invalidate activities providers since event deletion cascade-deletes associated activity
+      ref.invalidate(activitiesControllerProvider);
+      ref.invalidate(allActivitiesProvider);
     } catch (e) {
       logger.error('Error deleting event', error: e);
       rethrow;

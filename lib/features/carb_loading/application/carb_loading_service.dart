@@ -76,17 +76,29 @@ class CarbLoadingService {
     required String eventId,
   }) async {
     try {
-      await _carbLoadingRepository.deleteCarbLoadingPlan(
-        deviceId: deviceId,
-        planId: eventId,
-      );
+      // First, look up the plan by eventId to get the actual planId
+      final plan = await getCarbLoadingPlan(eventId);
 
-      // Update event
+      if (plan != null) {
+        // Delete the plan using the actual plan ID
+        await _carbLoadingRepository.deleteCarbLoadingPlan(
+          deviceId: deviceId,
+          planId: plan.id,
+        );
+        _logger.info('Deleted carb loading plan ${plan.id} for event $eventId');
+      } else {
+        _logger.warning('No carb loading plan found for event $eventId - nothing to delete');
+      }
+
+      // Update event to clear carb loading flags (even if plan wasn't found)
       await (_database.update(_database.eventsTable)..where((tbl) => tbl.id.equals(eventId)))
-          .write(const EventsTableCompanion(
-            hasCarbLoading: Value(false),
-            carbLoadingDays: Value.absent(),
-            carbLoadingStartDate: Value.absent(),
+          .write(EventsTableCompanion(
+            hasCarbLoading: const Value(false),
+            carbLoadingDays: const Value(null),
+            carbLoadingStartDate: const Value(null),
+            updatedAt: Value(DateTime.now()),
+            needsUpload: const Value(true),
+            localUpdatedAt: Value(DateTime.now()),
           ));
     } catch (e) {
       _logger.error('Error deleting carb loading plan', error: e);

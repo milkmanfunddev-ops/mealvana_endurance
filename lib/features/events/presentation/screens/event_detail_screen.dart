@@ -68,29 +68,72 @@ class EventDetailScreen extends ConsumerWidget {
             tooltip: 'Home',
             onPressed: () => context.go('/main'),
           ),
-          // Only show edit button when event is loaded successfully
+          // Only show menu when event is loaded successfully
           if (eventDetailAsync.hasValue)
-            IconButton(
+            PopupMenuButton<String>(
               icon: Icon(
-                FontAwesomeIcons.pen,
+                FontAwesomeIcons.ellipsisVertical,
                 size: AppIconSizes.sm,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
-              tooltip: 'Edit Event',
-              onPressed: () {
+              tooltip: 'More options',
+              onSelected: (value) async {
                 final event = eventDetailAsync.value!.event;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EventFormScreen(
-                      event: event, // Edit mode (event is provided)
+                if (value == 'edit') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EventFormScreen(
+                        event: event,
+                      ),
                     ),
-                  ),
-                ).then((_) {
-                  // Refresh the event detail provider when returning from edit
-                  ref.invalidate(eventDetailProvider(eventId));
-                });
+                  ).then((_) {
+                    ref.invalidate(eventDetailProvider(eventId));
+                  });
+                } else if (value == 'delete') {
+                  await _showDeleteConfirmation(context, ref, event.eventName);
+                }
               },
+              itemBuilder: (context) => [
+                PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(
+                        FontAwesomeIcons.pen,
+                        size: AppIconSizes.xs,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Edit Event',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(
+                        FontAwesomeIcons.trash,
+                        size: AppIconSizes.xs,
+                        color: AppColors.dragonfruit,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Delete Event',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.dragonfruit,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
         ],
       ),
@@ -188,5 +231,99 @@ class EventDetailScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Show delete confirmation dialog
+  Future<void> _showDeleteConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+    String? eventName,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Delete Event',
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${eventName ?? 'this event'}"?\n\n'
+          'This will also delete any associated nutrition plans and carb loading plans.',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'Delete',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.dragonfruit,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        // Show loading indicator
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Deleting event...',
+              style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+            ),
+            backgroundColor: AppColors.blackberry,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+
+        // Delete the event
+        await ref.read(eventsControllerProvider.notifier).deleteEvent(eventId);
+
+        if (context.mounted) {
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Event deleted successfully',
+                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+              ),
+              backgroundColor: AppColors.success,
+            ),
+          );
+
+          // Navigate back to events list
+          context.go('/main');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to delete event: $e',
+                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+              ),
+              backgroundColor: AppColors.dragonfruit,
+            ),
+          );
+        }
+      }
+    }
   }
 }
