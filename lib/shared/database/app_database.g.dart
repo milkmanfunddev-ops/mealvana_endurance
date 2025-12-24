@@ -2173,6 +2173,18 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
     requiredDuringInsert: false,
     defaultValue: const Constant(2),
   );
+  static const VerificationMeta _preferenceSourceMeta = const VerificationMeta(
+    'preferenceSource',
+  );
+  @override
+  late final GeneratedColumn<String> preferenceSource = GeneratedColumn<String>(
+    'preference_source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2204,6 +2216,7 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
     foodName,
     preference,
     preferenceLevel,
+    preferenceSource,
     createdAt,
     updatedAt,
   ];
@@ -2257,6 +2270,15 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
         ),
       );
     }
+    if (data.containsKey('preference_source')) {
+      context.handle(
+        _preferenceSourceMeta,
+        preferenceSource.isAcceptableOrUnknown(
+          data['preference_source']!,
+          _preferenceSourceMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2298,6 +2320,10 @@ class $FoodPreferencesTableTable extends FoodPreferencesTable
         DriftSqlType.int,
         data['${effectivePrefix}preference_level'],
       )!,
+      preferenceSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}preference_source'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2332,6 +2358,13 @@ class FoodPreferenceEntry extends DataClass
   /// Slider intensity level (0-4) representing the UI selection strength
   final int preferenceLevel;
 
+  /// Source of the preference: 'manual', 'allergy:{name}', or 'dietary:{name}'
+  /// - 'manual': User explicitly set this preference
+  /// - 'allergy:gluten': Auto-set due to gluten allergy (etc.)
+  /// - 'dietary:vegan': Auto-set due to vegan diet (etc.)
+  /// This allows proper undo when allergies/diets are removed
+  final String preferenceSource;
+
   /// When the preference was created (matches Supabase food_preferences.created_at)
   final DateTime createdAt;
 
@@ -2343,6 +2376,7 @@ class FoodPreferenceEntry extends DataClass
     required this.foodName,
     required this.preference,
     required this.preferenceLevel,
+    required this.preferenceSource,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -2354,6 +2388,7 @@ class FoodPreferenceEntry extends DataClass
     map['food_name'] = Variable<String>(foodName);
     map['preference'] = Variable<String>(preference);
     map['preference_level'] = Variable<int>(preferenceLevel);
+    map['preference_source'] = Variable<String>(preferenceSource);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -2366,6 +2401,7 @@ class FoodPreferenceEntry extends DataClass
       foodName: Value(foodName),
       preference: Value(preference),
       preferenceLevel: Value(preferenceLevel),
+      preferenceSource: Value(preferenceSource),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2382,6 +2418,7 @@ class FoodPreferenceEntry extends DataClass
       foodName: serializer.fromJson<String>(json['foodName']),
       preference: serializer.fromJson<String>(json['preference']),
       preferenceLevel: serializer.fromJson<int>(json['preferenceLevel']),
+      preferenceSource: serializer.fromJson<String>(json['preferenceSource']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -2395,6 +2432,7 @@ class FoodPreferenceEntry extends DataClass
       'foodName': serializer.toJson<String>(foodName),
       'preference': serializer.toJson<String>(preference),
       'preferenceLevel': serializer.toJson<int>(preferenceLevel),
+      'preferenceSource': serializer.toJson<String>(preferenceSource),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -2406,6 +2444,7 @@ class FoodPreferenceEntry extends DataClass
     String? foodName,
     String? preference,
     int? preferenceLevel,
+    String? preferenceSource,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => FoodPreferenceEntry(
@@ -2414,6 +2453,7 @@ class FoodPreferenceEntry extends DataClass
     foodName: foodName ?? this.foodName,
     preference: preference ?? this.preference,
     preferenceLevel: preferenceLevel ?? this.preferenceLevel,
+    preferenceSource: preferenceSource ?? this.preferenceSource,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -2428,6 +2468,9 @@ class FoodPreferenceEntry extends DataClass
       preferenceLevel: data.preferenceLevel.present
           ? data.preferenceLevel.value
           : this.preferenceLevel,
+      preferenceSource: data.preferenceSource.present
+          ? data.preferenceSource.value
+          : this.preferenceSource,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2441,6 +2484,7 @@ class FoodPreferenceEntry extends DataClass
           ..write('foodName: $foodName, ')
           ..write('preference: $preference, ')
           ..write('preferenceLevel: $preferenceLevel, ')
+          ..write('preferenceSource: $preferenceSource, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2454,6 +2498,7 @@ class FoodPreferenceEntry extends DataClass
     foodName,
     preference,
     preferenceLevel,
+    preferenceSource,
     createdAt,
     updatedAt,
   );
@@ -2466,6 +2511,7 @@ class FoodPreferenceEntry extends DataClass
           other.foodName == this.foodName &&
           other.preference == this.preference &&
           other.preferenceLevel == this.preferenceLevel &&
+          other.preferenceSource == this.preferenceSource &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -2477,6 +2523,7 @@ class FoodPreferencesTableCompanion
   final Value<String> foodName;
   final Value<String> preference;
   final Value<int> preferenceLevel;
+  final Value<String> preferenceSource;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -2486,6 +2533,7 @@ class FoodPreferencesTableCompanion
     this.foodName = const Value.absent(),
     this.preference = const Value.absent(),
     this.preferenceLevel = const Value.absent(),
+    this.preferenceSource = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2496,6 +2544,7 @@ class FoodPreferencesTableCompanion
     required String foodName,
     required String preference,
     this.preferenceLevel = const Value.absent(),
+    this.preferenceSource = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2509,6 +2558,7 @@ class FoodPreferencesTableCompanion
     Expression<String>? foodName,
     Expression<String>? preference,
     Expression<int>? preferenceLevel,
+    Expression<String>? preferenceSource,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -2519,6 +2569,7 @@ class FoodPreferencesTableCompanion
       if (foodName != null) 'food_name': foodName,
       if (preference != null) 'preference': preference,
       if (preferenceLevel != null) 'preference_level': preferenceLevel,
+      if (preferenceSource != null) 'preference_source': preferenceSource,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2531,6 +2582,7 @@ class FoodPreferencesTableCompanion
     Value<String>? foodName,
     Value<String>? preference,
     Value<int>? preferenceLevel,
+    Value<String>? preferenceSource,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -2541,6 +2593,7 @@ class FoodPreferencesTableCompanion
       foodName: foodName ?? this.foodName,
       preference: preference ?? this.preference,
       preferenceLevel: preferenceLevel ?? this.preferenceLevel,
+      preferenceSource: preferenceSource ?? this.preferenceSource,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -2565,6 +2618,9 @@ class FoodPreferencesTableCompanion
     if (preferenceLevel.present) {
       map['preference_level'] = Variable<int>(preferenceLevel.value);
     }
+    if (preferenceSource.present) {
+      map['preference_source'] = Variable<String>(preferenceSource.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2585,6 +2641,7 @@ class FoodPreferencesTableCompanion
           ..write('foodName: $foodName, ')
           ..write('preference: $preference, ')
           ..write('preferenceLevel: $preferenceLevel, ')
+          ..write('preferenceSource: $preferenceSource, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -18965,6 +19022,7 @@ typedef $$FoodPreferencesTableTableCreateCompanionBuilder =
       required String foodName,
       required String preference,
       Value<int> preferenceLevel,
+      Value<String> preferenceSource,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -18976,6 +19034,7 @@ typedef $$FoodPreferencesTableTableUpdateCompanionBuilder =
       Value<String> foodName,
       Value<String> preference,
       Value<int> preferenceLevel,
+      Value<String> preferenceSource,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -19012,6 +19071,11 @@ class $$FoodPreferencesTableTableFilterComposer
 
   ColumnFilters<int> get preferenceLevel => $composableBuilder(
     column: $table.preferenceLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get preferenceSource => $composableBuilder(
+    column: $table.preferenceSource,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19060,6 +19124,11 @@ class $$FoodPreferencesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get preferenceSource => $composableBuilder(
+    column: $table.preferenceSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -19096,6 +19165,11 @@ class $$FoodPreferencesTableTableAnnotationComposer
 
   GeneratedColumn<int> get preferenceLevel => $composableBuilder(
     column: $table.preferenceLevel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get preferenceSource => $composableBuilder(
+    column: $table.preferenceSource,
     builder: (column) => column,
   );
 
@@ -19154,6 +19228,7 @@ class $$FoodPreferencesTableTableTableManager
                 Value<String> foodName = const Value.absent(),
                 Value<String> preference = const Value.absent(),
                 Value<int> preferenceLevel = const Value.absent(),
+                Value<String> preferenceSource = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -19163,6 +19238,7 @@ class $$FoodPreferencesTableTableTableManager
                 foodName: foodName,
                 preference: preference,
                 preferenceLevel: preferenceLevel,
+                preferenceSource: preferenceSource,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -19174,6 +19250,7 @@ class $$FoodPreferencesTableTableTableManager
                 required String foodName,
                 required String preference,
                 Value<int> preferenceLevel = const Value.absent(),
+                Value<String> preferenceSource = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -19183,6 +19260,7 @@ class $$FoodPreferencesTableTableTableManager
                 foodName: foodName,
                 preference: preference,
                 preferenceLevel: preferenceLevel,
+                preferenceSource: preferenceSource,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

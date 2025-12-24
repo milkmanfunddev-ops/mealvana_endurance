@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(QueryExecutor e) : super(e);
 
   @override
-  int get schemaVersion => 2; // v2: Added dietary_preference, allergies, needs_upload to users; preference_level to food_preferences
+  int get schemaVersion => 2; // v2: Added dietary_preference, allergies, needs_upload to users; preference_level, preference_source to food_preferences
 
   /// Generate a proper UUID v4 for new records
   /// Uses the uuid package to ensure RFC 4122 compliance and exact 36-character length
@@ -215,6 +215,18 @@ class AppDatabase extends _$AppDatabase {
                 ELSE 2
               END;
             ''');
+          }
+
+          // 1b. Add preference_source to food_preferences if missing
+          // Tracks the origin of food preferences: 'manual', 'allergy:{name}', or 'dietary:{name}'
+          if (!foodPrefColumnNames.contains('preference_source')) {
+            await customStatement(
+              "ALTER TABLE food_preferences_table ADD COLUMN preference_source TEXT NOT NULL DEFAULT 'manual'"
+            );
+            // Existing preferences are user-set, so default to 'manual'
+            await customStatement(
+              "UPDATE food_preferences_table SET preference_source = 'manual' WHERE preference_source IS NULL OR preference_source = ''"
+            );
           }
 
           // 2. Add dietary columns to users table if missing
@@ -729,11 +741,16 @@ class AppDatabase extends _$AppDatabase {
   /// - `false` (default): Replace all preferences (used when user explicitly saves)
   /// - `true`: Merge with existing preferences, only updating provided items
   ///   (used when syncing from server to avoid data loss)
+  /// [source] identifies the origin of the preference:
+  /// - 'manual': User explicitly set this preference (default)
+  /// - 'allergy:{name}': Auto-set due to an allergy (e.g., 'allergy:gluten')
+  /// - 'dietary:{name}': Auto-set due to dietary preference (e.g., 'dietary:vegan')
   Future<void> saveFoodPreferences(
     String userId,
     Map<String, domain.FoodPreference> preferences, {
     Map<String, int>? sliderLevels,
     bool mergeMode = false,
+    String source = 'manual',
   }) async {
     await ensureUserDataSyncColumns();
 
@@ -766,6 +783,7 @@ class AppDatabase extends _$AppDatabase {
                 .value
                 .value, // Use .value instead of .name to get database-compatible format
             preferenceLevel: Value(sliderLevel),
+            preferenceSource: Value(source),
             createdAt: Value(DateTime.now()),
             updatedAt: Value(DateTime.now()),
           ),
@@ -883,6 +901,41 @@ class AppDatabase extends _$AppDatabase {
       ..where((f) => f.userId.equals(userId) & f.preference.equals('dislike'));
     final results = await query.get();
     return results.map((r) => r.foodName).toList();
+  }
+
+  /// Remove food preferences by source
+  /// Used when allergies or dietary preferences are removed to undo auto-avoids
+  /// [source] - The source to match (e.g., 'allergy:gluten', 'dietary:vegan')
+  /// Returns the number of preferences removed
+  Future<int> removeFoodPreferencesBySource(String userId, String source) async {
+    return await (delete(foodPreferencesTable)
+      ..where((f) => f.userId.equals(userId) & f.preferenceSource.equals(source)))
+      .go();
+  }
+
+  /// Remove all food preferences with sources matching a pattern
+  /// [sourcePrefix] - The prefix to match (e.g., 'allergy:' or 'dietary:')
+  /// Returns the number of preferences removed
+  Future<int> removeFoodPreferencesBySourcePrefix(String userId, String sourcePrefix) async {
+    // Use LIKE pattern for prefix matching
+    return await (delete(foodPreferencesTable)
+      ..where((f) => f.userId.equals(userId))
+      ..where((f) => f.preferenceSource.like('$sourcePrefix%')))
+      .go();
+  }
+
+  /// Get food preferences with their sources for a user
+  /// Returns a map of food name -> preference source
+  Future<Map<String, String>> getFoodPreferenceSources(String userId) async {
+    final query = select(foodPreferencesTable)
+      ..where((f) => f.userId.equals(userId));
+    final results = await query.get();
+
+    final sourcesMap = <String, String>{};
+    for (final row in results) {
+      sourcesMap[row.foodName] = row.preferenceSource;
+    }
+    return sourcesMap;
   }
 
   /// Get all food preference entries for a user (for upload to Supabase)

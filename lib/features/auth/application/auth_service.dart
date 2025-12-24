@@ -361,10 +361,15 @@ class AuthService {
 
   /// Save food preferences (typically during onboarding)
   /// Uses consolidated Edge Function for optimized multi-step operation (reduces network roundtrips)
+  /// [source] identifies the origin of the preference:
+  /// - 'manual': User explicitly set this preference (default)
+  /// - 'allergy:{name}': Auto-set due to an allergy (e.g., 'allergy:gluten')
+  /// - 'dietary:{name}': Auto-set due to dietary preference (e.g., 'dietary:vegan')
   Future<void> saveFoodPreferences(
     String userId,
     Map<String, FoodPreference> preferences, {
     Map<String, int>? sliderLevels,
+    String source = 'manual',
   }) async {
     // userId is Supabase auth UUID (from auth.currentUser.id)
     final deviceId = userId; // Keep variable name for backwards compatibility in logs
@@ -386,6 +391,7 @@ class AuthService {
         userId,
         preferences,
         sliderLevels: normalizedLevels,
+        source: source,
       );
 
       // Mark user as having completed onboarding locally and queue for background upload
@@ -459,6 +465,41 @@ class AuthService {
     try {
       final userRepo = await _userRepository;
       return await userRepo.getFoodPreferenceLevels(userId);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  /// Remove food preferences by source
+  /// Used when allergies or dietary preferences are removed to undo auto-avoids
+  /// [source] - The source to match (e.g., 'allergy:gluten', 'dietary:vegan')
+  /// Returns the number of preferences removed
+  Future<int> removeFoodPreferencesBySource(String userId, String source) async {
+    try {
+      final userRepo = await _userRepository;
+      final removedCount = await userRepo.removeFoodPreferencesBySource(userId, source);
+      _logger.info(
+        'Removed $removedCount food preferences with source: $source',
+        context: 'AUTH',
+        data: {'userId': userId, 'source': source, 'removedCount': removedCount},
+      );
+      return removedCount;
+    } catch (e) {
+      _logger.warning(
+        'Failed to remove food preferences by source: $e',
+        context: 'AUTH',
+        data: {'userId': userId, 'source': source},
+      );
+      return 0;
+    }
+  }
+
+  /// Get food preferences with their sources for a user
+  /// Returns a map of food name -> preference source
+  Future<Map<String, String>> getFoodPreferenceSources(String userId) async {
+    try {
+      final userRepo = await _userRepository;
+      return await userRepo.getFoodPreferenceSources(userId);
     } catch (e) {
       return {};
     }

@@ -20,6 +20,14 @@ class FoodPreferencesTable extends Table {
   IntColumn get preferenceLevel =>
       integer().named('preference_level').withDefault(const Constant(2))();
 
+  /// Source of the preference: 'manual', 'allergy:{name}', or 'dietary:{name}'
+  /// - 'manual': User explicitly set this preference
+  /// - 'allergy:gluten': Auto-set due to gluten allergy (etc.)
+  /// - 'dietary:vegan': Auto-set due to vegan diet (etc.)
+  /// This allows proper undo when allergies/diets are removed
+  TextColumn get preferenceSource =>
+      text().named('preference_source').withDefault(const Constant('manual'))();
+
   /// When the preference was created (matches Supabase food_preferences.created_at)
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
 
