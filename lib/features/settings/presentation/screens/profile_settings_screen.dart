@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/debug_screen.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../providers/settings_controller.dart';
+import '../../domain/settings_state.dart';
 import '../../../../shared/widgets/app_date_picker.dart';
 
 /// Profile Settings Screen - Personal information
@@ -97,7 +99,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, dynamic state) {
+  Widget _buildContent(BuildContext context, WidgetRef ref, SettingsState state) {
     return GestureDetector(
       onTap: () {
         // Dismiss keyboard when tapping outside input fields
@@ -154,7 +156,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     );
   }
 
-  Widget _buildGenderSelector(BuildContext context, WidgetRef ref, dynamic state) {
+  Widget _buildGenderSelector(BuildContext context, WidgetRef ref, SettingsState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -170,28 +172,45 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
         Row(
           children: Gender.values.map((gender) {
             final isSelected = state.gender == gender;
+            final IconData icon = gender == Gender.male
+                ? FontAwesomeIcons.mars
+                : gender == Gender.female
+                    ? FontAwesomeIcons.venus
+                    : FontAwesomeIcons.genderless;
+
             return Expanded(
               child: GestureDetector(
                 onTap: () => ref.read(settingsControllerProvider.notifier).updateGender(gender),
                 child: Container(
                   margin: EdgeInsets.only(right: gender != Gender.values.last ? 8.w : 0),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
                   decoration: BoxDecoration(
                     color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
                     border: Border.all(
                       color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
-                      width: 1,
+                      width: isSelected ? 2 : 1,
                     ),
-                    borderRadius: BorderRadius.circular(8.r),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
-                  child: Text(
-                    gender.displayName.toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: AppTheme.textStyle.copyWith(
-                      color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        icon,
+                        size: 24.sp,
+                        color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack.withValues(alpha: 0.6),
+                      ),
+                      SizedBox(height: 6.h),
+                      Text(
+                        gender.displayName.toUpperCase(),
+                        textAlign: TextAlign.center,
+                        style: AppTheme.textStyle.copyWith(
+                          color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -202,7 +221,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     );
   }
 
-  Widget _buildBirthdaySelector(BuildContext context, WidgetRef ref, dynamic state) {
+  Widget _buildBirthdaySelector(BuildContext context, WidgetRef ref, SettingsState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -250,7 +269,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     );
   }
 
-  Widget _buildHeightSelector(BuildContext context, WidgetRef ref, dynamic state) {
+  Widget _buildHeightSelector(BuildContext context, WidgetRef ref, SettingsState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -330,7 +349,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     );
   }
 
-  Widget _buildWeightSelector(BuildContext context, WidgetRef ref, dynamic state) {
+  Widget _buildWeightSelector(BuildContext context, WidgetRef ref, SettingsState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -375,7 +394,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
     );
   }
 
-  Widget _buildWaterBottleToggle(WidgetRef ref, dynamic state) {
+  Widget _buildWaterBottleToggle(WidgetRef ref, SettingsState state) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

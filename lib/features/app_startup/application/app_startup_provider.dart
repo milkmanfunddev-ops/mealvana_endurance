@@ -15,11 +15,16 @@ class AppStartupData {
     required this.user,
     required this.hasCompletedOnboarding,
     this.activityIdNeedingFeedback,
+    this.isLoggedOut = false,
   });
 
   final UserProfile? user;
   final bool hasCompletedOnboarding;
   final String? activityIdNeedingFeedback;
+
+  /// True when user has logged out but still has local data
+  /// In this state: no Supabase session, but local profile exists with onboardingCompleted = true
+  final bool isLoggedOut;
 }
 
 /// AsyncNotifier for app startup initialization using Drift
@@ -92,11 +97,23 @@ class AppStartup extends _$AppStartup {
         },
       );
 
+      // Detect logged-out state: no Supabase session but has local profile with completed onboarding
+      final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+      final currentSession = supabaseClient.auth.currentSession;
+      final isLoggedOut = currentSession == null &&
+          user != null &&
+          hasCompletedOnboarding;
+
+      if (isLoggedOut) {
+        debugPrint('[APP_STARTUP] User is logged out but has local data - will redirect to welcome');
+      }
+
       debugPrint('[APP_STARTUP] ✅ STARTUP COMPLETE: ${stopwatch.elapsedMilliseconds}ms total');
       return AppStartupData(
         user: user,
         hasCompletedOnboarding: hasCompletedOnboarding,
         activityIdNeedingFeedback: activityIdNeedingFeedback,
+        isLoggedOut: isLoggedOut,
       );
     } catch (e, stackTrace) {
       _logger.error('App startup initialization failed',

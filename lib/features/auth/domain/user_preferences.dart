@@ -12,6 +12,24 @@ class UserProfile {
   final String authProvider; // 'anonymous', 'email', 'google', 'apple'
   final bool isAnonymous; // True until account is linked
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AUTH STATE DOCUMENTATION
+  // ═══════════════════════════════════════════════════════════════════════════
+  // The auth state is determined by THREE fields that MUST be kept in sync:
+  //
+  // ANONYMOUS USER:
+  //   isAnonymous = true
+  //   authProvider = 'anonymous'
+  //   authUserId = null
+  //
+  // AUTHENTICATED USER (email/google/apple):
+  //   isAnonymous = false
+  //   authProvider = 'email' | 'google' | 'apple'
+  //   authUserId = <supabase auth.uid()>
+  //
+  // CANONICAL CHECK: Always use `isAnonymousUser` getter (not raw field checks)
+  // ═══════════════════════════════════════════════════════════════════════════
+
   final Gender gender;
   final DateTime birthday;
   final int heightFeet;
@@ -95,6 +113,32 @@ class UserProfile {
       case GutTraining.high:
         return GutTrainingLevel.high;
     }
+  }
+
+  /// CANONICAL CHECK: Whether this user is anonymous (not linked to email/OAuth)
+  ///
+  /// Use this getter instead of checking `isAnonymous`, `authProvider`, or
+  /// `authUserId` individually to ensure consistent behavior across the app.
+  bool get isAnonymousUser => isAnonymous;
+
+  /// Whether this user has linked their account to a permanent auth provider
+  bool get isAuthenticatedUser => !isAnonymous;
+
+  /// Debug helper: Check if auth state fields are consistent
+  /// Returns null if consistent, or an error message if inconsistent
+  String? get authStateInconsistency {
+    final isAnon = isAnonymous;
+    final providerIsAnon = authProvider == 'anonymous';
+    final hasAuthUserId = authUserId != null;
+
+    // Anonymous user should have: isAnonymous=true, authProvider='anonymous', authUserId=null
+    if (isAnon && providerIsAnon && !hasAuthUserId) return null;
+
+    // Authenticated user should have: isAnonymous=false, authProvider!='anonymous', authUserId!=null
+    if (!isAnon && !providerIsAnon && hasAuthUserId) return null;
+
+    // Inconsistent state detected
+    return 'Auth state inconsistent: isAnonymous=$isAnon, authProvider=$authProvider, authUserId=${authUserId != null ? "set" : "null"}';
   }
 
   /// Parse allergies from JSON - handles both String and List formats
@@ -184,7 +228,8 @@ class UserProfile {
       'cycling_ftp_watts': ftpWatts,
       'swimming_css_seconds_per_100m': cssPacePer100mSeconds,
       // Dietary preference and allergies (synced to Supabase)
-      'dietary_preference': dietaryPreference?.dbValue,
+      // Convert 'none' to null since Supabase dietary_preference_enum doesn't include 'none'
+      'dietary_preference': dietaryPreference?.dbValue == 'none' ? null : dietaryPreference?.dbValue,
       'allergies': Allergy.toDbArray(allergies),
       // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
       // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields

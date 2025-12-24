@@ -9,8 +9,8 @@ import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/new_activity_screen.dart';
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/sport_preferences_screen.dart';
-import '../../features/onboarding/presentation/screens/food_preferences_screen.dart' as onboarding;
 // New onboarding PageView (December 2025 redesign)
+// Note: Old food_preferences_screen.dart moved to /archived folder (replaced by food_preferences_v2_screen.dart)
 import '../../features/onboarding/presentation/screens/onboarding_pageview_screen.dart';
 import '../../features/onboarding/domain/dietary_preference.dart';
 import '../../features/onboarding/domain/allergy.dart';
@@ -76,6 +76,11 @@ class AppRouter {
             }
             // User exists but hasn't completed onboarding - start over from welcome
             if (!appStartupData.hasCompletedOnboarding) {
+              return '/welcome';
+            }
+            // User has logged out but still has local data - go to welcome to sign back in
+            // This allows them to sign in and access their existing data
+            if (appStartupData.isLoggedOut) {
               return '/welcome';
             }
             // User has pending feedback to provide

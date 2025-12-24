@@ -1110,6 +1110,10 @@ class DataSyncService {
             await _uploadUserProfile(dirtyUserProfile);
             uploadResults['users'] = true;
             _logger.info('User profile uploaded successfully', context: 'DATA_SYNC');
+
+            // Also upload food preferences to the normalized table
+            await _uploadFoodPreferences(dirtyUserProfile.id);
+            uploadResults['food_preferences'] = true;
           } catch (e, stackTrace) {
             _logger.error(
               'Failed to upload user profile',
@@ -1211,6 +1215,10 @@ class DataSyncService {
         try {
           await _uploadUserProfile(dirtyUserProfile);
           uploadResults['users'] = true;
+
+          // Also upload food preferences to the normalized table
+          await _uploadFoodPreferences(dirtyUserProfile.id);
+          uploadResults['food_preferences'] = true;
         } catch (e) {
           _logger.error('Failed to upload user profile', context: 'DATA_SYNC', error: e);
           uploadResults['users'] = false;
@@ -1285,6 +1293,10 @@ class DataSyncService {
         userId: userId,
         userIdColumn: 'device_id', // Uses device_id, not user_id
       );
+
+      // Clean users table duplicates (different structure - uses 'id' and 'updated_at')
+      // NOTE: UserProfilesTable has tableName override = 'users', not 'user_profiles'
+      totalDuplicatesDeleted += await _cleanUserProfilesDuplicates(userId);
 
       if (totalDuplicatesDeleted > 0) {
         _logger.warning(
@@ -1417,6 +1429,126 @@ class DataSyncService {
         error: e,
         stackTrace: stackTrace,
         data: {'table': tableName},
+      );
+      return 0; // Return 0 on error, don't block sync
+    }
+  }
+
+  /// Clean duplicate user profiles from Drift
+  /// User profiles use 'id' column and 'updated_at' (not user_id/local_updated_at)
+  /// NOTE: The table is named 'users' in SQL (see UserProfilesTable.tableName override)
+  /// Returns the number of duplicates deleted
+  Future<int> _cleanUserProfilesDuplicates(String userId) async {
+    try {
+      // Find duplicate IDs in users table (rows with same id appearing more than once)
+      final duplicateQuery = '''
+        SELECT id, COUNT(*) as count
+        FROM users
+        GROUP BY id
+        HAVING COUNT(*) > 1
+      ''';
+
+      final duplicates = await _database.customSelect(duplicateQuery).get();
+
+      if (duplicates.isEmpty) {
+        return 0;
+      }
+
+      int deletedCount = 0;
+
+      for (final duplicate in duplicates) {
+        final id = duplicate.data['id'].toString();
+        final count = duplicate.data['count'] as int;
+
+        _logger.warning(
+          'Found duplicate users records',
+          context: 'DATA_SYNC',
+          data: {'id': id, 'count': count},
+        );
+
+        // Find all records with this ID, ordered by updated_at DESC
+        // Keep the most recent one, delete the rest
+        final allRecordsQuery = '''
+          SELECT rowid, id, updated_at
+          FROM users
+          WHERE id = ?
+          ORDER BY updated_at DESC
+        ''';
+
+        final allRecords = await _database.customSelect(
+          allRecordsQuery,
+          variables: [Variable(id)],
+        ).get();
+
+        // Skip the first one (most recent), delete the rest
+        for (int i = 1; i < allRecords.length; i++) {
+          final rowid = allRecords[i].data['rowid'] as int;
+          final updatedAt = allRecords[i].data['updated_at'];
+
+          await _database.customStatement(
+            'DELETE FROM users WHERE rowid = ?',
+            [rowid],
+          );
+
+          _logger.warning(
+            'Deleted duplicate user',
+            context: 'DATA_SYNC',
+            data: {
+              'id': id,
+              'rowid': rowid,
+              'updated_at': updatedAt?.toString(),
+            },
+          );
+
+          deletedCount++;
+        }
+      }
+
+      // Also clean up: if multiple profiles have needs_upload = true, keep only the most recent
+      // This prevents "Too many elements" error when uploading
+      final multipleNeedsUploadQuery = '''
+        SELECT COUNT(*) as count FROM users WHERE needs_upload = 1
+      ''';
+      final needsUploadCount = await _database.customSelect(multipleNeedsUploadQuery).getSingle();
+      final count = needsUploadCount.data['count'] as int;
+
+      if (count > 1) {
+        _logger.warning(
+          'Multiple users need upload, keeping only most recent',
+          context: 'DATA_SYNC',
+          data: {'count': count},
+        );
+
+        // Get all profiles needing upload, ordered by most recent
+        final profilesQuery = '''
+          SELECT rowid, id, updated_at FROM users
+          WHERE needs_upload = 1
+          ORDER BY updated_at DESC
+        ''';
+        final profiles = await _database.customSelect(profilesQuery).get();
+
+        // Skip the first (most recent), clear needs_upload for the rest
+        for (int i = 1; i < profiles.length; i++) {
+          final rowid = profiles[i].data['rowid'] as int;
+          await _database.customStatement(
+            'UPDATE users SET needs_upload = 0 WHERE rowid = ?',
+            [rowid],
+          );
+          _logger.info(
+            'Cleared needs_upload for older user',
+            context: 'DATA_SYNC',
+            data: {'rowid': rowid},
+          );
+        }
+      }
+
+      return deletedCount;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to clean users duplicates',
+        context: 'DATA_SYNC',
+        error: e,
+        stackTrace: stackTrace,
       );
       return 0; // Return 0 on error, don't block sync
     }
@@ -2034,7 +2166,8 @@ class DataSyncService {
         'gut_training_level': profile.gutTrainingLevel,
         'onboarding_completed': profile.onboardingCompleted,
         'app_version': profile.appVersion,
-        'dietary_preference': profile.dietaryPreference,
+        // Convert 'none' to null since Supabase dietary_preference_enum doesn't include 'none'
+        'dietary_preference': profile.dietaryPreference == 'none' ? null : profile.dietaryPreference,
         'allergies': profile.allergies,
         'created_at': profile.createdAt.toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
@@ -2063,6 +2196,62 @@ class DataSyncService {
         error: e,
         stackTrace: stackTrace,
         data: {'userId': profile.id},
+      );
+      // Don't rethrow - allow other uploads to continue
+    }
+  }
+
+  /// Upload food preferences to Supabase food_preferences table
+  /// This ensures the normalized table is synced (not just the JSONB in users table)
+  Future<void> _uploadFoodPreferences(String userId) async {
+    try {
+      // Get all food preference entries from local database
+      final entries = await _database.getAllFoodPreferenceEntries(userId);
+
+      if (entries.isEmpty) {
+        _logger.info(
+          'No food preferences to upload',
+          context: 'FOOD_PREF_SYNC',
+          data: {'userId': userId},
+        );
+        return;
+      }
+
+      _logger.info(
+        'Uploading ${entries.length} food preferences to Supabase',
+        context: 'FOOD_PREF_SYNC',
+        data: {'userId': userId, 'count': entries.length},
+      );
+
+      // Convert to Supabase format
+      final rows = entries.map((entry) => {
+        'id': entry.id,
+        'user_id': entry.userId,
+        'food_name': entry.foodName,
+        'preference': entry.preference,
+        'preference_level': entry.preferenceLevel,
+        'created_at': entry.createdAt.toIso8601String(),
+        'updated_at': entry.updatedAt.toIso8601String(),
+      }).toList();
+
+      // Upsert to Supabase food_preferences table
+      await _supabase.from('food_preferences').upsert(
+        rows,
+        onConflict: 'user_id,food_name', // Use composite unique key
+      );
+
+      _logger.info(
+        'Food preferences uploaded successfully',
+        context: 'FOOD_PREF_SYNC',
+        data: {'userId': userId, 'count': entries.length},
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to upload food preferences',
+        context: 'FOOD_PREF_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
       );
       // Don't rethrow - allow other uploads to continue
     }

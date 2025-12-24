@@ -544,8 +544,8 @@ class AppDatabase extends _$AppDatabase {
                   food_display_name TEXT,
                   quantity INTEGER DEFAULT 1 NOT NULL CHECK (quantity > 0),
                   carbs_consumed REAL NOT NULL CHECK (carbs_consumed >= 0),
-                  created_at INTEGER NOT NULL,
-                  updated_at INTEGER NOT NULL,
+                  created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+                  updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
                   CHECK ((carb_loading_food_id IS NOT NULL AND carb_loading_user_food_id IS NULL) OR (carb_loading_food_id IS NULL AND carb_loading_user_food_id IS NOT NULL))
                 )
               ''');
@@ -885,6 +885,14 @@ class AppDatabase extends _$AppDatabase {
     return results.map((r) => r.foodName).toList();
   }
 
+  /// Get all food preference entries for a user (for upload to Supabase)
+  /// Returns raw FoodPreferenceEntry objects with id, food_name, preference, preference_level
+  Future<List<FoodPreferenceEntry>> getAllFoodPreferenceEntries(String userId) async {
+    final query = select(foodPreferencesTable)
+      ..where((f) => f.userId.equals(userId));
+    return await query.get();
+  }
+
   /// Get count of nutrition foods in local database
   /// Used during app startup to determine if fallback food loading is needed
   Future<int> getFoodCount() async {
@@ -1051,6 +1059,24 @@ class AppDatabase extends _$AppDatabase {
       await delete(feedbackTable).go();
       await delete(userProfilesTable).go();
       await delete(foodPreferencesTable).go();
+    });
+  }
+
+  /// Delete ALL data from ALL tables - for troubleshooting/reset
+  /// Uses PRAGMA to disable foreign keys, making it safe regardless of table order
+  /// This is the Drift-recommended approach for complete database clearing
+  Future<void> deleteEverythingForTroubleshooting() async {
+    await transaction(() async {
+      // Disable foreign key checks to allow deletion in any order
+      await customStatement('PRAGMA foreign_keys = OFF');
+
+      // Delete from all tables
+      for (final table in allTables) {
+        await delete(table).go();
+      }
+
+      // Re-enable foreign key checks
+      await customStatement('PRAGMA foreign_keys = ON');
     });
   }
 

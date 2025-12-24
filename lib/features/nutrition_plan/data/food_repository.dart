@@ -9,6 +9,8 @@ import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../onboarding/domain/allergy.dart';
+import '../../onboarding/domain/dietary_preference.dart';
 
 /// Repository for accessing food data from Supabase
 /// Replaces the hardcoded FoodDatabase with dynamic data
@@ -294,6 +296,78 @@ class FoodRepository {
         data: {'searchQuery': query},
         error: e,
       );
+      return [];
+    }
+  }
+
+  /// Get food names that should be avoided based on dietary preference and allergies
+  /// Used during onboarding to auto-set conflicting foods to "dislike"
+  Future<List<String>> getFoodsToAvoid({
+    DietaryPreference? dietaryPreference,
+    List<Allergy> allergies = const [],
+  }) async {
+    // If no dietary preference and no allergies, nothing to avoid
+    if (dietaryPreference == null && allergies.isEmpty) {
+      return [];
+    }
+
+    try {
+      // Query all foods with allergens and excluded_diets columns
+      final response = await _supabase
+          .from('foods')
+          .select('name, allergens, excluded_diets');
+
+      final List<String> foodsToAvoid = [];
+
+      for (final food in response) {
+        final foodName = food['name'] as String?;
+        if (foodName == null) continue;
+
+        // Parse allergens - handle both List<dynamic> (from Supabase) and String (from local)
+        final allergensRaw = food['allergens'];
+        final foodAllergens = allergensRaw is List
+            ? Allergy.fromList(allergensRaw)
+            : Allergy.fromDbArray(allergensRaw as String?);
+
+        // Parse excluded diets - handle both List<dynamic> (from Supabase) and String (from local)
+        final excludedDietsRaw = food['excluded_diets'];
+        final excludedDiets = excludedDietsRaw is List
+            ? DietaryPreference.fromList(excludedDietsRaw)
+            : DietaryPreference.fromDbArray(excludedDietsRaw as String?);
+
+        // Check if food contains any of user's allergens
+        if (allergies.any((userAllergy) => foodAllergens.contains(userAllergy))) {
+          foodsToAvoid.add(foodName);
+          continue; // Already added, skip to next food
+        }
+
+        // Check if food is excluded for user's dietary preference
+        if (dietaryPreference != null && excludedDiets.contains(dietaryPreference)) {
+          foodsToAvoid.add(foodName);
+        }
+      }
+
+      _logger.info(
+        'Found ${foodsToAvoid.length} foods to avoid based on diet/allergies',
+        context: 'FoodRepository',
+        data: {
+          'dietaryPreference': dietaryPreference?.name,
+          'allergiesCount': allergies.length,
+          'foodsToAvoidCount': foodsToAvoid.length,
+        },
+      );
+
+      return foodsToAvoid;
+    } catch (e) {
+      _logger.error('Error fetching foods to avoid',
+        context: 'FoodRepository',
+        data: {
+          'dietaryPreference': dietaryPreference?.name,
+          'allergiesCount': allergies.length,
+        },
+        error: e,
+      );
+      // Return empty list on error - don't block onboarding
       return [];
     }
   }

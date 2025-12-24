@@ -256,16 +256,16 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       color: AppColors.electrolyte,
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      contentService.getValue(
-                        'auth.login.syncing_message',
-                        defaultValue: 'Signing in and syncing your data...',
-                      ),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                    // Text(
+                    //   contentService.getValue(
+                    //     'auth.login.syncing_message',
+                    //     defaultValue: 'Signing in and syncing your data...',
+                    //   ),
+                    //   style: AppTextStyles.bodyMedium.copyWith(
+                    //     color: Theme.of(context).colorScheme.onSurface,
+                    //   ),
+                    //   textAlign: TextAlign.center,
+                    // ),
                   ],
                 ),
               ),
