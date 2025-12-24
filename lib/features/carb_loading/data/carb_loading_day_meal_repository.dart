@@ -58,6 +58,7 @@ class CarbLoadingDayMealRepository {
     required double carbsPerServing,
   }) async {
     final carbsConsumed = quantity * carbsPerServing;
+    final now = DateTime.now();
 
     await _database.into(_database.carbLoadingDayMealsTable).insert(
           CarbLoadingDayMealsTableCompanion.insert(
@@ -68,6 +69,8 @@ class CarbLoadingDayMealRepository {
             foodDisplayName: Value(foodDisplayName),
             quantity: Value(quantity),
             carbsConsumed: carbsConsumed,
+            createdAt: Value(now),
+            updatedAt: Value(now),
           ),
         );
 
@@ -94,6 +97,7 @@ class CarbLoadingDayMealRepository {
     required double carbsPerServing,
   }) async {
     final carbsConsumed = quantity * carbsPerServing;
+    final now = DateTime.now();
 
     await _database.into(_database.carbLoadingDayMealsTable).insert(
           CarbLoadingDayMealsTableCompanion.insert(
@@ -104,6 +108,8 @@ class CarbLoadingDayMealRepository {
             foodDisplayName: Value(foodDisplayName),
             quantity: Value(quantity),
             carbsConsumed: carbsConsumed,
+            createdAt: Value(now),
+            updatedAt: Value(now),
           ),
         );
 
@@ -239,6 +245,7 @@ class CarbLoadingDayMealRepository {
   }) async {
     return await _database.transaction(() async {
       final createdMeals = <domain.CarbLoadingDayMeal>[];
+      final now = DateTime.now();
 
       for (final meal in meals) {
         final carbsConsumed = meal.quantity * meal.carbsPerServing;
@@ -252,6 +259,8 @@ class CarbLoadingDayMealRepository {
                 foodDisplayName: Value(meal.foodDisplayName),
                 quantity: Value(meal.quantity),
                 carbsConsumed: carbsConsumed,
+                createdAt: Value(now),
+                updatedAt: Value(now),
               ),
             );
 

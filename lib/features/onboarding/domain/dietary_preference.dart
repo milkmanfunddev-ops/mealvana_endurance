@@ -113,6 +113,15 @@ enum DietaryPreference {
         .toList();
   }
 
+  /// Parse a list of dietary preferences from a native Dart list.
+  /// Used when Supabase returns PostgreSQL arrays as List.
+  static List<DietaryPreference> fromList(List<dynamic> values) {
+    return values
+        .map((v) => DietaryPreference.fromDbValue(v?.toString()))
+        .whereType<DietaryPreference>()
+        .toList();
+  }
+
   /// Convert list of dietary preferences to database array format
   static String toDbArray(List<DietaryPreference> diets) {
     if (diets.isEmpty) return '{}';

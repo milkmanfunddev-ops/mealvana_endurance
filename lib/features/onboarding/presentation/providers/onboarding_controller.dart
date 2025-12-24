@@ -119,6 +119,7 @@ class OnboardingController extends _$OnboardingController {
   }
 
   /// Save dietary preference (step 3a of onboarding)
+  /// When called from settings, also updates food preferences for excluded foods
   Future<bool> saveDietaryPreference(DietaryPreference? preference) async {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
@@ -143,6 +144,16 @@ class OnboardingController extends _$OnboardingController {
       DebugLogger.info('✅ Dietary preference - Save completed successfully');
       // Update our session user reference
       _currentUser = currentUser;
+
+      // Also update food preferences for excluded foods based on dietary preference
+      // This is called from settings mode, so we need to update food preferences immediately
+      if (preference != null) {
+        await _updateFoodPreferencesForAllergies(
+          currentUser.id,
+          currentUser.allergies,
+          preference,
+        );
+      }
     });
 
     if (state.hasError) {
@@ -156,6 +167,7 @@ class OnboardingController extends _$OnboardingController {
   }
 
   /// Save allergies (step 3b of onboarding)
+  /// When called from settings, also updates food preferences for allergen-containing foods
   Future<bool> saveAllergies(List<Allergy> allergies) async {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
@@ -180,6 +192,16 @@ class OnboardingController extends _$OnboardingController {
       DebugLogger.info('✅ Allergies - Save completed successfully');
       // Update our session user reference
       _currentUser = currentUser;
+
+      // Also update food preferences for allergen-containing foods
+      // This is called from settings mode, so we need to update food preferences immediately
+      if (allergies.isNotEmpty) {
+        await _updateFoodPreferencesForAllergies(
+          currentUser.id,
+          allergies,
+          currentUser.dietaryPreference,
+        );
+      }
     });
 
     if (state.hasError) {
@@ -190,6 +212,51 @@ class OnboardingController extends _$OnboardingController {
     }
 
     return !state.hasError;
+  }
+
+  /// Update food preferences to "avoid" for foods containing allergens or excluded by dietary preference
+  Future<void> _updateFoodPreferencesForAllergies(
+    String userId,
+    List<Allergy> allergies,
+    DietaryPreference? dietaryPreference,
+  ) async {
+    try {
+      final foodRepository = ref.read(foodRepositoryProvider);
+
+      // Get foods to avoid based on allergies and dietary preference
+      final foodsToAvoid = await foodRepository.getFoodsToAvoid(
+        dietaryPreference: dietaryPreference,
+        allergies: allergies,
+      );
+
+      if (foodsToAvoid.isEmpty) {
+        DebugLogger.debug('📋 No foods to avoid based on allergies/diet');
+        return;
+      }
+
+      DebugLogger.info('🍎 Setting ${foodsToAvoid.length} foods to "avoid" based on allergies');
+
+      // Create preference map with dislike (preference_level = 0) for avoided foods
+      final Map<String, FoodPreference> preferences = {};
+      final Map<String, int> sliderLevels = {};
+      for (final foodName in foodsToAvoid) {
+        preferences[foodName] = FoodPreference.dislike;
+        sliderLevels[foodName] = 0;
+      }
+
+      // Save to database using merge mode to preserve existing preferences
+      await _authService.saveFoodPreferences(
+        userId,
+        preferences,
+        sliderLevels: sliderLevels,
+      );
+
+      DebugLogger.info('✅ Food preferences updated for allergen-containing foods');
+    } catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to update food preferences for allergies: $e');
+      DebugLogger.debug('📍 Stack trace: $stackTrace');
+      // Don't rethrow - allergy save was successful, this is a best-effort update
+    }
   }
 
   /// Save food preferences (step 4 of onboarding)
@@ -411,6 +478,23 @@ class OnboardingController extends _$OnboardingController {
           } else {
             preferences[food.name] = FoodPreference.willingToTry;
             sliderLevels[food.name] = 2;
+          }
+        }
+
+        // Auto-set conflicting foods to "dislike" based on dietary preference and allergies
+        if (_cachedDietaryPreference != null || (_cachedAllergies?.isNotEmpty ?? false)) {
+          final foodsToAvoid = await foodRepository.getFoodsToAvoid(
+            dietaryPreference: _cachedDietaryPreference,
+            allergies: _cachedAllergies ?? [],
+          );
+
+          for (final foodName in foodsToAvoid) {
+            preferences[foodName] = FoodPreference.dislike;
+            sliderLevels[foodName] = 0;
+          }
+
+          if (foodsToAvoid.isNotEmpty) {
+            DebugLogger.info('✅ Auto-set ${foodsToAvoid.length} foods to dislike based on diet/allergies');
           }
         }
 

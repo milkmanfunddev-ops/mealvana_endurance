@@ -259,6 +259,67 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 },
               ),
             ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Sign Out button for anonymous users
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () async {
+                  // Show warning dialog
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Sign Out?'),
+                      content: const Text(
+                        'Your data is only saved on this device. '
+                        'Create an account first to back up your data and sync across devices.\n\n'
+                        'If you sign out without an account, you can still sign back in later to access your data on this device.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context, false);
+                            // Take them to create account instead
+                            context.push('/auth/post-onboarding');
+                          },
+                          child: const Text('Create Account'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.dragonfruit,
+                          ),
+                          child: const Text('Sign Out Anyway'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true && context.mounted) {
+                    final analytics = ref.read(appExternalDepsProvider);
+                    analytics.analytics.track('settings_anonymous_sign_out_tapped');
+
+                    // Sign out of Supabase (clears anonymous session)
+                    // Local data is preserved - user can sign back in later
+                    await ref.read(settingsControllerProvider.notifier).signOut();
+
+                    if (context.mounted) {
+                      context.go('/welcome');
+                    }
+                  }
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                child: const Text('Sign Out'),
+              ),
+            ),
           ] else ...[
             // Authenticated user - show provider and sign out
             Row(

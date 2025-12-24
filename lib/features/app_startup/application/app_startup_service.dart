@@ -331,6 +331,15 @@ class AppStartupService {
   /// Track auth state listener subscription to prevent duplicates
   StreamSubscription<AuthState>? _authStateSubscription;
 
+  /// Flag to prevent infinite loop when signing out due to session mismatch
+  /// When true, the signedOut handler skips invalidating appStartupProvider
+  /// because we're already handling the state in the startup flow
+  bool _isSigningOutDueToMismatch = false;
+
+  /// Flag to skip setting up auth listener when in "logged out with local data" state
+  /// This prevents infinite loop: listener setup -> signedOut event -> invalidate -> repeat
+  bool _skipAuthListenerSetup = false;
+
   /// Initialize Supabase Anonymous Authentication
   /// Creates or restores an anonymous auth session for the user
   /// This is the foundation for all Supabase Auth-based operations
@@ -340,7 +349,60 @@ class AppStartupService {
       final existingSession = _supabase.auth.currentSession;
 
       if (existingSession != null) {
-        // Session restored - Sentry breadcrumb for tracking (analytics deferred)
+        // Session restored from secure storage - verify it matches local data
+        final database = ref.read(appDatabaseProvider);
+        final localProfile = await database.getCurrentUserProfile();
+
+        if (localProfile != null && localProfile.onboardingCompleted) {
+          // Check if restored session matches local profile
+          final sessionUserId = existingSession.user.id;
+          final localAuthUserId = localProfile.authUserId;
+          final localId = localProfile.id;
+
+          // Session matches if authUserId OR id equals session user
+          final sessionMatches = localAuthUserId == sessionUserId ||
+              localId == sessionUserId;
+
+          if (!sessionMatches) {
+            // MISMATCH: Orphan session doesn't match local data
+            // This happens when a new anonymous session was created after logout
+            // but old local data was preserved. Clear the orphan session.
+            _logger.info(
+              'Session mismatch detected - clearing orphan Supabase session',
+              context: 'AUTH',
+              data: {
+                'session_user_id': sessionUserId,
+                'local_id': localId,
+                'local_auth_user_id': localAuthUserId,
+              },
+            );
+            _sentry.addBreadcrumb(
+              message: 'Clearing orphan Supabase session - mismatch with local data',
+              category: 'auth',
+              data: {
+                'session_user_id': sessionUserId,
+                'local_id': localId,
+                'local_auth_user_id': localAuthUserId,
+              },
+            );
+
+            // Set flags to prevent infinite loop
+            // 1. Skip provider invalidation in signedOut handler
+            // 2. Skip auth listener setup in finally block
+            _isSigningOutDueToMismatch = true;
+            _skipAuthListenerSetup = true;
+
+            // Sign out to clear the orphan session
+            // Local data is preserved - user can sign back in
+            await _supabase.auth.signOut();
+
+            // Return early - app will be in "logged out with local data" state
+            // Router will redirect to welcome screen
+            return;
+          }
+        }
+
+        // Session matches local data (or no local data) - proceed normally
         _sentry.addBreadcrumb(
           message: 'Supabase session restored',
           category: 'auth',
@@ -350,7 +412,35 @@ class AppStartupService {
         );
         // Don't return early - setup listener in finally block
       } else {
-        // No existing session - create anonymous user
+        // No existing session - check if user logged out with local data
+        // If so, don't create anonymous user - let them sign back in
+        final database = ref.read(appDatabaseProvider);
+        final localProfile = await database.getCurrentUserProfile();
+
+        if (localProfile != null && localProfile.onboardingCompleted) {
+          // User has logged out but has local data - skip anonymous auth
+          // They can sign back in from welcome screen to access their data
+          _logger.info(
+            'Logged out user with local data detected - skipping anonymous auth',
+            context: 'AUTH',
+          );
+          _sentry.addBreadcrumb(
+            message: 'Logged out user with local data - skipping anonymous auth',
+            category: 'auth',
+            data: {
+              'local_user_id': localProfile.id,
+              'onboarding_completed': localProfile.onboardingCompleted,
+            },
+          );
+          // Skip auth listener setup - no session to monitor
+          // Setting up listener would cause infinite loop (signedOut -> invalidate -> repeat)
+          _skipAuthListenerSetup = true;
+          // Don't create anonymous user - exit early
+          // App router will redirect to welcome screen
+          return;
+        }
+
+        // No local profile or incomplete onboarding - create anonymous user
         final response = await _supabase.auth.signInAnonymously();
 
         if (response.session == null || response.user == null) {
@@ -390,9 +480,18 @@ class AppStartupService {
       // User will see error screen with retry option
       rethrow;
     } finally {
-      // Setup auth state listener ONCE, regardless of path taken
-      // This prevents duplicate listeners that cause race conditions
-      setupAuthStateListener();
+      // Check if we should skip listener setup (logged out with local data state)
+      if (_skipAuthListenerSetup) {
+        _skipAuthListenerSetup = false; // Reset flag
+        _logger.info(
+          'Skipping auth listener setup - in logged out with local data state',
+          context: 'AUTH',
+        );
+      } else {
+        // Setup auth state listener ONCE, regardless of path taken
+        // This prevents duplicate listeners that cause race conditions
+        setupAuthStateListener();
+      }
     }
   }
 
@@ -422,12 +521,18 @@ class AppStartupService {
 
       // Handle sign-out events
       if (event == AuthChangeEvent.signedOut) {
+        // Check if this is a mismatch-triggered signout (during startup)
+        // If so, skip provider invalidation to prevent infinite loop
+        final wasMismatchSignOut = _isSigningOutDueToMismatch;
+        _isSigningOutDueToMismatch = false; // Reset flag
+
         // NOTE: session?.user.id is null here because session is already cleared
         // Sync timestamp is cleared in SettingsController.signOut() BEFORE sign-out
         // while we still have access to the user ID
 
         await _analytics.track('user_signed_out', properties: {
           'timestamp': DateTime.now().toIso8601String(),
+          'was_mismatch_signout': wasMismatchSignOut,
         });
 
         try {
@@ -435,23 +540,37 @@ class AppStartupService {
           // This allows users to sign back in offline and see their data
           // Data is already isolated by user_id via getCurrentUserProfile()
 
-          // Just invalidate providers so UI shows login screen
-          ref.invalidate(userIdProvider);
-          ref.invalidate(activitiesControllerProvider);
-          ref.invalidate(allEventsProvider);
-          ref.invalidate(nextUpcomingEventProvider);
-          ref.invalidate(settingsControllerProvider);
-          ref.invalidate(appStartupProvider);
+          // Skip provider invalidation if this was a mismatch signout
+          // The startup flow is already handling the state correctly
+          if (wasMismatchSignOut) {
+            _logger.info(
+              'Mismatch signout handled - skipping provider invalidation',
+              context: 'AUTH',
+            );
+          } else {
+            // User-initiated signout - invalidate providers so UI shows login screen
+            ref.invalidate(userIdProvider);
+            ref.invalidate(activitiesControllerProvider);
+            ref.invalidate(allEventsProvider);
+            ref.invalidate(nextUpcomingEventProvider);
+            ref.invalidate(settingsControllerProvider);
+            ref.invalidate(appStartupProvider);
 
-          _logger.info(
-            'User signed out - keeping local data for offline access',
-            context: 'AUTH',
-          );
+            _logger.info(
+              'User signed out - keeping local data for offline access',
+              context: 'AUTH',
+            );
+          }
 
           _sentry.addBreadcrumb(
-            message: 'User signed out - local data preserved',
+            message: wasMismatchSignOut
+                ? 'Mismatch signout - no invalidation needed'
+                : 'User signed out - local data preserved',
             category: 'auth',
-            data: {'timestamp': DateTime.now().toIso8601String()},
+            data: {
+              'timestamp': DateTime.now().toIso8601String(),
+              'was_mismatch_signout': wasMismatchSignOut,
+            },
           );
         } catch (e, stackTrace) {
           _logger.error(

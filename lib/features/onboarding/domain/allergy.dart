@@ -116,6 +116,15 @@ enum Allergy {
         .toList();
   }
 
+  /// Parse a list of allergies from a native Dart list.
+  /// Used when Supabase returns PostgreSQL arrays as List.
+  static List<Allergy> fromList(List<dynamic> values) {
+    return values
+        .map((v) => Allergy.fromDbValue(v?.toString()))
+        .whereType<Allergy>()
+        .toList();
+  }
+
   /// Convert list of allergies to database array format
   static String toDbArray(List<Allergy> allergies) {
     if (allergies.isEmpty) return '{}';

@@ -1229,26 +1229,26 @@ class UserRepository {
 
       // Step 1: Delete carb_loading_day_meals via carb_loading_days via carb_loading_plans
       await database.customStatement('''
-        DELETE FROM carb_loading_day_meals_table
+        DELETE FROM carb_loading_day_meals
         WHERE carb_loading_day_id IN (
-          SELECT id FROM carb_loading_days_table
+          SELECT id FROM carb_loading_days
           WHERE carb_loading_plan_id IN (
-            SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+            SELECT id FROM carb_loading_plans WHERE user_id = ?
           )
         )
       ''', [anonymousUserId]);
 
       // Step 2: Delete carb_loading_days via carb_loading_plans
       await database.customStatement('''
-        DELETE FROM carb_loading_days_table
+        DELETE FROM carb_loading_days
         WHERE carb_loading_plan_id IN (
-          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+          SELECT id FROM carb_loading_plans WHERE user_id = ?
         )
       ''', [anonymousUserId]);
 
       // Step 3: Delete carb_loading_plans
       await database.customStatement(
-        'DELETE FROM carb_loading_plans_table WHERE user_id = ?',
+        'DELETE FROM carb_loading_plans WHERE user_id = ?',
         [anonymousUserId],
       );
 
