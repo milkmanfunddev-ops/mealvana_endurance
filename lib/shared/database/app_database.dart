@@ -163,28 +163,16 @@ class AppDatabase extends _$AppDatabase {
         // Enable foreign key support (required for Drift)
         await customStatement('PRAGMA foreign_keys = ON');
 
-        // Note: Column additions moved to proper migrations in onUpgrade
-        // v2 migration handles: preference_level, dietary_preference, allergies, needs_upload
-
         if (kDebugMode) {
           // Enable detailed logging in debug mode
           await customStatement('PRAGMA synchronous = NORMAL');
           await customStatement('PRAGMA cache_size = 10000');
         }
 
-        // SAFETY NET: Ensure v2 columns have proper default values
-        // This handles edge cases where migration ran but didn't backfill properly
-        try {
-          // Fix null allergies (should be '{}')
-          await customStatement(
-            "UPDATE users SET allergies = '{}' WHERE allergies IS NULL OR allergies = ''"
-          );
-          // Fix null needs_upload (should be 0)
-          await customStatement(
-            "UPDATE users SET needs_upload = 0 WHERE needs_upload IS NULL"
-          );
-        } catch (e) {
-          // Columns don't exist yet - safe to ignore on fresh install
+        // Schema integrity validation - fail fast if schema is corrupted
+        // This replaces the old "safety net" approach with proper validation
+        if (!details.wasCreated) {
+          await _validateSchemaIntegrity();
         }
 
         // Normalize any legacy timestamp strings in user_foods to Unix millis
@@ -602,6 +590,81 @@ class AppDatabase extends _$AppDatabase {
   /// Note: categories, meal_types, and product_types are now enums in the database
   Future<void> _populateDefaultData() async {
     // No longer need to populate default data - using enums now
+  }
+
+  /// Validate schema integrity on database open
+  ///
+  /// Uses Drift's `allTables` to automatically check that all expected tables
+  /// and columns exist in the database. This is version-agnostic - works for
+  /// v2, v3, v4, etc. without code changes.
+  ///
+  /// If validation fails (indicating a failed or incomplete migration), it will:
+  /// 1. Delete the corrupted database
+  /// 2. Throw a [DatabaseSchemaException] to trigger app restart with fresh database
+  ///
+  /// This approach replaces manual column checking and automatically handles
+  /// any new columns added in future schema versions.
+  Future<void> _validateSchemaIntegrity() async {
+    final errors = <String>[];
+
+    // Iterate through all tables defined in Drift and verify they exist with correct columns
+    for (final table in allTables) {
+      final tableName = table.actualTableName;
+
+      try {
+        // Get actual columns from SQLite
+        final actualColumns = await customSelect(
+          "PRAGMA table_info('$tableName')",
+        ).get();
+
+        if (actualColumns.isEmpty) {
+          // Table doesn't exist at all
+          errors.add('Table "$tableName" does not exist');
+          continue;
+        }
+
+        final actualColumnNames = actualColumns
+            .map((row) => row.read<String>('name'))
+            .toSet();
+
+        // Get expected columns from Drift's table definition
+        final expectedColumnNames = table.$columns
+            .map((col) => col.$name)
+            .toSet();
+
+        // Check for missing columns
+        final missingColumns = expectedColumnNames.difference(actualColumnNames);
+        if (missingColumns.isNotEmpty) {
+          errors.add('Table "$tableName" missing columns: ${missingColumns.join(', ')}');
+        }
+      } catch (e) {
+        // Error querying table - might not exist
+        errors.add('Failed to validate table "$tableName": $e');
+      }
+    }
+
+    // If any errors found, delete database and force recreation
+    if (errors.isNotEmpty) {
+      if (kDebugMode) {
+        for (final error in errors) {
+          print('❌ Schema validation failed: $error');
+        }
+        print('🗑️ Deleting corrupted database to force fresh sync...');
+      }
+
+      // Delete the corrupted database
+      await deleteAndResync();
+
+      // Throw exception to signal app needs to restart with fresh database
+      throw DatabaseSchemaException(
+        'Database schema is corrupted or incomplete. The app will resync data from the server.',
+        errors: errors,
+      );
+    }
+
+    if (kDebugMode) {
+      print('✅ Schema validation passed (${allTables.length} tables verified)');
+    }
   }
 
   /// Get or create the current user profile (device-based)
@@ -1994,3 +2057,23 @@ class AppDatabase extends _$AppDatabase {
 /// Database connection setup with seed database support
 /// Implementation is platform-specific (see connection_native.dart / connection_web.dart)
 LazyDatabase _openConnection() => openNativeConnection();
+
+/// Exception thrown when database schema validation fails
+///
+/// This exception indicates that the database schema is corrupted or incomplete,
+/// typically due to a failed migration from v1 to v2. The database has been
+/// deleted and the app needs to restart to create a fresh database and resync.
+class DatabaseSchemaException implements Exception {
+  final String message;
+  final List<String> errors;
+
+  DatabaseSchemaException(this.message, {this.errors = const []});
+
+  @override
+  String toString() {
+    if (errors.isEmpty) {
+      return 'DatabaseSchemaException: $message';
+    }
+    return 'DatabaseSchemaException: $message\nErrors: ${errors.join(', ')}';
+  }
+}

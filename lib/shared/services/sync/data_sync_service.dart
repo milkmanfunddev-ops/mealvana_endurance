@@ -1049,9 +1049,12 @@ class DataSyncService {
       await _cleanDuplicatesFromDrift(userId);
 
       // Collect dirty records from all tables
-      final dirtyUserProfile = await (_database.select(_database.userProfilesTable)
+      // Use .get() instead of .getSingleOrNull() to handle duplicate profiles
+      // that can occur during v1→v2 migration. Take the first one if multiple exist.
+      final dirtyUserProfiles = await (_database.select(_database.userProfilesTable)
             ..where((tbl) => tbl.needsUpload.equals(true)))
-          .getSingleOrNull();
+          .get();
+      final dirtyUserProfile = dirtyUserProfiles.isNotEmpty ? dirtyUserProfiles.first : null;
 
       final dirtyActivities = await (_database.select(_database.activitiesTable)
             ..where((tbl) => tbl.needsUpload.equals(true)))
