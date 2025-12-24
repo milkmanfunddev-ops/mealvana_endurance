@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
-import '../../../nutrition_plan/domain/run_parameters.dart';
 
-/// Preferences Screen - Separate screen for editing preferences with explicit save
+/// Preferences Screen - Settings version that matches onboarding UserProfileScreen
+/// Saves immediately to database instead of caching
 class PreferencesScreen extends ConsumerStatefulWidget {
   const PreferencesScreen({super.key});
 
@@ -16,22 +17,18 @@ class PreferencesScreen extends ConsumerStatefulWidget {
 }
 
 class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
+  final _formKey = GlobalKey<FormState>();
+
   // Local state for editing
   Gender? _gender;
   DateTime? _birthday;
-  int? _heightFeet;
-  int? _heightInches;
-  double? _weightPounds;
+  final _heightFeetController = TextEditingController();
+  final _heightInchesController = TextEditingController();
+  final _weightController = TextEditingController();
   bool? _runsWithWaterBottle;
-  DistanceUnit? _preferredDistanceUnit;
-  PaceUnit? _preferredPaceUnit;
-  GutTraining? _gutTrainingLevel;
 
   bool _hasChanges = false;
   bool _isSaving = false;
-
-  // TextEditingController for weight field to fix autopopulation issue
-  final _weightController = TextEditingController();
 
   @override
   void initState() {
@@ -43,15 +40,15 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         setState(() {
           _gender = settingsState.gender;
           _birthday = settingsState.birthday;
-          _heightFeet = settingsState.heightFeet;
-          _heightInches = settingsState.heightInches;
-          _weightPounds = settingsState.weightPounds;
           _runsWithWaterBottle = settingsState.runsWithWaterBottle;
-          _preferredDistanceUnit = settingsState.preferredDistanceUnit;
-          _preferredPaceUnit = settingsState.preferredPaceUnit;
-          _gutTrainingLevel = settingsState.gutTrainingLevel;
         });
-        // Set weight controller text after state is loaded
+        // Set text controller values
+        if (settingsState.heightFeet != null) {
+          _heightFeetController.text = settingsState.heightFeet.toString();
+        }
+        if (settingsState.heightInches != null) {
+          _heightInchesController.text = settingsState.heightInches.toString();
+        }
         if (settingsState.weightPounds != null) {
           _weightController.text = settingsState.weightPounds.toString();
         }
@@ -61,6 +58,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
   @override
   void dispose() {
+    _heightFeetController.dispose();
+    _heightInchesController.dispose();
     _weightController.dispose();
     super.dispose();
   }
@@ -72,6 +71,25 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   }
 
   Future<void> _saveChanges() async {
+    // Dismiss keyboard first
+    FocusScope.of(context).unfocus();
+
+    // Validate form
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Validate birthday is selected
+    if (_birthday == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select your birthday'),
+          backgroundColor: AppColors.dragonfruit,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
@@ -79,18 +97,19 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final controller = ref.read(settingsControllerProvider.notifier);
 
     try {
+      // Parse height values
+      final heightFeet = int.tryParse(_heightFeetController.text);
+      final heightInches = int.tryParse(_heightInchesController.text);
+      final weightPounds = double.tryParse(_weightController.text);
+
       // Save all preferences in a single batch operation
-      // This avoids multiple invalidations that cause excessive UI refreshes
       await controller.saveAllPreferences(
         gender: _gender,
         birthday: _birthday,
-        heightFeet: _heightFeet,
-        heightInches: _heightInches,
-        weightPounds: _weightPounds,
+        heightFeet: heightFeet,
+        heightInches: heightInches,
+        weightPounds: weightPounds,
         runsWithWaterBottle: _runsWithWaterBottle,
-        preferredDistanceUnit: _preferredDistanceUnit,
-        preferredPaceUnit: _preferredPaceUnit,
-        gutTrainingLevel: _gutTrainingLevel,
       );
 
       if (mounted) {
@@ -102,7 +121,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Preferences saved successfully'),
+            content: Text('Profile saved successfully'),
             backgroundColor: AppColors.electrolyte,
             duration: Duration(seconds: 2),
           ),
@@ -119,7 +138,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving preferences: $e'),
+            content: Text('Error saving profile: $e'),
             backgroundColor: AppColors.dragonfruit,
             duration: const Duration(seconds: 3),
           ),
@@ -133,30 +152,33 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final settingsAsync = ref.watch(settingsControllerProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      body: settingsAsync.when(
-        data: (state) => _buildContent(context, state),
-        loading: () => _buildLoadingState(context),
-        error: (error, stack) => _buildErrorState(context, error),
-      ),
-    );
-  }
+      backgroundColor: AppColors.blackberry,
+      body: Column(
+        children: [
+          // Content area
+          Expanded(
+            child: SafeArea(
+              bottom: false,
+              child: settingsAsync.when(
+                data: (state) => _buildContent(context, state),
+                loading: () => _buildLoadingState(context),
+                error: (error, stack) => _buildErrorState(context, error),
+              ),
+            ),
+          ),
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      leading: IconButton(
-        icon: const Icon(FontAwesomeIcons.chevronLeft),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      title: Text(
-        'Preferences',
-        style: AppTextStyles.sectionTitle.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
+          // Footer navigation (matching onboarding style)
+          SafeArea(
+            top: false,
+            child: FigmaOnboardingFooter(
+              onContinue: _hasChanges && !_isSaving ? _saveChanges : null,
+              onBack: () => Navigator.of(context).pop(),
+              canContinue: _hasChanges && !_isSaving,
+              isLoading: _isSaving,
+              buttonText: 'Save Changes',
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -164,7 +186,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   Widget _buildLoadingState(BuildContext context) {
     return const Center(
       child: CircularProgressIndicator(
-        color: AppColors.electrolyte,
+        color: AppColors.orange,
       ),
     );
   }
@@ -181,7 +203,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Error loading preferences',
+            'Error loading profile',
             style: AppTextStyles.subtitle.copyWith(
               color: AppColors.dragonfruit,
             ),
@@ -190,7 +212,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           Text(
             error.toString(),
             style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: AppColors.textDark,
             ),
             textAlign: TextAlign.center,
           ),
@@ -200,43 +222,70 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   }
 
   Widget _buildContent(BuildContext context, dynamic state) {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: AppSpacing.screenPaddingHorizontal,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: AppSpacing.lg),
+    return GestureDetector(
+      onTap: () {
+        // Dismiss keyboard when tapping outside input fields
+        FocusScope.of(context).unfocus();
+      },
+      behavior: HitTestBehavior.opaque,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
 
-                // Profile section
-                _buildProfileSection(context, state),
+              // Introduction text (matching onboarding)
+              const Text(
+                'Tell us about yourself',
+                style: TextStyle(
+                  fontFamily: 'Sansita',
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.orange,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'This helps us calculate accurate nutrition plans for your activities.',
+                style: TextStyle(
+                  fontFamily: 'Apercu',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textDark,
+                  letterSpacing: 0.192,
+                  height: 1.0,
+                ),
+              ),
 
-                const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.lg),
 
-                // Preferences section
-                _buildPreferencesSection(context, state),
+              // Personal information section
+              _buildPersonalInfoSection(context),
 
-                const SizedBox(height: AppSpacing.xxxl),
-              ],
-            ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Physical information section
+              _buildPhysicalInfoSection(context),
+
+              const SizedBox(height: AppSpacing.xxxl),
+            ],
           ),
         ),
-
-        // Save button at bottom
-        _buildSaveButton(context, state),
-      ],
+      ),
     );
   }
 
-  Widget _buildProfileSection(BuildContext context, dynamic state) {
+  Widget _buildPersonalInfoSection(BuildContext context) {
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            state.profileSectionTitle,
+            'Personal Information',
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -244,40 +293,25 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           const SizedBox(height: AppSpacing.md),
 
-          // Gender selector
-          _buildGenderSelector(context, state),
+          // Gender selector (matching onboarding style)
+          _buildGenderSelector(context),
 
           const SizedBox(height: AppSpacing.md),
 
           // Birthday selector
-          _buildBirthdaySelector(context, state),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Height selector
-          _buildHeightSelector(context, state),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Weight selector
-          _buildWeightSelector(context, state),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Water bottle toggle
-          _buildWaterBottleToggle(context, state),
+          _buildBirthdaySelector(context),
         ],
       ),
     );
   }
 
-  Widget _buildPreferencesSection(BuildContext context, dynamic state) {
+  Widget _buildPhysicalInfoSection(BuildContext context) {
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            state.preferenceSectionTitle,
+            'Physical Information',
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -285,54 +319,99 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           const SizedBox(height: AppSpacing.md),
 
-          // Distance unit
-          _buildDistanceUnitSelector(context, state),
+          // Height fields (feet + inches) with validation
+          Text(
+            'Height',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  context: context,
+                  controller: _heightFeetController,
+                  hint: 'ft',
+                  icon: FontAwesomeIcons.rulerVertical,
+                  keyboardType: TextInputType.number,
+                  suffix: 'ft',
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Required';
+                    }
+                    final feet = int.tryParse(value);
+                    if (feet == null || feet < 3 || feet > 8) {
+                      return 'Valid: 3-8';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: _buildTextField(
+                  context: context,
+                  controller: _heightInchesController,
+                  hint: 'in',
+                  icon: FontAwesomeIcons.rulerVertical,
+                  keyboardType: TextInputType.number,
+                  suffix: 'in',
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Required';
+                    }
+                    final inches = int.tryParse(value);
+                    if (inches == null || inches < 0 || inches >= 12) {
+                      return 'Valid: 0-11';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
 
           const SizedBox(height: AppSpacing.md),
 
-          // Pace unit
-          _buildPaceUnitSelector(context, state),
+          // Weight field
+          _buildTextField(
+            context: context,
+            controller: _weightController,
+            label: 'Weight',
+            hint: 'Enter your weight',
+            icon: FontAwesomeIcons.weightScale,
+            keyboardType: TextInputType.number,
+            suffix: 'lbs',
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your weight';
+              }
+              final weight = double.tryParse(value);
+              if (weight == null || weight < 80 || weight > 500) {
+                return 'Please enter a valid weight (80-500 lbs)';
+              }
+              return null;
+            },
+          ),
 
           const SizedBox(height: AppSpacing.md),
 
-          // Gut training level
-          _buildGutTrainingSelector(context, state),
+          // Water bottle toggle
+          _buildWaterBottleToggle(context),
         ],
       ),
     );
   }
 
-  Widget _buildSaveButton(BuildContext context, dynamic state) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          child: KylePrimaryButton(
-            text: _isSaving ? 'Saving...' : (state.saveButtonText ?? 'Save Changes'),
-            onPressed: _hasChanges && !_isSaving ? _saveChanges : null,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGenderSelector(BuildContext context, dynamic state) {
+  Widget _buildGenderSelector(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          state.genderLabel,
+          'Gender',
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
@@ -341,26 +420,119 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
         const SizedBox(height: AppSpacing.sm),
 
-        KyleSegmentedControl<Gender>(
-          segments: [Gender.male, Gender.female],
-          selected: _gender ?? Gender.male,
-          onChanged: (gender) {
-            setState(() {
-              _gender = gender;
-            });
-            _markChanged();
-          },
+        // Gender options (matching onboarding style with icons)
+        Row(
+          children: [
+            Expanded(
+              child: _buildRadioOption(
+                context: context,
+                title: 'Male',
+                value: Gender.male,
+                groupValue: _gender ?? Gender.male,
+                onChanged: (value) {
+                  setState(() => _gender = value);
+                  _markChanged();
+                },
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _buildRadioOption(
+                context: context,
+                title: 'Female',
+                value: Gender.female,
+                groupValue: _gender ?? Gender.male,
+                onChanged: (value) {
+                  setState(() => _gender = value);
+                  _markChanged();
+                },
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _buildRadioOption(
+                context: context,
+                title: 'Non-binary',
+                value: Gender.other,
+                groupValue: _gender ?? Gender.male,
+                onChanged: (value) {
+                  setState(() => _gender = value);
+                  _markChanged();
+                },
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildBirthdaySelector(BuildContext context, dynamic state) {
+  Widget _buildRadioOption({
+    required BuildContext context,
+    required String title,
+    required Gender value,
+    required Gender groupValue,
+    required ValueChanged<Gender> onChanged,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isSelected = groupValue == value;
+
+    return GestureDetector(
+      onTap: () => onChanged(value),
+      child: Container(
+        height: 80,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? AppColors.cream : AppColors.blackberry)
+              : Colors.transparent,
+          border: Border.all(
+            color: isDark ? AppColors.cream : AppColors.blackberry,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Icon based on gender
+            Icon(
+              value == Gender.male
+                  ? FontAwesomeIcons.mars
+                  : value == Gender.female
+                      ? FontAwesomeIcons.venus
+                      : FontAwesomeIcons.genderless,
+              size: 28,
+              color: isSelected
+                  ? (isDark ? AppColors.blackberry : AppColors.cream)
+                  : (isDark ? AppColors.cream.withValues(alpha: 0.5) : AppColors.blackberry.withValues(alpha: 0.5)),
+            ),
+            const SizedBox(height: 4),
+
+            // Text content
+            Text(
+              title.toUpperCase(),
+              style: AppTextStyles.smallLabel.copyWith(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: isSelected
+                    ? (isDark ? AppColors.blackberry : AppColors.cream)
+                    : (isDark ? AppColors.cream.withValues(alpha: 0.5) : AppColors.blackberry.withValues(alpha: 0.5)),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBirthdaySelector(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          state.birthdayLabel,
+          'Birthday',
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
@@ -425,91 +597,52 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     );
   }
 
-  Widget _buildHeightSelector(BuildContext context, dynamic state) {
+  Widget _buildTextField({
+    required BuildContext context,
+    required TextEditingController controller,
+    String? label,
+    required String hint,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    String? suffix,
+    String? Function(String?)? validator,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          state.heightLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        Row(
-          children: [
-            // Feet dropdown
-            Expanded(
-              child: _buildDropdown<int>(
-                context: context,
-                value: _heightFeet,
-                hint: 'Feet',
-                items: List.generate(6, (index) => index + 3),
-                itemBuilder: (feet) => '$feet ft',
-                onChanged: (feet) {
-                  if (feet != null) {
-                    setState(() {
-                      _heightFeet = feet;
-                    });
-                    _markChanged();
-                  }
-                },
-              ),
+        if (label != null) ...[
+          Text(
+            label,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
             ),
-            const SizedBox(width: AppSpacing.sm),
-            // Inches dropdown
-            Expanded(
-              child: _buildDropdown<int>(
-                context: context,
-                value: _heightInches,
-                hint: 'Inches',
-                items: List.generate(12, (index) => index),
-                itemBuilder: (inches) => '$inches in',
-                onChanged: (inches) {
-                  if (inches != null) {
-                    setState(() {
-                      _heightInches = inches;
-                    });
-                    _markChanged();
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWeightSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.weightLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
           ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
+          const SizedBox(height: AppSpacing.sm),
+        ],
         TextFormField(
-          controller: _weightController,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          controller: controller,
+          keyboardType: keyboardType,
+          validator: validator,
+          onChanged: (_) => _markChanged(),
           decoration: InputDecoration(
-            hintText: 'Enter weight',
+            hintText: hint,
             hintStyle: AppTextStyles.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            suffixText: 'lbs',
-            suffixStyle: AppTextStyles.bodyMedium.copyWith(
+            prefixIcon: Icon(
+              icon,
+              size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
+            suffix: suffix != null
+                ? Text(
+                    suffix,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  )
+                : null,
             border: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
               borderSide: BorderSide(
@@ -529,6 +662,13 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 width: 2,
               ),
             ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: AppRadius.inputRadius,
+              borderSide: const BorderSide(
+                color: AppColors.dragonfruit,
+                width: 2,
+              ),
+            ),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(
@@ -539,21 +679,12 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
-          onChanged: (value) {
-            final weight = double.tryParse(value);
-            if (weight != null && weight > 0) {
-              setState(() {
-                _weightPounds = weight;
-              });
-              _markChanged();
-            }
-          },
         ),
       ],
     );
   }
 
-  Widget _buildWaterBottleToggle(BuildContext context, dynamic state) {
+  Widget _buildWaterBottleToggle(BuildContext context) {
     return InkWell(
       onTap: () {
         setState(() {
@@ -627,134 +758,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDistanceUnitSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.distanceUnitLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        KyleSegmentedControl<DistanceUnit>(
-          segments: DistanceUnit.values,
-          selected: _preferredDistanceUnit ?? DistanceUnit.miles,
-          onChanged: (unit) {
-            setState(() {
-              _preferredDistanceUnit = unit;
-            });
-            _markChanged();
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPaceUnitSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.paceUnitLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        KyleSegmentedControl<PaceUnit>(
-          segments: PaceUnit.values,
-          selected: _preferredPaceUnit ?? PaceUnit.minPerMile,
-          onChanged: (unit) {
-            setState(() {
-              _preferredPaceUnit = unit;
-            });
-            _markChanged();
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGutTrainingSelector(BuildContext context, dynamic state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          state.gutTrainingLabel,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        KyleGutTrainingSegmentedControl(
-          selected: _gutTrainingLevel ?? GutTraining.moderate,
-          onChanged: (level) {
-            setState(() {
-              _gutTrainingLevel = level;
-            });
-            _markChanged();
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDropdown<T>({
-    required BuildContext context,
-    required T? value,
-    required String hint,
-    required List<T> items,
-    required String Function(T) itemBuilder,
-    required ValueChanged<T?> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-        ),
-        borderRadius: AppRadius.inputRadius,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          hint: Text(
-            hint,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          isExpanded: true,
-          items: items.map((item) {
-            return DropdownMenuItem<T>(
-              value: item,
-              child: Text(
-                itemBuilder(item),
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            );
-          }).toList(),
-          onChanged: onChanged,
-          dropdownColor: Theme.of(context).colorScheme.surface,
         ),
       ),
     );
