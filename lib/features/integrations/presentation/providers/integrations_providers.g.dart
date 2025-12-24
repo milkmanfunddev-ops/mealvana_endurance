@@ -524,3 +524,383 @@ final class UserIntegrationsFamily extends $Family
   @override
   String toString() => r'userIntegrationsProvider';
 }
+
+/// Provider for TrainingPeaks API client
+
+@ProviderFor(trainingPeaksApiClient)
+const trainingPeaksApiClientProvider = TrainingPeaksApiClientProvider._();
+
+/// Provider for TrainingPeaks API client
+
+final class TrainingPeaksApiClientProvider
+    extends
+        $FunctionalProvider<
+          TrainingPeaksApiClient,
+          TrainingPeaksApiClient,
+          TrainingPeaksApiClient
+        >
+    with $Provider<TrainingPeaksApiClient> {
+  /// Provider for TrainingPeaks API client
+  const TrainingPeaksApiClientProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'trainingPeaksApiClientProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$trainingPeaksApiClientHash();
+
+  @$internal
+  @override
+  $ProviderElement<TrainingPeaksApiClient> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  TrainingPeaksApiClient create(Ref ref) {
+    return trainingPeaksApiClient(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TrainingPeaksApiClient value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TrainingPeaksApiClient>(value),
+    );
+  }
+}
+
+String _$trainingPeaksApiClientHash() =>
+    r'fa2fd24edabe2c4f981527b08dca19c9b7f6b38c';
+
+/// Provider for TrainingPeaks transformer
+
+@ProviderFor(trainingPeaksTransformer)
+const trainingPeaksTransformerProvider = TrainingPeaksTransformerProvider._();
+
+/// Provider for TrainingPeaks transformer
+
+final class TrainingPeaksTransformerProvider
+    extends
+        $FunctionalProvider<
+          TrainingPeaksTransformer,
+          TrainingPeaksTransformer,
+          TrainingPeaksTransformer
+        >
+    with $Provider<TrainingPeaksTransformer> {
+  /// Provider for TrainingPeaks transformer
+  const TrainingPeaksTransformerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'trainingPeaksTransformerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$trainingPeaksTransformerHash();
+
+  @$internal
+  @override
+  $ProviderElement<TrainingPeaksTransformer> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  TrainingPeaksTransformer create(Ref ref) {
+    return trainingPeaksTransformer(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TrainingPeaksTransformer value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TrainingPeaksTransformer>(value),
+    );
+  }
+}
+
+String _$trainingPeaksTransformerHash() =>
+    r'46b78b1659a485391a10d36ae825bab76f78abb5';
+
+/// Provider for TrainingPeaks OAuth service
+
+@ProviderFor(trainingPeaksOAuthService)
+const trainingPeaksOAuthServiceProvider = TrainingPeaksOAuthServiceProvider._();
+
+/// Provider for TrainingPeaks OAuth service
+
+final class TrainingPeaksOAuthServiceProvider
+    extends
+        $FunctionalProvider<
+          TrainingPeaksOAuthService,
+          TrainingPeaksOAuthService,
+          TrainingPeaksOAuthService
+        >
+    with $Provider<TrainingPeaksOAuthService> {
+  /// Provider for TrainingPeaks OAuth service
+  const TrainingPeaksOAuthServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'trainingPeaksOAuthServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$trainingPeaksOAuthServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<TrainingPeaksOAuthService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  TrainingPeaksOAuthService create(Ref ref) {
+    return trainingPeaksOAuthService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TrainingPeaksOAuthService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TrainingPeaksOAuthService>(value),
+    );
+  }
+}
+
+String _$trainingPeaksOAuthServiceHash() =>
+    r'a5647e0d24c512c32784120a37ffd6a572a7c2f7';
+
+/// Provider for TrainingPeaks sync service
+
+@ProviderFor(trainingPeaksSyncService)
+const trainingPeaksSyncServiceProvider = TrainingPeaksSyncServiceProvider._();
+
+/// Provider for TrainingPeaks sync service
+
+final class TrainingPeaksSyncServiceProvider
+    extends
+        $FunctionalProvider<
+          TrainingPeaksSyncService,
+          TrainingPeaksSyncService,
+          TrainingPeaksSyncService
+        >
+    with $Provider<TrainingPeaksSyncService> {
+  /// Provider for TrainingPeaks sync service
+  const TrainingPeaksSyncServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'trainingPeaksSyncServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$trainingPeaksSyncServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<TrainingPeaksSyncService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  TrainingPeaksSyncService create(Ref ref) {
+    return trainingPeaksSyncService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TrainingPeaksSyncService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TrainingPeaksSyncService>(value),
+    );
+  }
+}
+
+String _$trainingPeaksSyncServiceHash() =>
+    r'03871fc02255128452ad444a13fbefd14bbbee0b';
+
+/// Provider to get TrainingPeaks integration for a user
+
+@ProviderFor(trainingPeaksIntegration)
+const trainingPeaksIntegrationProvider = TrainingPeaksIntegrationFamily._();
+
+/// Provider to get TrainingPeaks integration for a user
+
+final class TrainingPeaksIntegrationProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<IntegrationModel?>,
+          IntegrationModel?,
+          FutureOr<IntegrationModel?>
+        >
+    with
+        $FutureModifier<IntegrationModel?>,
+        $FutureProvider<IntegrationModel?> {
+  /// Provider to get TrainingPeaks integration for a user
+  const TrainingPeaksIntegrationProvider._({
+    required TrainingPeaksIntegrationFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'trainingPeaksIntegrationProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$trainingPeaksIntegrationHash();
+
+  @override
+  String toString() {
+    return r'trainingPeaksIntegrationProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<IntegrationModel?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<IntegrationModel?> create(Ref ref) {
+    final argument = this.argument as String;
+    return trainingPeaksIntegration(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TrainingPeaksIntegrationProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$trainingPeaksIntegrationHash() =>
+    r'2ca305fabdc4fab8e4d733ce536cafa2e985f54c';
+
+/// Provider to get TrainingPeaks integration for a user
+
+final class TrainingPeaksIntegrationFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<IntegrationModel?>, String> {
+  const TrainingPeaksIntegrationFamily._()
+    : super(
+        retry: null,
+        name: r'trainingPeaksIntegrationProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider to get TrainingPeaks integration for a user
+
+  TrainingPeaksIntegrationProvider call(String userId) =>
+      TrainingPeaksIntegrationProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'trainingPeaksIntegrationProvider';
+}
+
+/// Provider to check if TrainingPeaks is connected
+
+@ProviderFor(isTrainingPeaksConnected)
+const isTrainingPeaksConnectedProvider = IsTrainingPeaksConnectedFamily._();
+
+/// Provider to check if TrainingPeaks is connected
+
+final class IsTrainingPeaksConnectedProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// Provider to check if TrainingPeaks is connected
+  const IsTrainingPeaksConnectedProvider._({
+    required IsTrainingPeaksConnectedFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'isTrainingPeaksConnectedProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$isTrainingPeaksConnectedHash();
+
+  @override
+  String toString() {
+    return r'isTrainingPeaksConnectedProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    final argument = this.argument as String;
+    return isTrainingPeaksConnected(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IsTrainingPeaksConnectedProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$isTrainingPeaksConnectedHash() =>
+    r'02f8246840744ccd8238b65561c6de1c4ccc6da4';
+
+/// Provider to check if TrainingPeaks is connected
+
+final class IsTrainingPeaksConnectedFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<bool>, String> {
+  const IsTrainingPeaksConnectedFamily._()
+    : super(
+        retry: null,
+        name: r'isTrainingPeaksConnectedProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider to check if TrainingPeaks is connected
+
+  IsTrainingPeaksConnectedProvider call(String userId) =>
+      IsTrainingPeaksConnectedProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'isTrainingPeaksConnectedProvider';
+}
