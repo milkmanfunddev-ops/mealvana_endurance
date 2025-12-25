@@ -35,18 +35,17 @@ ls web/
 
 ---
 
-### Step 2: Add drift_web
+### Step 2: Verify Drift Dependency
 
+The core `drift` package already includes web support via `drift/web.dart`. No additional packages needed!
+
+**Verify drift is in your pubspec.yaml:**
 ```bash
-flutter pub add drift_web
+grep "drift:" pubspec.yaml
+# Should show: drift: ^2.29.0 or similar
 ```
 
-**That's it!** drift_web includes sql.js (JavaScript SQLite) built-in. No additional dependencies needed.
-
-**Verify:**
-```bash
-grep drift_web pubspec.yaml
-```
+**Note:** There is no separate `drift_web` package. Web support uses `WebDatabase` from `package:drift/web.dart`, which uses sql.js (JavaScript SQLite) internally.
 
 ---
 

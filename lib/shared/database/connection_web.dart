@@ -1,36 +1,29 @@
-// Web platform database connection implementation
+// Web platform database connection implementation using drift_web
 import 'package:drift/drift.dart';
-import 'package:drift/wasm.dart';
+import 'package:drift/web.dart';
 import 'package:flutter/foundation.dart';
 
-/// Web platform connection using WebAssembly SQLite
+/// Web platform connection using sql.js (JavaScript SQLite via drift_web)
+/// This approach is simpler than WasmDatabase and requires no additional WASM files.
 LazyDatabase openNativeConnection() {
   return LazyDatabase(() async {
-    final result = await WasmDatabase.open(
-      databaseName: 'mealvana_db',
-      sqlite3Uri: Uri.parse('sqlite3.wasm'),
-      driftWorkerUri: Uri.parse('drift_worker.dart.js'),
-    );
+    // WebDatabase uses sql.js (JavaScript SQLite) with IndexedDB for persistence
+    // This is the simplest web database setup - no WASM files needed
+    final db = WebDatabase('mealvana_db', logStatements: kDebugMode);
 
-    if (kDebugMode && result.missingFeatures.isNotEmpty) {
-      debugPrint('[DRIFT_WEB] Storage: ${result.chosenImplementation}');
-      debugPrint('[DRIFT_WEB] Missing features: ${result.missingFeatures}');
+    if (kDebugMode) {
+      debugPrint('[DRIFT_WEB] Using WebDatabase with sql.js + IndexedDB storage');
     }
 
-    return result.resolvedExecutor;
+    return db;
   });
 }
 
 /// Create in-memory web database for testing
 QueryExecutor createNativeMemoryDatabase() {
-  return LazyDatabase(() async {
-    // Note: WasmDatabase automatically uses ephemeral storage in memory
-    // when IndexedDB is not available or for testing purposes
-    final result = await WasmDatabase.open(
-      databaseName: 'test_db_${DateTime.now().millisecondsSinceEpoch}',
-      sqlite3Uri: Uri.parse('sqlite3.wasm'),
-      driftWorkerUri: Uri.parse('drift_worker.dart.js'),
-    );
-    return result.resolvedExecutor;
-  });
+  // Use volatile storage for testing (data not persisted)
+  return WebDatabase.withStorage(
+    DriftWebStorage.volatile(),
+    logStatements: kDebugMode,
+  );
 }
