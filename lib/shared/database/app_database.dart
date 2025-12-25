@@ -570,6 +570,34 @@ class AppDatabase extends _$AppDatabase {
               await customStatement('CREATE INDEX idx_carb_loading_day_meals_carb_loading_user_food_id ON carb_loading_day_meals(carb_loading_user_food_id) WHERE carb_loading_user_food_id IS NOT NULL');
             }
 
+            // ========================================================================
+            // 5. Add allergens and excluded_diets columns to foods table
+            // ========================================================================
+            // These columns were added for the onboarding revamp feature to support
+            // automatic food preference filtering based on user allergies and dietary preferences.
+            // The foods table is a seed table, so we must ADD columns rather than recreate.
+            // ========================================================================
+            final foodsColumns = await customSelect("PRAGMA table_info(foods)").get();
+            final foodsColumnNames = foodsColumns.map((row) => row.read<String>('name')).toSet();
+
+            if (!foodsColumnNames.contains('allergens')) {
+              await customStatement(
+                "ALTER TABLE foods ADD COLUMN allergens TEXT NOT NULL DEFAULT '{}'"
+              );
+              if (kDebugMode) {
+                print('✅ Added allergens column to foods table');
+              }
+            }
+
+            if (!foodsColumnNames.contains('excluded_diets')) {
+              await customStatement(
+                "ALTER TABLE foods ADD COLUMN excluded_diets TEXT NOT NULL DEFAULT '{}'"
+              );
+              if (kDebugMode) {
+                print('✅ Added excluded_diets column to foods table');
+              }
+            }
+
             if (kDebugMode) {
               print('✅ V1→V2 migration completed: INTEGER to TEXT conversion successful');
             }

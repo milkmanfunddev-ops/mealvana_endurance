@@ -147,9 +147,9 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
 
         const SizedBox(height: 8),
 
-        // Horizontally scrollable month grid - dynamic height based on weeks
+        // Horizontally scrollable month grid - fixed height for max 6 weeks
         SizedBox(
-          height: _calculateMonthGridHeight(_currentMonth),
+          height: 6 * 48.0, // Max weeks (6) × row height (44px + 4px padding)
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: (index) {

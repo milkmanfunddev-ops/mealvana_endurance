@@ -64,18 +64,64 @@ class AuthService {
 
       // Check if a user with this device_id already exists
       // This handles existing users who are transitioning to new auth sessions
-      final existingUserResponse = await _supabase
-          .from('users')
-          .select('id')
-          .eq('device_id', deviceId)
-          .maybeSingle();
+      // CRITICAL: Check both Supabase AND local database for robustness
+      // The local check handles offline scenarios and ensures consistency
+      String? existingUserId;
+
+      // First, check Supabase (remote source of truth)
+      try {
+        final existingUserResponse = await _supabase
+            .from('users')
+            .select('id')
+            .eq('device_id', deviceId)
+            .maybeSingle();
+
+        if (existingUserResponse != null) {
+          existingUserId = existingUserResponse['id'] as String;
+          _logger.info(
+            'Existing user found in Supabase for device',
+            context: 'AUTH',
+            data: {'device_id': deviceId, 'existing_user_id': existingUserId},
+          );
+        }
+      } catch (e) {
+        _logger.warning(
+          'Failed to check Supabase for existing user, will check local DB',
+          context: 'AUTH',
+          data: {'device_id': deviceId, 'error': e.toString()},
+        );
+      }
+
+      // Fallback: Check local database if Supabase didn't return a result
+      // This handles the sign-out/re-onboarding scenario when offline or when
+      // Supabase query fails
+      if (existingUserId == null) {
+        try {
+          final userRepo = await _userRepository;
+          final localUser = await userRepo.getCurrentUser();
+          if (localUser != null && localUser.deviceId == deviceId) {
+            existingUserId = localUser.id;
+            _logger.info(
+              'Existing user found in local DB for device',
+              context: 'AUTH',
+              data: {'device_id': deviceId, 'existing_user_id': existingUserId},
+            );
+          }
+        } catch (e) {
+          _logger.warning(
+            'Failed to check local DB for existing user',
+            context: 'AUTH',
+            data: {'device_id': deviceId, 'error': e.toString()},
+          );
+        }
+      }
 
       final String effectiveUserId;
-      final bool isExistingUser = existingUserResponse != null;
+      final bool isExistingUser = existingUserId != null;
 
       if (isExistingUser) {
         // User exists - preserve their existing ID to maintain foreign key relationships
-        effectiveUserId = existingUserResponse['id'] as String;
+        effectiveUserId = existingUserId;
         _logger.info(
           'Existing user found for device, updating with new auth session',
           context: 'AUTH',
