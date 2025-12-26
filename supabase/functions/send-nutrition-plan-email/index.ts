@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || 're_DHjg7ayY_PmqLvMtUm7W5GXJaugAtQn93';
 // const FROM_EMAIL = 'onboarding@resend.dev'; // Will change to support@mealvana.io after DNS verification
 const FROM_EMAIL = 'support@mealvana.io'; // Will change to support@mealvana.io after DNS verification

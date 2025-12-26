@@ -1,9 +1,27 @@
 # Coach Mode Implementation Roadmap
 
 **Document Created**: 2025-12-15
+**Last Updated**: 2025-12-25
 **Purpose**: Complete implementation roadmap for coach portal feature in Mealvana Endurance
-**Timeline**: 12-16 weeks from design to production
-**Status**: Planning Phase
+**Timeline**: ASAP - 3-5 weeks for soft launch with free beta
+**Status**: Ready for Implementation
+
+---
+
+## Quick Start
+
+For streamlined deployment guides, see:
+- **[DEPLOYMENT_ROADMAP.md](./DEPLOYMENT_ROADMAP.md)** - Simplified ASAP timeline with Vercel setup
+- **[IMPLEMENTATION_CHECKLIST.md](./IMPLEMENTATION_CHECKLIST.md)** - Step-by-step implementation tasks
+
+**Key Decisions (2025-12-25):**
+| Decision | Selection |
+|----------|-----------|
+| Hosting | Vercel |
+| Domain | enduranceapp.mealvana.io |
+| Billing | Free during beta |
+| Verification | Manual only |
+| Athlete Web Access | Both (start with coaches) |
 
 ---
 
@@ -13,9 +31,9 @@
 Enable certified coaches and dietitians to manage multiple athletes via a Flutter web portal, creating a premium coaching platform that complements the existing mobile nutrition planning app.
 
 ### Business Goals
-- **Revenue Stream**: Two-tier paid subscription model ($15-25/month for <20 athletes, $40-60/month for 20+ athletes)
+- **Revenue Stream**: Free during beta, then two-tier paid subscription model ($20/month Starter, $50/month Pro)
 - **Market Position**: Premium coaching features competitive with TrainingPeaks ($22/mo) and Final Surge ($21/mo)
-- **Launch Timeline**: IMMEDIATE MVP launch desired with manual billing, automated payment later
+- **Launch Timeline**: ASAP with free beta, add Stripe billing later when scaling
 - **Multi-Sport Support**: Running, cycling, and swimming from day one
 
 ### Key Features
@@ -51,15 +69,15 @@ Enable certified coaches and dietitians to manage multiple athletes via a Flutte
 - **Storage**: No Drift on web - direct Supabase queries only
 
 ### Hosting Strategy
-- **Platform**: Cloudflare Pages (RECOMMENDED)
-  - Unlimited bandwidth (critical for coaching platform)
-  - Free tier supports commercial use
-  - Global CDN with edge caching
+- **Platform**: Vercel (SELECTED)
+  - Easy GitHub integration and preview deployments
   - Automatic HTTPS with custom domain
-  - GitHub Actions integration
+  - Edge functions compatible with Supabase
+  - Pro plan available if needed ($20/month)
 - **Domain**: enduranceapp.mealvana.io
-- **Alternative**: Netlify (100GB bandwidth, fallback option)
-- **NOT Vercel**: Free tier prohibits commercial use, requires $20/month Pro plan
+- **Alternative**: Cloudflare Pages (unlimited bandwidth, free tier)
+
+> **Note**: Hosting decision made 2025-12-25. See `/docs/coach_mode/DEPLOYMENT_ROADMAP.md` for setup guide.
 
 ### Database Architecture
 Reference complete schema analysis at `/docs/features/coach_mode/schema_analysis.md`:
@@ -1769,7 +1787,7 @@ class MessageRealtimeService extends _$MessageRealtimeService {
 
 **File**: `.github/workflows/deploy-web.yml`
 ```yaml
-name: Deploy Flutter Web to Cloudflare Pages
+name: Deploy Flutter Web to Vercel
 
 on:
   push:
@@ -1802,17 +1820,16 @@ jobs:
         run: flutter test
 
       - name: Build Flutter Web (Skwasm)
-        run: flutter build web --web-renderer skwasm --release --output web/dist
+        run: flutter build web --release --wasm --pwa-strategy=none
 
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: 'mealvana-endurance-web'
-          directory: 'web/dist'
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref_name }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./build/web
+          vercel-args: '--prod'
 ```
 
 **File**: `.github/workflows/deploy-edge-functions.yml`
@@ -1856,7 +1873,7 @@ jobs:
 
 **Development Environment**:
 - Branch: `develop`
-- URL: `https://dev.enduranceapp.mealvana.io`
+- URL: `https://dev-enduranceapp-mealvana.vercel.app` (preview)
 - Supabase Project: Dev project (separate from production)
 - Deployment: Automatic on push to `develop`
 
@@ -1866,39 +1883,55 @@ jobs:
 - Supabase Project: Production project
 - Deployment: Automatic on push to `main`
 
-#### Cloudflare Pages Configuration
+#### Vercel Configuration
+
+**vercel.json**:
+```json
+{
+  "buildCommand": "flutter build web --release --wasm --pwa-strategy=none",
+  "outputDirectory": "build/web",
+  "framework": null,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
 
 **Domain Setup**:
-1. Add custom domain in Cloudflare Pages dashboard
-2. Configure CNAME record: `enduranceapp.mealvana.io` → `mealvana-endurance-web.pages.dev`
-3. Enable automatic HTTPS
+1. Add custom domain in Vercel Dashboard → Project → Settings → Domains
+2. Add: `enduranceapp.mealvana.io`
+3. Configure DNS CNAME: `enduranceapp` → `cname.vercel-dns.com`
+4. Enable automatic HTTPS
 
-**Build Settings**:
-- Build command: `flutter build web --web-renderer skwasm --release`
-- Build output directory: `build/web`
-- Root directory: `/`
-
-**Environment Variables** (Cloudflare Pages):
+**Environment Variables** (Vercel Dashboard):
 ```
 SUPABASE_URL=https://[project-ref].supabase.co
 SUPABASE_ANON_KEY=[anon-key]
 SENTRY_DSN=[sentry-dsn]
-MIXPANEL_TOKEN=[mixpanel-token]
 ```
 
 #### SSL/TLS Configuration
-- Automatic SSL certificate provisioning via Let's Encrypt
+- Automatic SSL certificate provisioning
 - HTTPS enforced (HTTP redirects to HTTPS)
 - TLS 1.2+ required
-- HSTS enabled (max-age=31536000)
+- HSTS enabled
 
 #### Rollback Strategy
 ```bash
-# Cloudflare Pages deployments are immutable
-# Rollback via Cloudflare dashboard:
+# Vercel deployments are immutable
+# Rollback via Vercel dashboard:
 # 1. Navigate to Deployments tab
 # 2. Select previous successful deployment
-# 3. Click "Rollback to this deployment"
+# 3. Click "..." menu → "Promote to Production"
 
 # Alternatively, via Git:
 git revert HEAD
@@ -1916,11 +1949,11 @@ git push origin main
 **Focus**: Environment setup, database migration
 
 - [ ] Flutter web project configuration (Skwasm renderer)
-- [ ] Cloudflare Pages account setup and custom domain
+- [ ] Vercel project setup and custom domain
 - [ ] Database schema migration (3 new tables, 4 table modifications)
 - [ ] RLS policies implementation (22 policies)
 - [ ] GitHub Actions workflows (deploy-web.yml, deploy-edge-functions.yml)
-- [ ] Development environment testing (dev.enduranceapp.mealvana.io)
+- [ ] Development environment testing (preview deployment)
 
 **Deliverables**: Working dev environment, database schema v2 deployed
 
@@ -2558,24 +2591,28 @@ dart run drift_dev schema dump lib/shared/database/app_database.dart database_sc
 
 ### Key Decisions Made
 
-1. **Hosting**: Cloudflare Pages (unlimited bandwidth, free, commercial use)
-2. **Billing**: Manual invoicing for MVP → Stripe for Beta
-3. **Verification**: Manual for MVP (<50 coaches) → Hybrid for Beta (50-200 coaches)
+1. **Hosting**: Vercel (selected 2025-12-25)
+2. **Billing**: Free during beta → Stripe when scaling (20+ coaches)
+3. **Verification**: Manual only (you approve each coach personally)
 4. **Messaging**: Thread-based for MVP → Real-time chat for Scale phase
 5. **Connection**: Email invitations (72-hour expiration, token-based)
-6. **Pricing**: $20/month Starter (<20 athletes), $50/month Pro (20+ athletes)
+6. **Pricing**: Free beta → $20/month Starter, $50/month Pro
+7. **Athlete Access**: Both coaches and athletes can use web (start with coaches)
 
 ### Resources
 
+- **Deployment Roadmap**: `/docs/coach_mode/DEPLOYMENT_ROADMAP.md`
+- **Implementation Checklist**: `/docs/coach_mode/IMPLEMENTATION_CHECKLIST.md`
 - **Schema Analysis**: `/docs/features/coach_mode/schema_analysis.md`
 - **FOA Architecture**: `/docs/technical/foa-architecture.md`
+- **Web Mode Setup**: `/docs/web_mode/SETUP.md`
 - **Flutter Web Guide**: [Flutter Web Deployment](https://docs.flutter.dev/deployment/web)
 - **Supabase RLS**: [Row Level Security Guide](https://supabase.com/docs/guides/auth/row-level-security)
-- **Stripe Integration**: [Stripe Checkout Docs](https://stripe.com/docs/payments/checkout)
-- **Cloudflare Pages**: [Cloudflare Pages Docs](https://developers.cloudflare.com/pages/)
+- **Vercel Docs**: [Vercel Documentation](https://vercel.com/docs)
+- **Stripe Integration**: [Stripe Checkout Docs](https://stripe.com/docs/payments/checkout) (for later)
 
 ---
 
-**Last Updated**: 2025-12-15
-**Status**: Planning Phase
-**Next Review**: After Week 6 (MVP Launch)
+**Last Updated**: 2025-12-25
+**Status**: Ready for Implementation
+**Next Review**: After soft launch (Week 5)

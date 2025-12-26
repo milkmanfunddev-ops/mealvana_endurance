@@ -11,6 +11,7 @@ import '../../../features/carb_loading/application/carb_loading_food_sync_servic
 import '../../../features/auth/domain/user_preferences.dart';
 
 import '../../../shared/services/preferences_service.dart';
+import '../../../features/calendar/presentation/providers/calendar_controller.dart';
 
 part 'data_sync_service.g.dart';
 
@@ -129,6 +130,8 @@ class DataSyncService {
           context: 'DATA_SYNC',
           data: {'userId': userId},
         );
+        // Invalidate calendar providers to refresh UI with synced data
+        _invalidateCalendarProviders();
         return true;
       }
 
@@ -144,6 +147,8 @@ class DataSyncService {
         context: 'DATA_SYNC',
         data: {'userId': userId},
       );
+      // Invalidate calendar providers to refresh UI with synced data
+      _invalidateCalendarProviders();
       return true;
     } catch (e, stackTrace) {
       _logger.error(
@@ -2341,5 +2346,15 @@ class DataSyncService {
       );
       return true; // Err on side of full sync
     }
+  }
+
+  /// Invalidate calendar-related providers to refresh UI after sync
+  /// This ensures activities and events synced from external sources
+  /// (Final Surge, TrainingPeaks, etc.) are reflected in the UI immediately
+  void _invalidateCalendarProviders() {
+    _logger.info('Invalidating calendar providers after sync', context: 'DATA_SYNC');
+    _ref.invalidate(calendarControllerProvider);
+    _ref.invalidate(allEventsControllerProvider);
+    _ref.invalidate(nextUpcomingEventProvider);
   }
 }

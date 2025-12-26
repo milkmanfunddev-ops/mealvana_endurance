@@ -1,174 +1,293 @@
-Launching lib/main_prod.dart on iPhone in debug mode...
-Automatically signing iOS for device deployment using specified development team in Xcode project: 9Y99749RG3
-Xcode build done.                                           66.7s
-You may be prompted to give access to control Xcode. Flutter uses Xcode to run your app. If access is not allowed, you can change this through your Settings > Privacy & Security > Automation.
-Connecting to VM Service at ws://127.0.0.1:64153/bugMZzlM3is=/ws
-Connected to the VM Service.
-flutter: [STARTUP] Widget binding initialized: 47ms
+Restarted application in 1,696ms.
+flutter: [STARTUP] Widget binding initialized: 45ms
 flutter: [STARTUP] dotenv loaded (.env.prod.local): 86ms
-flutter: [STARTUP] AppConfig created (prod flavor): 86ms
+flutter: [STARTUP] AppConfig created (prod flavor): 87ms
 flutter: [STARTUP] Starting Sentry init...
-flutter: [STARTUP] Sentry init completed: 161ms
+flutter: [STARTUP] Sentry init completed: 148ms
 flutter: [STARTUP] Starting Supabase and runApp...
 flutter: [STARTUP] Starting Supabase.initialize...
 flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: [STARTUP] Supabase.initialize completed: 211ms
+flutter: [STARTUP] Supabase.initialize completed: 196ms
 flutter: [STARTUP] Calling runApp...
 flutter: [APP_STARTUP] Starting critical path initialization...
 flutter: [APP_STARTUP] initializeDatabase started
 flutter: [APP_STARTUP] initializeSupabaseAuth started
 flutter: [APP_STARTUP] setSentryUserContext started
-flutter: [APP_STARTUP] setSentryUserContext completed: 1773ms
-flutter: ✅ Renamed feature_survey_responses.user_id to device_id
-flutter: ✅ V1→V2 migration completed: INTEGER to TEXT conversion successful
-flutter: ❌ Schema validation failed: Table "foods" missing columns: allergens, excluded_diets
-flutter: 🗑️ Deleting corrupted database to force fresh sync...
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ DatabaseSchemaException: Database schema is corrupted or incomplete. The app will resync data from the server.
-flutter: │ Errors: Table "foods" missing columns: allergens, excluded_diets
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ #0   package:mealvana_endurance/shared/database/app_database.dart 659:7                          AppDatabase._validateSchemaIntegrity
-flutter: │ #1   package:mealvana_endurance/shared/database/app_database.dart 175:11                         AppDatabase.migration.<fn>
-flutter: │ #2   package:drift/src/runtime/api/db_base.dart 137:7                                            GeneratedDatabase.beforeOpen.<fn>
-flutter: │ #3   package:drift/src/remote/client_impl.dart 59:17                                             DriftClient._handleRequest.<fn>
-flutter: │ #4   package:drift/src/remote/communication.dart 165:20                                          DriftCommunication.setRequestHandler.<fn>
-flutter: │ #5   ===== asynchronous gap ===========================
-flutter: │ #6   package:drift/src/remote/communication.dart 113:66                                          DriftCommunication.request
-flutter: │ #7   package:drift/src/remote/server_impl.dart 309:24                                            _ServerDbUser.beforeOpen
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 15:41:34.472 (+0:00:05.193980)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ ⛔ [DATABASE] Database initialization failed
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ DatabaseSchemaException: Database schema is corrupted or incomplete. The app will resync data from the server.
-flutter: │ Errors: Table "foods" missing columns: allergens, excluded_diets
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ #0   package:mealvana_endurance/shared/database/app_database.dart 659:7                          AppDatabase._validateSchemaIntegrity
-flutter: │ #1   package:mealvana_endurance/shared/database/app_database.dart 175:11                         AppDatabase.migration.<fn>
-flutter: │ #2   package:drift/src/runtime/api/db_base.dart 137:7                                            GeneratedDatabase.beforeOpen.<fn>
-flutter: │ #3   package:drift/src/remote/client_impl.dart 59:17                                             DriftClient._handleRequest.<fn>
-flutter: │ #4   package:drift/src/remote/communication.dart 165:20                                          DriftCommunication.setRequestHandler.<fn>
-flutter: │ #5   ===== asynchronous gap ===========================
-flutter: │ #6   package:drift/src/remote/communication.dart 113:66                                          DriftCommunication.request
-flutter: │ #7   package:drift/src/remote/server_impl.dart 309:24                                            _ServerDbUser.beforeOpen
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 15:41:34.499 (+0:00:05.220609)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ ⛔ [AUTH] Supabase Auth initialization failed
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: [APP_STARTUP] setSentryUserContext completed: 496ms
+flutter: ✅ Schema validation passed (16 tables verified)
+flutter: [APP_STARTUP] initializeSupabaseAuth completed: 4983ms
 flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
 flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 15:41:34.537 (+0:00:05.259258)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 💡 [DATABASE] Database recovered after catastrophic failure
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: [APP_STARTUP] initializeDatabase completed: 5265ms
-flutter: [APP_STARTUP] initializeSupabaseAuth FAILED after 15155ms: DatabaseSchemaException: Database schema is corrupted or incomplete. The app will resync data from the server.
-flutter: Errors: Table "foods" missing columns: allergens, excluded_diets
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ DatabaseSchemaException: Database schema is corrupted or incomplete. The app will resync data from the server.
-flutter: │ Errors: Table "foods" missing columns: allergens, excluded_diets
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ #0   package:mealvana_endurance/shared/database/app_database.dart 659:7                          AppDatabase._validateSchemaIntegrity
-flutter: │ #1   package:mealvana_endurance/shared/database/app_database.dart 175:11                         AppDatabase.migration.<fn>
-flutter: │ #2   package:drift/src/runtime/api/db_base.dart 137:7                                            GeneratedDatabase.beforeOpen.<fn>
-flutter: │ #3   package:drift/src/remote/client_impl.dart 59:17                                             DriftClient._handleRequest.<fn>
-flutter: │ #4   package:drift/src/remote/communication.dart 165:20                                          DriftCommunication.setRequestHandler.<fn>
-flutter: │ #5   ===== asynchronous gap ===========================
-flutter: │ #6   package:drift/src/remote/communication.dart 113:66                                          DriftCommunication.request
-flutter: │ #7   package:drift/src/remote/server_impl.dart 309:24                                            _ServerDbUser.beforeOpen
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 15:41:44.448 (+0:00:15.170444)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ ⛔ [APP_STARTUP] App startup initialization failed
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: [APP_STARTUP] Starting critical path initialization...
-flutter: WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
-flutter: Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
-flutter: Here is the stacktrace from when the database was opened a second time:
-flutter: #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
-flutter: #1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
-flutter: #2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
-flutter: #3      new _$AppDatabase (package:mealvana_endurance/shared/database/app_database.g.dart:18094:36)
-flutter: #4      new AppDatabase (package:mealvana_endurance/shared/database/app_database.dart:80:19)
-flutter: #5      appDatabaseProvider.<anonymous closure> (package:mealvana_endurance/shared/database/database_provider.dart:10:10)
-flutter: #6      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
-flutter: #7      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
-flutter: #8      ProviderElement.buildState (package:riverpod/src/core/element.dart:633:28)
-flutter: #9      ProviderElement._performRebuild (package:riverpod/src/core/element.dart:548:5)
-flutter: #10     ProviderElement.flush (package:riverpod/src/core/element.dart:595:7)
-flutter: #11     $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:117:24)
-flutter: #12     ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:954:26)
-flutter: #13     ProviderContainer.read (package:riverpod/src/core/provider_container.dart:911:17)
-flutter: #14     Ref.read (package:riverpod/src/core/ref.dart:481:30)
-flutter: #15     AppStartupService.initializeDatabase (package:mealvana_endurance/features/app_startup/application/app_startup_service.dart:46:22)
-flutter: #16     AppStartup.build (package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart:61:62)
-flutter: #17     _$AppStartup.runBuild (package:mealvana_endurance/features/app_startup/application/app_startup_provider.g.dart:52:21)
-flutter: #18     $ClassProviderElement.create (package:riverpod/src/core/provider/notifier_provider.dart:561:26)
-flutter: #19     ProviderElement.buildState (package:riverpod/src/core/element.dart:633:28)
-flutter: #20     ProviderElement._performRebuild (package:riverpod/src/core/element.dart:548:5)
-flutter: #21     ProviderElement.flush (package:riverpod/src/core/element.dart:595:7)
-flutter: #22     ProviderScheduler._performRefresh (package:riverpod/src/core/scheduler.dart:123:37)
-flutter: #23     ProviderScheduler._task (package:riverpod/src/core/scheduler.dart:97:5)
-flutter: #24     ProviderScheduler.vsync.<anonymous closure>.invoke (package:riverpod/src/core/scheduler.dart:41:15)
-flutter: #25     _UncontrolledProviderScopeState._callTask (package:flutter_riverpod/src/core/provider_scope.dart:280:12)
-flutter: #26     _UncontrolledProviderScopeState._flutterVsync.<anonymous closure>.<anonymous closure> (package:flutter_riverpod/src/core/provider_scope.dart:304:9)
-flutter: #27     _rootRun (dart:async/zone.dart:1517:47)
-flutter: #28     _CustomZone.run (dart:async/zone.dart:1422:19)
-flutter: #29     _CustomZone.runGuarded (dart:async/zone.dart:1321:7)
-flutter: #30     _CustomZone.bindCallbackGuarded.<anonymous closure> (dart:async/zone.dart:1362:23)
-flutter: #31     _rootRun (dart:async/zone.dart:1525:13)
-flutter: #32     _CustomZone.run (dart:async/zone.dart:1422:19)
-flutter: #33     _CustomZone.bindCallback.<anonymous closure> (dart:async/zone.dart:1345:23)
-flutter: #34     Timer._createTimer.<anonymous closure> (dart:async-patch/timer_patch.dart:18:15)
-flutter: #35     _Timer._runTimers (dart:isolate-patch/timer_impl.dart:423:19)
-flutter: #36     _Timer._handleMessage (dart:isolate-patch/timer_impl.dart:454:5)
-flutter: #37     _RawReceivePort._handleMessage (dart:isolate-patch/isolate_patch.dart:193:12)
-flutter: This warning will only appear on debug builds.
-flutter: [APP_STARTUP] initializeDatabase started
-flutter: [APP_STARTUP] initializeSupabaseAuth started
-flutter: [APP_STARTUP] setSentryUserContext started
-flutter: [APP_STARTUP] setSentryUserContext completed: 0ms
-flutter: [APP_STARTUP] initializeSupabaseAuth completed: 3293ms
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 15:41:47.962 (+0:00:18.684020)
+flutter: │ 15:15:53.565 (+0:00:05.005140)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 flutter: │ 💡 [DATABASE] Database health check passed
 flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: [APP_STARTUP] initializeDatabase completed: 3298ms
-flutter: [APP_STARTUP] Critical path completed: 3307ms
+flutter: [APP_STARTUP] initializeDatabase completed: 5020ms
+flutter: [APP_STARTUP] Critical path completed: 5030ms
 flutter: [APP_STARTUP] Scheduling deferred initialization (analytics, device info, push)...
 flutter: [APP_STARTUP] Getting navigation data...
-flutter: [APP_STARTUP] User profile loaded: 3308ms
-flutter: [APP_STARTUP] Checking pending feedback...
-flutter: [APP_STARTUP] Pending feedback checked: 3312ms
-flutter: [APP_STARTUP] ✅ STARTUP COMPLETE: 3313ms total
 flutter: [DEFERRED_INIT] Post-frame: Starting deferred initialization...
 flutter: [DEVICE_INFO] Initializing...
-flutter: [DEVICE_INFO] Initialized in 20ms (ID: F0C2C5B2-E1CA-4AC9-BD41-BDC716563F78)
-flutter: [DEFERRED_INIT] Device info initialized: 21ms
-flutter: [DEFERRED_INIT] Analytics initialized: 58ms
-flutter: [DEFERRED_INIT] User session checked: 62ms
+flutter: [APP_STARTUP] User profile loaded: 5037ms
+flutter: [APP_STARTUP] Checking pending feedback...
+flutter: [DEVICE_INFO] Initialized in 6ms (ID: AB06614F-762E-4D8C-9CF8-410506412BBC)
+flutter: [DEFERRED_INIT] Device info initialized: 7ms
+flutter: [DEFERRED_INIT] Analytics initialized: 13ms
+flutter: [DEFERRED_INIT] User session checked: 32ms
 flutter: PushNotificationService: Initialized with app ID: 335e597f...
-flutter: PushNotificationService: Logged in user: F0C2C5B2-E1CA-4AC9-BD41-BDC716563F78
+flutter: [APP_STARTUP] Pending feedback checked: 5071ms
+flutter: [APP_STARTUP] ✅ STARTUP COMPLETE: 5072ms total
+flutter: PushNotificationService: Logged in user: AB06614F-762E-4D8C-9CF8-410506412BBC
 flutter: PushNotificationService: Permission granted
 flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
 flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 15:41:48.373 (+0:00:19.095170)
+flutter: │ 15:15:53.632 (+0:00:05.072236)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 flutter: │ 💡 [PUSH_NOTIFICATIONS] Push notifications initialized successfully
 flutter: │ 💡 Data: {permission_granted: true}
 flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: [DEFERRED_INIT] Push notifications initialized: 76ms
-flutter: [DEFERRED_INIT] ✅ All deferred services initialized: 76ms
-Lost connection to device.
-
-Exited.
+flutter: [DEFERRED_INIT] Push notifications initialized: 53ms
+flutter: [DEFERRED_INIT] ✅ All deferred services initialized: 53ms
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.883 (+0:00:06.323226)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [ACTIVITIES_CONTROLLER] Loading cached activities
+flutter: │ 💡 Data: {userId: e92cb452-0368-4bb3-a888-3e86a65d097f}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.887 (+0:00:06.327802)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [ACTIVITIES_CONTROLLER] Loading cached activities
+flutter: │ 💡 Data: {userId: e92cb452-0368-4bb3-a888-3e86a65d097f}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.893 (+0:00:06.333952)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [ACTIVITIES_CONTROLLER] Triggering initial background sync
+flutter: │ 💡 Data: {userId: e92cb452-0368-4bb3-a888-3e86a65d097f}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.895 (+0:00:06.335395)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [ACTIVITIES_CONTROLLER] Triggering background sync
+flutter: │ 💡 Data: {userId: e92cb452-0368-4bb3-a888-3e86a65d097f}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.908 (+0:00:06.348617)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [SYNC_COORDINATOR] Starting sync
+flutter: │ 💡 Data: {trigger: pullToRefresh, userId: e92cb452-0368-4bb3-a888-3e86a65d097f, connectivity: [ConnectivityResult.wifi]}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.909 (+0:00:06.349427)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [SYNC_COORDINATOR] Step 1: Uploading dirty records
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.915 (+0:00:06.355942)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] Starting upload of dirty records via edge function
+flutter: │ 💡 Data: {userId: e92cb452-0368-4bb3-a888-3e86a65d097f}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.916 (+0:00:06.356870)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] Scanning for duplicate records in Drift
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.946 (+0:00:06.386160)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [ACTIVITIES_CONTROLLER] Skipping sync - already triggered for this controller instance
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.954 (+0:00:06.394084)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] No duplicate records found in Drift
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.959 (+0:00:06.399523)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] No dirty records for edge function upload (user profile handled separately)
+flutter: │ 💡 Data: {hasUserProfile: false}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.960 (+0:00:06.400703)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [SYNC_COORDINATOR] Step 2: Downloading fresh data
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.961 (+0:00:06.401678)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] Starting syncAllData
+flutter: │ 💡 Data: {userId: e92cb452-0368-4bb3-a888-3e86a65d097f}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:54.963 (+0:00:06.403201)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] STEP 0: Syncing user profile
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.125 (+0:00:06.565622)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] STEP 1: Uploading dirty records
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.127 (+0:00:06.567052)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] Starting upload of dirty records via edge function
+flutter: │ 💡 Data: {userId: e92cb452-0368-4bb3-a888-3e86a65d097f}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.127 (+0:00:06.567717)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] Scanning for duplicate records in Drift
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.131 (+0:00:06.571668)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] No duplicate records found in Drift
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.137 (+0:00:06.577499)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] No dirty records for edge function upload (user profile handled separately)
+flutter: │ 💡 Data: {hasUserProfile: false}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.138 (+0:00:06.578382)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] STEP 2: Trying edge function sync
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.690 (+0:00:07.130877)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [DATA_SYNC] Edge function sync completed successfully
+flutter: │ 💡 Data: {userId: e92cb452-0368-4bb3-a888-3e86a65d097f}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.692 (+0:00:07.132239)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [SYNC_COORDINATOR] Invalidating all data providers
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.693 (+0:00:07.133610)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [SYNC_COORDINATOR] Sync completed successfully
+flutter: │ 💡 Data: {trigger: pullToRefresh, userId: e92cb452-0368-4bb3-a888-3e86a65d097f, uploadedTables: 0, lastSyncTime: 2025-12-25T15:15:55.691996, skippedInvalidation: false}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.694 (+0:00:07.134458)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [ACTIVITIES_CONTROLLER] Background sync completed
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.991 (+0:00:07.431926)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [ACTIVITIES_CONTROLLER] Loading cached activities
+flutter: │ 💡 Data: {userId: e92cb452-0368-4bb3-a888-3e86a65d097f}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
+flutter: │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 15:15:55.996 (+0:00:07.436108)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 💡 [ACTIVITIES_CONTROLLER] Skipping sync - already triggered for this controller instance
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: [FOOD_PREFS] 🔄 Starting food preferences load...
+flutter: [FOOD_PREFS] 🔍 Getting current user profile...
+flutter: [FOOD_PREFS] ✅ User profile retrieved, deviceId: e92cb452-0368-4bb3-a888-3e86a65d097f
+flutter: [FOOD_PREFS] 📦 Starting parallel data load (primary foods, additional foods, user foods, preferences)...
+flutter: [FOOD_PREFS] 🌐 Fetching primary foods from Supabase...
+flutter: [FOOD_PREFS] 🌐 Fetching additional foods from Supabase...
+flutter: [FOOD_PREFS] 💾 Fetching user foods from local database...
+flutter: [FOOD_PREFS] 🔐 Checking auth and loading preferences...
+flutter: [FOOD_PREFS] 📊 Loading slider levels...
+flutter: [FOOD_PREFS] ✅ User foods loaded: 0 items
+flutter: [FOOD_PREFS] 👤 User authenticated, fetching preferences...
+flutter: [FOOD_PREFS] ✅ Preferences loaded: 42 items
+flutter: [FOOD_PREFS] ✅ Slider levels loaded: 42
+flutter: [FOOD_PREFS] ✅ Additional foods loaded: 19 items
+flutter: [FOOD_PREFS] ✅ Primary foods loaded: 10 items
+flutter: [FOOD_PREFS] 🔄 Converting user foods to FoodItems...
+flutter: [FOOD_PREFS] 🎨 Setting state with loaded data...
+flutter: [FOOD_PREFS] 🎉 Food preferences load completed successfully! (10 primary foods, 0 user foods)
