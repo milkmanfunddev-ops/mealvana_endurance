@@ -64,18 +64,64 @@ class AuthService {
 
       // Check if a user with this device_id already exists
       // This handles existing users who are transitioning to new auth sessions
-      final existingUserResponse = await _supabase
-          .from('users')
-          .select('id')
-          .eq('device_id', deviceId)
-          .maybeSingle();
+      // CRITICAL: Check both Supabase AND local database for robustness
+      // The local check handles offline scenarios and ensures consistency
+      String? existingUserId;
+
+      // First, check Supabase (remote source of truth)
+      try {
+        final existingUserResponse = await _supabase
+            .from('users')
+            .select('id')
+            .eq('device_id', deviceId)
+            .maybeSingle();
+
+        if (existingUserResponse != null) {
+          existingUserId = existingUserResponse['id'] as String;
+          _logger.info(
+            'Existing user found in Supabase for device',
+            context: 'AUTH',
+            data: {'device_id': deviceId, 'existing_user_id': existingUserId},
+          );
+        }
+      } catch (e) {
+        _logger.warning(
+          'Failed to check Supabase for existing user, will check local DB',
+          context: 'AUTH',
+          data: {'device_id': deviceId, 'error': e.toString()},
+        );
+      }
+
+      // Fallback: Check local database if Supabase didn't return a result
+      // This handles the sign-out/re-onboarding scenario when offline or when
+      // Supabase query fails
+      if (existingUserId == null) {
+        try {
+          final userRepo = await _userRepository;
+          final localUser = await userRepo.getCurrentUser();
+          if (localUser != null && localUser.deviceId == deviceId) {
+            existingUserId = localUser.id;
+            _logger.info(
+              'Existing user found in local DB for device',
+              context: 'AUTH',
+              data: {'device_id': deviceId, 'existing_user_id': existingUserId},
+            );
+          }
+        } catch (e) {
+          _logger.warning(
+            'Failed to check local DB for existing user',
+            context: 'AUTH',
+            data: {'device_id': deviceId, 'error': e.toString()},
+          );
+        }
+      }
 
       final String effectiveUserId;
-      final bool isExistingUser = existingUserResponse != null;
+      final bool isExistingUser = existingUserId != null;
 
       if (isExistingUser) {
         // User exists - preserve their existing ID to maintain foreign key relationships
-        effectiveUserId = existingUserResponse['id'] as String;
+        effectiveUserId = existingUserId;
         _logger.info(
           'Existing user found for device, updating with new auth session',
           context: 'AUTH',
@@ -361,10 +407,15 @@ class AuthService {
 
   /// Save food preferences (typically during onboarding)
   /// Uses consolidated Edge Function for optimized multi-step operation (reduces network roundtrips)
+  /// [source] identifies the origin of the preference:
+  /// - 'manual': User explicitly set this preference (default)
+  /// - 'allergy:{name}': Auto-set due to an allergy (e.g., 'allergy:gluten')
+  /// - 'dietary:{name}': Auto-set due to dietary preference (e.g., 'dietary:vegan')
   Future<void> saveFoodPreferences(
     String userId,
     Map<String, FoodPreference> preferences, {
     Map<String, int>? sliderLevels,
+    String source = 'manual',
   }) async {
     // userId is Supabase auth UUID (from auth.currentUser.id)
     final deviceId = userId; // Keep variable name for backwards compatibility in logs
@@ -386,6 +437,7 @@ class AuthService {
         userId,
         preferences,
         sliderLevels: normalizedLevels,
+        source: source,
       );
 
       // Mark user as having completed onboarding locally and queue for background upload
@@ -459,6 +511,41 @@ class AuthService {
     try {
       final userRepo = await _userRepository;
       return await userRepo.getFoodPreferenceLevels(userId);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  /// Remove food preferences by source
+  /// Used when allergies or dietary preferences are removed to undo auto-avoids
+  /// [source] - The source to match (e.g., 'allergy:gluten', 'dietary:vegan')
+  /// Returns the number of preferences removed
+  Future<int> removeFoodPreferencesBySource(String userId, String source) async {
+    try {
+      final userRepo = await _userRepository;
+      final removedCount = await userRepo.removeFoodPreferencesBySource(userId, source);
+      _logger.info(
+        'Removed $removedCount food preferences with source: $source',
+        context: 'AUTH',
+        data: {'userId': userId, 'source': source, 'removedCount': removedCount},
+      );
+      return removedCount;
+    } catch (e) {
+      _logger.warning(
+        'Failed to remove food preferences by source: $e',
+        context: 'AUTH',
+        data: {'userId': userId, 'source': source},
+      );
+      return 0;
+    }
+  }
+
+  /// Get food preferences with their sources for a user
+  /// Returns a map of food name -> preference source
+  Future<Map<String, String>> getFoodPreferenceSources(String userId) async {
+    try {
+      final userRepo = await _userRepository;
+      return await userRepo.getFoodPreferenceSources(userId);
     } catch (e) {
       return {};
     }

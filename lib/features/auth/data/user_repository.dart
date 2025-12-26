@@ -223,19 +223,37 @@ class UserRepository {
   ///
   /// [mergeMode] - when true, merges with existing preferences instead of replacing all.
   /// Use mergeMode=true when syncing from server to avoid data loss.
+  /// [source] identifies the origin of the preference:
+  /// - 'manual': User explicitly set this preference (default)
+  /// - 'allergy:{name}': Auto-set due to an allergy (e.g., 'allergy:gluten')
+  /// - 'dietary:{name}': Auto-set due to dietary preference (e.g., 'dietary:vegan')
   Future<void> saveFoodPreferences(
     String userId,
     Map<String, FoodPreference> preferences, {
     Map<String, int>? sliderLevels,
     bool mergeMode = false,
+    String source = 'manual',
   }) async {
     await database.saveFoodPreferences(
       userId,
       preferences,
       sliderLevels: sliderLevels,
       mergeMode: mergeMode,
+      source: source,
     );
     // Remote sync is handled via the edge function in AuthService; avoid direct Supabase client writes here.
+  }
+
+  /// Remove food preferences by source
+  /// Used when allergies or dietary preferences are removed to undo auto-avoids
+  /// Returns the number of preferences removed
+  Future<int> removeFoodPreferencesBySource(String userId, String source) async {
+    return await database.removeFoodPreferencesBySource(userId, source);
+  }
+
+  /// Get food preferences with their sources for a user
+  Future<Map<String, String>> getFoodPreferenceSources(String userId) async {
+    return await database.getFoodPreferenceSources(userId);
   }
 
   /// Get food preferences for a user

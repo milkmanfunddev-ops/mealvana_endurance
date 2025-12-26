@@ -120,6 +120,7 @@ class OnboardingController extends _$OnboardingController {
 
   /// Save dietary preference (step 3a of onboarding)
   /// When called from settings, also updates food preferences for excluded foods
+  /// Removes auto-avoided foods when dietary preference changes (using preference_source tracking)
   Future<bool> saveDietaryPreference(DietaryPreference? preference) async {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
@@ -135,7 +136,12 @@ class OnboardingController extends _$OnboardingController {
       return false;
     }
 
+    // Get old dietary preference to determine if it changed
+    final oldPreference = currentUser.dietaryPreference;
+    final preferenceChanged = oldPreference != preference;
+
     DebugLogger.info('🚀 Dietary preference - Starting save process for user: ${currentUser.id}');
+    DebugLogger.debug('📋 Dietary preference - Old: ${oldPreference?.displayName ?? "none"}, New: ${preference?.displayName ?? "none"}');
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -145,12 +151,20 @@ class OnboardingController extends _$OnboardingController {
       // Update our session user reference
       _currentUser = currentUser;
 
-      // Also update food preferences for excluded foods based on dietary preference
-      // This is called from settings mode, so we need to update food preferences immediately
-      if (preference != null) {
+      // If dietary preference changed, remove old preference-based food avoids
+      if (preferenceChanged && oldPreference != null && oldPreference != DietaryPreference.none) {
+        final removedCount = await _authService.removeFoodPreferencesBySource(
+          currentUser.id,
+          'dietary:${oldPreference.dbValue}',
+        );
+        DebugLogger.info('🗑️ Removed $removedCount food avoids for old diet: ${oldPreference.displayName}');
+      }
+
+      // Add food preferences for new dietary preference only
+      if (preferenceChanged && preference != null && preference != DietaryPreference.none) {
         await _updateFoodPreferencesForAllergies(
           currentUser.id,
-          currentUser.allergies,
+          [], // Don't update allergies in dietary save
           preference,
         );
       }
@@ -168,6 +182,7 @@ class OnboardingController extends _$OnboardingController {
 
   /// Save allergies (step 3b of onboarding)
   /// When called from settings, also updates food preferences for allergen-containing foods
+  /// Removes auto-avoided foods when allergies are removed (using preference_source tracking)
   Future<bool> saveAllergies(List<Allergy> allergies) async {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
@@ -183,7 +198,15 @@ class OnboardingController extends _$OnboardingController {
       return false;
     }
 
+    // Get old allergies to determine which ones were removed
+    final oldAllergies = currentUser.allergies;
+    final newAllergies = allergies.toSet();
+    final removedAllergies = oldAllergies.where((a) => !newAllergies.contains(a)).toList();
+    final addedAllergies = newAllergies.where((a) => !oldAllergies.contains(a)).toList();
+
     DebugLogger.info('🚀 Allergies - Starting save process for user: ${currentUser.id}');
+    DebugLogger.debug('📋 Allergies - Removed: ${removedAllergies.map((a) => a.displayName).join(', ')}');
+    DebugLogger.debug('📋 Allergies - Added: ${addedAllergies.map((a) => a.displayName).join(', ')}');
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -193,13 +216,21 @@ class OnboardingController extends _$OnboardingController {
       // Update our session user reference
       _currentUser = currentUser;
 
-      // Also update food preferences for allergen-containing foods
-      // This is called from settings mode, so we need to update food preferences immediately
-      if (allergies.isNotEmpty) {
+      // Remove food preferences for allergies that were removed
+      for (final removedAllergy in removedAllergies) {
+        final removedCount = await _authService.removeFoodPreferencesBySource(
+          currentUser.id,
+          'allergy:${removedAllergy.dbValue}',
+        );
+        DebugLogger.info('🗑️ Removed $removedCount food avoids for allergy: ${removedAllergy.displayName}');
+      }
+
+      // Add food preferences for new allergies only
+      if (addedAllergies.isNotEmpty) {
         await _updateFoodPreferencesForAllergies(
           currentUser.id,
-          allergies,
-          currentUser.dietaryPreference,
+          addedAllergies,
+          null, // Don't update dietary in allergy save
         );
       }
     });
@@ -215,6 +246,7 @@ class OnboardingController extends _$OnboardingController {
   }
 
   /// Update food preferences to "avoid" for foods containing allergens or excluded by dietary preference
+  /// Saves each allergy/dietary preference with its own source tag for proper undo support
   Future<void> _updateFoodPreferencesForAllergies(
     String userId,
     List<Allergy> allergies,
@@ -223,35 +255,59 @@ class OnboardingController extends _$OnboardingController {
     try {
       final foodRepository = ref.read(foodRepositoryProvider);
 
-      // Get foods to avoid based on allergies and dietary preference
-      final foodsToAvoid = await foodRepository.getFoodsToAvoid(
-        dietaryPreference: dietaryPreference,
-        allergies: allergies,
-      );
+      // Process each allergy individually with its own source tag
+      for (final allergy in allergies) {
+        final allergyFoods = await foodRepository.getFoodsToAvoid(
+          allergies: [allergy],
+        );
 
-      if (foodsToAvoid.isEmpty) {
-        DebugLogger.debug('📋 No foods to avoid based on allergies/diet');
-        return;
+        if (allergyFoods.isNotEmpty) {
+          final preferences = <String, FoodPreference>{};
+          final sliderLevels = <String, int>{};
+          for (final foodName in allergyFoods) {
+            preferences[foodName] = FoodPreference.dislike;
+            sliderLevels[foodName] = 0;
+          }
+
+          // Save with allergy-specific source (e.g., 'allergy:gluten')
+          await _authService.saveFoodPreferences(
+            userId,
+            preferences,
+            sliderLevels: sliderLevels,
+            source: 'allergy:${allergy.dbValue}',
+          );
+
+          DebugLogger.info('🍎 Set ${allergyFoods.length} foods to avoid for allergy: ${allergy.displayName}');
+        }
       }
 
-      DebugLogger.info('🍎 Setting ${foodsToAvoid.length} foods to "avoid" based on allergies');
+      // Process dietary preference if set
+      if (dietaryPreference != null && dietaryPreference != DietaryPreference.none) {
+        final dietaryFoods = await foodRepository.getFoodsToAvoid(
+          dietaryPreference: dietaryPreference,
+        );
 
-      // Create preference map with dislike (preference_level = 0) for avoided foods
-      final Map<String, FoodPreference> preferences = {};
-      final Map<String, int> sliderLevels = {};
-      for (final foodName in foodsToAvoid) {
-        preferences[foodName] = FoodPreference.dislike;
-        sliderLevels[foodName] = 0;
+        if (dietaryFoods.isNotEmpty) {
+          final preferences = <String, FoodPreference>{};
+          final sliderLevels = <String, int>{};
+          for (final foodName in dietaryFoods) {
+            preferences[foodName] = FoodPreference.dislike;
+            sliderLevels[foodName] = 0;
+          }
+
+          // Save with dietary-specific source (e.g., 'dietary:vegan')
+          await _authService.saveFoodPreferences(
+            userId,
+            preferences,
+            sliderLevels: sliderLevels,
+            source: 'dietary:${dietaryPreference.dbValue}',
+          );
+
+          DebugLogger.info('🥗 Set ${dietaryFoods.length} foods to avoid for diet: ${dietaryPreference.displayName}');
+        }
       }
 
-      // Save to database using merge mode to preserve existing preferences
-      await _authService.saveFoodPreferences(
-        userId,
-        preferences,
-        sliderLevels: sliderLevels,
-      );
-
-      DebugLogger.info('✅ Food preferences updated for allergen-containing foods');
+      DebugLogger.info('✅ Food preferences updated for allergen/dietary restrictions');
     } catch (e, stackTrace) {
       DebugLogger.error('❌ Failed to update food preferences for allergies: $e');
       DebugLogger.debug('📍 Stack trace: $stackTrace');

@@ -1054,9 +1054,12 @@ class DataSyncService {
       await _cleanDuplicatesFromDrift(userId);
 
       // Collect dirty records from all tables
-      final dirtyUserProfile = await (_database.select(_database.userProfilesTable)
+      // Use .get() instead of .getSingleOrNull() to handle duplicate profiles
+      // that can occur during v1→v2 migration. Take the first one if multiple exist.
+      final dirtyUserProfiles = await (_database.select(_database.userProfilesTable)
             ..where((tbl) => tbl.needsUpload.equals(true)))
-          .getSingleOrNull();
+          .get();
+      final dirtyUserProfile = dirtyUserProfiles.isNotEmpty ? dirtyUserProfiles.first : null;
 
       final dirtyActivities = await (_database.select(_database.activitiesTable)
             ..where((tbl) => tbl.needsUpload.equals(true)))
@@ -2179,9 +2182,13 @@ class DataSyncService {
       };
 
       // Upsert to Supabase
+      // CRITICAL: Use device_id for conflict resolution to handle sign-out/re-onboarding flow.
+      // When a user signs out and re-creates an anonymous account, they get a NEW auth user ID
+      // but the SAME device_id. Using device_id ensures we update the existing row instead of
+      // trying to insert a new one (which would violate the unique constraint on device_id).
       await _supabase.from('users').upsert(
         userData,
-        onConflict: 'id', // Use id as primary key for conflict resolution
+        onConflict: 'device_id', // Use device_id for conflict resolution (handles re-onboarding)
       );
 
       // Mark as synced in local database

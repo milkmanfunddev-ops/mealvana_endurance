@@ -353,6 +353,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   Widget _buildNoNutritionPlanState(BuildContext context, ActivityDetailState state) {
     final activity = state.activity;
+
     return BaseCard(
       child: Center(
         child: Padding(
@@ -380,6 +381,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.lg),
+              // Generate Plan Button
               KylePrimaryButton(
                 onPressed: () => _navigateToGeneratePlan(context, activity),
                 text: 'Generate Plan',
@@ -392,8 +394,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
   }
 
+  /// Navigate to NewActivityScreen with activity details pre-filled
   void _navigateToGeneratePlan(BuildContext context, Activity? activity) {
     if (activity == null) return;
+
     context.pushNamed(
       'distance-pace-gut-entry',
       extra: {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -144,20 +145,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildVersionInfo(BuildContext context) {
+    final settingsAsync = ref.watch(settingsControllerProvider);
+    final userId = settingsAsync.asData?.value.userId;
+
     return Center(
-      child: FutureBuilder<PackageInfo>(
-        future: PackageInfo.fromPlatform(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return Text(
-              'Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+      child: Column(
+        children: [
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Text(
+                  'Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          if (userId != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            GestureDetector(
+              onTap: () {
+                // Copy user ID to clipboard
+                Clipboard.setData(ClipboardData(text: userId));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('User ID copied to clipboard'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              child: Text(
+                'User ID: $userId',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  fontSize: 10,
+                ),
               ),
-            );
-          }
-          return const SizedBox.shrink();
-        },
+            ),
+          ],
+        ],
       ),
     );
   }
