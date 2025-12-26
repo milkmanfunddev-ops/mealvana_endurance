@@ -177,6 +177,86 @@ class AppConfig {
     await dotenv.load(fileName: fileName);
     return AppConfig.fromEnv();
   }
+
+  /// Factory for web builds using --dart-define
+  /// Web builds cannot use dotenv files (they would be publicly accessible)
+  /// Instead, environment variables are passed via --dart-define at build time
+  ///
+  /// Required defines:
+  /// - SUPABASE_URL: Supabase project URL
+  /// - SUPABASE_ANON_KEY: Supabase anonymous key
+  ///
+  /// Optional defines (have fallbacks):
+  /// - APP_ENVIRONMENT: 'dev' or 'prod' (default: 'prod')
+  /// - SENTRY_DSN: Sentry DSN for error tracking
+  /// - MIXPANEL_PROJECT_TOKEN: Mixpanel analytics token
+  factory AppConfig.fromDartDefines() {
+    // Read environment from dart defines
+    const appEnv = String.fromEnvironment('APP_ENVIRONMENT', defaultValue: 'prod');
+    final isDevMode = appEnv == 'dev';
+
+    // Required configuration
+    const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+    const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+    // Validate required configuration
+    if (supabaseUrl.isEmpty) {
+      throw StateError('SUPABASE_URL must be provided via --dart-define');
+    }
+    if (supabaseAnonKey.isEmpty) {
+      throw StateError('SUPABASE_ANON_KEY must be provided via --dart-define');
+    }
+
+    return AppConfig(
+      // Environment configuration
+      devModeEnabled: isDevMode,
+      appEnvironment: appEnv,
+
+      // Supabase configuration
+      supabaseUrl: supabaseUrl,
+      supabaseAnonKey: supabaseAnonKey,
+      supabasePublishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
+      supabaseSecretKey: '', // Never include secret key in web builds
+
+      // Sentry configuration
+      sentryDsn: const String.fromEnvironment(
+        'SENTRY_DSN',
+        defaultValue: 'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
+      ),
+      sentryEnvironment: String.fromEnvironment(
+        'SENTRY_ENVIRONMENT',
+        defaultValue: isDevMode ? 'development' : 'production',
+      ),
+
+      // Analytics configuration
+      mixpanelProjectToken: String.fromEnvironment(
+        'MIXPANEL_PROJECT_TOKEN',
+        defaultValue: isDevMode
+            ? 'df6e8dd4f3dc1363fa194a156298b16c' // Dev token
+            : 'bd8fe50bb67b1dd0860351e6297347db', // Prod token
+      ),
+
+      // Wiredash (User Feedback) - using defaults for web
+      wiredashProjectId: const String.fromEnvironment(
+        'WIREDASH_PROJECT_ID',
+        defaultValue: 'mealvana-endurance-vn1pxw3',
+      ),
+      wiredashSecret: const String.fromEnvironment(
+        'WIREDASH_SECRET',
+        defaultValue: 'wuQrGN_DMojjIopfhEblvMpU53FSChuD',
+      ),
+
+      // OneSignal - not used on web
+      oneSignalAppId: '',
+
+      // External API keys
+      usdaApiKey: const String.fromEnvironment('USDA_API_KEY'),
+
+      // Debug settings
+      enableDebugLogging: kDebugMode,
+      enableSentryProfiling: false, // Disable profiling on web
+    );
+  }
 }
 
 /// Provider exposing application configuration
