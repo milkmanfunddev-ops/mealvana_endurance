@@ -1,80 +1,4 @@
-create type gender_enum as enum ('male', 'female', 'other', 'unknown');
-
-alter type gender_enum owner to postgres;
-
-create type distance_unit_enum as enum ('miles', 'kilometers');
-
-alter type distance_unit_enum owner to postgres;
-
-create type pace_unit_enum as enum ('min_per_mile', 'min_per_km');
-
-alter type pace_unit_enum owner to postgres;
-
-create type gut_training_enum as enum ('low', 'moderate', 'high');
-
-alter type gut_training_enum owner to postgres;
-
-create type activity_status_enum as enum ('planned', 'in_progress', 'completed', 'skipped');
-
-alter type activity_status_enum owner to postgres;
-
-create type intensity_enum as enum ('easy', 'moderate', 'hard', 'race');
-
-alter type intensity_enum owner to postgres;
-
-create type cycling_terrain_enum as enum ('flat', 'rolling', 'hilly');
-
-alter type cycling_terrain_enum owner to postgres;
-
-create type indoor_outdoor_enum as enum ('indoor', 'outdoor');
-
-alter type indoor_outdoor_enum owner to postgres;
-
-create type cycling_goal_enum as enum ('endurance', 'tempo', 'intervals');
-
-alter type cycling_goal_enum owner to postgres;
-
-create type category_enum as enum ('before_run', 'during_run', 'after_run');
-
-alter type category_enum owner to postgres;
-
-create type plan_type_enum as enum ('standard', 'carb_loading', 'recovery');
-
-alter type plan_type_enum owner to postgres;
-
-create type product_type_enum as enum ('bar', 'capsule', 'chew', 'drink_mix', 'electrolyte_only', 'electrolytes_fluids', 'gel', 'hydration_with_carbs', 'import', 'protein_recovery', 'quick_carbs', 'real_food', 'real_food_carbs', 'recovery_shake', 'solid_carb_snacks', 'sports_drink', 'waffle');
-
-alter type product_type_enum owner to postgres;
-
-create type event_subtype_enum as enum ('5k', '10k', '15k', '10_mile', 'half_marathon', '25k', '30k', 'marathon', 'ultra_50k', 'ultra_50m', 'ultra_100k', 'ultra_100m', 'ultra_12h', 'ultra_24h', '20k', '40k_tt', '50k', 'half_century', 'metric_century', 'century', 'gran_fondo', '200k', '1k', '1.5k', '2.5k', 'sprint', 'olympic', 'half_ironman', 'ironman', 'standard', 'long_course', 'aquathlon', 'aquabike', 'custom');
-
-alter type event_subtype_enum owner to postgres;
-
-create type activity_type_enum as enum ('running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport');
-
-alter type activity_type_enum owner to postgres;
-
-create type auth_provider_enum as enum ('anonymous', 'email', 'google', 'apple');
-
-alter type auth_provider_enum owner to postgres;
-
--- Unknown how to generate base type type
-
-alter type gtrgm owner to supabase_admin;
-
-create type dietary_preference_enum as enum ('omnivore', 'vegetarian', 'pescatarian', 'vegan', 'mediterranean', 'paleo', 'keto', 'low_carb');
-
-comment on type dietary_preference_enum is 'User dietary preference options for food filtering';
-
-alter type dietary_preference_enum owner to postgres;
-
-create type allergy_enum as enum ('dairy', 'eggs', 'fish', 'gluten', 'peanuts', 'sesame', 'shellfish', 'soy', 'tree_nuts');
-
-comment on type allergy_enum is 'Common food allergens for user allergy tracking';
-
-alter type allergy_enum owner to postgres;
-
-create table users
+create table public.users
 (
     id                            uuid                     default gen_random_uuid()               not null
         primary key,
@@ -123,56 +47,62 @@ create table users
     allergies                     allergy_enum[]           default '{}'::allergy_enum[]
 );
 
-comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
+comment on column public.users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
 
-comment on column users.prefers_cycling_power is 'Whether user prefers to input power vs speed for cycling';
+comment on column public.users.prefers_cycling_power is 'Whether user prefers to input power vs speed for cycling';
 
-comment on column users.swimming_css_seconds_per_100m is 'User default CSS (Critical Swim Speed) in seconds per 100m';
+comment on column public.users.swimming_css_seconds_per_100m is 'User default CSS (Critical Swim Speed) in seconds per 100m';
 
-comment on column users.prefers_swimming_pace is 'Whether user prefers to input pace vs speed for swimming';
+comment on column public.users.prefers_swimming_pace is 'Whether user prefers to input pace vs speed for swimming';
 
-comment on column users.typical_bike_bottles is 'Number of water bottles typically carried on bike (0-6)';
+comment on column public.users.typical_bike_bottles is 'Number of water bottles typically carried on bike (0-6)';
 
-comment on column users.has_aero_bottle is 'Whether cyclist has aero bottle for additional hydration';
+comment on column public.users.has_aero_bottle is 'Whether cyclist has aero bottle for additional hydration';
 
-comment on column users.has_bento_box is 'Whether cyclist has bento box for additional nutrition storage';
+comment on column public.users.has_bento_box is 'Whether cyclist has bento box for additional nutrition storage';
 
-comment on column users.typical_wetsuit is 'Whether swimmer typically uses wetsuit in open water';
+comment on column public.users.typical_wetsuit is 'Whether swimmer typically uses wetsuit in open water';
 
-comment on column users.typical_swim_cap_type is 'Typical swim cap type: none, latex, silicone, neoprene';
+comment on column public.users.typical_swim_cap_type is 'Typical swim cap type: none, latex, silicone, neoprene';
 
-comment on column users.gi_sensitivity is 'Whether user has GI sensitivity issues during endurance activities';
+comment on column public.users.gi_sensitivity is 'Whether user has GI sensitivity issues during endurance activities';
 
-comment on column users.dietary_preference is 'User dietary preference: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb. NULL means no preference set.';
+comment on column public.users.dietary_preference is 'User dietary preference: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb. NULL means no preference set.';
 
-comment on column users.allergies is 'Array of user allergies for food filtering. Empty array means no allergies.';
+comment on column public.users.allergies is 'Array of user allergies for food filtering. Empty array means no allergies.';
 
-alter table users
+alter table public.users
     owner to postgres;
 
 create index idx_users_device_id
-    on users (device_id);
+    on public.users (device_id);
 
 create index idx_users_updated_at
-    on users (updated_at);
+    on public.users (updated_at);
 
 create index idx_users_auth_user_id
-    on users (auth_user_id);
+    on public.users (auth_user_id);
 
 create index idx_users_auth_provider
-    on users (auth_provider);
+    on public.users (auth_provider);
 
 create index idx_users_dietary_preference
-    on users (dietary_preference)
+    on public.users (dietary_preference)
     where (dietary_preference IS NOT NULL);
 
-grant delete, insert, references, select, trigger, truncate, update on users to anon;
+create trigger update_users_updated_at
+    before update
+    on public.users
+    for each row
+execute procedure public.update_updated_at_column();
 
-grant delete, insert, references, select, trigger, truncate, update on users to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.users to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on users to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.users to authenticated;
 
-create table app_content
+grant delete, insert, references, select, trigger, truncate, update on public.users to service_role;
+
+create table public.app_content
 (
     id          uuid                     default gen_random_uuid()  not null
         primary key,
@@ -187,25 +117,31 @@ create table app_content
     updated_by  uuid
 );
 
-alter table app_content
+alter table public.app_content
     owner to postgres;
 
 create index idx_app_content_active
-    on app_content (is_active);
+    on public.app_content (is_active);
 
 create index idx_app_content_env_locale
-    on app_content (environment, locale);
+    on public.app_content (environment, locale);
 
 create index idx_app_content_version
-    on app_content (version);
+    on public.app_content (version);
 
-grant delete, insert, references, select, trigger, truncate, update on app_content to anon;
+create trigger update_app_content_updated_at
+    before update
+    on public.app_content
+    for each row
+execute procedure public.update_updated_at_column();
 
-grant delete, insert, references, select, trigger, truncate, update on app_content to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.app_content to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on app_content to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.app_content to authenticated;
 
-create table feedback
+grant delete, insert, references, select, trigger, truncate, update on public.app_content to service_role;
+
+create table public.feedback
 (
     id                   uuid                     default gen_random_uuid() not null
         primary key,
@@ -228,28 +164,28 @@ create table feedback
     created_at           timestamp with time zone default now()
 );
 
-alter table feedback
+alter table public.feedback
     owner to postgres;
 
 create index idx_feedback_created_at
-    on feedback (created_at);
+    on public.feedback (created_at);
 
 create index idx_feedback_satisfaction_level
-    on feedback (satisfaction_level);
+    on public.feedback (satisfaction_level);
 
 create index idx_feedback_timestamp
-    on feedback (timestamp);
+    on public.feedback (timestamp);
 
 create index idx_feedback_user_name
-    on feedback (user_name);
+    on public.feedback (user_name);
 
-grant delete, insert, references, select, trigger, truncate, update on feedback to anon;
+grant delete, insert, references, select, trigger, truncate, update on public.feedback to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on feedback to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.feedback to authenticated;
 
-grant delete, insert, references, select, trigger, truncate, update on feedback to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.feedback to service_role;
 
-create table foods
+create table public.foods
 (
     id                     uuid                      default gen_random_uuid()     not null
         primary key,
@@ -297,51 +233,57 @@ create table foods
     excluded_diets         dietary_preference_enum[] default '{}'::dietary_preference_enum[]
 );
 
-comment on column foods.show_in_preferences is 'Whether this food should be shown in the onboarding food preferences screen';
+comment on column public.foods.show_in_preferences is 'Whether this food should be shown in the onboarding food preferences screen';
 
-comment on column foods.is_essential is 'No need to present to user to set preferences';
+comment on column public.foods.is_essential is 'No need to present to user to set preferences';
 
-comment on column foods.allergens is 'Allergens contained in this food (e.g., dairy, gluten, peanuts). Used for filtering foods based on user allergies.';
+comment on column public.foods.allergens is 'Allergens contained in this food (e.g., dairy, gluten, peanuts). Used for filtering foods based on user allergies.';
 
-comment on column foods.excluded_diets is 'Diets that should exclude this food (e.g., vegan excludes meat/dairy). Used for filtering foods based on user dietary preference.';
+comment on column public.foods.excluded_diets is 'Diets that should exclude this food (e.g., vegan excludes meat/dairy). Used for filtering foods based on user dietary preference.';
 
-alter table foods
+alter table public.foods
     owner to postgres;
 
 create unique index uq_foods_lower_name
-    on foods (lower(name));
+    on public.foods (lower(name));
 
 create index idx_foods_categories_gin
-    on foods using gin (categories);
+    on public.foods using gin (categories);
 
 create index idx_foods_show_in_preferences_name
-    on foods (show_in_preferences, name);
+    on public.foods (show_in_preferences, name);
 
 create index idx_foods_before_suitable
-    on foods (before_run_suitable)
+    on public.foods (before_run_suitable)
     where (before_run_suitable = true);
 
 create index idx_foods_during_suitable
-    on foods (during_run_suitable)
+    on public.foods (during_run_suitable)
     where (during_run_suitable = true);
 
 create index idx_foods_after_suitable
-    on foods (after_run_suitable)
+    on public.foods (after_run_suitable)
     where (after_run_suitable = true);
 
 create index idx_foods_allergens_gin
-    on foods using gin (allergens);
+    on public.foods using gin (allergens);
 
 create index idx_foods_excluded_diets_gin
-    on foods using gin (excluded_diets);
+    on public.foods using gin (excluded_diets);
 
-grant delete, insert, references, select, trigger, truncate, update on foods to anon;
+create trigger update_foods_updated_at
+    before update
+    on public.foods
+    for each row
+execute procedure public.update_updated_at_column();
 
-grant delete, insert, references, select, trigger, truncate, update on foods to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.foods to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on foods to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.foods to authenticated;
 
-create table user_foods
+grant delete, insert, references, select, trigger, truncate, update on public.foods to service_role;
+
+create table public.user_foods
 (
     id                     uuid                     default gen_random_uuid()     not null
         primary key,
@@ -370,48 +312,48 @@ create table user_foods
     categories             category_enum[]          default '{}'::category_enum[] not null,
     user_id                uuid                                                   not null
         constraint fk_user_foods_user
-            references users
+            references public.users
             on delete cascade
-        references users
+        references public.users
             on delete cascade,
     product_type           product_type_enum,
     activity_types         activity_type_enum[]
 );
 
-alter table user_foods
+alter table public.user_foods
     owner to postgres;
 
 create index idx_user_foods_device
-    on user_foods (device_id);
+    on public.user_foods (device_id);
 
 create index idx_user_foods_barcode
-    on user_foods (barcode);
+    on public.user_foods (barcode);
 
 create unique index uq_user_foods_device_clientid
-    on user_foods (device_id, client_food_id);
+    on public.user_foods (device_id, client_food_id);
 
 create index idx_user_foods_device_not_deleted
-    on user_foods (device_id)
+    on public.user_foods (device_id)
     where (is_deleted = false);
 
 create index idx_user_foods_categories_gin
-    on user_foods using gin (categories);
+    on public.user_foods using gin (categories);
 
 create index idx_user_foods_user_id
-    on user_foods (user_id);
+    on public.user_foods (user_id);
 
-create policy "Users can manage their own foods" on user_foods
+create policy "Users can manage their own foods" on public.user_foods
     as permissive
     for all
     using (user_id = auth.uid());
 
-grant delete, insert, references, select, trigger, truncate, update on user_foods to anon;
+grant delete, insert, references, select, trigger, truncate, update on public.user_foods to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on user_foods to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.user_foods to authenticated;
 
-grant delete, insert, references, select, trigger, truncate, update on user_foods to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.user_foods to service_role;
 
-create table activities
+create table public.activities
 (
     title                          text               not null,
     scheduled_date_time            timestamp          not null,
@@ -449,7 +391,7 @@ create table activities
     intensity_target               text,
     time_before_minutes            integer,
     user_id                        uuid               not null
-        references users
+        references public.users
             on delete cascade,
     id                             text               not null
         primary key
@@ -471,69 +413,81 @@ create table activities
     humidity_percent               integer,
     nutrition_adherence_score      double precision,
     performance_vs_target          double precision,
-    activity_type                  activity_type_enum not null
+    activity_type                  activity_type_enum not null,
+    synced_from_provider           text,
+    provider_workout_id            text,
+    provider_workout_url           text,
+    last_synced_at                 timestamp with time zone,
+    workout_subtype                text,
+    pace_min_minutes_per_mile      real,
+    pace_max_minutes_per_mile      real,
+    distance_meters                real
 );
 
-comment on table activities is 'All calendar entries including workouts and events';
+comment on table public.activities is 'All calendar entries including workouts and events';
 
-comment on column activities.status is 'Current status: planned, in_progress, completed, skipped';
+comment on column public.activities.status is 'Current status: planned, in_progress, completed, skipped';
 
-comment on column activities.cycling_power_watts is 'Average power output in watts for cycling activities';
+comment on column public.activities.cycling_power_watts is 'Average power output in watts for cycling activities';
 
-comment on column activities.cycling_ftp_watts is 'Functional Threshold Power in watts (if known)';
+comment on column public.activities.cycling_ftp_watts is 'Functional Threshold Power in watts (if known)';
 
-comment on column activities.cycling_speed_mph is 'Average cycling speed in miles per hour';
+comment on column public.activities.cycling_speed_mph is 'Average cycling speed in miles per hour';
 
-comment on column activities.cycling_terrain is 'Terrain type: flat, rolling, or hilly';
+comment on column public.activities.cycling_terrain is 'Terrain type: flat, rolling, or hilly';
 
-comment on column activities.cycling_indoor_outdoor is 'Indoor (trainer) or outdoor cycling';
+comment on column public.activities.cycling_indoor_outdoor is 'Indoor (trainer) or outdoor cycling';
 
-comment on column activities.cycling_elevation_gain_ft is 'Total elevation gain in feet';
+comment on column public.activities.cycling_elevation_gain_ft is 'Total elevation gain in feet';
 
-comment on column activities.cycling_session_goal is 'Session type: endurance, tempo, or intervals';
+comment on column public.activities.cycling_session_goal is 'Session type: endurance, tempo, or intervals';
 
-comment on column activities.swimming_speed_per_100m is 'Average pace in seconds per 100 meters for swimming';
+comment on column public.activities.swimming_speed_per_100m is 'Average pace in seconds per 100 meters for swimming';
 
-comment on column activities.swimming_css_seconds_per_100m is 'Critical Swim Speed in seconds per 100m (if known)';
+comment on column public.activities.swimming_css_seconds_per_100m is 'Critical Swim Speed in seconds per 100m (if known)';
 
-comment on column activities.swimming_pace_per_100m_seconds is 'Swimming pace in seconds per 100 meters';
+comment on column public.activities.swimming_pace_per_100m_seconds is 'Swimming pace in seconds per 100 meters';
 
-comment on column activities.swimming_pool_or_open_water is 'Pool or open water swimming';
+comment on column public.activities.swimming_pool_or_open_water is 'Pool or open water swimming';
 
-comment on column activities.swimming_water_temp_c is 'Water temperature in Celsius';
+comment on column public.activities.swimming_water_temp_c is 'Water temperature in Celsius';
 
-comment on column activities.intensity_target is 'Intensity target (zone_1, zone_2, rpe_3, etc.) - works across all sports';
+comment on column public.activities.intensity_target is 'Intensity target (zone_1, zone_2, rpe_3, etc.) - works across all sports';
 
-comment on column activities.time_before_minutes is 'Pre-activity timing window in minutes (replaces run-specific pre_run_timing)';
+comment on column public.activities.time_before_minutes is 'Pre-activity timing window in minutes (replaces run-specific pre_run_timing)';
 
-comment on column activities.nutrition_plan_data is 'Full JSON payload for the nutrition plan (before/during/after sections, macro targets, notes)';
+comment on column public.activities.nutrition_plan_data is 'Full JSON payload for the nutrition plan (before/during/after sections, macro targets, notes)';
 
-comment on column activities.activity_type is 'Sport category using shared activity_type enum: running, cycling, swimming, triathlon, duathlon, multisport';
+comment on column public.activities.activity_type is 'Sport category using shared activity_type enum: running, cycling, swimming, triathlon, duathlon, multisport';
 
-alter table activities
+alter table public.activities
     owner to postgres;
 
 create index idx_activities_scheduled
-    on activities (scheduled_date_time);
+    on public.activities (scheduled_date_time);
 
 create index idx_activities_cycling_power
-    on activities (cycling_power_watts)
+    on public.activities (cycling_power_watts)
     where (cycling_power_watts IS NOT NULL);
 
 create index idx_activities_swimming_pace
-    on activities (swimming_speed_per_100m)
+    on public.activities (swimming_speed_per_100m)
     where (swimming_speed_per_100m IS NOT NULL);
 
 create index idx_activities_status
-    on activities (status);
+    on public.activities (status);
 
-grant delete, insert, references, select, trigger, truncate, update on activities to anon;
+create index idx_activities_provider_sync
+    on public.activities (synced_from_provider, provider_workout_id)
+    where (synced_from_provider IS NOT NULL);
 
-grant delete, insert, references, select, trigger, truncate, update on activities to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.activities to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on activities to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.activities to authenticated;
 
-create table events
+grant delete, insert, references, select, trigger, truncate, update on public.activities to service_role;
+
+create table public.events
 (
     event_name                    text,
     location                      text,
@@ -557,10 +511,10 @@ create table events
     updated_at                    timestamp default CURRENT_TIMESTAMP,
     has_nutrition_plan            boolean   default false,
     user_id                       uuid               not null
-        references users
+        references public.users
             on delete cascade,
     activity_id                   text
-        references activities
+        references public.activities
             on delete cascade,
     id                            text               not null
         primary key
@@ -573,39 +527,39 @@ create table events
     local_updated_at              timestamp default CURRENT_TIMESTAMP
 );
 
-comment on table events is 'Specialized event data for races and competitions';
+comment on table public.events is 'Specialized event data for races and competitions';
 
-comment on column events.has_carb_loading is 'Whether this event has an associated carb loading plan';
+comment on column public.events.has_carb_loading is 'Whether this event has an associated carb loading plan';
 
-comment on column events.has_nutrition_plan is 'Indicates whether this event has an associated nutrition plan';
+comment on column public.events.has_nutrition_plan is 'Indicates whether this event has an associated nutrition plan';
 
-comment on column events.event_subtype is 'Race distance/type: marathon, half_marathon, 10k, 5k, sprint, olympic, etc.';
+comment on column public.events.event_subtype is 'Race distance/type: marathon, half_marathon, 10k, 5k, sprint, olympic, etc.';
 
-comment on column events.event_type is 'Sport category using shared activity_type enum: running, cycling, swimming, triathlon, duathlon, multisport';
+comment on column public.events.event_type is 'Sport category using shared activity_type enum: running, cycling, swimming, triathlon, duathlon, multisport';
 
-comment on column events.event_date is 'Date of the event (DATE type). Use this for calendar displays and date-based queries. start_time remains for precise race start timestamps.';
+comment on column public.events.event_date is 'Date of the event (DATE type). Use this for calendar displays and date-based queries. start_time remains for precise race start timestamps.';
 
-alter table events
+alter table public.events
     owner to postgres;
 
 create index idx_events_carb_loading
-    on events (has_carb_loading)
+    on public.events (has_carb_loading)
     where (has_carb_loading = true);
 
 create index idx_events_event_date
-    on events (event_date);
+    on public.events (event_date);
 
 create index idx_events_activity
-    on events (activity_id)
+    on public.events (activity_id)
     where (activity_id IS NOT NULL);
 
-grant delete, insert, references, select, trigger, truncate, update on events to anon;
+grant delete, insert, references, select, trigger, truncate, update on public.events to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on events to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.events to authenticated;
 
-grant delete, insert, references, select, trigger, truncate, update on events to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.events to service_role;
 
-create table carb_loading_plans
+create table public.carb_loading_plans
 (
     total_days              integer   not null
         constraint total_days_check
@@ -623,10 +577,10 @@ create table carb_loading_plans
     completed_at            timestamp,
     user_id                 uuid      not null
         constraint fk_carb_loading_plans_user
-            references users
+            references public.users
             on delete cascade,
     event_id                text
-        references events
+        references public.events
             on delete cascade,
     id                      text      not null
         primary key
@@ -637,25 +591,31 @@ create table carb_loading_plans
     updated_at              timestamp with time zone default now()
 );
 
-comment on table carb_loading_plans is 'Carb loading plans linked to specific events';
+comment on table public.carb_loading_plans is 'Carb loading plans linked to specific events';
 
-alter table carb_loading_plans
+alter table public.carb_loading_plans
     owner to postgres;
 
 create index idx_carb_plans_dates
-    on carb_loading_plans (start_date, end_date);
+    on public.carb_loading_plans (start_date, end_date);
 
 create index idx_carb_plans_event
-    on carb_loading_plans (event_id)
+    on public.carb_loading_plans (event_id)
     where (event_id IS NOT NULL);
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_plans to anon;
+create trigger update_carb_loading_plans_updated_at
+    before update
+    on public.carb_loading_plans
+    for each row
+execute procedure public.update_updated_at_column();
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_plans to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_plans to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_plans to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_plans to authenticated;
 
-create table carb_loading_days
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_plans to service_role;
+
+create table public.carb_loading_days
 (
     plan_date               timestamp                            not null,
     day_number              integer                              not null
@@ -680,7 +640,7 @@ create table carb_loading_days
     carb_protocol_g_per_kg  real                     default 8.0 not null,
     carb_loading_plan_id    text
         constraint carb_loading_days_plan_fk
-            references carb_loading_plans
+            references public.carb_loading_plans
             on delete cascade,
     id                      text                                 not null
         primary key
@@ -691,25 +651,31 @@ create table carb_loading_days
     updated_at              timestamp with time zone default now()
 );
 
-alter table carb_loading_days
+alter table public.carb_loading_days
     owner to postgres;
 
 create index idx_carb_days_date
-    on carb_loading_days (plan_date);
+    on public.carb_loading_days (plan_date);
 
 create index idx_carb_days_completed
-    on carb_loading_days (completed);
+    on public.carb_loading_days (completed);
 
 create index idx_carb_days_plan
-    on carb_loading_days (carb_loading_plan_id);
+    on public.carb_loading_days (carb_loading_plan_id);
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_days to anon;
+create trigger update_carb_loading_days_updated_at
+    before update
+    on public.carb_loading_days
+    for each row
+execute procedure public.update_updated_at_column();
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_days to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_days to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_days to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_days to authenticated;
 
-create table carb_loading_foods
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_days to service_role;
+
+create table public.carb_loading_foods
 (
     id                  uuid                     default gen_random_uuid() not null
         primary key,
@@ -726,24 +692,30 @@ create table carb_loading_foods
     updated_at          timestamp with time zone default now()
 );
 
-comment on table carb_loading_foods is 'Global default carb loading foods';
+comment on table public.carb_loading_foods is 'Global default carb loading foods';
 
-alter table carb_loading_foods
+alter table public.carb_loading_foods
     owner to postgres;
 
 create index idx_carb_loading_foods_name
-    on carb_loading_foods (name);
+    on public.carb_loading_foods (name);
 
 create index idx_carb_loading_foods_default
-    on carb_loading_foods (is_default);
+    on public.carb_loading_foods (is_default);
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_foods to anon;
+create trigger update_carb_loading_foods_updated_at
+    before update
+    on public.carb_loading_foods
+    for each row
+execute procedure public.update_updated_at_column();
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_foods to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_foods to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_foods to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_foods to authenticated;
 
-create table carb_loading_user_foods
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_foods to service_role;
+
+create table public.carb_loading_user_foods
 (
     id                  uuid      default gen_random_uuid() not null
         primary key,
@@ -758,56 +730,56 @@ create table carb_loading_user_foods
     image_address       text,
     barcode             text,
     source_food_id      uuid
-        references foods,
+        references public.foods,
     source_user_food_id uuid
-        references user_foods,
+        references public.user_foods,
     is_deleted          boolean   default false,
     created_at          timestamp default CURRENT_TIMESTAMP,
     updated_at          timestamp default CURRENT_TIMESTAMP,
     meal_types          text[]    default '{}'::text[]      not null,
     user_id             uuid                                not null
         constraint fk_carb_loading_user_foods_user
-            references users
+            references public.users
             on delete cascade
-        references users
+        references public.users
             on delete cascade
 );
 
-alter table carb_loading_user_foods
+alter table public.carb_loading_user_foods
     owner to postgres;
 
 create index idx_carb_loading_user_foods_device
-    on carb_loading_user_foods (device_id);
+    on public.carb_loading_user_foods (device_id);
 
 create index idx_carb_loading_user_foods_deleted
-    on carb_loading_user_foods (is_deleted);
+    on public.carb_loading_user_foods (is_deleted);
 
 create index idx_carb_loading_user_foods_barcode
-    on carb_loading_user_foods (barcode)
+    on public.carb_loading_user_foods (barcode)
     where (barcode IS NOT NULL);
 
 create index idx_carb_loading_user_foods_user_id
-    on carb_loading_user_foods (user_id);
+    on public.carb_loading_user_foods (user_id);
 
-create policy "Users can manage their own carb loading foods" on carb_loading_user_foods
+create policy "Users can manage their own carb loading foods" on public.carb_loading_user_foods
     as permissive
     for all
     using (user_id = auth.uid());
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_user_foods to anon;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_user_foods to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_user_foods to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_user_foods to authenticated;
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_user_foods to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_user_foods to service_role;
 
-create table carb_loading_day_meals
+create table public.carb_loading_day_meals
 (
     id                        uuid      default gen_random_uuid() not null
         primary key,
     carb_loading_food_id      uuid
-        references carb_loading_foods,
+        references public.carb_loading_foods,
     carb_loading_user_food_id uuid
-        references carb_loading_user_foods,
+        references public.carb_loading_user_foods,
     food_display_name         text,
     quantity                  integer   default 1
         constraint quantity_positive
@@ -820,47 +792,47 @@ create table carb_loading_day_meals
     meal_type                 text                                not null,
     carb_loading_plan_id      text                                not null
         constraint carb_loading_day_meals_plan_fk
-            references carb_loading_plans
+            references public.carb_loading_plans
             on delete cascade,
     carb_loading_day_id       text
         constraint carb_loading_day_meals_day_fk
-            references carb_loading_days
+            references public.carb_loading_days
             on delete cascade,
     constraint one_food_type
         check (((carb_loading_food_id IS NOT NULL) AND (carb_loading_user_food_id IS NULL)) OR
                ((carb_loading_food_id IS NULL) AND (carb_loading_user_food_id IS NOT NULL)))
 );
 
-alter table carb_loading_day_meals
+alter table public.carb_loading_day_meals
     owner to postgres;
 
 create index idx_carb_day_meals_food
-    on carb_loading_day_meals (carb_loading_food_id)
+    on public.carb_loading_day_meals (carb_loading_food_id)
     where (carb_loading_food_id IS NOT NULL);
 
 create index idx_carb_day_meals_user_food
-    on carb_loading_day_meals (carb_loading_user_food_id)
+    on public.carb_loading_day_meals (carb_loading_user_food_id)
     where (carb_loading_user_food_id IS NOT NULL);
 
 create index idx_carb_day_meals_meal_type
-    on carb_loading_day_meals (meal_type);
+    on public.carb_loading_day_meals (meal_type);
 
 create index idx_carb_day_meals_day
-    on carb_loading_day_meals (carb_loading_day_id);
+    on public.carb_loading_day_meals (carb_loading_day_id);
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_day_meals to anon;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_day_meals to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_day_meals to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_day_meals to authenticated;
 
-grant delete, insert, references, select, trigger, truncate, update on carb_loading_day_meals to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.carb_loading_day_meals to service_role;
 
-create table feature_survey_responses
+create table public.feature_survey_responses
 (
     id                bigserial
         primary key,
     device_id         uuid                                   not null
         constraint feature_survey_responses_user_id_fkey
-            references users
+            references public.users
             on delete cascade,
     selected_features text                                   not null,
     voted_at          timestamp with time zone default now() not null,
@@ -868,63 +840,79 @@ create table feature_survey_responses
     needs_upload      boolean                  default false
 );
 
-alter table feature_survey_responses
+alter table public.feature_survey_responses
     owner to postgres;
 
-grant select, update, usage on sequence feature_survey_responses_id_seq to anon;
+grant select, update, usage on sequence public.feature_survey_responses_id_seq to anon;
 
-grant select, update, usage on sequence feature_survey_responses_id_seq to authenticated;
+grant select, update, usage on sequence public.feature_survey_responses_id_seq to authenticated;
 
-grant select, update, usage on sequence feature_survey_responses_id_seq to service_role;
+grant select, update, usage on sequence public.feature_survey_responses_id_seq to service_role;
 
 create unique index idx_feature_survey_responses_user_id
-    on feature_survey_responses (device_id);
+    on public.feature_survey_responses (device_id);
 
 create index idx_feature_survey_responses_voted_at
-    on feature_survey_responses (voted_at);
+    on public.feature_survey_responses (voted_at);
 
 create index idx_feature_survey_needs_upload
-    on feature_survey_responses (needs_upload)
+    on public.feature_survey_responses (needs_upload)
     where (needs_upload = true);
 
-grant delete, insert, references, select, trigger, truncate, update on feature_survey_responses to anon;
+create trigger feature_survey_update_timestamp
+    before update
+    on public.feature_survey_responses
+    for each row
+execute procedure public.update_feature_survey_timestamp();
 
-grant delete, insert, references, select, trigger, truncate, update on feature_survey_responses to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.feature_survey_responses to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on feature_survey_responses to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.feature_survey_responses to authenticated;
 
-create table food_preferences
+grant delete, insert, references, select, trigger, truncate, update on public.feature_survey_responses to service_role;
+
+create table public.food_preferences
 (
-    id               uuid                     default gen_random_uuid() not null
+    id                uuid                     default gen_random_uuid() not null
         primary key,
-    user_id          uuid                                               not null
-        references users
+    user_id           uuid                                               not null
+        references public.users
             on delete cascade,
-    food_name        text                                               not null,
-    preference       text                                               not null
+    food_name         text                                               not null,
+    preference        text                                               not null
         constraint food_preferences_preference_check
             check (preference = ANY (ARRAY ['like'::text, 'dislike'::text, 'willing_to_try'::text])),
-    created_at       timestamp with time zone default now()             not null,
-    updated_at       timestamp with time zone default now()             not null,
-    preference_level smallint                 default 2                 not null
+    created_at        timestamp with time zone default now()             not null,
+    updated_at        timestamp with time zone default now()             not null,
+    preference_level  smallint                 default 2                 not null,
+    preference_source text                     default 'manual'::text    not null
+        constraint food_preferences_preference_source_check
+            check ((preference_source = 'manual'::text) OR (preference_source ~~ 'allergy:%'::text) OR
+                   (preference_source ~~ 'dietary:%'::text))
 );
 
-alter table food_preferences
+alter table public.food_preferences
     owner to postgres;
 
 create unique index idx_food_preferences_user_food
-    on food_preferences (user_id, food_name);
+    on public.food_preferences (user_id, food_name);
 
 create index idx_food_preferences_preference
-    on food_preferences (preference);
+    on public.food_preferences (preference);
 
-grant delete, insert, references, select, trigger, truncate, update on food_preferences to anon;
+create index idx_food_preferences_preference_source
+    on public.food_preferences (preference_source);
 
-grant delete, insert, references, select, trigger, truncate, update on food_preferences to authenticated;
+create index idx_food_preferences_user_source
+    on public.food_preferences (user_id, preference_source);
 
-grant delete, insert, references, select, trigger, truncate, update on food_preferences to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.food_preferences to anon;
 
-create table public_events
+grant delete, insert, references, select, trigger, truncate, update on public.food_preferences to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.food_preferences to service_role;
+
+create table public.public_events
 (
     id               bigserial
         primary key,
@@ -953,1294 +941,117 @@ create table public_events
                                                                 COALESCE(state, ''::text)))) stored
 );
 
-alter table public_events
+alter table public.public_events
     owner to postgres;
 
-grant select, update, usage on sequence public_events_id_seq to anon;
+grant select, update, usage on sequence public.public_events_id_seq to anon;
 
-grant select, update, usage on sequence public_events_id_seq to authenticated;
+grant select, update, usage on sequence public.public_events_id_seq to authenticated;
 
-grant select, update, usage on sequence public_events_id_seq to service_role;
+grant select, update, usage on sequence public.public_events_id_seq to service_role;
 
 create index idx_public_events_search
-    on public_events using gin (search_vector);
+    on public.public_events using gin (search_vector);
 
 create index idx_public_events_name_trgm
-    on public_events using gin (event_name gin_trgm_ops);
+    on public.public_events using gin (event_name public.gin_trgm_ops);
 
 create index idx_public_events_city_trgm
-    on public_events using gin (city gin_trgm_ops);
+    on public.public_events using gin (city public.gin_trgm_ops);
 
 create index idx_public_events_location_trgm
-    on public_events using gin (location gin_trgm_ops);
+    on public.public_events using gin (location public.gin_trgm_ops);
 
-grant delete, insert, references, select, trigger, truncate, update on public_events to anon;
+grant delete, insert, references, select, trigger, truncate, update on public.public_events to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on public_events to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on public.public_events to authenticated;
 
-grant delete, insert, references, select, trigger, truncate, update on public_events to service_role;
+grant delete, insert, references, select, trigger, truncate, update on public.public_events to service_role;
 
-create function delete_nutrition_plan_by_device_plan_id(p_device_id text, p_plan_id text) returns boolean
-    language plpgsql
-as
-$$
-DECLARE
-    result JSONB;
-BEGIN
-    result := delete_nutrition_plan_versioned(p_device_id, p_plan_id);
-    RETURN (result->>'success')::BOOLEAN;
-END;
-$$;
+create table public.integrations
+(
+    id                     uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id                uuid                                               not null
+        references public.users
+            on delete cascade,
+    provider               text                                               not null
+        constraint integrations_provider_check
+            check (provider = ANY
+                   (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text])),
+    access_token           text                                               not null,
+    refresh_token          text,
+    token_expires_at       timestamp with time zone,
+    provider_athlete_id    text                                               not null,
+    provider_athlete_name  text,
+    provider_athlete_email text,
+    is_active              boolean                  default true,
+    last_sync_at           timestamp with time zone,
+    last_sync_status       text
+        constraint integrations_last_sync_status_check
+            check ((last_sync_status IS NULL) OR
+                   (last_sync_status = ANY (ARRAY ['success'::text, 'error'::text, 'pending'::text]))),
+    last_sync_error        text,
+    created_at             timestamp with time zone default now(),
+    updated_at             timestamp with time zone default now(),
+    unique (user_id, provider)
+);
 
-alter function delete_nutrition_plan_by_device_plan_id(text, text) owner to postgres;
+alter table public.integrations
+    owner to postgres;
 
-grant execute on function delete_nutrition_plan_by_device_plan_id(text, text) to anon;
+create index idx_integrations_user_provider
+    on public.integrations (user_id, provider);
 
-grant execute on function delete_nutrition_plan_by_device_plan_id(text, text) to authenticated;
+create index idx_integrations_active
+    on public.integrations (is_active)
+    where (is_active = true);
 
-grant execute on function delete_nutrition_plan_by_device_plan_id(text, text) to service_role;
-
-create function upsert_nutrition_plan_versioned(p_device_id text, p_plan_id text, p_plan_data jsonb, p_client_version integer DEFAULT NULL::integer, p_client_updated_at timestamp with time zone DEFAULT now()) returns jsonb
-    language plpgsql
-as
-$$
-DECLARE
-    result_plan nutrition_plans;
-    current_version INTEGER;
-    conflict_detected BOOLEAN := FALSE;
-    operation_type TEXT;
-BEGIN
-    -- Check if plan exists and get current version
-    SELECT version INTO current_version
-    FROM nutrition_plans 
-    WHERE device_id = p_device_id AND plan_id = p_plan_id AND is_deleted = FALSE;
-    
-    -- Detect conflicts
-    IF current_version IS NOT NULL AND p_client_version IS NOT NULL THEN
-        IF p_client_version < current_version THEN
-            conflict_detected := TRUE;
-        END IF;
-    END IF;
-    
-    -- Handle conflict detection
-    IF conflict_detected THEN
-        -- Return conflict information instead of updating
-        SELECT * INTO result_plan
-        FROM nutrition_plans 
-        WHERE device_id = p_device_id AND plan_id = p_plan_id;
-        
-        RETURN jsonb_build_object(
-            'success', false,
-            'conflict', true,
-            'current_version', current_version,
-            'client_version', p_client_version,
-            'server_plan', row_to_json(result_plan),
-            'message', 'Version conflict detected. Server has newer version.'
-        );
-    END IF;
-    
-    -- Determine operation type
-    operation_type := CASE WHEN current_version IS NULL THEN 'insert' ELSE 'update' END;
-    
-    -- Perform upsert with version increment
-    INSERT INTO nutrition_plans (
-        device_id,
-        plan_id,
-        plan_name,
-        plan_data,
-        total_calories,
-        notes,
-        distance_miles,
-        pace_minutes_per_mile,
-        version,
-        last_modified_by,
-        client_updated_at,
-        is_deleted,
-        conflict_resolution
-    ) VALUES (
-        p_device_id,
-        p_plan_id,
-        COALESCE((p_plan_data->>'plan_name')::TEXT, 'Nutrition Plan'),
-        p_plan_data->'plan_data',
-        (p_plan_data->>'total_calories')::INTEGER,
-        (p_plan_data->>'notes')::TEXT,
-        (p_plan_data->>'distance_miles')::DECIMAL,
-        (p_plan_data->>'pace_minutes_per_mile')::DECIMAL,
-        1, -- Initial version
-        p_device_id,
-        p_client_updated_at,
-        FALSE,
-        'last_write_wins'
-    )
-    ON CONFLICT (device_id, plan_id) 
-    DO UPDATE SET
-        plan_name = COALESCE((p_plan_data->>'plan_name')::TEXT, nutrition_plans.plan_name),
-        plan_data = p_plan_data->'plan_data',
-        total_calories = (p_plan_data->>'total_calories')::INTEGER,
-        notes = (p_plan_data->>'notes')::TEXT,
-        distance_miles = (p_plan_data->>'distance_miles')::DECIMAL,
-        pace_minutes_per_mile = (p_plan_data->>'pace_minutes_per_mile')::DECIMAL,
-        version = nutrition_plans.version + 1, -- Increment version
-        last_modified_by = p_device_id,
-        client_updated_at = p_client_updated_at,
-        updated_at = NOW(),
-        is_deleted = FALSE
-    RETURNING * INTO result_plan;
-    
-    -- Return success response
-    RETURN jsonb_build_object(
-        'success', true,
-        'conflict', false,
-        'operation', operation_type,
-        'plan', row_to_json(result_plan),
-        'new_version', result_plan.version
-    );
-END;
-$$;
-
-alter function upsert_nutrition_plan_versioned(text, text, jsonb, integer, timestamp with time zone) owner to postgres;
-
-grant execute on function upsert_nutrition_plan_versioned(text, text, jsonb, integer, timestamp with time zone) to anon;
-
-grant execute on function upsert_nutrition_plan_versioned(text, text, jsonb, integer, timestamp with time zone) to authenticated;
-
-grant execute on function upsert_nutrition_plan_versioned(text, text, jsonb, integer, timestamp with time zone) to service_role;
-
-create function delete_nutrition_plan_versioned(p_device_id text, p_plan_id text, p_client_version integer DEFAULT NULL::integer) returns jsonb
-    language plpgsql
-as
-$$
-DECLARE
-    result_plan nutrition_plans;
-    current_version INTEGER;
-    conflict_detected BOOLEAN := FALSE;
-BEGIN
-    -- Check if plan exists and get current version
-    SELECT version INTO current_version
-    FROM nutrition_plans 
-    WHERE device_id = p_device_id AND plan_id = p_plan_id AND is_deleted = FALSE;
-    
-    -- Check if plan exists
-    IF current_version IS NULL THEN
-        RETURN jsonb_build_object(
-            'success', false,
-            'conflict', false,
-            'message', 'Plan not found or already deleted.'
-        );
-    END IF;
-    
-    -- Detect conflicts
-    IF p_client_version IS NOT NULL AND p_client_version < current_version THEN
-        conflict_detected := TRUE;
-    END IF;
-    
-    -- Handle conflict
-    IF conflict_detected THEN
-        SELECT * INTO result_plan
-        FROM nutrition_plans 
-        WHERE device_id = p_device_id AND plan_id = p_plan_id;
-        
-        RETURN jsonb_build_object(
-            'success', false,
-            'conflict', true,
-            'current_version', current_version,
-            'client_version', p_client_version,
-            'server_plan', row_to_json(result_plan),
-            'message', 'Version conflict detected. Server has newer version.'
-        );
-    END IF;
-    
-    -- Perform soft delete with version increment
-    UPDATE nutrition_plans 
-    SET 
-        is_deleted = TRUE,
-        version = version + 1,
-        last_modified_by = p_device_id,
-        client_updated_at = NOW(),
-        updated_at = NOW()
-    WHERE device_id = p_device_id AND plan_id = p_plan_id
-    RETURNING * INTO result_plan;
-    
-    RETURN jsonb_build_object(
-        'success', true,
-        'conflict', false,
-        'operation', 'delete',
-        'plan', row_to_json(result_plan),
-        'new_version', result_plan.version
-    );
-END;
-$$;
-
-alter function delete_nutrition_plan_versioned(text, text, integer) owner to postgres;
-
-grant execute on function delete_nutrition_plan_versioned(text, text, integer) to anon;
-
-grant execute on function delete_nutrition_plan_versioned(text, text, integer) to authenticated;
-
-grant execute on function delete_nutrition_plan_versioned(text, text, integer) to service_role;
-
-create function upsert_food_preferences(p_device_id text, p_preferences jsonb) returns boolean
-    language plpgsql
-as
-$$
-DECLARE
-    preference_record RECORD;
-BEGIN
-    -- Delete existing preferences for this user
-    DELETE FROM food_preferences WHERE device_id = p_device_id;
-
-    -- Insert new preferences
-    FOR preference_record IN
-        SELECT
-            key as food_name,
-            value as preference
-        FROM jsonb_each_text(p_preferences)
-    LOOP
-        INSERT INTO food_preferences (device_id, food_name, preference)
-        VALUES (p_device_id, preference_record.food_name, preference_record.preference);
-    END LOOP;
-
-    RETURN TRUE;
-EXCEPTION
-    WHEN OTHERS THEN
-        -- Log error and return false
-        RAISE NOTICE 'Error in upsert_food_preferences: %', SQLERRM;
-        RETURN FALSE;
-END;
-$$;
-
-comment on function upsert_food_preferences(text, jsonb) is 'Replace all food preferences for a user with new preferences from JSONB object';
-
-alter function upsert_food_preferences(text, jsonb) owner to postgres;
-
-grant execute on function upsert_food_preferences(text, jsonb) to anon;
-
-grant execute on function upsert_food_preferences(text, jsonb) to authenticated;
-
-grant execute on function upsert_food_preferences(text, jsonb) to service_role;
-
-create function update_updated_at_column() returns trigger
-    language plpgsql
-as
-$$
-  BEGIN
-      NEW.updated_at = now();
-      RETURN NEW;
-  END;
-  $$;
-
-alter function update_updated_at_column() owner to postgres;
-
-create trigger update_users_updated_at
+create trigger integrations_updated_at_trigger
     before update
-    on users
+    on public.integrations
     for each row
-execute procedure update_updated_at_column();
-
-create trigger update_app_content_updated_at
-    before update
-    on app_content
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_foods_updated_at
-    before update
-    on foods
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_carb_loading_plans_updated_at
-    before update
-    on carb_loading_plans
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_carb_loading_days_updated_at
-    before update
-    on carb_loading_days
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_carb_loading_foods_updated_at
-    before update
-    on carb_loading_foods
-    for each row
-execute procedure update_updated_at_column();
-
-grant execute on function update_updated_at_column() to anon;
-
-grant execute on function update_updated_at_column() to authenticated;
-
-grant execute on function update_updated_at_column() to service_role;
-
-create function update_food_preferences_updated_at() returns trigger
-    language plpgsql
-as
-$$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$;
-
-alter function update_food_preferences_updated_at() owner to postgres;
-
-grant execute on function update_food_preferences_updated_at() to anon;
-
-grant execute on function update_food_preferences_updated_at() to authenticated;
-
-grant execute on function update_food_preferences_updated_at() to service_role;
-
-create function update_auth_sessions_updated_at() returns trigger
-    language plpgsql
-as
-$$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$;
-
-alter function update_auth_sessions_updated_at() owner to postgres;
-
-grant execute on function update_auth_sessions_updated_at() to anon;
-
-grant execute on function update_auth_sessions_updated_at() to authenticated;
-
-grant execute on function update_auth_sessions_updated_at() to service_role;
-
-create function set_limit(real) returns real
-    strict
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function set_limit(real) owner to supabase_admin;
-
-grant execute on function set_limit(real) to postgres;
-
-grant execute on function set_limit(real) to anon;
-
-grant execute on function set_limit(real) to authenticated;
-
-grant execute on function set_limit(real) to service_role;
-
-create function show_limit() returns real
-    stable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function show_limit() owner to supabase_admin;
-
-grant execute on function show_limit() to postgres;
-
-grant execute on function show_limit() to anon;
-
-grant execute on function show_limit() to authenticated;
-
-grant execute on function show_limit() to service_role;
-
-create function show_trgm(text) returns text[]
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function show_trgm(text) owner to supabase_admin;
-
-grant execute on function show_trgm(text) to postgres;
-
-grant execute on function show_trgm(text) to anon;
-
-grant execute on function show_trgm(text) to authenticated;
-
-grant execute on function show_trgm(text) to service_role;
-
-create function similarity(text, text) returns real
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function similarity(text, text) owner to supabase_admin;
-
-grant execute on function similarity(text, text) to postgres;
-
-grant execute on function similarity(text, text) to anon;
-
-grant execute on function similarity(text, text) to authenticated;
-
-grant execute on function similarity(text, text) to service_role;
-
-create function similarity_op(text, text) returns boolean
-    stable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function similarity_op(text, text) owner to supabase_admin;
-
-grant execute on function similarity_op(text, text) to postgres;
-
-grant execute on function similarity_op(text, text) to anon;
-
-grant execute on function similarity_op(text, text) to authenticated;
-
-grant execute on function similarity_op(text, text) to service_role;
-
-create function word_similarity(text, text) returns real
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function word_similarity(text, text) owner to supabase_admin;
-
-grant execute on function word_similarity(text, text) to postgres;
-
-grant execute on function word_similarity(text, text) to anon;
-
-grant execute on function word_similarity(text, text) to authenticated;
-
-grant execute on function word_similarity(text, text) to service_role;
-
-create function word_similarity_op(text, text) returns boolean
-    stable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function word_similarity_op(text, text) owner to supabase_admin;
-
-grant execute on function word_similarity_op(text, text) to postgres;
-
-grant execute on function word_similarity_op(text, text) to anon;
-
-grant execute on function word_similarity_op(text, text) to authenticated;
-
-grant execute on function word_similarity_op(text, text) to service_role;
-
-create function word_similarity_commutator_op(text, text) returns boolean
-    stable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function word_similarity_commutator_op(text, text) owner to supabase_admin;
-
-grant execute on function word_similarity_commutator_op(text, text) to postgres;
-
-grant execute on function word_similarity_commutator_op(text, text) to anon;
-
-grant execute on function word_similarity_commutator_op(text, text) to authenticated;
-
-grant execute on function word_similarity_commutator_op(text, text) to service_role;
-
-create function similarity_dist(text, text) returns real
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function similarity_dist(text, text) owner to supabase_admin;
-
-grant execute on function similarity_dist(text, text) to postgres;
-
-grant execute on function similarity_dist(text, text) to anon;
-
-grant execute on function similarity_dist(text, text) to authenticated;
-
-grant execute on function similarity_dist(text, text) to service_role;
-
-create function word_similarity_dist_op(text, text) returns real
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function word_similarity_dist_op(text, text) owner to supabase_admin;
-
-grant execute on function word_similarity_dist_op(text, text) to postgres;
-
-grant execute on function word_similarity_dist_op(text, text) to anon;
-
-grant execute on function word_similarity_dist_op(text, text) to authenticated;
-
-grant execute on function word_similarity_dist_op(text, text) to service_role;
-
-create function word_similarity_dist_commutator_op(text, text) returns real
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function word_similarity_dist_commutator_op(text, text) owner to supabase_admin;
-
-grant execute on function word_similarity_dist_commutator_op(text, text) to postgres;
-
-grant execute on function word_similarity_dist_commutator_op(text, text) to anon;
-
-grant execute on function word_similarity_dist_commutator_op(text, text) to authenticated;
-
-grant execute on function word_similarity_dist_commutator_op(text, text) to service_role;
-
-create function gtrgm_in(cstring) returns gtrgm
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_in(cstring) owner to supabase_admin;
-
-grant execute on function gtrgm_in(cstring) to postgres;
-
-grant execute on function gtrgm_in(cstring) to anon;
-
-grant execute on function gtrgm_in(cstring) to authenticated;
-
-grant execute on function gtrgm_in(cstring) to service_role;
-
-create function gtrgm_out(gtrgm) returns cstring
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_out(gtrgm) owner to supabase_admin;
-
-grant execute on function gtrgm_out(gtrgm) to postgres;
-
-grant execute on function gtrgm_out(gtrgm) to anon;
-
-grant execute on function gtrgm_out(gtrgm) to authenticated;
-
-grant execute on function gtrgm_out(gtrgm) to service_role;
-
-create function gtrgm_consistent(internal, text, smallint, oid, internal) returns boolean
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_consistent(internal, text, smallint, oid, internal) owner to supabase_admin;
-
-grant execute on function gtrgm_consistent(internal, text, smallint, oid, internal) to postgres;
-
-grant execute on function gtrgm_consistent(internal, text, smallint, oid, internal) to anon;
-
-grant execute on function gtrgm_consistent(internal, text, smallint, oid, internal) to authenticated;
-
-grant execute on function gtrgm_consistent(internal, text, smallint, oid, internal) to service_role;
-
-create function gtrgm_distance(internal, text, smallint, oid, internal) returns double precision
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_distance(internal, text, smallint, oid, internal) owner to supabase_admin;
-
-grant execute on function gtrgm_distance(internal, text, smallint, oid, internal) to postgres;
-
-grant execute on function gtrgm_distance(internal, text, smallint, oid, internal) to anon;
-
-grant execute on function gtrgm_distance(internal, text, smallint, oid, internal) to authenticated;
-
-grant execute on function gtrgm_distance(internal, text, smallint, oid, internal) to service_role;
-
-create function gtrgm_compress(internal) returns internal
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_compress(internal) owner to supabase_admin;
-
-grant execute on function gtrgm_compress(internal) to postgres;
-
-grant execute on function gtrgm_compress(internal) to anon;
-
-grant execute on function gtrgm_compress(internal) to authenticated;
-
-grant execute on function gtrgm_compress(internal) to service_role;
-
-create function gtrgm_decompress(internal) returns internal
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_decompress(internal) owner to supabase_admin;
-
-grant execute on function gtrgm_decompress(internal) to postgres;
-
-grant execute on function gtrgm_decompress(internal) to anon;
-
-grant execute on function gtrgm_decompress(internal) to authenticated;
-
-grant execute on function gtrgm_decompress(internal) to service_role;
-
-create function gtrgm_penalty(internal, internal, internal) returns internal
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_penalty(internal, internal, internal) owner to supabase_admin;
-
-grant execute on function gtrgm_penalty(internal, internal, internal) to postgres;
-
-grant execute on function gtrgm_penalty(internal, internal, internal) to anon;
-
-grant execute on function gtrgm_penalty(internal, internal, internal) to authenticated;
-
-grant execute on function gtrgm_penalty(internal, internal, internal) to service_role;
-
-create function gtrgm_picksplit(internal, internal) returns internal
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_picksplit(internal, internal) owner to supabase_admin;
-
-grant execute on function gtrgm_picksplit(internal, internal) to postgres;
-
-grant execute on function gtrgm_picksplit(internal, internal) to anon;
-
-grant execute on function gtrgm_picksplit(internal, internal) to authenticated;
-
-grant execute on function gtrgm_picksplit(internal, internal) to service_role;
-
-create function gtrgm_union(internal, internal) returns gtrgm
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_union(internal, internal) owner to supabase_admin;
-
-grant execute on function gtrgm_union(internal, internal) to postgres;
-
-grant execute on function gtrgm_union(internal, internal) to anon;
-
-grant execute on function gtrgm_union(internal, internal) to authenticated;
-
-grant execute on function gtrgm_union(internal, internal) to service_role;
-
-create function gtrgm_same(gtrgm, gtrgm, internal) returns internal
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_same(gtrgm, gtrgm, internal) owner to supabase_admin;
-
-grant execute on function gtrgm_same(gtrgm, gtrgm, internal) to postgres;
-
-grant execute on function gtrgm_same(gtrgm, gtrgm, internal) to anon;
-
-grant execute on function gtrgm_same(gtrgm, gtrgm, internal) to authenticated;
-
-grant execute on function gtrgm_same(gtrgm, gtrgm, internal) to service_role;
-
-create function gin_extract_value_trgm(text, internal) returns internal
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gin_extract_value_trgm(text, internal) owner to supabase_admin;
-
-grant execute on function gin_extract_value_trgm(text, internal) to postgres;
-
-grant execute on function gin_extract_value_trgm(text, internal) to anon;
-
-grant execute on function gin_extract_value_trgm(text, internal) to authenticated;
-
-grant execute on function gin_extract_value_trgm(text, internal) to service_role;
-
-create function gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal) returns internal
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal) owner to supabase_admin;
-
-grant execute on function gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal) to postgres;
-
-grant execute on function gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal) to anon;
-
-grant execute on function gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal) to authenticated;
-
-grant execute on function gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal) to service_role;
-
-create function gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal) returns boolean
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal) owner to supabase_admin;
-
-grant execute on function gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal) to postgres;
-
-grant execute on function gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal) to anon;
-
-grant execute on function gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal) to authenticated;
-
-grant execute on function gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal) to service_role;
-
-create function gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal) returns "char"
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal) owner to supabase_admin;
-
-grant execute on function gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal) to postgres;
-
-grant execute on function gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal) to anon;
-
-grant execute on function gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal) to authenticated;
-
-grant execute on function gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal) to service_role;
-
-create function strict_word_similarity(text, text) returns real
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function strict_word_similarity(text, text) owner to supabase_admin;
-
-grant execute on function strict_word_similarity(text, text) to postgres;
-
-grant execute on function strict_word_similarity(text, text) to anon;
-
-grant execute on function strict_word_similarity(text, text) to authenticated;
-
-grant execute on function strict_word_similarity(text, text) to service_role;
-
-create function strict_word_similarity_op(text, text) returns boolean
-    stable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function strict_word_similarity_op(text, text) owner to supabase_admin;
-
-grant execute on function strict_word_similarity_op(text, text) to postgres;
-
-grant execute on function strict_word_similarity_op(text, text) to anon;
-
-grant execute on function strict_word_similarity_op(text, text) to authenticated;
-
-grant execute on function strict_word_similarity_op(text, text) to service_role;
-
-create function strict_word_similarity_commutator_op(text, text) returns boolean
-    stable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function strict_word_similarity_commutator_op(text, text) owner to supabase_admin;
-
-grant execute on function strict_word_similarity_commutator_op(text, text) to postgres;
-
-grant execute on function strict_word_similarity_commutator_op(text, text) to anon;
-
-grant execute on function strict_word_similarity_commutator_op(text, text) to authenticated;
-
-grant execute on function strict_word_similarity_commutator_op(text, text) to service_role;
-
-create function strict_word_similarity_dist_op(text, text) returns real
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function strict_word_similarity_dist_op(text, text) owner to supabase_admin;
-
-grant execute on function strict_word_similarity_dist_op(text, text) to postgres;
-
-grant execute on function strict_word_similarity_dist_op(text, text) to anon;
-
-grant execute on function strict_word_similarity_dist_op(text, text) to authenticated;
-
-grant execute on function strict_word_similarity_dist_op(text, text) to service_role;
-
-create function strict_word_similarity_dist_commutator_op(text, text) returns real
-    immutable
-    strict
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function strict_word_similarity_dist_commutator_op(text, text) owner to supabase_admin;
-
-grant execute on function strict_word_similarity_dist_commutator_op(text, text) to postgres;
-
-grant execute on function strict_word_similarity_dist_commutator_op(text, text) to anon;
-
-grant execute on function strict_word_similarity_dist_commutator_op(text, text) to authenticated;
-
-grant execute on function strict_word_similarity_dist_commutator_op(text, text) to service_role;
-
-create function gtrgm_options(internal) returns void
-    immutable
-    parallel safe
-    language c
-as
-$$
-begin
--- missing source code
-end;
-$$;
-
-alter function gtrgm_options(internal) owner to supabase_admin;
-
-grant execute on function gtrgm_options(internal) to postgres;
-
-grant execute on function gtrgm_options(internal) to anon;
-
-grant execute on function gtrgm_options(internal) to authenticated;
-
-grant execute on function gtrgm_options(internal) to service_role;
-
-create function search_public_events_hybrid(search_term text, limit_count integer DEFAULT 20, event_type_filter text DEFAULT NULL::text, state_filter text DEFAULT NULL::text, min_similarity double precision DEFAULT 0.2)
-    returns TABLE(id bigint, event_name text, event_type text, event_subtype text, location text, city text, state text, country text, event_date date, start_time time without time zone, registration_url text, website_url text, description text, organizer_name text, match_type text, relevance_score real)
-    stable
-    language plpgsql
-as
-$$
-DECLARE
-  fts_query TEXT;
-  today_date DATE := CURRENT_DATE;
-BEGIN
-  -- Convert search term to tsquery (handle special characters)
-  fts_query := websearch_to_tsquery('english', search_term)::text;
-
-  -- Return combined results from both full-text and fuzzy search
-  RETURN QUERY
-  WITH fts_matches AS (
-    -- Full-text search using the existing search_vector
-    SELECT
-      e.id,
-      e.event_name,
-      e.event_type::TEXT,
-      e.event_subtype::TEXT,
-      e.location,
-      e.city,
-      e.state,
-      e.country,
-      e.event_date,
-      e.start_time,
-      e.registration_url,
-      e.website_url,
-      e.description,
-      e.organizer_name,
-      'exact'::TEXT AS match_type,
-      -- Weighted ranking: event_name weighted highest
-      ts_rank_cd(
-        '{0.1, 0.2, 0.4, 1.0}',
-        e.search_vector,
-        websearch_to_tsquery('english', search_term)
-      )::REAL AS relevance_score
-    FROM public.public_events e
-    WHERE
-      e.is_active = true
-      AND e.event_date >= today_date
-      AND e.search_vector @@ websearch_to_tsquery('english', search_term)
-      -- Apply optional filters
-      AND (event_type_filter IS NULL OR e.event_type::TEXT = event_type_filter)
-      AND (state_filter IS NULL OR e.state ILIKE state_filter)
-  ),
-  fuzzy_matches AS (
-    -- Fuzzy matching using pg_trgm similarity for typo tolerance
-    SELECT
-      e.id,
-      e.event_name,
-      e.event_type::TEXT,
-      e.event_subtype::TEXT,
-      e.location,
-      e.city,
-      e.state,
-      e.country,
-      e.event_date,
-      e.start_time,
-      e.registration_url,
-      e.website_url,
-      e.description,
-      e.organizer_name,
-      'fuzzy'::TEXT AS match_type,
-      -- Combined similarity score (event_name weighted 60%, city 40%)
-      (
-        0.6 * similarity(e.event_name, search_term) +
-        0.4 * COALESCE(similarity(e.city, search_term), 0)
-      )::REAL AS relevance_score
-    FROM public.public_events e
-    WHERE
-      e.is_active = true
-      AND e.event_date >= today_date
-      -- Use similarity operator (%) for fuzzy matching
-      AND (
-        e.event_name % search_term
-        OR e.city % search_term
-        OR COALESCE(e.location, '') % search_term
-      )
-      -- Exclude events already found by FTS (FIXED: fully qualified column name)
-      AND NOT EXISTS (
-        SELECT 1 FROM fts_matches fm WHERE fm.id = e.id
-      )
-      -- Apply optional filters
-      AND (event_type_filter IS NULL OR e.event_type::TEXT = event_type_filter)
-      AND (state_filter IS NULL OR e.state ILIKE state_filter)
-      -- Only include results above similarity threshold
-      AND (
-        similarity(e.event_name, search_term) >= min_similarity
-        OR similarity(COALESCE(e.city, ''), search_term) >= min_similarity
-        OR similarity(COALESCE(e.location, ''), search_term) >= min_similarity
-      )
-  ),
-  combined_results AS (
-    -- Combine both result sets
-    SELECT * FROM fts_matches
-    UNION ALL
-    SELECT * FROM fuzzy_matches
-  )
-  -- Return sorted by relevance score (highest first), then by event date (nearest first)
-  SELECT * FROM combined_results
-  ORDER BY relevance_score DESC, event_date ASC
-  LIMIT limit_count;
-END;
-$$;
-
-comment on function search_public_events_hybrid(text, integer, text, text, double precision) is 'Hybrid search function combining full-text search (exact matches) with fuzzy matching (typo tolerance).
-Returns results ranked by relevance score with match_type indicator (exact/fuzzy).
-Fixed: Column reference ambiguity in NOT IN clause.
-Parameters:
-- search_term: Query string (e.g., "Boston Marathon")
-- limit_count: Max results to return (default: 20)
-- event_type_filter: Optional activity type filter (e.g., "running")
-- state_filter: Optional state filter (e.g., "MA")
-- min_similarity: Minimum fuzzy match threshold 0-1 (default: 0.2)';
-
-alter function search_public_events_hybrid(text, integer, text, text, double precision) owner to postgres;
-
-grant execute on function search_public_events_hybrid(text, integer, text, text, double precision) to anon;
-
-grant execute on function search_public_events_hybrid(text, integer, text, text, double precision) to authenticated;
-
-grant execute on function search_public_events_hybrid(text, integer, text, text, double precision) to service_role;
-
-create function update_feature_survey_timestamp() returns trigger
-    language plpgsql
-as
-$$
-  BEGIN
-    NEW.local_updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-  END;
-  $$;
-
-alter function update_feature_survey_timestamp() owner to postgres;
-
-create trigger feature_survey_update_timestamp
-    before update
-    on feature_survey_responses
-    for each row
-execute procedure update_feature_survey_timestamp();
-
-grant execute on function update_feature_survey_timestamp() to anon;
-
-grant execute on function update_feature_survey_timestamp() to authenticated;
-
-grant execute on function update_feature_survey_timestamp() to service_role;
-
-create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
-
-alter operator %(text, text) owner to supabase_admin;
-
-create operator <-> (procedure = similarity_dist, leftarg = text, rightarg = text, commutator = <->);
-
-alter operator <->(text, text) owner to supabase_admin;
-
-create operator family gist_trgm_ops using gist;
-
-alter operator family gist_trgm_ops using gist add
-    operator 1 %(text, text),
-    operator 2 <->(text, text) for order by float_ops,
-    operator 3 ~~(text,text),
-    operator 4 ~~*(text,text),
-    operator 5 ~(text,text),
-    operator 6 ~*(text,text),
-    operator 7 %>(text, text),
-    operator 8 <->>(text, text) for order by float_ops,
-    operator 9 %>>(text, text),
-    operator 10 <->>>(text, text) for order by float_ops,
-    operator 11 =(text,text),
-    function 5(text, text) gtrgm_penalty(internal, internal, internal),
-    function 6(text, text) gtrgm_picksplit(internal, internal),
-    function 7(text, text) gtrgm_same(gtrgm, gtrgm, internal),
-    function 8(text, text) gtrgm_distance(internal, text, smallint, oid, internal),
-    function 10(text, text) gtrgm_options(internal),
-    function 1(text, text) gtrgm_consistent(internal, text, smallint, oid, internal),
-    function 2(text, text) gtrgm_union(internal, internal),
-    function 3(text, text) gtrgm_compress(internal),
-    function 4(text, text) gtrgm_decompress(internal);
-
-alter operator family gist_trgm_ops using gist owner to supabase_admin;
-
-create operator class gist_trgm_ops for type text using gist as storage gtrgm function 7(text, text) gtrgm_same(gtrgm, gtrgm, internal),
-	function 2(text, text) gtrgm_union(internal, internal),
-	function 6(text, text) gtrgm_picksplit(internal, internal),
-	function 5(text, text) gtrgm_penalty(internal, internal, internal),
-	function 1(text, text) gtrgm_consistent(internal, text, smallint, oid, internal);
-
-alter operator class gist_trgm_ops using gist owner to supabase_admin;
-
-create operator family gin_trgm_ops using gin;
-
-alter operator family gin_trgm_ops using gin add
-    operator 6 ~*(text,text),
-    operator 7 %>(text, text),
-    operator 11 =(text,text),
-    operator 9 %>>(text, text),
-    operator 1 %(text, text),
-    operator 3 ~~(text,text),
-    operator 4 ~~*(text,text),
-    operator 5 ~(text,text),
-    function 3(text, text) gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal),
-    function 4(text, text) gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal),
-    function 6(text, text) gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal),
-    function 1(text, text) btint4cmp(integer,integer),
-    function 2(text, text) gin_extract_value_trgm(text, internal);
-
-alter operator family gin_trgm_ops using gin owner to supabase_admin;
-
-create operator class gin_trgm_ops for type text using gin as storage integer function 2(text, text) gin_extract_value_trgm(text, internal),
-	function 3(text, text) gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal);
-
-alter operator class gin_trgm_ops using gin owner to supabase_admin;
-
--- Cyclic dependencies found
-
-create operator %> (procedure = word_similarity_commutator_op, leftarg = text, rightarg = text, commutator = <%, join = matchingjoinsel, restrict = matchingsel);
-
-alter operator %>(text, text) owner to supabase_admin;
-
-create operator <% (procedure = word_similarity_op, leftarg = text, rightarg = text, commutator = %>, join = matchingjoinsel, restrict = matchingsel);
-
-alter operator <%(text, text) owner to supabase_admin;
-
--- Cyclic dependencies found
-
-create operator %>> (procedure = strict_word_similarity_commutator_op, leftarg = text, rightarg = text, commutator = <<%, join = matchingjoinsel, restrict = matchingsel);
-
-alter operator %>>(text, text) owner to supabase_admin;
-
-create operator <<% (procedure = strict_word_similarity_op, leftarg = text, rightarg = text, commutator = %>>, join = matchingjoinsel, restrict = matchingsel);
-
-alter operator <<%(text, text) owner to supabase_admin;
-
--- Cyclic dependencies found
-
-create operator <->> (procedure = word_similarity_dist_commutator_op, leftarg = text, rightarg = text, commutator = <<->);
-
-alter operator <->>(text, text) owner to supabase_admin;
-
-create operator <<-> (procedure = word_similarity_dist_op, leftarg = text, rightarg = text, commutator = <->>);
-
-alter operator <<->(text, text) owner to supabase_admin;
-
--- Cyclic dependencies found
-
-create operator <->>> (procedure = strict_word_similarity_dist_commutator_op, leftarg = text, rightarg = text, commutator = <<<->);
-
-alter operator <->>>(text, text) owner to supabase_admin;
-
-create operator <<<-> (procedure = strict_word_similarity_dist_op, leftarg = text, rightarg = text, commutator = <->>>);
-
-alter operator <<<->(text, text) owner to supabase_admin;
+execute procedure public.update_integrations_updated_at();
+
+create policy "Users can view own integrations" on public.integrations
+    as permissive
+    for select
+    using ((auth.uid() = user_id) OR (user_id IN (SELECT users.id
+                                                  FROM users
+                                                  WHERE (users.device_id =
+                                                         ((current_setting('request.headers'::text, true))::json ->>
+                                                          'x-device-id'::text)))));
+
+create policy "Users can insert own integrations" on public.integrations
+    as permissive
+    for insert
+    with check ((auth.uid() = user_id) OR (user_id IN (SELECT users.id
+                                                       FROM users
+                                                       WHERE (users.device_id =
+                                                              ((current_setting('request.headers'::text, true))::json ->>
+                                                               'x-device-id'::text)))));
+
+create policy "Users can update own integrations" on public.integrations
+    as permissive
+    for update
+    using ((auth.uid() = user_id) OR (user_id IN (SELECT users.id
+                                                  FROM users
+                                                  WHERE (users.device_id =
+                                                         ((current_setting('request.headers'::text, true))::json ->>
+                                                          'x-device-id'::text)))));
+
+create policy "Users can delete own integrations" on public.integrations
+    as permissive
+    for delete
+    using ((auth.uid() = user_id) OR (user_id IN (SELECT users.id
+                                                  FROM users
+                                                  WHERE (users.device_id =
+                                                         ((current_setting('request.headers'::text, true))::json ->>
+                                                          'x-device-id'::text)))));
+
+grant delete, insert, references, select, trigger, truncate, update on public.integrations to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.integrations to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.integrations to service_role;
 
