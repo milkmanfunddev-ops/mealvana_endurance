@@ -235,7 +235,12 @@ class TrainingPeaksTransformer {
     // Calculate pace from distance and time (TrainingPeaks doesn't provide pace)
     final paceMinPerMile = _calculatePace(distanceMiles, durationMinutes, activityType);
 
-    // Create the Activity
+    // Extract provider info
+    final providerWorkoutId = extractWorkoutId(workout);
+    final providerWorkoutUrl = _buildWorkoutUrl(workout);
+
+    // Create the Activity with provider sync fields
+    // Use 'planned' status since synced workouts are confirmed by external platform
     final activity = Activity(
       id: _uuid.v4(),
       userId: userId,
@@ -245,7 +250,7 @@ class TrainingPeaksTransformer {
         workout['WorkoutDay'] as String?,
         workout['StartTime'] as String? ?? workout['StartTimePlanned'] as String?,
       ),
-      status: ActivityStatus.draft,
+      status: ActivityStatus.planned,
       distanceMiles: distanceMiles,
       durationMinutes: durationMinutes,
       paceTargetMinutesPerMile: paceMinPerMile,
@@ -254,6 +259,11 @@ class TrainingPeaksTransformer {
           ? _calculateSwimmingPace(distanceMeters, durationMinutes)
           : null,
       notes: workout['Description'] as String?,
+      // Provider sync fields
+      syncedFromProvider: 'training_peaks',
+      providerWorkoutId: providerWorkoutId,
+      providerWorkoutUrl: providerWorkoutUrl,
+      lastSyncedAt: now,
       createdAt: now,
       updatedAt: now,
     );
@@ -261,8 +271,8 @@ class TrainingPeaksTransformer {
     return TrainingPeaksTransformResult(
       activity: activity,
       syncedFromProvider: 'training_peaks',
-      providerWorkoutId: extractWorkoutId(workout),
-      providerWorkoutUrl: _buildWorkoutUrl(workout),
+      providerWorkoutId: providerWorkoutId,
+      providerWorkoutUrl: providerWorkoutUrl,
       lastSyncedAt: now,
       workoutSubtype: isWalk ? 'Walk' : workout['Title'] as String?,
       distanceMeters: distanceMeters,

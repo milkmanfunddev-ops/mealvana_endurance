@@ -66,11 +66,9 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     // Additional validation as safety check
     if (email.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter your email address'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          'Please enter your email address',
         );
       }
       return;
@@ -78,11 +76,9 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
     if (password.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter your password'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          'Please enter your password',
         );
       }
       return;
@@ -98,15 +94,11 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
     if (success && mounted) {
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            contentService.getValue(
-              'auth.post_onboarding.success_linked',
-              defaultValue: 'Account created successfully!',
-            ),
-          ),
-          backgroundColor: AppColors.electrolyte,
+      MealvanaSnackbar.showSuccess(
+        context,
+        contentService.getValue(
+          'auth.post_onboarding.success_linked',
+          defaultValue: 'Account created successfully!',
         ),
       );
 
@@ -114,15 +106,11 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
       context.pop(true);
     } else if (!success && mounted) {
       // Error message shown by controller via snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            contentService.getValue(
-              'auth.post_onboarding.error_email_failed',
-              defaultValue: 'Account creation failed. Please try again.',
-            ),
-          ),
-          backgroundColor: AppColors.dragonfruit,
+      MealvanaSnackbar.showError(
+        context,
+        contentService.getValue(
+          'auth.post_onboarding.error_email_failed',
+          defaultValue: 'Account creation failed. Please try again.',
         ),
       );
     }

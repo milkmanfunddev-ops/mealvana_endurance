@@ -96,15 +96,11 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
 
     // Show generic error message
     final contentService = ref.read(contentServiceProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          contentService.getValue(
-            'auth.post_onboarding.error_oauth_failed',
-            defaultValue: 'Sign in failed. Please try again.',
-          ),
-        ),
-        backgroundColor: AppColors.dragonfruit,
+    MealvanaSnackbar.showError(
+      context,
+      contentService.getValue(
+        'auth.post_onboarding.error_oauth_failed',
+        defaultValue: 'Sign in failed. Please try again.',
       ),
     );
   }
@@ -240,15 +236,11 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
       }
     } else {
       // Show error if save failed
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            contentService.getValue(
-              'auth.post_onboarding.error_save_failed',
-              defaultValue: 'Failed to save your preferences. Please try again.',
-            ),
-          ),
-          backgroundColor: AppColors.dragonfruit,
+      MealvanaSnackbar.showError(
+        context,
+        contentService.getValue(
+          'auth.post_onboarding.error_save_failed',
+          defaultValue: 'Failed to save your preferences. Please try again.',
         ),
       );
     }

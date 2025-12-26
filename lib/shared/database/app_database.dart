@@ -598,7 +598,7 @@ class AppDatabase extends _$AppDatabase {
           }
 
           // 1. Create integrations table if it doesn't exist
-          await m.createTable(schema.integrationsTable);
+          await m.createTable(schema.integrations);
 
           // 2. Add sync columns to activities table
           final activitiesColumns = await customSelect("PRAGMA table_info(activities)").get();

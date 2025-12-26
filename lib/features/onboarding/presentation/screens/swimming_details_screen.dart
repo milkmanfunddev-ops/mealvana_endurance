@@ -11,6 +11,7 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Swimming Details Screen - Unified for both onboarding and settings
 ///
@@ -226,20 +227,10 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
 
           if (!mounted) return;
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Swimming details updated'),
-              backgroundColor: AppColors.electrolyte,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, 'Swimming details updated');
           context.pop();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save swimming details. Please try again.'),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Failed to save swimming details. Please try again.');
         }
       }
     } finally {

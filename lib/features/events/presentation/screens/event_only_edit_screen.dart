@@ -13,6 +13,7 @@ import '../../../../shared/utils/location_formatter.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../domain/event.dart';
 import '../providers/events_controller.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Event-only Edit Screen for modifying event details (NOT activity details).
 /// This screen allows editing event properties regardless of whether an activity exists.
@@ -234,12 +235,7 @@ class _EventOnlyEditScreenState extends ConsumerState<EventOnlyEditScreen> {
           _isSearchingLocation = false;
         });
         // Optionally show error to user
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error searching locations: $e'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        MealvanaSnackbar.showWarning(context, 'Error searching locations: $e');
       }
     }
   }
@@ -311,22 +307,12 @@ class _EventOnlyEditScreenState extends ConsumerState<EventOnlyEditScreen> {
       await eventsController.updateEvent(updatedEvent);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Event updated successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        MealvanaSnackbar.showSuccess(context, 'Event updated successfully');
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating event: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Error updating event: $e');
       }
     } finally {
       if (mounted) {

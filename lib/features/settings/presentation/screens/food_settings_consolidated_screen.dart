@@ -128,20 +128,10 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
           });
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Food preferences updated successfully'),
-            backgroundColor: AppColors.electrolyte,
-          ),
-        );
+        MealvanaSnackbar.showSuccess(context, 'Food preferences updated successfully');
         context.pop();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save preferences. Please try again.'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Failed to save preferences. Please try again.');
       }
     } finally {
       if (mounted) {

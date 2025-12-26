@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
-import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
-import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
+import 'package:mealvana_endurance/shared/widgets/navigation/figma_onboarding_footer.dart';
 
 import '../providers/connect_training_controller.dart';
 import '../widgets/integration_provider_card.dart';
@@ -38,46 +36,62 @@ class ConnectTrainingScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.blackberry,
-      body: SafeArea(
-        child: Padding(
-          padding: AppSpacing.screenPadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Back button (if not first screen)
-              if (onBack != null)
-                IconButton(
-                  icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-                  onPressed: onBack,
-                ),
+      body: Column(
+        children: [
+          // Main content
+          Expanded(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: AppSpacing.screenPadding,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: AppSpacing.lg),
 
-              const SizedBox(height: AppSpacing.lg),
+                    // Header
+                    _buildHeader(context),
 
-              // Header
-              _buildHeader(context),
+                    const SizedBox(height: AppSpacing.xl),
 
-              const SizedBox(height: AppSpacing.xl),
+                    // Integration providers list
+                    Expanded(
+                      child: state.when(
+                        data: (data) => _buildProvidersList(context, ref, data),
+                        loading: () => const Center(
+                          child: CircularProgressIndicator(color: AppColors.dragonfruit),
+                        ),
+                        error: (error, _) => _buildError(context, ref, error.toString()),
+                      ),
+                    ),
 
-              // Integration providers list
-              Expanded(
-                child: state.when(
-                  data: (data) => _buildProvidersList(context, ref, data),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(color: AppColors.dragonfruit),
-                  ),
-                  error: (error, _) => _buildError(context, ref, error.toString()),
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Skip button
+                    _buildSkipButton(context, ref),
+
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              // Skip button
-              _buildSkipButton(context, ref),
-
-              const SizedBox(height: AppSpacing.md),
-            ],
+            ),
           ),
-        ),
+
+          // Footer navigation
+          _buildFooter(context, ref, state),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter(BuildContext context, WidgetRef ref, AsyncValue<ConnectTrainingState> state) {
+    return SafeArea(
+      top: false,
+      child: FigmaOnboardingFooter(
+        onContinue: () => _continue(context),
+        onBack: onBack,
+        canContinue: true,
+        isLoading: state.isLoading,
       ),
     );
   }
@@ -106,10 +120,9 @@ class ConnectTrainingScreen extends ConsumerWidget {
   ) {
     return ListView(
       children: [
-        // Final Surge - Active
+        // Final Surge
         IntegrationProviderCard(
           name: 'Final Surge',
-          description: 'Sync your training plan and upcoming workouts',
           iconPath: 'assets/images/integrations/final_surge_logo.jpg',
           isAvailable: true,
           isConnected: data.isFinalSurgeConnected,
@@ -121,10 +134,9 @@ class ConnectTrainingScreen extends ConsumerWidget {
 
         const SizedBox(height: AppSpacing.md),
 
-        // TrainingPeaks - Active
+        // TrainingPeaks
         IntegrationProviderCard(
           name: 'TrainingPeaks',
-          description: 'Import structured workouts from your coach',
           iconPath: 'assets/images/integrations/training_peaks_logo.jpg',
           isAvailable: true,
           isConnected: data.isTrainingPeaksConnected,
@@ -136,10 +148,9 @@ class ConnectTrainingScreen extends ConsumerWidget {
 
         const SizedBox(height: AppSpacing.md),
 
-        // Strava - Coming Soon
+        // Strava
         IntegrationProviderCard(
           name: 'Strava',
-          description: 'Sync your planned activities',
           iconPath: 'assets/images/integrations/strava_logo.jpg',
           isAvailable: false,
           isConnected: false,
@@ -201,18 +212,20 @@ class ConnectTrainingScreen extends ConsumerWidget {
     final success = await controller.connectFinalSurge();
 
     if (success && context.mounted) {
-      // Show success and continue
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Final Surge connected! Importing workouts...'),
-          backgroundColor: AppColors.success,
-        ),
+      // Show success message
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Final Surge connected! Importing workouts...',
       );
 
-      // Import workouts and continue
+      // Import workouts (but don't auto-navigate)
       await controller.importWorkouts();
+
       if (context.mounted) {
-        _continue(context);
+        MealvanaSnackbar.showSuccess(
+          context,
+          'Workouts imported successfully!',
+        );
       }
     }
   }
@@ -222,12 +235,7 @@ class ConnectTrainingScreen extends ConsumerWidget {
     await controller.disconnectFinalSurge();
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Final Surge disconnected'),
-          backgroundColor: AppColors.blackberry,
-        ),
-      );
+      MealvanaSnackbar.showInfo(context, 'Final Surge disconnected');
     }
   }
 
@@ -236,18 +244,20 @@ class ConnectTrainingScreen extends ConsumerWidget {
     final success = await controller.connectTrainingPeaks();
 
     if (success && context.mounted) {
-      // Show success and continue
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('TrainingPeaks connected! Importing workouts...'),
-          backgroundColor: AppColors.success,
-        ),
+      // Show success message
+      MealvanaSnackbar.showSuccess(
+        context,
+        'TrainingPeaks connected! Importing workouts...',
       );
 
-      // Import workouts and continue
+      // Import workouts (but don't auto-navigate)
       await controller.importWorkouts();
+
       if (context.mounted) {
-        _continue(context);
+        MealvanaSnackbar.showSuccess(
+          context,
+          'Workouts imported successfully!',
+        );
       }
     }
   }
@@ -257,17 +267,12 @@ class ConnectTrainingScreen extends ConsumerWidget {
     await controller.disconnectTrainingPeaks();
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('TrainingPeaks disconnected'),
-          backgroundColor: AppColors.blackberry,
-        ),
-      );
+      MealvanaSnackbar.showInfo(context, 'TrainingPeaks disconnected');
     }
   }
 
   void _skipConnection(BuildContext context, WidgetRef ref) {
-    // Track skip
+    // Track skip and continue
     ref.read(connectTrainingControllerProvider.notifier).trackSkip();
     _continue(context);
   }

@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../domain/http_retry_client.dart';
+import '../domain/integration_exceptions.dart';
+
 /// API client for TrainingPeaks workout and event data
 ///
 /// CRITICAL DIFFERENCES FROM FINAL SURGE:
@@ -18,12 +21,15 @@ import 'package:http/http.dart' as http;
 /// - Fetching upcoming workouts
 /// - Fetching athlete profile
 /// - Fetching events (unique to TrainingPeaks)
+/// - Automatic retry with exponential backoff
+/// - Rate limit handling
 class TrainingPeaksApiClient {
   TrainingPeaksApiClient({
     required String clientId,
     required String clientSecret,
     bool useSandbox = true,
     http.Client? httpClient,
+    RetryConfig? retryConfig,
   })  : _clientId = clientId,
         _clientSecret = clientSecret,
         _oauthBaseUrl = useSandbox
@@ -32,13 +38,17 @@ class TrainingPeaksApiClient {
         _apiBaseUrl = useSandbox
             ? 'https://api.sandbox.trainingpeaks.com'
             : 'https://api.trainingpeaks.com',
-        _httpClient = httpClient ?? http.Client();
+        _httpClient = httpClient ?? http.Client(),
+        _retryConfig = retryConfig ?? RetryConfig.defaultConfig;
+
+  static const _provider = 'training_peaks';
 
   final String _clientId;
   final String _clientSecret;
   final String _oauthBaseUrl;
   final String _apiBaseUrl;
   final http.Client _httpClient;
+  final RetryConfig _retryConfig;
 
   static const _userAgent = 'Mealvana Endurance v1.0';
 
@@ -128,59 +138,53 @@ class TrainingPeaksApiClient {
   Future<TrainingPeaksAthleteProfile> getAthleteProfile(
     String accessToken,
   ) async {
-    final response = await _httpClient.get(
-      Uri.parse('$_apiBaseUrl/v1/athlete/profile'),
-      headers: _authHeaders(accessToken),
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.get(
+        Uri.parse('$_apiBaseUrl/v1/athlete/profile'),
+        headers: _authHeaders(accessToken),
+      ),
+      onResponse: (response) {
+        _handleErrorResponse(response, 'Failed to fetch athlete profile');
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        return TrainingPeaksAthleteProfile.fromJson(json);
+      },
+      provider: _provider,
+      config: _retryConfig,
     );
-
-    if (response.statusCode == 401) {
-      throw TrainingPeaksTokenExpiredException();
-    }
-
-    if (response.statusCode != 200) {
-      throw TrainingPeaksApiException(
-        'Failed to fetch athlete profile',
-        statusCode: response.statusCode,
-        body: response.body,
-      );
-    }
-
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return TrainingPeaksAthleteProfile.fromJson(json);
   }
 
   /// Fetch workouts for a date range
   ///
   /// CRITICAL: Distance is in METERS, Time is in DECIMAL HOURS
   /// Max date range is 45 days.
+  ///
+  /// Throws:
+  /// - [TokenExpiredException] if access token is invalid (401)
+  /// - [RateLimitException] if rate limited (429)
+  /// - [NetworkException] for connection issues
+  /// - [IntegrationApiException] for other API errors
   Future<List<Map<String, dynamic>>> getWorkouts(
     String accessToken, {
     required DateTime startDate,
     required DateTime endDate,
     bool includeDescription = false,
   }) async {
-    final response = await _httpClient.get(
-      Uri.parse('$_apiBaseUrl/v2/workouts/${_formatDate(startDate)}/${_formatDate(endDate)}')
-          .replace(queryParameters: {
-        if (includeDescription) 'includeDescription': 'true',
-      }),
-      headers: _authHeaders(accessToken),
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.get(
+        Uri.parse('$_apiBaseUrl/v2/workouts/${_formatDate(startDate)}/${_formatDate(endDate)}')
+            .replace(queryParameters: {
+          if (includeDescription) 'includeDescription': 'true',
+        }),
+        headers: _authHeaders(accessToken),
+      ),
+      onResponse: (response) {
+        _handleErrorResponse(response, 'Failed to fetch workouts');
+        final json = jsonDecode(response.body) as List;
+        return json.cast<Map<String, dynamic>>();
+      },
+      provider: _provider,
+      config: _retryConfig,
     );
-
-    if (response.statusCode == 401) {
-      throw TrainingPeaksTokenExpiredException();
-    }
-
-    if (response.statusCode != 200) {
-      throw TrainingPeaksApiException(
-        'Failed to fetch workouts',
-        statusCode: response.statusCode,
-        body: response.body,
-      );
-    }
-
-    final json = jsonDecode(response.body) as List;
-    return json.cast<Map<String, dynamic>>();
   }
 
   /// Fetch upcoming workouts (convenience method)
@@ -206,39 +210,32 @@ class TrainingPeaksApiClient {
   /// This is a key differentiator from Final Surge - we can auto-import
   /// races and events for nutrition planning.
   Future<Map<String, dynamic>?> getNextEvent(String accessToken) async {
-    final response = await _httpClient.get(
-      Uri.parse('$_apiBaseUrl/v2/events/next'),
-      headers: _authHeaders(accessToken),
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.get(
+        Uri.parse('$_apiBaseUrl/v2/events/next'),
+        headers: _authHeaders(accessToken),
+      ),
+      onResponse: (response) {
+        // 404 = No upcoming events (not an error)
+        if (response.statusCode == 404) return null;
+
+        _handleErrorResponse(response, 'Failed to fetch next event');
+
+        final body = response.body;
+        if (body.isEmpty) return null;
+
+        final json = jsonDecode(body);
+        if (json == null) return null;
+
+        // API can return a single object or array
+        if (json is List) {
+          return json.isNotEmpty ? json.first as Map<String, dynamic> : null;
+        }
+        return json as Map<String, dynamic>;
+      },
+      provider: _provider,
+      config: _retryConfig,
     );
-
-    if (response.statusCode == 401) {
-      throw TrainingPeaksTokenExpiredException();
-    }
-
-    if (response.statusCode == 404) {
-      // No upcoming events
-      return null;
-    }
-
-    if (response.statusCode != 200) {
-      throw TrainingPeaksApiException(
-        'Failed to fetch next event',
-        statusCode: response.statusCode,
-        body: response.body,
-      );
-    }
-
-    final body = response.body;
-    if (body.isEmpty) return null;
-
-    final json = jsonDecode(body);
-    if (json == null) return null;
-
-    // API can return a single object or array
-    if (json is List) {
-      return json.isNotEmpty ? json.first as Map<String, dynamic> : null;
-    }
-    return json as Map<String, dynamic>;
   }
 
   /// Get events for a specific date
@@ -246,29 +243,23 @@ class TrainingPeaksApiClient {
     String accessToken,
     DateTime date,
   ) async {
-    final response = await _httpClient.get(
-      Uri.parse('$_apiBaseUrl/v2/events/${_formatDate(date)}'),
-      headers: _authHeaders(accessToken),
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.get(
+        Uri.parse('$_apiBaseUrl/v2/events/${_formatDate(date)}'),
+        headers: _authHeaders(accessToken),
+      ),
+      onResponse: (response) {
+        // 404 = No events on this date (not an error)
+        if (response.statusCode == 404) return <Map<String, dynamic>>[];
+
+        _handleErrorResponse(response, 'Failed to fetch events');
+
+        final json = jsonDecode(response.body) as List;
+        return json.cast<Map<String, dynamic>>();
+      },
+      provider: _provider,
+      config: _retryConfig,
     );
-
-    if (response.statusCode == 401) {
-      throw TrainingPeaksTokenExpiredException();
-    }
-
-    if (response.statusCode == 404) {
-      return [];
-    }
-
-    if (response.statusCode != 200) {
-      throw TrainingPeaksApiException(
-        'Failed to fetch events',
-        statusCode: response.statusCode,
-        body: response.body,
-      );
-    }
-
-    final json = jsonDecode(response.body) as List;
-    return json.cast<Map<String, dynamic>>();
   }
 
   /// Push nutrition data to TrainingPeaks (UNIQUE FEATURE!)
@@ -284,34 +275,31 @@ class TrainingPeaksApiClient {
     double? fat,
     double? protein,
   }) async {
-    final response = await _httpClient.post(
-      Uri.parse('$_apiBaseUrl/v1/athletes/$athleteId/nutrition'),
-      headers: {
-        ..._authHeaders(accessToken),
-        'Content-Type': 'application/json',
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.post(
+        Uri.parse('$_apiBaseUrl/v1/athletes/$athleteId/nutrition'),
+        headers: {
+          ..._authHeaders(accessToken),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'NutritionDate': date.toIso8601String(),
+          if (calories != null) 'Calories': calories,
+          if (carbohydrates != null) 'Carbohydrates': carbohydrates,
+          if (fat != null) 'Fat': fat,
+          if (protein != null) 'Protein': protein,
+        }),
+      ),
+      onResponse: (response) {
+        // 201 = Created (success for POST)
+        if (response.statusCode != 201) {
+          _handleErrorResponse(response, 'Failed to create nutrition entry');
+        }
+        return jsonDecode(response.body) as Map<String, dynamic>;
       },
-      body: jsonEncode({
-        'NutritionDate': date.toIso8601String(),
-        if (calories != null) 'Calories': calories,
-        if (carbohydrates != null) 'Carbohydrates': carbohydrates,
-        if (fat != null) 'Fat': fat,
-        if (protein != null) 'Protein': protein,
-      }),
+      provider: _provider,
+      config: _retryConfig,
     );
-
-    if (response.statusCode == 401) {
-      throw TrainingPeaksTokenExpiredException();
-    }
-
-    if (response.statusCode != 201) {
-      throw TrainingPeaksApiException(
-        'Failed to create nutrition entry',
-        statusCode: response.statusCode,
-        body: response.body,
-      );
-    }
-
-    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
   Map<String, String> _authHeaders(String accessToken) => {
@@ -321,6 +309,16 @@ class TrainingPeaksApiClient {
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Handle error responses and throw appropriate exceptions
+  void _handleErrorResponse(http.Response response, String context) {
+    final error = HttpRetryClient.mapStatusToException(
+      response,
+      provider: _provider,
+      context: context,
+    );
+    if (error != null) throw error;
   }
 
   void dispose() {
@@ -417,16 +415,15 @@ class TrainingPeaksAthleteProfile {
 }
 
 /// Exception for TrainingPeaks API errors
-class TrainingPeaksApiException implements Exception {
+///
+/// Extends the shared [IntegrationApiException] for consistency across integrations.
+/// Kept for backward compatibility with existing code.
+class TrainingPeaksApiException extends IntegrationApiException {
   const TrainingPeaksApiException(
-    this.message, {
-    this.statusCode,
-    this.body,
-  });
-
-  final String message;
-  final int? statusCode;
-  final String? body;
+    super.message, {
+    super.statusCode,
+    super.body,
+  }) : super(provider: 'training_peaks');
 
   @override
   String toString() {
@@ -443,11 +440,21 @@ class TrainingPeaksApiException implements Exception {
 
 /// Exception specifically for expired tokens
 ///
-/// This exception should trigger a token refresh flow
-class TrainingPeaksTokenExpiredException implements Exception {
-  const TrainingPeaksTokenExpiredException();
+/// Extends the shared [TokenExpiredException] for consistency.
+/// This exception should trigger a token refresh flow.
+class TrainingPeaksTokenExpiredException extends TokenExpiredException {
+  const TrainingPeaksTokenExpiredException()
+      : super('Token expired. Call refreshToken().', provider: 'training_peaks');
 
   @override
   String toString() =>
       'TrainingPeaksTokenExpiredException: Token expired. Call refreshToken().';
+}
+
+/// Exception for OAuth-specific errors
+class TrainingPeaksOAuthException extends IntegrationApiException {
+  const TrainingPeaksOAuthException(super.message) : super(provider: 'training_peaks');
+
+  @override
+  String toString() => 'TrainingPeaksOAuthException: $message';
 }

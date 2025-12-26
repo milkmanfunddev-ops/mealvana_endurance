@@ -5,12 +5,11 @@ import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
 /// Card displaying an integration provider (Final Surge, TrainingPeaks, etc.)
 ///
-/// Shows connection status and allows connect/disconnect actions.
+/// Shows connection status and allows connect/disconnect/sync actions.
 class IntegrationProviderCard extends StatelessWidget {
   const IntegrationProviderCard({
     super.key,
     required this.name,
-    required this.description,
     required this.isAvailable,
     required this.isConnected,
     required this.isConnecting,
@@ -19,13 +18,12 @@ class IntegrationProviderCard extends StatelessWidget {
     this.comingSoonText,
     this.onConnect,
     this.onDisconnect,
+    this.onSync,
+    this.isSyncing = false,
   });
 
   /// Provider name (e.g., "Final Surge")
   final String name;
-
-  /// Provider description
-  final String description;
 
   /// Path to provider logo image
   final String? iconPath;
@@ -50,6 +48,12 @@ class IntegrationProviderCard extends StatelessWidget {
 
   /// Callback when user taps Disconnect
   final VoidCallback? onDisconnect;
+
+  /// Callback when user taps Sync Now (when connected)
+  final VoidCallback? onSync;
+
+  /// Whether sync is in progress
+  final bool isSyncing;
 
   @override
   Widget build(BuildContext context) {
@@ -111,28 +115,9 @@ class IntegrationProviderCard extends StatelessWidget {
   }
 
   Widget _buildInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          name,
-          style: AppTextStyles.activityTitle.copyWith(color: AppColors.textDark),
-        ),
-        const SizedBox(height: 2),
-        if (isConnected && athleteName != null) ...[
-          Text(
-            'Connected as $athleteName',
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.success),
-          ),
-        ] else ...[
-          Text(
-            description,
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textDarkSecondary),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ],
+    return Text(
+      name,
+      style: AppTextStyles.activityTitle.copyWith(color: AppColors.textDark, fontSize: 12),
     );
   }
 
@@ -141,7 +126,7 @@ class IntegrationProviderCard extends StatelessWidget {
     if (!isAvailable) {
       return Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
+          horizontal: AppSpacing.xs,
           vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
@@ -155,21 +140,33 @@ class IntegrationProviderCard extends StatelessWidget {
       );
     }
 
-    // Connecting spinner
-    if (isConnecting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: AppColors.dragonfruit,
-        ),
+    // Connecting or syncing spinner
+    if (isConnecting || isSyncing) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.dragonfruit,
+            ),
+          ),
+          if (isSyncing) ...[
+            const SizedBox(width: 8),
+            Text(
+              'Syncing...',
+              style: AppTextStyles.smallLabel.copyWith(color: AppColors.textDarkSecondary),
+            ),
+          ],
+        ],
       );
     }
 
-    // Connected - show disconnect option
+    // Connected - show Sync Now button with disconnect option
     if (isConnected) {
-      return _ConnectedBadge(onDisconnect: onDisconnect);
+      return _SyncButton(onSync: onSync, onDisconnect: onDisconnect);
     }
 
     // Not connected - show connect button
@@ -177,38 +174,39 @@ class IntegrationProviderCard extends StatelessWidget {
   }
 }
 
-/// Badge showing connected status with disconnect option
-class _ConnectedBadge extends StatelessWidget {
-  const _ConnectedBadge({this.onDisconnect});
+/// Sync button for connected providers - shows Sync Now with long-press to disconnect
+class _SyncButton extends StatelessWidget {
+  const _SyncButton({this.onSync, this.onDisconnect});
 
+  final VoidCallback? onSync;
   final VoidCallback? onDisconnect;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showDisconnectDialog(context),
+      onTap: onSync,
+      onLongPress: () => _showDisconnectDialog(context),
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xxs,
         ),
         decoration: BoxDecoration(
-          color: AppColors.success.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.success),
+          color: AppColors.dragonfruit,
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.check_circle,
+              Icons.sync,
               size: 16,
-              color: AppColors.success,
+              color: AppColors.textDark,
             ),
             const SizedBox(width: 4),
             Text(
-              'Connected',
-              style: AppTextStyles.smallLabel.copyWith(color: AppColors.success),
+              'Sync Now',
+              style: AppTextStyles.buttonPrimary.copyWith(color: AppColors.textDark),
             ),
           ],
         ),
@@ -226,7 +224,7 @@ class _ConnectedBadge extends StatelessWidget {
           style: AppTextStyles.sectionTitle.copyWith(color: AppColors.textDark),
         ),
         content: Text(
-          'Your imported workouts will remain, but no new workouts will be synced.',
+          'Your imported workouts will remain, but no new workouts will be synced.\n\nTip: Long-press Sync Now to disconnect.',
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textDarkSecondary),
         ),
         actions: [
@@ -265,8 +263,8 @@ class _ConnectButton extends StatelessWidget {
       onTap: onConnect,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
           color: AppColors.dragonfruit,

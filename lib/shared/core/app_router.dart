@@ -35,6 +35,7 @@ import '../../features/settings/presentation/screens/food_settings_consolidated_
 import '../../features/settings/presentation/screens/food_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
+import '../../features/settings/presentation/screens/connected_apps_screen.dart';
 import '../core/screen_mode.dart';
 import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
 import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
@@ -260,6 +261,13 @@ class AppRouter {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+
+      // Connected Apps Screen - Training platform integrations (Final Surge, etc.)
+      GoRoute(
+        path: '/settings/connected-apps',
+        name: 'settings-connected-apps',
+        builder: (context, state) => const ConnectedAppsScreen(),
       ),
 
       // Preferences Screen - Edit profile and preferences with save button

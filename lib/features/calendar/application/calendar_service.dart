@@ -201,12 +201,19 @@ class CalendarService {
     String? packetPickupInfo,
   }) async {
     try {
+      // Parse eventDate from startTime for calendar display
+      DateTime? eventDate;
+      if (startTime != null && startTime.isNotEmpty) {
+        eventDate = DateTime.tryParse(startTime);
+      }
+
       final companion = EventsTableCompanion.insert(
         userId: userId,
         activityId: activityId != null ? Value(activityId) : const Value.absent(),
         eventType: eventType.dbValue,
         eventSubtype: Value(eventSubtype),
         eventName: Value(eventName),
+        eventDate: Value(eventDate), // Set eventDate for calendar indicators
         location: Value(location),
         registrationUrl: Value(registrationUrl),
         startTime: Value(startTime),

@@ -702,12 +702,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     // Validate form and required fields
     if (!_formKey.currentState!.validate() || _selectedBirthday == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please fill in all fields'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Please fill in all fields');
       }
       return;
     }

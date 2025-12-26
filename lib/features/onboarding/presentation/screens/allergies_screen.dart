@@ -174,20 +174,10 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
           // Invalidate settings controller to refresh the food preferences hub screen
           ref.invalidate(settingsControllerProvider);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Allergies updated'),
-              backgroundColor: AppColors.electrolyte,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, 'Allergies updated');
           context.pop();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save allergies. Please try again.'),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Failed to save allergies. Please try again.');
         }
       }
     } finally {

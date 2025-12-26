@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../theme/app_theme.dart';
 import '../providers/plan_rating_controller.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Screen for users to rate how well their nutrition plan worked
 /// Shown after a run is completed (via notification or app startup)
@@ -249,12 +250,7 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
       context.go('/main?tab=workout-notes');
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save rating: $error'),
-            backgroundColor: AppTheme.warningColor,
-          ),
-        );
+        MealvanaSnackbar.showWarning(context, 'Failed to save rating: $error');
       }
     }
   }
@@ -271,12 +267,7 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to skip feedback: $error'),
-            backgroundColor: AppTheme.warningColor,
-          ),
-        );
+        MealvanaSnackbar.showWarning(context, 'Failed to skip feedback: $error');
         // Even if skip fails, still navigate away to avoid being stuck
         context.go('/main');
       }

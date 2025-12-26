@@ -18,6 +18,7 @@ import '../providers/macro_targets_controller.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../activities/domain/activity.dart' as domain;
 
 /// New Activity Screen - Kyle's Unified Design
@@ -213,12 +214,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       DebugLogger.error('❌ NEW ACTIVITY: Error in macro generation flow: $e');
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error generating plan: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      MealvanaSnackbar.showError(context, 'Error generating plan: $e');
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/debug_log_storage.dart';
 import '../../../../shared/services/sync/data_sync_service.dart';
 import '../../../../shared/database/database_provider.dart';
@@ -97,11 +98,10 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
 
     Clipboard.setData(ClipboardData(text: logText));
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('📋 Logs copied to clipboard'),
-        duration: Duration(seconds: 2),
-      ),
+    MealvanaSnackbar.showSuccess(
+      context,
+      'Logs copied to clipboard',
+      duration: const Duration(seconds: 2),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/services/app_config.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
@@ -19,13 +20,17 @@ part 'integrations_providers.g.dart';
 /// TODO: Move to environment variables
 const _finalSurgeClientId = 'BD5D0C2B-7507-405B-8A3F-DB161288E6FC';
 
-/// TrainingPeaks Client ID and Secret
-/// TODO: Load from environment variables in production
-const _trainingPeaksClientId = 'mealvana';
-const _trainingPeaksClientSecret = 'CSBPmjgHFFTjGNUfBlPTqcx1bm9ilR6laqHO31Ms';
+/// Base callback URL scheme for OAuth
+const _baseCallbackScheme = 'com.milkman.mealvanaendurance';
 
-/// Whether to use TrainingPeaks sandbox (true for development)
-const _useTrainingPeaksSandbox = true;
+/// Get the callback URL scheme for OAuth
+/// Note: We use the same callback scheme for both dev and prod because
+/// Final Surge only has one registered app ("mealvana") with a single
+/// whitelisted callback URL. Using different schemes per environment
+/// would cause "invalid callback URL" errors.
+String _getCallbackScheme(bool isDev) {
+  return _baseCallbackScheme;
+}
 
 // =============================================================================
 // DATA LAYER PROVIDERS
@@ -51,6 +56,7 @@ IntegrationsRepository integrationsRepository(Ref ref) {
 /// Provider for Final Surge OAuth service
 @Riverpod(keepAlive: true)
 FinalSurgeOAuthService finalSurgeOAuthService(Ref ref) {
+  final config = ref.watch(appConfigProvider);
   final apiClient = ref.watch(finalSurgeApiClientProvider);
   final repository = ref.watch(integrationsRepositoryProvider);
 
@@ -58,6 +64,7 @@ FinalSurgeOAuthService finalSurgeOAuthService(Ref ref) {
     apiClient: apiClient,
     repository: repository,
     clientId: _finalSurgeClientId,
+    callbackUrlScheme: _getCallbackScheme(config.isDevelopment),
   );
 }
 
@@ -124,10 +131,11 @@ Future<List<IntegrationModel>> userIntegrations(
 /// Provider for TrainingPeaks API client
 @Riverpod(keepAlive: true)
 TrainingPeaksApiClient trainingPeaksApiClient(Ref ref) {
+  final config = ref.watch(appConfigProvider);
   return TrainingPeaksApiClient(
-    clientId: _trainingPeaksClientId,
-    clientSecret: _trainingPeaksClientSecret,
-    useSandbox: _useTrainingPeaksSandbox,
+    clientId: config.trainingPeaksClientId,
+    clientSecret: config.trainingPeaksClientSecret,
+    useSandbox: config.trainingPeaksUseSandbox,
   );
 }
 
@@ -140,14 +148,16 @@ TrainingPeaksTransformer trainingPeaksTransformer(Ref ref) {
 /// Provider for TrainingPeaks OAuth service
 @Riverpod(keepAlive: true)
 TrainingPeaksOAuthService trainingPeaksOAuthService(Ref ref) {
+  final config = ref.watch(appConfigProvider);
   final apiClient = ref.watch(trainingPeaksApiClientProvider);
   final repository = ref.watch(integrationsRepositoryProvider);
 
   return TrainingPeaksOAuthService(
     apiClient: apiClient,
     repository: repository,
-    clientId: _trainingPeaksClientId,
-    useSandbox: _useTrainingPeaksSandbox,
+    clientId: config.trainingPeaksClientId,
+    useSandbox: config.trainingPeaksUseSandbox,
+    callbackUrlScheme: _getCallbackScheme(config.isDevelopment),
   );
 }
 

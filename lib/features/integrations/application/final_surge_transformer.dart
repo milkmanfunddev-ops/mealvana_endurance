@@ -102,14 +102,19 @@ class FinalSurgeTransformer {
         ? _getDistanceMeters(workout)
         : null;
 
-    // Create the Activity
+    // Extract provider info
+    final providerWorkoutId = extractWorkoutId(workout);
+    final providerWorkoutUrl = workout['WorkoutURL'] as String?;
+
+    // Create the Activity with provider sync fields
+    // Use 'planned' status since synced workouts are confirmed by external platform
     final activity = Activity(
       id: _uuid.v4(),
       userId: userId,
       activityType: activityType,
       title: _getTitle(workout, workoutTypeName),
       scheduledDateTime: _parseScheduledDate(workout['WorkoutDate'] as String?),
-      status: ActivityStatus.draft,
+      status: ActivityStatus.planned,
       distanceMiles: distanceMiles,
       durationMinutes: durationMinutes,
       paceTargetMinutesPerMile: paceResult.targetPace,
@@ -118,6 +123,11 @@ class FinalSurgeTransformer {
           ? _calculateSwimmingPace(distanceMeters, durationMinutes)
           : null,
       notes: _cleanDescription(workout['WorkoutDescription'] as String?),
+      // Provider sync fields
+      syncedFromProvider: 'final_surge',
+      providerWorkoutId: providerWorkoutId,
+      providerWorkoutUrl: providerWorkoutUrl,
+      lastSyncedAt: now,
       createdAt: now,
       updatedAt: now,
     );
@@ -125,8 +135,8 @@ class FinalSurgeTransformer {
     return FinalSurgeTransformResult(
       activity: activity,
       syncedFromProvider: 'final_surge',
-      providerWorkoutId: extractWorkoutId(workout),
-      providerWorkoutUrl: workout['WorkoutURL'] as String?,
+      providerWorkoutId: providerWorkoutId,
+      providerWorkoutUrl: providerWorkoutUrl,
       lastSyncedAt: now,
       workoutSubtype: isWalk ? 'Walk' : workout['WorkoutSubTypeName'] as String?,
       paceMinMinutesPerMile: paceResult.minPace,

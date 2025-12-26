@@ -170,7 +170,7 @@ class LLMNutritionPlanService {
       // Parse the response
       final data = response.data as Map<String, dynamic>;
       _logger.api('Edge function response received',
-        endpoint: '/generate-ai-nutrition-plan',
+        endpoint: '/generate-nutrition-plan',
         statusCode: response.status,
         responseData: data,
       );

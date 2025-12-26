@@ -13,6 +13,7 @@ import '../../../../shared/domain/activity_type.dart';
 import '../providers/activity_detail_controller.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/food_item_data.dart';
+import '../../../activities/domain/activity.dart';
 
 /// Activity Detail Screen - Refactored with extracted widgets
 /// Shows activity details with nutrition sections and food items
@@ -207,7 +208,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           if (state.nutritionPlan != null)
             _buildNutritionSections(context, state),
           if (state.nutritionPlan == null)
-            _buildNoNutritionPlanState(context),
+            _buildNoNutritionPlanState(context, state),
           const SizedBox(height: AppSpacing.xl),
           _buildActionButtons(context, state),
           const SizedBox(height: AppSpacing.xxxl),
@@ -350,7 +351,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
   }
 
-  Widget _buildNoNutritionPlanState(BuildContext context) {
+  Widget _buildNoNutritionPlanState(BuildContext context, ActivityDetailState state) {
+    final activity = state.activity;
     return BaseCard(
       child: Center(
         child: Padding(
@@ -377,10 +379,30 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: AppSpacing.lg),
+              KylePrimaryButton(
+                onPressed: () => _navigateToGeneratePlan(context, activity),
+                text: 'Generate Plan',
+                icon: FontAwesomeIcons.wandMagicSparkles,
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  void _navigateToGeneratePlan(BuildContext context, Activity? activity) {
+    if (activity == null) return;
+    context.pushNamed(
+      'distance-pace-gut-entry',
+      extra: {
+        'initialDate': activity.scheduledDateTime,
+        'distance': activity.distanceMiles,
+        'pace': activity.paceTargetMinutesPerMile,
+        'duration': activity.durationMinutes,
+        'activityId': activity.id,
+      },
     );
   }
 
@@ -789,12 +811,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     });
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Changes saved successfully!'),
-          backgroundColor: AppColors.electrolyte,
-        ),
-      );
+      MealvanaSnackbar.showSuccess(context, 'Changes saved successfully!');
 
       if (state.isNewActivity) {
         context.go('/main');
@@ -829,12 +846,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           });
 
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Workout completed successfully!'),
-                backgroundColor: AppColors.electrolyte,
-              ),
-            );
+            MealvanaSnackbar.showSuccess(context, 'Workout completed successfully!');
           }
         },
       ),
@@ -869,11 +881,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     await controller.deleteFoodItem(foodId, category);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Food item removed'),
-        ),
-      );
+      MealvanaSnackbar.showInfo(context, 'Food item removed');
     }
   }
 

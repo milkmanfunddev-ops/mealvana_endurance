@@ -16,6 +16,9 @@ class AppConfig {
     required this.wiredashProjectId,
     required this.wiredashSecret,
     required this.oneSignalAppId,
+    required this.trainingPeaksClientId,
+    required this.trainingPeaksClientSecret,
+    required this.trainingPeaksUseSandbox,
     required this.devModeEnabled,
     required this.appEnvironment,
     this.enableDebugLogging = false,
@@ -44,6 +47,11 @@ class AppConfig {
 
   // External API keys
   final String usdaApiKey;
+
+  // TrainingPeaks integration
+  final String trainingPeaksClientId;
+  final String trainingPeaksClientSecret;
+  final bool trainingPeaksUseSandbox;
 
   // Environment configuration
   final bool devModeEnabled;
@@ -127,6 +135,18 @@ class AppConfig {
         fallback: '',
       ),
 
+      // TrainingPeaks integration
+      trainingPeaksClientId: dotenv.get(
+        'TRAININGPEAKS_CLIENT_ID',
+        fallback: 'mealvana',
+      ),
+      trainingPeaksClientSecret: dotenv.get(
+        'TRAININGPEAKS_CLIENT_SECRET',
+        fallback: '',
+      ),
+      // Use sandbox in dev, production API in prod
+      trainingPeaksUseSandbox: isDevMode,
+
       // Debug settings
       enableDebugLogging: kDebugMode,
       enableSentryProfiling: !kDebugMode, // Disabled in debug due to iOS crash
@@ -147,6 +167,9 @@ class AppConfig {
     String? wiredashSecret,
     String? oneSignalAppId,
     String? usdaApiKey,
+    String? trainingPeaksClientId,
+    String? trainingPeaksClientSecret,
+    bool trainingPeaksUseSandbox = true,
     bool devModeEnabled = true,
     String appEnvironment = 'dev',
     bool enableDebugLogging = true,
@@ -164,6 +187,9 @@ class AppConfig {
       wiredashSecret: wiredashSecret ?? 'test-wiredash-secret',
       oneSignalAppId: oneSignalAppId ?? 'test-onesignal-app-id',
       usdaApiKey: usdaApiKey ?? 'test-usda-api-key',
+      trainingPeaksClientId: trainingPeaksClientId ?? 'test-tp-client-id',
+      trainingPeaksClientSecret: trainingPeaksClientSecret ?? 'test-tp-secret',
+      trainingPeaksUseSandbox: trainingPeaksUseSandbox,
       devModeEnabled: devModeEnabled,
       appEnvironment: appEnvironment,
       enableDebugLogging: enableDebugLogging,

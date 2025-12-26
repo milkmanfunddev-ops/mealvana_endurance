@@ -100,13 +100,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         });
 
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Preferences saved successfully'),
-            backgroundColor: AppColors.electrolyte,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        MealvanaSnackbar.showSuccess(context, 'Preferences saved successfully');
 
         // Go back to settings screen
         Navigator.of(context).pop();
@@ -117,13 +111,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           _isSaving = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving preferences: $e'),
-            backgroundColor: AppColors.dragonfruit,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Error saving preferences: $e');
       }
     }
   }

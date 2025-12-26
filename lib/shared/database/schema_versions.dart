@@ -78,6 +78,7 @@ final class Schema2 extends i0.VersionedSchema {
         _column_32,
         _column_33,
         _column_34,
+        _column_35,
       ],
       attachedDatabase: database,
     ),
@@ -95,11 +96,11 @@ final class Schema2 extends i0.VersionedSchema {
         'CHECK (preference_level >= 0 AND preference_level <= 4)',
       ],
       columns: [
-        _column_35,
         _column_36,
         _column_37,
         _column_38,
         _column_39,
+        _column_40,
         _column_5,
         _column_6,
       ],
@@ -115,7 +116,6 @@ final class Schema2 extends i0.VersionedSchema {
       tableConstraints: ['PRIMARY KEY(id)'],
       columns: [
         _column_0,
-        _column_40,
         _column_41,
         _column_42,
         _column_43,
@@ -134,8 +134,9 @@ final class Schema2 extends i0.VersionedSchema {
         _column_56,
         _column_57,
         _column_58,
-        _column_5,
         _column_59,
+        _column_5,
+        _column_35,
         _column_60,
       ],
       attachedDatabase: database,
@@ -149,7 +150,7 @@ final class Schema2 extends i0.VersionedSchema {
       isStrict: false,
       tableConstraints: ['PRIMARY KEY(id)'],
       columns: [
-        _column_35,
+        _column_36,
         _column_61,
         _column_62,
         _column_5,
@@ -202,9 +203,9 @@ final class Schema2 extends i0.VersionedSchema {
         'UNIQUE (device_id, client_food_id)',
       ],
       columns: [
-        _column_35,
-        _column_97,
         _column_36,
+        _column_97,
+        _column_37,
         _column_98,
         _column_99,
         _column_100,
@@ -229,7 +230,7 @@ final class Schema2 extends i0.VersionedSchema {
         _column_104,
         _column_105,
         _column_106,
-        _column_59,
+        _column_35,
         _column_60,
       ],
       attachedDatabase: database,
@@ -270,7 +271,7 @@ final class Schema2 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: ['PRIMARY KEY(id)', 'UNIQUE(name)'],
-      columns: [_column_35, _column_117, _column_118, _column_5, _column_6],
+      columns: [_column_36, _column_117, _column_118, _column_5, _column_6],
       attachedDatabase: database,
     ),
     alias: null,
@@ -281,14 +282,16 @@ final class Schema2 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: [
+        'PRIMARY KEY(id)',
         'CHECK (activity_type IN (\'running\', \'cycling\', \'swimming\'))',
-        'CHECK (status IN (\'planned\', \'in_progress\', \'completed\', \'skipped\'))',
+        'CHECK (status IN (\'draft\', \'planned\', \'in_progress\', \'completed\', \'skipped\'))',
         'CHECK (intensity_level IS NULL OR intensity_level IN (\'easy\', \'moderate\', \'hard\', \'race\'))',
         'CHECK (completion_rating IS NULL OR (completion_rating >= 1 AND completion_rating <= 5))',
       ],
       columns: [
+        _column_0,
+        _column_37,
         _column_119,
-        _column_36,
         _column_120,
         _column_121,
         _column_122,
@@ -309,20 +312,19 @@ final class Schema2 extends i0.VersionedSchema {
         _column_137,
         _column_138,
         _column_139,
+        _column_59,
         _column_140,
-        _column_58,
-        _column_141,
         _column_60,
+        _column_141,
         _column_142,
         _column_143,
         _column_144,
         _column_145,
         _column_146,
         _column_147,
-        _column_148,
         _column_104,
         _column_105,
-        _column_149,
+        _column_148,
       ],
       attachedDatabase: database,
     ),
@@ -334,12 +336,14 @@ final class Schema2 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: [
+        'PRIMARY KEY(id)',
         'CHECK (carb_loading_days IS NULL OR carb_loading_days IN (1, 2, 3, 7))',
       ],
       columns: [
-        _column_119,
+        _column_0,
+        _column_149,
+        _column_37,
         _column_150,
-        _column_36,
         _column_151,
         _column_152,
         _column_153,
@@ -359,10 +363,9 @@ final class Schema2 extends i0.VersionedSchema {
         _column_167,
         _column_168,
         _column_169,
-        _column_170,
         _column_104,
         _column_105,
-        _column_141,
+        _column_140,
         _column_60,
       ],
       attachedDatabase: database,
@@ -375,13 +378,15 @@ final class Schema2 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: [
+        'PRIMARY KEY(id)',
         'CHECK (total_days IN (1, 2, 3, 7))',
         'CHECK (adherence_score IS NULL OR (adherence_score >= 0.0 AND adherence_score <= 1.0))',
       ],
       columns: [
-        _column_119,
+        _column_0,
+        _column_170,
+        _column_37,
         _column_171,
-        _column_36,
         _column_172,
         _column_173,
         _column_174,
@@ -389,10 +394,9 @@ final class Schema2 extends i0.VersionedSchema {
         _column_176,
         _column_177,
         _column_178,
+        _column_141,
+        _column_35,
         _column_179,
-        _column_142,
-        _column_59,
-        _column_180,
       ],
       attachedDatabase: database,
     ),
@@ -404,6 +408,7 @@ final class Schema2 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: [
+        'PRIMARY KEY(id)',
         'UNIQUE(carb_loading_plan_id, plan_date)',
         'CHECK (day_number > 0)',
         'CHECK (carb_target_grams > 0)',
@@ -418,7 +423,8 @@ final class Schema2 extends i0.VersionedSchema {
         'CHECK (logged_calories >= 0)',
       ],
       columns: [
-        _column_119,
+        _column_0,
+        _column_180,
         _column_181,
         _column_182,
         _column_183,
@@ -434,9 +440,8 @@ final class Schema2 extends i0.VersionedSchema {
         _column_193,
         _column_194,
         _column_195,
-        _column_196,
-        _column_59,
-        _column_180,
+        _column_35,
+        _column_179,
       ],
       attachedDatabase: database,
     ),
@@ -451,12 +456,12 @@ final class Schema2 extends i0.VersionedSchema {
       columns: [
         _column_0,
         _column_100,
-        _column_197,
+        _column_196,
         _column_102,
-        _column_198,
+        _column_197,
         _column_62,
+        _column_198,
         _column_199,
-        _column_200,
         _column_5,
       ],
       attachedDatabase: database,
@@ -472,17 +477,17 @@ final class Schema2 extends i0.VersionedSchema {
       columns: [
         _column_0,
         _column_97,
-        _column_36,
+        _column_37,
         _column_98,
         _column_100,
-        _column_197,
+        _column_196,
         _column_102,
-        _column_198,
+        _column_197,
         _column_62,
         _column_99,
-        _column_201,
-        _column_202,
         _column_200,
+        _column_201,
+        _column_199,
         _column_103,
         _column_5,
         _column_6,
@@ -497,19 +502,20 @@ final class Schema2 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: [
+        'PRIMARY KEY(id)',
         'CHECK (quantity > 0)',
         'CHECK (carbs_consumed >= 0)',
         'CHECK ((carb_loading_food_id IS NOT NULL AND carb_loading_user_food_id IS NULL) OR (carb_loading_food_id IS NULL AND carb_loading_user_food_id IS NOT NULL))',
       ],
       columns: [
-        _column_119,
+        _column_0,
+        _column_202,
         _column_203,
         _column_204,
         _column_205,
         _column_206,
         _column_207,
         _column_208,
-        _column_209,
         _column_5,
         _column_6,
       ],
@@ -524,7 +530,7 @@ final class Schema2 extends i0.VersionedSchema {
       isStrict: false,
       tableConstraints: [],
       columns: [
-        _column_119,
+        _column_209,
         _column_210,
         _column_211,
         _column_212,
@@ -547,13 +553,13 @@ final class Schema2 extends i0.VersionedSchema {
       entityName: 'feature_survey_responses',
       withoutRowId: false,
       isStrict: false,
-      tableConstraints: ['UNIQUE(user_id)'],
+      tableConstraints: ['UNIQUE(device_id)'],
       columns: [
-        _column_119,
-        _column_36,
         _column_222,
+        _column_97,
         _column_223,
-        _column_59,
+        _column_224,
+        _column_35,
         _column_60,
       ],
       attachedDatabase: database,
@@ -634,6 +640,8 @@ class Shape0 extends i0.VersionedTable {
       columnsByName['dietary_preference']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get allergies =>
       columnsByName['allergies']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<bool> get needsUpload =>
+      columnsByName['needs_upload']! as i1.GeneratedColumn<bool>;
 }
 
 i1.GeneratedColumn<String> _column_0(String aliasedName) =>
@@ -939,6 +947,17 @@ i1.GeneratedColumn<String> _column_34(String aliasedName) =>
       type: i1.DriftSqlType.string,
       defaultValue: const CustomExpression('\'{}\''),
     );
+i1.GeneratedColumn<bool> _column_35(String aliasedName) =>
+    i1.GeneratedColumn<bool>(
+      'needs_upload',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.bool,
+      defaultConstraints: i1.GeneratedColumn.constraintIsAlways(
+        'CHECK ("needs_upload" IN (0, 1))',
+      ),
+      defaultValue: const CustomExpression('0'),
+    );
 
 class Shape1 extends i0.VersionedTable {
   Shape1({required super.source, required super.alias}) : super.aliased();
@@ -958,7 +977,7 @@ class Shape1 extends i0.VersionedTable {
       columnsByName['updated_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<String> _column_35(String aliasedName) =>
+i1.GeneratedColumn<String> _column_36(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'id',
       aliasedName,
@@ -969,28 +988,28 @@ i1.GeneratedColumn<String> _column_35(String aliasedName) =>
       ),
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_36(String aliasedName) =>
+i1.GeneratedColumn<String> _column_37(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'user_id',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_37(String aliasedName) =>
+i1.GeneratedColumn<String> _column_38(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'food_name',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_38(String aliasedName) =>
+i1.GeneratedColumn<String> _column_39(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'preference',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_39(String aliasedName) =>
+i1.GeneratedColumn<int> _column_40(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'preference_level',
       aliasedName,
@@ -1049,91 +1068,91 @@ class Shape2 extends i0.VersionedTable {
       columnsByName['local_updated_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<String> _column_40(String aliasedName) =>
+i1.GeneratedColumn<String> _column_41(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'device_id',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_41(String aliasedName) =>
+i1.GeneratedColumn<int> _column_42(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'satisfaction_level',
       aliasedName,
       false,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<String> _column_42(String aliasedName) =>
+i1.GeneratedColumn<String> _column_43(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'satisfaction_emoji',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_43(String aliasedName) =>
+i1.GeneratedColumn<String> _column_44(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'satisfaction_label',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_44(String aliasedName) =>
+i1.GeneratedColumn<String> _column_45(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'app_feedback',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_45(String aliasedName) =>
+i1.GeneratedColumn<String> _column_46(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'suggestions',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_46(String aliasedName) =>
+i1.GeneratedColumn<String> _column_47(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'plan_name',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_47(String aliasedName) =>
+i1.GeneratedColumn<String> _column_48(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'user_name',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<DateTime> _column_48(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_49(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'timestamp',
       aliasedName,
       true,
       type: i1.DriftSqlType.dateTime,
     );
-i1.GeneratedColumn<int> _column_49(String aliasedName) =>
+i1.GeneratedColumn<int> _column_50(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'confidence_level',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<String> _column_50(String aliasedName) =>
+i1.GeneratedColumn<String> _column_51(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'confidence_label',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_51(String aliasedName) =>
+i1.GeneratedColumn<String> _column_52(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'reuse_intent',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<bool> _column_52(String aliasedName) =>
+i1.GeneratedColumn<bool> _column_53(String aliasedName) =>
     i1.GeneratedColumn<bool>(
       'reminder_requested',
       aliasedName,
@@ -1144,28 +1163,28 @@ i1.GeneratedColumn<bool> _column_52(String aliasedName) =>
       ),
       defaultValue: const CustomExpression('0'),
     );
-i1.GeneratedColumn<String> _column_53(String aliasedName) =>
+i1.GeneratedColumn<String> _column_54(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'missed_reasons',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_54(String aliasedName) =>
+i1.GeneratedColumn<String> _column_55(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'missed_other',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_55(String aliasedName) =>
+i1.GeneratedColumn<int> _column_56(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'reminder_day_of_week',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<int> _column_56(String aliasedName) =>
+i1.GeneratedColumn<int> _column_57(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'reminder_hour',
       aliasedName,
@@ -1173,7 +1192,7 @@ i1.GeneratedColumn<int> _column_56(String aliasedName) =>
       type: i1.DriftSqlType.int,
       defaultValue: const CustomExpression('17'),
     );
-i1.GeneratedColumn<int> _column_57(String aliasedName) =>
+i1.GeneratedColumn<int> _column_58(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'reminder_minute',
       aliasedName,
@@ -1181,7 +1200,7 @@ i1.GeneratedColumn<int> _column_57(String aliasedName) =>
       type: i1.DriftSqlType.int,
       defaultValue: const CustomExpression('0'),
     );
-i1.GeneratedColumn<bool> _column_58(String aliasedName) =>
+i1.GeneratedColumn<bool> _column_59(String aliasedName) =>
     i1.GeneratedColumn<bool>(
       'reminder_recurring',
       aliasedName,
@@ -1189,17 +1208,6 @@ i1.GeneratedColumn<bool> _column_58(String aliasedName) =>
       type: i1.DriftSqlType.bool,
       defaultConstraints: i1.GeneratedColumn.constraintIsAlways(
         'CHECK ("reminder_recurring" IN (0, 1))',
-      ),
-      defaultValue: const CustomExpression('0'),
-    );
-i1.GeneratedColumn<bool> _column_59(String aliasedName) =>
-    i1.GeneratedColumn<bool>(
-      'needs_upload',
-      aliasedName,
-      false,
-      type: i1.DriftSqlType.bool,
-      defaultConstraints: i1.GeneratedColumn.constraintIsAlways(
-        'CHECK ("needs_upload" IN (0, 1))',
       ),
       defaultValue: const CustomExpression('0'),
     );
@@ -1847,8 +1855,8 @@ i1.GeneratedColumn<String> _column_118(String aliasedName) =>
 
 class Shape7 extends i0.VersionedTable {
   Shape7({required super.source, required super.alias}) : super.aliased();
-  i1.GeneratedColumn<int> get id =>
-      columnsByName['id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get userId =>
       columnsByName['user_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get activityType =>
@@ -1924,39 +1932,28 @@ class Shape7 extends i0.VersionedTable {
       columnsByName['deleted_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<int> _column_119(String aliasedName) =>
-    i1.GeneratedColumn<int>(
-      'id',
-      aliasedName,
-      false,
-      hasAutoIncrement: true,
-      type: i1.DriftSqlType.int,
-      defaultConstraints: i1.GeneratedColumn.constraintIsAlways(
-        'PRIMARY KEY AUTOINCREMENT',
-      ),
-    );
-i1.GeneratedColumn<String> _column_120(String aliasedName) =>
+i1.GeneratedColumn<String> _column_119(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'activity_type',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_121(String aliasedName) =>
+i1.GeneratedColumn<String> _column_120(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'title',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<DateTime> _column_122(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_121(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'scheduled_date_time',
       aliasedName,
       false,
       type: i1.DriftSqlType.dateTime,
     );
-i1.GeneratedColumn<String> _column_123(String aliasedName) =>
+i1.GeneratedColumn<String> _column_122(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'status',
       aliasedName,
@@ -1964,105 +1961,105 @@ i1.GeneratedColumn<String> _column_123(String aliasedName) =>
       type: i1.DriftSqlType.string,
       defaultValue: const CustomExpression('\'planned\''),
     );
-i1.GeneratedColumn<double> _column_124(String aliasedName) =>
+i1.GeneratedColumn<double> _column_123(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'distance_miles',
       aliasedName,
       true,
       type: i1.DriftSqlType.double,
     );
-i1.GeneratedColumn<int> _column_125(String aliasedName) =>
+i1.GeneratedColumn<int> _column_124(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'duration_minutes',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<double> _column_126(String aliasedName) =>
+i1.GeneratedColumn<double> _column_125(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'pace_target_minutes_per_mile',
       aliasedName,
       true,
       type: i1.DriftSqlType.double,
     );
-i1.GeneratedColumn<String> _column_127(String aliasedName) =>
+i1.GeneratedColumn<String> _column_126(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'intensity_level',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<double> _column_128(String aliasedName) =>
+i1.GeneratedColumn<double> _column_127(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'cycling_speed_mph',
       aliasedName,
       true,
       type: i1.DriftSqlType.double,
     );
-i1.GeneratedColumn<String> _column_129(String aliasedName) =>
+i1.GeneratedColumn<String> _column_128(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'cycling_terrain',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_130(String aliasedName) =>
+i1.GeneratedColumn<String> _column_129(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'cycling_indoor_outdoor',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_131(String aliasedName) =>
+i1.GeneratedColumn<int> _column_130(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'cycling_elevation_gain_ft',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<String> _column_132(String aliasedName) =>
+i1.GeneratedColumn<String> _column_131(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'cycling_session_goal',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_133(String aliasedName) =>
+i1.GeneratedColumn<int> _column_132(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'swimming_pace_per_100m_seconds',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<String> _column_134(String aliasedName) =>
+i1.GeneratedColumn<String> _column_133(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'swimming_pool_or_open_water',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<double> _column_135(String aliasedName) =>
+i1.GeneratedColumn<double> _column_134(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'swimming_water_temp_c',
       aliasedName,
       true,
       type: i1.DriftSqlType.double,
     );
-i1.GeneratedColumn<String> _column_136(String aliasedName) =>
+i1.GeneratedColumn<String> _column_135(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'intensity_target',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_137(String aliasedName) =>
+i1.GeneratedColumn<int> _column_136(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'time_before_minutes',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<bool> _column_138(String aliasedName) =>
+i1.GeneratedColumn<bool> _column_137(String aliasedName) =>
     i1.GeneratedColumn<bool>(
       'reminder_enabled',
       aliasedName,
@@ -2073,21 +2070,21 @@ i1.GeneratedColumn<bool> _column_138(String aliasedName) =>
       ),
       defaultValue: const CustomExpression('0'),
     );
-i1.GeneratedColumn<int> _column_139(String aliasedName) =>
+i1.GeneratedColumn<int> _column_138(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'reminder_days_before',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<String> _column_140(String aliasedName) =>
+i1.GeneratedColumn<String> _column_139(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'reminder_time_of_day',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<bool> _column_141(String aliasedName) =>
+i1.GeneratedColumn<bool> _column_140(String aliasedName) =>
     i1.GeneratedColumn<bool>(
       'needs_upload',
       aliasedName,
@@ -2097,56 +2094,56 @@ i1.GeneratedColumn<bool> _column_141(String aliasedName) =>
         'CHECK ("needs_upload" IN (0, 1))',
       ),
     );
-i1.GeneratedColumn<DateTime> _column_142(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_141(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'completed_at',
       aliasedName,
       true,
       type: i1.DriftSqlType.dateTime,
     );
-i1.GeneratedColumn<int> _column_143(String aliasedName) =>
+i1.GeneratedColumn<int> _column_142(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'completion_rating',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<String> _column_144(String aliasedName) =>
+i1.GeneratedColumn<String> _column_143(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'completion_notes',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<double> _column_145(String aliasedName) =>
+i1.GeneratedColumn<double> _column_144(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'actual_distance_miles',
       aliasedName,
       true,
       type: i1.DriftSqlType.double,
     );
-i1.GeneratedColumn<int> _column_146(String aliasedName) =>
+i1.GeneratedColumn<int> _column_145(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'actual_duration_minutes',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<String> _column_147(String aliasedName) =>
+i1.GeneratedColumn<String> _column_146(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'nutrition_plan_data',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_148(String aliasedName) =>
+i1.GeneratedColumn<String> _column_147(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'notes',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<DateTime> _column_149(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_148(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'deleted_at',
       aliasedName,
@@ -2156,10 +2153,10 @@ i1.GeneratedColumn<DateTime> _column_149(String aliasedName) =>
 
 class Shape8 extends i0.VersionedTable {
   Shape8({required super.source, required super.alias}) : super.aliased();
-  i1.GeneratedColumn<int> get id =>
-      columnsByName['id']! as i1.GeneratedColumn<int>;
-  i1.GeneratedColumn<int> get activityId =>
-      columnsByName['activity_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get activityId =>
+      columnsByName['activity_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get userId =>
       columnsByName['user_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get eventType =>
@@ -2214,84 +2211,84 @@ class Shape8 extends i0.VersionedTable {
       columnsByName['local_updated_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<int> _column_150(String aliasedName) =>
-    i1.GeneratedColumn<int>(
+i1.GeneratedColumn<String> _column_149(String aliasedName) =>
+    i1.GeneratedColumn<String>(
       'activity_id',
       aliasedName,
       true,
-      type: i1.DriftSqlType.int,
+      type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_151(String aliasedName) =>
+i1.GeneratedColumn<String> _column_150(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'event_type',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_152(String aliasedName) =>
+i1.GeneratedColumn<String> _column_151(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'event_subtype',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_153(String aliasedName) =>
+i1.GeneratedColumn<String> _column_152(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'event_name',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_154(String aliasedName) =>
+i1.GeneratedColumn<String> _column_153(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'location',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_155(String aliasedName) =>
+i1.GeneratedColumn<String> _column_154(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'registration_url',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<DateTime> _column_156(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_155(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'event_date',
       aliasedName,
       true,
       type: i1.DriftSqlType.dateTime,
     );
-i1.GeneratedColumn<String> _column_157(String aliasedName) =>
+i1.GeneratedColumn<String> _column_156(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'start_time',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_158(String aliasedName) =>
+i1.GeneratedColumn<int> _column_157(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'goal_time_minutes',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<double> _column_159(String aliasedName) =>
+i1.GeneratedColumn<double> _column_158(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'goal_pace_minutes_per_mile',
       aliasedName,
       true,
       type: i1.DriftSqlType.double,
     );
-i1.GeneratedColumn<int> _column_160(String aliasedName) =>
+i1.GeneratedColumn<int> _column_159(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'predicted_finish_time_minutes',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<bool> _column_161(String aliasedName) =>
+i1.GeneratedColumn<bool> _column_160(String aliasedName) =>
     i1.GeneratedColumn<bool>(
       'has_carb_loading',
       aliasedName,
@@ -2302,21 +2299,21 @@ i1.GeneratedColumn<bool> _column_161(String aliasedName) =>
       ),
       defaultValue: const CustomExpression('0'),
     );
-i1.GeneratedColumn<int> _column_162(String aliasedName) =>
+i1.GeneratedColumn<int> _column_161(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'carb_loading_days',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<DateTime> _column_163(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_162(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'carb_loading_start_date',
       aliasedName,
       true,
       type: i1.DriftSqlType.dateTime,
     );
-i1.GeneratedColumn<bool> _column_164(String aliasedName) =>
+i1.GeneratedColumn<bool> _column_163(String aliasedName) =>
     i1.GeneratedColumn<bool>(
       'has_nutrition_plan',
       aliasedName,
@@ -2327,42 +2324,42 @@ i1.GeneratedColumn<bool> _column_164(String aliasedName) =>
       ),
       defaultValue: const CustomExpression('0'),
     );
-i1.GeneratedColumn<String> _column_165(String aliasedName) =>
+i1.GeneratedColumn<String> _column_164(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'bib_number',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_166(String aliasedName) =>
+i1.GeneratedColumn<String> _column_165(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'wave_start_time',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_167(String aliasedName) =>
+i1.GeneratedColumn<String> _column_166(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'packet_pickup_info',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_168(String aliasedName) =>
+i1.GeneratedColumn<int> _column_167(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'actual_finish_time_minutes',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<int> _column_169(String aliasedName) =>
+i1.GeneratedColumn<int> _column_168(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'final_placement',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<int> _column_170(String aliasedName) =>
+i1.GeneratedColumn<int> _column_169(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'age_group_placement',
       aliasedName,
@@ -2372,10 +2369,10 @@ i1.GeneratedColumn<int> _column_170(String aliasedName) =>
 
 class Shape9 extends i0.VersionedTable {
   Shape9({required super.source, required super.alias}) : super.aliased();
-  i1.GeneratedColumn<int> get id =>
-      columnsByName['id']! as i1.GeneratedColumn<int>;
-  i1.GeneratedColumn<int> get eventId =>
-      columnsByName['event_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get eventId =>
+      columnsByName['event_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get userId =>
       columnsByName['user_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<int> get totalDays =>
@@ -2402,56 +2399,56 @@ class Shape9 extends i0.VersionedTable {
       columnsByName['local_updated_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<int> _column_171(String aliasedName) =>
-    i1.GeneratedColumn<int>(
+i1.GeneratedColumn<String> _column_170(String aliasedName) =>
+    i1.GeneratedColumn<String>(
       'event_id',
       aliasedName,
       true,
-      type: i1.DriftSqlType.int,
+      type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_172(String aliasedName) =>
+i1.GeneratedColumn<int> _column_171(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'total_days',
       aliasedName,
       false,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<DateTime> _column_173(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_172(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'start_date',
       aliasedName,
       false,
       type: i1.DriftSqlType.dateTime,
     );
-i1.GeneratedColumn<DateTime> _column_174(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_173(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'end_date',
       aliasedName,
       false,
       type: i1.DriftSqlType.dateTime,
     );
-i1.GeneratedColumn<int> _column_175(String aliasedName) =>
+i1.GeneratedColumn<int> _column_174(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'daily_carb_target_grams',
       aliasedName,
       false,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<int> _column_176(String aliasedName) =>
+i1.GeneratedColumn<int> _column_175(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'daily_calorie_target',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<DateTime> _column_177(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_176(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'generated_at',
       aliasedName,
       false,
       type: i1.DriftSqlType.dateTime,
     );
-i1.GeneratedColumn<String> _column_178(String aliasedName) =>
+i1.GeneratedColumn<String> _column_177(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'algorithm_version',
       aliasedName,
@@ -2459,14 +2456,14 @@ i1.GeneratedColumn<String> _column_178(String aliasedName) =>
       type: i1.DriftSqlType.string,
       defaultValue: const CustomExpression('\'v1.0\''),
     );
-i1.GeneratedColumn<double> _column_179(String aliasedName) =>
+i1.GeneratedColumn<double> _column_178(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'adherence_score',
       aliasedName,
       true,
       type: i1.DriftSqlType.double,
     );
-i1.GeneratedColumn<DateTime> _column_180(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_179(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'local_updated_at',
       aliasedName,
@@ -2476,10 +2473,10 @@ i1.GeneratedColumn<DateTime> _column_180(String aliasedName) =>
 
 class Shape10 extends i0.VersionedTable {
   Shape10({required super.source, required super.alias}) : super.aliased();
-  i1.GeneratedColumn<int> get id =>
-      columnsByName['id']! as i1.GeneratedColumn<int>;
-  i1.GeneratedColumn<int> get carbLoadingPlanId =>
-      columnsByName['carb_loading_plan_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get carbLoadingPlanId =>
+      columnsByName['carb_loading_plan_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<DateTime> get planDate =>
       columnsByName['plan_date']! as i1.GeneratedColumn<DateTime>;
   i1.GeneratedColumn<int> get dayNumber =>
@@ -2516,35 +2513,35 @@ class Shape10 extends i0.VersionedTable {
       columnsByName['local_updated_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<int> _column_181(String aliasedName) =>
-    i1.GeneratedColumn<int>(
+i1.GeneratedColumn<String> _column_180(String aliasedName) =>
+    i1.GeneratedColumn<String>(
       'carb_loading_plan_id',
       aliasedName,
       false,
-      type: i1.DriftSqlType.int,
+      type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<DateTime> _column_182(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_181(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'plan_date',
       aliasedName,
       false,
       type: i1.DriftSqlType.dateTime,
     );
-i1.GeneratedColumn<int> _column_183(String aliasedName) =>
+i1.GeneratedColumn<int> _column_182(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'day_number',
       aliasedName,
       false,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<int> _column_184(String aliasedName) =>
+i1.GeneratedColumn<int> _column_183(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'carb_target_grams',
       aliasedName,
       false,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<double> _column_185(String aliasedName) =>
+i1.GeneratedColumn<double> _column_184(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'carb_protocol_g_per_kg',
       aliasedName,
@@ -2552,14 +2549,14 @@ i1.GeneratedColumn<double> _column_185(String aliasedName) =>
       type: i1.DriftSqlType.double,
       defaultValue: const CustomExpression('8.0'),
     );
-i1.GeneratedColumn<int> _column_186(String aliasedName) =>
+i1.GeneratedColumn<int> _column_185(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'calorie_target',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<int> _column_187(String aliasedName) =>
+i1.GeneratedColumn<int> _column_186(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'meal_count',
       aliasedName,
@@ -2567,7 +2564,7 @@ i1.GeneratedColumn<int> _column_187(String aliasedName) =>
       type: i1.DriftSqlType.int,
       defaultValue: const CustomExpression('6'),
     );
-i1.GeneratedColumn<double> _column_188(String aliasedName) =>
+i1.GeneratedColumn<double> _column_187(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'breakfast_percent',
       aliasedName,
@@ -2575,7 +2572,7 @@ i1.GeneratedColumn<double> _column_188(String aliasedName) =>
       type: i1.DriftSqlType.double,
       defaultValue: const CustomExpression('0.25'),
     );
-i1.GeneratedColumn<double> _column_189(String aliasedName) =>
+i1.GeneratedColumn<double> _column_188(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'morning_snack_percent',
       aliasedName,
@@ -2583,7 +2580,7 @@ i1.GeneratedColumn<double> _column_189(String aliasedName) =>
       type: i1.DriftSqlType.double,
       defaultValue: const CustomExpression('0.1'),
     );
-i1.GeneratedColumn<double> _column_190(String aliasedName) =>
+i1.GeneratedColumn<double> _column_189(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'lunch_percent',
       aliasedName,
@@ -2591,7 +2588,7 @@ i1.GeneratedColumn<double> _column_190(String aliasedName) =>
       type: i1.DriftSqlType.double,
       defaultValue: const CustomExpression('0.25'),
     );
-i1.GeneratedColumn<double> _column_191(String aliasedName) =>
+i1.GeneratedColumn<double> _column_190(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'afternoon_snack_percent',
       aliasedName,
@@ -2599,7 +2596,7 @@ i1.GeneratedColumn<double> _column_191(String aliasedName) =>
       type: i1.DriftSqlType.double,
       defaultValue: const CustomExpression('0.15'),
     );
-i1.GeneratedColumn<double> _column_192(String aliasedName) =>
+i1.GeneratedColumn<double> _column_191(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'dinner_percent',
       aliasedName,
@@ -2607,7 +2604,7 @@ i1.GeneratedColumn<double> _column_192(String aliasedName) =>
       type: i1.DriftSqlType.double,
       defaultValue: const CustomExpression('0.2'),
     );
-i1.GeneratedColumn<double> _column_193(String aliasedName) =>
+i1.GeneratedColumn<double> _column_192(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'evening_snack_percent',
       aliasedName,
@@ -2615,7 +2612,7 @@ i1.GeneratedColumn<double> _column_193(String aliasedName) =>
       type: i1.DriftSqlType.double,
       defaultValue: const CustomExpression('0.05'),
     );
-i1.GeneratedColumn<int> _column_194(String aliasedName) =>
+i1.GeneratedColumn<int> _column_193(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'logged_carbs_grams',
       aliasedName,
@@ -2623,7 +2620,7 @@ i1.GeneratedColumn<int> _column_194(String aliasedName) =>
       type: i1.DriftSqlType.int,
       defaultValue: const CustomExpression('0'),
     );
-i1.GeneratedColumn<int> _column_195(String aliasedName) =>
+i1.GeneratedColumn<int> _column_194(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'logged_calories',
       aliasedName,
@@ -2631,7 +2628,7 @@ i1.GeneratedColumn<int> _column_195(String aliasedName) =>
       type: i1.DriftSqlType.int,
       defaultValue: const CustomExpression('0'),
     );
-i1.GeneratedColumn<bool> _column_196(String aliasedName) =>
+i1.GeneratedColumn<bool> _column_195(String aliasedName) =>
     i1.GeneratedColumn<bool>(
       'completed',
       aliasedName,
@@ -2665,21 +2662,21 @@ class Shape11 extends i0.VersionedTable {
       columnsByName['created_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<String> _column_197(String aliasedName) =>
+i1.GeneratedColumn<String> _column_196(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'display_name',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<double> _column_198(String aliasedName) =>
+i1.GeneratedColumn<double> _column_197(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'carbs_per_serving',
       aliasedName,
       false,
       type: i1.DriftSqlType.double,
     );
-i1.GeneratedColumn<bool> _column_199(String aliasedName) =>
+i1.GeneratedColumn<bool> _column_198(String aliasedName) =>
     i1.GeneratedColumn<bool>(
       'is_default',
       aliasedName,
@@ -2690,7 +2687,7 @@ i1.GeneratedColumn<bool> _column_199(String aliasedName) =>
       ),
       defaultValue: const CustomExpression('1'),
     );
-i1.GeneratedColumn<String> _column_200(String aliasedName) =>
+i1.GeneratedColumn<String> _column_199(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'meal_types',
       aliasedName,
@@ -2734,14 +2731,14 @@ class Shape12 extends i0.VersionedTable {
       columnsByName['updated_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<String> _column_201(String aliasedName) =>
+i1.GeneratedColumn<String> _column_200(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'source_food_id',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_202(String aliasedName) =>
+i1.GeneratedColumn<String> _column_201(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'source_user_food_id',
       aliasedName,
@@ -2751,10 +2748,10 @@ i1.GeneratedColumn<String> _column_202(String aliasedName) =>
 
 class Shape13 extends i0.VersionedTable {
   Shape13({required super.source, required super.alias}) : super.aliased();
-  i1.GeneratedColumn<int> get id =>
-      columnsByName['id']! as i1.GeneratedColumn<int>;
-  i1.GeneratedColumn<int> get carbLoadingDayId =>
-      columnsByName['carb_loading_day_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get carbLoadingDayId =>
+      columnsByName['carb_loading_day_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<int> get mealTypeId =>
       columnsByName['meal_type_id']! as i1.GeneratedColumn<int>;
   i1.GeneratedColumn<String> get carbLoadingFoodId =>
@@ -2773,42 +2770,42 @@ class Shape13 extends i0.VersionedTable {
       columnsByName['updated_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<int> _column_203(String aliasedName) =>
-    i1.GeneratedColumn<int>(
+i1.GeneratedColumn<String> _column_202(String aliasedName) =>
+    i1.GeneratedColumn<String>(
       'carb_loading_day_id',
       aliasedName,
       false,
-      type: i1.DriftSqlType.int,
+      type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_204(String aliasedName) =>
+i1.GeneratedColumn<int> _column_203(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'meal_type_id',
       aliasedName,
       false,
       type: i1.DriftSqlType.int,
     );
-i1.GeneratedColumn<String> _column_205(String aliasedName) =>
+i1.GeneratedColumn<String> _column_204(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'carb_loading_food_id',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_206(String aliasedName) =>
+i1.GeneratedColumn<String> _column_205(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'carb_loading_user_food_id',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<String> _column_207(String aliasedName) =>
+i1.GeneratedColumn<String> _column_206(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'food_display_name',
       aliasedName,
       true,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<int> _column_208(String aliasedName) =>
+i1.GeneratedColumn<int> _column_207(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'quantity',
       aliasedName,
@@ -2816,7 +2813,7 @@ i1.GeneratedColumn<int> _column_208(String aliasedName) =>
       type: i1.DriftSqlType.int,
       defaultValue: const CustomExpression('1'),
     );
-i1.GeneratedColumn<double> _column_209(String aliasedName) =>
+i1.GeneratedColumn<double> _column_208(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'carbs_consumed',
       aliasedName,
@@ -2854,6 +2851,17 @@ class Shape14 extends i0.VersionedTable {
       columnsByName['expires_at']! as i1.GeneratedColumn<DateTime>;
 }
 
+i1.GeneratedColumn<int> _column_209(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'id',
+      aliasedName,
+      false,
+      hasAutoIncrement: true,
+      type: i1.DriftSqlType.int,
+      defaultConstraints: i1.GeneratedColumn.constraintIsAlways(
+        'PRIMARY KEY AUTOINCREMENT',
+      ),
+    );
 i1.GeneratedColumn<double> _column_210(String aliasedName) =>
     i1.GeneratedColumn<double>(
       'latitude',
@@ -2950,8 +2958,8 @@ class Shape15 extends i0.VersionedTable {
   Shape15({required super.source, required super.alias}) : super.aliased();
   i1.GeneratedColumn<int> get id =>
       columnsByName['id']! as i1.GeneratedColumn<int>;
-  i1.GeneratedColumn<String> get userId =>
-      columnsByName['user_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get deviceId =>
+      columnsByName['device_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get selectedFeatures =>
       columnsByName['selected_features']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<DateTime> get votedAt =>
@@ -2962,22 +2970,885 @@ class Shape15 extends i0.VersionedTable {
       columnsByName['local_updated_at']! as i1.GeneratedColumn<DateTime>;
 }
 
-i1.GeneratedColumn<String> _column_222(String aliasedName) =>
+i1.GeneratedColumn<int> _column_222(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'id',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+    );
+i1.GeneratedColumn<String> _column_223(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'selected_features',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
     );
-i1.GeneratedColumn<DateTime> _column_223(String aliasedName) =>
+i1.GeneratedColumn<DateTime> _column_224(String aliasedName) =>
     i1.GeneratedColumn<DateTime>(
       'voted_at',
       aliasedName,
       false,
       type: i1.DriftSqlType.dateTime,
     );
+
+final class Schema3 extends i0.VersionedSchema {
+  Schema3({required super.database}) : super(version: 3);
+  @override
+  late final List<i1.DatabaseSchemaEntity> entities = [
+    users,
+    foodPreferencesTable,
+    feedback,
+    foods,
+    userFoods,
+    appContentTable,
+    edgeFunctionsTable,
+    activities,
+    events,
+    carbLoadingPlans,
+    carbLoadingDays,
+    carbLoadingFoods,
+    carbLoadingUserFoods,
+    carbLoadingDayMeals,
+    weatherForecastsTable,
+    featureSurveyResponses,
+    integrations,
+  ];
+  late final Shape0 users = Shape0(
+    source: i0.VersionedTable(
+      entityName: 'users',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'UNIQUE(device_id)',
+        'CHECK (gender IN (\'male\', \'female\', \'other\') OR gender IS NULL)',
+        'CHECK (gut_training_level IN (\'low\', \'moderate\', \'high\'))',
+        'CHECK (preferred_distance_unit IN (\'miles\', \'kilometers\'))',
+        'CHECK (preferred_pace_unit IN (\'min_per_mile\', \'min_per_km\'))',
+        'CHECK (calendar_week_start IN (\'sunday\', \'monday\'))',
+        'CHECK (default_activity_day IN (\'monday\', \'tuesday\', \'wednesday\', \'thursday\', \'friday\', \'saturday\', \'sunday\'))',
+        'CHECK (auth_provider IN (\'anonymous\', \'email\', \'google\', \'apple\'))',
+        'CHECK (dietary_preference IN (\'omnivore\', \'vegetarian\', \'pescatarian\', \'vegan\', \'mediterranean\', \'paleo\', \'keto\', \'low_carb\') OR dietary_preference IS NULL)',
+      ],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_3,
+        _column_4,
+        _column_5,
+        _column_6,
+        _column_7,
+        _column_8,
+        _column_9,
+        _column_10,
+        _column_11,
+        _column_12,
+        _column_13,
+        _column_14,
+        _column_15,
+        _column_16,
+        _column_17,
+        _column_18,
+        _column_19,
+        _column_20,
+        _column_21,
+        _column_22,
+        _column_23,
+        _column_24,
+        _column_25,
+        _column_26,
+        _column_27,
+        _column_28,
+        _column_29,
+        _column_30,
+        _column_31,
+        _column_32,
+        _column_33,
+        _column_34,
+        _column_35,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape1 foodPreferencesTable = Shape1(
+    source: i0.VersionedTable(
+      entityName: 'food_preferences_table',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'UNIQUE(user_id, food_name)',
+        'CHECK (preference IN (\'like\', \'dislike\', \'willing_to_try\'))',
+        'CHECK (preference_level >= 0 AND preference_level <= 4)',
+      ],
+      columns: [
+        _column_36,
+        _column_37,
+        _column_38,
+        _column_39,
+        _column_40,
+        _column_5,
+        _column_6,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape2 feedback = Shape2(
+    source: i0.VersionedTable(
+      entityName: 'feedback',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_41,
+        _column_42,
+        _column_43,
+        _column_44,
+        _column_45,
+        _column_46,
+        _column_47,
+        _column_48,
+        _column_49,
+        _column_50,
+        _column_51,
+        _column_52,
+        _column_53,
+        _column_54,
+        _column_55,
+        _column_56,
+        _column_57,
+        _column_58,
+        _column_59,
+        _column_5,
+        _column_35,
+        _column_60,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape3 foods = Shape3(
+    source: i0.VersionedTable(
+      entityName: 'foods',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_36,
+        _column_61,
+        _column_62,
+        _column_5,
+        _column_63,
+        _column_64,
+        _column_65,
+        _column_66,
+        _column_67,
+        _column_68,
+        _column_69,
+        _column_70,
+        _column_71,
+        _column_72,
+        _column_73,
+        _column_74,
+        _column_75,
+        _column_76,
+        _column_77,
+        _column_78,
+        _column_79,
+        _column_80,
+        _column_81,
+        _column_82,
+        _column_83,
+        _column_84,
+        _column_85,
+        _column_86,
+        _column_87,
+        _column_88,
+        _column_89,
+        _column_90,
+        _column_91,
+        _column_92,
+        _column_93,
+        _column_94,
+        _column_95,
+        _column_96,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape4 userFoods = Shape4(
+    source: i0.VersionedTable(
+      entityName: 'user_foods',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'UNIQUE (device_id, client_food_id)',
+      ],
+      columns: [
+        _column_36,
+        _column_97,
+        _column_37,
+        _column_98,
+        _column_99,
+        _column_100,
+        _column_101,
+        _column_102,
+        _column_84,
+        _column_62,
+        _column_63,
+        _column_87,
+        _column_75,
+        _column_73,
+        _column_74,
+        _column_72,
+        _column_69,
+        _column_76,
+        _column_91,
+        _column_67,
+        _column_68,
+        _column_78,
+        _column_79,
+        _column_103,
+        _column_104,
+        _column_105,
+        _column_106,
+        _column_35,
+        _column_60,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape5 appContentTable = Shape5(
+    source: i0.VersionedTable(
+      entityName: 'app_content_table',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'CHECK(environment IN (\'production\', \'staging\', \'development\'))',
+        'CHECK(version > 0)',
+      ],
+      columns: [
+        _column_107,
+        _column_108,
+        _column_109,
+        _column_110,
+        _column_111,
+        _column_112,
+        _column_5,
+        _column_6,
+        _column_113,
+        _column_114,
+        _column_115,
+        _column_116,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape6 edgeFunctionsTable = Shape6(
+    source: i0.VersionedTable(
+      entityName: 'edge_functions_table',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)', 'UNIQUE(name)'],
+      columns: [_column_36, _column_117, _column_118, _column_5, _column_6],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape16 activities = Shape16(
+    source: i0.VersionedTable(
+      entityName: 'activities',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'CHECK (activity_type IN (\'running\', \'cycling\', \'swimming\'))',
+        'CHECK (status IN (\'draft\', \'planned\', \'in_progress\', \'completed\', \'skipped\'))',
+        'CHECK (intensity_level IS NULL OR intensity_level IN (\'easy\', \'moderate\', \'hard\', \'race\'))',
+        'CHECK (completion_rating IS NULL OR (completion_rating >= 1 AND completion_rating <= 5))',
+      ],
+      columns: [
+        _column_0,
+        _column_37,
+        _column_119,
+        _column_120,
+        _column_121,
+        _column_122,
+        _column_123,
+        _column_124,
+        _column_125,
+        _column_126,
+        _column_127,
+        _column_128,
+        _column_129,
+        _column_130,
+        _column_131,
+        _column_132,
+        _column_133,
+        _column_134,
+        _column_135,
+        _column_136,
+        _column_137,
+        _column_138,
+        _column_139,
+        _column_59,
+        _column_140,
+        _column_60,
+        _column_225,
+        _column_226,
+        _column_227,
+        _column_228,
+        _column_229,
+        _column_230,
+        _column_231,
+        _column_232,
+        _column_141,
+        _column_142,
+        _column_143,
+        _column_144,
+        _column_145,
+        _column_146,
+        _column_147,
+        _column_104,
+        _column_105,
+        _column_148,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape8 events = Shape8(
+    source: i0.VersionedTable(
+      entityName: 'events',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'CHECK (carb_loading_days IS NULL OR carb_loading_days IN (1, 2, 3, 7))',
+      ],
+      columns: [
+        _column_0,
+        _column_149,
+        _column_37,
+        _column_150,
+        _column_151,
+        _column_152,
+        _column_153,
+        _column_154,
+        _column_155,
+        _column_156,
+        _column_157,
+        _column_158,
+        _column_159,
+        _column_160,
+        _column_161,
+        _column_162,
+        _column_163,
+        _column_164,
+        _column_165,
+        _column_166,
+        _column_167,
+        _column_168,
+        _column_169,
+        _column_104,
+        _column_105,
+        _column_140,
+        _column_60,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape9 carbLoadingPlans = Shape9(
+    source: i0.VersionedTable(
+      entityName: 'carb_loading_plans',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'CHECK (total_days IN (1, 2, 3, 7))',
+        'CHECK (adherence_score IS NULL OR (adherence_score >= 0.0 AND adherence_score <= 1.0))',
+      ],
+      columns: [
+        _column_0,
+        _column_170,
+        _column_37,
+        _column_171,
+        _column_172,
+        _column_173,
+        _column_174,
+        _column_175,
+        _column_176,
+        _column_177,
+        _column_178,
+        _column_141,
+        _column_35,
+        _column_179,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape10 carbLoadingDays = Shape10(
+    source: i0.VersionedTable(
+      entityName: 'carb_loading_days',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'UNIQUE(carb_loading_plan_id, plan_date)',
+        'CHECK (day_number > 0)',
+        'CHECK (carb_target_grams > 0)',
+        'CHECK (meal_count > 0)',
+        'CHECK (breakfast_percent >= 0.0 AND breakfast_percent <= 1.0)',
+        'CHECK (morning_snack_percent >= 0.0 AND morning_snack_percent <= 1.0)',
+        'CHECK (lunch_percent >= 0.0 AND lunch_percent <= 1.0)',
+        'CHECK (afternoon_snack_percent >= 0.0 AND afternoon_snack_percent <= 1.0)',
+        'CHECK (dinner_percent >= 0.0 AND dinner_percent <= 1.0)',
+        'CHECK (evening_snack_percent >= 0.0 AND evening_snack_percent <= 1.0)',
+        'CHECK (logged_carbs_grams >= 0)',
+        'CHECK (logged_calories >= 0)',
+      ],
+      columns: [
+        _column_0,
+        _column_180,
+        _column_181,
+        _column_182,
+        _column_183,
+        _column_184,
+        _column_185,
+        _column_186,
+        _column_187,
+        _column_188,
+        _column_189,
+        _column_190,
+        _column_191,
+        _column_192,
+        _column_193,
+        _column_194,
+        _column_195,
+        _column_35,
+        _column_179,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape11 carbLoadingFoods = Shape11(
+    source: i0.VersionedTable(
+      entityName: 'carb_loading_foods',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)', 'CHECK (carbs_per_serving > 0)'],
+      columns: [
+        _column_0,
+        _column_100,
+        _column_196,
+        _column_102,
+        _column_197,
+        _column_62,
+        _column_198,
+        _column_199,
+        _column_5,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape12 carbLoadingUserFoods = Shape12(
+    source: i0.VersionedTable(
+      entityName: 'carb_loading_user_foods',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)', 'CHECK (carbs_per_serving > 0)'],
+      columns: [
+        _column_0,
+        _column_97,
+        _column_37,
+        _column_98,
+        _column_100,
+        _column_196,
+        _column_102,
+        _column_197,
+        _column_62,
+        _column_99,
+        _column_200,
+        _column_201,
+        _column_199,
+        _column_103,
+        _column_5,
+        _column_6,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape13 carbLoadingDayMeals = Shape13(
+    source: i0.VersionedTable(
+      entityName: 'carb_loading_day_meals',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'CHECK (quantity > 0)',
+        'CHECK (carbs_consumed >= 0)',
+        'CHECK ((carb_loading_food_id IS NOT NULL AND carb_loading_user_food_id IS NULL) OR (carb_loading_food_id IS NULL AND carb_loading_user_food_id IS NOT NULL))',
+      ],
+      columns: [
+        _column_0,
+        _column_202,
+        _column_203,
+        _column_204,
+        _column_205,
+        _column_206,
+        _column_207,
+        _column_208,
+        _column_5,
+        _column_6,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape14 weatherForecastsTable = Shape14(
+    source: i0.VersionedTable(
+      entityName: 'weather_forecasts_table',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_209,
+        _column_210,
+        _column_211,
+        _column_212,
+        _column_213,
+        _column_214,
+        _column_215,
+        _column_216,
+        _column_217,
+        _column_218,
+        _column_219,
+        _column_220,
+        _column_221,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape15 featureSurveyResponses = Shape15(
+    source: i0.VersionedTable(
+      entityName: 'feature_survey_responses',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['UNIQUE(device_id)'],
+      columns: [
+        _column_222,
+        _column_97,
+        _column_223,
+        _column_224,
+        _column_35,
+        _column_60,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape17 integrations = Shape17(
+    source: i0.VersionedTable(
+      entityName: 'integrations',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(id)',
+        'CHECK (provider IN (\'final_surge\', \'training_peaks\', \'strava\', \'garmin\'))',
+        'CHECK (last_sync_status IS NULL OR last_sync_status IN (\'success\', \'error\', \'pending\'))',
+        'UNIQUE(user_id, provider)',
+      ],
+      columns: [
+        _column_0,
+        _column_37,
+        _column_233,
+        _column_234,
+        _column_235,
+        _column_236,
+        _column_237,
+        _column_238,
+        _column_239,
+        _column_112,
+        _column_115,
+        _column_240,
+        _column_241,
+        _column_104,
+        _column_105,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+}
+
+class Shape16 extends i0.VersionedTable {
+  Shape16({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get userId =>
+      columnsByName['user_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get activityType =>
+      columnsByName['activity_type']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get title =>
+      columnsByName['title']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<DateTime> get scheduledDateTime =>
+      columnsByName['scheduled_date_time']! as i1.GeneratedColumn<DateTime>;
+  i1.GeneratedColumn<String> get status =>
+      columnsByName['status']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<double> get distanceMiles =>
+      columnsByName['distance_miles']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<int> get durationMinutes =>
+      columnsByName['duration_minutes']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<double> get paceTargetMinutesPerMile =>
+      columnsByName['pace_target_minutes_per_mile']!
+          as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<String> get intensityLevel =>
+      columnsByName['intensity_level']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<double> get cyclingSpeedMph =>
+      columnsByName['cycling_speed_mph']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<String> get cyclingTerrain =>
+      columnsByName['cycling_terrain']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get cyclingIndoorOutdoor =>
+      columnsByName['cycling_indoor_outdoor']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get cyclingElevationGainFt =>
+      columnsByName['cycling_elevation_gain_ft']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get cyclingSessionGoal =>
+      columnsByName['cycling_session_goal']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get swimmingPacePer100mSeconds =>
+      columnsByName['swimming_pace_per_100m_seconds']!
+          as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get swimmingPoolOrOpenWater =>
+      columnsByName['swimming_pool_or_open_water']!
+          as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<double> get swimmingWaterTempC =>
+      columnsByName['swimming_water_temp_c']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<String> get intensityTarget =>
+      columnsByName['intensity_target']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get timeBeforeMinutes =>
+      columnsByName['time_before_minutes']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<bool> get reminderEnabled =>
+      columnsByName['reminder_enabled']! as i1.GeneratedColumn<bool>;
+  i1.GeneratedColumn<int> get reminderDaysBefore =>
+      columnsByName['reminder_days_before']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get reminderTimeOfDay =>
+      columnsByName['reminder_time_of_day']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<bool> get reminderRecurring =>
+      columnsByName['reminder_recurring']! as i1.GeneratedColumn<bool>;
+  i1.GeneratedColumn<bool> get needsUpload =>
+      columnsByName['needs_upload']! as i1.GeneratedColumn<bool>;
+  i1.GeneratedColumn<DateTime> get localUpdatedAt =>
+      columnsByName['local_updated_at']! as i1.GeneratedColumn<DateTime>;
+  i1.GeneratedColumn<String> get syncedFromProvider =>
+      columnsByName['synced_from_provider']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get providerWorkoutId =>
+      columnsByName['provider_workout_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get providerWorkoutUrl =>
+      columnsByName['provider_workout_url']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<DateTime> get lastSyncedAt =>
+      columnsByName['last_synced_at']! as i1.GeneratedColumn<DateTime>;
+  i1.GeneratedColumn<String> get workoutSubtype =>
+      columnsByName['workout_subtype']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<double> get paceMinMinutesPerMile =>
+      columnsByName['pace_min_minutes_per_mile']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get paceMaxMinutesPerMile =>
+      columnsByName['pace_max_minutes_per_mile']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get distanceMeters =>
+      columnsByName['distance_meters']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<DateTime> get completedAt =>
+      columnsByName['completed_at']! as i1.GeneratedColumn<DateTime>;
+  i1.GeneratedColumn<int> get completionRating =>
+      columnsByName['completion_rating']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get completionNotes =>
+      columnsByName['completion_notes']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<double> get actualDistanceMiles =>
+      columnsByName['actual_distance_miles']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<int> get actualDurationMinutes =>
+      columnsByName['actual_duration_minutes']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get nutritionPlanData =>
+      columnsByName['nutrition_plan_data']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get notes =>
+      columnsByName['notes']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<DateTime> get createdAt =>
+      columnsByName['created_at']! as i1.GeneratedColumn<DateTime>;
+  i1.GeneratedColumn<DateTime> get updatedAt =>
+      columnsByName['updated_at']! as i1.GeneratedColumn<DateTime>;
+  i1.GeneratedColumn<DateTime> get deletedAt =>
+      columnsByName['deleted_at']! as i1.GeneratedColumn<DateTime>;
+}
+
+i1.GeneratedColumn<String> _column_225(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'synced_from_provider',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<String> _column_226(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'provider_workout_id',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<String> _column_227(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'provider_workout_url',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<DateTime> _column_228(String aliasedName) =>
+    i1.GeneratedColumn<DateTime>(
+      'last_synced_at',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.dateTime,
+    );
+i1.GeneratedColumn<String> _column_229(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'workout_subtype',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<double> _column_230(String aliasedName) =>
+    i1.GeneratedColumn<double>(
+      'pace_min_minutes_per_mile',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.double,
+    );
+i1.GeneratedColumn<double> _column_231(String aliasedName) =>
+    i1.GeneratedColumn<double>(
+      'pace_max_minutes_per_mile',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.double,
+    );
+i1.GeneratedColumn<double> _column_232(String aliasedName) =>
+    i1.GeneratedColumn<double>(
+      'distance_meters',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.double,
+    );
+
+class Shape17 extends i0.VersionedTable {
+  Shape17({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get userId =>
+      columnsByName['user_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get provider =>
+      columnsByName['provider']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get accessToken =>
+      columnsByName['access_token']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get refreshToken =>
+      columnsByName['refresh_token']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<DateTime> get tokenExpiresAt =>
+      columnsByName['token_expires_at']! as i1.GeneratedColumn<DateTime>;
+  i1.GeneratedColumn<String> get providerAthleteId =>
+      columnsByName['provider_athlete_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get providerAthleteName =>
+      columnsByName['provider_athlete_name']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get providerAthleteEmail =>
+      columnsByName['provider_athlete_email']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<bool> get isActive =>
+      columnsByName['is_active']! as i1.GeneratedColumn<bool>;
+  i1.GeneratedColumn<DateTime> get lastSyncAt =>
+      columnsByName['last_sync_at']! as i1.GeneratedColumn<DateTime>;
+  i1.GeneratedColumn<String> get lastSyncStatus =>
+      columnsByName['last_sync_status']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get lastSyncError =>
+      columnsByName['last_sync_error']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<DateTime> get createdAt =>
+      columnsByName['created_at']! as i1.GeneratedColumn<DateTime>;
+  i1.GeneratedColumn<DateTime> get updatedAt =>
+      columnsByName['updated_at']! as i1.GeneratedColumn<DateTime>;
+}
+
+i1.GeneratedColumn<String> _column_233(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'provider',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<String> _column_234(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'access_token',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<String> _column_235(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'refresh_token',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<DateTime> _column_236(String aliasedName) =>
+    i1.GeneratedColumn<DateTime>(
+      'token_expires_at',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.dateTime,
+    );
+i1.GeneratedColumn<String> _column_237(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'provider_athlete_id',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<String> _column_238(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'provider_athlete_name',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<String> _column_239(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'provider_athlete_email',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<String> _column_240(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'last_sync_status',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+    );
+i1.GeneratedColumn<String> _column_241(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'last_sync_error',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+    );
 i0.MigrationStepWithVersion migrationSteps({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
+  required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
 }) {
   return (currentVersion, database) async {
     switch (currentVersion) {
@@ -2986,6 +3857,11 @@ i0.MigrationStepWithVersion migrationSteps({
         final migrator = i1.Migrator(database, schema);
         await from1To2(migrator, schema);
         return 2;
+      case 2:
+        final schema = Schema3(database: database);
+        final migrator = i1.Migrator(database, schema);
+        await from2To3(migrator, schema);
+        return 3;
       default:
         throw ArgumentError.value('Unknown migration from $currentVersion');
     }
@@ -2994,6 +3870,7 @@ i0.MigrationStepWithVersion migrationSteps({
 
 i1.OnUpgrade stepByStep({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
+  required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
 }) => i0.VersionedSchema.stepByStepHelper(
-  step: migrationSteps(from1To2: from1To2),
+  step: migrationSteps(from1To2: from1To2, from2To3: from2To3),
 );

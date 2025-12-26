@@ -327,17 +327,9 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
           _isSearchingLocation = false;
         });
         // Show error snackbar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error searching locations: $e',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
-              ),
-            ),
-            backgroundColor: AppColors.dragonfruit,
-            behavior: SnackBarBehavior.floating,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          'Error searching locations: $e',
         );
       }
     }
@@ -426,17 +418,9 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
 
     // Ensure subtype is selected
     if (_selectedSubtype == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Please select a race distance',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-        ),
+      MealvanaSnackbar.showWarning(
+        context,
+        'Please select a race distance',
       );
       return;
     }
@@ -499,17 +483,9 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error creating event: $e',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
-              ),
-            ),
-            backgroundColor: AppColors.dragonfruit,
-            behavior: SnackBarBehavior.floating,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          'Error creating event: $e',
         );
       }
     }

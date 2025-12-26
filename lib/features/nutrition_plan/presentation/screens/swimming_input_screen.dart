@@ -15,6 +15,7 @@ import '../widgets/pre_run_timing_selector.dart';
 import '../../../weather/presentation/widgets/weather_indicator_badge.dart';
 import '../../../weather/presentation/screens/weather_detail_screen.dart';
 import '../../../weather/domain/weather_forecast.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Swimming Input Screen - Swimming-specific nutrition plan input
 /// Users enter swimming details and generate their nutrition plan
@@ -104,11 +105,9 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
     } else if (currentState?.errorMessage != null) {
       // Show error if there is one
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(currentState?.errorMessage ?? currentState?.errorGeneric ?? 'Something went wrong. Please try again.'),
-            backgroundColor: AppTheme.highlight600,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          currentState?.errorMessage ?? currentState?.errorGeneric ?? 'Something went wrong. Please try again.',
         );
       }
     }

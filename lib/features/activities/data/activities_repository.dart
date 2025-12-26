@@ -276,9 +276,16 @@ class ActivitiesRepository {
   ///
   /// Unlike createActivity, this method doesn't immediately upload to Supabase.
   /// Used for batch imports from external providers.
+  ///
+  /// IMPORTANT: Always clears the activity ID to ensure a new row is created.
+  /// The transformer may provide a pre-generated UUID, but we want the database
+  /// to generate the actual ID to ensure proper INSERT behavior.
   Future<domain.Activity> insertActivity(domain.Activity activity) async {
     try {
+      // Clear the ID to force INSERT path in _saveToDrift
+      // This ensures we always create a new row, not update a non-existent one
       final activityWithFlags = activity.copyWith(
+        id: '', // Force INSERT by clearing ID
         needsUpload: true,
         localUpdatedAt: DateTime.now(),
       );

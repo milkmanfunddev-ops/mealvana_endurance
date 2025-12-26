@@ -35,15 +35,45 @@ String get oauthBaseUrl => useSandbox ? sandboxOAuthUrl : productionOAuthUrl;
 String get apiBaseUrl => useSandbox ? sandboxApiUrl : productionApiUrl;
 
 // Your TrainingPeaks Partner API credentials
-// Loaded from environment variables (set in .env.dev.local)
-const String clientId = String.fromEnvironment(
-  'TRAININGPEAKS_CLIENT_ID',
-  defaultValue: 'mealvana',
-);
-const String clientSecret = String.fromEnvironment(
-  'TRAININGPEAKS_CLIENT_SECRET',
-  defaultValue: '',
-);
+// Loaded from .env.dev.local file at runtime
+late final String clientId;
+late final String clientSecret;
+
+/// Load credentials from .env.dev.local file
+void loadEnvCredentials() {
+  final envFile = File('.env.dev.local');
+  if (!envFile.existsSync()) {
+    print('❌ Error: .env.dev.local file not found');
+    print('   Make sure you are running from the project root directory');
+    exit(1);
+  }
+
+  final lines = envFile.readAsLinesSync();
+  final env = <String, String>{};
+
+  for (final line in lines) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+
+    final equalsIndex = trimmed.indexOf('=');
+    if (equalsIndex > 0) {
+      final key = trimmed.substring(0, equalsIndex).trim();
+      final value = trimmed.substring(equalsIndex + 1).trim();
+      env[key] = value;
+    }
+  }
+
+  clientId = env['TRAININGPEAKS_CLIENT_ID'] ?? 'mealvana';
+  clientSecret = env['TRAININGPEAKS_CLIENT_SECRET'] ?? '';
+
+  if (clientSecret.isEmpty) {
+    print('❌ Error: TRAININGPEAKS_CLIENT_SECRET not found in .env.dev.local');
+    exit(1);
+  }
+
+  print('   Client ID: $clientId');
+  print('   Client Secret: ${clientSecret.substring(0, 8)}...');
+}
 
 // Redirect URI for OAuth
 const String redirectUri = 'http://127.0.0.1:8889/callback';
@@ -75,11 +105,9 @@ Future<void> main(List<String> args) async {
   print('   API URL: $apiBaseUrl');
   print('');
 
-  if (clientSecret.isEmpty) {
-    print('⚠️  Warning: TRAINING_PEAKS_CLIENT_SECRET not set');
-    print('   Run with: dart run --define=TRAINING_PEAKS_CLIENT_SECRET=your_secret tool/training_peaks_api_test.dart');
-    print('');
-  }
+  // Load credentials from .env.dev.local
+  loadEnvCredentials();
+  print('');
 
   // Parse command line arguments
   final command = args.isNotEmpty ? args[0] : 'help';
@@ -380,12 +408,6 @@ String _truncateToken(String? token) {
 Future<void> runOAuthFlow() async {
   print('🔐 Starting OAuth Authorization Flow...');
   print('');
-
-  if (clientSecret.isEmpty) {
-    print('❌ Error: TRAINING_PEAKS_CLIENT_SECRET not set');
-    print('   Run with: dart run --define=TRAINING_PEAKS_CLIENT_SECRET=your_secret tool/training_peaks_api_test.dart auth');
-    exit(1);
-  }
 
   // Step 1: Generate authorization URL
   final scopeString = requestedScopes.join(' ');

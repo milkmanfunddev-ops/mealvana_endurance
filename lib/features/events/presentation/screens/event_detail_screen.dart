@@ -282,15 +282,10 @@ class EventDetailScreen extends ConsumerWidget {
     if (confirmed == true && context.mounted) {
       try {
         // Show loading indicator
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Deleting event...',
-              style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-            ),
-            backgroundColor: AppColors.blackberry,
-            duration: const Duration(seconds: 1),
-          ),
+        MealvanaSnackbar.showInfo(
+          context,
+          'Deleting event...',
+          duration: const Duration(seconds: 1),
         );
 
         // Delete the event
@@ -298,30 +293,14 @@ class EventDetailScreen extends ConsumerWidget {
 
         if (context.mounted) {
           // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Event deleted successfully',
-                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-              ),
-              backgroundColor: AppColors.success,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, 'Event deleted successfully');
 
           // Navigate back to events list
           context.go('/main');
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Failed to delete event: $e',
-                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-              ),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Failed to delete event: $e');
         }
       }
     }

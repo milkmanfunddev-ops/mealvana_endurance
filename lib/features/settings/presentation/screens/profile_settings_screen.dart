@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/debug_screen.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../providers/settings_controller.dart';
 import '../../domain/settings_state.dart';
@@ -138,12 +139,10 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                 ? null
                 : () {
                     // Show save confirmation
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('✅ Profile saved!'),
-                        backgroundColor: AppTheme.primary600,
-                        duration: const Duration(seconds: 2),
-                      ),
+                    MealvanaSnackbar.showSuccess(
+                      context,
+                      'Profile saved!',
+                      duration: const Duration(seconds: 2),
                     );
                   },
             width: double.infinity,

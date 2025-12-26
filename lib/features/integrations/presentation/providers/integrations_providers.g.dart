@@ -165,7 +165,7 @@ final class FinalSurgeOAuthServiceProvider
 }
 
 String _$finalSurgeOAuthServiceHash() =>
-    r'b89f6edab143a29c03b96b7b1971b17a710a6a15';
+    r'd68b2a776ef4d0cce65f1f8309812e6659c2819b';
 
 /// Provider for Final Surge transformer
 
@@ -576,7 +576,7 @@ final class TrainingPeaksApiClientProvider
 }
 
 String _$trainingPeaksApiClientHash() =>
-    r'fa2fd24edabe2c4f981527b08dca19c9b7f6b38c';
+    r'c396e3761f203c668fb9c89e5f058438fc8f4b16';
 
 /// Provider for TrainingPeaks transformer
 
@@ -682,7 +682,7 @@ final class TrainingPeaksOAuthServiceProvider
 }
 
 String _$trainingPeaksOAuthServiceHash() =>
-    r'a5647e0d24c512c32784120a37ffd6a572a7c2f7';
+    r'39bac35ac524866a6be72d4d4538d98751dd58e5';
 
 /// Provider for TrainingPeaks sync service
 

@@ -46,6 +46,26 @@
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
     <meta-data android:name="flutterEmbedding" android:value="2"/>
 
+    <!-- flutter_web_auth_2 callback handler for OAuth -->
+    <!-- Production scheme -->
+    <activity
+        android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
+        android:exported="true">
+      <intent-filter android:label="flutter_web_auth_2">
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="com.milkman.mealvanaendurance"/>
+      </intent-filter>
+      <!-- Dev scheme (for .dev flavor) -->
+      <intent-filter android:label="flutter_web_auth_2_dev">
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="com.milkman.mealvanaendurance.dev"/>
+      </intent-filter>
+    </activity>
+
     <!-- Google Sign-In Configuration -->
     <meta-data
         android:name="com.google.android.gms.auth.api.signin.GoogleSignInOptions$SERVER_CLIENT_ID"

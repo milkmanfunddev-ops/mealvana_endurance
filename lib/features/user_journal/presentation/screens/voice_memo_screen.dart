@@ -7,6 +7,7 @@ import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/secondary_button.dart';
 import '../providers/voice_memo_controller.dart';
 import '../../domain/workout_note.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Screen for users to view and add workout notes about their nutrition plan
 /// Displays a list of notes with timestamps and supports speech-to-text input
@@ -456,12 +457,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   Future<void> _handleSaveNewNote() async {
     final notes = _textController.text.trim();
     if (notes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter some notes before saving'),
-          backgroundColor: AppTheme.warningColor,
-        ),
-      );
+      MealvanaSnackbar.showWarning(context, 'Please enter some notes before saving');
       return;
     }
 
@@ -481,21 +477,11 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
         await _loadNotes();
         
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Note saved successfully!'),
-            backgroundColor: AppTheme.primary900,
-          ),
-        );
+        MealvanaSnackbar.showInfo(context, 'Note saved successfully!');
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save note: $error'),
-            backgroundColor: AppTheme.warningColor,
-          ),
-        );
+        MealvanaSnackbar.showWarning(context, 'Failed to save note: $error');
       }
     }
   }
@@ -503,12 +489,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   /// Edit an existing note
   void _editNote(WorkoutNote note) {
     // TODO: Implement edit functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edit functionality coming soon'),
-        backgroundColor: AppTheme.primary600,
-      ),
-    );
+    MealvanaSnackbar.showInfo(context, 'Edit functionality coming soon');
   }
   
   /// Load notes from the controller
@@ -529,12 +510,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
         _isLoadingNotes = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load notes: $e'),
-            backgroundColor: AppTheme.warningColor,
-          ),
-        );
+        MealvanaSnackbar.showWarning(context, 'Failed to load notes: $e');
       }
     }
   }

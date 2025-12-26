@@ -55,15 +55,11 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
     if (success && mounted) {
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            contentService.getValue(
-              'auth.login.success',
-              defaultValue: 'Logged in successfully!',
-            ),
-          ),
-          backgroundColor: AppColors.electrolyte,
+      MealvanaSnackbar.showSuccess(
+        context,
+        contentService.getValue(
+          'auth.login.success',
+          defaultValue: 'Logged in successfully!',
         ),
       );
 
@@ -71,15 +67,11 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       context.pop(true);
     } else if (!success && mounted) {
       // Error message shown by controller via snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            contentService.getValue(
-              'auth.login.error_failed',
-              defaultValue: 'Login failed. Please check your credentials.',
-            ),
-          ),
-          backgroundColor: AppColors.dragonfruit,
+      MealvanaSnackbar.showError(
+        context,
+        contentService.getValue(
+          'auth.login.error_failed',
+          defaultValue: 'Login failed. Please check your credentials.',
         ),
       );
     }

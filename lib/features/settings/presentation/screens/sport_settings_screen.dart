@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../providers/settings_controller.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Sport Settings Screen - Cycling, swimming, and sport-specific preferences
 class SportSettingsScreen extends ConsumerWidget {
@@ -103,13 +104,7 @@ class SportSettingsScreen extends ConsumerWidget {
 
                     if (context.mounted) {
                       // Show success confirmation
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Sport settings saved!'),
-                          backgroundColor: AppTheme.primary600,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
+                      MealvanaSnackbar.showInfo(context, 'Sport settings saved!');
                     }
                   },
             width: double.infinity,

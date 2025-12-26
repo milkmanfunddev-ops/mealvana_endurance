@@ -524,6 +524,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.sm),
 
+          // Connected Apps (Final Surge, TrainingPeaks, Strava integrations)
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.link,
+            title: 'Connected Apps',
+            subtitle: 'Final Surge, TrainingPeaks, Strava',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_connected_apps_tapped');
+              context.push('/settings/connected-apps');
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
           // Help & Feedback
           _buildQuickLink(
             context: context,

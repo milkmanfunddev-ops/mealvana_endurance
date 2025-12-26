@@ -566,22 +566,12 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
     analytics.analytics.track('weather_refreshed');
 
     // Show refresh indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Refreshing weather data...'),
-        backgroundColor: AppColors.electrolyte,
-      ),
-    );
+    MealvanaSnackbar.showSuccess(context, 'Refreshing weather data...');
 
     // In a real app, this would fetch fresh weather data
     Future.delayed(const Duration(seconds: 2), () {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Weather data updated'),
-          backgroundColor: AppColors.electrolyte,
-        ),
-      );
+      MealvanaSnackbar.showSuccess(context, 'Weather data updated');
     });
   }
 }

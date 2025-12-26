@@ -245,17 +245,9 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
             ref.invalidate(activitiesControllerProvider);
 
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Event "${result['eventName']}" created successfully!',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      // color: Colors.white,
-                    ),
-                  ),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                ),
+              MealvanaSnackbar.showSuccess(
+                context,
+                'Event "${result['eventName']}" created successfully!',
               );
             }
 
@@ -298,17 +290,9 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
     eventsController.deleteEvent(event.id).then((_) {
       // Show success message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Deleted "$eventName"',
-              style: AppTextStyles.bodyMedium.copyWith(
-                // color: Colors.white,
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.onSurface,
-            behavior: SnackBarBehavior.floating,
-          ),
+        MealvanaSnackbar.showInfo(
+          context,
+          'Deleted "$eventName"',
         );
       }
     }).catchError((e) {
@@ -318,17 +302,9 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
           _dismissedEventIds.remove(event.id);
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error deleting event: $e',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
-              ),
-            ),
-            backgroundColor: AppColors.dragonfruit,
-            behavior: SnackBarBehavior.floating,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          'Error deleting event: $e',
         );
       }
     });

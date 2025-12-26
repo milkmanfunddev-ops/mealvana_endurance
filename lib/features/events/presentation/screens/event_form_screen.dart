@@ -467,18 +467,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     }
 
     if (_startTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Please select an event date',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      MealvanaSnackbar.showWarning(context, 'Please select an event date');
       return;
     }
 
@@ -552,17 +541,9 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           _isSaving = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error ${isEditMode ? 'updating' : 'creating'} event: $e',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
-              ),
-            ),
-            backgroundColor: AppColors.dragonfruit,
-            behavior: SnackBarBehavior.floating,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          'Error ${isEditMode ? 'updating' : 'creating'} event: $e',
         );
       }
     }
