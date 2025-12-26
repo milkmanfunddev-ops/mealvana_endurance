@@ -70,45 +70,38 @@
       "flutterMode": "release"
     },
     {
-      "name": "Dev Flavor (Web - Chrome)",
+      "name": "Web (Chrome) - Dev",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main_dev.dart",
+      "program": "lib/main_web.dart",
       "args": [
         "-d",
-        "chrome"
+        "chrome",
+        "--dart-define-from-file=.env.web.local"
       ]
     },
     {
-      "name": "Prod Flavor (Web - Chrome)",
+      "name": "Web (Chrome) - Prod",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main_prod.dart",
+      "program": "lib/main_web.dart",
       "args": [
         "-d",
-        "chrome"
+        "chrome",
+        "--dart-define-from-file=.env.web.prod.local"
       ]
     },
     {
-      "name": "Dev Flavor (Web - Edge)",
+      "name": "Web Server (localhost:8080) - Dev",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main_dev.dart",
-      "args": [
-        "-d",
-        "edge"
-      ]
-    },
-    {
-      "name": "Dev Flavor (Web Server)",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main_dev.dart",
+      "program": "lib/main_web.dart",
       "args": [
         "-d",
         "web-server",
         "--web-port",
-        "8080"
+        "8080",
+        "--dart-define-from-file=.env.web.local"
       ]
     }
   ]
