@@ -8,6 +8,7 @@ import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/preferences_service.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../data/user_repository.dart';
+import '../domain/auth_exceptions.dart';
 
 part 'email_auth_service.g.dart';
 
@@ -180,20 +181,119 @@ class EmailAuthService extends _$EmailAuthService {
         'error': error.toString(),
       });
 
-      // Provide user-friendly error messages
-      String userMessage = 'Account creation failed. Please try again.';
-
+      // Check for "already registered" error - throw specific exception for UI to handle
       if (error is AuthApiException) {
-        if (error.message.contains('already registered')) {
-          userMessage = 'This email is already registered. Please sign in instead.';
+        if (error.message.contains('already registered') ||
+            error.message.contains('already been registered') ||
+            error.message.contains('User already registered')) {
+          throw AccountAlreadyExistsException(
+            'This email is already registered',
+            email: email,
+          );
         } else if (error.message.contains('invalid')) {
-          userMessage = 'Please enter a valid email address.';
+          throw Exception('Please enter a valid email address.');
         } else if (error.message.contains('weak password')) {
-          userMessage = 'Please use a stronger password (at least 8 characters).';
+          throw Exception('Please use a stronger password (at least 8 characters).');
         }
       }
 
-      throw Exception(userMessage);
+      throw Exception('Account creation failed. Please try again.');
+    }
+  }
+
+  /// Sign up with email/password (creates NEW user)
+  /// Used when no Supabase session exists (during onboarding)
+  /// This creates a brand new Supabase auth user with email/password credentials
+  Future<void> signUpWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      _logger.info('Starting email signup (new user)', context: 'EMAIL_AUTH', data: {
+        'email_length': email.length,
+      });
+
+      // Validate inputs
+      final emailValidation = validateEmail(email);
+      if (emailValidation != null) {
+        throw Exception(emailValidation);
+      }
+
+      final passwordValidation = validatePassword(password);
+      if (passwordValidation != null) {
+        throw Exception(passwordValidation);
+      }
+
+      // Create NEW Supabase auth user with email/password
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+
+      if (response.user == null) {
+        throw Exception('Failed to create account - no user returned');
+      }
+
+      final newUserId = response.user!.id;
+
+      _logger.info('Email signup successful', context: 'EMAIL_AUTH', data: {
+        'user_id': newUserId,
+        'email': response.user!.email,
+        'email_confirmed': response.user!.emailConfirmedAt != null,
+      });
+
+      // Complete authentication (creates UserProfile)
+      final userRepo = await ref.read(userRepositoryProvider.future);
+      await userRepo.completeAuthentication(
+        previousUserId: null, // No previous user during onboarding
+        wasAnonymous: false,
+        newUserId: newUserId,
+        authProvider: 'email',
+        preservedUserId: false, // New user ID created
+      );
+
+      // CRITICAL: Invalidate userIdProvider to force re-read with new user
+      ref.invalidate(userIdProvider);
+      _logger.info('Invalidated userIdProvider after signup', context: 'EMAIL_AUTH');
+
+      // Track successful signup in analytics
+      await _analytics.track('email_account_created', properties: {
+        'user_id': newUserId,
+        'email_confirmed': response.user!.emailConfirmedAt != null,
+      });
+
+      _logger.info('Email signup complete', context: 'EMAIL_AUTH');
+    });
+
+    // Re-throw errors for UI to handle
+    if (state.hasError) {
+      final error = state.error;
+      _logger.error('Email signup failed', context: 'EMAIL_AUTH', error: error);
+
+      // Track failure in analytics
+      await _analytics.track('email_signup_failed', properties: {
+        'error': error.toString(),
+      });
+
+      // Check for "already registered" error - throw specific exception for UI to handle
+      if (error is AuthApiException) {
+        if (error.message.contains('already registered') ||
+            error.message.contains('already been registered') ||
+            error.message.contains('User already registered')) {
+          throw AccountAlreadyExistsException(
+            'This email is already registered',
+            email: email,
+          );
+        } else if (error.message.contains('invalid')) {
+          throw Exception('Please enter a valid email address.');
+        } else if (error.message.contains('weak password')) {
+          throw Exception('Please use a stronger password (at least 8 characters).');
+        }
+      }
+
+      throw Exception('Account creation failed. Please try again.');
     }
   }
 

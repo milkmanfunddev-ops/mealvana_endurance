@@ -55,17 +55,17 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
     if (success && mounted) {
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            contentService.getValue(
-              'auth.login.success',
-              defaultValue: 'Logged in successfully!',
-            ),
-          ),
-          backgroundColor: AppColors.electrolyte,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(
+      //       contentService.getValue(
+      //         'auth.login.success',
+      //         defaultValue: 'Logged in successfully!',
+      //       ),
+      //     ),
+      //     backgroundColor: AppColors.electrolyte,
+      //   ),
+      // );
 
       // Return to post-onboarding auth screen which will navigate to main
       context.pop(true);

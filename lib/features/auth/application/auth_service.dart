@@ -42,6 +42,8 @@ class AuthService {
     required bool runsWithWaterBottle,
     GutTraining? gutTraining,
     Map<String, FoodPreference>? foodPreferences,
+    String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
+    bool isAnonymous = true, // false when user signs up with email/OAuth
   }) async {
     try {
       // Get or create Supabase auth session
@@ -153,8 +155,8 @@ class AuthService {
         id: effectiveUserId, // Use existing ID or new auth ID
         deviceId: deviceId, // Keep for backwards compatibility
         authUserId: authUser.id, // Always update to current Supabase auth user ID
-        authProvider: 'anonymous', // Anonymous auth
-        isAnonymous: true, // Anonymous until linked to email/social
+        authProvider: authProvider, // 'anonymous', 'email', 'google', 'apple'
+        isAnonymous: isAnonymous, // false when user signs up with email/OAuth
         gender: gender,
         birthday: birthday,
         heightFeet: heightFeet,
@@ -162,7 +164,7 @@ class AuthService {
         weightPounds: weightPounds,
         runsWithWaterBottle: runsWithWaterBottle,
         gutTraining: gutTraining ?? GutTraining.high,
-        onboardingCompleted: false,
+        onboardingCompleted: true, // Set true immediately so user can proceed even if later steps fail
         appVersion: appVersion,
         createdAt: isExistingUser ? now : now, // For existing users, this will be ignored by upsert
         updatedAt: now,
@@ -195,7 +197,7 @@ class AuthService {
       await _sentry.setUserContext(
         deviceId: effectiveUserId, // Use effective user ID for Sentry
         appVersion: appVersion,
-        onboardingCompleted: false,
+        onboardingCompleted: true,
         gutTrainingLevel: (gutTraining ?? GutTraining.high).name,
       );
 
@@ -440,32 +442,23 @@ class AuthService {
         source: source,
       );
 
-      // Mark user as having completed onboarding locally and queue for background upload
+      // Mark user profile for background upload (onboardingCompleted already set in createUser)
       final user = await getCurrentUser();
       if (user != null) {
         final updatedUser = user.copyWith(
-          onboardingCompleted: true,
           updatedAt: DateTime.now(),
         );
         // Mark for background upload - DataSyncService will sync user profile + food preferences
         await userRepo.updateUserProfile(updatedUser, needsUpload: true);
 
         _logger.info(
-          'Onboarding completed locally - food preferences and profile marked for background upload',
+          'Food preferences saved locally and marked for background upload',
           context: 'AUTH',
           data: {'userId': userId, 'foodPreferencesCount': preferences.length},
         );
 
-        // Update Sentry user context (unawaited for performance)
-        unawaited(_sentry.setUserContext(
-          deviceId: userId,
-          appVersion: '1.0.0',
-          onboardingCompleted: true,
-          gutTrainingLevel: user.gutTraining.name,
-        ));
-
         _sentry.addBreadcrumb(
-          message: 'Onboarding completed - food preferences saved locally',
+          message: 'Food preferences saved locally',
           category: 'user_lifecycle',
           data: {
             'user_id': userId,

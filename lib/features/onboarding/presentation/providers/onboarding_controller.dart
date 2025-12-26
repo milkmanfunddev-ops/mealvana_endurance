@@ -46,6 +46,8 @@ class OnboardingController extends _$OnboardingController {
     required int heightInches,
     required double weightPounds,
     required bool runsWithWaterBottle,
+    String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
+    bool isAnonymous = true, // false when user signs up with email/OAuth
   }) async {
     state = const AsyncLoading();
 
@@ -57,6 +59,8 @@ class OnboardingController extends _$OnboardingController {
         heightInches: heightInches,
         weightPounds: weightPounds,
         runsWithWaterBottle: runsWithWaterBottle,
+        authProvider: authProvider,
+        isAnonymous: isAnonymous,
       );
     });
 
@@ -466,8 +470,13 @@ class OnboardingController extends _$OnboardingController {
 
   /// Save all cached onboarding data to DB and Supabase
   /// This is called after OAuth registration to save everything at once
-  Future<bool> saveAllOnboardingData() async {
-    DebugLogger.info('📦 Starting batch save of all onboarding data');
+  /// [authProvider] - 'anonymous', 'email', 'google', 'apple'
+  /// [isAnonymous] - false when user signs up with email/OAuth
+  Future<bool> saveAllOnboardingData({
+    String authProvider = 'anonymous',
+    bool isAnonymous = true,
+  }) async {
+    DebugLogger.info('📦 Starting batch save of all onboarding data (authProvider: $authProvider, isAnonymous: $isAnonymous)');
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -481,6 +490,8 @@ class OnboardingController extends _$OnboardingController {
           heightInches: data['heightInches'] as int,
           weightPounds: data['weightPounds'] as double,
           runsWithWaterBottle: data['runsWithWaterBottle'] as bool,
+          authProvider: authProvider,
+          isAnonymous: isAnonymous,
         );
         DebugLogger.info('✅ User profile created: ${_currentUser!.id}');
       } else {
