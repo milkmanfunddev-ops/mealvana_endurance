@@ -28,7 +28,6 @@ class $UserProfilesTableTable extends UserProfilesTable
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   static const VerificationMeta _authUserIdMeta = const VerificationMeta(
     'authUserId',
@@ -966,7 +965,8 @@ class UserProfileEntry extends DataClass
   /// Will eventually be UUID-only after full migration to Supabase Auth
   final String id;
 
-  /// Device ID used as unique identifier (matches Supabase users.device_id)
+  /// Device ID used to identify the device (matches Supabase users.device_id)
+  /// NOT unique - multiple users can share the same device (family devices)
   /// This will become nullable during auth migration (legacy field)
   final String deviceId;
 

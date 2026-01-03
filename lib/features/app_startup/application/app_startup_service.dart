@@ -615,6 +615,21 @@ class AppStartupService {
   /// UPDATED: Now includes full sync for device-based users who skip OAuth
   /// OAuth users still get their sync from OAuthService to prevent duplication
   Future<void> _performPostAuthSync(String userId) async {
+    // CRITICAL: Check if user has completed onboarding before syncing
+    // During onboarding, no user profile exists yet, so sync would fail
+    try {
+      final database = ref.read(appDatabaseProvider);
+      final userProfile = await database.getCurrentUserProfile();
+
+      if (userProfile == null || userProfile.onboardingCompleted != true) {
+        _logger.info('Skipping post-auth sync - onboarding not complete', context: 'AUTH');
+        return;
+      }
+    } catch (e) {
+      _logger.error('Error checking onboarding status, skipping sync', context: 'AUTH', error: e);
+      return;
+    }
+
     try {
       final userRepo = await ref.read(userRepositoryProvider.future);
 

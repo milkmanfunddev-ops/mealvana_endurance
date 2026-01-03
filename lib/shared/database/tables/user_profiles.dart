@@ -10,9 +10,10 @@ class UserProfilesTable extends Table {
   /// Will eventually be UUID-only after full migration to Supabase Auth
   TextColumn get id => text()();
 
-  /// Device ID used as unique identifier (matches Supabase users.device_id)
+  /// Device ID used to identify the device (matches Supabase users.device_id)
+  /// NOT unique - multiple users can share the same device (family devices)
   /// This will become nullable during auth migration (legacy field)
-  TextColumn get deviceId => text().unique().named('device_id')();
+  TextColumn get deviceId => text().named('device_id')();
 
   /// Auth columns for Supabase authentication integration
   /// Explicit reference to Supabase auth.uid() - this is the canonical user ID
@@ -113,7 +114,7 @@ class UserProfilesTable extends Table {
 
   @override
   List<String> get customConstraints => [
-    'UNIQUE(device_id)', // Ensure device_id is unique
+    // Note: device_id is NOT unique - multiple users can share the same device
     "CHECK (gender IN ('male', 'female', 'other') OR gender IS NULL)",
     "CHECK (gut_training_level IN ('low', 'moderate', 'high'))",
     "CHECK (preferred_distance_unit IN ('miles', 'kilometers'))",

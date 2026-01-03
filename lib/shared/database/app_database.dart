@@ -603,6 +603,159 @@ class AppDatabase extends _$AppDatabase {
               }
             }
 
+            // ========================================================================
+            // 6. Remove UNIQUE constraint on device_id in users table
+            // ========================================================================
+            // Multiple users can share a device (e.g., family members, switching accounts).
+            // The UNIQUE constraint on device_id was incorrect and prevents this.
+            // SQLite doesn't support DROP CONSTRAINT, so we must recreate the table.
+            // Schema matches UserProfilesTable (the actual table used by Drift).
+            // ========================================================================
+
+            // Check if the constraint exists by looking at indexes
+            final userIndexes = await customSelect("PRAGMA index_list('users')").get();
+            final hasDeviceIdUnique = userIndexes.any((idx) {
+              final name = idx.read<String>('name');
+              final unique = idx.read<int>('unique') == 1;
+              // Check if any unique index contains device_id
+              return unique && name.toLowerCase().contains('device');
+            });
+
+            // Also check for auto-generated constraint by testing if UNIQUE violation would occur
+            // We need to recreate the table to definitively remove the constraint
+            if (hasDeviceIdUnique || true) { // Always recreate to ensure constraint is removed
+              // Get all current users columns for recreation
+              final currentUsersColumns = await customSelect("PRAGMA table_info(users)").get();
+              final currentColumnNames = currentUsersColumns.map((row) => row.read<String>('name')).toList();
+
+              // Only recreate if device_id column exists (sanity check)
+              if (currentColumnNames.contains('device_id')) {
+                // Create new table without UNIQUE constraint on device_id
+                // NOTE: Schema matches UserProfilesTable exactly (including auth columns)
+                await customStatement('''
+                  CREATE TABLE users_new (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    device_id TEXT NOT NULL,
+                    auth_user_id TEXT,
+                    auth_provider TEXT DEFAULT 'anonymous' NOT NULL,
+                    is_anonymous INTEGER DEFAULT 1 NOT NULL,
+                    created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000) NOT NULL,
+                    updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000) NOT NULL,
+                    gender TEXT,
+                    birthday INTEGER,
+                    height_feet INTEGER,
+                    height_inches INTEGER,
+                    weight_pounds REAL,
+                    runs_with_water_bottle INTEGER DEFAULT 0 NOT NULL,
+                    food_preferences TEXT DEFAULT '{}' NOT NULL,
+                    preferred_distance_unit TEXT DEFAULT 'miles' NOT NULL,
+                    preferred_pace_unit TEXT DEFAULT 'min_per_mile' NOT NULL,
+                    gut_training_level TEXT DEFAULT 'moderate' NOT NULL,
+                    onboarding_completed INTEGER DEFAULT 0 NOT NULL,
+                    last_active_at INTEGER DEFAULT (strftime('%s', 'now') * 1000) NOT NULL,
+                    app_version TEXT,
+                    notifications_enabled INTEGER DEFAULT 0 NOT NULL,
+                    default_reminder_day INTEGER DEFAULT 4 NOT NULL,
+                    default_reminder_hour INTEGER DEFAULT 17 NOT NULL,
+                    default_reminder_minute INTEGER DEFAULT 0 NOT NULL,
+                    default_reminder_recurring INTEGER DEFAULT 0 NOT NULL,
+                    temp_plan_data TEXT,
+                    swipe_hint_shown INTEGER DEFAULT 0 NOT NULL,
+                    calendar_week_start TEXT DEFAULT 'monday' NOT NULL,
+                    default_activity_time TEXT DEFAULT '07:00:00' NOT NULL,
+                    default_activity_day TEXT DEFAULT 'saturday' NOT NULL,
+                    auto_generate_nutrition INTEGER DEFAULT 1 NOT NULL,
+                    completion_reminders INTEGER DEFAULT 1 NOT NULL,
+                    sender_name TEXT,
+                    dietary_preference TEXT,
+                    allergies TEXT DEFAULT '{}' NOT NULL,
+                    needs_upload INTEGER DEFAULT 0 NOT NULL,
+                    CHECK (gender IN ('male', 'female', 'other') OR gender IS NULL),
+                    CHECK (gut_training_level IN ('low', 'moderate', 'high')),
+                    CHECK (preferred_distance_unit IN ('miles', 'kilometers')),
+                    CHECK (preferred_pace_unit IN ('min_per_mile', 'min_per_km')),
+                    CHECK (calendar_week_start IN ('sunday', 'monday')),
+                    CHECK (default_activity_day IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')),
+                    CHECK (auth_provider IN ('anonymous', 'email', 'google', 'apple')),
+                    CHECK (dietary_preference IN ('omnivore', 'vegetarian', 'pescatarian', 'vegan', 'mediterranean', 'paleo', 'keto', 'low_carb') OR dietary_preference IS NULL)
+                  )
+                ''');
+
+                // Copy data from old table
+                // Check if auth columns exist (they should in v1+, but be safe)
+                final hasAuthColumns = currentColumnNames.contains('auth_user_id');
+
+                if (hasAuthColumns) {
+                  // Full copy including auth columns
+                  await customStatement('''
+                    INSERT INTO users_new (
+                      id, device_id, auth_user_id, auth_provider, is_anonymous,
+                      created_at, updated_at, gender, birthday,
+                      height_feet, height_inches, weight_pounds, runs_with_water_bottle,
+                      food_preferences, preferred_distance_unit, preferred_pace_unit,
+                      gut_training_level, onboarding_completed, last_active_at, app_version,
+                      notifications_enabled, default_reminder_day, default_reminder_hour,
+                      default_reminder_minute, default_reminder_recurring, temp_plan_data,
+                      swipe_hint_shown, calendar_week_start, default_activity_time,
+                      default_activity_day, auto_generate_nutrition, completion_reminders,
+                      sender_name, dietary_preference, allergies, needs_upload
+                    )
+                    SELECT
+                      id, device_id, auth_user_id, auth_provider, is_anonymous,
+                      created_at, updated_at, gender, birthday,
+                      height_feet, height_inches, weight_pounds, runs_with_water_bottle,
+                      food_preferences, preferred_distance_unit, preferred_pace_unit,
+                      gut_training_level, onboarding_completed, last_active_at, app_version,
+                      notifications_enabled, default_reminder_day, default_reminder_hour,
+                      default_reminder_minute, default_reminder_recurring, temp_plan_data,
+                      swipe_hint_shown, calendar_week_start, default_activity_time,
+                      default_activity_day, auto_generate_nutrition, completion_reminders,
+                      sender_name, dietary_preference, allergies, needs_upload
+                    FROM users
+                  ''');
+                } else {
+                  // Legacy migration - auth columns will get defaults
+                  await customStatement('''
+                    INSERT INTO users_new (
+                      id, device_id,
+                      created_at, updated_at, gender, birthday,
+                      height_feet, height_inches, weight_pounds, runs_with_water_bottle,
+                      food_preferences, preferred_distance_unit, preferred_pace_unit,
+                      gut_training_level, onboarding_completed, last_active_at, app_version,
+                      notifications_enabled, default_reminder_day, default_reminder_hour,
+                      default_reminder_minute, default_reminder_recurring, temp_plan_data,
+                      swipe_hint_shown, calendar_week_start, default_activity_time,
+                      default_activity_day, auto_generate_nutrition, completion_reminders,
+                      sender_name, dietary_preference, allergies, needs_upload
+                    )
+                    SELECT
+                      id, device_id,
+                      created_at, updated_at, gender, birthday,
+                      height_feet, height_inches, weight_pounds, runs_with_water_bottle,
+                      food_preferences, preferred_distance_unit, preferred_pace_unit,
+                      gut_training_level, onboarding_completed, last_active_at, app_version,
+                      notifications_enabled, default_reminder_day, default_reminder_hour,
+                      default_reminder_minute, default_reminder_recurring, temp_plan_data,
+                      swipe_hint_shown, calendar_week_start, default_activity_time,
+                      default_activity_day, auto_generate_nutrition, completion_reminders,
+                      sender_name, dietary_preference, allergies, needs_upload
+                    FROM users
+                  ''');
+                }
+
+                // Drop old table and rename new
+                await customStatement('DROP TABLE users');
+                await customStatement('ALTER TABLE users_new RENAME TO users');
+
+                // Recreate index on device_id (non-unique, for query performance)
+                await customStatement('CREATE INDEX IF NOT EXISTS idx_users_device_id ON users(device_id)');
+
+                if (kDebugMode) {
+                  print('✅ Removed UNIQUE constraint on users.device_id');
+                }
+              }
+            }
+
             if (kDebugMode) {
               print('✅ V1→V2 migration completed: INTEGER to TEXT conversion successful');
             }
@@ -821,7 +974,17 @@ class AppDatabase extends _$AppDatabase {
 
   /// Save a user profile
   /// [needsUpload] - If true, marks profile for background upload to Supabase (for new registrations)
+  ///
+  /// IMPORTANT: This method handles the case where a different user exists with the same device_id.
+  /// Since device_id has a UNIQUE constraint (legacy schema), we must delete any existing user
+  /// with the same device_id before inserting the new user.
   Future<void> saveUserProfile(domain.UserProfile profile, {bool needsUpload = false}) async {
+    // Delete any existing user with this device_id that has a DIFFERENT id
+    // This handles the case where a new user is created on a device that already has a user
+    await (delete(userProfilesTable)
+      ..where((u) => u.deviceId.equals(profile.deviceId) & u.id.equals(profile.id).not()))
+      .go();
+
     await into(userProfilesTable).insertOnConflictUpdate(
       UserProfilesTableCompanion.insert(
         id: profile.id,

@@ -2182,13 +2182,12 @@ class DataSyncService {
       };
 
       // Upsert to Supabase
-      // CRITICAL: Use device_id for conflict resolution to handle sign-out/re-onboarding flow.
-      // When a user signs out and re-creates an anonymous account, they get a NEW auth user ID
-      // but the SAME device_id. Using device_id ensures we update the existing row instead of
-      // trying to insert a new one (which would violate the unique constraint on device_id).
+      // Use primary key (id) for conflict resolution.
+      // NOTE: device_id is NOT unique - multiple users can share a device (family members, account switching).
+      // Each user has their own unique id (UUID), so conflicts are resolved by id.
       await _supabase.from('users').upsert(
         userData,
-        onConflict: 'device_id', // Use device_id for conflict resolution (handles re-onboarding)
+        onConflict: 'id', // Use primary key for conflict resolution
       );
 
       // Mark as synced in local database
