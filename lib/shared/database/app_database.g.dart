@@ -19522,6 +19522,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $IntegrationsTableTable integrationsTable =
       $IntegrationsTableTable(this);
   late final UserDao userDao = UserDao(this as AppDatabase);
+  late final FoodPreferencesDao foodPreferencesDao = FoodPreferencesDao(
+    this as AppDatabase,
+  );
+  late final ActivityDao activityDao = ActivityDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();

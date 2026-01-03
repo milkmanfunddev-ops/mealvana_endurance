@@ -43,6 +43,8 @@ import 'migrations/migration_v2_to_v3.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
+import 'daos/food_preferences_dao.dart';
+import 'daos/activity_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -89,6 +91,8 @@ part 'app_database.g.dart';
   ],
   daos: [
     UserDao,
+    FoodPreferencesDao,
+    ActivityDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
