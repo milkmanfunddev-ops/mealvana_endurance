@@ -41,6 +41,9 @@ import '../../features/nutrition_plan/domain/food_item.dart';
 import 'migrations/migration_v1_to_v2.dart';
 import 'migrations/migration_v2_to_v3.dart';
 
+// DAOs (extracted for modularity)
+import 'daos/user_dao.dart';
+
 part 'app_database.g.dart';
 
 /// Main Drift database for the Mealvana Endurance app
@@ -83,6 +86,9 @@ part 'app_database.g.dart';
 
     // External integrations (Final Surge, TrainingPeaks, Strava, etc.)
     IntegrationsTable,
+  ],
+  daos: [
+    UserDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
