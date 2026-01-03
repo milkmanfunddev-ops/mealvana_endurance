@@ -177,6 +177,53 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
     return userCount.read(userProfilesTable.id.count())! > 0;
   }
 
+  /// Update user notification preferences
+  Future<void> updateUserNotificationPreferences({
+    required String userId,
+    required bool notificationsEnabled,
+    required int defaultReminderDay,
+    required int defaultReminderHour,
+    required int defaultReminderMinute,
+    required bool defaultReminderRecurring,
+  }) async {
+    await (update(userProfilesTable)..where((u) => u.id.equals(userId))).write(
+      UserProfilesTableCompanion(
+        notificationsEnabled: Value(notificationsEnabled),
+        defaultReminderDay: Value(defaultReminderDay),
+        defaultReminderHour: Value(defaultReminderHour),
+        defaultReminderMinute: Value(defaultReminderMinute),
+        defaultReminderRecurring: Value(defaultReminderRecurring),
+      ),
+    );
+  }
+
+  /// Check if swipe hint animation has been shown for current user
+  /// NOTE: Swipe hint now uses SharedPreferences for global persistence
+  /// This method is kept for backward compatibility with user profiles
+  Future<bool> hasShownSwipeHint() async {
+    final user = await getCurrentUserProfile();
+    if (user != null) {
+      return user.swipeHintShown;
+    }
+    return false; // Default to not shown if no user profile
+  }
+
+  /// Mark swipe hint animation as shown for current user
+  /// NOTE: Swipe hint now uses SharedPreferences for global persistence
+  /// This method is kept for backward compatibility with user profiles
+  Future<void> markSwipeHintAsShown() async {
+    final user = await getCurrentUserProfile();
+    if (user != null) {
+      await (update(userProfilesTable)..where((t) => t.id.equals(user.id)))
+          .write(
+        UserProfilesTableCompanion(
+          swipeHintShown: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+    }
+  }
+
   /// Convert database entry to domain model
   domain.UserProfile _convertToDomainUserProfile(UserProfileEntry dbUser) {
     return domain.UserProfile(
