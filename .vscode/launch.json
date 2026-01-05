@@ -77,7 +77,9 @@
       "args": [
         "-d",
         "chrome",
-        "--dart-define-from-file=.env.web.local"
+        "--dart-define-from-file=.env.web.local",
+        "--web-header=Cross-Origin-Opener-Policy=same-origin",
+        "--web-header=Cross-Origin-Embedder-Policy=require-corp"
       ]
     },
     {
@@ -88,7 +90,9 @@
       "args": [
         "-d",
         "chrome",
-        "--dart-define-from-file=.env.web.prod.local"
+        "--dart-define-from-file=.env.web.prod.local",
+        "--web-header=Cross-Origin-Opener-Policy=same-origin",
+        "--web-header=Cross-Origin-Embedder-Policy=require-corp"
       ]
     },
     {
@@ -101,7 +105,9 @@
         "web-server",
         "--web-port",
         "8080",
-        "--dart-define-from-file=.env.web.local"
+        "--dart-define-from-file=.env.web.local",
+        "--web-header=Cross-Origin-Opener-Policy=same-origin",
+        "--web-header=Cross-Origin-Embedder-Policy=require-corp"
       ]
     }
   ]

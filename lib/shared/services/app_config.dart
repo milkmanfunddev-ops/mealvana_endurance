@@ -191,13 +191,29 @@ class AppConfig {
   /// - SENTRY_DSN: Sentry DSN for error tracking
   /// - MIXPANEL_PROJECT_TOKEN: Mixpanel analytics token
   factory AppConfig.fromDartDefines() {
-    // Read environment from dart defines
+    // All String.fromEnvironment calls MUST be const (compile-time only)
     const appEnv = String.fromEnvironment('APP_ENVIRONMENT', defaultValue: 'prod');
-    final isDevMode = appEnv == 'dev';
-
-    // Required configuration
     const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
     const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+    const supabasePublishableKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+    const sentryDsn = String.fromEnvironment(
+      'SENTRY_DSN',
+      defaultValue: 'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
+    );
+    const sentryEnvironment = String.fromEnvironment('SENTRY_ENVIRONMENT');
+    const mixpanelToken = String.fromEnvironment('MIXPANEL_PROJECT_TOKEN');
+    const wiredashProjectId = String.fromEnvironment(
+      'WIREDASH_PROJECT_ID',
+      defaultValue: 'mealvana-endurance-vn1pxw3',
+    );
+    const wiredashSecret = String.fromEnvironment(
+      'WIREDASH_SECRET',
+      defaultValue: 'wuQrGN_DMojjIopfhEblvMpU53FSChuD',
+    );
+    const usdaApiKey = String.fromEnvironment('USDA_API_KEY');
+
+    // Runtime logic applied after const extraction
+    final isDevMode = appEnv == 'dev';
 
     // Validate required configuration
     if (supabaseUrl.isEmpty) {
@@ -207,6 +223,17 @@ class AppConfig {
       throw StateError('SUPABASE_ANON_KEY must be provided via --dart-define');
     }
 
+    // Apply defaults that depend on runtime values
+    final effectiveSentryEnv = sentryEnvironment.isNotEmpty
+        ? sentryEnvironment
+        : (isDevMode ? 'development' : 'production');
+
+    final effectiveMixpanelToken = mixpanelToken.isNotEmpty
+        ? mixpanelToken
+        : (isDevMode
+            ? 'df6e8dd4f3dc1363fa194a156298b16c'  // Dev token
+            : 'bd8fe50bb67b1dd0860351e6297347db'); // Prod token
+
     return AppConfig(
       // Environment configuration
       devModeEnabled: isDevMode,
@@ -215,42 +242,25 @@ class AppConfig {
       // Supabase configuration
       supabaseUrl: supabaseUrl,
       supabaseAnonKey: supabaseAnonKey,
-      supabasePublishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
+      supabasePublishableKey: supabasePublishableKey,
       supabaseSecretKey: '', // Never include secret key in web builds
 
       // Sentry configuration
-      sentryDsn: const String.fromEnvironment(
-        'SENTRY_DSN',
-        defaultValue: 'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
-      ),
-      sentryEnvironment: String.fromEnvironment(
-        'SENTRY_ENVIRONMENT',
-        defaultValue: isDevMode ? 'development' : 'production',
-      ),
+      sentryDsn: sentryDsn,
+      sentryEnvironment: effectiveSentryEnv,
 
       // Analytics configuration
-      mixpanelProjectToken: String.fromEnvironment(
-        'MIXPANEL_PROJECT_TOKEN',
-        defaultValue: isDevMode
-            ? 'df6e8dd4f3dc1363fa194a156298b16c' // Dev token
-            : 'bd8fe50bb67b1dd0860351e6297347db', // Prod token
-      ),
+      mixpanelProjectToken: effectiveMixpanelToken,
 
-      // Wiredash (User Feedback) - using defaults for web
-      wiredashProjectId: const String.fromEnvironment(
-        'WIREDASH_PROJECT_ID',
-        defaultValue: 'mealvana-endurance-vn1pxw3',
-      ),
-      wiredashSecret: const String.fromEnvironment(
-        'WIREDASH_SECRET',
-        defaultValue: 'wuQrGN_DMojjIopfhEblvMpU53FSChuD',
-      ),
+      // Wiredash (User Feedback)
+      wiredashProjectId: wiredashProjectId,
+      wiredashSecret: wiredashSecret,
 
       // OneSignal - not used on web
       oneSignalAppId: '',
 
       // External API keys
-      usdaApiKey: const String.fromEnvironment('USDA_API_KEY'),
+      usdaApiKey: usdaApiKey,
 
       // Debug settings
       enableDebugLogging: kDebugMode,

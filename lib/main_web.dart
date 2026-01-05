@@ -34,9 +34,21 @@ Future<void> main() async {
     SentryWidgetsFlutterBinding.ensureInitialized();
     debugPrint('[STARTUP] Widget binding initialized: ${mainStopwatch.elapsedMilliseconds}ms');
 
+    // Debug: Print dart defines to verify they're being passed
+    debugPrint('[STARTUP] Checking dart defines...');
+    debugPrint('[STARTUP] SUPABASE_URL: ${const String.fromEnvironment('SUPABASE_URL', defaultValue: 'NOT SET')}');
+    debugPrint('[STARTUP] APP_ENVIRONMENT: ${const String.fromEnvironment('APP_ENVIRONMENT', defaultValue: 'NOT SET')}');
+
     // Create app configuration from dart defines (web-safe)
-    final config = AppConfig.fromDartDefines();
-    debugPrint('[STARTUP] AppConfig created (web): ${mainStopwatch.elapsedMilliseconds}ms');
+    late final AppConfig config;
+    try {
+      config = AppConfig.fromDartDefines();
+      debugPrint('[STARTUP] AppConfig created (web): ${mainStopwatch.elapsedMilliseconds}ms');
+    } catch (e, st) {
+      debugPrint('[STARTUP] ERROR creating AppConfig: $e');
+      debugPrint('[STARTUP] Stack trace: $st');
+      rethrow;
+    }
 
     // Initialize Sentry
     debugPrint('[STARTUP] Starting Sentry init...');
@@ -83,6 +95,8 @@ Future<void> main() async {
     debugPrint('[STARTUP] Starting Supabase and runApp...');
     await _runMealvanaApp(config, mainStopwatch);
   }, (exception, stackTrace) async {
+    debugPrint('[STARTUP] UNCAUGHT ERROR: $exception');
+    debugPrint('[STARTUP] Stack trace: $stackTrace');
     await Sentry.captureException(exception, stackTrace: stackTrace);
   });
 }
