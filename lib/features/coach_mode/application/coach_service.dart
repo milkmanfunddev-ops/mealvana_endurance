@@ -481,4 +481,54 @@ class CoachService {
       rethrow;
     }
   }
+
+  // ============================================================================
+  // COACH DIRECTORY (Athlete browsing coaches)
+  // ============================================================================
+
+  /// Get all available/active coaches for browsing
+  Future<List<Coach>> getAvailableCoaches() async {
+    try {
+      return await _repository.getActiveCoaches();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get available coaches',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return [];
+    }
+  }
+
+  /// Request to connect with a coach (athlete initiates)
+  Future<bool> requestCoachConnection(String coachId) async {
+    try {
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null) {
+        _logger.warning(
+          'Cannot request coach: no user profile',
+          context: 'COACH_SERVICE',
+        );
+        return false;
+      }
+
+      final relationship = await _repository.createRelationship(
+        coachId: coachId,
+        athleteUserId: profile.id,
+        athleteDeviceId: profile.deviceId,
+        requestedBy: 'athlete',
+      );
+
+      return relationship != null;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to request coach connection',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
 }

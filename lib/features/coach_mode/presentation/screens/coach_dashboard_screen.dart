@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/coach_dashboard_controller.dart';
@@ -155,7 +156,7 @@ class CoachDashboardScreen extends ConsumerWidget {
                   return AthleteCard(
                     relationship: athlete,
                     onTap: () {
-                      // TODO: Navigate to athlete detail
+                      context.push('/coach/athlete/${athlete.id}');
                     },
                     onArchive: () {
                       _showArchiveConfirmation(context, ref, athlete);
@@ -393,7 +394,7 @@ class CoachDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 32),
             FilledButton.icon(
               onPressed: () {
-                // TODO: Navigate to coach profile setup
+                context.push('/coach/setup');
               },
               icon: const Icon(Icons.add),
               label: const Text('Create Profile'),

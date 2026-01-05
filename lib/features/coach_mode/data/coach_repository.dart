@@ -181,6 +181,26 @@ class CoachRepository {
     }
   }
 
+  /// Get all active coaches for directory browsing
+  Future<List<Coach>> getActiveCoaches() async {
+    try {
+      final results = await (_database.select(_database.coachesTable)
+            ..where((t) => t.isActive.equals(true))
+            ..orderBy([(t) => OrderingTerm.asc(t.coachName)]))
+          .get();
+
+      return results.map(_mapToCoachDomain).toList();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get active coaches',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   // ============================================================================
   // RELATIONSHIP OPERATIONS
   // ============================================================================

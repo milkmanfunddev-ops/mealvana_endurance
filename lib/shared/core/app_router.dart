@@ -52,6 +52,7 @@ import '../../features/coach_mode/presentation/screens/coach_dashboard_screen.da
 import '../../features/coach_mode/presentation/screens/athlete_detail_screen.dart';
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_profile_setup_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
@@ -522,6 +523,13 @@ class AppRouter {
         path: '/coach/setup',
         name: 'coach-profile-setup',
         builder: (context, state) => const CoachProfileSetupScreen(),
+      ),
+
+      // Coach Directory - Athletes browse available coaches
+      GoRoute(
+        path: '/coaches',
+        name: 'coach-directory',
+        builder: (context, state) => const CoachDirectoryScreen(),
       ),
     ],
 

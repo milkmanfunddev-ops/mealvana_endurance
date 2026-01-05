@@ -119,6 +119,17 @@ CREATE TABLE IF NOT EXISTS coach_feedback (
 -- PHASE 3: MODIFY EXISTING TABLES (with idempotent checks)
 -- ============================================================================
 
+-- Add is_coach flag to users table (set by admin/backend only)
+DO $$ BEGIN
+  ALTER TABLE users ADD COLUMN is_coach BOOLEAN DEFAULT false;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+COMMENT ON COLUMN users.is_coach IS 'Flag indicating user has coach privileges. Set by admin/backend only.';
+
+-- Create index for quick coach lookups
+CREATE INDEX IF NOT EXISTS idx_users_is_coach ON users(is_coach) WHERE is_coach = true;
+
 -- Modify nutrition_plans
 DO $$ BEGIN
   ALTER TABLE nutrition_plans ADD COLUMN created_by_coach_id UUID REFERENCES coaches(id) ON DELETE SET NULL;

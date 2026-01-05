@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/my_coaches_controller.dart';
@@ -28,6 +29,11 @@ class MyCoachesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => _buildErrorView(context, error.toString(), ref),
         data: (state) => _buildContent(context, state, ref),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/coaches'),
+        icon: const Icon(Icons.search),
+        label: const Text('Find Coach'),
       ),
     );
   }
@@ -328,13 +334,12 @@ class MyCoachesScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 32),
-            OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Show how to connect with coach
-              },
-              icon: const Icon(Icons.help_outline),
-              label: const Text('How to Connect'),
+            FilledButton.icon(
+              onPressed: () => context.push('/coaches'),
+              icon: const Icon(Icons.search),
+              label: const Text('Find a Coach'),
             ),
+            const SizedBox(height: 80), // Space for FAB
           ],
         ),
       ),

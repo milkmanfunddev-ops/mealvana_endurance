@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -567,16 +568,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
 
-          const SizedBox(height: AppSpacing.sm),
-
-          // Coach Mode - show different options for coaches vs athletes
-          _buildCoachModeLink(context),
+          // Coach Mode - web only, show different options for coaches vs athletes
+          if (kIsWeb) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _buildCoachModeLink(context),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildCoachModeLink(BuildContext context) {
+    // Note: This is only called on web (checked by parent)
     final settingsAsync = ref.watch(settingsControllerProvider);
     final isCoach = settingsAsync.asData?.value.isCoach ?? false;
 
