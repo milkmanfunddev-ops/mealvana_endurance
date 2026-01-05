@@ -597,17 +597,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         },
       );
     } else {
-      // User is an athlete - show My Coaches
-      return _buildQuickLink(
-        context: context,
-        icon: FontAwesomeIcons.userGroup,
-        title: 'My Coaches',
-        subtitle: 'Connect with coaches',
-        onTap: () {
-          final analytics = ref.read(appExternalDepsProvider);
-          analytics.analytics.track('settings_my_coaches_tapped');
-          context.push('/my-coaches');
-        },
+      // User is not a coach - show My Coaches and Become a Coach options
+      return Column(
+        children: [
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.userGroup,
+            title: 'My Coaches',
+            subtitle: 'Connect with coaches',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_my_coaches_tapped');
+              context.push('/my-coaches');
+            },
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.userPlus,
+            title: 'Become a Coach',
+            subtitle: 'Enter invite code',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_become_coach_tapped');
+              context.push('/become-coach');
+            },
+          ),
+        ],
       );
     }
   }

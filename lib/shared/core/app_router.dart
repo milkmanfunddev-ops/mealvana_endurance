@@ -56,6 +56,7 @@ import '../../features/coach_mode/presentation/screens/coach_directory_screen.da
 import '../../features/coach_mode/presentation/screens/invite_athlete_screen.dart';
 import '../../features/coach_mode/presentation/screens/generate_invite_code_screen.dart';
 import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.dart';
+import '../../features/coach_mode/presentation/screens/become_coach_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
@@ -554,6 +555,13 @@ class AppRouter {
         path: '/athlete/feedback',
         name: 'athlete-feedback',
         builder: (context, state) => const AthleteFeedbackScreen(),
+      ),
+
+      // Become a Coach - Enter invite code to unlock coach mode
+      GoRoute(
+        path: '/become-coach',
+        name: 'become-coach',
+        builder: (context, state) => const BecomeCoachScreen(),
       ),
     ],
 

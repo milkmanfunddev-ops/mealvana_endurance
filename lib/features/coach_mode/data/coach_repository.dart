@@ -578,6 +578,82 @@ class CoachRepository {
   }
 
   // ============================================================================
+  // INVITE CODE OPERATIONS
+  // ============================================================================
+
+  /// Redeem a coach invite code via Supabase RPC
+  /// Returns a map with 'success', 'message', and 'error' keys
+  Future<Map<String, dynamic>> redeemInviteCode({
+    required String code,
+    required String userId,
+  }) async {
+    try {
+      final response = await _supabase.rpc(
+        'redeem_coach_invite_code',
+        params: {
+          'p_code': code.toUpperCase().trim(),
+          'p_user_id': userId,
+        },
+      );
+
+      _logger.info(
+        'Redeem invite code response',
+        context: 'COACH_REPOSITORY',
+        data: {'response': response},
+      );
+
+      // Response is the JSON from the function
+      if (response is Map<String, dynamic>) {
+        // If successful, update local database
+        if (response['success'] == true) {
+          await _updateLocalUserIsCoach(userId, true);
+        }
+        return response;
+      }
+
+      return {
+        'success': false,
+        'error': 'Unexpected response format',
+      };
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to redeem invite code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// Update local user profile to set is_coach flag
+  Future<void> _updateLocalUserIsCoach(String userId, bool isCoach) async {
+    try {
+      await (_database.update(_database.userProfilesTable)
+            ..where((t) => t.id.equals(userId)))
+          .write(UserProfilesTableCompanion(
+        isCoach: Value(isCoach),
+        updatedAt: Value(DateTime.now()),
+      ));
+
+      _logger.info(
+        'Updated local user is_coach flag',
+        context: 'COACH_REPOSITORY',
+        data: {'userId': userId, 'isCoach': isCoach},
+      );
+    } catch (e) {
+      _logger.warning(
+        'Failed to update local is_coach flag (non-critical)',
+        context: 'COACH_REPOSITORY',
+        data: {'error': e.toString()},
+      );
+    }
+  }
+
+  // ============================================================================
   // HELPER METHODS
   // ============================================================================
 

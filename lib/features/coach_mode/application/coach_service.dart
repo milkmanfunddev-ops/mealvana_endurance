@@ -501,6 +501,51 @@ class CoachService {
     }
   }
 
+  // ============================================================================
+  // INVITE CODE OPERATIONS
+  // ============================================================================
+
+  /// Redeem a coach invite code to become a coach
+  /// Returns a map with 'success', 'message', and 'error' keys
+  Future<Map<String, dynamic>> redeemCoachInviteCode(String code) async {
+    try {
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null) {
+        _logger.warning(
+          'Cannot redeem invite code: no user profile',
+          context: 'COACH_SERVICE',
+        );
+        return {
+          'success': false,
+          'error': 'No user profile found. Please complete onboarding first.',
+        };
+      }
+
+      if (profile.isCoach) {
+        return {
+          'success': false,
+          'error': 'You are already registered as a coach.',
+        };
+      }
+
+      return await _repository.redeemInviteCode(
+        code: code,
+        userId: profile.id,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to redeem invite code',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return {
+        'success': false,
+        'error': 'An error occurred. Please try again.',
+      };
+    }
+  }
+
   /// Request to connect with a coach (athlete initiates)
   Future<bool> requestCoachConnection(String coachId) async {
     try {
