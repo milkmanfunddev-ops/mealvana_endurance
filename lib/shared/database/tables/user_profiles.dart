@@ -105,6 +105,10 @@ class UserProfilesTable extends Table {
   /// Used for background sync after onboarding registration
   BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();
 
+  /// Whether this user has coach privileges (can manage athletes)
+  /// Set via admin/backend - not user-editable
+  BoolColumn get isCoach => boolean().withDefault(const Constant(false)).named('is_coach')();
+
   @override
   Set<Column> get primaryKey => {id};
 

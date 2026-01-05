@@ -33,6 +33,10 @@ import 'tables/carb_loading_day_meals_table.dart';
 import 'tables/weather_forecasts_table.dart';
 // NEW: Feature survey table
 import 'tables/feature_survey_responses_table.dart';
+// NEW: Coach mode tables
+import 'tables/coaches_table.dart';
+import 'tables/coach_athlete_relationships_table.dart';
+import 'tables/coach_feedback_table.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
 
 part 'app_database.g.dart';
@@ -74,6 +78,11 @@ part 'app_database.g.dart';
 
     // Feature survey tables
     FeatureSurveyResponsesTable,
+
+    // Coach mode tables
+    CoachesTable,
+    CoachAthleteRelationshipsTable,
+    CoachFeedbackTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -94,7 +103,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(QueryExecutor e) : super(e);
 
   @override
-  int get schemaVersion => 2; // v2: Added dietary_preference, allergies, needs_upload to users; preference_level, preference_source to food_preferences
+  int get schemaVersion => 3; // v3: Added coach mode tables (coaches, coach_athlete_relationships, coach_feedback) and is_coach column to users
 
   /// Generate a proper UUID v4 for new records
   /// Uses the uuid package to ensure RFC 4122 compliance and exact 36-character length
@@ -607,6 +616,79 @@ class AppDatabase extends _$AppDatabase {
               print('⚠️ V1→V2 migration warning: $e');
             }
             // Rethrow to trigger app restart with fresh database
+            rethrow;
+          }
+        },
+        from2To3: (m, schema) async {
+          // V2 -> V3 Migration (January 2025)
+          // Adds: coaches table, coach_athlete_relationships table, coach_feedback table
+          // Adds: is_coach column to users table
+
+          try {
+            // 1. Add is_coach column to users table if missing
+            final usersColumns = await customSelect("PRAGMA table_info(users)").get();
+            final usersColumnNames = usersColumns.map((row) => row.read<String>('name')).toSet();
+
+            if (!usersColumnNames.contains('is_coach')) {
+              await customStatement(
+                'ALTER TABLE users ADD COLUMN is_coach INTEGER NOT NULL DEFAULT 0'
+              );
+              if (kDebugMode) {
+                print('✅ Added is_coach column to users table');
+              }
+            }
+
+            // 2. Create coaches table
+            await m.createTable(schema.coachesTable);
+            if (kDebugMode) {
+              print('✅ Created coaches table');
+            }
+
+            // 3. Create coach_athlete_relationships table
+            await m.createTable(schema.coachAthleteRelationshipsTable);
+            if (kDebugMode) {
+              print('✅ Created coach_athlete_relationships table');
+            }
+
+            // 4. Create coach_feedback table
+            await m.createTable(schema.coachFeedbackTable);
+            if (kDebugMode) {
+              print('✅ Created coach_feedback table');
+            }
+
+            // 5. Create indexes for coach mode tables
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_coaches_user_id ON coaches(user_id)'
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_coaches_device_id ON coaches(device_id)'
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_relationships_coach_id ON coach_athlete_relationships(coach_id)'
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_relationships_athlete_user_id ON coach_athlete_relationships(athlete_user_id)'
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_relationships_status ON coach_athlete_relationships(status)'
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_feedback_relationship_id ON coach_feedback(relationship_id)'
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_feedback_coach_id ON coach_feedback(coach_id)'
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_feedback_athlete_user_id ON coach_feedback(athlete_user_id)'
+            );
+
+            if (kDebugMode) {
+              print('✅ V2→V3 migration completed: Coach mode tables created');
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ V2→V3 migration warning: $e');
+            }
             rethrow;
           }
         },
@@ -1982,6 +2064,8 @@ class AppDatabase extends _$AppDatabase {
       // Convert null to DietaryPreference.none for UI (database stores null, UI uses none enum)
       dietaryPreference: DietaryPreference.fromDbValue(dbUser.dietaryPreference) ?? DietaryPreference.none,
       allergies: Allergy.fromDbArray(dbUser.allergies),
+      // Coach mode
+      isCoach: dbUser.isCoach,
     );
   }
 
