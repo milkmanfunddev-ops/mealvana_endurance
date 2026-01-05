@@ -76,13 +76,61 @@ class CoachService {
   // COACH PROFILE MANAGEMENT
   // ============================================================================
 
-  /// Create a new coach profile for the current user
-  /// Requires that the user has is_coach = true in their profile
-  Future<Coach?> createCoachProfile({
-    required String coachName,
+  /// Update the current user's coach profile (full object)
+  Future<Coach?> updateCoachProfileFull(Coach coach) async {
+    try {
+      return await _repository.updateCoach(coach);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to update coach profile',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Update the current user's coach profile with specific fields
+  Future<Coach?> updateCoachProfile({
+    required String displayName,
     String? bio,
-    List<String>? certifications,
-    List<String>? specializations,
+    List<CoachSpecialization> specializations = const [],
+  }) async {
+    try {
+      final existing = await getCurrentCoachProfile();
+      if (existing == null) {
+        _logger.warning(
+          'Cannot update coach profile: no existing profile',
+          context: 'COACH_SERVICE',
+        );
+        return null;
+      }
+
+      final updated = existing.copyWith(
+        coachName: displayName,
+        bio: bio,
+        specializations: specializations.map((s) => s.name).toList(),
+        updatedAt: DateTime.now(),
+      );
+
+      return await _repository.updateCoach(updated);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to update coach profile',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Create a new coach profile with simplified parameters
+  Future<Coach?> createCoachProfile({
+    required String displayName,
+    String? bio,
+    List<CoachSpecialization> specializations = const [],
   }) async {
     try {
       final profile = await _database.getCurrentUserProfile();
@@ -117,29 +165,13 @@ class CoachService {
       return await _repository.createCoach(
         userId: profile.id,
         deviceId: profile.deviceId,
-        coachName: coachName,
+        coachName: displayName,
         bio: bio,
-        certifications: certifications,
-        specializations: specializations,
+        specializations: specializations.map((s) => s.name).toList(),
       );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to create coach profile',
-        context: 'COACH_SERVICE',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Update the current user's coach profile
-  Future<Coach?> updateCoachProfile(Coach coach) async {
-    try {
-      return await _repository.updateCoach(coach);
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update coach profile',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,

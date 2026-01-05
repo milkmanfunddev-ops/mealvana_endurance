@@ -62,6 +62,9 @@ class SettingsState {
   final String? authUserId; // Supabase auth.uid()
   final String? email; // User's email (if available)
 
+  // Coach mode
+  final bool isCoach;
+
   // Account section labels
   final String accountSectionTitle;
   final String accountStatusAnonymous;
@@ -114,6 +117,7 @@ class SettingsState {
     this.authProvider = 'anonymous',
     this.authUserId,
     this.email,
+    this.isCoach = false,
     this.accountSectionTitle = 'Account',
     this.accountStatusAnonymous = 'Not signed in',
     this.accountStatusAuthenticated = 'Signed in',
@@ -166,6 +170,7 @@ class SettingsState {
     String? authProvider,
     String? authUserId,
     String? email,
+    bool? isCoach,
     String? accountSectionTitle,
     String? accountStatusAnonymous,
     String? accountStatusAuthenticated,
@@ -217,6 +222,7 @@ class SettingsState {
       authProvider: authProvider ?? this.authProvider,
       authUserId: authUserId ?? this.authUserId,
       email: email ?? this.email,
+      isCoach: isCoach ?? this.isCoach,
       accountSectionTitle: accountSectionTitle ?? this.accountSectionTitle,
       accountStatusAnonymous: accountStatusAnonymous ?? this.accountStatusAnonymous,
       accountStatusAuthenticated: accountStatusAuthenticated ?? this.accountStatusAuthenticated,

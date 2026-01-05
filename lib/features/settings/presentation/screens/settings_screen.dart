@@ -566,9 +566,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               context.push('/help');
             },
           ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Coach Mode - show different options for coaches vs athletes
+          _buildCoachModeLink(context),
         ],
       ),
     );
+  }
+
+  Widget _buildCoachModeLink(BuildContext context) {
+    final settingsAsync = ref.watch(settingsControllerProvider);
+    final isCoach = settingsAsync.asData?.value.isCoach ?? false;
+
+    if (isCoach) {
+      // User is a coach - show Coach Dashboard
+      return _buildQuickLink(
+        context: context,
+        icon: FontAwesomeIcons.userTie,
+        title: 'Coach Dashboard',
+        subtitle: 'Manage your athletes',
+        onTap: () {
+          final analytics = ref.read(appExternalDepsProvider);
+          analytics.analytics.track('settings_coach_dashboard_tapped');
+          context.push('/coach');
+        },
+      );
+    } else {
+      // User is an athlete - show My Coaches
+      return _buildQuickLink(
+        context: context,
+        icon: FontAwesomeIcons.userGroup,
+        title: 'My Coaches',
+        subtitle: 'Connect with coaches',
+        onTap: () {
+          final analytics = ref.read(appExternalDepsProvider);
+          analytics.analytics.track('settings_my_coaches_tapped');
+          context.push('/my-coaches');
+        },
+      );
+    }
   }
 
   void _showThemeModeDialog(BuildContext context) {

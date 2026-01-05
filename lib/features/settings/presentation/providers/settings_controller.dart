@@ -197,6 +197,8 @@ class SettingsController extends _$SettingsController {
       authProvider: displayProfile?.authProvider ?? 'anonymous',
       authUserId: displayProfile?.authUserId,
       email: supabaseUser?.email,
+      // Coach mode
+      isCoach: displayProfile?.isCoach ?? false,
     );
   }
 

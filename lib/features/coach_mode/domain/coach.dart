@@ -1,3 +1,39 @@
+/// Coach specialization types
+enum CoachSpecialization {
+  running,
+  cycling,
+  swimming,
+  triathlon,
+  nutrition,
+  strengthAndConditioning,
+  mentalPerformance;
+
+  String get name {
+    return switch (this) {
+      CoachSpecialization.running => 'running',
+      CoachSpecialization.cycling => 'cycling',
+      CoachSpecialization.swimming => 'swimming',
+      CoachSpecialization.triathlon => 'triathlon',
+      CoachSpecialization.nutrition => 'nutrition',
+      CoachSpecialization.strengthAndConditioning => 'strength_and_conditioning',
+      CoachSpecialization.mentalPerformance => 'mental_performance',
+    };
+  }
+
+  static CoachSpecialization? fromString(String value) {
+    return switch (value.toLowerCase()) {
+      'running' => CoachSpecialization.running,
+      'cycling' => CoachSpecialization.cycling,
+      'swimming' => CoachSpecialization.swimming,
+      'triathlon' => CoachSpecialization.triathlon,
+      'nutrition' => CoachSpecialization.nutrition,
+      'strength_and_conditioning' => CoachSpecialization.strengthAndConditioning,
+      'mental_performance' => CoachSpecialization.mentalPerformance,
+      _ => null,
+    };
+  }
+}
+
 /// Coach domain model
 /// Represents a user with coaching capabilities
 class Coach {
@@ -136,4 +172,22 @@ class Coach {
 
   @override
   int get hashCode => id.hashCode;
+
+  /// Alias for coachName for UI consistency
+  String get displayName => coachName;
+
+  /// Get specializations as typed enum values
+  List<CoachSpecialization> get specializationsTyped {
+    return specializations
+        .map((s) => CoachSpecialization.fromString(s))
+        .whereType<CoachSpecialization>()
+        .toList();
+  }
+
+  /// Create a copy with typed specializations
+  Coach copyWithSpecializations(List<CoachSpecialization> specs) {
+    return copyWith(
+      specializations: specs.map((s) => s.name).toList(),
+    );
+  }
 }

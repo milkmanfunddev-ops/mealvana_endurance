@@ -47,6 +47,11 @@ import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
 import '../screens/food_detail_screen.dart';
+// Coach mode screens
+import '../../features/coach_mode/presentation/screens/coach_dashboard_screen.dart';
+import '../../features/coach_mode/presentation/screens/athlete_detail_screen.dart';
+import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_profile_setup_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
@@ -483,8 +488,43 @@ class AppRouter {
           );
         },
       ),
+
+      // ============================================================================
+      // COACH MODE ROUTES
+      // ============================================================================
+
+      // Coach Dashboard - Main hub for coaches to manage athletes
+      GoRoute(
+        path: '/coach',
+        name: 'coach-dashboard',
+        builder: (context, state) => const CoachDashboardScreen(),
+      ),
+
+      // Athlete Detail - View athlete's activities and add feedback
+      GoRoute(
+        path: '/coach/athlete/:relationshipId',
+        name: 'coach-athlete-detail',
+        builder: (context, state) {
+          final relationshipId = state.pathParameters['relationshipId']!;
+          return AthleteDetailScreen(relationshipId: relationshipId);
+        },
+      ),
+
+      // My Coaches - Athlete's view of connected coaches
+      GoRoute(
+        path: '/my-coaches',
+        name: 'my-coaches',
+        builder: (context, state) => const MyCoachesScreen(),
+      ),
+
+      // Coach Profile Setup - Create or edit coach profile
+      GoRoute(
+        path: '/coach/setup',
+        name: 'coach-profile-setup',
+        builder: (context, state) => const CoachProfileSetupScreen(),
+      ),
     ],
-    
+
     // Error handling
     errorBuilder: (context, state) => Scaffold(
       appBar: AppBar(
