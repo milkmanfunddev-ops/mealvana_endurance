@@ -39,6 +39,7 @@ class UserProfile {
   final DateTime createdAt;
   final DateTime updatedAt;
   final GutTraining gutTraining;
+  final SweatRateCat sweatRate;
   final bool onboardingCompleted;
   final String appVersion;
   final bool swipeHintShown;
@@ -71,7 +72,8 @@ class UserProfile {
     required this.runsWithWaterBottle,
     required this.createdAt,
     required this.updatedAt,
-    this.gutTraining = GutTraining.high,
+    this.gutTraining = GutTraining.moderate,
+    this.sweatRate = SweatRateCat.medium,
     this.onboardingCompleted = false,
     required this.appVersion,
     this.swipeHintShown = false,
@@ -186,6 +188,10 @@ class UserProfile {
         (gt) => gt.name == json['gut_training_level'],
         orElse: () => GutTraining.moderate,
       ),
+      sweatRate: SweatRateCat.values.firstWhere(
+        (sr) => sr.name == json['sweat_rate'],
+        orElse: () => SweatRateCat.medium,
+      ),
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       appVersion: json['app_version'] as String? ?? '1.0.0',
       swipeHintShown: false, // Drift-only field, always default to false from Supabase
@@ -220,6 +226,7 @@ class UserProfile {
       'weight_pounds': weightPounds,
       'runs_with_water_bottle': runsWithWaterBottle,
       'gut_training_level': gutTraining.name,
+      'sweat_rate': sweatRate.name,
       'onboarding_completed': onboardingCompleted,
       'app_version': appVersion,
       'created_at': createdAt.toIso8601String(),
@@ -252,6 +259,7 @@ class UserProfile {
     bool? runsWithWaterBottle,
     DateTime? updatedAt,
     GutTraining? gutTraining,
+    SweatRateCat? sweatRate,
     bool? onboardingCompleted,
     String? appVersion,
     bool? swipeHintShown,
@@ -282,6 +290,7 @@ class UserProfile {
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       gutTraining: gutTraining ?? this.gutTraining,
+      sweatRate: sweatRate ?? this.sweatRate,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       appVersion: appVersion ?? this.appVersion,
       swipeHintShown: swipeHintShown ?? this.swipeHintShown,

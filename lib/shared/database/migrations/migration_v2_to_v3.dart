@@ -7,6 +7,7 @@ import '../schema_versions.dart';
 ///
 /// Changes:
 /// - Creates integrations table for Final Surge, TrainingPeaks, Strava OAuth tokens
+/// - Adds sweat_rate column to users table (default: 'medium', values: 'light', 'medium', 'heavy')
 /// - Adds sync columns to activities for external provider tracking:
 ///   - synced_from_provider, provider_workout_id, provider_workout_url, last_synced_at
 /// - Adds workout metadata:
@@ -26,7 +27,17 @@ Future<void> runMigrationV2ToV3(
   // 1. Create integrations table if it doesn't exist
   await m.createTable(schema.integrations);
 
-  // 2. Add sync columns to activities table
+  // 2. Add sweat_rate column to users table
+  final usersColumns = await db.customSelect("PRAGMA table_info(users)").get();
+  final usersColumnNames = usersColumns.map((row) => row.read<String>('name')).toSet();
+
+  if (!usersColumnNames.contains('sweat_rate')) {
+    await db.customStatement(
+      "ALTER TABLE users ADD COLUMN sweat_rate TEXT NOT NULL DEFAULT 'medium'"
+    );
+  }
+
+  // 3. Add sync columns to activities table
   final activitiesColumns = await db.customSelect("PRAGMA table_info(activities)").get();
   final activitiesColumnNames = activitiesColumns.map((row) => row.read<String>('name')).toSet();
 
@@ -62,7 +73,7 @@ Future<void> runMigrationV2ToV3(
     await db.customStatement('ALTER TABLE activities ADD COLUMN distance_meters REAL');
   }
 
-  // 3. Create index for synced activities (if not exists)
+  // 4. Create index for synced activities (if not exists)
   try {
     await db.customStatement('''
       CREATE INDEX IF NOT EXISTS idx_activities_provider_sync
@@ -76,6 +87,6 @@ Future<void> runMigrationV2ToV3(
   }
 
   if (kDebugMode) {
-    print('V2->V3 migration completed: Final Surge integration schema added');
+    print('V2->V3 migration completed: Final Surge integration schema + sweat_rate added');
   }
 }

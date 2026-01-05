@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/segmented_control.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -26,6 +27,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   final _heightInchesController = TextEditingController();
   final _weightController = TextEditingController();
   bool? _runsWithWaterBottle;
+  GutTraining? _gutTraining;
+  SweatRateCat? _sweatRate;
 
   bool _hasChanges = false;
   bool _isSaving = false;
@@ -41,6 +44,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           _gender = settingsState.gender;
           _birthday = settingsState.birthday;
           _runsWithWaterBottle = settingsState.runsWithWaterBottle;
+          _gutTraining = settingsState.gutTrainingLevel;
+          _sweatRate = settingsState.sweatRate;
         });
         // Set text controller values
         if (settingsState.heightFeet != null) {
@@ -110,6 +115,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         heightInches: heightInches,
         weightPounds: weightPounds,
         runsWithWaterBottle: _runsWithWaterBottle,
+        gutTrainingLevel: _gutTraining,
+        sweatRate: _sweatRate,
       );
 
       if (mounted) {
@@ -258,6 +265,11 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
               // Physical information section
               _buildPhysicalInfoSection(context),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // Nutrition settings section (gut training and sweat rate)
+              _buildNutritionSettingsSection(context),
 
               const SizedBox(height: AppSpacing.xxxl),
             ],
@@ -669,6 +681,80 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNutritionSettingsSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Nutrition Settings',
+            style: AppTextStyles.subtitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Gut Training Level
+          Text(
+            'Gut Training Level',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Your gut\'s ability to absorb carbs during exercise',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          KyleGutTrainingSegmentedControl(
+            selected: _gutTraining ?? GutTraining.moderate,
+            onChanged: (value) {
+              setState(() => _gutTraining = value);
+              _markChanged();
+            },
+            showValues: true,
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // Sweat Rate
+          Text(
+            'Sweat Rate',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'How much you typically sweat during exercise',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          KyleSweatRateSegmentedControl(
+            selected: _sweatRate ?? SweatRateCat.medium,
+            onChanged: (value) {
+              setState(() => _sweatRate = value);
+              _markChanged();
+            },
+          ),
+        ],
+      ),
     );
   }
 

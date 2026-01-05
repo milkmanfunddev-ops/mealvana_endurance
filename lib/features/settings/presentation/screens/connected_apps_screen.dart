@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
+import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
 
@@ -76,7 +77,7 @@ class ConnectedAppsScreen extends ConsumerWidget {
           athleteName: data.finalSurgeAthleteName,
           onConnect: () => _connectFinalSurge(context, ref),
           onDisconnect: () => _disconnectFinalSurge(context, ref),
-          onSync: () => _syncFinalSurge(context, ref),
+          onSync: () => syncFinalSurge(context, ref),
         ),
 
         // Show last sync info when connected
@@ -104,7 +105,7 @@ class ConnectedAppsScreen extends ConsumerWidget {
           athleteName: data.trainingPeaksAthleteName,
           onConnect: () => _connectTrainingPeaks(context, ref),
           onDisconnect: () => _disconnectTrainingPeaks(context, ref),
-          onSync: () => _syncTrainingPeaks(context, ref),
+          onSync: () => syncTrainingPeaks(context, ref),
         ),
 
         // Show last sync info and event when connected
@@ -225,94 +226,6 @@ class ConnectedAppsScreen extends ConsumerWidget {
 
     if (context.mounted) {
       MealvanaSnackbar.showInfo(context, 'Final Surge disconnected');
-    }
-  }
-
-  Future<void> _syncFinalSurge(BuildContext context, WidgetRef ref) async {
-    debugPrint('🔄 Starting Final Surge sync from Connected Apps...');
-
-    // Show immediate "syncing" feedback
-    final loadingController = MealvanaSnackbar.showLoading(
-      context,
-      'Syncing Final Surge workouts...',
-    );
-
-    final controller = ref.read(connectTrainingControllerProvider.notifier);
-    final count = await controller.importFinalSurgeWorkouts();
-
-    debugPrint('✅ Final Surge sync complete: $count workouts imported');
-
-    // Dismiss the syncing snackbar and show result
-    if (context.mounted) {
-      loadingController.close();
-
-      final state = ref.read(connectTrainingControllerProvider).value;
-
-      if (count > 0) {
-        MealvanaSnackbar.showSuccess(
-          context,
-          'Imported $count new workouts!',
-          duration: const Duration(seconds: 4),
-        );
-      } else if (state?.errorMessage != null) {
-        MealvanaSnackbar.showError(
-          context,
-          'Sync failed: ${state!.errorMessage}',
-          duration: const Duration(seconds: 4),
-        );
-      } else {
-        MealvanaSnackbar.showInfo(
-          context,
-          'All workouts already synced',
-          duration: const Duration(seconds: 4),
-        );
-      }
-    }
-  }
-
-  Future<void> _syncTrainingPeaks(BuildContext context, WidgetRef ref) async {
-    debugPrint('🔄 Starting TrainingPeaks sync from Connected Apps...');
-
-    // Show immediate "syncing" feedback
-    final loadingController = MealvanaSnackbar.showLoading(
-      context,
-      'Syncing TrainingPeaks workouts...',
-    );
-
-    // Run sync (this updates state which shows progress in UI)
-    final controller = ref.read(connectTrainingControllerProvider.notifier);
-    final count = await controller.importTrainingPeaksWorkouts();
-
-    debugPrint('✅ TrainingPeaks sync complete: $count workouts imported');
-
-    // Dismiss the syncing snackbar and show result
-    if (context.mounted) {
-      loadingController.close();
-
-      final state = ref.read(connectTrainingControllerProvider).value;
-      final eventInfo = state?.hasNextEvent == true && state?.nextEventName != null
-          ? '\nNext event: ${state!.nextEventName}'
-          : '';
-
-      if (count > 0) {
-        MealvanaSnackbar.showSuccess(
-          context,
-          'Imported $count new workouts!$eventInfo',
-          duration: const Duration(seconds: 4),
-        );
-      } else if (state?.errorMessage != null) {
-        MealvanaSnackbar.showError(
-          context,
-          'Sync failed: ${state!.errorMessage}',
-          duration: const Duration(seconds: 4),
-        );
-      } else {
-        MealvanaSnackbar.showInfo(
-          context,
-          'All workouts already synced$eventInfo',
-          duration: const Duration(seconds: 4),
-        );
-      }
     }
   }
 

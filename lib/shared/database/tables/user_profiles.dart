@@ -61,6 +61,9 @@ class UserProfilesTable extends Table {
   /// Gut training level (stored as string enum: 'low', 'moderate', 'high')
   TextColumn get gutTrainingLevel => text().withDefault(const Constant('moderate')).named('gut_training_level')();
 
+  /// Sweat rate category (stored as string enum: 'light', 'medium', 'heavy')
+  TextColumn get sweatRate => text().withDefault(const Constant('medium')).named('sweat_rate')();
+
   /// Whether user has completed onboarding
   BoolColumn get onboardingCompleted => boolean().withDefault(const Constant(false)).named('onboarding_completed')();
 
@@ -117,6 +120,7 @@ class UserProfilesTable extends Table {
     // Note: device_id is NOT unique - multiple users can share the same device
     "CHECK (gender IN ('male', 'female', 'other') OR gender IS NULL)",
     "CHECK (gut_training_level IN ('low', 'moderate', 'high'))",
+    "CHECK (sweat_rate IN ('light', 'medium', 'heavy'))",
     "CHECK (preferred_distance_unit IN ('miles', 'kilometers'))",
     "CHECK (preferred_pace_unit IN ('min_per_mile', 'min_per_km'))",
     "CHECK (calendar_week_start IN ('sunday', 'monday'))",

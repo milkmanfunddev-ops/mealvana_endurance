@@ -176,6 +176,7 @@ class SettingsController extends _$SettingsController {
       preferredDistanceUnit: DistanceUnit.miles,
       preferredPaceUnit: PaceUnit.minPerMile,
       gutTrainingLevel: displayProfile?.gutTraining ?? GutTraining.moderate,
+      sweatRate: displayProfile?.sweatRate ?? SweatRateCat.medium,
       // Sport preferences
       giSensitivity: displayProfile?.giSensitivity,
       ftpWatts: displayProfile?.ftpWatts,
@@ -301,6 +302,18 @@ class SettingsController extends _$SettingsController {
     await _saveProfile();
   }
 
+  /// Update sweat rate
+  Future<void> updateSweatRate(SweatRateCat sweatRate) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(sweatRate: sweatRate, isSaving: true),
+    );
+
+    await _saveProfile();
+  }
+
   /// Save all preferences in a single batch operation
   /// This avoids multiple invalidations that cause excessive UI refreshes
   Future<void> saveAllPreferences({
@@ -313,6 +326,7 @@ class SettingsController extends _$SettingsController {
     DistanceUnit? preferredDistanceUnit,
     PaceUnit? preferredPaceUnit,
     GutTraining? gutTrainingLevel,
+    SweatRateCat? sweatRate,
   }) async {
     final currentState = state.value;
     if (currentState == null) return;
@@ -329,6 +343,7 @@ class SettingsController extends _$SettingsController {
         preferredDistanceUnit: preferredDistanceUnit ?? currentState.preferredDistanceUnit,
         preferredPaceUnit: preferredPaceUnit ?? currentState.preferredPaceUnit,
         gutTrainingLevel: gutTrainingLevel ?? currentState.gutTrainingLevel,
+        sweatRate: sweatRate ?? currentState.sweatRate,
         isSaving: true,
       ),
     );
@@ -451,6 +466,7 @@ class SettingsController extends _$SettingsController {
         weightPounds: currentState.weightPounds ?? existingProfile.weightPounds,
         runsWithWaterBottle: currentState.runsWithWaterBottle,
         gutTraining: currentState.gutTrainingLevel,
+        sweatRate: currentState.sweatRate,
         giSensitivity: currentState.giSensitivity ?? existingProfile.giSensitivity,
         ftpWatts: currentState.ftpWatts ?? existingProfile.ftpWatts,
         typicalBikeBottles: currentState.typicalBikeBottles ?? existingProfile.typicalBikeBottles,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/navigation/figma_onboarding_footer.dart';
 
+import '../integration_sync_helpers.dart';
 import '../providers/connect_training_controller.dart';
 import '../widgets/integration_provider_card.dart';
 
@@ -127,9 +128,11 @@ class ConnectTrainingScreen extends ConsumerWidget {
           isAvailable: true,
           isConnected: data.isFinalSurgeConnected,
           isConnecting: data.isConnecting && data.connectingProvider == 'final_surge',
+          isSyncing: data.isImporting && data.isFinalSurgeConnected,
           athleteName: data.finalSurgeAthleteName,
           onConnect: () => _connectFinalSurge(context, ref),
           onDisconnect: () => _disconnectFinalSurge(context, ref),
+          onSync: () => syncFinalSurge(context, ref),
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -141,9 +144,11 @@ class ConnectTrainingScreen extends ConsumerWidget {
           isAvailable: true,
           isConnected: data.isTrainingPeaksConnected,
           isConnecting: data.isConnecting && data.connectingProvider == 'training_peaks',
+          isSyncing: data.isImporting && data.isTrainingPeaksConnected,
           athleteName: data.trainingPeaksAthleteName,
           onConnect: () => _connectTrainingPeaks(context, ref),
           onDisconnect: () => _disconnectTrainingPeaks(context, ref),
+          onSync: () => syncTrainingPeaks(context, ref),
         ),
 
         const SizedBox(height: AppSpacing.md),

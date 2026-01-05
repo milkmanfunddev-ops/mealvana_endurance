@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
-import '../../../../../shared/widgets/kyle_design/buttons/segmented_control.dart';
 import '../../providers/running_input_controller.dart';
 import '../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../theme/kyle_design/app_text_styles.dart';
@@ -15,10 +14,10 @@ import '../../../../weather/presentation/screens/weather_detail_screen.dart';
 /// - Distance (miles)
 /// - Average Pace (min/mile)
 /// - Time before Run
-/// - Gut Training Level (segmented control)
-/// - Sweat Rate (segmented control)
 /// - Temperature with weather forecast link
 /// - Humidity
+///
+/// Note: Gut Training Level and Sweat Rate are managed in Settings > Profile & Preferences
 ///
 /// Status: Phase 2 - Full implementation with Kyle design components
 class RunningTabContent extends ConsumerWidget {
@@ -76,49 +75,6 @@ class RunningTabContent extends ConsumerWidget {
               //   ),
               //   textAlign: TextAlign.left,
               // ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Gut Training Level with g/kg/h values
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Gut Training Level',
-                style: AppTextStyles.descriptor.copyWith(
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              KyleGutTrainingSegmentedControl(
-                selected: formState.gutTraining,
-                onChanged: controller.updateGutTraining,
-                showValues: true,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Sweat Rate
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Sweat Rate',
-                style: AppTextStyles.descriptor.copyWith(
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              KyleSweatRateSegmentedControl(
-                selected: formState.sweatRate,
-                onChanged: controller.updateSweatRate,
-              ),
             ],
           ),
 

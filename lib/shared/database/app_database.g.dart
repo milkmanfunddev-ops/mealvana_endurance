@@ -212,6 +212,18 @@ class $UserProfilesTableTable extends UserProfilesTable
     requiredDuringInsert: false,
     defaultValue: const Constant('moderate'),
   );
+  static const VerificationMeta _sweatRateMeta = const VerificationMeta(
+    'sweatRate',
+  );
+  @override
+  late final GeneratedColumn<String> sweatRate = GeneratedColumn<String>(
+    'sweat_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('medium'),
+  );
   static const VerificationMeta _onboardingCompletedMeta =
       const VerificationMeta('onboardingCompleted');
   @override
@@ -472,6 +484,7 @@ class $UserProfilesTableTable extends UserProfilesTable
     preferredDistanceUnit,
     preferredPaceUnit,
     gutTrainingLevel,
+    sweatRate,
     onboardingCompleted,
     lastActiveAt,
     appVersion,
@@ -626,6 +639,12 @@ class $UserProfilesTableTable extends UserProfilesTable
           data['gut_training_level']!,
           _gutTrainingLevelMeta,
         ),
+      );
+    }
+    if (data.containsKey('sweat_rate')) {
+      context.handle(
+        _sweatRateMeta,
+        sweatRate.isAcceptableOrUnknown(data['sweat_rate']!, _sweatRateMeta),
       );
     }
     if (data.containsKey('onboarding_completed')) {
@@ -870,6 +889,10 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.string,
         data['${effectivePrefix}gut_training_level'],
       )!,
+      sweatRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sweat_rate'],
+      )!,
       onboardingCompleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}onboarding_completed'],
@@ -1016,6 +1039,9 @@ class UserProfileEntry extends DataClass
   /// Gut training level (stored as string enum: 'low', 'moderate', 'high')
   final String gutTrainingLevel;
 
+  /// Sweat rate category (stored as string enum: 'light', 'medium', 'heavy')
+  final String sweatRate;
+
   /// Whether user has completed onboarding
   final bool onboardingCompleted;
 
@@ -1073,6 +1099,7 @@ class UserProfileEntry extends DataClass
     required this.preferredDistanceUnit,
     required this.preferredPaceUnit,
     required this.gutTrainingLevel,
+    required this.sweatRate,
     required this.onboardingCompleted,
     required this.lastActiveAt,
     this.appVersion,
@@ -1131,6 +1158,7 @@ class UserProfileEntry extends DataClass
     map['preferred_distance_unit'] = Variable<String>(preferredDistanceUnit);
     map['preferred_pace_unit'] = Variable<String>(preferredPaceUnit);
     map['gut_training_level'] = Variable<String>(gutTrainingLevel);
+    map['sweat_rate'] = Variable<String>(sweatRate);
     map['onboarding_completed'] = Variable<bool>(onboardingCompleted);
     map['last_active_at'] = Variable<DateTime>(lastActiveAt);
     if (!nullToAbsent || appVersion != null) {
@@ -1194,6 +1222,7 @@ class UserProfileEntry extends DataClass
       preferredDistanceUnit: Value(preferredDistanceUnit),
       preferredPaceUnit: Value(preferredPaceUnit),
       gutTrainingLevel: Value(gutTrainingLevel),
+      sweatRate: Value(sweatRate),
       onboardingCompleted: Value(onboardingCompleted),
       lastActiveAt: Value(lastActiveAt),
       appVersion: appVersion == null && nullToAbsent
@@ -1253,6 +1282,7 @@ class UserProfileEntry extends DataClass
       ),
       preferredPaceUnit: serializer.fromJson<String>(json['preferredPaceUnit']),
       gutTrainingLevel: serializer.fromJson<String>(json['gutTrainingLevel']),
+      sweatRate: serializer.fromJson<String>(json['sweatRate']),
       onboardingCompleted: serializer.fromJson<bool>(
         json['onboardingCompleted'],
       ),
@@ -1317,6 +1347,7 @@ class UserProfileEntry extends DataClass
       'preferredDistanceUnit': serializer.toJson<String>(preferredDistanceUnit),
       'preferredPaceUnit': serializer.toJson<String>(preferredPaceUnit),
       'gutTrainingLevel': serializer.toJson<String>(gutTrainingLevel),
+      'sweatRate': serializer.toJson<String>(sweatRate),
       'onboardingCompleted': serializer.toJson<bool>(onboardingCompleted),
       'lastActiveAt': serializer.toJson<DateTime>(lastActiveAt),
       'appVersion': serializer.toJson<String?>(appVersion),
@@ -1359,6 +1390,7 @@ class UserProfileEntry extends DataClass
     String? preferredDistanceUnit,
     String? preferredPaceUnit,
     String? gutTrainingLevel,
+    String? sweatRate,
     bool? onboardingCompleted,
     DateTime? lastActiveAt,
     Value<String?> appVersion = const Value.absent(),
@@ -1396,6 +1428,7 @@ class UserProfileEntry extends DataClass
     preferredDistanceUnit: preferredDistanceUnit ?? this.preferredDistanceUnit,
     preferredPaceUnit: preferredPaceUnit ?? this.preferredPaceUnit,
     gutTrainingLevel: gutTrainingLevel ?? this.gutTrainingLevel,
+    sweatRate: sweatRate ?? this.sweatRate,
     onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
     lastActiveAt: lastActiveAt ?? this.lastActiveAt,
     appVersion: appVersion.present ? appVersion.value : this.appVersion,
@@ -1460,6 +1493,7 @@ class UserProfileEntry extends DataClass
       gutTrainingLevel: data.gutTrainingLevel.present
           ? data.gutTrainingLevel.value
           : this.gutTrainingLevel,
+      sweatRate: data.sweatRate.present ? data.sweatRate.value : this.sweatRate,
       onboardingCompleted: data.onboardingCompleted.present
           ? data.onboardingCompleted.value
           : this.onboardingCompleted,
@@ -1538,6 +1572,7 @@ class UserProfileEntry extends DataClass
           ..write('preferredDistanceUnit: $preferredDistanceUnit, ')
           ..write('preferredPaceUnit: $preferredPaceUnit, ')
           ..write('gutTrainingLevel: $gutTrainingLevel, ')
+          ..write('sweatRate: $sweatRate, ')
           ..write('onboardingCompleted: $onboardingCompleted, ')
           ..write('lastActiveAt: $lastActiveAt, ')
           ..write('appVersion: $appVersion, ')
@@ -1580,6 +1615,7 @@ class UserProfileEntry extends DataClass
     preferredDistanceUnit,
     preferredPaceUnit,
     gutTrainingLevel,
+    sweatRate,
     onboardingCompleted,
     lastActiveAt,
     appVersion,
@@ -1621,6 +1657,7 @@ class UserProfileEntry extends DataClass
           other.preferredDistanceUnit == this.preferredDistanceUnit &&
           other.preferredPaceUnit == this.preferredPaceUnit &&
           other.gutTrainingLevel == this.gutTrainingLevel &&
+          other.sweatRate == this.sweatRate &&
           other.onboardingCompleted == this.onboardingCompleted &&
           other.lastActiveAt == this.lastActiveAt &&
           other.appVersion == this.appVersion &&
@@ -1660,6 +1697,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<String> preferredDistanceUnit;
   final Value<String> preferredPaceUnit;
   final Value<String> gutTrainingLevel;
+  final Value<String> sweatRate;
   final Value<bool> onboardingCompleted;
   final Value<DateTime> lastActiveAt;
   final Value<String?> appVersion;
@@ -1698,6 +1736,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.preferredDistanceUnit = const Value.absent(),
     this.preferredPaceUnit = const Value.absent(),
     this.gutTrainingLevel = const Value.absent(),
+    this.sweatRate = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
     this.lastActiveAt = const Value.absent(),
     this.appVersion = const Value.absent(),
@@ -1737,6 +1776,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.preferredDistanceUnit = const Value.absent(),
     this.preferredPaceUnit = const Value.absent(),
     this.gutTrainingLevel = const Value.absent(),
+    this.sweatRate = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
     this.lastActiveAt = const Value.absent(),
     this.appVersion = const Value.absent(),
@@ -1777,6 +1817,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<String>? preferredDistanceUnit,
     Expression<String>? preferredPaceUnit,
     Expression<String>? gutTrainingLevel,
+    Expression<String>? sweatRate,
     Expression<bool>? onboardingCompleted,
     Expression<DateTime>? lastActiveAt,
     Expression<String>? appVersion,
@@ -1818,6 +1859,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
         'preferred_distance_unit': preferredDistanceUnit,
       if (preferredPaceUnit != null) 'preferred_pace_unit': preferredPaceUnit,
       if (gutTrainingLevel != null) 'gut_training_level': gutTrainingLevel,
+      if (sweatRate != null) 'sweat_rate': sweatRate,
       if (onboardingCompleted != null)
         'onboarding_completed': onboardingCompleted,
       if (lastActiveAt != null) 'last_active_at': lastActiveAt,
@@ -1869,6 +1911,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<String>? preferredDistanceUnit,
     Value<String>? preferredPaceUnit,
     Value<String>? gutTrainingLevel,
+    Value<String>? sweatRate,
     Value<bool>? onboardingCompleted,
     Value<DateTime>? lastActiveAt,
     Value<String?>? appVersion,
@@ -1909,6 +1952,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           preferredDistanceUnit ?? this.preferredDistanceUnit,
       preferredPaceUnit: preferredPaceUnit ?? this.preferredPaceUnit,
       gutTrainingLevel: gutTrainingLevel ?? this.gutTrainingLevel,
+      sweatRate: sweatRate ?? this.sweatRate,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       appVersion: appVersion ?? this.appVersion,
@@ -1994,6 +2038,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     }
     if (gutTrainingLevel.present) {
       map['gut_training_level'] = Variable<String>(gutTrainingLevel.value);
+    }
+    if (sweatRate.present) {
+      map['sweat_rate'] = Variable<String>(sweatRate.value);
     }
     if (onboardingCompleted.present) {
       map['onboarding_completed'] = Variable<bool>(onboardingCompleted.value);
@@ -2086,6 +2133,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('preferredDistanceUnit: $preferredDistanceUnit, ')
           ..write('preferredPaceUnit: $preferredPaceUnit, ')
           ..write('gutTrainingLevel: $gutTrainingLevel, ')
+          ..write('sweatRate: $sweatRate, ')
           ..write('onboardingCompleted: $onboardingCompleted, ')
           ..write('lastActiveAt: $lastActiveAt, ')
           ..write('appVersion: $appVersion, ')
@@ -19573,6 +19621,7 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<String> preferredDistanceUnit,
       Value<String> preferredPaceUnit,
       Value<String> gutTrainingLevel,
+      Value<String> sweatRate,
       Value<bool> onboardingCompleted,
       Value<DateTime> lastActiveAt,
       Value<String?> appVersion,
@@ -19613,6 +19662,7 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<String> preferredDistanceUnit,
       Value<String> preferredPaceUnit,
       Value<String> gutTrainingLevel,
+      Value<String> sweatRate,
       Value<bool> onboardingCompleted,
       Value<DateTime> lastActiveAt,
       Value<String?> appVersion,
@@ -19731,6 +19781,11 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<String> get gutTrainingLevel => $composableBuilder(
     column: $table.gutTrainingLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sweatRate => $composableBuilder(
+    column: $table.sweatRate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19924,6 +19979,11 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sweatRate => $composableBuilder(
+    column: $table.sweatRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get onboardingCompleted => $composableBuilder(
     column: $table.onboardingCompleted,
     builder: (column) => ColumnOrderings(column),
@@ -20103,6 +20163,9 @@ class $$UserProfilesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get sweatRate =>
+      $composableBuilder(column: $table.sweatRate, builder: (column) => column);
+
   GeneratedColumn<bool> get onboardingCompleted => $composableBuilder(
     column: $table.onboardingCompleted,
     builder: (column) => column,
@@ -20255,6 +20318,7 @@ class $$UserProfilesTableTableTableManager
                 Value<String> preferredDistanceUnit = const Value.absent(),
                 Value<String> preferredPaceUnit = const Value.absent(),
                 Value<String> gutTrainingLevel = const Value.absent(),
+                Value<String> sweatRate = const Value.absent(),
                 Value<bool> onboardingCompleted = const Value.absent(),
                 Value<DateTime> lastActiveAt = const Value.absent(),
                 Value<String?> appVersion = const Value.absent(),
@@ -20293,6 +20357,7 @@ class $$UserProfilesTableTableTableManager
                 preferredDistanceUnit: preferredDistanceUnit,
                 preferredPaceUnit: preferredPaceUnit,
                 gutTrainingLevel: gutTrainingLevel,
+                sweatRate: sweatRate,
                 onboardingCompleted: onboardingCompleted,
                 lastActiveAt: lastActiveAt,
                 appVersion: appVersion,
@@ -20334,6 +20399,7 @@ class $$UserProfilesTableTableTableManager
                 Value<String> preferredDistanceUnit = const Value.absent(),
                 Value<String> preferredPaceUnit = const Value.absent(),
                 Value<String> gutTrainingLevel = const Value.absent(),
+                Value<String> sweatRate = const Value.absent(),
                 Value<bool> onboardingCompleted = const Value.absent(),
                 Value<DateTime> lastActiveAt = const Value.absent(),
                 Value<String?> appVersion = const Value.absent(),
@@ -20372,6 +20438,7 @@ class $$UserProfilesTableTableTableManager
                 preferredDistanceUnit: preferredDistanceUnit,
                 preferredPaceUnit: preferredPaceUnit,
                 gutTrainingLevel: gutTrainingLevel,
+                sweatRate: sweatRate,
                 onboardingCompleted: onboardingCompleted,
                 lastActiveAt: lastActiveAt,
                 appVersion: appVersion,

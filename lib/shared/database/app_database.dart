@@ -119,7 +119,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(QueryExecutor e) : super(e);
 
   @override
-  int get schemaVersion => 3; // v3: Added integrations table and sync columns to activities for Final Surge integration
+  int get schemaVersion => 3; // v3: Added integrations table, sync columns to activities, and sweat_rate to users
 
   /// Generate a proper UUID v4 for new records
   /// Uses the uuid package to ensure RFC 4122 compliance and exact 36-character length
@@ -374,6 +374,7 @@ class AppDatabase extends _$AppDatabase {
         weightPounds: Value(profile.weightPounds),
         runsWithWaterBottle: Value(profile.runsWithWaterBottle),
         gutTrainingLevel: Value(profile.gutTraining.name),
+        sweatRate: Value(profile.sweatRate.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
         createdAt: Value(profile.createdAt),
         updatedAt: Value(profile.updatedAt),
@@ -410,6 +411,7 @@ class AppDatabase extends _$AppDatabase {
         weightPounds: Value(profile.weightPounds),
         runsWithWaterBottle: Value(profile.runsWithWaterBottle),
         gutTrainingLevel: Value(profile.gutTraining.name),
+        sweatRate: Value(profile.sweatRate.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
         updatedAt: Value(DateTime.now()),
         appVersion: Value(profile.appVersion),
@@ -1581,6 +1583,10 @@ class AppDatabase extends _$AppDatabase {
       gutTraining: domain.GutTraining.values.firstWhere(
         (g) => g.name == dbUser.gutTrainingLevel,
         orElse: () => domain.GutTraining.moderate,
+      ),
+      sweatRate: domain.SweatRateCat.values.firstWhere(
+        (s) => s.name == dbUser.sweatRate,
+        orElse: () => domain.SweatRateCat.medium,
       ),
       onboardingCompleted: dbUser.onboardingCompleted,
       createdAt: dbUser.createdAt,

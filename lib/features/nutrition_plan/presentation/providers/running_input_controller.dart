@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../../auth/data/user_repository.dart';
 import '../../domain/run_parameters.dart';
 import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
@@ -88,9 +89,16 @@ class RunningInputController extends _$RunningInputController {
   RunningFormState build() {
     final now = DateTime.now();
 
+    // Fetch user profile to get gut training and sweat rate
+    // This is done asynchronously, so we start with defaults
+    _loadUserPreferences();
+
     final initialState = RunningFormState(
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 7, minute: 0),
+      // Default values - will be updated when user profile loads
+      gutTraining: GutTraining.moderate,
+      sweatRate: SweatRateCat.medium,
     );
 
     // NOTE: Location fetching is now triggered explicitly when this tab becomes active
@@ -99,6 +107,25 @@ class RunningInputController extends _$RunningInputController {
     // See: fetchLocationIfNeeded() method
 
     return initialState;
+  }
+
+  /// Load gut training and sweat rate from user profile
+  Future<void> _loadUserPreferences() async {
+    try {
+      final userRepository = await ref.read(userRepositoryProvider.future);
+      final userProfile = await userRepository.getCurrentUser();
+
+      if (userProfile != null) {
+        state = state.copyWith(
+          gutTraining: userProfile.gutTraining,
+          sweatRate: userProfile.sweatRate,
+        );
+        DebugLogger.info('🏃 RUNNING CONTROLLER: Loaded user preferences - gut training: ${userProfile.gutTraining.name}, sweat rate: ${userProfile.sweatRate.name}');
+      }
+    } catch (e) {
+      DebugLogger.error('🏃 RUNNING CONTROLLER: Failed to load user preferences', error: e);
+      // Keep defaults on error
+    }
   }
 
   /// Fetch location if this controller needs it and doesn't already have it.
