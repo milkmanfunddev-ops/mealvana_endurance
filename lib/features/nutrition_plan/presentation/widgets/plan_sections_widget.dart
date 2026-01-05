@@ -36,7 +36,7 @@ class PlanSectionsWidget extends StatelessWidget {
             // Plan Sections with individual edit states
             ...plan.sections.map((section) {
               final isLastSection = section == plan.sections.last;
-              final category = _getSectionCategory(section.title);
+              final category = _getSectionCategory(section.id);
               return Column(
                 children: [
                   PlanSectionEditableWidget(
@@ -59,16 +59,11 @@ class PlanSectionsWidget extends StatelessWidget {
         );
   }
 
-  String _getSectionCategory(String sectionTitle) {
-    switch (sectionTitle) {
-      case 'Before Run':
-        return 'before_run';
-      case 'During Run':
-        return 'during_run';
-      case 'After Run':
-        return 'after_run';
-      default:
-        return 'before_run';
-    }
+  /// Get section category from section id (sport-agnostic)
+  String _getSectionCategory(String sectionId) {
+    // section.id is already the category: 'before_run', 'during_run', 'after_run'
+    if (sectionId.contains('during')) return 'during_run';
+    if (sectionId.contains('after')) return 'after_run';
+    return 'before_run';
   }
 }

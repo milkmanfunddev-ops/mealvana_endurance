@@ -38,52 +38,46 @@ class SectionSubtitleWidget extends StatelessWidget {
       return _buildLegacyBadgeSubtitle(carbs, protein, fluids, sodium);
     }
 
-    switch (section.title) {
-      case 'Before Run':
-        final carbsTarget = macroTargets!.preRun.carbsG.round();
-        final fluidsTarget = macroTargets!.preRun.fluidsMl.round();
-        final sodiumTarget = macroTargets!.preRun.sodiumMg.round();
+    // Match on section.id (before_run, during_run, after_run) not title for sport-agnostic matching
+    if (section.id.contains('before')) {
+      final carbsTarget = macroTargets!.preRun.carbsG.round();
+      final fluidsTarget = macroTargets!.preRun.fluidsMl.round();
+      final sodiumTarget = macroTargets!.preRun.sodiumMg.round();
 
-        badges = [
-          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
-          _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
-        ];
-        break;
+      badges = [
+        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+      ];
+    } else if (section.id.contains('during')) {
+      final carbsTarget = macroTargets!.duringRun.carbTotalG.round();
+      final fluidsTarget = macroTargets!.duringRun.fluidTotalMl.round();
+      final sodiumTarget = macroTargets!.duringRun.sodiumTotalMg.round();
 
-      case 'During Run':
-        final carbsTarget = macroTargets!.duringRun.carbTotalG.round();
-        final fluidsTarget = macroTargets!.duringRun.fluidTotalMl.round();
-        final sodiumTarget = macroTargets!.duringRun.sodiumTotalMg.round();
+      badges = [
+        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+      ];
+    } else if (section.id.contains('after')) {
+      final carbsTarget = macroTargets!.postRun.carbsG.round();
+      final proteinTarget = macroTargets!.postRun.proteinG.round();
+      final fluidsTarget = macroTargets!.postRun.fluidsMl.round();
 
-        badges = [
-          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
-          _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
-        ];
-        break;
-
-      case 'After Run':
-        final carbsTarget = macroTargets!.postRun.carbsG.round();
-        final proteinTarget = macroTargets!.postRun.proteinG.round();
-        final fluidsTarget = macroTargets!.postRun.fluidsMl.round();
-
-        badges = [
-          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
-          _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
-        ];
-        break;
-
-      default:
-        return Text(
-          section.subtitle ?? '',
-          style: AppTheme.noteStyle.copyWith(
-            color: AppTheme.primary600,
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-          ),
-        );
+      badges = [
+        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
+      ];
+    } else {
+      return Text(
+        section.subtitle ?? '',
+        style: AppTheme.noteStyle.copyWith(
+          color: AppTheme.primary600,
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+        ),
+      );
     }
 
     return Wrap(
@@ -136,52 +130,46 @@ class SectionSubtitleWidget extends StatelessWidget {
   Widget _buildLegacyBadgeSubtitle(int carbs, int protein, int fluids, int sodium) {
     List<Widget> badges = [];
 
-    switch (section.title) {
-      case 'Before Run':
-        final carbsTarget = plan.sections[0].carbsTarget?.toInt() ?? 0;
-        final fluidsTarget = plan.sections[0].fluidsTarget?.toInt() ?? 0;
-        final sodiumTarget = plan.sections[0].sodiumTarget?.toInt() ?? 0;
+    // Match on section.id (before_run, during_run, after_run) not title for sport-agnostic matching
+    if (section.id.contains('before')) {
+      final carbsTarget = plan.sections[0].carbsTarget?.toInt() ?? 0;
+      final fluidsTarget = plan.sections[0].fluidsTarget?.toInt() ?? 0;
+      final sodiumTarget = plan.sections[0].sodiumTarget?.toInt() ?? 0;
 
-        badges = [
-          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
-          _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
-        ];
-        break;
+      badges = [
+        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+      ];
+    } else if (section.id.contains('during')) {
+      final carbsTarget = plan.sections[1].carbsTarget?.toInt() ?? 0;
+      final fluidsTarget = plan.sections[1].fluidsTarget?.toInt() ?? 0;
+      final sodiumTarget = plan.sections[1].sodiumTarget?.toInt() ?? 0;
 
-      case 'During Run':
-        final carbsTarget = plan.sections[1].carbsTarget?.toInt() ?? 0;
-        final fluidsTarget = plan.sections[1].fluidsTarget?.toInt() ?? 0;
-        final sodiumTarget = plan.sections[1].sodiumTarget?.toInt() ?? 0;
+      badges = [
+        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+      ];
+    } else if (section.id.contains('after')) {
+      final carbsTarget = plan.sections[2].carbsTarget?.toInt() ?? 0;
+      final proteinTarget = plan.sections[2].proteinTarget?.toInt() ?? 0;
+      final fluidsTarget = plan.sections[2].fluidsTarget?.toInt() ?? 0;
 
-        badges = [
-          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
-          _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
-        ];
-        break;
-
-      case 'After Run':
-        final carbsTarget = plan.sections[2].carbsTarget?.toInt() ?? 0;
-        final proteinTarget = plan.sections[2].proteinTarget?.toInt() ?? 0;
-        final fluidsTarget = plan.sections[2].fluidsTarget?.toInt() ?? 0;
-
-        badges = [
-          _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-          _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
-          _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
-        ];
-        break;
-
-      default:
-        return Text(
-          section.subtitle ?? '',
-          style: AppTheme.noteStyle.copyWith(
-            color: AppTheme.primary600,
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-          ),
-        );
+      badges = [
+        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
+      ];
+    } else {
+      return Text(
+        section.subtitle ?? '',
+        style: AppTheme.noteStyle.copyWith(
+          color: AppTheme.primary600,
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+        ),
+      );
     }
 
     return Wrap(

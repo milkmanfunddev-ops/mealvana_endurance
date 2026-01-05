@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/new_activity_coordinator.dart';
 import '../providers/running_input_controller.dart';
+import '../providers/cycling_input_controller.dart';
+import '../providers/swimming_input_controller.dart';
 import '../widgets/new_activity/shared/sport_selector.dart';
 import '../widgets/new_activity/shared/new_activity_app_bar.dart';
 import '../widgets/new_activity/shared/new_activity_hero_section.dart';
@@ -49,6 +51,21 @@ class NewActivityScreen extends ConsumerStatefulWidget {
     this.initialPace,
     this.activityId,
     this.eventId,
+    // Activity type for tab selection
+    this.activityType,
+    // Cycling-specific parameters
+    this.cyclingSpeedMph,
+    this.cyclingTerrain,
+    this.cyclingIndoorOutdoor,
+    this.cyclingElevationGainFt,
+    this.cyclingSessionGoal,
+    // Swimming-specific parameters
+    this.swimmingPacePer100mSeconds,
+    this.swimmingPoolOrOpenWater,
+    this.swimmingWaterTempC,
+    // Shared parameters
+    this.intensityTarget,
+    this.timeBeforeMinutes,
   });
 
   final DateTime? initialDate;
@@ -56,6 +73,25 @@ class NewActivityScreen extends ConsumerStatefulWidget {
   final double? initialPace;
   final String? activityId;
   final String? eventId;
+
+  /// Activity type for selecting the correct sport tab (e.g., 'running', 'cycling', 'swimming')
+  final String? activityType;
+
+  // Cycling-specific parameters
+  final double? cyclingSpeedMph;
+  final String? cyclingTerrain;
+  final String? cyclingIndoorOutdoor;
+  final int? cyclingElevationGainFt;
+  final String? cyclingSessionGoal;
+
+  // Swimming-specific parameters
+  final int? swimmingPacePer100mSeconds;
+  final String? swimmingPoolOrOpenWater;
+  final double? swimmingWaterTempC;
+
+  // Shared parameters
+  final String? intensityTarget;
+  final int? timeBeforeMinutes;
 
   @override
   ConsumerState<NewActivityScreen> createState() => _NewActivityScreenState();
@@ -81,15 +117,24 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     super.dispose();
   }
 
-  /// Initialize form controllers with data from event navigation
+  /// Initialize form controllers with data from event/activity navigation
   ///
-  /// When coming from an event (e.g., marathon race day), pre-populate:
-  /// - Date/time from event date
-  /// - Distance from event subtype (e.g., 26.2 miles for marathon)
-  /// - Pace from event goal pace
+  /// When coming from an event or synced activity, pre-populate:
+  /// - Sport tab based on activity type
+  /// - Date/time from scheduled date
+  /// - Sport-specific fields (distance, pace, etc.)
   void _initializeFromEventData() {
     final coordinator = ref.read(newActivityCoordinatorProvider.notifier);
     final coordinatorState = ref.read(newActivityCoordinatorProvider);
+
+    // Select the appropriate sport tab based on activity type
+    if (widget.activityType != null) {
+      final sportTab = _getSportTabFromActivityType(widget.activityType!);
+      if (sportTab != null && sportTab != coordinatorState.selectedTab) {
+        DebugLogger.info('🏃 NEW ACTIVITY: Selecting ${widget.activityType} tab');
+        coordinator.selectTab(sportTab);
+      }
+    }
 
     // Check if coordinator has default date (today) - only override if it's the default
     final now = DateTime.now();
@@ -97,27 +142,28 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         coordinatorState.selectedDate.month == now.month &&
         coordinatorState.selectedDate.day == now.day;
 
-    // Initialize date/time from event
+    // Initialize date/time from event/activity
     if (widget.initialDate != null && isDefaultDate) {
-      DebugLogger.info('🗓️ NEW ACTIVITY: Initializing date from event: ${widget.initialDate}');
+      DebugLogger.info('🗓️ NEW ACTIVITY: Initializing date: ${widget.initialDate}');
       coordinator.updateDateTime(
         widget.initialDate!,
         TimeOfDay.fromDateTime(widget.initialDate!),
       );
     }
 
-    // Initialize running controller with event distance and pace
-    // (Currently defaulting to running for events - can be extended for multi-sport)
-    final runningController = ref.read(runningInputControllerProvider.notifier);
-
-    if (widget.initialDistance != null) {
-      DebugLogger.info('📏 NEW ACTIVITY: Initializing distance from event: ${widget.initialDistance} miles');
-      runningController.updateDistance(widget.initialDistance!);
-    }
-
-    if (widget.initialPace != null) {
-      DebugLogger.info('⏱️ NEW ACTIVITY: Initializing pace from event: ${widget.initialPace} min/mile');
-      runningController.updatePace(widget.initialPace!);
+    // Initialize sport-specific controllers based on activity type
+    final activityType = widget.activityType ?? 'running';
+    switch (activityType) {
+      case 'cycling':
+        _initializeCyclingController();
+        break;
+      case 'swimming':
+        _initializeSwimmingController();
+        break;
+      case 'running':
+      default:
+        _initializeRunningController();
+        break;
     }
 
     if (widget.activityId != null || widget.eventId != null) {
@@ -127,6 +173,79 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     // Trigger location fetch for the active sport tab
     // This is done via coordinator to ensure only ONE controller fetches at a time
     coordinator.fetchLocationForActiveTab();
+  }
+
+  /// Convert activity type string to SportTab enum
+  SportTab? _getSportTabFromActivityType(String activityType) {
+    switch (activityType.toLowerCase()) {
+      case 'running':
+        return SportTab.running;
+      case 'cycling':
+        return SportTab.cycling;
+      case 'swimming':
+        return SportTab.swimming;
+      default:
+        return null;
+    }
+  }
+
+  /// Initialize running controller with synced activity data
+  void _initializeRunningController() {
+    final controller = ref.read(runningInputControllerProvider.notifier);
+
+    if (widget.initialDistance != null) {
+      DebugLogger.info('📏 NEW ACTIVITY: Initializing distance: ${widget.initialDistance} miles');
+      controller.updateDistance(widget.initialDistance!);
+    }
+
+    if (widget.initialPace != null) {
+      DebugLogger.info('⏱️ NEW ACTIVITY: Initializing pace: ${widget.initialPace} min/mile');
+      controller.updatePace(widget.initialPace!);
+    }
+
+    if (widget.timeBeforeMinutes != null) {
+      controller.updatePreRunMinutes(widget.timeBeforeMinutes!);
+    }
+  }
+
+  /// Initialize cycling controller with synced activity data
+  void _initializeCyclingController() {
+    final controller = ref.read(cyclingInputControllerProvider.notifier);
+
+    if (widget.initialDistance != null) {
+      DebugLogger.info('📏 NEW ACTIVITY: Initializing cycling distance: ${widget.initialDistance} miles');
+      controller.updateDistance(widget.initialDistance!);
+    }
+
+    if (widget.cyclingSpeedMph != null) {
+      DebugLogger.info('🚴 NEW ACTIVITY: Initializing cycling speed: ${widget.cyclingSpeedMph} mph');
+      controller.updateSpeed(widget.cyclingSpeedMph!);
+    }
+
+    if (widget.timeBeforeMinutes != null) {
+      controller.updatePreRideMinutes(widget.timeBeforeMinutes!);
+    }
+  }
+
+  /// Initialize swimming controller with synced activity data
+  void _initializeSwimmingController() {
+    final controller = ref.read(swimmingInputControllerProvider.notifier);
+
+    if (widget.initialDistance != null) {
+      // Convert miles to meters for swimming
+      final distanceMeters = (widget.initialDistance! * 1609.34).round();
+      DebugLogger.info('📏 NEW ACTIVITY: Initializing swimming distance: $distanceMeters meters');
+      controller.updateDistance(distanceMeters);
+    }
+
+    if (widget.swimmingPacePer100mSeconds != null) {
+      DebugLogger.info('🏊 NEW ACTIVITY: Initializing swimming pace: ${widget.swimmingPacePer100mSeconds} sec/100m');
+      controller.updatePace(widget.swimmingPacePer100mSeconds!);
+    }
+
+    if (widget.timeBeforeMinutes != null) {
+      controller.updatePreSwimMinutes(widget.timeBeforeMinutes!);
+    }
   }
 
   @override

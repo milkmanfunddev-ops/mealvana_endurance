@@ -5,11 +5,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../activities/data/activities_repository.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/application/calendar_service.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
-import '../../../nutrition_plan/application/bulk_nutrition_plan_service.dart';
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/training_peaks_oauth_service.dart';
@@ -104,10 +102,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   FinalSurgeSyncService get _finalSurgeSync => ref.read(finalSurgeSyncServiceProvider);
   TrainingPeaksOAuthService get _trainingPeaksOAuth => ref.read(trainingPeaksOAuthServiceProvider);
   TrainingPeaksSyncService get _trainingPeaksSync => ref.read(trainingPeaksSyncServiceProvider);
-  BulkNutritionPlanService get _bulkPlanService => ref.read(bulkNutritionPlanServiceProvider);
   IntegrationsRepository get _integrationsRepo => ref.read(integrationsRepositoryProvider);
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
-  ActivitiesRepository get _activitiesRepo => ref.read(activitiesRepositoryProvider);
 
   String? _currentUserId;
 
@@ -234,31 +230,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         return 0;
       }
 
-      // Phase 1: Generate and SAVE nutrition plans for NEW activities
-      if (result.hasNewWorkouts && result.activities.isNotEmpty) {
-        if (kDebugMode) {
-          print('📋 Generating and saving nutrition plans for ${result.activities.length} new activities');
-        }
-        await _bulkPlanService.generateAndSavePlansForActivities(
-          result.activities,
-          onProgress: (progress) {
-            if (ref.mounted) {
-              state = AsyncData(state.value!.copyWith(importProgress: 0.3 + (progress.fraction * 0.3)));
-            }
-          },
-        );
-        if (!ref.mounted) return 0;
+      // Activities are saved during sync - users will generate nutrition plans manually
+      // by tapping activities in the calendar
+      if (kDebugMode && result.hasNewWorkouts) {
+        print('📋 Synced ${result.activities.length} activities (nutrition plans will be created manually)');
       }
 
-      // Phase 2: Generate plans for EXISTING activities without nutrition plans
-      if (ref.mounted) {
-        state = AsyncData(state.value!.copyWith(importProgress: 0.6));
-      }
-      await _generatePlansForExistingActivities();
-      if (!ref.mounted) return 0;
-
-      // Phase 3: Invalidate calendar to refresh UI
-      state = AsyncData(state.value!.copyWith(importProgress: 0.9));
+      // Invalidate calendar to refresh UI
+      state = AsyncData(state.value!.copyWith(importProgress: 0.8));
       _invalidateCalendar();
 
       state = AsyncData(state.value!.copyWith(
@@ -353,31 +332,18 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // Check if still mounted after async operation
       if (!ref.mounted) return 0;
 
-      // Phase 1: Generate and SAVE plans for NEW activities
-      if (result.workoutResult.hasNewWorkouts && result.workoutResult.activities.isNotEmpty) {
-        if (kDebugMode) {
-          print('📋 Generating and saving nutrition plans for ${result.workoutResult.activities.length} new activities');
-        }
-        await _bulkPlanService.generateAndSavePlansForActivities(
-          result.workoutResult.activities,
-          onProgress: (progress) {
-            if (ref.mounted) {
-              state = AsyncData(state.value!.copyWith(importProgress: 0.3 + (progress.fraction * 0.3)));
-            }
-          },
-        );
-        if (!ref.mounted) return 0;
+      // Activities are saved during sync - users will generate nutrition plans manually
+      // by tapping activities in the calendar
+      if (kDebugMode && result.workoutResult.hasNewWorkouts) {
+        print('📋 Synced ${result.workoutResult.activities.length} activities (nutrition plans will be created manually)');
       }
 
-      // Phase 2: Generate plans for EXISTING activities without nutrition plans
-      // This handles the case where activities were synced previously but plans weren't generated
+      // Update progress
       if (ref.mounted) {
-        state = AsyncData(state.value!.copyWith(importProgress: 0.6));
+        state = AsyncData(state.value!.copyWith(importProgress: 0.5));
       }
-      await _generatePlansForExistingActivities();
-      if (!ref.mounted) return 0;
 
-      // Phase 3: Save event to database if found
+      // Save event to database if found (events still sync as before)
       String? savedEventId;
       if (result.eventResult?.hasEvent ?? false) {
         final eventData = result.eventResult!.event!;
@@ -438,48 +404,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       }
       _trackEvent('workout_import_error', {'provider': 'training_peaks', 'error': e.toString()});
       return 0;
-    }
-  }
-
-  /// Generate and SAVE nutrition plans for existing activities that don't have them
-  Future<void> _generatePlansForExistingActivities() async {
-    if (_currentUserId == null || !ref.mounted) return;
-
-    try {
-      // Get all activities for this user from the provider (training_peaks or final_surge)
-      final allActivities = await _activitiesRepo.getActivities(_currentUserId!);
-      if (!ref.mounted) return;
-
-      // Filter to synced activities without nutrition plans
-      final activitiesNeedingPlans = allActivities.where((a) =>
-          a.syncedFromProvider != null &&
-          a.nutritionPlanData == null &&
-          a.scheduledDateTime.isAfter(DateTime.now().subtract(const Duration(days: 1)))).toList();
-
-      if (activitiesNeedingPlans.isEmpty) {
-        if (kDebugMode) {
-          print('✅ All synced activities already have nutrition plans');
-        }
-        return;
-      }
-
-      if (kDebugMode) {
-        print('📋 Generating and saving nutrition plans for ${activitiesNeedingPlans.length} existing activities');
-      }
-
-      await _bulkPlanService.generateAndSavePlansForActivities(
-        activitiesNeedingPlans,
-        onProgress: (progress) {
-          if (ref.mounted) {
-            state = AsyncData(state.value!.copyWith(importProgress: 0.6 + (progress.fraction * 0.2)));
-          }
-        },
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Failed to generate plans for existing activities: $e');
-      }
-      // Don't fail the sync if this fails
     }
   }
 

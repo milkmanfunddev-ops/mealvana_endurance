@@ -26,17 +26,12 @@ class PlanSectionWidget extends StatelessWidget {
   final Function(String foodItemId)? onDeleteFood;
   final int? activityId;
   
+  /// Get section category from section.id (sport-agnostic)
   String get _sectionCategory {
-    switch (section.title) {
-      case 'Before Run':
-        return 'before_run';
-      case 'During Run':
-        return 'during_run';
-      case 'After Run':
-        return 'after_run';
-      default:
-        return 'before_run';
-    }
+    // section.id is already the category: 'before_run', 'during_run', 'after_run'
+    if (section.id.contains('during')) return 'during_run';
+    if (section.id.contains('after')) return 'after_run';
+    return 'before_run';
   }
 
   @override

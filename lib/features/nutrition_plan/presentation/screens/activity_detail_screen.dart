@@ -412,27 +412,36 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   Widget _buildNutritionSections(BuildContext context, ActivityDetailState state) {
     final plan = state.nutritionPlan!;
+    // Get activity type for sport-specific section titles (e.g., "Before Swim", "During Ride")
+    final activityType = state.activity?.activityType ?? ActivityType.running;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: plan.sections.map((section) {
-        String category = 'before_run';
-        Color sectionColor = AppColors.orange;
+        // Determine category from section.id (preferred) or fallback to parsing title
+        String category;
+        Color sectionColor;
 
-        if (section.title.contains('During')) {
+        if (section.id.contains('during')) {
           category = 'during_run';
           sectionColor = AppColors.electrolyte;
-        } else if (section.title.contains('After')) {
+        } else if (section.id.contains('after')) {
           category = 'after_run';
           sectionColor = AppColors.dragonfruit;
+        } else {
+          category = 'before_run';
+          sectionColor = AppColors.orange;
         }
+
+        // Generate sport-specific title using ActivityType
+        final sectionTitle = activityType.getSectionTitle(category);
 
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.lg),
           child: _buildNutritionSection(
             context: context,
             state: state,
-            title: section.title.toUpperCase(),
+            title: sectionTitle.toUpperCase(),
             section: section,
             category: category,
             sectionColor: sectionColor,

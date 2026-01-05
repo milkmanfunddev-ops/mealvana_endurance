@@ -9,8 +9,10 @@ import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/widgets/food_selection/recommended_alternatives.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../providers/swap_food_controller.dart';
+import '../providers/activity_detail_controller.dart';
 import '../../domain/food.dart';
 import '../../domain/food_item.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
@@ -83,16 +85,15 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       : 'Add Food to ${_getCategoryDisplayName()}';
 
   String _getCategoryDisplayName() {
-    switch (widget.category) {
-      case 'before_run':
-        return 'Before Run';
-      case 'during_run':
-        return 'During Run';
-      case 'after_run':
-        return 'After Run';
-      default:
-        return widget.category;
-    }
+    // Get activity type from ActivityDetailController for sport-specific labels
+    final activityDetailAsync = ref.read(
+      activityDetailControllerProvider(
+        activityId: widget.activityId,
+        isNewActivity: widget.isNewActivity,
+      ),
+    );
+    final activityType = activityDetailAsync.asData?.value.activity?.activityType ?? ActivityType.running;
+    return activityType.getSectionTitle(widget.category);
   }
 
   void _onSearchChanged(String query) {

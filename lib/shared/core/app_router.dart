@@ -133,6 +133,7 @@ class AppRouter {
       ),
 
       // REDIRECTED: Old routes now point to NewActivityScreen (multi-sport Kyle design)
+      // Supports pre-population from synced activities and events
       GoRoute(
         path: '/distancepacegut',
         name: 'distancepacegut',
@@ -144,6 +145,21 @@ class AppRouter {
             initialPace: extra?['goalPace'] as double?,
             activityId: extra?['activityId'] as String?,
             eventId: extra?['eventId'] as String?,
+            // Activity type for tab selection
+            activityType: extra?['activityType'] as String?,
+            // Cycling-specific parameters
+            cyclingSpeedMph: extra?['cyclingSpeedMph'] as double?,
+            cyclingTerrain: extra?['cyclingTerrain'] as String?,
+            cyclingIndoorOutdoor: extra?['cyclingIndoorOutdoor'] as String?,
+            cyclingElevationGainFt: extra?['cyclingElevationGainFt'] as int?,
+            cyclingSessionGoal: extra?['cyclingSessionGoal'] as String?,
+            // Swimming-specific parameters
+            swimmingPacePer100mSeconds: extra?['swimmingPacePer100mSeconds'] as int?,
+            swimmingPoolOrOpenWater: extra?['swimmingPoolOrOpenWater'] as String?,
+            swimmingWaterTempC: extra?['swimmingWaterTempC'] as double?,
+            // Shared parameters
+            intensityTarget: extra?['intensityTarget'] as String?,
+            timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
           );
         },
       ),
@@ -161,6 +177,21 @@ class AppRouter {
             initialPace: extra?['goalPace'] as double?,
             activityId: extra?['activityId'] as String?,
             eventId: extra?['eventId'] as String?,
+            // Activity type for tab selection
+            activityType: extra?['activityType'] as String?,
+            // Cycling-specific parameters
+            cyclingSpeedMph: extra?['cyclingSpeedMph'] as double?,
+            cyclingTerrain: extra?['cyclingTerrain'] as String?,
+            cyclingIndoorOutdoor: extra?['cyclingIndoorOutdoor'] as String?,
+            cyclingElevationGainFt: extra?['cyclingElevationGainFt'] as int?,
+            cyclingSessionGoal: extra?['cyclingSessionGoal'] as String?,
+            // Swimming-specific parameters
+            swimmingPacePer100mSeconds: extra?['swimmingPacePer100mSeconds'] as int?,
+            swimmingPoolOrOpenWater: extra?['swimmingPoolOrOpenWater'] as String?,
+            swimmingWaterTempC: extra?['swimmingWaterTempC'] as double?,
+            // Shared parameters
+            intensityTarget: extra?['intensityTarget'] as String?,
+            timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
           );
         },
       ),

@@ -204,10 +204,36 @@ class ActivityCard extends ConsumerWidget {
   }
 
   void _handleTap(BuildContext context) {
-    context.push('/plan', extra: {
-      'mode': 'view',
-      'activityId': activity.id,
-    });
+    // Check if activity has a nutrition plan
+    if (activity.nutritionPlanData == null) {
+      // No nutrition plan - open New Activity screen with pre-populated data
+      context.push('/distancepacegut', extra: {
+        'activityId': activity.id,
+        'initialDate': activity.scheduledDateTime,
+        'distance': activity.distanceMiles,
+        'goalPace': activity.paceTargetMinutesPerMile,
+        'activityType': activity.activityType.name,
+        // Cycling-specific parameters
+        'cyclingSpeedMph': activity.cyclingSpeedMph,
+        'cyclingTerrain': activity.cyclingTerrain,
+        'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
+        'cyclingElevationGainFt': activity.cyclingElevationGainFt,
+        'cyclingSessionGoal': activity.cyclingSessionGoal,
+        // Swimming-specific parameters
+        'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
+        'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
+        'swimmingWaterTempC': activity.swimmingWaterTempC,
+        // Shared parameters
+        'intensityTarget': activity.intensityTarget,
+        'timeBeforeMinutes': activity.timeBeforeMinutes,
+      });
+    } else {
+      // Has nutrition plan - open Activity Detail screen (current behavior)
+      context.push('/plan', extra: {
+        'mode': 'view',
+        'activityId': activity.id,
+      });
+    }
   }
 
   String _formatActivityDetails() {

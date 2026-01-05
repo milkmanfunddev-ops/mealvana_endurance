@@ -167,7 +167,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
         final selectedDateActivities = activities.where((activity) {
           return _isSameDay(activity.scheduledDateTime, selectedDate);
-        }).toList();
+        }).toList()
+          // Sort by time (ascending) so morning activities appear before afternoon
+          ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
 
         final selectedDateCarbDays = carbLoadingDays.where((carbDay) {
           return _isSameDay(carbDay.planDate, selectedDate);
