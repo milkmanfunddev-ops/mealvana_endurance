@@ -14,6 +14,7 @@ import '../providers/activity_detail_controller.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/food_item_data.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../coach_mode/presentation/widgets/activity_coach_feedback_widget.dart';
 
 /// Activity Detail Screen - Refactored with extracted widgets
 /// Shows activity details with nutrition sections and food items
@@ -209,6 +210,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             _buildNutritionSections(context, state),
           if (state.nutritionPlan == null)
             _buildNoNutritionPlanState(context, state),
+          // Coach feedback section (if any)
+          ActivityCoachFeedbackWidget(activityId: widget.activityId),
           const SizedBox(height: AppSpacing.xl),
           _buildActionButtons(context, state),
           const SizedBox(height: AppSpacing.xxxl),

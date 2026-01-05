@@ -18,6 +18,20 @@ class MyCoachesScreen extends ConsumerWidget {
         title: const Text('My Coaches'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.feedback),
+            tooltip: 'View coach feedback',
+            onPressed: () {
+              context.push('/athlete/feedback');
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.qr_code),
+            tooltip: 'Generate invite code',
+            onPressed: () {
+              context.push('/athlete/invite-code');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
               ref.read(myCoachesControllerProvider.notifier).refresh();

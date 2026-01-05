@@ -53,6 +53,9 @@ import '../../features/coach_mode/presentation/screens/athlete_detail_screen.dar
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_profile_setup_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
+import '../../features/coach_mode/presentation/screens/invite_athlete_screen.dart';
+import '../../features/coach_mode/presentation/screens/generate_invite_code_screen.dart';
+import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
@@ -530,6 +533,27 @@ class AppRouter {
         path: '/coaches',
         name: 'coach-directory',
         builder: (context, state) => const CoachDirectoryScreen(),
+      ),
+
+      // Invite Athlete - Coaches enter athlete invite codes
+      GoRoute(
+        path: '/coach/invite',
+        name: 'coach-invite-athlete',
+        builder: (context, state) => const InviteAthleteScreen(),
+      ),
+
+      // Generate Invite Code - Athletes create codes for coaches
+      GoRoute(
+        path: '/athlete/invite-code',
+        name: 'athlete-invite-code',
+        builder: (context, state) => const GenerateInviteCodeScreen(),
+      ),
+
+      // Athlete Feedback - Athletes view feedback from coaches
+      GoRoute(
+        path: '/athlete/feedback',
+        name: 'athlete-feedback',
+        builder: (context, state) => const AthleteFeedbackScreen(),
       ),
     ],
 

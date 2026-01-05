@@ -40,8 +40,7 @@ class CoachDashboardScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // TODO: Navigate to invite athlete screen
-          _showInviteDialog(context);
+          context.push('/coach/invite');
         },
         icon: const Icon(Icons.person_add),
         label: const Text('Invite Athlete'),
@@ -401,25 +400,6 @@ class CoachDashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showInviteDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Invite Athlete'),
-        content: const Text(
-          'Athlete invitation feature coming soon!\n\n'
-          'You will be able to invite athletes via email or share an invite link.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
       ),
     );
   }
