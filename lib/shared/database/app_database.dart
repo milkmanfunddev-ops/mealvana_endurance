@@ -12,7 +12,6 @@ import 'connection_native.dart' if (dart.library.html) 'connection_web.dart';
 import '../../features/auth/domain/user_preferences.dart' as domain;
 import '../../features/onboarding/domain/dietary_preference.dart';
 import '../../features/onboarding/domain/allergy.dart';
-import 'schema_versions.dart';
 import 'tables/user_profiles.dart';
 import 'tables/food_preferences.dart';
 import 'tables/feedback.dart';
@@ -188,9 +187,10 @@ class AppDatabase extends _$AppDatabase {
         await _normalizeUserFoodTimestamps();
       },
 
-      // Called when upgrading from older version - uses Drift's official stepByStep migrations
-      onUpgrade: stepByStep(
-        from1To2: (m, schema) async {
+      // Called when upgrading from older version
+      onUpgrade: (Migrator m, int from, int to) async {
+        // V1 -> V2 Migration
+        if (from < 2) {
           // V1 -> V2 Migration (December 2025)
           // Adds: dietary_preference, allergies, needs_upload to users; preference_level to food_preferences
           // Converts: INTEGER IDs to TEXT (UUID) for offline-first tables
@@ -202,7 +202,7 @@ class AppDatabase extends _$AppDatabase {
           final foodPrefColumnNames = foodPrefColumns.map((row) => row.read<String>('name')).toSet();
 
           if (!foodPrefColumnNames.contains('preference_level')) {
-            await m.addColumn(schema.foodPreferencesTable, schema.foodPreferencesTable.preferenceLevel);
+            await m.addColumn(foodPreferencesTable, foodPreferencesTable.preferenceLevel);
             // Migrate existing preference values to the new numeric scale
             await customStatement('''
               UPDATE food_preferences_table
@@ -618,8 +618,10 @@ class AppDatabase extends _$AppDatabase {
             // Rethrow to trigger app restart with fresh database
             rethrow;
           }
-        },
-        from2To3: (m, schema) async {
+        }
+
+        // V2 -> V3 Migration
+        if (from < 3) {
           // V2 -> V3 Migration (January 2025)
           // Adds: coaches table, coach_athlete_relationships table, coach_feedback table
           // Adds: is_coach column to users table
@@ -639,19 +641,19 @@ class AppDatabase extends _$AppDatabase {
             }
 
             // 2. Create coaches table
-            await m.createTable(schema.coachesTable);
+            await m.createTable(coachesTable);
             if (kDebugMode) {
               print('✅ Created coaches table');
             }
 
             // 3. Create coach_athlete_relationships table
-            await m.createTable(schema.coachAthleteRelationshipsTable);
+            await m.createTable(coachAthleteRelationshipsTable);
             if (kDebugMode) {
               print('✅ Created coach_athlete_relationships table');
             }
 
             // 4. Create coach_feedback table
-            await m.createTable(schema.coachFeedbackTable);
+            await m.createTable(coachFeedbackTable);
             if (kDebugMode) {
               print('✅ Created coach_feedback table');
             }
@@ -691,8 +693,8 @@ class AppDatabase extends _$AppDatabase {
             }
             rethrow;
           }
-        },
-      ),
+        }
+      },
     );
   }
 
