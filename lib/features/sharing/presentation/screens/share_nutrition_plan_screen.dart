@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../content/application/content_service.dart';
@@ -55,12 +56,7 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
         defaultValue: 'Nutrition plan sent successfully!',
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(successMessage),
-          backgroundColor: Colors.green,
-        ),
-      );
+      MealvanaSnackbar.showSuccess(context, successMessage);
 
       context.pop();
     } else {
@@ -70,12 +66,7 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
         defaultValue: 'Failed to send nutrition plan. Please try again.',
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.error ?? errorMessage),
-          backgroundColor: Colors.red,
-        ),
-      );
+      MealvanaSnackbar.showError(context, result.error ?? errorMessage);
     }
   }
 

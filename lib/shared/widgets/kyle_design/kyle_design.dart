@@ -17,6 +17,7 @@ export 'cards/macro_targets_table.dart';
 // export 'cards/food_item_card.dart';
 export 'data/large_stat.dart';
 export 'theme_toggle_widget.dart';
+export 'feedback/mealvana_snackbar.dart';
 
 // Theme exports
 export '../../../theme/kyle_design/app_colors.dart';

@@ -10,7 +10,7 @@ import '../../../features/nutrition_plan/data/food_repository.dart';
 import '../../../features/carb_loading/application/carb_loading_food_sync_service.dart';
 import '../../../features/auth/domain/user_preferences.dart';
 
-import '../../../shared/services/preferences_service.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../features/calendar/presentation/providers/calendar_controller.dart';
 
 part 'data_sync_service.g.dart';
@@ -109,7 +109,7 @@ class DataSyncService {
       );
 
       // Get last sync timestamp
-      final prefs = await _ref.read(sharedPreferencesProvider.future);
+      final prefs = _ref.read(sharedPreferencesProvider);
       final lastSyncTimestamp = prefs.getString('last_sync_timestamp_$userId');
 
       // STEP 0: CRITICAL - Sync user profile first to prevent FK violations
@@ -173,8 +173,10 @@ class DataSyncService {
   Future<void> syncUsers(String userId) async {
     try {
 
-      // Get the current user profile from local database
-      var localUser = await _database.getCurrentUserProfile();
+      // Get the current user profile from local database for this auth user
+      var localUser = await _database.getCurrentUserProfile(
+        currentAuthUserId: userId,
+      );
 
       // SIGN-BACK-IN FIX: Check if local user ID matches the auth user ID
       // After sign-out, local DB has anonymous user, but we're syncing as OAuth user
@@ -209,7 +211,9 @@ class DataSyncService {
           await _saveRemoteUserProfile(remoteUser, userId);
 
           // Re-fetch the local user after saving
-          localUser = await _database.getCurrentUserProfile();
+          localUser = await _database.getCurrentUserProfile(
+            currentAuthUserId: userId,
+          );
         } else {
           _logger.info(
             'No remote user profile found - user may need to complete onboarding',
@@ -394,7 +398,7 @@ class DataSyncService {
 
       // Update last sync timestamp
       if (data['timestamp'] != null) {
-        final prefs = await _ref.read(sharedPreferencesProvider.future);
+        final prefs = _ref.read(sharedPreferencesProvider);
         await prefs.setString('last_sync_timestamp_$userId', data['timestamp'] as String);
       }
 
@@ -2182,9 +2186,9 @@ class DataSyncService {
       };
 
       // Upsert to Supabase
-      // Use 'id' (primary key) for conflict resolution.
-      // Note: device_id is NOT unique - one device can have multiple user accounts over time
-      // (e.g., user signs out and re-onboards as a new anonymous user).
+      // Use primary key (id) for conflict resolution.
+      // NOTE: device_id is NOT unique - multiple users can share a device (family members, account switching).
+      // Each user has their own unique id (UUID), so conflicts are resolved by id.
       await _supabase.from('users').upsert(
         userData,
         onConflict: 'id', // Use primary key for conflict resolution
@@ -2299,7 +2303,7 @@ class DataSyncService {
       }
 
       // Check 2: Have we ever synced?
-      final prefs = await _ref.read(sharedPreferencesProvider.future);
+      final prefs = _ref.read(sharedPreferencesProvider);
       final lastSync = prefs.getString('last_sync_timestamp_$userId');
 
       if (lastSync == null) {

@@ -389,6 +389,86 @@ class ActivitiesRepository {
     }
   }
 
+  /// Find activity by external provider workout ID for a specific user
+  ///
+  /// Used to check if a workout has already been imported from Final Surge, etc.
+  /// IMPORTANT: This method is user-scoped to allow multiple users to import
+  /// the same workout from their respective training platforms.
+  Future<domain.Activity?> findByProviderWorkoutId(
+    String userId,
+    String provider,
+    String providerWorkoutId,
+  ) async {
+    try {
+      // CRITICAL: Filter by user_id to allow per-user deduplication
+      // Without this, User B cannot import workouts that User A already imported
+      final query = _database.select(_database.activitiesTable)
+        ..where((tbl) =>
+            tbl.userId.lower().equals(userId.toLowerCase()) &
+            tbl.syncedFromProvider.equals(provider) &
+            tbl.providerWorkoutId.equals(providerWorkoutId) &
+            tbl.deletedAt.isNull());
+
+      final activity = await query.getSingleOrNull();
+      return activity != null ? _mapToActivityDomain(activity) : null;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to find activity by provider workout ID',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId, 'provider': provider, 'providerWorkoutId': providerWorkoutId},
+      );
+      return null; // Return null on error to allow sync to continue
+    }
+  }
+
+  /// Insert a new activity directly (used by sync services)
+  ///
+  /// Unlike createActivity, this method doesn't immediately upload to Supabase.
+  /// Used for batch imports from external providers.
+  ///
+  /// IMPORTANT: Always clears the activity ID to ensure a new row is created.
+  /// The transformer may provide a pre-generated UUID, but we want the database
+  /// to generate the actual ID to ensure proper INSERT behavior.
+  Future<domain.Activity> insertActivity(domain.Activity activity) async {
+    try {
+      // Clear the ID to force INSERT path in _saveToDrift
+      // This ensures we always create a new row, not update a non-existent one
+      final activityWithFlags = activity.copyWith(
+        id: '', // Force INSERT by clearing ID
+        needsUpload: true,
+        localUpdatedAt: DateTime.now(),
+      );
+
+      final generatedId = await _saveToDrift(activityWithFlags);
+
+      final savedActivity = await (_database.select(_database.activitiesTable)
+            ..where((tbl) => tbl.id.equals(generatedId)))
+          .getSingle();
+
+      _logger.info(
+        'Inserted activity from sync',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {
+          'activityId': generatedId,
+          'provider': activity.syncedFromProvider,
+          'providerWorkoutId': activity.providerWorkoutId,
+        },
+      );
+
+      return _mapToActivityDomain(savedActivity);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to insert activity',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   /// Save activity to Drift database (offline-first pattern)
   /// Returns the ID of the saved activity (auto-generated if creating new)
   Future<String> _saveToDrift(domain.Activity activity) async {
@@ -460,6 +540,15 @@ class ActivitiesRepository {
         needsUpload: Value(activity.needsUpload ?? false),
         localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
         deletedAt: const Value.absent(), // Soft delete support
+        // External provider sync fields
+        syncedFromProvider: Value(activity.syncedFromProvider),
+        providerWorkoutId: Value(activity.providerWorkoutId),
+        providerWorkoutUrl: Value(activity.providerWorkoutUrl),
+        lastSyncedAt: Value(activity.lastSyncedAt),
+        workoutSubtype: Value(activity.workoutSubtype),
+        paceMinMinutesPerMile: Value(activity.paceMinMinutesPerMile),
+        paceMaxMinutesPerMile: Value(activity.paceMaxMinutesPerMile),
+        distanceMeters: const Value.absent(), // Calculated from distanceMiles if needed
         // Metadata
         createdAt: activity.createdAt,
         updatedAt: activity.updatedAt,
@@ -524,6 +613,14 @@ class ActivitiesRepository {
         needsUpload: Value(activity.needsUpload ?? false),
         localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
         deletedAt: Value(activity.deletedAt), // Soft delete support
+        // External provider sync fields
+        syncedFromProvider: Value(activity.syncedFromProvider),
+        providerWorkoutId: Value(activity.providerWorkoutId),
+        providerWorkoutUrl: Value(activity.providerWorkoutUrl),
+        lastSyncedAt: Value(activity.lastSyncedAt),
+        workoutSubtype: Value(activity.workoutSubtype),
+        paceMinMinutesPerMile: Value(activity.paceMinMinutesPerMile),
+        paceMaxMinutesPerMile: Value(activity.paceMaxMinutesPerMile),
         // Metadata
         createdAt: Value(activity.createdAt),
         updatedAt: Value(activity.updatedAt),
@@ -786,6 +883,14 @@ class ActivitiesRepository {
       // Sync fields
       needsUpload: activity.needsUpload,
       localUpdatedAt: activity.localUpdatedAt,
+      // External provider sync fields
+      syncedFromProvider: activity.syncedFromProvider,
+      providerWorkoutId: activity.providerWorkoutId,
+      providerWorkoutUrl: activity.providerWorkoutUrl,
+      lastSyncedAt: activity.lastSyncedAt,
+      workoutSubtype: activity.workoutSubtype,
+      paceMinMinutesPerMile: activity.paceMinMinutesPerMile,
+      paceMaxMinutesPerMile: activity.paceMaxMinutesPerMile,
     );
   }
 
@@ -800,6 +905,77 @@ class ActivitiesRepository {
         error: e,
       );
       return null;
+    }
+  }
+
+  /// Migrate activities from one user ID to another
+  ///
+  /// Used during onboarding when activities are synced before the final
+  /// user profile is created. This updates the user_id on all activities
+  /// that belong to the old user so they appear for the new user.
+  ///
+  /// Returns the number of activities migrated.
+  Future<int> migrateActivitiesToUser({
+    required String fromUserId,
+    required String toUserId,
+  }) async {
+    if (fromUserId == toUserId) return 0;
+
+    try {
+      final result = await (_database.update(_database.activitiesTable)
+            ..where((tbl) => tbl.userId.equals(fromUserId) & tbl.deletedAt.isNull()))
+          .write(ActivitiesTableCompanion(
+        userId: Value(toUserId),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(DateTime.now()),
+      ));
+
+      if (result > 0) {
+        _logger.info(
+          'Migrated activities to new user',
+          context: 'ACTIVITIES_REPOSITORY',
+          data: {
+            'fromUserId': fromUserId,
+            'toUserId': toUserId,
+            'count': result,
+          },
+        );
+      }
+
+      return result;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to migrate activities',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'fromUserId': fromUserId, 'toUserId': toUserId},
+      );
+      return 0;
+    }
+  }
+
+  /// Get all activities synced from external providers (regardless of user)
+  ///
+  /// Used to find activities that were synced during onboarding before
+  /// the user profile was finalized.
+  Future<List<domain.Activity>> getActivitiesByProvider(String provider) async {
+    try {
+      final query = _database.select(_database.activitiesTable)
+        ..where((tbl) =>
+            tbl.syncedFromProvider.equals(provider) & tbl.deletedAt.isNull());
+
+      final results = await query.get();
+      return results.map(_mapToActivityDomain).toList();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get activities by provider',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'provider': provider},
+      );
+      return [];
     }
   }
 }

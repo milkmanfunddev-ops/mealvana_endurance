@@ -522,12 +522,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
     analytics.analytics.track('help_getting_started_tapped');
 
     // TODO: Implement getting started guide or link to external documentation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Getting started guide coming soon!'),
-        backgroundColor: AppColors.electrolyte,
-      ),
-    );
+    MealvanaSnackbar.showSuccess(context, 'Getting started guide coming soon!');
   }
 
   void _openTrainingTips(BuildContext context, WidgetRef ref) {
@@ -536,12 +531,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
     analytics.analytics.track('help_training_tips_tapped');
 
     // TODO: Implement training tips or link to external documentation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Training tips coming soon!'),
-        backgroundColor: AppColors.electrolyte,
-      ),
-    );
+    MealvanaSnackbar.showSuccess(context, 'Training tips coming soon!');
   }
 
   void _openNutritionGuide(BuildContext context, WidgetRef ref) {
@@ -550,12 +540,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
     analytics.analytics.track('help_nutrition_guide_tapped');
 
     // TODO: Implement nutrition guide or link to external documentation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Nutrition guide coming soon!'),
-        backgroundColor: AppColors.electrolyte,
-      ),
-    );
+    MealvanaSnackbar.showSuccess(context, 'Nutrition guide coming soon!');
   }
 
   void _openFAQs(BuildContext context, WidgetRef ref) {
@@ -564,12 +549,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
     analytics.analytics.track('help_faqs_tapped');
 
     // TODO: Implement FAQs or link to external documentation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('FAQs coming soon!'),
-        backgroundColor: AppColors.electrolyte,
-      ),
-    );
+    MealvanaSnackbar.showSuccess(context, 'FAQs coming soon!');
   }
 
   void _sendEmail(BuildContext context, WidgetRef ref) async {
@@ -583,12 +563,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
       await launchUrl(emailUri);
     } else {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not open email app'),
-          backgroundColor: AppColors.dragonfruit,
-        ),
-      );
+      MealvanaSnackbar.showError(context, 'Could not open email app');
     }
   }
 
@@ -603,12 +578,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
       await launchUrl(websiteUri);
     } else {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not open website'),
-          backgroundColor: AppColors.dragonfruit,
-        ),
-      );
+      MealvanaSnackbar.showError(context, 'Could not open website');
     }
   }
 
@@ -623,12 +593,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
       await launchUrl(forumUri);
     } else {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not open community forum'),
-          backgroundColor: AppColors.dragonfruit,
-        ),
-      );
+      MealvanaSnackbar.showError(context, 'Could not open community forum');
     }
   }
 }

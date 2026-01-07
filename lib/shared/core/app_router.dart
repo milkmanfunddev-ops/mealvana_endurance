@@ -35,6 +35,7 @@ import '../../features/settings/presentation/screens/food_settings_consolidated_
 import '../../features/settings/presentation/screens/food_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
+import '../../features/settings/presentation/screens/connected_apps_screen.dart';
 import '../core/screen_mode.dart';
 import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
 import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
@@ -139,6 +140,7 @@ class AppRouter {
       ),
 
       // REDIRECTED: Old routes now point to NewActivityScreen (multi-sport Kyle design)
+      // Supports pre-population from synced activities and events
       GoRoute(
         path: '/distancepacegut',
         name: 'distancepacegut',
@@ -150,6 +152,21 @@ class AppRouter {
             initialPace: extra?['goalPace'] as double?,
             activityId: extra?['activityId'] as String?,
             eventId: extra?['eventId'] as String?,
+            // Activity type for tab selection
+            activityType: extra?['activityType'] as String?,
+            // Cycling-specific parameters
+            cyclingSpeedMph: extra?['cyclingSpeedMph'] as double?,
+            cyclingTerrain: extra?['cyclingTerrain'] as String?,
+            cyclingIndoorOutdoor: extra?['cyclingIndoorOutdoor'] as String?,
+            cyclingElevationGainFt: extra?['cyclingElevationGainFt'] as int?,
+            cyclingSessionGoal: extra?['cyclingSessionGoal'] as String?,
+            // Swimming-specific parameters
+            swimmingPacePer100mSeconds: extra?['swimmingPacePer100mSeconds'] as int?,
+            swimmingPoolOrOpenWater: extra?['swimmingPoolOrOpenWater'] as String?,
+            swimmingWaterTempC: extra?['swimmingWaterTempC'] as double?,
+            // Shared parameters
+            intensityTarget: extra?['intensityTarget'] as String?,
+            timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
           );
         },
       ),
@@ -167,6 +184,21 @@ class AppRouter {
             initialPace: extra?['goalPace'] as double?,
             activityId: extra?['activityId'] as String?,
             eventId: extra?['eventId'] as String?,
+            // Activity type for tab selection
+            activityType: extra?['activityType'] as String?,
+            // Cycling-specific parameters
+            cyclingSpeedMph: extra?['cyclingSpeedMph'] as double?,
+            cyclingTerrain: extra?['cyclingTerrain'] as String?,
+            cyclingIndoorOutdoor: extra?['cyclingIndoorOutdoor'] as String?,
+            cyclingElevationGainFt: extra?['cyclingElevationGainFt'] as int?,
+            cyclingSessionGoal: extra?['cyclingSessionGoal'] as String?,
+            // Swimming-specific parameters
+            swimmingPacePer100mSeconds: extra?['swimmingPacePer100mSeconds'] as int?,
+            swimmingPoolOrOpenWater: extra?['swimmingPoolOrOpenWater'] as String?,
+            swimmingWaterTempC: extra?['swimmingWaterTempC'] as double?,
+            // Shared parameters
+            intensityTarget: extra?['intensityTarget'] as String?,
+            timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
           );
         },
       ),
@@ -269,6 +301,13 @@ class AppRouter {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+
+      // Connected Apps Screen - Training platform integrations (Final Surge, etc.)
+      GoRoute(
+        path: '/settings/connected-apps',
+        name: 'settings-connected-apps',
+        builder: (context, state) => const ConnectedAppsScreen(),
       ),
 
       // Preferences Screen - Edit profile and preferences with save button

@@ -26,6 +26,8 @@ class OnboardingService {
     required int heightInches,
     required double weightPounds,
     required bool runsWithWaterBottle,
+    String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
+    bool isAnonymous = true, // false when user signs up with email/OAuth
   }) async {
 
     final user = await _authService.createUser(
@@ -35,6 +37,8 @@ class OnboardingService {
       heightInches: heightInches,
       weightPounds: weightPounds,
       runsWithWaterBottle: runsWithWaterBottle,
+      authProvider: authProvider,
+      isAnonymous: isAnonymous,
     );
 
     // Track user registration

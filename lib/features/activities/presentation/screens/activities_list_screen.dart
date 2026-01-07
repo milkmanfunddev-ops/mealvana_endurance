@@ -15,6 +15,7 @@ import '../../../carb_loading/presentation/providers/carb_loading_controller.dar
 import '../widgets/activity_card.dart';
 import '../widgets/carb_loading_day_card.dart';
 import '../../../../shared/database/app_database.dart' as db;
+import '../../domain/activity.dart';
 
 /// Main screen showing calendar date picker and daily activity list.
 ///
@@ -159,7 +160,10 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return activitiesState.when(
-      data: (activities) {
+      data: (activitiesData) {
+        // Cast to proper type since AsyncValue loses generic type info
+        final activities = (activitiesData as List).cast<Activity>();
+
         final carbLoadingDays = carbLoadingState.maybeWhen(
           data: (days) => days.cast<db.CarbLoadingDay>(),
           orElse: () => <db.CarbLoadingDay>[],
@@ -168,6 +172,8 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         final selectedDateActivities = activities.where((activity) {
           return _isSameDay(activity.scheduledDateTime, selectedDate);
         }).toList();
+        // Sort by time (ascending) so morning activities appear before afternoon
+        selectedDateActivities.sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
 
         final selectedDateCarbDays = carbLoadingDays.where((carbDay) {
           return _isSameDay(carbDay.planDate, selectedDate);

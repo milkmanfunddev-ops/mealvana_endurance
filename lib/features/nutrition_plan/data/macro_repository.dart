@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../shared/domain/activity_type.dart';
-import '../../../shared/services/preferences_service.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../domain/macro_targets.dart';
 import 'offline_macro_calculator.dart';
 
@@ -337,7 +337,7 @@ class MacroRepositoryImpl implements MacroRepository {
 }
 
 @riverpod
-Future<MacroRepository> macroRepository(Ref ref) async {
-  final prefs = await ref.watch(sharedPreferencesProvider.future);
+MacroRepository macroRepository(Ref ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
   return MacroRepositoryImpl(sharedPreferences: prefs);
 }

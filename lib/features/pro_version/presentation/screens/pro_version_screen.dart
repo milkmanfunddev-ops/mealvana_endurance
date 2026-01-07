@@ -6,6 +6,7 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../shared/widgets/kyle_design/cards/base_card.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Mealvana Pro screen showcasing upcoming premium features
 class ProVersionScreen extends ConsumerWidget {
@@ -230,12 +231,7 @@ class ProVersionScreen extends ConsumerWidget {
                 icon: Icons.notifications_active,
                 onPressed: () {
                   // TODO: Implement notification signup
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Notification system coming soon!'),
-                      backgroundColor: AppColors.electrolyte,
-                    ),
-                  );
+                  MealvanaSnackbar.showSuccess(context, 'Notification system coming soon!');
                 },
               ),
 

@@ -36,6 +36,7 @@ class SettingsState {
   final DistanceUnit preferredDistanceUnit;
   final PaceUnit preferredPaceUnit;
   final GutTraining gutTrainingLevel;
+  final SweatRateCat sweatRate;
 
   // Sport preferences
   final bool? giSensitivity;
@@ -111,6 +112,7 @@ class SettingsState {
     this.preferredDistanceUnit = DistanceUnit.miles,
     this.preferredPaceUnit = PaceUnit.minPerMile,
     this.gutTrainingLevel = GutTraining.moderate,
+    this.sweatRate = SweatRateCat.medium,
     this.giSensitivity,
     this.ftpWatts,
     this.typicalBikeBottles,
@@ -164,6 +166,7 @@ class SettingsState {
     DistanceUnit? preferredDistanceUnit,
     PaceUnit? preferredPaceUnit,
     GutTraining? gutTrainingLevel,
+    SweatRateCat? sweatRate,
     bool? giSensitivity,
     int? ftpWatts,
     int? typicalBikeBottles,
@@ -216,6 +219,7 @@ class SettingsState {
       preferredDistanceUnit: preferredDistanceUnit ?? this.preferredDistanceUnit,
       preferredPaceUnit: preferredPaceUnit ?? this.preferredPaceUnit,
       gutTrainingLevel: gutTrainingLevel ?? this.gutTrainingLevel,
+      sweatRate: sweatRate ?? this.sweatRate,
       giSensitivity: giSensitivity ?? this.giSensitivity,
       ftpWatts: ftpWatts ?? this.ftpWatts,
       typicalBikeBottles: typicalBikeBottles ?? this.typicalBikeBottles,

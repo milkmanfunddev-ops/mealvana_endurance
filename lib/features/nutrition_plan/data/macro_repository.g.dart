@@ -14,12 +14,8 @@ const macroRepositoryProvider = MacroRepositoryProvider._();
 
 final class MacroRepositoryProvider
     extends
-        $FunctionalProvider<
-          AsyncValue<MacroRepository>,
-          MacroRepository,
-          FutureOr<MacroRepository>
-        >
-    with $FutureModifier<MacroRepository>, $FutureProvider<MacroRepository> {
+        $FunctionalProvider<MacroRepository, MacroRepository, MacroRepository>
+    with $Provider<MacroRepository> {
   const MacroRepositoryProvider._()
     : super(
         from: null,
@@ -36,14 +32,21 @@ final class MacroRepositoryProvider
 
   @$internal
   @override
-  $FutureProviderElement<MacroRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  $ProviderElement<MacroRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
-  FutureOr<MacroRepository> create(Ref ref) {
+  MacroRepository create(Ref ref) {
     return macroRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MacroRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MacroRepository>(value),
+    );
   }
 }
 
-String _$macroRepositoryHash() => r'ed6d18df92d394666b362ce99270b8f9cbfff019';
+String _$macroRepositoryHash() => r'26a9500962f71a6f81b6de4da3f19e5740df7f94';

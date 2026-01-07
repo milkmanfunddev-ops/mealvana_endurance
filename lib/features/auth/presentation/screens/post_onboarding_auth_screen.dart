@@ -38,12 +38,16 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
   Future<void> _handleAppleSignIn() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
+    final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
-    // If we are in login mode, we should sign in (replace user)
-    // If we are in signup mode (default), we should try to link first
-    final success = isLogin
-        ? await controller.signInWithApple()
-        : await controller.linkAppleAccount();
+    // For signup mode (onboarding), sign out any existing session first
+    // This ensures we create a fresh new user, not link to an old one
+    if (!isLogin && supabase.auth.currentUser != null) {
+      await supabase.auth.signOut();
+    }
+
+    // signInWithApple creates a new user OR logs in existing user
+    final bool success = await controller.signInWithApple();
 
     if (!mounted) return;
 
@@ -53,7 +57,10 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
       if (isLogin) {
         await _navigateToMain();
       } else {
-        await _saveOnboardingDataAndNavigate();
+        await _saveOnboardingDataAndNavigate(
+          authProvider: 'apple',
+          isAnonymous: false,
+        );
       }
     } else {
       _handleError(context, 'Apple');
@@ -63,12 +70,16 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
   Future<void> _handleGoogleSignIn() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
+    final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
-    // If we are in login mode, we should sign in (replace user)
-    // If we are in signup mode (default), we should try to link first
-    final success = isLogin
-        ? await controller.signInWithGoogle()
-        : await controller.linkGoogleAccount();
+    // For signup mode (onboarding), sign out any existing session first
+    // This ensures we create a fresh new user, not link to an old one
+    if (!isLogin && supabase.auth.currentUser != null) {
+      await supabase.auth.signOut();
+    }
+
+    // signInWithGoogle creates a new user OR logs in existing user
+    final bool success = await controller.signInWithGoogle();
 
     if (!mounted) return;
 
@@ -78,7 +89,10 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
       if (isLogin) {
         await _navigateToMain();
       } else {
-        await _saveOnboardingDataAndNavigate();
+        await _saveOnboardingDataAndNavigate(
+          authProvider: 'google',
+          isAnonymous: false,
+        );
       }
     } else {
       _handleError(context, 'Google');
@@ -96,15 +110,11 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
 
     // Show generic error message
     final contentService = ref.read(contentServiceProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          contentService.getValue(
-            'auth.post_onboarding.error_oauth_failed',
-            defaultValue: 'Sign in failed. Please try again.',
-          ),
-        ),
-        backgroundColor: AppColors.dragonfruit,
+    MealvanaSnackbar.showError(
+      context,
+      contentService.getValue(
+        'auth.post_onboarding.error_oauth_failed',
+        defaultValue: 'Sign in failed. Please try again.',
       ),
     );
   }
@@ -175,12 +185,29 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
   }
 
   Future<void> _handleEmailSignUp() async {
+    final logger = ref.read(appExternalDepsProvider).logger;
+
     // Navigate to email signup screen
+    logger.info('Navigating to email signup screen', context: 'NAV');
     final result = await context.push('/auth/email-signup');
+
+    logger.info('Email signup returned', context: 'NAV', data: {
+      'result': result,
+      'mounted': mounted,
+    });
 
     // If email signup successful, save onboarding data and navigate to main app
     if (result == true && mounted) {
-      await _saveOnboardingDataAndNavigate();
+      logger.info('Email signup successful, saving onboarding data', context: 'NAV');
+      await _saveOnboardingDataAndNavigate(
+        authProvider: 'email',
+        isAnonymous: false,
+      );
+    } else {
+      logger.info('Email signup did not return true or widget unmounted', context: 'NAV', data: {
+        'result': result,
+        'mounted': mounted,
+      });
     }
   }
 
@@ -199,8 +226,11 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     await controller.skipAuthentication();
 
     if (mounted) {
-      // Save all cached onboarding data before navigating as guest
-      await _saveOnboardingDataAndNavigate();
+      // Save all cached onboarding data before navigating as guest (anonymous user)
+      await _saveOnboardingDataAndNavigate(
+        authProvider: 'anonymous',
+        isAnonymous: true,
+      );
     }
   }
 
@@ -212,19 +242,46 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
 
   /// Save all cached onboarding data and navigate to main app
   /// IMPORTANT: This now saves locally only and triggers background sync for Supabase upload
-  Future<void> _saveOnboardingDataAndNavigate() async {
+  /// [authProvider] - 'anonymous', 'email', 'google', 'apple'
+  /// [isAnonymous] - false when user signs up with email/OAuth
+  Future<void> _saveOnboardingDataAndNavigate({
+    String authProvider = 'anonymous',
+    bool isAnonymous = true,
+  }) async {
+    final logger = ref.read(appExternalDepsProvider).logger;
     final onboardingController = ref.read(onboardingControllerProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
 
-    // Save all cached onboarding data (saves to Drift only, marks for background upload)
-    final success = await onboardingController.saveAllOnboardingData();
+    logger.info('Starting saveAllOnboardingData', context: 'NAV', data: {
+      'authProvider': authProvider,
+      'isAnonymous': isAnonymous,
+    });
 
-    if (!mounted) return;
+    // Save all cached onboarding data (saves to Drift only, marks for background upload)
+    final success = await onboardingController.saveAllOnboardingData(
+      authProvider: authProvider,
+      isAnonymous: isAnonymous,
+    );
+
+    logger.info('saveAllOnboardingData completed', context: 'NAV', data: {
+      'success': success,
+      'mounted': mounted,
+    });
+
+    if (!mounted) {
+      logger.info('Widget unmounted after save, aborting navigation', context: 'NAV');
+      return;
+    }
 
     if (success) {
       // Get current user ID for background sync
       final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
+
+      logger.info('Navigating to /main', context: 'NAV', data: {
+        'hasUser': currentUser != null,
+        'userId': currentUser?.id,
+      });
 
       // Navigate to main app immediately after local save
       context.go('/main');
@@ -240,15 +297,12 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
       }
     } else {
       // Show error if save failed
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            contentService.getValue(
-              'auth.post_onboarding.error_save_failed',
-              defaultValue: 'Failed to save your preferences. Please try again.',
-            ),
-          ),
-          backgroundColor: AppColors.dragonfruit,
+      logger.error('saveAllOnboardingData FAILED - NOT navigating to /main', context: 'NAV');
+      MealvanaSnackbar.showError(
+        context,
+        contentService.getValue(
+          'auth.post_onboarding.error_save_failed',
+          defaultValue: 'Failed to save your preferences. Please try again.',
         ),
       );
     }

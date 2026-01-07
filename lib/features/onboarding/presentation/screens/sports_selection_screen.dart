@@ -7,6 +7,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Sports Selection Screen - Step 2 of Onboarding
 ///
@@ -76,12 +77,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
   void _continue() async {
     // Validate at least one sport selected
     if (_selectedSports.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select at least one sport'),
-          backgroundColor: const Color(0xFFE84393),
-        ),
-      );
+      MealvanaSnackbar.showInfo(context, 'Please select at least one sport');
       return;
     }
 

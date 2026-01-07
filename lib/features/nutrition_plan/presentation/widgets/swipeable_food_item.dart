@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/food_item_data.dart';
 import 'editable_expandable_food_item.dart';
@@ -95,14 +95,14 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
     super.dispose();
   }
 
-  void _checkAndStartHintAnimation() async {
+  void _checkAndStartHintAnimation() {
     try {
       // Use SharedPreferences for simple, reliable persistence
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = ref.read(sharedPreferencesProvider);
       final hasShown = prefs.getBool('swipe_hint_shown') ?? false;
-      
+
       DebugLogger.info('🎯 SharedPreferences check: hasShown = $hasShown');
-      
+
       if (!hasShown && mounted && !_hasInteracted) {
         DebugLogger.info('🚀 Starting animation');
         _startHintAnimation();
@@ -212,18 +212,17 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
       // Mark hint as shown in SharedPreferences (fire and forget)
       if (widget.isFirstInBeforeRun) {
         DebugLogger.info('💾 Attempting to mark swipe hint as shown');
-        SharedPreferences.getInstance().then((prefs) {
-          return prefs.setBool('swipe_hint_shown', true);
-        }).then((success) {
-          DebugLogger.info('✅ Successfully marked swipe hint as shown: $success');
-          // Verify it was saved
-          return SharedPreferences.getInstance();
-        }).then((prefs) {
-          final hasShown = prefs.getBool('swipe_hint_shown') ?? false;
-          DebugLogger.info('🔍 Verification: hasShown = $hasShown');
-        }).catchError((e) {
+        try {
+          final prefs = ref.read(sharedPreferencesProvider);
+          prefs.setBool('swipe_hint_shown', true).then((success) {
+            DebugLogger.info('✅ Successfully marked swipe hint as shown: $success');
+            // Verify it was saved
+            final hasShown = prefs.getBool('swipe_hint_shown') ?? false;
+            DebugLogger.info('🔍 Verification: hasShown = $hasShown');
+          });
+        } catch (e) {
           DebugLogger.error('❌ Failed to mark swipe hint as shown: $e');
-        });
+        }
       }
     }
   }

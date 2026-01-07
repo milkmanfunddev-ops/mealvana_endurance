@@ -5,6 +5,7 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/services/app_external_deps.dart';
 
 /// Welcome Screen - Design System
@@ -156,16 +157,42 @@ class WelcomeScreen extends ConsumerWidget {
     );
   }
 
-  void _getStarted(BuildContext context, WidgetRef ref) {
+  void _getStarted(BuildContext context, WidgetRef ref) async {
     // Track get started
-    final analytics = ref.read(appExternalDepsProvider);
-    analytics.analytics.track('welcome_get_started_tapped');
+    final externalDeps = ref.read(appExternalDepsProvider);
+    externalDeps.analytics.track('welcome_get_started_tapped');
+
+    // Capture navigation info before async operations
+    final shouldUseCallback = onContinue != null;
+    final callback = onContinue;
+    final navigator = GoRouter.of(context);
+
+    // CRITICAL: Create a fresh start for onboarding
+    // 1. Sign out any existing session to ensure we start fresh
+    // 2. Create new anonymous session for this onboarding flow
+    // 3. Clear any temp user ID from previous attempts
+    final supabase = externalDeps.supabaseClient;
+
+    try {
+      // Sign out existing session (if any) to start completely fresh
+      await supabase.auth.signOut();
+
+      // Create new anonymous session for onboarding
+      await supabase.auth.signInAnonymously();
+
+      // Clear temp user ID from any previous onboarding attempts
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('onboarding_temp_user_id');
+    } catch (e) {
+      // Log but continue - onboarding flow will handle auth if needed
+      debugPrint('[WELCOME] Error creating fresh session: $e');
+    }
 
     // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
-    if (onContinue != null) {
-      onContinue!();
+    if (shouldUseCallback && callback != null) {
+      callback();
     } else {
-      context.push('/onboarding');
+      navigator.push('/onboarding');
     }
   }
 

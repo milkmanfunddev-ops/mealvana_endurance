@@ -9,6 +9,7 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import 'feature_survey_success_screen.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Main feature survey screen
 /// Shows either the voting UI or "already voted" view
@@ -183,19 +184,11 @@ class _VotingView extends ConsumerWidget {
       );
     } else if (!success && context.mounted) {
       // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            controller.errorMessage ??
-                'Failed to submit survey. Please try again.',
-          ),
-          backgroundColor: Colors.red,
-          action: SnackBarAction(
-            label: 'Retry',
-            textColor: Colors.white,
-            onPressed: () => _handleSubmit(context, ref),
-          ),
-        ),
+      MealvanaSnackbar.showError(
+        context,
+        controller.errorMessage ?? 'Failed to submit survey. Please try again.',
+        actionLabel: 'Retry',
+        onAction: () => _handleSubmit(context, ref),
       );
     }
   }

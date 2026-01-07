@@ -62,12 +62,7 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
     // Validate at least one sport selected
     if (!_doesRunning && !_doesCycling && !_doesSwimming) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please select at least one sport'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Please select at least one sport');
       }
       return;
     }
@@ -116,12 +111,7 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
       final state = ref.read(onboardingControllerProvider);
       final errorMessage = state.asError?.error.toString() ?? 'Failed to save sport preferences';
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: AppColors.dragonfruit,
-        ),
-      );
+      MealvanaSnackbar.showError(context, errorMessage);
     }
   }
 

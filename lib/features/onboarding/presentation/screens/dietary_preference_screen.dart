@@ -141,20 +141,10 @@ class _DietaryPreferenceScreenState extends ConsumerState<DietaryPreferenceScree
           // Invalidate settings controller to refresh the food preferences hub screen
           ref.invalidate(settingsControllerProvider);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Dietary preference updated'),
-              backgroundColor: AppColors.electrolyte,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, 'Dietary preference updated');
           context.pop();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save dietary preference. Please try again.'),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Failed to save dietary preference. Please try again.');
         }
       }
     } finally {

@@ -58,10 +58,10 @@ class EventsService {
   /// Get a specific event by ID
   Future<domain.Event?> getEventById(String userId, String eventId) async {
     try {
-      //show all events
-      final events = await getAllEvents(userId);
       final query = _database.select(_database.eventsTable)
-            ..where((tbl) => tbl.id.equals(eventId));
+        ..where((tbl) =>
+            tbl.id.equals(eventId) &
+            tbl.userId.lower().equals(userId.toLowerCase()));
 
       final event = await query.getSingleOrNull();
 
@@ -76,7 +76,8 @@ class EventsService {
   Future<List<domain.Event>> getAllEvents(String userId) async {
     try {
       final query = _database.select(_database.eventsTable)
-            ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]);
+        ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()))
+        ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]);
 
       final events = await query.get();
 

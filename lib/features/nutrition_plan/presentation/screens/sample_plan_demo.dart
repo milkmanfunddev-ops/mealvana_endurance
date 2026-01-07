@@ -6,6 +6,7 @@ import '../../domain/food_item_data.dart';
 import '../widgets/plan_container.dart';
 import '../../../../shared/widgets/hero_image.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Demo screen showing the new UI components with sample data
 /// This demonstrates how the redesigned components work together
@@ -45,9 +46,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: LargeHeroImage(
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Hero image tapped!')),
-                  );
+                  MealvanaSnackbar.showInfo(context, 'Hero image tapped!');
                 },
               ),
             ),
@@ -86,9 +85,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
             PlanContainer(
               plan: _createSamplePlan(),
               onFoodItemTap: (foodItemId) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Tapped food item: $foodItemId')),
-                );
+                MealvanaSnackbar.showInfo(context, 'Tapped food item: $foodItemId');
               },
             ),
             
@@ -102,9 +99,7 @@ class _SamplePlanDemoState extends State<SamplePlanDemo> {
                   PrimaryButton(
                     text: 'Generate New Plan',
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Generating new plan...')),
-                      );
+                      MealvanaSnackbar.showInfo(context, 'Generating new plan...');
                     },
                     width: double.infinity,
                   ),

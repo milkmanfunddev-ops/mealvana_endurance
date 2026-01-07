@@ -57,6 +57,15 @@ class Activity {
     // Sync tracking (offline-first architecture)
     this.needsUpload,
     this.localUpdatedAt,
+
+    // External provider sync tracking (Final Surge, etc.)
+    this.syncedFromProvider,
+    this.providerWorkoutId,
+    this.providerWorkoutUrl,
+    this.lastSyncedAt,
+    this.workoutSubtype,
+    this.paceMinMinutesPerMile,
+    this.paceMaxMinutesPerMile,
   });
 
   final String id;
@@ -114,6 +123,15 @@ class Activity {
   final bool? needsUpload;
   final DateTime? localUpdatedAt;
 
+  // External provider sync tracking (Final Surge, etc.)
+  final String? syncedFromProvider; // 'final_surge', etc.
+  final String? providerWorkoutId; // WorkoutKey from provider
+  final String? providerWorkoutUrl; // URL to view workout in provider
+  final DateTime? lastSyncedAt;
+  final String? workoutSubtype; // 'long_run', 'interval', etc.
+  final double? paceMinMinutesPerMile; // Pace range from provider
+  final double? paceMaxMinutesPerMile;
+
   /// Serialize activity to JSON for edge function payload
   Map<String, dynamic> toJson() {
     return {
@@ -151,6 +169,13 @@ class Activity {
       'reminderDaysBefore': reminderDaysBefore,
       'reminderTimeOfDay': reminderTimeOfDay,
       'reminderRecurring': reminderRecurring,
+      'syncedFromProvider': syncedFromProvider,
+      'providerWorkoutId': providerWorkoutId,
+      'providerWorkoutUrl': providerWorkoutUrl,
+      'lastSyncedAt': lastSyncedAt?.toIso8601String(),
+      'workoutSubtype': workoutSubtype,
+      'paceMinMinutesPerMile': paceMinMinutesPerMile,
+      'paceMaxMinutesPerMile': paceMaxMinutesPerMile,
     };
   }
 
@@ -191,6 +216,13 @@ class Activity {
     bool? reminderRecurring,
     bool? needsUpload,
     DateTime? localUpdatedAt,
+    String? syncedFromProvider,
+    String? providerWorkoutId,
+    String? providerWorkoutUrl,
+    DateTime? lastSyncedAt,
+    String? workoutSubtype,
+    double? paceMinMinutesPerMile,
+    double? paceMaxMinutesPerMile,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -229,6 +261,13 @@ class Activity {
       reminderRecurring: reminderRecurring ?? this.reminderRecurring,
       needsUpload: needsUpload ?? this.needsUpload,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      syncedFromProvider: syncedFromProvider ?? this.syncedFromProvider,
+      providerWorkoutId: providerWorkoutId ?? this.providerWorkoutId,
+      providerWorkoutUrl: providerWorkoutUrl ?? this.providerWorkoutUrl,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      workoutSubtype: workoutSubtype ?? this.workoutSubtype,
+      paceMinMinutesPerMile: paceMinMinutesPerMile ?? this.paceMinMinutesPerMile,
+      paceMaxMinutesPerMile: paceMaxMinutesPerMile ?? this.paceMaxMinutesPerMile,
     );
   }
 
@@ -269,7 +308,14 @@ class Activity {
         other.reminderEnabled == reminderEnabled &&
         other.reminderDaysBefore == reminderDaysBefore &&
         other.reminderTimeOfDay == reminderTimeOfDay &&
-        other.reminderRecurring == reminderRecurring;
+        other.reminderRecurring == reminderRecurring &&
+        other.syncedFromProvider == syncedFromProvider &&
+        other.providerWorkoutId == providerWorkoutId &&
+        other.providerWorkoutUrl == providerWorkoutUrl &&
+        other.lastSyncedAt == lastSyncedAt &&
+        other.workoutSubtype == workoutSubtype &&
+        other.paceMinMinutesPerMile == paceMinMinutesPerMile &&
+        other.paceMaxMinutesPerMile == paceMaxMinutesPerMile;
   }
 
   @override
@@ -310,6 +356,14 @@ class Activity {
       reminderDaysBefore,
       reminderTimeOfDay,
       reminderRecurring,
+    ) ^ Object.hash(
+      syncedFromProvider,
+      providerWorkoutId,
+      providerWorkoutUrl,
+      lastSyncedAt,
+      workoutSubtype,
+      paceMinMinutesPerMile,
+      paceMaxMinutesPerMile,
     );
   }
 

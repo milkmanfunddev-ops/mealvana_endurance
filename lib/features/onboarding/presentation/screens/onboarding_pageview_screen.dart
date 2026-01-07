@@ -11,6 +11,7 @@ import 'swimming_details_screen.dart';
 import 'dietary_preference_screen.dart';
 import 'allergies_screen.dart';
 import 'food_preferences_v2_screen.dart';
+import '../../../settings/presentation/screens/connected_apps_screen.dart';
 
 /// Onboarding PageView Screen - Wrapper for all onboarding steps
 ///
@@ -20,12 +21,13 @@ import 'food_preferences_v2_screen.dart';
 /// Note: Welcome screen is shown separately at /welcome before navigating here.
 ///
 /// Flow:
-/// 1. User Profile
-/// 2. Sports Selection
-/// 3-5. [Dynamic] Sport Details (Running, Cycling, Swimming based on selection)
-/// 6. Dietary Preference
-/// 7. Allergies
-/// 8. Food Preferences V2
+/// 1. Connect Training (Final Surge, TrainingPeaks, etc.)
+/// 2. User Profile
+/// 3. Sports Selection
+/// 4-6. [Dynamic] Sport Details (Running, Cycling, Swimming based on selection)
+/// 7. Dietary Preference
+/// 8. Allergies
+/// 9. Food Preferences V2
 class OnboardingPageViewScreen extends ConsumerStatefulWidget {
   const OnboardingPageViewScreen({super.key});
 
@@ -52,15 +54,23 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
   /// Build the list of pages dynamically based on selected sports
   List<Widget> _buildPages(Set<String> selectedSports) {
     return [
-      // 1. User Profile (Welcome screen is shown separately at /welcome)
+      // 1. Connect Training (Final Surge, TrainingPeaks, etc.)
       PageKeepAliveWrapper(
-        child: UserProfileScreen(
+        child: ConnectedAppsScreen(
           onContinue: _nextPage,
           onBack: null, // First page - can't go back
         ),
       ),
 
-      // 2. Sports Selection
+      // 2. User Profile
+      PageKeepAliveWrapper(
+        child: UserProfileScreen(
+          onContinue: _nextPage,
+          onBack: _previousPage,
+        ),
+      ),
+
+      // 3. Sports Selection
       PageKeepAliveWrapper(
         child: SportsSelectionScreen(
           onContinue: _nextPage,
@@ -140,13 +150,13 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
 
       // If we're past the sports selection screen, we might need to adjust
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _currentPageIndex > 1) {
+        if (mounted && _currentPageIndex > 2) {
           // We're on or past sport details - may need to adjust
           // For simplicity, just stay on current page if valid, else go to sports selection
           final newPages = _buildPages(newSports);
           if (_currentPageIndex >= newPages.length) {
-            // Current page index is now invalid, go back to sports selection (page 1)
-            _goToPage(1);
+            // Current page index is now invalid, go back to sports selection (page 2)
+            _goToPage(2);
           }
         }
       });

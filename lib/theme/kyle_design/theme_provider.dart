@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../shared/services/app_external_deps.dart';
 
 /// Theme mode provider for Kyle's design system
 /// Manages light/dark theme switching with persistence
@@ -14,17 +14,17 @@ class AppThemeModeNotifier extends AsyncNotifier<ThemeMode> {
   @override
   Future<ThemeMode> build() async {
     // Default to dark mode per requirements
-    await _loadTheme();
+    _loadTheme();
     return state.value ?? ThemeMode.dark;
   }
   
   /// Load theme from shared preferences
-  Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
+  void _loadTheme() {
+    final prefs = ref.read(sharedPreferencesProvider);
     final savedTheme = prefs.getString(_themeKey);
-    
+
     ThemeMode themeMode = ThemeMode.dark; // Default
-    
+
     if (savedTheme != null) {
       // Parse saved theme
       switch (savedTheme) {
@@ -39,16 +39,16 @@ class AppThemeModeNotifier extends AsyncNotifier<ThemeMode> {
           break;
       }
     }
-    
+
     state = AsyncValue.data(themeMode);
   }
-  
+
   /// Set theme mode and persist to storage
   Future<void> setThemeMode(ThemeMode mode) async {
     state = AsyncValue.data(mode);
-    
+
     // Persist to shared preferences
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setString(_themeKey, mode.name);
   }
   

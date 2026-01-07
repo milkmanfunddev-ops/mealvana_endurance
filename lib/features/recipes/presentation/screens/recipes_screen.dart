@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/recipe.dart';
 import '../../application/recipe_service.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 class RecipesScreen extends ConsumerStatefulWidget {
   const RecipesScreen({super.key});
@@ -187,9 +188,7 @@ class _RecipeCard extends StatelessWidget {
       child: InkWell(
         onTap: () {
           // TODO: Navigate to recipe detail screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Recipe: ${recipe.name}')),
-          );
+          MealvanaSnackbar.showInfo(context, 'Recipe: ${recipe.name}');
         },
         child: Padding(
           padding: const EdgeInsets.all(16),

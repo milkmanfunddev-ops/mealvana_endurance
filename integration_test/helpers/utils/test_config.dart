@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
@@ -73,17 +74,22 @@ class TestConfig {
   }
 
   /// Creates mock external dependencies for testing
-  static AppExternalDeps createMockExternalDeps({
+  /// Note: You must call SharedPreferences.setMockInitialValues({}) before using this
+  static Future<AppExternalDeps> createMockExternalDeps({
     RecordingAnalyticsTracker? analytics,
     RecordingSentryReporter? sentry,
     RecordingAppLogger? logger,
     SupabaseClient? supabaseClient,
-  }) {
+    SharedPreferences? sharedPreferences,
+  }) async {
+    // Get or create SharedPreferences instance for testing
+    final prefs = sharedPreferences ?? await SharedPreferences.getInstance();
     return AppExternalDeps(
       analytics: analytics ?? RecordingAnalyticsTracker(),
       supabaseClient: supabaseClient ?? MockSupabaseClient(),
       sentry: sentry ?? RecordingSentryReporter(),
       logger: logger ?? RecordingAppLogger(),
+      sharedPreferences: prefs,
     );
   }
 

@@ -8,70 +8,22 @@ part of 'preferences_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provider for SharedPreferences instance
-
-@ProviderFor(sharedPreferences)
-const sharedPreferencesProvider = SharedPreferencesProvider._();
-
-/// Provider for SharedPreferences instance
-
-final class SharedPreferencesProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<SharedPreferences>,
-          SharedPreferences,
-          FutureOr<SharedPreferences>
-        >
-    with
-        $FutureModifier<SharedPreferences>,
-        $FutureProvider<SharedPreferences> {
-  /// Provider for SharedPreferences instance
-  const SharedPreferencesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'sharedPreferencesProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$sharedPreferencesHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<SharedPreferences> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<SharedPreferences> create(Ref ref) {
-    return sharedPreferences(ref);
-  }
-}
-
-String _$sharedPreferencesHash() => r'd22b545aefe95500327f9dce52c645d746349271';
-
-/// Provider for PreferencesService (async to wait for SharedPreferences)
+/// Provider for PreferencesService (synchronous now that SharedPreferences is pre-initialized)
 
 @ProviderFor(preferencesService)
 const preferencesServiceProvider = PreferencesServiceProvider._();
 
-/// Provider for PreferencesService (async to wait for SharedPreferences)
+/// Provider for PreferencesService (synchronous now that SharedPreferences is pre-initialized)
 
 final class PreferencesServiceProvider
     extends
         $FunctionalProvider<
-          AsyncValue<PreferencesService>,
           PreferencesService,
-          FutureOr<PreferencesService>
+          PreferencesService,
+          PreferencesService
         >
-    with
-        $FutureModifier<PreferencesService>,
-        $FutureProvider<PreferencesService> {
-  /// Provider for PreferencesService (async to wait for SharedPreferences)
+    with $Provider<PreferencesService> {
+  /// Provider for PreferencesService (synchronous now that SharedPreferences is pre-initialized)
   const PreferencesServiceProvider._()
     : super(
         from: null,
@@ -88,15 +40,23 @@ final class PreferencesServiceProvider
 
   @$internal
   @override
-  $FutureProviderElement<PreferencesService> $createElement(
+  $ProviderElement<PreferencesService> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $ProviderElement(pointer);
 
   @override
-  FutureOr<PreferencesService> create(Ref ref) {
+  PreferencesService create(Ref ref) {
     return preferencesService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PreferencesService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PreferencesService>(value),
+    );
   }
 }
 
 String _$preferencesServiceHash() =>
-    r'8868af4b9879fd12fdee3da1e44d2f337b9ba05f';
+    r'e06bd6f5478c65d390b6833eef2f877194b9b0e0';

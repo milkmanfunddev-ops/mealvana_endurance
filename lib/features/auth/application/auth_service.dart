@@ -30,9 +30,9 @@ class AuthService {
   /// Create a new user profile during onboarding using Supabase Auth
   /// Uses anonymous auth session created during app startup
   ///
-  /// Handles existing users transitioning to new auth sessions by checking
-  /// if a user with the same device_id already exists and updating that row
-  /// instead of creating a duplicate (which would violate the unique constraint).
+  /// IMPORTANT: Each new registration creates a completely fresh user profile.
+  /// Multiple users can share the same device_id (family members, account switching).
+  /// The auth user ID is always used as the primary identifier for new profiles.
   Future<UserProfile> createUser({
     required Gender gender,
     required DateTime birthday,
@@ -42,6 +42,8 @@ class AuthService {
     required bool runsWithWaterBottle,
     GutTraining? gutTraining,
     Map<String, FoodPreference>? foodPreferences,
+    String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
+    bool isAnonymous = true, // false when user signs up with email/OAuth
   }) async {
     try {
       // Get or create Supabase auth session
@@ -59,90 +61,23 @@ class AuthService {
         }
       }
 
-      // Get device ID for backwards compatibility and analytics
+      // Get device ID for analytics and backwards compatibility
+      // NOTE: device_id is NOT used to look up existing users - each new registration
+      // creates a fresh user profile with the auth user's UUID as the primary ID
       final deviceId = await _getDeviceId();
 
-      // Check if a user with this device_id already exists
-      // This handles existing users who are transitioning to new auth sessions
-      // CRITICAL: Check both Supabase AND local database for robustness
-      // The local check handles offline scenarios and ensures consistency
-      String? existingUserId;
+      // ALWAYS use auth user ID for new registrations
+      // This ensures each registration creates a fresh user profile
+      final String effectiveUserId = authUser.id;
 
-      // First, check Supabase (remote source of truth)
-      try {
-        final existingUserResponse = await _supabase
-            .from('users')
-            .select('id')
-            .eq('device_id', deviceId)
-            .maybeSingle();
-
-        if (existingUserResponse != null) {
-          existingUserId = existingUserResponse['id'] as String;
-          _logger.info(
-            'Existing user found in Supabase for device',
-            context: 'AUTH',
-            data: {'device_id': deviceId, 'existing_user_id': existingUserId},
-          );
-        }
-      } catch (e) {
-        _logger.warning(
-          'Failed to check Supabase for existing user, will check local DB',
-          context: 'AUTH',
-          data: {'device_id': deviceId, 'error': e.toString()},
-        );
-      }
-
-      // Fallback: Check local database if Supabase didn't return a result
-      // This handles the sign-out/re-onboarding scenario when offline or when
-      // Supabase query fails
-      if (existingUserId == null) {
-        try {
-          final userRepo = await _userRepository;
-          final localUser = await userRepo.getCurrentUser();
-          if (localUser != null && localUser.deviceId == deviceId) {
-            existingUserId = localUser.id;
-            _logger.info(
-              'Existing user found in local DB for device',
-              context: 'AUTH',
-              data: {'device_id': deviceId, 'existing_user_id': existingUserId},
-            );
-          }
-        } catch (e) {
-          _logger.warning(
-            'Failed to check local DB for existing user',
-            context: 'AUTH',
-            data: {'device_id': deviceId, 'error': e.toString()},
-          );
-        }
-      }
-
-      final String effectiveUserId;
-      final bool isExistingUser = existingUserId != null;
-
-      if (isExistingUser) {
-        // User exists - preserve their existing ID to maintain foreign key relationships
-        effectiveUserId = existingUserId;
-        _logger.info(
-          'Existing user found for device, updating with new auth session',
-          context: 'AUTH',
-          data: {
-            'device_id': deviceId,
-            'existing_user_id': effectiveUserId,
-            'new_auth_user_id': authUser.id,
-          },
-        );
-      } else {
-        // New user - use Supabase auth UUID as the canonical ID
-        effectiveUserId = authUser.id;
-        _logger.info(
-          'Creating new user',
-          context: 'AUTH',
-          data: {
-            'device_id': deviceId,
-            'user_id': effectiveUserId,
-          },
-        );
-      }
+      _logger.info(
+        'Creating new user with Supabase auth ID',
+        context: 'AUTH',
+        data: {
+          'device_id': deviceId,
+          'user_id': effectiveUserId,
+        },
+      );
 
       // Get app version
       const appVersion = '1.0.0';
@@ -150,11 +85,11 @@ class AuthService {
       // Create UserProfile with Supabase auth fields
       final now = DateTime.now();
       final userProfile = UserProfile(
-        id: effectiveUserId, // Use existing ID or new auth ID
-        deviceId: deviceId, // Keep for backwards compatibility
-        authUserId: authUser.id, // Always update to current Supabase auth user ID
-        authProvider: 'anonymous', // Anonymous auth
-        isAnonymous: true, // Anonymous until linked to email/social
+        id: effectiveUserId, // Always use auth user ID for new registrations
+        deviceId: deviceId, // Keep for analytics and backwards compatibility
+        authUserId: authUser.id, // Supabase auth user ID
+        authProvider: authProvider, // 'anonymous', 'email', 'google', 'apple'
+        isAnonymous: isAnonymous, // false when user signs up with email/OAuth
         gender: gender,
         birthday: birthday,
         heightFeet: heightFeet,
@@ -162,9 +97,9 @@ class AuthService {
         weightPounds: weightPounds,
         runsWithWaterBottle: runsWithWaterBottle,
         gutTraining: gutTraining ?? GutTraining.high,
-        onboardingCompleted: false,
+        onboardingCompleted: true, // Set true immediately so user can proceed even if later steps fail
         appVersion: appVersion,
-        createdAt: isExistingUser ? now : now, // For existing users, this will be ignored by upsert
+        createdAt: now,
         updatedAt: now,
         // Optional fields default to null
         giSensitivity: null,
@@ -195,20 +130,17 @@ class AuthService {
       await _sentry.setUserContext(
         deviceId: effectiveUserId, // Use effective user ID for Sentry
         appVersion: appVersion,
-        onboardingCompleted: false,
+        onboardingCompleted: true,
         gutTrainingLevel: (gutTraining ?? GutTraining.high).name,
       );
 
       _sentry.addBreadcrumb(
-        message: isExistingUser
-            ? 'Existing user updated with new auth session'
-            : 'New user created with Supabase Auth',
+        message: 'New user created with Supabase Auth',
         category: 'user_lifecycle',
         data: {
           'user_id': effectiveUserId,
           'auth_user_id': authUser.id,
-          'auth_provider': 'anonymous',
-          'is_existing_user': isExistingUser.toString(),
+          'auth_provider': authProvider,
           'gender': gender.name,
           'gut_training': (gutTraining ?? GutTraining.high).name,
         },
@@ -440,32 +372,23 @@ class AuthService {
         source: source,
       );
 
-      // Mark user as having completed onboarding locally and queue for background upload
+      // Mark user profile for background upload (onboardingCompleted already set in createUser)
       final user = await getCurrentUser();
       if (user != null) {
         final updatedUser = user.copyWith(
-          onboardingCompleted: true,
           updatedAt: DateTime.now(),
         );
         // Mark for background upload - DataSyncService will sync user profile + food preferences
         await userRepo.updateUserProfile(updatedUser, needsUpload: true);
 
         _logger.info(
-          'Onboarding completed locally - food preferences and profile marked for background upload',
+          'Food preferences saved locally and marked for background upload',
           context: 'AUTH',
           data: {'userId': userId, 'foodPreferencesCount': preferences.length},
         );
 
-        // Update Sentry user context (unawaited for performance)
-        unawaited(_sentry.setUserContext(
-          deviceId: userId,
-          appVersion: '1.0.0',
-          onboardingCompleted: true,
-          gutTrainingLevel: user.gutTraining.name,
-        ));
-
         _sentry.addBreadcrumb(
-          message: 'Onboarding completed - food preferences saved locally',
+          message: 'Food preferences saved locally',
           category: 'user_lifecycle',
           data: {
             'user_id': userId,

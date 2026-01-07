@@ -20,6 +20,7 @@ import '../../domain/carb_loading_user_food.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Screen for selecting foods to add to a carb loading meal
 /// Searches across all food sources and handles importing from nutrition plan
@@ -525,12 +526,7 @@ class _CarbLoadingFoodSelectionScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to import food: $e'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Failed to import food: $e');
       }
     }
   }
@@ -796,22 +792,12 @@ class _CarbLoadingFoodSelectionScreenState
         ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$foodName deleted'),
-              backgroundColor: AppColors.electrolyte,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, '$foodName deleted');
         }
       } catch (e) {
         debugPrint('Error deleting user food: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to delete food. Please try again.'),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Failed to delete food. Please try again.');
         }
       }
     }
@@ -837,22 +823,12 @@ class _CarbLoadingFoodSelectionScreenState
         ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${result.name} updated!'),
-              backgroundColor: AppColors.electrolyte,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, '${result.name} updated!');
         }
       } catch (e) {
         debugPrint('Error updating user food: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to update food. Please try again.'),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Failed to update food. Please try again.');
         }
       }
     }

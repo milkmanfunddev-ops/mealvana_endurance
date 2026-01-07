@@ -1,0 +1,135 @@
+/// Domain model for external training platform integrations
+///
+/// This represents an OAuth connection to a provider like Final Surge,
+/// TrainingPeaks, Strava, or Garmin.
+class IntegrationModel {
+  const IntegrationModel({
+    this.id,
+    required this.userId,
+    required this.provider,
+    required this.accessToken,
+    this.refreshToken,
+    this.tokenExpiresAt,
+    required this.providerAthleteId,
+    this.providerAthleteName,
+    this.providerAthleteEmail,
+    this.isActive = true,
+    this.lastSyncAt,
+    this.lastSyncStatus,
+    this.lastSyncError,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  final String? id;
+  final String userId;
+  final String provider; // 'final_surge', 'training_peaks', 'strava', 'garmin'
+  final String accessToken;
+  final String? refreshToken;
+  final DateTime? tokenExpiresAt;
+  final String providerAthleteId;
+  final String? providerAthleteName;
+  final String? providerAthleteEmail;
+  final bool isActive;
+  final DateTime? lastSyncAt;
+  final String? lastSyncStatus; // 'success', 'error', 'pending'
+  final String? lastSyncError;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  /// Check if the access token has expired
+  bool get isTokenExpired {
+    if (tokenExpiresAt == null) return false;
+    return DateTime.now().isAfter(tokenExpiresAt!);
+  }
+
+  /// Check if token will expire soon (within 5 minutes)
+  bool get isTokenExpiringSoon {
+    if (tokenExpiresAt == null) return false;
+    final fiveMinutesFromNow = DateTime.now().add(const Duration(minutes: 5));
+    return fiveMinutesFromNow.isAfter(tokenExpiresAt!);
+  }
+
+  /// Display name for the integration (athlete name or email or ID)
+  String get displayName {
+    return providerAthleteName ?? providerAthleteEmail ?? providerAthleteId;
+  }
+
+  /// Human-readable provider name
+  String get providerDisplayName {
+    switch (provider) {
+      case 'final_surge':
+        return 'Final Surge';
+      case 'training_peaks':
+        return 'TrainingPeaks';
+      case 'strava':
+        return 'Strava';
+      case 'garmin':
+        return 'Garmin Connect';
+      default:
+        return provider;
+    }
+  }
+
+  /// Create a copy with updated fields
+  IntegrationModel copyWith({
+    String? id,
+    String? userId,
+    String? provider,
+    String? accessToken,
+    String? refreshToken,
+    DateTime? tokenExpiresAt,
+    String? providerAthleteId,
+    String? providerAthleteName,
+    String? providerAthleteEmail,
+    bool? isActive,
+    DateTime? lastSyncAt,
+    String? lastSyncStatus,
+    String? lastSyncError,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return IntegrationModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      provider: provider ?? this.provider,
+      accessToken: accessToken ?? this.accessToken,
+      refreshToken: refreshToken ?? this.refreshToken,
+      tokenExpiresAt: tokenExpiresAt ?? this.tokenExpiresAt,
+      providerAthleteId: providerAthleteId ?? this.providerAthleteId,
+      providerAthleteName: providerAthleteName ?? this.providerAthleteName,
+      providerAthleteEmail: providerAthleteEmail ?? this.providerAthleteEmail,
+      isActive: isActive ?? this.isActive,
+      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      lastSyncStatus: lastSyncStatus ?? this.lastSyncStatus,
+      lastSyncError: lastSyncError ?? this.lastSyncError,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'IntegrationModel(provider: $provider, athlete: $displayName, active: $isActive)';
+  }
+}
+
+/// Supported integration providers
+enum IntegrationProvider {
+  finalSurge('final_surge', 'Final Surge'),
+  trainingPeaks('training_peaks', 'TrainingPeaks'),
+  strava('strava', 'Strava'),
+  garmin('garmin', 'Garmin Connect');
+
+  const IntegrationProvider(this.value, this.displayName);
+
+  final String value;
+  final String displayName;
+
+  static IntegrationProvider? fromValue(String value) {
+    return IntegrationProvider.values.cast<IntegrationProvider?>().firstWhere(
+          (p) => p?.value == value,
+          orElse: () => null,
+        );
+  }
+}

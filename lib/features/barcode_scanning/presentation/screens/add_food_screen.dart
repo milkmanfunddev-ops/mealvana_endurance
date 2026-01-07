@@ -17,6 +17,7 @@ import '../../application/product_detail_service.dart';
 import '../../application/food_mapping_service.dart';
 import '../../../../shared/database/database_provider.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Full-screen modal for adding foods via search or barcode scan
 class AddFoodScreen extends ConsumerStatefulWidget {
@@ -84,12 +85,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
     DebugLogger.info('🎯 Add Food Screen - Has valid ID: ${result.hasValidId}');
 
     if (!result.hasValidId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot load details for this product'),
-          backgroundColor: AppColors.dragonfruit,
-        ),
-      );
+      MealvanaSnackbar.showError(context, 'Cannot load details for this product');
       return;
     }
 
@@ -118,12 +114,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
 
       if (apiProduct == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Unable to load product details'),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Unable to load product details');
         }
         return;
       }
@@ -167,12 +158,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, e.message);
       }
     } catch (e) {
       // Close loading dialog if still open
@@ -181,12 +167,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to load product details'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Failed to load product details');
       }
     }
   }
@@ -269,12 +250,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       if (hasDuplicate) {
         DebugLogger.warning('⚠️ _saveSearchedFood - Food already exists, showing duplicate message');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${foodItem.name} is already in your foods'),
-              backgroundColor: AppColors.orange,
-            ),
-          );
+          MealvanaSnackbar.showWarning(context, '${foodItem.name} is already in your foods');
         }
         return;
       }
@@ -332,12 +308,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
 
       if (mounted) {
         DebugLogger.info('✅ _saveSearchedFood - Showing success message and closing screen');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${foodItem.name} added to your foods'),
-            backgroundColor: AppColors.electrolyte,
-          ),
-        );
+        MealvanaSnackbar.showSuccess(context, '${foodItem.name} added to your foods');
 
         // Close the screen
         Navigator.of(context).pop();
@@ -351,12 +322,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       DebugLogger.debug('   Stack trace: $stackTrace');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save food: ${e.toString()}. Please try again.'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Failed to save food: ${e.toString()}. Please try again.');
       } else {
         DebugLogger.warning('⚠️ _saveSearchedFood - Widget not mounted, cannot show error message');
       }

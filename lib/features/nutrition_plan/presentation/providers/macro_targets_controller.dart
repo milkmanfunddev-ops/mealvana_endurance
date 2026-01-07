@@ -250,7 +250,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     final helpValidation = _contentService.getValue('adjust_macros.help_content.validation', defaultValue: 'Warning indicators show values outside research-backed ranges but won\'t prevent plan creation.');
 
     // Load cached macro targets
-    final repository = await ref.read(macroRepositoryProvider.future);
+    final repository = ref.read(macroRepositoryProvider);
     final cachedTargets = await repository.getCachedMacroTargets();
 
     return MacroTargetsState(
@@ -310,7 +310,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     ));
 
     // Also clear from repository cache
-    final repository = await ref.read(macroRepositoryProvider.future);
+    final repository = ref.read(macroRepositoryProvider);
     await repository.clearCachedMacroTargets();
   }
 
@@ -428,7 +428,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         // Get the generated macro targets from cache to track analytics
-        final repository = await ref.read(macroRepositoryProvider.future);
+        final repository = ref.read(macroRepositoryProvider);
         final macroTargets = await repository.getCachedMacroTargets();
 
         // Update state to not generating and include macro targets with finalActivityId
@@ -544,7 +544,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Create the service instance
         final macroService = MacroGenerationService(
           supabaseClient: ref.read(appExternalDepsProvider).supabaseClient,
-          macroRepository: ref.read(macroRepositoryProvider.future),
+          macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
         );
@@ -736,7 +736,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     );
 
     // Cache the macro targets
-    final repository = await ref.read(macroRepositoryProvider.future);
+    final repository = ref.read(macroRepositoryProvider);
     await repository.saveMacroTargets(macroTargets);
 
     await _analytics.trackPlanGenerated(
@@ -867,7 +867,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Create the service instance
         final macroService = MacroGenerationService(
           supabaseClient: ref.read(appExternalDepsProvider).supabaseClient,
-          macroRepository: ref.read(macroRepositoryProvider.future),
+          macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
         );
@@ -926,7 +926,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     required MacroField field, 
     required double newValue,
   }) async {
-    final repository = await ref.read(macroRepositoryProvider.future);
+    final repository = ref.read(macroRepositoryProvider);
     final cachedTargets = await repository.getCachedMacroTargets();
     
     if (cachedTargets == null) return;
@@ -984,7 +984,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
   /// Reset all values to the original recommended values
   Future<void> resetToRecommended() async {
-    final repository = await ref.read(macroRepositoryProvider.future);
+    final repository = ref.read(macroRepositoryProvider);
     final cachedTargets = await repository.getCachedMacroTargets();
     
     if (cachedTargets == null) return;
@@ -1144,7 +1144,7 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// Create nutrition plan with adjusted values
   /// Returns the activityId of the created/updated activity
   Future<String?> createNutritionPlan() async {
-    final repository = await ref.read(macroRepositoryProvider.future);
+    final repository = ref.read(macroRepositoryProvider);
     final macroTargets = await repository.getCachedMacroTargets();
 
     if (macroTargets == null) return null;
@@ -1222,7 +1222,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           if (currentStateValue?.eventId != null) {
             // Get the events repository directly to avoid provider lifecycle issues
             final eventsRepository = ref.read(eventsRepositoryProvider);
-            final event = await eventsRepository.getEventById(currentStateValue!.eventId!);
+            final event = await eventsRepository.getEventById(userId, currentStateValue!.eventId!);
 
             if (event != null) {
               await eventsRepository.updateEvent(

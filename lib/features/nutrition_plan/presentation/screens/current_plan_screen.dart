@@ -17,6 +17,7 @@
 // import '../widgets/macro_targets_widget.dart';
 // import '../../domain/macro_targets.dart' as targets_model;
 // import '../../domain/nutrition_plan.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 // /// Plan Screen - Shows generated nutrition plan matching Alex's design
 // /// Displays the plan with Before/During/After sections and feedback integration

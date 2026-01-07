@@ -767,12 +767,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
     });
 
     // Show skip confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Activity skipped'),
-        backgroundColor: AppColors.dragonfruit,
-      ),
-    );
+    MealvanaSnackbar.showError(context, 'Activity skipped');
   }
 
   bool _isToday(DateTime date) {

@@ -181,11 +181,9 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
     } catch (e) {
       // Show error
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Invalid input: ${e.toString()}'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          'Invalid input: ${e.toString()}',
         );
       }
     }

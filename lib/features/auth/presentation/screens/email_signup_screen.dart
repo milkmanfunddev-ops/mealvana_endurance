@@ -7,6 +7,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../content/application/content_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
+import '../../domain/auth_exceptions.dart';
 
 /// Email Signup Screen
 /// Allows users to create an account with email and password
@@ -66,11 +67,9 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     // Additional validation as safety check
     if (email.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter your email address'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          'Please enter your email address',
         );
       }
       return;
@@ -78,11 +77,9 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
     if (password.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter your password'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
+        MealvanaSnackbar.showError(
+          context,
+          'Please enter your password',
         );
       }
       return;
@@ -90,42 +87,86 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
+    final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
-    final success = await controller.linkEmailAccount(
+    // IMPORTANT: During onboarding signup, we ALWAYS create a NEW user.
+    // If there's an existing session (from a previous attempt or old login),
+    // sign out first to start fresh.
+    if (supabase.auth.currentUser != null) {
+      await supabase.auth.signOut();
+    }
+
+    // Always use signUp during onboarding - creates a fresh new user
+    final bool success = await controller.signUpWithEmail(
       email: email,
       password: password,
     );
 
     if (success && mounted) {
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            contentService.getValue(
-              'auth.post_onboarding.success_linked',
-              defaultValue: 'Account created successfully!',
-            ),
-          ),
-          backgroundColor: AppColors.electrolyte,
+      MealvanaSnackbar.showSuccess(
+        context,
+        contentService.getValue(
+          'auth.post_onboarding.success_linked',
+          defaultValue: 'Account created successfully!',
         ),
       );
 
       // Return to post-onboarding auth screen which will navigate to main
       context.pop(true);
     } else if (!success && mounted) {
-      // Error message shown by controller via snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            contentService.getValue(
-              'auth.post_onboarding.error_email_failed',
-              defaultValue: 'Account creation failed. Please try again.',
-            ),
-          ),
-          backgroundColor: AppColors.dragonfruit,
+      // Check if the error is because the account already exists
+      final state = ref.read(postOnboardingAuthControllerProvider);
+      if (state.hasError && state.error is AccountAlreadyExistsException) {
+        final exception = state.error as AccountAlreadyExistsException;
+        await _showAccountExistsDialog(context, email, exception.email);
+        return;
+      }
+
+      // Show generic error message
+      MealvanaSnackbar.showError(
+        context,
+        contentService.getValue(
+          'auth.post_onboarding.error_email_failed',
+          defaultValue: 'Account creation failed. Please try again.',
         ),
       );
     }
+  }
+
+  Future<void> _showAccountExistsDialog(BuildContext context, String attemptedEmail, String? existingEmail) async {
+    final contentService = ref.read(contentServiceProvider);
+    final displayEmail = existingEmail ?? attemptedEmail;
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(contentService.getValue('auth.error.account_exists_title', defaultValue: 'Account Already Exists')),
+        content: Text(
+          contentService.getValue(
+            'auth.error.email_already_registered',
+            defaultValue: 'An account with $displayEmail already exists. Would you like to sign in instead?'
+          )
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Cancel
+            },
+            child: Text(contentService.getValue('common.cancel', defaultValue: 'Cancel')),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to email login screen
+              context.push('/auth/email-login');
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.electrolyte),
+            child: Text(contentService.getValue('auth.error.sign_in_instead', defaultValue: 'Sign In')),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

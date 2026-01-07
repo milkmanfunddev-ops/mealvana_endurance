@@ -5,6 +5,7 @@ import '../providers/survey_controller.dart';
 import 'survey_page_1.dart';
 import 'survey_page_2.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Main survey screen that handles navigation between survey pages
 class SurveyScreen extends ConsumerStatefulWidget {
@@ -55,24 +56,13 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
     if (mounted) {
       if (success) {
         // Show success message and navigate to tabs
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Thank you for your feedback!'),
-            backgroundColor: AppTheme.primary900,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        MealvanaSnackbar.showSuccess(context, 'Thank you for your feedback!');
         
         // Navigate to tabs screen (replace current route)
         context.go('/main');
       } else {
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to submit survey. Please try again.'),
-            backgroundColor: AppTheme.warningColor,
-          ),
-        );
+        MealvanaSnackbar.showWarning(context, 'Failed to submit survey. Please try again.');
       }
     }
   }
@@ -111,17 +101,19 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
               final success = await controller.sendTestNotification();
               
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success 
-                        ? '🔔 Test notification scheduled for 5 seconds!'
-                        : '❌ Failed to schedule notification. Check permissions.',
-                    ),
-                    backgroundColor: success ? AppTheme.successColor : AppTheme.warningColor,
+                if (success) {
+                  MealvanaSnackbar.showSuccess(
+                    context,
+                    'Test notification scheduled for 5 seconds!',
                     duration: const Duration(seconds: 3),
-                  ),
-                );
+                  );
+                } else {
+                  MealvanaSnackbar.showWarning(
+                    context,
+                    'Failed to schedule notification. Check permissions.',
+                    duration: const Duration(seconds: 3),
+                  );
+                }
               }
             },
           ),

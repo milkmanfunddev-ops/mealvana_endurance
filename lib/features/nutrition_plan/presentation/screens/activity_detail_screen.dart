@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/activity_detail/completion_dialog.dart';
 import '../widgets/activity_detail/expandable_food_item_widget.dart';
 import '../widgets/activity_detail/geometric_pattern_painter.dart';
@@ -47,9 +46,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     _checkSwipeHintShown();
   }
 
-  Future<void> _checkSwipeHintShown() async {
+  void _checkSwipeHintShown() {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = ref.read(sharedPreferencesProvider);
       final hasShown = prefs.getBool(_swipeHintShownKey) ?? false;
       if (mounted) {
         setState(() {
@@ -69,7 +68,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   Future<void> _markSwipeHintShown() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = ref.read(sharedPreferencesProvider);
       await prefs.setBool(_swipeHintShownKey, true);
     } catch (e) {
       // Silently fail
@@ -443,27 +442,36 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   Widget _buildNutritionSections(BuildContext context, ActivityDetailState state) {
     final plan = state.nutritionPlan!;
+    // Get activity type for sport-specific section titles (e.g., "Before Swim", "During Ride")
+    final activityType = state.activity?.activityType ?? ActivityType.running;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: plan.sections.map((section) {
-        String category = 'before_run';
-        Color sectionColor = AppColors.orange;
+        // Determine category from section.id (preferred) or fallback to parsing title
+        String category;
+        Color sectionColor;
 
-        if (section.title.contains('During')) {
+        if (section.id.contains('during')) {
           category = 'during_run';
           sectionColor = AppColors.electrolyte;
-        } else if (section.title.contains('After')) {
+        } else if (section.id.contains('after')) {
           category = 'after_run';
           sectionColor = AppColors.dragonfruit;
+        } else {
+          category = 'before_run';
+          sectionColor = AppColors.orange;
         }
+
+        // Generate sport-specific title using ActivityType
+        final sectionTitle = activityType.getSectionTitle(category);
 
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.lg),
           child: _buildNutritionSection(
             context: context,
             state: state,
-            title: section.title.toUpperCase(),
+            title: sectionTitle.toUpperCase(),
             section: section,
             category: category,
             sectionColor: sectionColor,
@@ -855,12 +863,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     });
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Changes saved successfully!'),
-          backgroundColor: AppColors.electrolyte,
-        ),
-      );
+      MealvanaSnackbar.showSuccess(context, 'Changes saved successfully!');
 
       if (state.isNewActivity) {
         context.go('/main');
@@ -891,12 +894,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           });
 
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Workout completed successfully!'),
-                backgroundColor: AppColors.electrolyte,
-              ),
-            );
+            MealvanaSnackbar.showSuccess(context, 'Workout completed successfully!');
           }
         },
       ),
@@ -928,11 +926,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     await controller.deleteFoodItem(foodId, category);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Food item removed'),
-        ),
-      );
+      MealvanaSnackbar.showInfo(context, 'Food item removed');
     }
   }
 

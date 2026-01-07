@@ -9,8 +9,10 @@ import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/widgets/food_selection/recommended_alternatives.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../providers/swap_food_controller.dart';
+import '../providers/activity_detail_controller.dart';
 import '../../domain/food.dart';
 import '../../domain/food_item.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
@@ -86,16 +88,15 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       : 'Add Food to ${_getCategoryDisplayName()}';
 
   String _getCategoryDisplayName() {
-    switch (widget.category) {
-      case 'before_run':
-        return 'Before Run';
-      case 'during_run':
-        return 'During Run';
-      case 'after_run':
-        return 'After Run';
-      default:
-        return widget.category;
-    }
+    // Get activity type from ActivityDetailController for sport-specific labels
+    final activityDetailAsync = ref.read(
+      activityDetailControllerProvider(
+        activityId: widget.activityId,
+        isNewActivity: widget.isNewActivity,
+      ),
+    );
+    final activityType = activityDetailAsync.asData?.value.activity?.activityType ?? ActivityType.running;
+    return activityType.getSectionTitle(widget.category);
   }
 
   void _onSearchChanged(String query) {
@@ -277,12 +278,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
       if (apiProduct == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Unable to load product details'),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Unable to load product details');
         }
         return;
       }
@@ -343,12 +339,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to import food: $e'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Failed to import food: $e');
       }
     }
   }
@@ -476,21 +467,11 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${foodItem.name} added!'),
-            backgroundColor: AppColors.electrolyte,
-          ),
-        );
+        MealvanaSnackbar.showSuccess(context, '${foodItem.name} added!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save food: $e'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Failed to save food: $e');
       }
     }
   }
@@ -968,22 +949,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${food.name} deleted'),
-              backgroundColor: AppColors.electrolyte,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, '${food.name} deleted');
         }
       } catch (e) {
         debugPrint('Error deleting user food: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to delete food. Please try again.'),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Failed to delete food. Please try again.');
         }
       }
     }
@@ -1009,22 +980,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${result.name} updated!'),
-              backgroundColor: AppColors.electrolyte,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, '${result.name} updated!');
         }
       } catch (e) {
         debugPrint('Error updating user food: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to update food. Please try again.'),
-              backgroundColor: AppColors.dragonfruit,
-            ),
-          );
+          MealvanaSnackbar.showError(context, 'Failed to update food. Please try again.');
         }
       }
     }

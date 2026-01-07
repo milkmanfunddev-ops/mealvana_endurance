@@ -45,8 +45,12 @@ Future<String> userId(Ref ref) async {
   }
 
   // Supabase auth stream hasn't yielded a user yet (app startup / offline mode)
-  // Fallback to the latest cached user profile.
-  final cachedProfile = await database.getCurrentUserProfile();
+  // Without an authenticated user, there's no current profile.
+  // Note: getCurrentUserProfile(currentAuthUserId: null) returns null,
+  // which is correct - no auth session means no current user.
+  final cachedProfile = await database.getCurrentUserProfile(
+    currentAuthUserId: null,
+  );
   if (cachedProfile != null) {
     return cachedProfile.id;
   }

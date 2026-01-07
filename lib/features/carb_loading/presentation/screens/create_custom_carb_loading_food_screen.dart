@@ -10,6 +10,7 @@ import '../../application/food_import_service.dart';
 import '../../domain/meal_type.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../auth/application/auth_service.dart';
+import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Screen for creating a custom carb loading food from scratch
 class CreateCustomCarbLoadingFoodScreen extends ConsumerStatefulWidget {
@@ -60,12 +61,7 @@ class _CreateCustomCarbLoadingFoodScreenState
     }
 
     if (_selectedMealTypes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one meal type'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      MealvanaSnackbar.showWarning(context, 'Please select at least one meal type');
       return;
     }
 
@@ -99,12 +95,7 @@ class _CreateCustomCarbLoadingFoodScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create food: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Failed to create food: $e');
         setState(() {
           _isSaving = false;
         });

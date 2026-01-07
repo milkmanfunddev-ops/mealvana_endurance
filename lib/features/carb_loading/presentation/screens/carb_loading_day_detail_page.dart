@@ -690,17 +690,7 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
 
   void _markDayComplete(BuildContext context) {
     // TODO: Mark day as complete in database
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Day marked as complete!',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.blackberry,
-          ),
-        ),
-        backgroundColor: AppColors.electrolyte,
-      ),
-    );
+    MealvanaSnackbar.showSuccess(context, 'Day marked as complete!');
     Navigator.of(context).pop();
   }
 }

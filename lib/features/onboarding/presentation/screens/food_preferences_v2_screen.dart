@@ -93,12 +93,14 @@ class _FoodPreferencesV2ScreenState extends ConsumerState<FoodPreferencesV2Scree
         foods = primaryFoods.take(18).toList();
       }
 
+      if (!mounted) return;
       setState(() {
         _allFoods = foods;
         _filteredFoods = _applyFilters(foods);
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });

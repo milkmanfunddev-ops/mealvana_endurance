@@ -197,6 +197,51 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     return !state.hasError;
   }
 
+  /// Sign up with email/password (creates NEW user)
+  /// Used when no Supabase session exists (during onboarding)
+  Future<bool> signUpWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    state = const AsyncLoading();
+
+    _logger.info('Post-onboarding auth: Starting email signup (new user)', context: 'AUTH');
+
+    await _analytics.track('auth_flow_started', properties: {
+      'provider': 'email',
+      'source': 'post_onboarding_signup',
+    });
+
+    state = await AsyncValue.guard(() async {
+      await _emailAuthService.signUpWithEmail(
+        email: email,
+        password: password,
+      );
+    });
+
+    if (state.hasError) {
+      _logger.error('Post-onboarding auth: Email signup failed',
+        context: 'AUTH',
+        error: state.error,
+      );
+
+      await _analytics.track('auth_flow_failed', properties: {
+        'provider': 'email',
+        'source': 'post_onboarding_signup',
+        'error': state.error.toString(),
+      });
+    } else {
+      _logger.info('Post-onboarding auth: Email signup successful', context: 'AUTH');
+
+      await _analytics.track('auth_flow_completed', properties: {
+        'provider': 'email',
+        'source': 'post_onboarding_signup',
+      });
+    }
+
+    return !state.hasError;
+  }
+
   /// Sign in with email/password
   Future<bool> signInWithEmail({
     required String email,

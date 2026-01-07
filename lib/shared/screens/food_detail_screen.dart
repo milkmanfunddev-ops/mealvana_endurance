@@ -435,21 +435,17 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 
   void _handleSave() {
     if (!_hasValidName) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a food name'),
-          backgroundColor: Colors.red,
-        ),
+      MealvanaSnackbar.showError(
+        context,
+        'Please enter a food name',
       );
       return;
     }
 
     if (widget.showCategories && !_hasValidCategorySelection) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one category'),
-          backgroundColor: Colors.red,
-        ),
+      MealvanaSnackbar.showError(
+        context,
+        'Please select at least one category',
       );
       return;
     }
