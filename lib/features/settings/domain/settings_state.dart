@@ -65,6 +65,17 @@ class SettingsState {
   // Coach mode
   final bool isCoach;
 
+  /// Generate a short, shareable athlete code from the user ID
+  /// Format: ATH-XXXXXXXX (first 8 chars of UUID, uppercase)
+  /// Returns null if no userId
+  String? get athleteCode {
+    if (userId == null) return null;
+    // Remove hyphens and take first 8 characters, uppercase
+    final cleanId = userId!.replaceAll('-', '').toUpperCase();
+    if (cleanId.length < 8) return null;
+    return 'ATH-${cleanId.substring(0, 8)}';
+  }
+
   // Account section labels
   final String accountSectionTitle;
   final String accountStatusAnonymous;

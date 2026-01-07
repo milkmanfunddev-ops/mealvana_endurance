@@ -97,12 +97,12 @@ class OAuthService extends _$OAuthService {
     return _googleSignIn!;
   }
 
-  /// Link Apple account using native Apple Sign-In
-  /// iOS 13+ required, uses AuthenticationServices framework
+  /// Link Apple account using native Apple Sign-In (mobile) or Supabase OAuth (web)
+  /// iOS 13+ required for native, uses AuthenticationServices framework
   Future<void> linkAppleAccount() async {
-    // Web platforms should use Supabase's web OAuth flow
+    // Web platforms use Supabase's web OAuth flow
     if (kIsWeb) {
-      throw UnsupportedError('Native Apple Sign-In not supported on web. Use Supabase web OAuth flow.');
+      return _linkAppleAccountWeb();
     }
 
     state = const AsyncLoading();
@@ -227,12 +227,12 @@ class OAuthService extends _$OAuthService {
     }
   }
 
-  /// Link Google account using native Google Sign-In
-  /// Works on iOS and Android
+  /// Link Google account using native Google Sign-In (mobile) or Supabase OAuth (web)
+  /// Works on iOS, Android, and Web
   Future<void> linkGoogleAccount() async {
-    // Web platforms should use Supabase's web OAuth flow
+    // Web platforms use Supabase's web OAuth flow
     if (kIsWeb) {
-      throw UnsupportedError('Native Google Sign-In not supported on web. Use Supabase web OAuth flow.');
+      return _linkGoogleAccountWeb();
     }
 
     state = const AsyncLoading();
@@ -379,9 +379,9 @@ class OAuthService extends _$OAuthService {
   /// Used when account linking fails because account already exists
   /// Migrates anonymous user's data to the existing OAuth account
   Future<void> signInWithApple() async {
-    // Web platforms should use Supabase's web OAuth flow
+    // Web platforms use Supabase's web OAuth flow
     if (kIsWeb) {
-      throw UnsupportedError('Native Apple Sign-In not supported on web. Use Supabase web OAuth flow.');
+      return _signInWithAppleWeb();
     }
 
     state = const AsyncLoading();
@@ -499,9 +499,9 @@ class OAuthService extends _$OAuthService {
   /// Used when account linking fails because account already exists
   /// Migrates anonymous user's data to the existing OAuth account
   Future<void> signInWithGoogle() async {
-    // Web platforms should use Supabase's web OAuth flow
+    // Web platforms use Supabase's web OAuth flow
     if (kIsWeb) {
-      throw UnsupportedError('Native Google Sign-In not supported on web. Use Supabase web OAuth flow.');
+      return _signInWithGoogleWeb();
     }
 
     state = const AsyncLoading();
@@ -627,6 +627,208 @@ class OAuthService extends _$OAuthService {
 
     if (state.hasError) {
       _logger.error('Google Sign-In failed', context: 'OAUTH_NATIVE', error: state.error);
+      throw state.error!;
+    }
+  }
+
+  // ============================================================================
+  // WEB OAUTH METHODS
+  // These methods use Supabase's built-in OAuth flow for web platforms
+  // ============================================================================
+
+  /// Get the redirect URL for OAuth callbacks on web
+  /// Uses the current window location for local development
+  String _getWebRedirectUrl() {
+    // For web, we need to redirect back to our app after OAuth
+    // In production, this should be your deployed URL
+    // In development, this is typically localhost
+    return Uri.base.origin;
+  }
+
+  /// Link Apple account using Supabase web OAuth flow
+  Future<void> _linkAppleAccountWeb() async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      _logger.info('Starting web Apple OAuth flow (linking)', context: 'OAUTH_WEB');
+
+      await _analytics.track('auth_apple_web_started', properties: {
+        'platform': 'web',
+        'mode': 'link',
+      });
+
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No active auth session - cannot link Apple account');
+      }
+
+      final anonymousUserId = currentUser.id;
+      final wasAnonymous = currentUser.isAnonymous;
+
+      _logger.info('Linking Apple account to user (web)', context: 'OAUTH_WEB', data: {
+        'current_user_id': anonymousUserId,
+        'is_anonymous': wasAnonymous,
+      });
+
+      try {
+        // Use Supabase's linkIdentity for web OAuth linking
+        await _supabase.auth.linkIdentity(
+          OAuthProvider.apple,
+          redirectTo: _getWebRedirectUrl(),
+        );
+
+        // Note: The OAuth flow will redirect the browser, so we won't reach this
+        // point immediately. The auth state change listener will handle the result.
+        _logger.info('Apple OAuth redirect initiated', context: 'OAUTH_WEB');
+      } on supabase.AuthException catch (e) {
+        if (e.message.contains('already linked') || e.message.contains('Identity is already linked')) {
+          _logger.warning('Apple account already linked to another user (web)', context: 'OAUTH_WEB');
+          throw AccountAlreadyExistsException(
+            'This Apple account is already linked to another user.',
+            email: null,
+          );
+        }
+        rethrow;
+      }
+    });
+
+    if (state.hasError) {
+      final error = state.error;
+      if (error is AccountAlreadyExistsException) {
+        throw error;
+      }
+      _logger.error('Apple web OAuth failed', context: 'OAUTH_WEB', error: error);
+      throw state.error!;
+    }
+  }
+
+  /// Link Google account using Supabase web OAuth flow
+  Future<void> _linkGoogleAccountWeb() async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      _logger.info('Starting web Google OAuth flow (linking)', context: 'OAUTH_WEB');
+
+      await _analytics.track('auth_google_web_started', properties: {
+        'platform': 'web',
+        'mode': 'link',
+      });
+
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No active auth session - cannot link Google account');
+      }
+
+      final anonymousUserId = currentUser.id;
+      final wasAnonymous = currentUser.isAnonymous;
+
+      _logger.info('Linking Google account to user (web)', context: 'OAUTH_WEB', data: {
+        'current_user_id': anonymousUserId,
+        'is_anonymous': wasAnonymous,
+      });
+
+      try {
+        // Use Supabase's linkIdentity for web OAuth linking
+        await _supabase.auth.linkIdentity(
+          OAuthProvider.google,
+          redirectTo: _getWebRedirectUrl(),
+        );
+
+        // Note: The OAuth flow will redirect the browser, so we won't reach this
+        // point immediately. The auth state change listener will handle the result.
+        _logger.info('Google OAuth redirect initiated', context: 'OAUTH_WEB');
+      } on supabase.AuthException catch (e) {
+        if (e.message.contains('already linked') || e.message.contains('Identity is already linked')) {
+          _logger.warning('Google account already linked to another user (web)', context: 'OAUTH_WEB');
+          throw AccountAlreadyExistsException(
+            'This Google account is already linked to another user.',
+            email: null,
+          );
+        }
+        rethrow;
+      }
+    });
+
+    if (state.hasError) {
+      final error = state.error;
+      if (error is AccountAlreadyExistsException) {
+        throw error;
+      }
+      _logger.error('Google web OAuth failed', context: 'OAUTH_WEB', error: error);
+      throw state.error!;
+    }
+  }
+
+  /// Sign in with Apple using Supabase web OAuth flow
+  Future<void> _signInWithAppleWeb() async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      _logger.info('Starting web Apple OAuth flow (sign-in)', context: 'OAUTH_WEB');
+
+      await _analytics.track('auth_apple_web_signin_started', properties: {
+        'platform': 'web',
+      });
+
+      // Capture current user ID for potential data migration
+      final anonymousUserId = _supabase.auth.currentUser?.id;
+      final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+
+      _logger.info('Capturing anonymous user before web sign-in', context: 'OAUTH_WEB', data: {
+        'anonymous_user_id': anonymousUserId,
+        'was_anonymous': wasAnonymous,
+      });
+
+      // Use Supabase's signInWithOAuth for web sign-in
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.apple,
+        redirectTo: _getWebRedirectUrl(),
+      );
+
+      // Note: The OAuth flow will redirect the browser, so we won't reach this
+      // point immediately. The auth state change listener will handle the result.
+      _logger.info('Apple OAuth sign-in redirect initiated', context: 'OAUTH_WEB');
+    });
+
+    if (state.hasError) {
+      _logger.error('Apple web OAuth sign-in failed', context: 'OAUTH_WEB', error: state.error);
+      throw state.error!;
+    }
+  }
+
+  /// Sign in with Google using Supabase web OAuth flow
+  Future<void> _signInWithGoogleWeb() async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      _logger.info('Starting web Google OAuth flow (sign-in)', context: 'OAUTH_WEB');
+
+      await _analytics.track('auth_google_web_signin_started', properties: {
+        'platform': 'web',
+      });
+
+      // Capture current user ID for potential data migration
+      final anonymousUserId = _supabase.auth.currentUser?.id;
+      final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+
+      _logger.info('Capturing anonymous user before web sign-in', context: 'OAUTH_WEB', data: {
+        'anonymous_user_id': anonymousUserId,
+        'was_anonymous': wasAnonymous,
+      });
+
+      // Use Supabase's signInWithOAuth for web sign-in
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: _getWebRedirectUrl(),
+      );
+
+      // Note: The OAuth flow will redirect the browser, so we won't reach this
+      // point immediately. The auth state change listener will handle the result.
+      _logger.info('Google OAuth sign-in redirect initiated', context: 'OAUTH_WEB');
+    });
+
+    if (state.hasError) {
+      _logger.error('Google web OAuth sign-in failed', context: 'OAUTH_WEB', error: state.error);
       throw state.error!;
     }
   }

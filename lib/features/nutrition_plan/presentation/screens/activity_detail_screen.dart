@@ -15,6 +15,8 @@ import '../../domain/nutrition_plan.dart';
 import '../../domain/food_item_data.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../coach_mode/presentation/widgets/activity_coach_feedback_widget.dart';
+import '../../../coach_mode/presentation/providers/coach_activity_detail_controller.dart';
+import '../providers/activity_detail_state.dart';
 
 /// Activity Detail Screen - Refactored with extracted widgets
 /// Shows activity details with nutrition sections and food items
@@ -23,10 +25,12 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
     super.key,
     required this.activityId,
     this.isNewActivity = false,
+    this.isCoachView = false,
   });
 
   final String activityId;
   final bool isNewActivity;
+  final bool isCoachView;
 
   @override
   ConsumerState<ActivityDetailScreen> createState() => _ActivityDetailScreenState();
@@ -82,19 +86,39 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activityDetailAsync = ref.watch(
-      activityDetailControllerProvider(
-        activityId: widget.activityId,
-        isNewActivity: widget.isNewActivity,
-      ),
-    );
+    final AsyncValue<dynamic> activityDetailAsync = widget.isCoachView
+        ? ref.watch(coachActivityDetailControllerProvider(widget.activityId))
+        : ref.watch(
+            activityDetailControllerProvider(
+              activityId: widget.activityId,
+              isNewActivity: widget.isNewActivity,
+            ),
+          );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
       body: activityDetailAsync.when(
-        data: (state) => _buildContent(context, state),
-        loading: () => _buildLoadingState(context),
+                data: (data) {
+                  final ActivityDetailState state;
+                  if (data is ActivityDetailState) {
+                    state = data;
+                  } else {
+                    final dynamic d = data;
+                    state = ActivityDetailState(
+                      activity: d.activity,
+                      nutritionPlan: d.nutritionPlan,
+                      completion: d.completion,
+                      scheduledDateTime: d.scheduledDateTime,
+                      isSaving: d.isSaving ?? false,
+                      isCompleting: d.isCompleting ?? false,
+                      hasUnsavedChanges: d.hasUnsavedChanges ?? false,
+                      error: d.error,
+                    );
+                  }
+                  return _buildContent(context, state);
+                },
+                loading: () => _buildLoadingState(context),
         error: (error, stack) => _buildErrorState(context, error),
       ),
     );
@@ -211,7 +235,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           if (state.nutritionPlan == null)
             _buildNoNutritionPlanState(context, state),
           // Coach feedback section (if any)
-          ActivityCoachFeedbackWidget(activityId: widget.activityId),
+          ActivityCoachFeedbackWidget(
+            activityId: widget.activityId,
+            isCoachView: widget.isCoachView,
+            activityUserId: activity.userId,
+          ),
           const SizedBox(height: AppSpacing.xl),
           _buildActionButtons(context, state),
           const SizedBox(height: AppSpacing.xxxl),
@@ -799,14 +827,22 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
   }
 
-  // Action handlers
-  void _saveWorkout(BuildContext context, ActivityDetailState state) async {
-    final controller = ref.read(
+  // Helper to get the correct controller notifier based on view mode
+  dynamic _getControllerNotifier() {
+    if (widget.isCoachView) {
+      return ref.read(coachActivityDetailControllerProvider(widget.activityId).notifier);
+    }
+    return ref.read(
       activityDetailControllerProvider(
         activityId: widget.activityId,
         isNewActivity: widget.isNewActivity,
       ).notifier,
     );
+  }
+
+  // Action handlers
+  void _saveWorkout(BuildContext context, ActivityDetailState state) async {
+    final controller = _getControllerNotifier();
 
     await controller.saveActivity();
 
@@ -815,6 +851,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       'activity_id': state.activity?.id,
       'has_nutrition_plan': state.nutritionPlan != null,
       'is_new_activity': state.isNewActivity,
+      'is_coach_view': widget.isCoachView,
     });
 
     if (context.mounted) {
@@ -838,12 +875,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         onComplete: (rating, notes) async {
           Navigator.of(dialogContext).pop();
 
-          final controller = ref.read(
-            activityDetailControllerProvider(
-              activityId: widget.activityId,
-              isNewActivity: widget.isNewActivity,
-            ).notifier,
-          );
+          final controller = _getControllerNotifier();
 
           await controller.completeActivity(
             overallSatisfaction: rating,
@@ -855,6 +887,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             'activity_id': state.activity?.id,
             'rating': rating,
             'has_notes': notes?.isNotEmpty ?? false,
+            'is_coach_view': widget.isCoachView,
           });
 
           if (mounted) {
@@ -876,6 +909,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       'food_id': foodId,
       'food_name': foodName,
       'section': category,
+      'is_coach_view': widget.isCoachView,
     });
 
     context.push('/swap-food', extra: {
@@ -884,16 +918,12 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       'category': category,
       'activityId': widget.activityId,
       'isNewActivity': widget.isNewActivity,
+      'isCoachView': widget.isCoachView,
     });
   }
 
   Future<void> _deleteFood(BuildContext context, ActivityDetailState state, String foodId, String category) async {
-    final controller = ref.read(
-      activityDetailControllerProvider(
-        activityId: widget.activityId,
-        isNewActivity: widget.isNewActivity,
-      ).notifier,
-    );
+    final controller = _getControllerNotifier();
 
     await controller.deleteFoodItem(foodId, category);
 
@@ -907,12 +937,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   }
 
   Future<void> _updateFoodQuantity(BuildContext context, ActivityDetailState state, String foodId, String category, double newQuantity) async {
-    final controller = ref.read(
-      activityDetailControllerProvider(
-        activityId: widget.activityId,
-        isNewActivity: widget.isNewActivity,
-      ).notifier,
-    );
+    final controller = _getControllerNotifier();
 
     await controller.updateFoodQuantity(foodId, category, newQuantity);
   }
@@ -929,6 +954,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       'category': category,
       'activityId': widget.activityId,
       'isNewActivity': widget.isNewActivity,
+      'isCoachView': widget.isCoachView,
     });
   }
 }

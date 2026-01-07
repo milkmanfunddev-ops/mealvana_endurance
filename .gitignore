@@ -26,6 +26,10 @@ migrate_working_dir/
 !.env.example
 !.env.web.example
 
+# Dart defines for web builds (contains secrets - NEVER commit!)
+.dart_defines.json
+!.dart_defines.json.example
+
 # IntelliJ related
 *.iml
 *.ipr

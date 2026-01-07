@@ -60,6 +60,9 @@ class UserProfile {
   // Coach mode flag (set by admin/backend)
   final bool isCoach;
 
+  // Sharing preferences
+  final String? senderName; // Display name used when sharing plans
+
   UserProfile({
     required this.id,
     required this.deviceId,
@@ -92,6 +95,8 @@ class UserProfile {
     this.allergies = const [],
     // Coach mode
     this.isCoach = false,
+    // Sharing preferences
+    this.senderName,
   });
 
   /// Calculate age from birthday
@@ -209,6 +214,8 @@ class UserProfile {
       allergies: _parseAllergiesFromJson(json['allergies']),
       // Coach mode
       isCoach: json['is_coach'] as bool? ?? false,
+      // Sharing preferences
+      senderName: json['sender_name'] as String?,
     );
   }
 
@@ -238,8 +245,9 @@ class UserProfile {
       // Convert 'none' to null since Supabase dietary_preference_enum doesn't include 'none'
       'dietary_preference': dietaryPreference?.dbValue == 'none' ? null : dietaryPreference?.dbValue,
       'allergies': Allergy.toDbArray(allergies),
-      // Coach mode - read-only from backend, but include in sync
-      'is_coach': isCoach,
+      // Sharing preferences
+      'sender_name': senderName,
+      // Note: is_coach is NOT synced to Supabase - coach status lives in coaches table
       // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
       // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields
       // and should not be synced to Supabase production
@@ -277,6 +285,8 @@ class UserProfile {
     List<Allergy>? allergies,
     // Coach mode
     bool? isCoach,
+    // Sharing preferences
+    String? senderName,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -310,6 +320,8 @@ class UserProfile {
       allergies: allergies ?? this.allergies,
       // Coach mode
       isCoach: isCoach ?? this.isCoach,
+      // Sharing preferences
+      senderName: senderName ?? this.senderName,
     );
   }
 }

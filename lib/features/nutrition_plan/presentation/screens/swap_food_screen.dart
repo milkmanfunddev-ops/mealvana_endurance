@@ -27,6 +27,7 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
   final String category; // before_run, during_run, after_run
   final String activityId;
   final bool isNewActivity;
+  final bool isCoachView;
 
   const SwapFoodScreen({
     super.key,
@@ -35,6 +36,7 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
     required this.category,
     required this.activityId,
     this.isNewActivity = false,
+    this.isCoachView = false,
   });
 
   @override
@@ -58,6 +60,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       originalFoodId: widget.foodToSwapId,
       originalFoodName: widget.foodToSwapName,
       isNewActivity: widget.isNewActivity,
+      isCoachView: widget.isCoachView,
     );
 
     // Track screen viewed

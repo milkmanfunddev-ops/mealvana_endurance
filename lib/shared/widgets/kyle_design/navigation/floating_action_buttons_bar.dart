@@ -33,17 +33,21 @@ class FloatingActionButtonsBar extends StatelessWidget {
   const FloatingActionButtonsBar({
     super.key,
     required this.onCalendarTap,
+    required this.onCoachTap,
     required this.onSurveyTap,
     required this.onMenuTap,
     required this.onAddTap,
     this.activeButton,
+    this.showCoachTab = false,
   });
 
   final VoidCallback onCalendarTap;
+  final VoidCallback onCoachTap;
   final VoidCallback onSurveyTap;
   final VoidCallback onMenuTap;
   final VoidCallback onAddTap;
   final int? activeButton;
+  final bool showCoachTab;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +64,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Pill container with calendar, survey, and menu buttons
+            // Pill container with calendar, coach (optional), survey, and menu buttons
             Container(
               height: 43,
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -85,13 +89,26 @@ class FloatingActionButtonsBar extends StatelessWidget {
                         : (isDark ? AppColors.cream : AppColors.blackberry),
                   ),
                   const SizedBox(width: 8),
+                  if (showCoachTab) ...[
+                    CircularActionButton(
+                      icon: FontAwesomeIcons.userTie,
+                      onPressed: onCoachTap,
+                      backgroundColor: activeButton == 1
+                          ? activeBackground
+                          : inactiveBackground,
+                      iconColor: activeButton == 1
+                          ? AppColors.blackberry
+                          : (isDark ? AppColors.cream : AppColors.blackberry),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   CircularActionButton(
                     icon: FontAwesomeIcons.clipboardList,
                     onPressed: onSurveyTap,
-                    backgroundColor: activeButton == 1
+                    backgroundColor: activeButton == (showCoachTab ? 2 : 1)
                         ? activeBackground
                         : inactiveBackground,
-                    iconColor: activeButton == 1
+                    iconColor: activeButton == (showCoachTab ? 2 : 1)
                         ? AppColors.blackberry
                         : (isDark ? AppColors.cream : AppColors.blackberry),
                   ),
@@ -99,10 +116,10 @@ class FloatingActionButtonsBar extends StatelessWidget {
                   CircularActionButton(
                     icon: FontAwesomeIcons.ellipsis,
                     onPressed: onMenuTap,
-                    backgroundColor: activeButton == 2
+                    backgroundColor: activeButton == (showCoachTab ? 3 : 2)
                         ? activeBackground
                         : inactiveBackground,
-                    iconColor: activeButton == 2
+                    iconColor: activeButton == (showCoachTab ? 3 : 2)
                         ? AppColors.blackberry
                         : (isDark ? AppColors.cream : AppColors.blackberry),
                   ),

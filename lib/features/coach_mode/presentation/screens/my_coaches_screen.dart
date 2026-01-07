@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/my_coaches_controller.dart';
 
@@ -78,7 +82,7 @@ class MyCoachesScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     if (!state.hasCoaches && !state.hasPendingRequests) {
-      return _buildEmptyView(context);
+      return _buildEmptyView(context, ref);
     }
 
     return RefreshIndicator(
@@ -88,6 +92,14 @@ class MyCoachesScreen extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // My Athlete Code section - always show at top
+          _buildAthleteCodeSection(context, ref),
+          const SizedBox(height: 24),
+
+          // Find a Coach button
+          _buildFindCoachButton(context),
+          const SizedBox(height: 24),
+
           // Pending requests section
           if (state.hasPendingRequests) ...[
             _buildSectionHeader(
@@ -113,6 +125,150 @@ class MyCoachesScreen extends ConsumerWidget {
             ...state.activeCoaches.map(
               (coach) => _buildCoachCard(context, coach),
             ),
+        ],
+      ),
+    );
+  }
+
+  /// Build the Find a Coach button
+  Widget _buildFindCoachButton(BuildContext context) {
+    return BaseCard(
+      child: InkWell(
+        onTap: () => context.push('/coach-directory'),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.electrolyte.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.search,
+                  color: AppColors.electrolyte,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Find a Coach',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Browse available coaches and send a request',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build the athlete code section so athletes can share their code with coaches
+  Widget _buildAthleteCodeSection(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(settingsControllerProvider);
+    final athleteCode = settingsAsync.asData?.value.athleteCode;
+
+    if (athleteCode == null) {
+      return const SizedBox.shrink();
+    }
+
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                FontAwesomeIcons.idCard,
+                size: 20,
+                color: AppColors.electrolyte,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'My Athlete Code',
+                style: AppTextStyles.subtitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.electrolyte.withValues(alpha: 0.1),
+                    borderRadius: AppRadius.cardRadius,
+                    border: Border.all(
+                      color: AppColors.electrolyte.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    athleteCode,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.electrolyte,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 20,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              IconButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: athleteCode));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Athlete code copied!'),
+                      backgroundColor: AppColors.electrolyte,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  FontAwesomeIcons.copy,
+                  size: AppIconSizes.controlIcon,
+                  color: AppColors.electrolyte,
+                ),
+                tooltip: 'Copy athlete code',
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Share this code with your coach to connect',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
@@ -148,6 +304,14 @@ class MyCoachesScreen extends ConsumerWidget {
   ) {
     final theme = Theme.of(context);
 
+    // Format display name: "Coach FirstName" instead of "Coach 607f9dd5..."
+    String displayName;
+    if (request.coachDisplayName != null && request.coachDisplayName!.isNotEmpty) {
+      displayName = 'Coach ${request.coachDisplayName}';
+    } else {
+      displayName = 'Coach ${request.coachUserId.substring(0, 8)}...';
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
@@ -179,8 +343,7 @@ class MyCoachesScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        request.coachDisplayName ??
-                            'Coach ${request.coachUserId.substring(0, 8)}...',
+                        displayName,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -225,6 +388,14 @@ class MyCoachesScreen extends ConsumerWidget {
   ) {
     final theme = Theme.of(context);
 
+    // Format display name: "Coach FirstName" instead of "Coach 607f9dd5..."
+    String displayName;
+    if (relationship.coachDisplayName != null && relationship.coachDisplayName!.isNotEmpty) {
+      displayName = 'Coach ${relationship.coachDisplayName}';
+    } else {
+      displayName = 'Coach ${relationship.coachUserId.substring(0, 8)}...';
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -235,10 +406,7 @@ class MyCoachesScreen extends ConsumerWidget {
             color: theme.colorScheme.onPrimaryContainer,
           ),
         ),
-        title: Text(
-          relationship.coachDisplayName ??
-              'Coach ${relationship.coachUserId.substring(0, 8)}...',
-        ),
+        title: Text(displayName),
         subtitle: Row(
           children: [
             _buildStatusBadge(context, relationship.status),
@@ -315,45 +483,51 @@ class MyCoachesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyView(BuildContext context) {
+  Widget _buildEmptyView(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.sports,
-              size: 80,
-              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Show athlete code at top
+          _buildAthleteCodeSection(context, ref),
+          const SizedBox(height: 24),
+
+          // Find a Coach button
+          _buildFindCoachButton(context),
+          const SizedBox(height: 32),
+
+          // Empty state message
+          Icon(
+            Icons.sports,
+            size: 80,
+            color: theme.colorScheme.primary.withValues(alpha: 0.5),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Connect with a Coach',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Connect with a Coach',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Share your training and nutrition data with a coach to get personalized guidance and feedback.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Share your training and nutrition data with a coach to get personalized guidance and feedback.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Browse the coach directory above, or share your athlete code with your coach to connect.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Ask your coach to invite you to connect.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

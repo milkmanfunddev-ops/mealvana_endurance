@@ -53,6 +53,7 @@ import '../../features/coach_mode/presentation/screens/athlete_detail_screen.dar
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
 import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_registration_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
@@ -215,6 +216,7 @@ class AppRouter {
           return ActivityDetailScreen(
             activityId: activityId,
             isNewActivity: extra?['isNewActivity'] as bool? ?? false,
+            isCoachView: extra?['isCoachView'] as bool? ?? false,
           );
         },
       ),
@@ -236,6 +238,7 @@ class AppRouter {
           return ActivityDetailScreen(
             activityId: activityId,
             isNewActivity: extra?['isNewActivity'] as bool? ?? false,
+            isCoachView: extra?['isCoachView'] as bool? ?? false,
           );
         },
       ),
@@ -368,6 +371,7 @@ class AppRouter {
           final extra = state.extra as Map<String, dynamic>?;
           final activityId = extra?['activityId'] as String?;
           final isNewActivity = extra?['isNewActivity'] as bool? ?? false;
+          final isCoachView = extra?['isCoachView'] as bool? ?? false;
           if (activityId == null) {
             return const Scaffold(
               body: Center(
@@ -381,6 +385,7 @@ class AppRouter {
             category: extra?['category'] as String? ?? 'before_run',
             activityId: activityId,
             isNewActivity: isNewActivity,
+            isCoachView: isCoachView,
           );
         },
       ),
@@ -530,6 +535,13 @@ class AppRouter {
         path: '/coach/apply',
         name: 'coach-apply',
         builder: (context, state) => const CoachRegistrationScreen(),
+      ),
+
+      // Coach Directory - Athletes browse and request coaches
+      GoRoute(
+        path: '/coach-directory',
+        name: 'coach-directory',
+        builder: (context, state) => const CoachDirectoryScreen(),
       ),
     ],
 

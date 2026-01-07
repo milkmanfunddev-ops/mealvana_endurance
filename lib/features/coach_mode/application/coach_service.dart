@@ -65,6 +65,7 @@ class CoachService {
         userId: profile.id,
         deviceId: profile.deviceId,
         isCoach: profile.isCoach,
+        displayName: profile.senderName,
       );
     } catch (e, stackTrace) {
       _logger.error(
@@ -120,7 +121,59 @@ class CoachService {
     }
   }
 
-  /// Invite an athlete to connect with the coach
+  /// Invite an athlete to connect with the coach using their athlete code
+  /// Athlete code format: ATH-XXXXXXXX (e.g., ATH-FE36370A)
+  /// Returns the relationship if successful, null if athlete not found or user is not a coach
+  Future<CoachAthleteRelationship?> inviteAthleteByCode({
+    required String athleteCode,
+  }) async {
+    try {
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null || !profile.isCoach) {
+        _logger.warning(
+          'Cannot invite athlete: user is not a coach',
+          context: 'COACH_SERVICE',
+        );
+        return null;
+      }
+
+      // Look up the athlete by their code
+      final athleteUserId = await _repository.findUserIdByAthleteCode(athleteCode);
+      if (athleteUserId == null) {
+        _logger.warning(
+          'Athlete not found by code',
+          context: 'COACH_SERVICE',
+          data: {'athleteCode': athleteCode},
+        );
+        return null;
+      }
+
+      // Prevent inviting yourself
+      if (athleteUserId == profile.id) {
+        _logger.warning(
+          'Cannot invite yourself as an athlete',
+          context: 'COACH_SERVICE',
+        );
+        return null;
+      }
+
+      return await _repository.createRelationship(
+        coachUserId: profile.id,
+        athleteUserId: athleteUserId,
+        requestedBy: 'coach',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to invite athlete by code',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Invite an athlete to connect with the coach (legacy - uses full user ID)
   Future<CoachAthleteRelationship?> inviteAthlete({
     required String athleteUserId,
   }) async {
@@ -467,16 +520,56 @@ class CoachService {
         return false;
       }
 
-      final relationship = await _repository.createRelationship(
+      await _repository.createRelationship(
         coachUserId: coachUserId,
         athleteUserId: profile.id,
         requestedBy: 'athlete',
       );
 
-      return relationship != null;
+      return true;
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to request coach connection',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  // ============================================================================
+  // COACH APPLICATION SUBMISSION
+  // ============================================================================
+
+  /// Submit a coach application for the current user
+  /// Returns true if successful, false otherwise
+  Future<bool> submitCoachApplication({
+    required String firstName,
+    required String lastName,
+    required String email,
+    String? bio,
+  }) async {
+    try {
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null) {
+        _logger.warning(
+          'Cannot submit coach application: no user profile',
+          context: 'COACH_SERVICE',
+        );
+        return false;
+      }
+
+      return await _repository.submitCoachApplication(
+        userId: profile.id,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        bio: bio,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to submit coach application',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,

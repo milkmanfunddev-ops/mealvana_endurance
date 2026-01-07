@@ -32,7 +32,8 @@ import 'tables/carb_loading_day_meals_table.dart';
 import 'tables/weather_forecasts_table.dart';
 // NEW: Feature survey table
 import 'tables/feature_survey_responses_table.dart';
-// NEW: Coach mode tables (simplified - no coaches table, just is_coach flag on users)
+// NEW: Coach mode tables
+import 'tables/coaches_table.dart';
 import 'tables/coach_athlete_relationships_table.dart';
 import 'tables/coach_messages_table.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
@@ -77,7 +78,8 @@ part 'app_database.g.dart';
     // Feature survey tables
     FeatureSurveyResponsesTable,
 
-    // Coach mode tables (simplified schema)
+    // Coach mode tables
+    CoachesTable,
     CoachAthleteRelationshipsTable,
     CoachMessagesTable,
   ],
@@ -2062,6 +2064,8 @@ class AppDatabase extends _$AppDatabase {
       allergies: Allergy.fromDbArray(dbUser.allergies),
       // Coach mode
       isCoach: dbUser.isCoach,
+      // Sharing preferences
+      senderName: dbUser.senderName,
     );
   }
 

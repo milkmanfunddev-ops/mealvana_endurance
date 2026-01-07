@@ -12,6 +12,7 @@ import '../../../../shared/services/food_management/shared_food_search_service.d
 import '../../../../shared/utils/search_strategy.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../../../features/coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 
 part 'swap_food_controller.g.dart';
 
@@ -26,6 +27,7 @@ class SwapFoodParams {
     this.originalFoodId,
     this.originalFoodName,
     this.isNewActivity = false,
+    this.isCoachView = false,
   });
 
   final String activityId; // Activity ID - matches ActivityDetailController provider
@@ -33,6 +35,7 @@ class SwapFoodParams {
   final String? originalFoodId; // Food being swapped (for product type matching)
   final String? originalFoodName; // Food name being swapped (fallback if ID lookup fails)
   final bool isNewActivity; // Match ActivityDetailController provider instance
+  final bool isCoachView;
 }
 
 /// State for the swap food screen
@@ -352,21 +355,27 @@ class SwapFoodController extends _$SwapFoodController {
   
   /// Swap a food in the nutrition plan
   Future<void> swapFood(SwapFoodParams params, String oldFoodId, Food newFood, String category, {double? customAmount}) async {
-    // CRITICAL: Wait for the ActivityDetailController to finish loading before swapping
-    // This prevents race conditions where we try to swap before the nutrition plan is loaded
     _logger.info('Waiting for ActivityDetailController to initialize',
       context: 'SwapFoodController',
-      data: {'activityId': params.activityId},
+      data: {'activityId': params.activityId, 'isCoachView': params.isCoachView},
     );
 
-    // Store the provider reference to ensure we use the same instance
-    final provider = activityDetailControllerProvider(
-      activityId: params.activityId,
-      isNewActivity: params.isNewActivity,
-    );
+    // Conditionally get controller and state based on view mode
+    final dynamic activityDetailController;
+    final dynamic controllerState;
 
-    // Wait for the provider's async build() to complete
-    final controllerState = await ref.read(provider.future);
+    if (params.isCoachView) {
+      final provider = coachActivityDetailControllerProvider(params.activityId);
+      controllerState = await ref.read(provider.future);
+      activityDetailController = ref.read(provider.notifier);
+    } else {
+      final provider = activityDetailControllerProvider(
+        activityId: params.activityId,
+        isNewActivity: params.isNewActivity,
+      );
+      controllerState = await ref.read(provider.future);
+      activityDetailController = ref.read(provider.notifier);
+    }
 
     if (controllerState.nutritionPlan == null) {
       _logger.error('Cannot swap food: nutrition plan not loaded after waiting',
@@ -386,15 +395,10 @@ class SwapFoodController extends _$SwapFoodController {
       },
     );
 
-    // Use the SAME provider instance to get the notifier
-    final activityDetailController = ref.read(provider.notifier);
-
     _logger.info('About to call swapFoodItem on controller',
       context: 'SwapFoodController',
       data: {
         'controllerHashCode': activityDetailController.hashCode,
-        'controllerStateIsNull': activityDetailController.state.value == null,
-        'controllerNutritionPlanIsNull': activityDetailController.state.value?.nutritionPlan == null,
       },
     );
 
@@ -410,21 +414,27 @@ class SwapFoodController extends _$SwapFoodController {
 
   /// Add a food to the nutrition plan
   Future<void> addFood(SwapFoodParams params, Food food, String category, {double? customAmount}) async {
-    // CRITICAL: Wait for the ActivityDetailController to finish loading before adding
-    // This prevents race conditions where we try to add before the nutrition plan is loaded
     _logger.info('Waiting for ActivityDetailController to initialize',
       context: 'SwapFoodController',
-      data: {'activityId': params.activityId},
+      data: {'activityId': params.activityId, 'isCoachView': params.isCoachView},
     );
 
-    // Store the provider reference to ensure we use the same instance
-    final provider = activityDetailControllerProvider(
-      activityId: params.activityId,
-      isNewActivity: params.isNewActivity,
-    );
+    // Conditionally get controller and state based on view mode
+    final dynamic activityDetailController;
+    final dynamic controllerState;
 
-    // Wait for the provider's async build() to complete
-    final controllerState = await ref.read(provider.future);
+    if (params.isCoachView) {
+      final provider = coachActivityDetailControllerProvider(params.activityId);
+      controllerState = await ref.read(provider.future);
+      activityDetailController = ref.read(provider.notifier);
+    } else {
+      final provider = activityDetailControllerProvider(
+        activityId: params.activityId,
+        isNewActivity: params.isNewActivity,
+      );
+      controllerState = await ref.read(provider.future);
+      activityDetailController = ref.read(provider.notifier);
+    }
 
     if (controllerState.nutritionPlan == null) {
       _logger.error('Cannot add food: nutrition plan not loaded after waiting',
@@ -443,15 +453,10 @@ class SwapFoodController extends _$SwapFoodController {
       },
     );
 
-    // Use the SAME provider instance to get the notifier
-    final activityDetailController = ref.read(provider.notifier);
-
     _logger.info('About to call addFoodItem on controller',
       context: 'SwapFoodController',
       data: {
         'controllerHashCode': activityDetailController.hashCode,
-        'controllerStateIsNull': activityDetailController.state.value == null,
-        'controllerNutritionPlanIsNull': activityDetailController.state.value?.nutritionPlan == null,
       },
     );
 

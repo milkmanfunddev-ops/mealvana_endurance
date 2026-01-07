@@ -57,6 +57,7 @@ class CoachRepository {
         userId: result.id,
         deviceId: result.deviceId,
         isCoach: result.isCoach,
+        displayName: result.senderName,
       );
     } catch (e, stackTrace) {
       _logger.error(
@@ -69,19 +70,24 @@ class CoachRepository {
     }
   }
 
-  /// Get all users with is_coach=true (for coach directory)
+  /// Get all approved coaches from the coaches table (for coach directory)
   Future<List<CoachInfo>> getActiveCoaches() async {
     try {
-      final results = await (_database.select(_database.userProfilesTable)
-            ..where((t) => t.isCoach.equals(true))
-            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
-          .get();
+      // Query Supabase coaches table for approved coaches
+      final response = await _supabase
+          .from('coaches')
+          .select('user_id, first_name, last_name, email, bio')
+          .eq('status', 'approved')
+          .order('created_at', ascending: true);
+
+      final List<dynamic> results = response as List<dynamic>;
 
       return results
           .map((r) => CoachInfo(
-                userId: r.id,
-                deviceId: r.deviceId,
-                isCoach: r.isCoach,
+                userId: r['user_id'] as String,
+                deviceId: '', // Not needed for directory listing
+                isCoach: true,
+                displayName: r['first_name'] as String?,
               ))
           .toList();
     } catch (e, stackTrace) {
@@ -122,18 +128,32 @@ class CoachRepository {
     }
   }
 
-  /// Get all relationships for an athlete
+  /// Get all relationships for an athlete with coach display names
   Future<List<CoachAthleteRelationship>> getRelationshipsForAthlete(
     String athleteUserId,
   ) async {
     try {
-      final results = await (_database
-              .select(_database.coachAthleteRelationshipsTable)
-            ..where((t) => t.athleteUserId.equals(athleteUserId))
-            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-          .get();
+      // Join with user_profiles to get coach display name (sender_name field)
+      final query = _database.select(_database.coachAthleteRelationshipsTable).join([
+        leftOuterJoin(
+          _database.userProfilesTable,
+          _database.userProfilesTable.id.equalsExp(_database.coachAthleteRelationshipsTable.coachUserId),
+        ),
+      ])
+        ..where(_database.coachAthleteRelationshipsTable.athleteUserId.equals(athleteUserId))
+        ..orderBy([OrderingTerm.desc(_database.coachAthleteRelationshipsTable.createdAt)]);
 
-      return results.map(_mapToRelationshipDomain).toList();
+      final results = await query.get();
+
+      return results.map((row) {
+        final relationship = row.readTable(_database.coachAthleteRelationshipsTable);
+        final coachProfile = row.readTableOrNull(_database.userProfilesTable);
+
+        return _mapToRelationshipDomain(
+          relationship,
+          coachDisplayName: coachProfile?.senderName,
+        );
+      }).toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get relationships for athlete',
@@ -563,6 +583,74 @@ class CoachRepository {
   // USER PROFILE OPERATIONS (for coach mode)
   // ============================================================================
 
+  /// Look up a user ID by their athlete code
+  /// Athlete code format: ATH-XXXXXXXX (first 8 chars of UUID, uppercase, no hyphens)
+  /// Returns the full user ID if found, null otherwise
+  Future<String?> findUserIdByAthleteCode(String athleteCode) async {
+    try {
+      // Validate and extract the code
+      final code = athleteCode.toUpperCase().trim();
+      if (!code.startsWith('ATH-') || code.length != 12) {
+        _logger.warning(
+          'Invalid athlete code format',
+          context: 'COACH_REPOSITORY',
+          data: {'code': code},
+        );
+        return null;
+      }
+
+      final codePrefix = code.substring(4); // Remove 'ATH-' prefix
+
+      // First try locally from Drift
+      final localResults = await _database.select(_database.userProfilesTable).get();
+      for (final user in localResults) {
+        final cleanId = user.id.replaceAll('-', '').toUpperCase();
+        if (cleanId.startsWith(codePrefix)) {
+          _logger.info(
+            'Found user by athlete code (local)',
+            context: 'COACH_REPOSITORY',
+            data: {'code': code, 'userId': user.id},
+          );
+          return user.id;
+        }
+      }
+
+      // If not found locally, try Supabase
+      // Use ilike to match the beginning of the ID
+      final response = await _supabase.from('users').select('id');
+
+      for (final row in response) {
+        final userId = row['id'] as String?;
+        if (userId != null) {
+          final cleanId = userId.replaceAll('-', '').toUpperCase();
+          if (cleanId.startsWith(codePrefix)) {
+            _logger.info(
+              'Found user by athlete code (Supabase)',
+              context: 'COACH_REPOSITORY',
+              data: {'code': code, 'userId': userId},
+            );
+            return userId;
+          }
+        }
+      }
+
+      _logger.warning(
+        'User not found by athlete code',
+        context: 'COACH_REPOSITORY',
+        data: {'code': code},
+      );
+      return null;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to find user by athlete code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
   /// Update local user profile to set is_coach flag
   /// Used when syncing is_coach status from Supabase
   Future<void> updateLocalUserIsCoach(String userId, bool isCoach) async {
@@ -592,21 +680,23 @@ class CoachRepository {
   // IS_COACH SYNC OPERATIONS
   // ============================================================================
 
-  /// Fetch the latest is_coach status from Supabase for a user
-  /// Returns true if user is a coach, false otherwise
+  /// Fetch the latest coach status from Supabase coaches table for a user
+  /// Returns true if user has an approved coach record, false otherwise
   Future<bool?> fetchIsCoachFromSupabase(String userId) async {
     try {
+      // Check the coaches table for an approved record
       final response = await _supabase
-          .from('users')
-          .select('is_coach')
-          .eq('id', userId)
+          .from('coaches')
+          .select('status')
+          .eq('user_id', userId)
+          .eq('status', 'approved')
           .maybeSingle();
 
-      if (response == null) return null;
-      return response['is_coach'] as bool? ?? false;
+      // User is a coach if they have an approved record
+      return response != null;
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to fetch is_coach from Supabase',
+        'Failed to fetch coach status from Supabase',
         context: 'COACH_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
@@ -616,13 +706,68 @@ class CoachRepository {
   }
 
   // ============================================================================
+  // COACH APPLICATION OPERATIONS
+  // ============================================================================
+
+  /// Submit a coach application
+  /// Creates a new entry in the coaches table with pending status
+  Future<bool> submitCoachApplication({
+    required String userId,
+    required String firstName,
+    required String lastName,
+    required String email,
+    String? bio,
+  }) async {
+    try {
+      final id = _uuid.v4();
+      final now = DateTime.now();
+
+      // Insert into Supabase coaches table
+      await _supabase.from('coaches').insert({
+        'id': id,
+        'user_id': userId,
+        'first_name': firstName,
+        'last_name': lastName,
+        'email': email,
+        'bio': bio,
+        'application_status': 'pending',
+        'submitted_at': now.toIso8601String(),
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      });
+
+      _logger.info(
+        'Submitted coach application',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'applicationId': id,
+          'userId': userId,
+          'email': email,
+        },
+      );
+
+      return true;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to submit coach application',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  // ============================================================================
   // HELPER METHODS
   // ============================================================================
 
   /// Map Drift CoachAthleteRelationshipEntry to domain
   CoachAthleteRelationship _mapToRelationshipDomain(
-    CoachAthleteRelationshipEntry entry,
-  ) {
+    CoachAthleteRelationshipEntry entry, {
+    String? coachDisplayName,
+    String? athleteDisplayName,
+  }) {
     return CoachAthleteRelationship(
       id: entry.id,
       coachUserId: entry.coachUserId,
@@ -635,6 +780,8 @@ class CoachRepository {
       archivedAt: entry.archivedAt,
       createdAt: entry.createdAt,
       updatedAt: entry.updatedAt,
+      coachDisplayName: coachDisplayName,
+      athleteDisplayName: athleteDisplayName,
     );
   }
 

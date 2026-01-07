@@ -155,6 +155,65 @@ class ActivitiesRepository {
     }
   }
 
+  /// Update an existing activity directly in Supabase (Remote-only)
+  /// Used by coaches to edit athlete activities
+  Future<void> updateRemoteActivity(domain.Activity activity) async {
+    try {
+      final payload = {
+        'id': activity.id,
+        'user_id': activity.userId,
+        'activity_type': activity.activityType.name,
+        'title': activity.title,
+        'scheduled_date_time': activity.scheduledDateTime.toIso8601String(),
+        'status': activity.status.name,
+        'distance_miles': activity.distanceMiles,
+        'duration_minutes': activity.durationMinutes,
+        'pace_target_minutes_per_mile': activity.paceTargetMinutesPerMile,
+        'intensity_level': activity.intensityLevel?.name,
+        'intensity_target': activity.intensityTarget,
+        'time_before_minutes': activity.timeBeforeMinutes,
+        'notes': activity.notes,
+        'cycling_speed_mph': activity.cyclingSpeedMph,
+        'cycling_terrain': activity.cyclingTerrain,
+        'cycling_indoor_outdoor': activity.cyclingIndoorOutdoor,
+        'cycling_elevation_gain_ft': activity.cyclingElevationGainFt,
+        'cycling_session_goal': activity.cyclingSessionGoal,
+        'swimming_pace_per_100m_seconds': activity.swimmingPacePer100mSeconds,
+        'swimming_pool_or_open_water': activity.swimmingPoolOrOpenWater,
+        'swimming_water_temp_c': activity.swimmingWaterTempC,
+        'completed_at': activity.completedAt?.toIso8601String(),
+        'actual_distance_miles': activity.actualDistanceMiles,
+        'actual_duration_minutes': activity.actualDurationMinutes,
+        'completion_rating': activity.completionRating,
+        'completion_notes': activity.completionNotes,
+        'nutrition_plan_data': activity.nutritionPlanData != null
+            ? jsonEncode(activity.nutritionPlanData)
+            : null,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      await _supabase
+          .from('activities')
+          .update(payload)
+          .eq('id', activity.id); // Security: RLS will check if current user (coach) has access
+
+      _logger.info(
+        'Remote activity updated',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'activityId': activity.id},
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to update remote activity',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'activityId': activity.id},
+      );
+      rethrow;
+    }
+  }
+
   /// Get all activities for a device (local-first, returns cached data)
   Future<List<domain.Activity>> getActivities(String userId) async {
     try {
@@ -191,6 +250,92 @@ class ActivitiesRepository {
       );
       rethrow;
     }
+  }
+
+  /// Get a specific activity by ID (REMOTE/SUPABASE)
+  /// Used by coaches to view athlete activities without syncing everything locally
+  Future<domain.Activity?> getRemoteActivityById(String activityId) async {
+    try {
+      final response = await _supabase
+          .from('activities')
+          .select()
+          .eq('id', activityId)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      // Convert Supabase response (Map) to Activity domain model
+      // We can use the same mapping logic, but need to construct a database-like object first
+      // OR simpler: manually map from JSON to domain
+      return _mapJsonToActivityDomain(response);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get remote activity by ID',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'activityId': activityId},
+      );
+      rethrow;
+    }
+  }
+
+  /// Map JSON from Supabase to domain Activity
+  domain.Activity _mapJsonToActivityDomain(Map<String, dynamic> json) {
+    return domain.Activity(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      activityType: ActivityType.values.firstWhere(
+        (type) => type.name == json['activity_type'],
+        orElse: () => ActivityType.running,
+      ),
+      title: json['title'] as String,
+      scheduledDateTime: DateTime.parse(json['scheduled_date_time'] as String),
+      status: domain.ActivityStatus.values.firstWhere(
+        (status) => status.name == json['status'],
+        orElse: () => domain.ActivityStatus.planned,
+      ),
+      distanceMiles: (json['distance_miles'] as num?)?.toDouble(),
+      durationMinutes: (json['duration_minutes'] as num?)?.toInt(),
+      paceTargetMinutesPerMile: (json['pace_target_minutes_per_mile'] as num?)?.toDouble(),
+      intensityLevel: json['intensity_level'] != null
+          ? domain.IntensityLevel.values.firstWhere(
+              (level) => level.name == json['intensity_level'],
+              orElse: () => domain.IntensityLevel.moderate,
+            )
+          : null,
+      // Cycling-specific fields
+      cyclingSpeedMph: (json['cycling_speed_mph'] as num?)?.toDouble(),
+      cyclingTerrain: json['cycling_terrain'] as String?,
+      cyclingIndoorOutdoor: json['cycling_indoor_outdoor'] as String?,
+      cyclingElevationGainFt: (json['cycling_elevation_gain_ft'] as num?)?.toInt(),
+      cyclingSessionGoal: json['cycling_session_goal'] as String?,
+      // Swimming-specific fields
+      swimmingPacePer100mSeconds: (json['swimming_pace_per_100m_seconds'] as num?)?.toInt(),
+      swimmingPoolOrOpenWater: json['swimming_pool_or_open_water'] as String?,
+      swimmingWaterTempC: (json['swimming_water_temp_c'] as num?)?.toDouble(),
+      // Shared fields
+      intensityTarget: json['intensity_target'] as String?,
+      timeBeforeMinutes: (json['time_before_minutes'] as num?)?.toInt(),
+      // Completion data
+      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at'] as String) : null,
+      completionRating: (json['completion_rating'] as num?)?.toInt(),
+      completionNotes: json['completion_notes'] as String?,
+      actualDistanceMiles: (json['actual_distance_miles'] as num?)?.toDouble(),
+      actualDurationMinutes: (json['actual_duration_minutes'] as num?)?.toInt(),
+      // Nutrition plan data (embedded JSON)
+      nutritionPlanData: json['nutrition_plan_data'] != null
+          ? _parseNutritionPlanData(json['nutrition_plan_data'] as String)
+          : null,
+      notes: json['notes'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+      deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at'] as String) : null,
+      // Reminder fields (default to false/null since these might not be relevant for coach view)
+      reminderEnabled: false,
+      needsUpload: false,
+      localUpdatedAt: DateTime.now(),
+    );
   }
 
   /// Get a specific activity by ID

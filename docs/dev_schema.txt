@@ -1,3 +1,11 @@
+-- we don't know how to generate root <with-no-name> (class Root) :(
+
+comment on database postgres is 'default administrative connection database';
+
+grant create on database postgres to supabase_etl_admin;
+
+grant connect, create, temporary on database postgres to dashboard_user;
+
 -- Unknown how to generate base type type
 
 alter type gtrgm owner to supabase_admin;
@@ -187,11 +195,11 @@ grant delete, insert, references, select, trigger, truncate, update on feedback 
 
 create table foods
 (
-    id                     uuid                             default gen_random_uuid()            not null
+    id                     uuid                      default gen_random_uuid()     not null
         primary key,
     name                   text,
     image_address          text,
-    created_at             timestamp with time zone         default now(),
+    created_at             timestamp with time zone  default now(),
     serving_amount         numeric,
     max_servings_before    integer,
     max_servings_during    integer,
@@ -203,16 +211,16 @@ create table foods
     protein_per_serving    numeric(10, 2),
     calories_per_serving   integer,
     fluid_ml_per_serving   numeric(10, 1),
-    show_in_preferences    boolean                          default false,
+    show_in_preferences    boolean                   default false,
     display_name           varchar(100),
     max_servings_after     integer,
-    is_electrolyte         boolean                          default false,
+    is_electrolyte         boolean                   default false,
     display_name_plural    varchar(100),
-    to_exclude_from_solver boolean                          default false,
+    to_exclude_from_solver boolean                   default false,
     description            text,
     serving_description    text,
     serving_size           varchar(50),
-    is_essential           boolean                          default false,
+    is_essential           boolean                   default false,
     is_other_food          boolean,
     instructions           text,
     nutritional_info       text,
@@ -222,15 +230,15 @@ create table foods
     purchase_url           text,
     affiliate_source       text,
     preference_priority    integer,
-    categories             public.category_enum[]           default '{}'::public.category_enum[] not null,
-    product_type           public.product_type_enum,
-    activity_types         public.activity_type_enum[],
-    before_run_suitable    boolean                          default false,
-    during_run_suitable    boolean                          default false,
-    after_run_suitable     boolean                          default false,
-    updated_at             timestamp with time zone         default now(),
-    allergens              public.allergy_enum[]            default '{}'::public.allergy_enum[],
-    excluded_diets         public.dietary_preference_enum[] default '{}'::public.dietary_preference_enum[]
+    categories             category_enum[]           default '{}'::category_enum[] not null,
+    product_type           product_type_enum,
+    activity_types         activity_type_enum[],
+    before_run_suitable    boolean                   default false,
+    during_run_suitable    boolean                   default false,
+    after_run_suitable     boolean                   default false,
+    updated_at             timestamp with time zone  default now(),
+    allergens              allergy_enum[]            default '{}'::allergy_enum[],
+    excluded_diets         dietary_preference_enum[] default '{}'::dietary_preference_enum[]
 );
 
 comment on column foods.show_in_preferences is 'Whether this food should be shown in the onboarding food preferences screen';
@@ -281,9 +289,9 @@ create table public_events
 (
     id               bigserial
         primary key,
-    event_name       text                      not null,
-    event_type       public.activity_type_enum not null,
-    event_subtype    public.event_subtype_enum,
+    event_name       text               not null,
+    event_type       activity_type_enum not null,
+    event_subtype    event_subtype_enum,
     location         text,
     city             text,
     state            text,
@@ -335,37 +343,36 @@ grant delete, insert, references, select, trigger, truncate, update on public_ev
 
 create table users
 (
-    id                            uuid                      default gen_random_uuid()                      not null
+    id                            uuid                     default gen_random_uuid()               not null
         primary key,
-    device_id                     text                                                                     not null
-        unique,
-    created_at                    timestamp with time zone  default now(),
-    updated_at                    timestamp with time zone  default now(),
-    gender                        public.gender_enum,
+    device_id                     text                                                             not null,
+    created_at                    timestamp with time zone default now(),
+    updated_at                    timestamp with time zone default now(),
+    gender                        gender_enum,
     birthday                      date,
     height_feet                   integer,
     height_inches                 integer,
     weight_pounds                 numeric(5, 2),
-    runs_with_water_bottle        boolean                   default false,
-    food_preferences              jsonb                     default '{}'::jsonb,
-    preferred_distance_unit       public.distance_unit_enum default 'miles'::public.distance_unit_enum,
-    preferred_pace_unit           public.pace_unit_enum     default 'min_per_mile'::public.pace_unit_enum,
-    gut_training_level            public.gut_training_enum  default 'moderate'::public.gut_training_enum,
-    onboarding_completed          boolean                   default false,
-    last_active_at                timestamp with time zone  default now(),
+    runs_with_water_bottle        boolean                  default false,
+    food_preferences              jsonb                    default '{}'::jsonb,
+    preferred_distance_unit       distance_unit_enum       default 'miles'::distance_unit_enum,
+    preferred_pace_unit           pace_unit_enum           default 'min_per_mile'::pace_unit_enum,
+    gut_training_level            gut_training_enum        default 'moderate'::gut_training_enum,
+    onboarding_completed          boolean                  default false,
+    last_active_at                timestamp with time zone default now(),
     app_version                   text,
-    notifications_enabled         boolean                   default false,
-    default_reminder_day          integer                   default 4,
-    default_reminder_hour         integer                   default 17,
-    default_reminder_minute       integer                   default 0,
-    default_reminder_recurring    boolean                   default false,
+    notifications_enabled         boolean                  default false,
+    default_reminder_day          integer                  default 4,
+    default_reminder_hour         integer                  default 17,
+    default_reminder_minute       integer                  default 0,
+    default_reminder_recurring    boolean                  default false,
     cycling_ftp_watts             integer,
-    prefers_cycling_power         boolean                   default false,
+    prefers_cycling_power         boolean                  default false,
     swimming_css_seconds_per_100m integer,
-    prefers_swimming_pace         boolean                   default false,
+    prefers_swimming_pace         boolean                  default false,
     auth_user_id                  uuid,
-    auth_provider                 public.auth_provider_enum default 'anonymous'::public.auth_provider_enum not null,
-    is_anonymous                  boolean                   default true                                   not null,
+    auth_provider                 auth_provider_enum       default 'anonymous'::auth_provider_enum not null,
+    is_anonymous                  boolean                  default true                            not null,
     auth_skipped_at               timestamp with time zone,
     typical_bike_bottles          integer
         constraint check_bike_bottles
@@ -378,8 +385,23 @@ create table users
             check ((typical_swim_cap_type IS NULL) OR (typical_swim_cap_type = ANY
                                                        (ARRAY ['none'::text, 'latex'::text, 'silicone'::text, 'neoprene'::text]))),
     gi_sensitivity                boolean,
-    dietary_preference            public.dietary_preference_enum,
-    allergies                     public.allergy_enum[]     default '{}'::public.allergy_enum[]
+    dietary_preference            dietary_preference_enum,
+    allergies                     allergy_enum[]           default '{}'::allergy_enum[],
+    sweat_rate                    text                     default 'medium'::text                  not null
+        constraint check_sweat_rate
+            check (sweat_rate = ANY (ARRAY ['light'::text, 'medium'::text, 'heavy'::text])),
+    calendar_week_start           text                     default 'monday'::text                  not null
+        constraint check_calendar_week_start
+            check (calendar_week_start = ANY (ARRAY ['sunday'::text, 'monday'::text])),
+    default_activity_time         text                     default '07:00:00'::text                not null,
+    default_activity_day          text                     default 'saturday'::text                not null
+        constraint check_default_activity_day
+            check (default_activity_day = ANY
+                   (ARRAY ['monday'::text, 'tuesday'::text, 'wednesday'::text, 'thursday'::text, 'friday'::text, 'saturday'::text, 'sunday'::text])),
+    auto_generate_nutrition       boolean                  default true                            not null,
+    completion_reminders          boolean                  default true                            not null,
+    sender_name                   text,
+    is_coach                      boolean                  default false
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -405,6 +427,22 @@ comment on column users.gi_sensitivity is 'Whether user has GI sensitivity issue
 comment on column users.dietary_preference is 'User dietary preference: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb. NULL means no preference set.';
 
 comment on column users.allergies is 'Array of user allergies for food filtering. Empty array means no allergies.';
+
+comment on column users.sweat_rate is 'User sweat rate category: light, medium, heavy. Used for hydration calculations.';
+
+comment on column users.calendar_week_start is 'Calendar week start preference: sunday or monday';
+
+comment on column users.default_activity_time is 'Default time for new activities in HH:MM:SS format';
+
+comment on column users.default_activity_day is 'Default day of week for new activities';
+
+comment on column users.auto_generate_nutrition is 'Whether to auto-generate nutrition plans for synced activities';
+
+comment on column users.completion_reminders is 'Whether to send activity completion reminders';
+
+comment on column users.sender_name is 'Name used when sharing nutrition plans via email';
+
+comment on column users.is_coach is 'Flag indicating user has coach privileges. Set by admin only.';
 
 alter table users
     owner to postgres;
@@ -469,7 +507,15 @@ create table activities
     humidity_percent               integer,
     nutrition_adherence_score      double precision,
     performance_vs_target          double precision,
-    activity_type                  activity_type_enum not null
+    activity_type                  activity_type_enum not null,
+    synced_from_provider           text,
+    provider_workout_id            text,
+    provider_workout_url           text,
+    last_synced_at                 timestamp with time zone,
+    workout_subtype                text,
+    pace_min_minutes_per_mile      real,
+    pace_max_minutes_per_mile      real,
+    distance_meters                real
 );
 
 comment on table activities is 'All calendar entries including workouts and events';
@@ -524,6 +570,10 @@ create index idx_activities_status
 create index idx_activities_swimming_pace
     on activities (swimming_speed_per_100m)
     where (swimming_speed_per_100m IS NOT NULL);
+
+create index idx_activities_provider_sync
+    on activities (synced_from_provider, provider_workout_id)
+    where (synced_from_provider IS NOT NULL);
 
 grant delete, insert, references, select, trigger, truncate, update on activities to anon;
 
@@ -748,18 +798,22 @@ grant delete, insert, references, select, trigger, truncate, update on feature_s
 
 create table food_preferences
 (
-    id               uuid                     default gen_random_uuid() not null
+    id                uuid                     default gen_random_uuid() not null
         primary key,
-    user_id          uuid                                               not null
+    user_id           uuid                                               not null
         references users
             on delete cascade,
-    food_name        text                                               not null,
-    preference       text                                               not null
+    food_name         text                                               not null,
+    preference        text                                               not null
         constraint food_preferences_preference_check
             check (preference = ANY (ARRAY ['like'::text, 'dislike'::text, 'willing_to_try'::text])),
-    created_at       timestamp with time zone default now()             not null,
-    updated_at       timestamp with time zone default now()             not null,
-    preference_level smallint                 default 2                 not null
+    created_at        timestamp with time zone default now()             not null,
+    updated_at        timestamp with time zone default now()             not null,
+    preference_level  smallint                 default 1                 not null,
+    preference_source text                     default 'manual'::text    not null
+        constraint food_preferences_preference_source_check
+            check ((preference_source = 'manual'::text) OR (preference_source ~~ 'allergy:%'::text) OR
+                   (preference_source ~~ 'dietary:%'::text))
 );
 
 alter table food_preferences
@@ -771,6 +825,12 @@ create index idx_food_preferences_preference
 create unique index idx_food_preferences_user_food
     on food_preferences (user_id, food_name);
 
+create index idx_food_preferences_preference_source
+    on food_preferences (preference_source);
+
+create index idx_food_preferences_user_source
+    on food_preferences (user_id, preference_source);
+
 grant delete, insert, references, select, trigger, truncate, update on food_preferences to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on food_preferences to authenticated;
@@ -779,12 +839,12 @@ grant delete, insert, references, select, trigger, truncate, update on food_pref
 
 create table user_foods
 (
-    id                     uuid                     default gen_random_uuid()            not null
+    id                     uuid                     default gen_random_uuid()     not null
         primary key,
-    device_id              text                                                          not null,
+    device_id              text                                                   not null,
     client_food_id         text,
     barcode                text,
-    name                   text                                                          not null,
+    name                   text                                                   not null,
     display_name           text,
     display_name_plural    text,
     description            text,
@@ -803,15 +863,15 @@ create table user_foods
     created_at             timestamp with time zone default now(),
     updated_at             timestamp with time zone default now(),
     client_updated_at      timestamp with time zone,
-    categories             public.category_enum[]   default '{}'::public.category_enum[] not null,
-    user_id                uuid                                                          not null
+    categories             category_enum[]          default '{}'::category_enum[] not null,
+    user_id                uuid                                                   not null
         constraint fk_user_foods_user
             references users
             on delete cascade
         references users
             on delete cascade,
-    product_type           public.product_type_enum,
-    activity_types         public.activity_type_enum[]
+    product_type           product_type_enum,
+    activity_types         activity_type_enum[]
 );
 
 alter table user_foods
@@ -917,11 +977,6 @@ create index idx_carb_loading_user_foods_device
 create index idx_carb_loading_user_foods_user_id
     on carb_loading_user_foods (user_id);
 
-create policy "Users can manage their own carb loading foods" on carb_loading_user_foods
-    as permissive
-    for all
-    using (user_id = auth.uid());
-
 grant delete, insert, references, select, trigger, truncate, update on carb_loading_user_foods to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on carb_loading_user_foods to authenticated;
@@ -947,11 +1002,6 @@ create index idx_user_foods_user_id
 create unique index uq_user_foods_device_clientid
     on user_foods (device_id, client_food_id);
 
-create policy "Users can manage their own foods" on user_foods
-    as permissive
-    for all
-    using (user_id = auth.uid());
-
 grant delete, insert, references, select, trigger, truncate, update on user_foods to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on user_foods to authenticated;
@@ -974,11 +1024,173 @@ create index idx_users_dietary_preference
 create index idx_users_updated_at
     on users (updated_at);
 
+create index idx_users_is_coach
+    on users (is_coach)
+    where (is_coach = true);
+
 grant delete, insert, references, select, trigger, truncate, update on users to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on users to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on users to service_role;
+
+create table integrations
+(
+    id                     uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id                uuid                                               not null
+        references users
+            on delete cascade,
+    provider               text                                               not null
+        constraint integrations_provider_check
+            check (provider = ANY
+                   (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text])),
+    access_token           text                                               not null,
+    refresh_token          text,
+    token_expires_at       timestamp with time zone,
+    provider_athlete_id    text                                               not null,
+    provider_athlete_name  text,
+    provider_athlete_email text,
+    is_active              boolean                  default true,
+    last_sync_at           timestamp with time zone,
+    last_sync_status       text
+        constraint integrations_last_sync_status_check
+            check ((last_sync_status IS NULL) OR
+                   (last_sync_status = ANY (ARRAY ['success'::text, 'error'::text, 'pending'::text]))),
+    last_sync_error        text,
+    created_at             timestamp with time zone default now(),
+    updated_at             timestamp with time zone default now(),
+    unique (user_id, provider)
+);
+
+alter table integrations
+    owner to postgres;
+
+create index idx_integrations_user_provider
+    on integrations (user_id, provider);
+
+create index idx_integrations_active
+    on integrations (is_active)
+    where (is_active = true);
+
+grant delete, insert, references, select, trigger, truncate, update on integrations to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on integrations to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on integrations to service_role;
+
+create table coach_athlete_relationships
+(
+    id              uuid                     default gen_random_uuid() not null
+        primary key,
+    coach_user_id   uuid                                               not null
+        references users
+            on delete cascade,
+    athlete_user_id uuid                                               not null
+        references users
+            on delete cascade,
+    status          text                     default 'pending'::text   not null
+        constraint check_status
+            check (status = ANY (ARRAY ['pending'::text, 'active'::text, 'declined'::text, 'archived'::text])),
+    requested_by    text                                               not null
+        constraint check_requested_by
+            check (requested_by = ANY (ARRAY ['coach'::text, 'athlete'::text])),
+    requested_at    timestamp with time zone default now(),
+    accepted_at     timestamp with time zone,
+    declined_at     timestamp with time zone,
+    archived_at     timestamp with time zone,
+    created_at      timestamp with time zone default now(),
+    updated_at      timestamp with time zone default now(),
+    unique (coach_user_id, athlete_user_id),
+    constraint check_different_users
+        check (coach_user_id <> athlete_user_id)
+);
+
+comment on table coach_athlete_relationships is 'Tracks connections between coaches and athletes';
+
+alter table coach_athlete_relationships
+    owner to postgres;
+
+create index idx_car_coach
+    on coach_athlete_relationships (coach_user_id);
+
+create index idx_car_athlete
+    on coach_athlete_relationships (athlete_user_id);
+
+create index idx_car_status
+    on coach_athlete_relationships (status);
+
+create index idx_car_active
+    on coach_athlete_relationships (coach_user_id, status)
+    where (status = 'active'::text);
+
+grant delete, insert, references, select, trigger, truncate, update on coach_athlete_relationships to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_athlete_relationships to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_athlete_relationships to service_role;
+
+create table coach_messages
+(
+    id                uuid                     default gen_random_uuid() not null
+        primary key,
+    coach_user_id     uuid                                               not null
+        references users
+            on delete cascade,
+    athlete_user_id   uuid                                               not null
+        references users
+            on delete cascade,
+    sender_user_id    uuid                                               not null
+        references users
+            on delete cascade,
+    message_text      text                                               not null
+        constraint message_not_empty
+            check (char_length(TRIM(BOTH FROM message_text)) > 0),
+    nutrition_plan_id text,
+    activity_id       text
+                                                                         references activities
+                                                                             on delete set null,
+    is_read           boolean                  default false,
+    created_at        timestamp with time zone default now(),
+    updated_at        timestamp with time zone default now(),
+    constraint check_sender
+        check ((sender_user_id = coach_user_id) OR (sender_user_id = athlete_user_id))
+);
+
+comment on table coach_messages is 'Bidirectional messaging and comments between coaches and athletes';
+
+comment on column coach_messages.nutrition_plan_id is 'Optional reference to nutrition plan (stored as TEXT, not FK since plans are in activity.nutrition_plan_data JSON)';
+
+comment on column coach_messages.activity_id is 'When set, this message is a comment on an activity';
+
+alter table coach_messages
+    owner to postgres;
+
+create index idx_cm_coach
+    on coach_messages (coach_user_id);
+
+create index idx_cm_athlete
+    on coach_messages (athlete_user_id);
+
+create index idx_cm_conversation
+    on coach_messages (coach_user_id asc, athlete_user_id asc, created_at desc);
+
+create index idx_cm_activity
+    on coach_messages (activity_id)
+    where (activity_id IS NOT NULL);
+
+create index idx_cm_unread
+    on coach_messages (athlete_user_id, is_read)
+    where (is_read = false);
+
+create index idx_cm_created
+    on coach_messages (created_at desc);
+
+grant delete, insert, references, select, trigger, truncate, update on coach_messages to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_messages to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_messages to service_role;
 
 create function set_limit(real) returns real
     strict
@@ -1132,7 +1344,7 @@ $$;
 
 alter function word_similarity_dist_commutator_op(text, text) owner to supabase_admin;
 
-create function gtrgm_in(cstring) returns public.gtrgm
+create function gtrgm_in(cstring) returns gtrgm
     immutable
     strict
     parallel safe
@@ -1146,7 +1358,7 @@ $$;
 
 alter function gtrgm_in(cstring) owner to supabase_admin;
 
-create function gtrgm_out(public.gtrgm) returns cstring
+create function gtrgm_out(gtrgm) returns cstring
     immutable
     strict
     parallel safe
@@ -1158,7 +1370,7 @@ begin
 end;
 $$;
 
-alter function gtrgm_out(public.gtrgm) owner to supabase_admin;
+alter function gtrgm_out(gtrgm) owner to supabase_admin;
 
 create function gtrgm_consistent(internal, text, smallint, oid, internal) returns boolean
     immutable
@@ -1244,7 +1456,7 @@ $$;
 
 alter function gtrgm_picksplit(internal, internal) owner to supabase_admin;
 
-create function gtrgm_union(internal, internal) returns public.gtrgm
+create function gtrgm_union(internal, internal) returns gtrgm
     immutable
     strict
     parallel safe
@@ -1258,7 +1470,7 @@ $$;
 
 alter function gtrgm_union(internal, internal) owner to supabase_admin;
 
-create function gtrgm_same(public.gtrgm, public.gtrgm, internal) returns internal
+create function gtrgm_same(gtrgm, gtrgm, internal) returns internal
     immutable
     strict
     parallel safe
@@ -1270,7 +1482,7 @@ begin
 end;
 $$;
 
-alter function gtrgm_same(public.gtrgm, public.gtrgm, internal) owner to supabase_admin;
+alter function gtrgm_same(gtrgm, gtrgm, internal) owner to supabase_admin;
 
 create function gin_extract_value_trgm(text, internal) returns internal
     immutable
@@ -1678,42 +1890,6 @@ $$
 
 alter function update_updated_at_column() owner to postgres;
 
-create trigger update_app_content_updated_at
-    before update
-    on app_content
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_carb_loading_days_updated_at
-    before update
-    on carb_loading_days
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_carb_loading_foods_updated_at
-    before update
-    on carb_loading_foods
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_carb_loading_plans_updated_at
-    before update
-    on carb_loading_plans
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_foods_updated_at
-    before update
-    on foods
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_users_updated_at
-    before update
-    on users
-    for each row
-execute procedure update_updated_at_column();
-
 grant execute on function update_updated_at_column() to anon;
 
 grant execute on function update_updated_at_column() to authenticated;
@@ -1878,17 +2054,29 @@ $$
 
 alter function update_feature_survey_timestamp() owner to postgres;
 
-create trigger feature_survey_update_timestamp
-    before update
-    on feature_survey_responses
-    for each row
-execute procedure update_feature_survey_timestamp();
-
 grant execute on function update_feature_survey_timestamp() to anon;
 
 grant execute on function update_feature_survey_timestamp() to authenticated;
 
 grant execute on function update_feature_survey_timestamp() to service_role;
+
+create function update_integrations_updated_at() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+alter function update_integrations_updated_at() owner to postgres;
+
+grant execute on function update_integrations_updated_at() to anon;
+
+grant execute on function update_integrations_updated_at() to authenticated;
+
+grant execute on function update_integrations_updated_at() to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 
@@ -1913,7 +2101,7 @@ alter operator family gist_trgm_ops using gist add
     operator 10 <->>>(text, text) for order by float_ops,
     operator 11 =(text,text),
     function 6(text, text) gtrgm_picksplit(internal, internal),
-    function 7(text, text) gtrgm_same(public.gtrgm, public.gtrgm, internal),
+    function 7(text, text) gtrgm_same(gtrgm, gtrgm, internal),
     function 8(text, text) gtrgm_distance(internal, text, smallint, oid, internal),
     function 10(text, text) gtrgm_options(internal),
     function 2(text, text) gtrgm_union(internal, internal),
@@ -1924,9 +2112,9 @@ alter operator family gist_trgm_ops using gist add
 
 alter operator family gist_trgm_ops using gist owner to supabase_admin;
 
-create operator class gist_trgm_ops for type text using gist as storage public.gtrgm function 6(text, text) gtrgm_picksplit(internal, internal),
+create operator class gist_trgm_ops for type text using gist as storage gtrgm function 6(text, text) gtrgm_picksplit(internal, internal),
 	function 1(text, text) gtrgm_consistent(internal, text, smallint, oid, internal),
-	function 7(text, text) gtrgm_same(public.gtrgm, public.gtrgm, internal),
+	function 7(text, text) gtrgm_same(gtrgm, gtrgm, internal),
 	function 5(text, text) gtrgm_penalty(internal, internal, internal),
 	function 2(text, text) gtrgm_union(internal, internal);
 

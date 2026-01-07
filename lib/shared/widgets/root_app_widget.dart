@@ -7,6 +7,7 @@ import '../../theme/kyle_design/theme_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../core/app_router.dart';
 import '../services/app_config.dart';
+import 'responsive_content_wrapper.dart';
 
 /// Root app widget that handles app initialization and navigation
 /// Following Andrea Bizzotto's patterns for app startup with deep link support
@@ -73,7 +74,8 @@ class RootAppWidget extends ConsumerWidget {
                 builder: (context, child) {
                   return AppStartupWidget(
                     // Pass router child back when initialization is complete
-                    onLoaded: (_) => child!,
+                    // Wrapped with ResponsiveContentWrapper for web/iPad support
+                    onLoaded: (_) => ResponsiveContentWrapper(child: child!),
                   );
                 },
               ),
@@ -98,7 +100,7 @@ class RootAppWidget extends ConsumerWidget {
                 routerConfig: goRouter,
                 builder: (context, child) {
                   return AppStartupWidget(
-                    onLoaded: (_) => child!,
+                    onLoaded: (_) => ResponsiveContentWrapper(child: child!),
                   );
                 },
               ),
@@ -122,7 +124,7 @@ class RootAppWidget extends ConsumerWidget {
                 routerConfig: goRouter,
                 builder: (context, child) {
                   return AppStartupWidget(
-                    onLoaded: (_) => child!,
+                    onLoaded: (_) => ResponsiveContentWrapper(child: child!),
                   );
                 },
               ),

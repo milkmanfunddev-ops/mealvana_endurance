@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "echo '{\"SUPABASE_URL\":\"'$SUPABASE_URL'\",\"SUPABASE_ANON_KEY\":\"'$SUPABASE_ANON_KEY'\",\"SENTRY_DSN\":\"'$SENTRY_DSN'\",\"MIXPANEL_PROJECT_TOKEN\":\"'$MIXPANEL_PROJECT_TOKEN'\",\"APP_ENVIRONMENT\":\"prod\"}' > .dart_defines.json && flutter/bin/flutter build web --release --wasm --pwa-strategy=none -t lib/main_web.dart --dart-define-from-file=.dart_defines.json",
+  "buildCommand": "chmod +x scripts/build_web.sh && ./scripts/build_web.sh",
   "installCommand": "if cd flutter; then git pull && cd ..; else git clone https://github.com/flutter/flutter.git --depth 1 --branch stable; fi && flutter/bin/flutter doctor",
   "outputDirectory": "build/web",
   "framework": null,

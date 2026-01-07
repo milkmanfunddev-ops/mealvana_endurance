@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -486,7 +485,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-
   Widget _buildQuickLinksSection(BuildContext context) {
     return BaseCard(
       child: Column(
@@ -568,11 +566,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
 
-          // Coach Mode - web only, show different options for coaches vs athletes
-          if (kIsWeb) ...[
-            const SizedBox(height: AppSpacing.sm),
-            _buildCoachModeLink(context),
-          ],
+          // Coach Mode - show different options for coaches vs athletes
+          _buildCoachModeLink(context),
         ],
       ),
     );

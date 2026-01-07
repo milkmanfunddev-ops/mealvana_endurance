@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/coach_dashboard_controller.dart';
@@ -394,14 +395,23 @@ class CoachDashboardScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Enter the athlete\'s user ID to send them an invitation to connect.',
+                'Enter your athlete\'s code to send them an invitation to connect.',
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Athletes can find their code in Settings → Coach Connection',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: textController,
+                textCapitalization: TextCapitalization.characters,
                 decoration: const InputDecoration(
-                  labelText: 'Athlete User ID',
-                  hintText: 'Enter athlete user ID...',
+                  labelText: 'Athlete Code',
+                  hintText: 'ATH-XXXXXXXX',
+                  helperText: 'Example: ATH-FE36370A',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -415,27 +425,29 @@ class CoachDashboardScreen extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () async {
-              if (textController.text.trim().isEmpty) return;
+              final code = textController.text.trim();
+              if (code.isEmpty) return;
 
               final coachService = ref.read(coachServiceProvider);
-              final result = await coachService.inviteAthlete(
-                athleteUserId: textController.text.trim(),
+              final result = await coachService.inviteAthleteByCode(
+                athleteCode: code,
               );
 
               if (context.mounted) {
                 Navigator.pop(context);
                 if (result != null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Invitation sent successfully'),
+                    SnackBar(
+                      content: const Text('Invitation sent successfully!'),
+                      backgroundColor: AppColors.electrolyte,
                     ),
                   );
                   ref.read(coachDashboardControllerProvider.notifier).refresh();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Failed to send invitation'),
-                      backgroundColor: Colors.red,
+                    SnackBar(
+                      content: const Text('Athlete not found. Please check the code and try again.'),
+                      backgroundColor: AppColors.dragonfruit,
                     ),
                   );
                 }

@@ -1,161 +1,90 @@
-Resolving dependencies...
-Downloading packages...
-  _fe_analyzer_shared 85.0.0 (92.0.0 available)
-  analyzer 7.6.0 (9.0.0 available)
-  analyzer_buffer 0.1.10 (0.2.0 available)
-  analyzer_plugin 0.13.4 (0.13.11 available)
-  animations 2.0.11 (2.1.1 available)
-  app_links 6.4.1 (7.0.0 available)
-  build 3.0.0 (4.0.3 available)
-  build_config 1.1.2 (1.2.0 available)
-  build_daemon 4.0.4 (4.1.1 available)
-  build_resolvers 3.0.0 (3.0.4 available)
-  build_runner 2.6.0 (2.10.4 available)
-  build_runner_core 9.2.0 (9.3.2 available)
-  built_value 8.11.1 (8.12.1 available)
-  characters 1.4.0 (1.4.1 available)
-  code_builder 4.10.1 (4.11.0 available)
-  crypto 3.0.6 (3.0.7 available)
-  custom_lint_core 0.8.0 (0.8.2 available)
-  custom_lint_visitor 1.0.0+7.7.0 (1.0.0+9.0.0 available)
-  dart_style 3.1.1 (3.1.3 available)
-  device_info_plus 10.1.2 (12.3.0 available)
-  drift 2.29.0 (2.30.0 available)
-  drift_dev 2.29.0 (2.30.0 available)
-  flutter_dotenv 5.2.1 (6.0.0 available)
-  flutter_lints 5.0.0 (6.0.0 available)
-  flutter_local_notifications 19.4.1 (19.5.0 available)
-  flutter_local_notifications_windows 1.0.2 (1.0.3 available)
-  flutter_riverpod 3.0.1 (3.1.0 available)
-  geolocator 13.0.4 (14.0.2 available)
-  geolocator_android 4.6.2 (5.0.2 available)
-  go_router 12.1.3 (17.0.1 available)
-  google_fonts 6.3.0 (6.3.3 available)
-  google_sign_in 6.3.0 (7.2.0 available)
-  google_sign_in_android 6.2.1 (7.2.7 available)
-  google_sign_in_ios 5.9.0 (6.2.4 available)
-  google_sign_in_platform_interface 2.5.0 (3.1.0 available)
-  google_sign_in_web 0.12.4+4 (1.1.0 available)
-  gotrue 2.16.0 (2.18.0 available)
-  http 1.5.0 (1.6.0 available)
-  image 4.5.4 (4.7.2 available)
-  injector 3.0.0 (4.0.0 available)
-  jni 0.14.2 (0.15.2 available)
-  lints 5.1.1 (6.0.0 available)
-  matcher 0.12.17 (0.12.18 available)
-  material_color_utilities 0.11.1 (0.13.0 available)
-  meta 1.16.0 (1.17.0 available)
-  mobile_scanner 7.0.1 (7.1.4 available)
-  mockito 5.5.0 (5.6.1 available)
-  onesignal_flutter 5.3.4 (5.3.5 available)
-  package_info_plus 8.3.1 (9.0.0 available)
-  path_provider_android 2.2.17 (2.2.22 available)
-  path_provider_foundation 2.4.1 (2.5.1 available)
-  pool 1.5.1 (1.5.2 available)
-  postgrest 2.5.0 (2.6.0 available)
-  realtime_client 2.6.0 (2.7.0 available)
-  riverpod 3.0.1 (3.1.0 available)
-  riverpod_analyzer_utils 1.0.0-dev.7 (1.0.0-dev.8 available)
-  riverpod_annotation 3.0.1 (4.0.0 available)
-  riverpod_generator 3.0.1 (4.0.0+1 available)
-  sentry 9.6.0 (9.9.1 available)
-  sentry_dart_plugin 3.1.1 (3.2.0 available)
-  sentry_drift 9.6.0 (9.9.1 available)
-  sentry_flutter 9.6.0 (9.9.1 available)
-  shared_preferences 2.5.3 (2.5.4 available)
-  shared_preferences_android 2.4.11 (2.4.18 available)
-  shared_preferences_foundation 2.5.4 (2.5.6 available)
-  sign_in_with_apple 6.1.4 (7.0.1 available)
-  sign_in_with_apple_platform_interface 1.1.0 (2.0.0 available)
-  sign_in_with_apple_web 2.1.1 (3.0.0 available)
-  simple_gradient_text 1.3.0 (1.4.0 available)
-  smooth_page_indicator 1.2.1 (2.0.1 available)
-  source_gen 3.1.0 (4.1.1 available)
-  sqlite3 2.9.0 (3.1.2 available)
-  sqlite3_flutter_libs 0.5.39 (0.5.41 available)
-  supabase 2.10.0 (2.10.2 available)
-  supabase_flutter 2.10.3 (2.12.0 available)
-  system_info2 4.0.0 (4.1.0 available)
-  test 1.26.2 (1.28.0 available)
-  test_api 0.7.6 (0.7.8 available)
-  test_core 0.6.11 (0.6.14 available)
-  universal_io 2.2.2 (2.3.1 available)
-  url_launcher_android 6.3.17 (6.3.28 available)
-  url_launcher_ios 6.3.3 (6.3.6 available)
-  url_launcher_linux 3.2.1 (3.2.2 available)
-  url_launcher_macos 3.2.2 (3.2.5 available)
-  url_launcher_windows 3.1.4 (3.1.5 available)
-  uuid 4.5.1 (4.5.2 available)
-  vm_service 15.0.0 (15.0.2 available)
-  watcher 1.1.2 (1.2.0 available)
-  win32 5.14.0 (5.15.0 available)
-  win32_registry 1.1.5 (2.1.0 available)
-Got dependencies!
-90 packages have newer versions incompatible with dependency constraints.
-Try `flutter pub outdated` for more information.
 Launching lib/main_web.dart on Chrome in debug mode...
-This app is linked to the debug service: ws://127.0.0.1:56646/8-3Kxss6VW0=/ws
-Debug service listening on ws://127.0.0.1:56646/8-3Kxss6VW0=/ws
-Connecting to VM Service at ws://127.0.0.1:56646/8-3Kxss6VW0=/ws
+This app is linked to the debug service: ws://127.0.0.1:54009/L64iJLuqv70=/ws
+Debug service listening on ws://127.0.0.1:54009/L64iJLuqv70=/ws
+Connecting to VM Service at ws://127.0.0.1:54009/L64iJLuqv70=/ws
 Connected to the VM Service.
 Starting application from main method in: org-dartlang-app:/web_entrypoint.dart.
 Found an existing <meta name="viewport"> tag. Flutter Web uses its own viewport configuration for better compatibility with Flutter. This tag will be replaced.
-[STARTUP] Widget binding initialized: 47ms
+[STARTUP] Widget binding initialized: 27ms
 [STARTUP] Checking dart defines...
 [STARTUP] SUPABASE_URL: https://vlmtsdzpnjnavdgytcmi.supabase.co
 [STARTUP] APP_ENVIRONMENT: dev
-[STARTUP] AppConfig created (web): 48ms
+[STARTUP] AppConfig created (web): 28ms
 [STARTUP] Starting Sentry init...
 Sentry Logger [log]:
 Sentry Logger [log]:
 Sentry Logger [log]:
 Sentry Logger [log]:
-[STARTUP] Sentry init completed: 213ms
+[STARTUP] Sentry init completed: 210ms
 [STARTUP] Starting Supabase and runApp...
 [STARTUP] Starting Supabase.initialize...
 supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-[STARTUP] Supabase.initialize completed: 228ms
+[STARTUP] Supabase.initialize completed: 223ms
 [STARTUP] Calling runApp...
 [APP_STARTUP] Starting critical path initialization...
-[DRIFT_WEB] Using WebDatabase with sql.js + IndexedDB storage
+[DRIFT_WEB] Opening WasmDatabase...
 [APP_STARTUP] initializeDatabase started
 [APP_STARTUP] initializeSupabaseAuth started
 [APP_STARTUP] setSentryUserContext started
 [APP_STARTUP] setSentryUserContext completed: 24ms
+[DRIFT_WEB] Database opened successfully
+[DRIFT_WEB] Storage implementation: WasmStorageImplementation.opfsLocks
+[DRIFT_WEB] Missing browser features: {MissingBrowserFeature.dedicatedWorkersInSharedWorkers}
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:44.298 (+0:00:00.031000)
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:51.052 (+0:00:00.476000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:51.064 (+0:00:00.488000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
 │ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:44.300 (+0:00:00.033000)
+│ 14:52:51.071 (+0:00:00.495000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database recovery failed - app cannot continue
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 120ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:44.385 (+0:00:00.118000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 1492ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+[APP_STARTUP] initializeDatabase FAILED after 514ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 1064ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:45.763 (+0:00:01.496000)
+│ 14:52:51.645 (+0:00:01.069000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [APP_STARTUP] App startup initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -165,39 +94,60 @@ supabase.supabase_flutter: INFO: ***** Supabase init completed *****
 [APP_STARTUP] setSentryUserContext started
 [APP_STARTUP] setSentryUserContext completed: 2ms
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:45.975 (+0:00:01.708000)
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:51.855 (+0:00:01.279000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:51.860 (+0:00:01.284000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
 │ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:45.976 (+0:00:01.709000)
+│ 14:52:51.864 (+0:00:01.288000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database recovery failed - app cannot continue
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 9ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:45.980 (+0:00:01.713000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 16ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+[APP_STARTUP] initializeDatabase FAILED after 15ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 20ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:45.987 (+0:00:01.720000)
+│ 14:52:51.873 (+0:00:01.297000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [APP_STARTUP] App startup initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -207,39 +157,60 @@ supabase.supabase_flutter: INFO: ***** Supabase init completed *****
 [APP_STARTUP] setSentryUserContext started
 [APP_STARTUP] setSentryUserContext completed: 0ms
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:46.394 (+0:00:02.127000)
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:52.279 (+0:00:01.703000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:52.282 (+0:00:01.706000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
 │ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:46.395 (+0:00:02.128000)
+│ 14:52:52.287 (+0:00:01.711000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database recovery failed - app cannot continue
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 6ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:46.399 (+0:00:02.132000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 12ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+[APP_STARTUP] initializeDatabase FAILED after 12ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 16ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:46.406 (+0:00:02.139000)
+│ 14:52:52.294 (+0:00:01.718000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [APP_STARTUP] App startup initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -249,81 +220,60 @@ supabase.supabase_flutter: INFO: ***** Supabase init completed *****
 [APP_STARTUP] setSentryUserContext started
 [APP_STARTUP] setSentryUserContext completed: 0ms
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:47.213 (+0:00:02.946000)
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:53.100 (+0:00:02.524000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:53.104 (+0:00:02.528000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
 │ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:47.214 (+0:00:02.947000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [DATABASE] Database recovery failed - app cannot continue
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 5ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:47.218 (+0:00:02.951000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 10ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:47.223 (+0:00:02.956000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [APP_STARTUP] App startup initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] Starting critical path initialization...
-[APP_STARTUP] initializeDatabase started
-[APP_STARTUP] initializeSupabaseAuth started
-[APP_STARTUP] setSentryUserContext started
-[APP_STARTUP] setSentryUserContext completed: 1ms
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:48.838 (+0:00:04.571000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [DATABASE] Database initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
-│ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:48.840 (+0:00:04.573000)
+│ 14:52:53.109 (+0:00:02.533000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database recovery failed - app cannot continue
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 6ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:48.843 (+0:00:04.576000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 12ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+[APP_STARTUP] initializeDatabase FAILED after 12ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 16ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:48.849 (+0:00:04.582000)
+│ 14:52:53.116 (+0:00:02.540000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [APP_STARTUP] App startup initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -333,39 +283,60 @@ supabase.supabase_flutter: INFO: ***** Supabase init completed *****
 [APP_STARTUP] setSentryUserContext started
 [APP_STARTUP] setSentryUserContext completed: 0ms
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:52.056 (+0:00:07.789000)
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:54.732 (+0:00:04.156000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:54.736 (+0:00:04.160000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
 │ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:52.057 (+0:00:07.790000)
+│ 14:52:54.741 (+0:00:04.165000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database recovery failed - app cannot continue
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 5ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:52.060 (+0:00:07.793000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 11ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+[APP_STARTUP] initializeDatabase FAILED after 13ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 17ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:52.066 (+0:00:07.799000)
+│ 14:52:54.749 (+0:00:04.173000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [APP_STARTUP] App startup initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -375,123 +346,60 @@ supabase.supabase_flutter: INFO: ***** Supabase init completed *****
 [APP_STARTUP] setSentryUserContext started
 [APP_STARTUP] setSentryUserContext completed: 0ms
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:58.472 (+0:00:14.205000)
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:57.964 (+0:00:07.388000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:52:57.969 (+0:00:07.393000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
 │ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:58.473 (+0:00:14.206000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [DATABASE] Database recovery failed - app cannot continue
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 5ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:58.477 (+0:00:14.210000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 11ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:34:58.483 (+0:00:14.216000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [APP_STARTUP] App startup initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] Starting critical path initialization...
-[APP_STARTUP] initializeDatabase started
-[APP_STARTUP] initializeSupabaseAuth started
-[APP_STARTUP] setSentryUserContext started
-[APP_STARTUP] setSentryUserContext completed: 1ms
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:04.897 (+0:00:20.630000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [DATABASE] Database initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
-│ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:04.898 (+0:00:20.631000)
+│ 14:52:57.973 (+0:00:07.397000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database recovery failed - app cannot continue
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 7ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:04.902 (+0:00:20.635000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 12ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+[APP_STARTUP] initializeDatabase FAILED after 13ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 17ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:04.907 (+0:00:20.640000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [APP_STARTUP] App startup initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] Starting critical path initialization...
-[APP_STARTUP] initializeDatabase started
-[APP_STARTUP] initializeSupabaseAuth started
-[APP_STARTUP] setSentryUserContext started
-[APP_STARTUP] setSentryUserContext completed: 2ms
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:11.315 (+0:00:27.048000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [DATABASE] Database initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
-│ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:11.316 (+0:00:27.049000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [DATABASE] Database recovery failed - app cannot continue
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 7ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:11.319 (+0:00:27.052000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 12ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:11.324 (+0:00:27.057000)
+│ 14:52:57.981 (+0:00:07.405000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [APP_STARTUP] App startup initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -501,39 +409,60 @@ supabase.supabase_flutter: INFO: ***** Supabase init completed *****
 [APP_STARTUP] setSentryUserContext started
 [APP_STARTUP] setSentryUserContext completed: 0ms
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:17.732 (+0:00:33.465000)
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:04.398 (+0:00:13.822000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:04.403 (+0:00:13.827000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
 │ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:17.733 (+0:00:33.466000)
+│ 14:53:04.407 (+0:00:13.831000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database recovery failed - app cannot continue
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 5ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:17.736 (+0:00:33.469000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 9ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+[APP_STARTUP] initializeDatabase FAILED after 14ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 22ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:17.741 (+0:00:33.474000)
+│ 14:53:04.420 (+0:00:13.844000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [APP_STARTUP] App startup initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -543,41 +472,188 @@ supabase.supabase_flutter: INFO: ***** Supabase init completed *****
 [APP_STARTUP] setSentryUserContext started
 [APP_STARTUP] setSentryUserContext completed: 0ms
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:24.148 (+0:00:39.881000)
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:10.836 (+0:00:20.260000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:10.841 (+0:00:20.265000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
 │ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
-│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 179:17  <fn>
-│ #3   package:mealvana_endurance/shared/database/app_database.dart 2071:3                          <fn>
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:24.149 (+0:00:39.882000)
+│ 14:53:10.847 (+0:00:20.271000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [DATABASE] Database recovery failed - app cannot continue
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeDatabase FAILED after 4ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-│ Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:24.152 (+0:00:39.885000)
-├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ ⛔ [AUTH] Supabase Auth initialization failed
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[APP_STARTUP] initializeSupabaseAuth FAILED after 9ms: Unsupported operation: Could not access the sql.js javascript library. The drift documentation contains instructions on how to setup drift the web, which might help you fix this.
+[APP_STARTUP] initializeDatabase FAILED after 15ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 20ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 │ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ #0   package:mealvana_endurance/shared/database/app_database.dart 2069:7               <fn>
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-│ 06:35:24.157 (+0:00:39.890000)
+│ 14:53:10.856 (+0:00:20.280000)
 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 │ ⛔ [APP_STARTUP] App startup initialization failed
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Sentry Logger [log]:
 Sentry Logger [log]:
+[APP_STARTUP] Starting critical path initialization...
+[APP_STARTUP] initializeDatabase started
+[APP_STARTUP] initializeSupabaseAuth started
+[APP_STARTUP] setSentryUserContext started
+[APP_STARTUP] setSentryUserContext completed: 0ms
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:17.274 (+0:00:26.698000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:17.279 (+0:00:26.703000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
+│ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:17.284 (+0:00:26.708000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [DATABASE] Database recovery failed - app cannot continue
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[APP_STARTUP] initializeDatabase FAILED after 15ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 20ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:17.294 (+0:00:26.718000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [APP_STARTUP] App startup initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[APP_STARTUP] Starting critical path initialization...
+[APP_STARTUP] initializeDatabase started
+[APP_STARTUP] initializeSupabaseAuth started
+[APP_STARTUP] setSentryUserContext started
+[APP_STARTUP] setSentryUserContext completed: 0ms
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:23.713 (+0:00:33.137000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [DATABASE] Database initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+│   Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters: 
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   drift_worker.js 429:20                                                            Object.a
+│ #1   drift_worker.js 4874:23                                                           Object.j4
+│ #2   drift_worker.js 10731:12                                                          h1
+│ #3   drift_worker.js 9576:24                                                           iW.kB
+│ #4   drift_worker.js 10248:31                                                          <fn>
+│ #5   drift_worker.js 1638:63                                                           of.a
+│ #6   drift_worker.js 6125:14                                                           of.$2
+│ #7   drift_worker.js 1624:10                                                           Object.l
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:23.722 (+0:00:33.146000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [AUTH] Supabase Auth initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   package:mealvana_endurance/shared/services/logging_service.dart 358:7                        [_logWithContext]
+│ #1   package:mealvana_endurance/shared/services/logging_service.dart 185:5                        error
+│ #2   package:mealvana_endurance/features/app_startup/application/app_startup_service.dart 180:17  <fn>
+│ #3   package:mealvana_endurance/shared/database/app_database.dart 2155:3                          <fn>
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:23.731 (+0:00:33.155000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [DATABASE] Database recovery failed - app cannot continue
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[APP_STARTUP] initializeDatabase FAILED after 25ms: Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+[APP_STARTUP] initializeSupabaseAuth FAILED after 31ms: SqliteException(1): while executing, no such function: char_length, SQL logic error (code 1)
+  Causing statement: CREATE TABLE IF NOT EXISTS "coaches" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, "email" TEXT NOT NULL, "bio" TEXT NULL, "status" TEXT NOT NULL DEFAULT 'pending', "reviewed_by" TEXT NULL, "reviewed_at" INTEGER NULL, "rejection_reason" TEXT NULL, "created_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "updated_at" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"), UNIQUE(user_id), CHECK (status IN ('pending', 'approved', 'rejected')), CHECK (char_length(trim(first_name)) >= 1), CHECK (char_length(trim(last_name)) >= 1));, parameters:
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ Exception: Database recovery failed: Unsupported operation: Database file path not available on web
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ #0   package:mealvana_endurance/shared/database/app_database.dart 2153:7               <fn>
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ 14:53:23.744 (+0:00:33.168000)
+├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│ ⛔ [APP_STARTUP] App startup initialization failed
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

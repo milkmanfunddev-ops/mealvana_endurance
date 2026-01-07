@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../domain/coach_athlete_relationship.dart';
 import '../../domain/coach_message.dart';
@@ -217,6 +218,12 @@ class AthleteDetailScreen extends ConsumerWidget {
               '${activity.distanceMiles?.toStringAsFixed(1) ?? "-"} mi - ${_formatDate(activity.scheduledDateTime)}',
             ),
             trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              context.push('/plan', extra: {
+                'activityId': activity.id,
+                'isCoachView': true,
+              });
+            },
           ),
         );
       },
