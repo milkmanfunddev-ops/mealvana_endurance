@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/app_content.dart';
 import '../../../shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
@@ -14,13 +14,15 @@ part 'content_repository.g.dart';
 class ContentRepository {
   ContentRepository({
     required this.supabase,
+    required this.sharedPreferences,
   });
-  
+
   static const String _contentKey = 'app_content_cache';
   static const String _defaultsAssetPath = 'assets/config/content_defaults.json';
   static const String supabaseTableName = 'app_content';
-  
+
   final SupabaseClient supabase;
+  final SharedPreferences sharedPreferences;
 
   /// Get the current active content
   Future<AppContent?> getActiveContent({
@@ -51,8 +53,7 @@ class ContentRepository {
   /// Get content from local cache
   Future<AppContent?> _getCachedContent() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedJson = prefs.getString(_contentKey);
+      final cachedJson = sharedPreferences.getString(_contentKey);
       
       if (cachedJson != null) {
         final Map<String, dynamic> contentMap = json.decode(cachedJson);
@@ -67,9 +68,8 @@ class ContentRepository {
   /// Cache content locally
   Future<void> _cacheContent(AppContent content) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final contentJson = json.encode(content.toJson());
-      await prefs.setString(_contentKey, contentJson);
+      await sharedPreferences.setString(_contentKey, contentJson);
     } catch (e) {
       DebugLogger.error('Error caching content: $e');
     }
@@ -132,8 +132,7 @@ class ContentRepository {
     String locale = 'en',
   }) async {
     // Clear local cache
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_contentKey);
+    await sharedPreferences.remove(_contentKey);
     
     // Force fetch from remote
     final content = await getActiveContent(environment: environment, locale: locale);
@@ -157,16 +156,16 @@ class ContentRepository {
 
   /// Clear all cached content
   Future<void> clearCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_contentKey);
+    await sharedPreferences.remove(_contentKey);
   }
 }
 
 /// Content repository provider
 @riverpod
 ContentRepository contentRepository(Ref ref) {
-  final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+  final deps = ref.read(appExternalDepsProvider);
   return ContentRepository(
-    supabase: supabase,
+    supabase: deps.supabaseClient,
+    sharedPreferences: deps.sharedPreferences,
   );
 }

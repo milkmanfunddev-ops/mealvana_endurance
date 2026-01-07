@@ -1,3 +1,11 @@
+-- we don't know how to generate root <with-no-name> (class Root) :(
+
+comment on database postgres is 'default administrative connection database';
+
+grant create on database postgres to supabase_etl_admin;
+
+grant connect, create, temporary on database postgres to dashboard_user;
+
 -- Unknown how to generate base type type
 
 alter type gtrgm owner to supabase_admin;
@@ -337,8 +345,7 @@ create table users
 (
     id                            uuid                      default gen_random_uuid()                      not null
         primary key,
-    device_id                     text                                                                     not null
-        unique,
+    device_id                     text                                                                     not null,
     created_at                    timestamp with time zone  default now(),
     updated_at                    timestamp with time zone  default now(),
     gender                        public.gender_enum,
@@ -469,7 +476,15 @@ create table activities
     humidity_percent               integer,
     nutrition_adherence_score      double precision,
     performance_vs_target          double precision,
-    activity_type                  activity_type_enum not null
+    activity_type                  activity_type_enum not null,
+    synced_from_provider           text,
+    provider_workout_id            text,
+    provider_workout_url           text,
+    last_synced_at                 timestamp with time zone,
+    workout_subtype                text,
+    pace_min_minutes_per_mile      real,
+    pace_max_minutes_per_mile      real,
+    distance_meters                real
 );
 
 comment on table activities is 'All calendar entries including workouts and events';
@@ -524,6 +539,10 @@ create index idx_activities_status
 create index idx_activities_swimming_pace
     on activities (swimming_speed_per_100m)
     where (swimming_speed_per_100m IS NOT NULL);
+
+create index idx_activities_provider_sync
+    on activities (synced_from_provider, provider_workout_id)
+    where (synced_from_provider IS NOT NULL);
 
 grant delete, insert, references, select, trigger, truncate, update on activities to anon;
 
@@ -748,18 +767,22 @@ grant delete, insert, references, select, trigger, truncate, update on feature_s
 
 create table food_preferences
 (
-    id               uuid                     default gen_random_uuid() not null
+    id                uuid                     default gen_random_uuid() not null
         primary key,
-    user_id          uuid                                               not null
+    user_id           uuid                                               not null
         references users
             on delete cascade,
-    food_name        text                                               not null,
-    preference       text                                               not null
+    food_name         text                                               not null,
+    preference        text                                               not null
         constraint food_preferences_preference_check
             check (preference = ANY (ARRAY ['like'::text, 'dislike'::text, 'willing_to_try'::text])),
-    created_at       timestamp with time zone default now()             not null,
-    updated_at       timestamp with time zone default now()             not null,
-    preference_level smallint                 default 2                 not null
+    created_at        timestamp with time zone default now()             not null,
+    updated_at        timestamp with time zone default now()             not null,
+    preference_level  smallint                 default 1                 not null,
+    preference_source text                     default 'manual'::text    not null
+        constraint food_preferences_preference_source_check
+            check ((preference_source = 'manual'::text) OR (preference_source ~~ 'allergy:%'::text) OR
+                   (preference_source ~~ 'dietary:%'::text))
 );
 
 alter table food_preferences
@@ -770,6 +793,12 @@ create index idx_food_preferences_preference
 
 create unique index idx_food_preferences_user_food
     on food_preferences (user_id, food_name);
+
+create index idx_food_preferences_preference_source
+    on food_preferences (preference_source);
+
+create index idx_food_preferences_user_source
+    on food_preferences (user_id, preference_source);
 
 grant delete, insert, references, select, trigger, truncate, update on food_preferences to anon;
 
@@ -917,11 +946,6 @@ create index idx_carb_loading_user_foods_device
 create index idx_carb_loading_user_foods_user_id
     on carb_loading_user_foods (user_id);
 
-create policy "Users can manage their own carb loading foods" on carb_loading_user_foods
-    as permissive
-    for all
-    using (user_id = auth.uid());
-
 grant delete, insert, references, select, trigger, truncate, update on carb_loading_user_foods to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on carb_loading_user_foods to authenticated;
@@ -946,11 +970,6 @@ create index idx_user_foods_user_id
 
 create unique index uq_user_foods_device_clientid
     on user_foods (device_id, client_food_id);
-
-create policy "Users can manage their own foods" on user_foods
-    as permissive
-    for all
-    using (user_id = auth.uid());
 
 grant delete, insert, references, select, trigger, truncate, update on user_foods to anon;
 
@@ -979,6 +998,51 @@ grant delete, insert, references, select, trigger, truncate, update on users to 
 grant delete, insert, references, select, trigger, truncate, update on users to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on users to service_role;
+
+create table integrations
+(
+    id                     uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id                uuid                                               not null
+        references users
+            on delete cascade,
+    provider               text                                               not null
+        constraint integrations_provider_check
+            check (provider = ANY
+                   (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text])),
+    access_token           text                                               not null,
+    refresh_token          text,
+    token_expires_at       timestamp with time zone,
+    provider_athlete_id    text                                               not null,
+    provider_athlete_name  text,
+    provider_athlete_email text,
+    is_active              boolean                  default true,
+    last_sync_at           timestamp with time zone,
+    last_sync_status       text
+        constraint integrations_last_sync_status_check
+            check ((last_sync_status IS NULL) OR
+                   (last_sync_status = ANY (ARRAY ['success'::text, 'error'::text, 'pending'::text]))),
+    last_sync_error        text,
+    created_at             timestamp with time zone default now(),
+    updated_at             timestamp with time zone default now(),
+    unique (user_id, provider)
+);
+
+alter table integrations
+    owner to postgres;
+
+create index idx_integrations_user_provider
+    on integrations (user_id, provider);
+
+create index idx_integrations_active
+    on integrations (is_active)
+    where (is_active = true);
+
+grant delete, insert, references, select, trigger, truncate, update on integrations to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on integrations to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on integrations to service_role;
 
 create function set_limit(real) returns real
     strict
@@ -1678,42 +1742,6 @@ $$
 
 alter function update_updated_at_column() owner to postgres;
 
-create trigger update_app_content_updated_at
-    before update
-    on app_content
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_carb_loading_days_updated_at
-    before update
-    on carb_loading_days
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_carb_loading_foods_updated_at
-    before update
-    on carb_loading_foods
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_carb_loading_plans_updated_at
-    before update
-    on carb_loading_plans
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_foods_updated_at
-    before update
-    on foods
-    for each row
-execute procedure update_updated_at_column();
-
-create trigger update_users_updated_at
-    before update
-    on users
-    for each row
-execute procedure update_updated_at_column();
-
 grant execute on function update_updated_at_column() to anon;
 
 grant execute on function update_updated_at_column() to authenticated;
@@ -1878,17 +1906,29 @@ $$
 
 alter function update_feature_survey_timestamp() owner to postgres;
 
-create trigger feature_survey_update_timestamp
-    before update
-    on feature_survey_responses
-    for each row
-execute procedure update_feature_survey_timestamp();
-
 grant execute on function update_feature_survey_timestamp() to anon;
 
 grant execute on function update_feature_survey_timestamp() to authenticated;
 
 grant execute on function update_feature_survey_timestamp() to service_role;
+
+create function update_integrations_updated_at() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+alter function update_integrations_updated_at() owner to postgres;
+
+grant execute on function update_integrations_updated_at() to anon;
+
+grant execute on function update_integrations_updated_at() to authenticated;
+
+grant execute on function update_integrations_updated_at() to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 

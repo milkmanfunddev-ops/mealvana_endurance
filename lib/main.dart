@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'shared/services/app_config.dart';
+import 'shared/services/app_external_deps.dart';
 import 'shared/widgets/root_app_widget.dart';
 
 /// Default entry point (Production fallback)
@@ -137,6 +139,11 @@ Future<void> _runMealvanaApp(AppConfig config, Stopwatch mainStopwatch) async {
   );
   debugPrint('[STARTUP] Supabase.initialize completed: ${mainStopwatch.elapsedMilliseconds}ms');
 
+  // Initialize SharedPreferences (non-recoverable, required for app startup)
+  debugPrint('[STARTUP] Starting SharedPreferences.getInstance...');
+  final sharedPreferences = await SharedPreferences.getInstance();
+  debugPrint('[STARTUP] SharedPreferences initialized: ${mainStopwatch.elapsedMilliseconds}ms');
+
   // Entry point following Andrea Bizzotto's pattern with runZonedGuarded pattern
   debugPrint('[STARTUP] Calling runApp...');
   // Widget hierarchy:
@@ -149,6 +156,8 @@ Future<void> _runMealvanaApp(AppConfig config, Stopwatch mainStopwatch) async {
         overrides: [
           // Override appConfigProvider with loaded config
           appConfigProvider.overrideWithValue(config),
+          // Override sharedPreferencesProvider with initialized instance
+          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
         ],
         child: const RootAppWidget(),
       ),

@@ -12,7 +12,6 @@ import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
-import '../../../shared/services/preferences_service.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/utils/platform_io.dart' if (dart.library.html) '../../../shared/utils/platform_web.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
@@ -465,7 +464,7 @@ class OAuthService extends _$OAuthService {
 
         try {
           // Clear sync timestamp to force full sync (not incremental)
-          final prefs = await ref.read(sharedPreferencesProvider.future);
+          final prefs = ref.read(sharedPreferencesProvider);
           await prefs.remove('last_sync_timestamp_$oauthUserId');
 
           // Trigger sync using SyncCoordinator (provides sync lock and logging)
@@ -598,7 +597,7 @@ class OAuthService extends _$OAuthService {
 
         try {
           // Clear sync timestamp to force full sync (not incremental)
-          final prefs = await ref.read(sharedPreferencesProvider.future);
+          final prefs = ref.read(sharedPreferencesProvider);
           await prefs.remove('last_sync_timestamp_$oauthUserId');
 
           // Trigger sync using SyncCoordinator (provides sync lock and logging)

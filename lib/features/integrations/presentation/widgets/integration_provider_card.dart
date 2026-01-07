@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
@@ -6,6 +7,7 @@ import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 /// Card displaying an integration provider (Final Surge, TrainingPeaks, etc.)
 ///
 /// Shows connection status and allows connect/disconnect/sync actions.
+/// Logo should include the provider wordmark - no separate text label is shown.
 class IntegrationProviderCard extends StatelessWidget {
   const IntegrationProviderCard({
     super.key,
@@ -14,19 +16,25 @@ class IntegrationProviderCard extends StatelessWidget {
     required this.isConnected,
     required this.isConnecting,
     this.iconPath,
+    this.logoHeight = 24,
     this.athleteName,
     this.comingSoonText,
     this.onConnect,
     this.onDisconnect,
     this.onSync,
     this.isSyncing = false,
+    this.showSyncButton = true,
+    this.hasSynced = false,
   });
 
-  /// Provider name (e.g., "Final Surge")
+  /// Provider name (used for placeholder if no logo, not displayed as text)
   final String name;
 
-  /// Path to provider logo image
+  /// Path to provider logo image (PNG or SVG with wordmark)
   final String? iconPath;
+
+  /// Height for the logo (default 24, adjust per provider for visual balance)
+  final double logoHeight;
 
   /// Whether this provider is available for connection
   final bool isAvailable;
@@ -55,6 +63,14 @@ class IntegrationProviderCard extends StatelessWidget {
   /// Whether sync is in progress
   final bool isSyncing;
 
+  /// Whether to show "Sync Now" button when connected.
+  /// If false, shows "Connected" badge instead.
+  final bool showSyncButton;
+
+  /// Whether sync has completed successfully (shows "Synced!" instead of "Sync Now").
+  /// This is in-memory only and resets when navigating away.
+  final bool hasSynced;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -68,56 +84,58 @@ class IntegrationProviderCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
-          // Provider logo
-          _buildLogo(),
+          // Provider logo with wordmark (no separate text label)
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _buildLogo(),
+            ),
+          ),
           const SizedBox(width: AppSpacing.md),
 
-          // Provider info
-          Expanded(child: _buildInfo()),
-
-          // Action button
-          _buildAction(),
+          // Action button - fixed width to prevent logo shifting during state changes
+          SizedBox(
+            width: 200,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: _buildAction(),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildLogo() {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: AppColors.blackberry,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: iconPath != null
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                iconPath!,
-                width: 48,
-                height: 48,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildPlaceholderIcon(),
-              ),
+    if (iconPath == null) {
+      return _buildPlaceholderIcon();
+    }
+
+    // Check if it's an SVG file
+    final isSvg = iconPath!.toLowerCase().endsWith('.svg');
+
+    return SizedBox(
+      height: logoHeight,
+      child: isSvg
+          ? SvgPicture.asset(
+              iconPath!,
+              height: logoHeight,
+              fit: BoxFit.contain,
+              placeholderBuilder: (_) => _buildPlaceholderIcon(),
             )
-          : _buildPlaceholderIcon(),
+          : Image.asset(
+              iconPath!,
+              height: logoHeight,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => _buildPlaceholderIcon(),
+            ),
     );
   }
 
   Widget _buildPlaceholderIcon() {
-    return Center(
-      child: Text(
-        name.isNotEmpty ? name[0].toUpperCase() : '?',
-        style: AppTextStyles.dateTime.copyWith(color: AppColors.textDark),
-      ),
-    );
-  }
-
-  Widget _buildInfo() {
     return Text(
       name,
-      style: AppTextStyles.activityTitle.copyWith(color: AppColors.textDark, fontSize: 12),
+      style: AppTextStyles.activityTitle.copyWith(color: AppColors.textDark, fontSize: 14),
     );
   }
 
@@ -164,9 +182,13 @@ class IntegrationProviderCard extends StatelessWidget {
       );
     }
 
-    // Connected - show Sync Now button with disconnect option
+    // Connected - show Sync Now button or Connected badge
     if (isConnected) {
-      return _SyncButton(onSync: onSync, onDisconnect: onDisconnect);
+      if (showSyncButton) {
+        return _SyncButton(onSync: onSync, onDisconnect: onDisconnect, hasSynced: hasSynced);
+      } else {
+        return _ConnectedBadge();
+      }
     }
 
     // Not connected - show connect button
@@ -175,11 +197,13 @@ class IntegrationProviderCard extends StatelessWidget {
 }
 
 /// Sync button for connected providers - shows Sync Now with long-press to disconnect
+/// Shows "Synced!" after successful sync (in-memory only, resets on navigation)
 class _SyncButton extends StatelessWidget {
-  const _SyncButton({this.onSync, this.onDisconnect});
+  const _SyncButton({this.onSync, this.onDisconnect, this.hasSynced = false});
 
   final VoidCallback? onSync;
   final VoidCallback? onDisconnect;
+  final bool hasSynced;
 
   @override
   Widget build(BuildContext context) {
@@ -199,13 +223,13 @@ class _SyncButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.sync,
+              hasSynced ? Icons.check_circle : Icons.sync,
               size: 16,
               color: AppColors.textDark,
             ),
             const SizedBox(width: 4),
             Text(
-              'Sync Now',
+              hasSynced ? 'Synced!' : 'Sync Now',
               style: AppTextStyles.buttonPrimary.copyWith(color: AppColors.textDark),
             ),
           ],
@@ -274,6 +298,40 @@ class _ConnectButton extends StatelessWidget {
           'Connect',
           style: AppTextStyles.buttonPrimary.copyWith(color: AppColors.textDark),
         ),
+      ),
+    );
+  }
+}
+
+/// Connected badge shown when sync button is disabled (e.g., in onboarding)
+class _ConnectedBadge extends StatelessWidget {
+  const _ConnectedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.dragonfruit,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.check_circle,
+            size: 16,
+            color: AppColors.textDark,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Connected',
+            style: AppTextStyles.buttonPrimary.copyWith(color: AppColors.textDark),
+          ),
+        ],
       ),
     );
   }

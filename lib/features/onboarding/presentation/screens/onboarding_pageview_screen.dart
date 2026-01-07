@@ -11,7 +11,7 @@ import 'swimming_details_screen.dart';
 import 'dietary_preference_screen.dart';
 import 'allergies_screen.dart';
 import 'food_preferences_v2_screen.dart';
-import '../../../integrations/presentation/screens/connect_training_screen.dart';
+import '../../../settings/presentation/screens/connected_apps_screen.dart';
 
 /// Onboarding PageView Screen - Wrapper for all onboarding steps
 ///
@@ -56,7 +56,7 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
     return [
       // 1. Connect Training (Final Surge, TrainingPeaks, etc.)
       PageKeepAliveWrapper(
-        child: ConnectTrainingScreen(
+        child: ConnectedAppsScreen(
           onContinue: _nextPage,
           onBack: null, // First page - can't go back
         ),

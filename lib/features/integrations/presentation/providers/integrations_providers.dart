@@ -1,3 +1,4 @@
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../shared/database/database_provider.dart';
@@ -15,6 +16,12 @@ import '../../data/training_peaks_api_client.dart';
 import '../../domain/integration.dart';
 
 part 'integrations_providers.g.dart';
+
+/// Provider for app package info (version, build number, etc.)
+@Riverpod(keepAlive: true)
+Future<PackageInfo> packageInfo(Ref ref) async {
+  return PackageInfo.fromPlatform();
+}
 
 /// Final Surge Client ID
 /// TODO: Move to environment variables
@@ -130,11 +137,13 @@ Future<List<IntegrationModel>> userIntegrations(
 
 /// Provider for TrainingPeaks API client
 @Riverpod(keepAlive: true)
-TrainingPeaksApiClient trainingPeaksApiClient(Ref ref) {
+Future<TrainingPeaksApiClient> trainingPeaksApiClient(Ref ref) async {
   final config = ref.watch(appConfigProvider);
+  final packageInfoData = await ref.watch(packageInfoProvider.future);
   return TrainingPeaksApiClient(
     clientId: config.trainingPeaksClientId,
     clientSecret: config.trainingPeaksClientSecret,
+    appVersion: packageInfoData.version,
     useSandbox: config.trainingPeaksUseSandbox,
   );
 }
@@ -147,9 +156,9 @@ TrainingPeaksTransformer trainingPeaksTransformer(Ref ref) {
 
 /// Provider for TrainingPeaks OAuth service
 @Riverpod(keepAlive: true)
-TrainingPeaksOAuthService trainingPeaksOAuthService(Ref ref) {
+Future<TrainingPeaksOAuthService> trainingPeaksOAuthService(Ref ref) async {
   final config = ref.watch(appConfigProvider);
-  final apiClient = ref.watch(trainingPeaksApiClientProvider);
+  final apiClient = await ref.watch(trainingPeaksApiClientProvider.future);
   final repository = ref.watch(integrationsRepositoryProvider);
 
   return TrainingPeaksOAuthService(
@@ -163,9 +172,9 @@ TrainingPeaksOAuthService trainingPeaksOAuthService(Ref ref) {
 
 /// Provider for TrainingPeaks sync service
 @Riverpod(keepAlive: true)
-TrainingPeaksSyncService trainingPeaksSyncService(Ref ref) {
-  final apiClient = ref.watch(trainingPeaksApiClientProvider);
-  final oauthService = ref.watch(trainingPeaksOAuthServiceProvider);
+Future<TrainingPeaksSyncService> trainingPeaksSyncService(Ref ref) async {
+  final apiClient = await ref.watch(trainingPeaksApiClientProvider.future);
+  final oauthService = await ref.watch(trainingPeaksOAuthServiceProvider.future);
   final integrationsRepository = ref.watch(integrationsRepositoryProvider);
   final activitiesRepository = ref.watch(activitiesRepositoryProvider);
   final transformer = ref.watch(trainingPeaksTransformerProvider);

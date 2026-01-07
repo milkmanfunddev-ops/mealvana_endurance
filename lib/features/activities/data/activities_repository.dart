@@ -244,16 +244,22 @@ class ActivitiesRepository {
     }
   }
 
-  /// Find activity by external provider workout ID
+  /// Find activity by external provider workout ID for a specific user
   ///
   /// Used to check if a workout has already been imported from Final Surge, etc.
+  /// IMPORTANT: This method is user-scoped to allow multiple users to import
+  /// the same workout from their respective training platforms.
   Future<domain.Activity?> findByProviderWorkoutId(
+    String userId,
     String provider,
     String providerWorkoutId,
   ) async {
     try {
+      // CRITICAL: Filter by user_id to allow per-user deduplication
+      // Without this, User B cannot import workouts that User A already imported
       final query = _database.select(_database.activitiesTable)
         ..where((tbl) =>
+            tbl.userId.lower().equals(userId.toLowerCase()) &
             tbl.syncedFromProvider.equals(provider) &
             tbl.providerWorkoutId.equals(providerWorkoutId) &
             tbl.deletedAt.isNull());
@@ -266,7 +272,7 @@ class ActivitiesRepository {
         context: 'ACTIVITIES_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
-        data: {'provider': provider, 'providerWorkoutId': providerWorkoutId},
+        data: {'userId': userId, 'provider': provider, 'providerWorkoutId': providerWorkoutId},
       );
       return null; // Return null on error to allow sync to continue
     }
@@ -754,6 +760,77 @@ class ActivitiesRepository {
         error: e,
       );
       return null;
+    }
+  }
+
+  /// Migrate activities from one user ID to another
+  ///
+  /// Used during onboarding when activities are synced before the final
+  /// user profile is created. This updates the user_id on all activities
+  /// that belong to the old user so they appear for the new user.
+  ///
+  /// Returns the number of activities migrated.
+  Future<int> migrateActivitiesToUser({
+    required String fromUserId,
+    required String toUserId,
+  }) async {
+    if (fromUserId == toUserId) return 0;
+
+    try {
+      final result = await (_database.update(_database.activitiesTable)
+            ..where((tbl) => tbl.userId.equals(fromUserId) & tbl.deletedAt.isNull()))
+          .write(ActivitiesTableCompanion(
+        userId: Value(toUserId),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(DateTime.now()),
+      ));
+
+      if (result > 0) {
+        _logger.info(
+          'Migrated activities to new user',
+          context: 'ACTIVITIES_REPOSITORY',
+          data: {
+            'fromUserId': fromUserId,
+            'toUserId': toUserId,
+            'count': result,
+          },
+        );
+      }
+
+      return result;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to migrate activities',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'fromUserId': fromUserId, 'toUserId': toUserId},
+      );
+      return 0;
+    }
+  }
+
+  /// Get all activities synced from external providers (regardless of user)
+  ///
+  /// Used to find activities that were synced during onboarding before
+  /// the user profile was finalized.
+  Future<List<domain.Activity>> getActivitiesByProvider(String provider) async {
+    try {
+      final query = _database.select(_database.activitiesTable)
+        ..where((tbl) =>
+            tbl.syncedFromProvider.equals(provider) & tbl.deletedAt.isNull());
+
+      final results = await query.get();
+      return results.map(_mapToActivityDomain).toList();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get activities by provider',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'provider': provider},
+      );
+      return [];
     }
   }
 }

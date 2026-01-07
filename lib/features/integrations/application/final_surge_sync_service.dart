@@ -121,8 +121,10 @@ class FinalSurgeSyncService {
           continue;
         }
 
-        // Check if this workout was already imported
+        // Check if this workout was already imported FOR THIS USER
+        // (allows different users to import the same workout)
         final existing = await _activitiesRepository.findByProviderWorkoutId(
+          userId,
           'final_surge',
           result.providerWorkoutId,
         );
@@ -311,7 +313,9 @@ class FinalSurgeSyncService {
           continue;
         }
 
+        // Check if this workout was already imported FOR THIS USER
         final existing = await _activitiesRepository.findByProviderWorkoutId(
+          userId,
           'final_surge',
           result.providerWorkoutId,
         );

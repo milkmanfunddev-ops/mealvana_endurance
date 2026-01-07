@@ -294,25 +294,27 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  /// Get or create the current user profile (device-based)
-  Future<domain.UserProfile?> getCurrentUserProfile() async {
-    final query = select(userProfilesTable)
-      ..orderBy([
-        // Always prefer authenticated profiles over anonymous placeholders.
-        (u) => OrderingTerm.asc(u.isAnonymous),
-        // Within each auth type, pick the most recently updated profile.
-        (u) => OrderingTerm.desc(u.updatedAt),
-      ])
-      ..limit(1);
-
-    final results = await query.get();
-
-    if (results.isEmpty) {
+  /// Get the current user profile for the authenticated session.
+  ///
+  /// [currentAuthUserId] - The current Supabase auth user ID. Pass null if no auth session.
+  ///
+  /// Returns the profile matching the auth user ID, or null if:
+  /// - No auth user ID provided (user not authenticated)
+  /// - No profile found matching the auth user ID
+  ///
+  /// This ensures that after logout, getCurrentUserProfile() returns null
+  /// even if old profile data exists in the database from a previous user.
+  Future<domain.UserProfile?> getCurrentUserProfile({
+    String? currentAuthUserId,
+  }) async {
+    // If no auth user ID provided, there's no current user
+    // This happens after logout when no Supabase session exists
+    if (currentAuthUserId == null) {
       return null;
     }
 
-    final profile = _convertToDomainUserProfile(results.first);
-    return profile;
+    // Find profile matching this auth user
+    return getUserProfileByAuthUserId(currentAuthUserId);
   }
 
   /// Look up a user profile by Supabase auth user ID.
@@ -757,20 +759,20 @@ class AppDatabase extends _$AppDatabase {
 
       // carb_loading_day_meals (via carb_loading_days via carb_loading_plans.user_id)
       await customStatement('''
-        DELETE FROM carb_loading_day_meals_table
+        DELETE FROM carb_loading_day_meals
         WHERE carb_loading_day_id IN (
-          SELECT id FROM carb_loading_days_table
+          SELECT id FROM carb_loading_days
           WHERE carb_loading_plan_id IN (
-            SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+            SELECT id FROM carb_loading_plans WHERE user_id = ?
           )
         )
       ''', [userId]);
 
       // carb_loading_days (via carb_loading_plans.user_id)
       await customStatement('''
-        DELETE FROM carb_loading_days_table
+        DELETE FROM carb_loading_days
         WHERE carb_loading_plan_id IN (
-          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+          SELECT id FROM carb_loading_plans WHERE user_id = ?
         )
       ''', [userId]);
 
@@ -899,26 +901,26 @@ class AppDatabase extends _$AppDatabase {
 
       // Step 1: Delete carb_loading_day_meals for OAuth user's plans
       await customStatement('''
-        DELETE FROM carb_loading_day_meals_table
+        DELETE FROM carb_loading_day_meals
         WHERE carb_loading_day_id IN (
-          SELECT id FROM carb_loading_days_table
+          SELECT id FROM carb_loading_days
           WHERE carb_loading_plan_id IN (
-            SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+            SELECT id FROM carb_loading_plans WHERE user_id = ?
           )
         )
       ''', [toUserId]);
 
       // Step 2: Delete carb_loading_days for OAuth user's plans
       await customStatement('''
-        DELETE FROM carb_loading_days_table
+        DELETE FROM carb_loading_days
         WHERE carb_loading_plan_id IN (
-          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+          SELECT id FROM carb_loading_plans WHERE user_id = ?
         )
       ''', [toUserId]);
 
       // Step 3: Delete carb_loading_plans for OAuth user
       await customStatement(
-        'DELETE FROM carb_loading_plans_table WHERE user_id = ?',
+        'DELETE FROM carb_loading_plans WHERE user_id = ?',
         [toUserId],
       );
       // Migrate anonymous user's carb loading plans to OAuth user
@@ -947,14 +949,20 @@ class AppDatabase extends _$AppDatabase {
       // No migration needed here
 
       // ============ FEATURE SURVEY RESPONSES ============
-      // Delete OAuth user's old survey responses (if any)
+      // Note: feature_survey_responses table uses device_id, NOT user_id
+      // Survey responses stay with the device (like feedback), not migrated with user account
+      // The device_id is inherited from anonymous user to OAuth user via users.device_id
+      // No migration needed here
+
+      // ============ INTEGRATIONS ============
+      // Delete OAuth user's old integrations (if any)
       await customStatement(
-        'DELETE FROM feature_survey_responses WHERE user_id = ?',
+        'DELETE FROM integrations WHERE user_id = ?',
         [toUserId],
       );
-      // Migrate anonymous user's survey responses to OAuth user
+      // Migrate anonymous/temp user's integrations to OAuth user
       await customStatement(
-        'UPDATE feature_survey_responses SET user_id = ? WHERE user_id = ?',
+        'UPDATE integrations SET user_id = ? WHERE user_id = ?',
         [toUserId, fromUserId],
       );
 

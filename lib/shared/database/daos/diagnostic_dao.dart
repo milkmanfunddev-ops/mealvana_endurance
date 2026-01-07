@@ -13,6 +13,7 @@ import '../tables/carb_loading_days_table.dart';
 import '../tables/carb_loading_user_foods_table.dart';
 import '../tables/carb_loading_day_meals_table.dart';
 import '../tables/feature_survey_responses_table.dart';
+import '../tables/integrations_table.dart';
 
 part 'diagnostic_dao.g.dart';
 
@@ -38,6 +39,7 @@ part 'diagnostic_dao.g.dart';
   CarbLoadingUserFoodsTable,
   CarbLoadingDayMealsTable,
   FeatureSurveyResponsesTable,
+  IntegrationsTable,
 ])
 class DiagnosticDao extends DatabaseAccessor<AppDatabase>
     with _$DiagnosticDaoMixin {
@@ -87,20 +89,20 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
 
       // carb_loading_day_meals (via carb_loading_days via carb_loading_plans.user_id)
       await db.customStatement('''
-        DELETE FROM carb_loading_day_meals_table
+        DELETE FROM carb_loading_day_meals
         WHERE carb_loading_day_id IN (
-          SELECT id FROM carb_loading_days_table
+          SELECT id FROM carb_loading_days
           WHERE carb_loading_plan_id IN (
-            SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+            SELECT id FROM carb_loading_plans WHERE user_id = ?
           )
         )
       ''', [userId]);
 
       // carb_loading_days (via carb_loading_plans.user_id)
       await db.customStatement('''
-        DELETE FROM carb_loading_days_table
+        DELETE FROM carb_loading_days
         WHERE carb_loading_plan_id IN (
-          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+          SELECT id FROM carb_loading_plans WHERE user_id = ?
         )
       ''', [userId]);
 
@@ -133,6 +135,10 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
             ..where((t) => t.userId.equals(userId)))
           .go();
 
+      // integrations uses user_id
+      await (delete(integrationsTable)..where((t) => t.userId.equals(userId)))
+          .go();
+
       // Delete user profile last
       await (delete(userProfilesTable)..where((t) => t.id.equals(userId))).go();
     });
@@ -152,6 +158,7 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       await delete(userFoodsTable).go();
       await delete(featureSurveyResponsesTable).go();
       await delete(feedbackTable).go();
+      await delete(integrationsTable).go();
       await delete(userProfilesTable).go();
       await delete(foodPreferencesTable).go();
     });
@@ -230,26 +237,26 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       // ============ CARB LOADING PLANS ============
       // Step 1: Delete carb_loading_day_meals for OAuth user's plans
       await db.customStatement('''
-        DELETE FROM carb_loading_day_meals_table
+        DELETE FROM carb_loading_day_meals
         WHERE carb_loading_day_id IN (
-          SELECT id FROM carb_loading_days_table
+          SELECT id FROM carb_loading_days
           WHERE carb_loading_plan_id IN (
-            SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+            SELECT id FROM carb_loading_plans WHERE user_id = ?
           )
         )
       ''', [toUserId]);
 
       // Step 2: Delete carb_loading_days for OAuth user's plans
       await db.customStatement('''
-        DELETE FROM carb_loading_days_table
+        DELETE FROM carb_loading_days
         WHERE carb_loading_plan_id IN (
-          SELECT id FROM carb_loading_plans_table WHERE user_id = ?
+          SELECT id FROM carb_loading_plans WHERE user_id = ?
         )
       ''', [toUserId]);
 
       // Step 3: Delete carb_loading_plans for OAuth user
       await db.customStatement(
-        'DELETE FROM carb_loading_plans_table WHERE user_id = ?',
+        'DELETE FROM carb_loading_plans WHERE user_id = ?',
         [toUserId],
       );
       // Migrate anonymous user's carb loading plans to OAuth user
@@ -275,6 +282,18 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       );
       await db.customStatement(
         'UPDATE feature_survey_responses SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ INTEGRATIONS ============
+      // Delete any existing integrations for the target user
+      await db.customStatement(
+        'DELETE FROM integrations WHERE user_id = ?',
+        [toUserId],
+      );
+      // Migrate integrations from temp user to new user
+      await db.customStatement(
+        'UPDATE integrations SET user_id = ? WHERE user_id = ?',
         [toUserId, fromUserId],
       );
 

@@ -4,6 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/activities_controller.dart';
 import 'activity_action_buttons.dart';
@@ -46,7 +48,7 @@ class ActivityCard extends ConsumerWidget {
         ),
       ),
       child: InkWell(
-        onTap: () => _handleTap(context),
+        onTap: () => _handleTap(context, ref),
         borderRadius: BorderRadius.circular(15),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -203,7 +205,21 @@ class ActivityCard extends ConsumerWidget {
     }
   }
 
-  void _handleTap(BuildContext context) {
+  void _handleTap(BuildContext context, WidgetRef ref) {
+    // Track activity viewed with synced workout info
+    // Use activity.userId as the device_id (userId is the Supabase auth user ID)
+    final isSyncedWorkout = activity.syncedFromProvider != null;
+
+    ref.read(appExternalDepsProvider).analytics.trackActivityViewed(
+      deviceId: activity.userId,
+      activityId: activity.id,
+      activityType: activity.activityType.name,
+      hasNutritionPlan: activity.nutritionPlanData != null,
+      isSyncedWorkout: isSyncedWorkout,
+      syncedFromProvider: activity.syncedFromProvider,
+      providerWorkoutId: activity.providerWorkoutId,
+    );
+
     // Check if activity has a nutrition plan
     if (activity.nutritionPlanData == null) {
       // No nutrition plan - open New Activity screen with pre-populated data

@@ -26,7 +26,7 @@ class MacroGenerationService {
   });
 
   final SupabaseClient supabaseClient;
-  final Future<MacroRepository> macroRepository;
+  final MacroRepository macroRepository;
   final AuthService authService;
   final AnalyticsTracker analytics;
 
@@ -432,8 +432,7 @@ class MacroGenerationService {
   }
 
   Future<void> _cacheMacroTargets(MacroTargets macroTargets) async {
-    final repository = await macroRepository;
-    await repository.saveMacroTargets(macroTargets);
+    await macroRepository.saveMacroTargets(macroTargets);
   }
 
   int _calculateTotalCarbs(MacroTargets macroTargets) {

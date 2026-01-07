@@ -60,10 +60,17 @@ class UserRepository {
     }
   }
 
-  /// Get the current user profile (assumes single user for MVP)
+  /// Get the current user profile based on the current Supabase auth session
   Future<UserProfile?> getCurrentUser() async {
     try {
-      return await database.getCurrentUserProfile();
+      // Get the current auth user ID from Supabase session
+      final currentAuthUserId = supabase.auth.currentUser?.id;
+
+      // Pass the auth user ID to find the matching profile
+      // Without this, the database returns null (by design for logout scenarios)
+      return await database.getCurrentUserProfile(
+        currentAuthUserId: currentAuthUserId,
+      );
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -774,6 +781,16 @@ class UserRepository {
         return true;
       }
 
+      final foodPreferencesResponse = await supabase
+          .from('food_preferences')
+          .select('id')
+          .eq('user_id', userId)
+          .limit(1);
+
+      if ((foodPreferencesResponse as List).isNotEmpty) {
+        return true;
+      }
+
       // Note: We only check Supabase here since the purpose is to prevent
       // migration that would DELETE data from Supabase. Local-only data
       // wouldn't be affected by the migration deletion.
@@ -815,9 +832,22 @@ class UserRepository {
 
       // CRITICAL FIX: Check if OAuth user has existing data on server
       // If they do, we should KEEP their existing data, not replace it with anonymous onboarding data
-      final oauthUserExistsOnServer = await _checkUserExistsInSupabase(toOAuthUserId);
+      // We check for ACTUAL DATA (activities, events), not just user profile existence
+      // because the auth trigger might have created an empty profile.
+      bool oauthUserHasData = false;
+      try {
+        oauthUserHasData = await checkUserHasData(toOAuthUserId);
+      } catch (e) {
+        // FAIL SAFE: Assume data exists to prevent data loss on network error
+        sentry.addBreadcrumb(
+          message: 'Error checking OAuth user data - assuming exists to prevent data loss',
+          category: 'auth',
+          data: {'error': e.toString()},
+        );
+        oauthUserHasData = true;
+      }
 
-      if (oauthUserExistsOnServer) {
+      if (oauthUserHasData) {
         // SCENARIO A: EXISTING OAuth user signing in on new device
         // - OAuth user has historical data on server (e.g., 50 activities from last year)
         // - Anonymous user has test/onboarding data from new device (e.g., 1 test activity)
@@ -910,34 +940,6 @@ class UserRepository {
         stackTrace: stackTrace,
       );
       rethrow;
-    }
-  }
-
-  /// Check if user exists in Supabase public.users table
-  Future<bool> _checkUserExistsInSupabase(String userId) async {
-    try {
-      final response = await supabase
-          .from('users')
-          .select('id')
-          .eq('id', userId)
-          .maybeSingle();
-      return response != null;
-    } catch (e) {
-      // FAIL SAFE: Assume user exists to prevent data loss
-      // If we can't verify, it's safer to skip deletion than to delete existing data
-      // sentry.addBreadcrumb(
-      //   Breadcrumb(
-      //     message: 'Error checking OAuth user existence - assuming exists to prevent data loss',
-      //     category: 'auth',
-      //     data: {
-      //       'user_id': userId,
-      //       'error': e.toString(),
-      //       'fail_safe_action': 'returning_true_to_prevent_deletion',
-      //     },
-      //     level: SentryLevel.warning,
-      //   ),
-      // );
-      return true; // Conservative: preserve existing data on network errors
     }
   }
 

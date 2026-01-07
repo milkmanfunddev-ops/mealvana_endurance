@@ -299,4 +299,126 @@ extension AnalyticsEvents on AnalyticsTracker {
       'platform': Platform.isIOS ? 'iOS' : 'Android',
     });
   }
+
+  // 7. Integration & Sync Events
+
+  /// Track when user starts connecting to a training provider
+  Future<void> trackIntegrationConnectStarted({
+    required String provider,
+    required String deviceId,
+  }) {
+    return track('integration_connect_started', properties: {
+      'provider': provider,
+      'device_id': deviceId,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Track successful integration connection
+  /// Maps to: trainingpeaks_connect_success, final_surge_connect_success
+  Future<void> trackIntegrationConnectSuccess({
+    required String provider,
+    required String deviceId,
+    String? athleteName,
+  }) {
+    return track('integration_connect_success', properties: {
+      'provider': provider,
+      'device_id': deviceId,
+      if (athleteName != null) 'athlete_name': athleteName,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Track failed integration connection
+  /// Maps to: trainingpeaks_connect_failed, final_surge_connect_failed
+  Future<void> trackIntegrationConnectFailed({
+    required String provider,
+    required String deviceId,
+    required String errorType,
+    String? errorMessage,
+  }) {
+    return track('integration_connect_failed', properties: {
+      'provider': provider,
+      'device_id': deviceId,
+      'error_type': errorType,
+      if (errorMessage != null) 'error_message': errorMessage,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Track when user disconnects from a training provider
+  /// Maps to: trainingpeaks_disconnected, final_surge_disconnected
+  Future<void> trackIntegrationDisconnected({
+    required String provider,
+    required String deviceId,
+    String? reason,
+  }) {
+    return track('integration_disconnected', properties: {
+      'provider': provider,
+      'device_id': deviceId,
+      if (reason != null) 'reason': reason,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Track successful workout sync from a training provider
+  /// Maps to: trainingpeaks_sync_success, final_surge_sync_success
+  Future<void> trackIntegrationSyncSuccess({
+    required String provider,
+    required String deviceId,
+    required int workoutsSynced,
+    int? skippedCount,
+    int? eventsCount,
+  }) {
+    return track('integration_sync_success', properties: {
+      'provider': provider,
+      'device_id': deviceId,
+      'workouts_synced': workoutsSynced,
+      if (skippedCount != null) 'skipped_count': skippedCount,
+      if (eventsCount != null) 'events_count': eventsCount,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Track failed workout sync from a training provider
+  /// Maps to: trainingpeaks_sync_failed, final_surge_sync_failed
+  Future<void> trackIntegrationSyncFailed({
+    required String provider,
+    required String deviceId,
+    required String errorType,
+    String? errorMessage,
+  }) {
+    return track('integration_sync_failed', properties: {
+      'provider': provider,
+      'device_id': deviceId,
+      'error_type': errorType,
+      if (errorMessage != null) 'error_message': errorMessage,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  // 8. Activity Viewing Events
+
+  /// Track when user views/taps on an activity
+  /// Includes synced workout information to identify activities from integrations
+  Future<void> trackActivityViewed({
+    required String deviceId,
+    required String activityId,
+    required String activityType,
+    bool hasNutritionPlan = false,
+    bool isSyncedWorkout = false,
+    String? syncedFromProvider,
+    String? providerWorkoutId,
+  }) {
+    return track('activity_viewed', properties: {
+      'device_id': deviceId,
+      'activity_id': activityId,
+      'activity_type': activityType,
+      'has_nutrition_plan': hasNutritionPlan,
+      'is_synced_workout': isSyncedWorkout,
+      if (syncedFromProvider != null) 'synced_from_provider': syncedFromProvider,
+      if (providerWorkoutId != null) 'provider_workout_id': providerWorkoutId,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
 }

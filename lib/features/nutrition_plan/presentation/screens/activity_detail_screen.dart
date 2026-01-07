@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/activity_detail/completion_dialog.dart';
 import '../widgets/activity_detail/expandable_food_item_widget.dart';
 import '../widgets/activity_detail/geometric_pattern_painter.dart';
@@ -42,9 +41,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     _checkSwipeHintShown();
   }
 
-  Future<void> _checkSwipeHintShown() async {
+  void _checkSwipeHintShown() {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = ref.read(sharedPreferencesProvider);
       final hasShown = prefs.getBool(_swipeHintShownKey) ?? false;
       if (mounted) {
         setState(() {
@@ -64,7 +63,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   Future<void> _markSwipeHintShown() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = ref.read(sharedPreferencesProvider);
       await prefs.setBool(_swipeHintShownKey, true);
     } catch (e) {
       // Silently fail

@@ -90,8 +90,10 @@ class TrainingPeaksSyncService {
           continue;
         }
 
-        // Check if this workout was already imported
+        // Check if this workout was already imported FOR THIS USER
+        // (allows different users to import the same workout)
         final existing = await _activitiesRepository.findByProviderWorkoutId(
+          userId,
           'training_peaks',
           result.providerWorkoutId,
         );
@@ -197,7 +199,9 @@ class TrainingPeaksSyncService {
           continue;
         }
 
+        // Check if this workout was already imported FOR THIS USER
         final existing = await _activitiesRepository.findByProviderWorkoutId(
+          userId,
           'training_peaks',
           result.providerWorkoutId,
         );
@@ -244,12 +248,75 @@ class TrainingPeaksSyncService {
     }
   }
 
-  /// Sync the next upcoming event from TrainingPeaks (UNIQUE FEATURE!)
+  /// Sync all upcoming events from TrainingPeaks (UNIQUE FEATURE!)
   ///
   /// This is a major differentiator from Final Surge - we can auto-import
   /// races for nutrition planning and carb-loading.
   ///
-  /// Returns the event data if found, null otherwise.
+  /// [days] - Number of days ahead to search (default: 90 = ~3 months)
+  ///
+  /// Returns all events found within the date range.
+  Future<TrainingPeaksEventSyncResult> syncEvents(
+    String userId, {
+    int days = 90,
+  }) async {
+    final accessToken = await _oauthService.getValidAccessToken(userId);
+    if (accessToken == null) {
+      return TrainingPeaksEventSyncResult.notConnected();
+    }
+
+    if (kDebugMode) {
+      print('🔄 Fetching all events from TrainingPeaks ($days day range)...');
+    }
+
+    try {
+      final eventsJson = await _apiClient.getEventsInRange(
+        accessToken,
+        days: days,
+      );
+
+      if (eventsJson.isEmpty) {
+        if (kDebugMode) {
+          print('   No upcoming events found');
+        }
+        return TrainingPeaksEventSyncResult.noEvents();
+      }
+
+      // Transform all events
+      final events = <TrainingPeaksEventResult>[];
+      for (final eventJson in eventsJson) {
+        final event = _transformer.transformEvent(eventJson);
+        if (event != null) {
+          events.add(event);
+          if (kDebugMode) {
+            print('✅ Found event: ${event.eventName}');
+            print('   Type: ${event.eventType}');
+            print('   Date: ${event.eventDate}');
+          }
+        }
+      }
+
+      if (kDebugMode) {
+        print('✅ Total events found: ${events.length}');
+      }
+
+      return TrainingPeaksEventSyncResult(
+        success: true,
+        events: events,
+      );
+    } on TrainingPeaksTokenExpiredException {
+      return TrainingPeaksEventSyncResult.tokenExpired();
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Event sync failed: $e');
+      }
+      return TrainingPeaksEventSyncResult.error(e.toString());
+    }
+  }
+
+  /// Sync only the next upcoming event (faster, single API call)
+  ///
+  /// Use this for quick checks. For full sync, use [syncEvents].
   Future<TrainingPeaksEventSyncResult> syncNextEvent(String userId) async {
     final accessToken = await _oauthService.getValidAccessToken(userId);
     if (accessToken == null) {
@@ -286,7 +353,7 @@ class TrainingPeaksSyncService {
 
       return TrainingPeaksEventSyncResult(
         success: true,
-        event: event,
+        events: [event],
       );
     } on TrainingPeaksTokenExpiredException {
       return TrainingPeaksEventSyncResult.tokenExpired();
@@ -298,12 +365,14 @@ class TrainingPeaksSyncService {
     }
   }
 
-  /// Full sync: workouts + next event
+  /// Full sync: workouts + all events
   ///
   /// Use this for initial onboarding sync.
+  /// [eventDays] - How many days ahead to search for events (default: 90 = ~3 months)
   Future<TrainingPeaksFullSyncResult> syncAll(
     String userId, {
     int workoutDays = 14,
+    int eventDays = 90,
   }) async {
     if (kDebugMode) {
       print('🔄 Starting full TrainingPeaks sync...');
@@ -312,10 +381,10 @@ class TrainingPeaksSyncService {
     // Sync workouts
     final workoutResult = await syncWorkouts(userId, numDays: workoutDays);
 
-    // Sync next event (don't fail if this fails - events are optional)
+    // Sync all events (don't fail if this fails - events are optional)
     TrainingPeaksEventSyncResult? eventResult;
     try {
-      eventResult = await syncNextEvent(userId);
+      eventResult = await syncEvents(userId, days: eventDays);
     } catch (e) {
       if (kDebugMode) {
         print('⚠️ Event sync failed, continuing: $e');
@@ -407,7 +476,7 @@ class TrainingPeaksSyncResult {
 class TrainingPeaksEventSyncResult {
   const TrainingPeaksEventSyncResult({
     required this.success,
-    this.event,
+    this.events = const [],
     this.error,
     this.tokenExpired = false,
   });
@@ -430,7 +499,7 @@ class TrainingPeaksEventSyncResult {
   factory TrainingPeaksEventSyncResult.noEvents() {
     return const TrainingPeaksEventSyncResult(
       success: true,
-      event: null,
+      events: [],
     );
   }
 
@@ -442,11 +511,11 @@ class TrainingPeaksEventSyncResult {
   }
 
   final bool success;
-  final TrainingPeaksEventResult? event;
+  final List<TrainingPeaksEventResult> events;
   final String? error;
   final bool tokenExpired;
 
-  bool get hasEvent => event != null;
+  bool get hasEvent => events.isNotEmpty;
 }
 
 /// Result of a full sync (workouts + events)
@@ -461,13 +530,19 @@ class TrainingPeaksFullSyncResult {
 
   bool get success => workoutResult.success;
   bool get hasNewWorkouts => workoutResult.hasNewWorkouts;
-  bool get hasEvent => eventResult?.hasEvent ?? false;
+  bool get hasEvents => eventResult?.hasEvent ?? false;
+  int get eventCount => eventResult?.events.length ?? 0;
 
   String get summary {
     final parts = <String>[];
     parts.add(workoutResult.summary);
     if (eventResult?.hasEvent ?? false) {
-      parts.add('Next event: ${eventResult!.event!.eventName}');
+      final count = eventResult!.events.length;
+      if (count == 1) {
+        parts.add('Found event: ${eventResult!.events.first.eventName}');
+      } else {
+        parts.add('Found $count events');
+      }
     }
     return parts.join('. ');
   }

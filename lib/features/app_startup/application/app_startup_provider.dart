@@ -77,7 +77,17 @@ class AppStartup extends _$AppStartup {
       // 3. Get navigation data (fast local DB query)
       debugPrint('[APP_STARTUP] Getting navigation data...');
       final database = ref.read(appDatabaseProvider);
-      final user = await database.getCurrentUserProfile();
+
+      // Get current Supabase session to check auth state
+      final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+      final currentSession = supabaseClient.auth.currentSession;
+      final currentAuthUserId = currentSession?.user.id;
+
+      // CRITICAL: Pass currentAuthUserId to getCurrentUserProfile
+      // Without this, it returns null even when a valid session exists!
+      final user = await database.getCurrentUserProfile(
+        currentAuthUserId: currentAuthUserId,
+      );
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
       debugPrint('[APP_STARTUP] User profile loaded: ${stopwatch.elapsedMilliseconds}ms');
 
@@ -96,10 +106,6 @@ class AppStartup extends _$AppStartup {
           'duration_ms': stopwatch.elapsedMilliseconds,
         },
       );
-
-      // Detect logged-out state: no Supabase session but has local profile with completed onboarding
-      final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
-      final currentSession = supabaseClient.auth.currentSession;
       final isLoggedOut = currentSession == null &&
           user != null &&
           hasCompletedOnboarding;

@@ -17,28 +17,27 @@ part 'user_dao.g.dart';
 class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   UserDao(super.db);
 
-  /// Get the current user profile (device-based)
+  /// Get the current user profile for the authenticated session.
   ///
-  /// Returns the most appropriate user profile:
-  /// - Prefers authenticated profiles over anonymous ones
-  /// - Within each auth type, returns the most recently updated profile
-  Future<domain.UserProfile?> getCurrentUserProfile() async {
-    final query = select(userProfilesTable)
-      ..orderBy([
-        // Always prefer authenticated profiles over anonymous placeholders.
-        (u) => OrderingTerm.asc(u.isAnonymous),
-        // Within each auth type, pick the most recently updated profile.
-        (u) => OrderingTerm.desc(u.updatedAt),
-      ])
-      ..limit(1);
-
-    final results = await query.get();
-
-    if (results.isEmpty) {
+  /// [currentAuthUserId] - The current Supabase auth user ID. Pass null if no auth session.
+  ///
+  /// Returns the profile matching the auth user ID, or null if:
+  /// - No auth user ID provided (user not authenticated)
+  /// - No profile found matching the auth user ID
+  ///
+  /// This ensures that after logout, getCurrentUserProfile() returns null
+  /// even if old profile data exists in the database from a previous user.
+  Future<domain.UserProfile?> getCurrentUserProfile({
+    String? currentAuthUserId,
+  }) async {
+    // If no auth user ID provided, there's no current user
+    // This happens after logout when no Supabase session exists
+    if (currentAuthUserId == null) {
       return null;
     }
 
-    return _convertToDomainUserProfile(results.first);
+    // Find profile matching this auth user
+    return getUserProfileByAuthUserId(currentAuthUserId);
   }
 
   /// Look up a user profile by Supabase auth user ID.

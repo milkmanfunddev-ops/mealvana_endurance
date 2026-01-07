@@ -5,7 +5,6 @@ import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
-import '../../../shared/services/preferences_service.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../data/user_repository.dart';
 import '../domain/auth_exceptions.dart';
@@ -381,7 +380,7 @@ class EmailAuthService extends _$EmailAuthService {
         // CRITICAL: Clear sync timestamp to force full sync (not incremental)
         // Otherwise, if user logs out and back in on same device, we might send
         // an old timestamp and get no data back (because local DB was cleared)
-        final prefs = await ref.read(sharedPreferencesProvider.future);
+        final prefs = ref.read(sharedPreferencesProvider);
         await prefs.remove('last_sync_timestamp_$newUserId');
 
         await ref.read(syncCoordinatorProvider.notifier).sync(

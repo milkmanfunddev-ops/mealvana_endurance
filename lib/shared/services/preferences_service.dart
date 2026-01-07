@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'app_external_deps.dart';
 
 part 'preferences_service.g.dart';
 
@@ -34,15 +35,9 @@ class PreferencesService {
   }
 }
 
-/// Provider for SharedPreferences instance
+/// Provider for PreferencesService (synchronous now that SharedPreferences is pre-initialized)
 @Riverpod(keepAlive: true)
-Future<SharedPreferences> sharedPreferences(Ref ref) async {
-  return await SharedPreferences.getInstance();
-}
-
-/// Provider for PreferencesService (async to wait for SharedPreferences)
-@Riverpod(keepAlive: true)
-Future<PreferencesService> preferencesService(Ref ref) async {
-  final prefs = await ref.watch(sharedPreferencesProvider.future);
+PreferencesService preferencesService(Ref ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
   return PreferencesService(prefs);
 }

@@ -127,7 +127,7 @@ class EventsRepository {
   }) async {
     try {
       // Get the event first to check for associated activity
-      final event = await getEventById(eventId);
+      final event = await getEventById(deviceId, eventId);
 
       // CASCADE: Delete carb loading plan first (Drift doesn't enforce FK constraints)
       // This must happen BEFORE deleting the event so we can find the plan by eventId
@@ -167,10 +167,11 @@ class EventsRepository {
     }
   }
 
-  /// Get all events (local-first, returns cached data)
-  Future<List<domain.Event>> getEvents() async {
+  /// Get all events for a user (local-first, returns cached data)
+  Future<List<domain.Event>> getEvents(String userId) async {
     try {
       final query = _database.select(_database.eventsTable)
+        ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()))
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]);
 
       final events = await query.get();
@@ -186,12 +187,14 @@ class EventsRepository {
     }
   }
 
-  /// Get a specific event by ID
+  /// Get a specific event by ID for a user
   /// Note: If duplicate events exist with the same ID, returns the first one
-  Future<domain.Event?> getEventById(String eventId) async {
+  Future<domain.Event?> getEventById(String userId, String eventId) async {
     try {
       final query = _database.select(_database.eventsTable)
-        ..where((tbl) => tbl.id.equals(eventId));
+        ..where((tbl) =>
+            tbl.id.equals(eventId) &
+            tbl.userId.lower().equals(userId.toLowerCase()));
 
       final events = await query.get();
 
@@ -231,6 +234,43 @@ class EventsRepository {
         stackTrace: stackTrace,
       );
       rethrow;
+    }
+  }
+
+  /// Find existing event by user_id + event_name + event_date for deduplication
+  ///
+  /// Used during sync to prevent creating duplicate events when syncing
+  /// from external providers like TrainingPeaks.
+  /// IMPORTANT: This is user-scoped to allow different users to have events
+  /// with the same name on the same date.
+  Future<domain.Event?> findExistingEvent({
+    required String userId,
+    required String eventName,
+    required DateTime eventDate,
+  }) async {
+    try {
+      // Normalize the date to just the date part (no time)
+      final dateOnly = DateTime(eventDate.year, eventDate.month, eventDate.day);
+      final nextDay = dateOnly.add(const Duration(days: 1));
+
+      final query = _database.select(_database.eventsTable)
+        ..where((tbl) =>
+            tbl.userId.lower().equals(userId.toLowerCase()) &
+            tbl.eventName.equals(eventName) &
+            tbl.eventDate.isBiggerOrEqualValue(dateOnly) &
+            tbl.eventDate.isSmallerThanValue(nextDay));
+
+      final event = await query.getSingleOrNull();
+      return event != null ? _mapToEventDomain(event) : null;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to find existing event',
+        context: 'EVENTS_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId, 'eventName': eventName, 'eventDate': eventDate.toIso8601String()},
+      );
+      return null; // Return null on error to allow sync to continue
     }
   }
 

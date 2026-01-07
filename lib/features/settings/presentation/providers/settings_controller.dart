@@ -16,6 +16,10 @@ import '../../domain/settings_state.dart';
 
 part 'settings_controller.g.dart';
 
+/// Key for storing temporary user ID in shared preferences during onboarding
+/// Must match the key in connect_training_controller.dart and onboarding_controller.dart
+const _onboardingTempUserIdKey = 'onboarding_temp_user_id';
+
 /// Controller for settings screen following Andrea Bizzotto FOA patterns
 @riverpod
 class SettingsController extends _$SettingsController {
@@ -543,6 +547,12 @@ class SettingsController extends _$SettingsController {
         }
       }
 
+      // Clear the temp user ID from SharedPreferences
+      // This ensures the next user gets a fresh onboarding experience
+      // without inheriting the previous user's integration state
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.remove(_onboardingTempUserIdKey);
+
       // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
       await supabaseClient.auth.signOut();
 
@@ -614,6 +624,11 @@ class SettingsController extends _$SettingsController {
         userId: currentUserId,
         forceDelete: true,
       );
+
+      // Clear the temp user ID from SharedPreferences
+      // This ensures a new user won't inherit the previous user's integration status
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.remove(_onboardingTempUserIdKey);
 
       // Sign out to trigger auth state listener to create a new anonymous user
       try {

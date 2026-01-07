@@ -351,17 +351,19 @@ class AppStartupService {
       if (existingSession != null) {
         // Session restored from secure storage - verify it matches local data
         final database = ref.read(appDatabaseProvider);
-        final localProfile = await database.getCurrentUserProfile();
+        final sessionUserId = existingSession.user.id;
+        final localProfile = await database.getCurrentUserProfile(
+          currentAuthUserId: sessionUserId,
+        );
 
         if (localProfile != null && localProfile.onboardingCompleted) {
-          // Check if restored session matches local profile
-          final sessionUserId = existingSession.user.id;
+          // Profile found matching this session - user is properly authenticated
+          // No mismatch handling needed since getCurrentUserProfile already filters by auth ID
           final localAuthUserId = localProfile.authUserId;
           final localId = localProfile.id;
 
-          // Session matches if authUserId OR id equals session user
-          final sessionMatches = localAuthUserId == sessionUserId ||
-              localId == sessionUserId;
+          // Session matches (always true here since we filtered by auth ID)
+          final sessionMatches = true;
 
           if (!sessionMatches) {
             // MISMATCH: Orphan session doesn't match local data
@@ -412,35 +414,12 @@ class AppStartupService {
         );
         // Don't return early - setup listener in finally block
       } else {
-        // No existing session - check if user logged out with local data
-        // If so, don't create anonymous user - let them sign back in
-        final database = ref.read(appDatabaseProvider);
-        final localProfile = await database.getCurrentUserProfile();
+        // No existing session - create anonymous user for new session
+        // Note: getCurrentUserProfile(currentAuthUserId: null) returns null when no auth,
+        // so we always create a fresh anonymous session here.
+        // If a returning user wants their data back, they login from welcome screen.
 
-        if (localProfile != null && localProfile.onboardingCompleted) {
-          // User has logged out but has local data - skip anonymous auth
-          // They can sign back in from welcome screen to access their data
-          _logger.info(
-            'Logged out user with local data detected - skipping anonymous auth',
-            context: 'AUTH',
-          );
-          _sentry.addBreadcrumb(
-            message: 'Logged out user with local data - skipping anonymous auth',
-            category: 'auth',
-            data: {
-              'local_user_id': localProfile.id,
-              'onboarding_completed': localProfile.onboardingCompleted,
-            },
-          );
-          // Skip auth listener setup - no session to monitor
-          // Setting up listener would cause infinite loop (signedOut -> invalidate -> repeat)
-          _skipAuthListenerSetup = true;
-          // Don't create anonymous user - exit early
-          // App router will redirect to welcome screen
-          return;
-        }
-
-        // No local profile or incomplete onboarding - create anonymous user
+        // Create anonymous user for new session
         final response = await _supabase.auth.signInAnonymously();
 
         if (response.session == null || response.user == null) {
@@ -619,7 +598,9 @@ class AppStartupService {
     // During onboarding, no user profile exists yet, so sync would fail
     try {
       final database = ref.read(appDatabaseProvider);
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.getCurrentUserProfile(
+        currentAuthUserId: userId,
+      );
 
       if (userProfile == null || userProfile.onboardingCompleted != true) {
         _logger.info('Skipping post-auth sync - onboarding not complete', context: 'AUTH');
@@ -696,16 +677,19 @@ class AppStartupService {
   Future<void> initializeNutritionPlans() async {
     try {
       final database = ref.read(appDatabaseProvider);
+      final currentAuthUserId = _supabase.auth.currentUser?.id;
 
       // Check if we have a current user
-      final user = await database.getCurrentUserProfile();
+      final user = await database.getCurrentUserProfile(
+        currentAuthUserId: currentAuthUserId,
+      );
 
       if (user != null) {
         // Note: Nutrition plans are now embedded in activities table
         // No initialization needed - plans are loaded with activities
       }
     } catch (e) {
-      _logger.error('Plan initialization error', 
+      _logger.error('Plan initialization error',
         context: 'NUTRITION_PLAN',
         error: e
       );
@@ -749,9 +733,12 @@ class AppStartupService {
       }
 
       final database = ref.read(appDatabaseProvider);
+      final currentAuthUserId = _supabase.auth.currentUser?.id;
 
       // Check if we have a current user
-      final user = await database.getCurrentUserProfile();
+      final user = await database.getCurrentUserProfile(
+        currentAuthUserId: currentAuthUserId,
+      );
       if (user == null) return null;
 
       // Get plans that have a run date/time in the past but no feedback yet

@@ -171,4 +171,41 @@ class IntegrationsRepository {
       updatedAt: Value(model.updatedAt ?? DateTime.now()),
     );
   }
+
+  /// Migrate integrations from one user ID to another
+  ///
+  /// Used during onboarding when integrations are created before the final
+  /// user profile is created. This updates the user_id on all integrations
+  /// that belong to the old user so they are associated with the new user.
+  ///
+  /// Returns the number of integrations migrated.
+  Future<int> migrateIntegrationsToUser({
+    required String fromUserId,
+    required String toUserId,
+  }) async {
+    if (fromUserId == toUserId) return 0;
+
+    try {
+      final result = await (_db.update(_db.integrationsTable)
+            ..where((t) => t.userId.equals(fromUserId)))
+          .write(IntegrationsTableCompanion(
+        userId: Value(toUserId),
+        updatedAt: Value(DateTime.now()),
+      ));
+
+      return result;
+    } catch (e) {
+      // Log but don't throw - migration is best-effort
+      return 0;
+    }
+  }
+
+  /// Get all integrations (regardless of user)
+  ///
+  /// Used to find any integrations that were created during onboarding
+  /// before the user profile was finalized.
+  Future<List<IntegrationModel>> getAllIntegrations() async {
+    final results = await _db.select(_db.integrationsTable).get();
+    return results.map(_toModel).toList();
+  }
 }

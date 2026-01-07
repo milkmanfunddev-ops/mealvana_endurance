@@ -8,6 +8,50 @@ part of 'integrations_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Provider for app package info (version, build number, etc.)
+
+@ProviderFor(packageInfo)
+const packageInfoProvider = PackageInfoProvider._();
+
+/// Provider for app package info (version, build number, etc.)
+
+final class PackageInfoProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<PackageInfo>,
+          PackageInfo,
+          FutureOr<PackageInfo>
+        >
+    with $FutureModifier<PackageInfo>, $FutureProvider<PackageInfo> {
+  /// Provider for app package info (version, build number, etc.)
+  const PackageInfoProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'packageInfoProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$packageInfoHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<PackageInfo> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<PackageInfo> create(Ref ref) {
+    return packageInfo(ref);
+  }
+}
+
+String _$packageInfoHash() => r'41f10b7668cfc9d09df704d18b851ed9440397d6';
+
 /// Provider for Final Surge API client
 
 @ProviderFor(finalSurgeApiClient)
@@ -535,11 +579,13 @@ const trainingPeaksApiClientProvider = TrainingPeaksApiClientProvider._();
 final class TrainingPeaksApiClientProvider
     extends
         $FunctionalProvider<
+          AsyncValue<TrainingPeaksApiClient>,
           TrainingPeaksApiClient,
-          TrainingPeaksApiClient,
-          TrainingPeaksApiClient
+          FutureOr<TrainingPeaksApiClient>
         >
-    with $Provider<TrainingPeaksApiClient> {
+    with
+        $FutureModifier<TrainingPeaksApiClient>,
+        $FutureProvider<TrainingPeaksApiClient> {
   /// Provider for TrainingPeaks API client
   const TrainingPeaksApiClientProvider._()
     : super(
@@ -557,26 +603,18 @@ final class TrainingPeaksApiClientProvider
 
   @$internal
   @override
-  $ProviderElement<TrainingPeaksApiClient> $createElement(
+  $FutureProviderElement<TrainingPeaksApiClient> $createElement(
     $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  TrainingPeaksApiClient create(Ref ref) {
+  FutureOr<TrainingPeaksApiClient> create(Ref ref) {
     return trainingPeaksApiClient(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(TrainingPeaksApiClient value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<TrainingPeaksApiClient>(value),
-    );
   }
 }
 
 String _$trainingPeaksApiClientHash() =>
-    r'c396e3761f203c668fb9c89e5f058438fc8f4b16';
+    r'29d96aa2470b4626fa0bae693c6b4c474a418460';
 
 /// Provider for TrainingPeaks transformer
 
@@ -641,11 +679,13 @@ const trainingPeaksOAuthServiceProvider = TrainingPeaksOAuthServiceProvider._();
 final class TrainingPeaksOAuthServiceProvider
     extends
         $FunctionalProvider<
+          AsyncValue<TrainingPeaksOAuthService>,
           TrainingPeaksOAuthService,
-          TrainingPeaksOAuthService,
-          TrainingPeaksOAuthService
+          FutureOr<TrainingPeaksOAuthService>
         >
-    with $Provider<TrainingPeaksOAuthService> {
+    with
+        $FutureModifier<TrainingPeaksOAuthService>,
+        $FutureProvider<TrainingPeaksOAuthService> {
   /// Provider for TrainingPeaks OAuth service
   const TrainingPeaksOAuthServiceProvider._()
     : super(
@@ -663,26 +703,18 @@ final class TrainingPeaksOAuthServiceProvider
 
   @$internal
   @override
-  $ProviderElement<TrainingPeaksOAuthService> $createElement(
+  $FutureProviderElement<TrainingPeaksOAuthService> $createElement(
     $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  TrainingPeaksOAuthService create(Ref ref) {
+  FutureOr<TrainingPeaksOAuthService> create(Ref ref) {
     return trainingPeaksOAuthService(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(TrainingPeaksOAuthService value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<TrainingPeaksOAuthService>(value),
-    );
   }
 }
 
 String _$trainingPeaksOAuthServiceHash() =>
-    r'39bac35ac524866a6be72d4d4538d98751dd58e5';
+    r'ac95d519150287fd3af08c5de03a02b9b38e1f4e';
 
 /// Provider for TrainingPeaks sync service
 
@@ -694,11 +726,13 @@ const trainingPeaksSyncServiceProvider = TrainingPeaksSyncServiceProvider._();
 final class TrainingPeaksSyncServiceProvider
     extends
         $FunctionalProvider<
+          AsyncValue<TrainingPeaksSyncService>,
           TrainingPeaksSyncService,
-          TrainingPeaksSyncService,
-          TrainingPeaksSyncService
+          FutureOr<TrainingPeaksSyncService>
         >
-    with $Provider<TrainingPeaksSyncService> {
+    with
+        $FutureModifier<TrainingPeaksSyncService>,
+        $FutureProvider<TrainingPeaksSyncService> {
   /// Provider for TrainingPeaks sync service
   const TrainingPeaksSyncServiceProvider._()
     : super(
@@ -716,26 +750,18 @@ final class TrainingPeaksSyncServiceProvider
 
   @$internal
   @override
-  $ProviderElement<TrainingPeaksSyncService> $createElement(
+  $FutureProviderElement<TrainingPeaksSyncService> $createElement(
     $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  TrainingPeaksSyncService create(Ref ref) {
+  FutureOr<TrainingPeaksSyncService> create(Ref ref) {
     return trainingPeaksSyncService(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(TrainingPeaksSyncService value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<TrainingPeaksSyncService>(value),
-    );
   }
 }
 
 String _$trainingPeaksSyncServiceHash() =>
-    r'03871fc02255128452ad444a13fbefd14bbbee0b';
+    r'952bb7f47f5283d8ec30b91898f107261bf83740';
 
 /// Provider to get TrainingPeaks integration for a user
 

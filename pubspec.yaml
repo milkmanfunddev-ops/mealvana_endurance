@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.12.1+60
+version: 1.12.1+61
 
 environment:
   sdk: ^3.8.1
@@ -104,6 +104,7 @@ dependencies:
   # User Feedback with Screenshot Annotation
   wiredash: ^2.6.0
   connectivity_plus: ^7.0.0
+  flutter_svg: ^2.2.3
 
 dev_dependencies:
   sentry_dart_plugin: ^3.1.1
@@ -144,6 +145,7 @@ flutter:
     - .env.prod.local
     - shorebird.yaml
     - assets/images/
+    - assets/images/integrations/
     - assets/config/
     - assets/icons/
 

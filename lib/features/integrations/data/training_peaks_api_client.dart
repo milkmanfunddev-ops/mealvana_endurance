@@ -27,11 +27,13 @@ class TrainingPeaksApiClient {
   TrainingPeaksApiClient({
     required String clientId,
     required String clientSecret,
+    required String appVersion,
     bool useSandbox = true,
     http.Client? httpClient,
     RetryConfig? retryConfig,
   })  : _clientId = clientId,
         _clientSecret = clientSecret,
+        _appVersion = appVersion,
         _oauthBaseUrl = useSandbox
             ? 'https://oauth.sandbox.trainingpeaks.com'
             : 'https://oauth.trainingpeaks.com',
@@ -45,12 +47,16 @@ class TrainingPeaksApiClient {
 
   final String _clientId;
   final String _clientSecret;
+  final String _appVersion;
   final String _oauthBaseUrl;
   final String _apiBaseUrl;
   final http.Client _httpClient;
   final RetryConfig _retryConfig;
 
-  static const _userAgent = 'Mealvana Endurance v1.0';
+  /// User-Agent header format: [client_id]/[Version Number]
+  /// Per TrainingPeaks API requirements: https://github.com/TrainingPeaks/PartnersAPI/wiki#api-requests
+  /// Client ID is 'mealvana', version comes from pubspec.yaml
+  String get _userAgent => 'Mealvana/$_appVersion';
 
   /// Exchange authorization code for access token
   ///
@@ -63,7 +69,10 @@ class TrainingPeaksApiClient {
   ) async {
     final response = await _httpClient.post(
       Uri.parse('$_oauthBaseUrl/oauth/token'),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': _userAgent,
+      },
       body: {
         'client_id': _clientId,
         'client_secret': _clientSecret,
@@ -92,7 +101,10 @@ class TrainingPeaksApiClient {
   Future<TrainingPeaksTokenResponse> refreshToken(String refreshToken) async {
     final response = await _httpClient.post(
       Uri.parse('$_oauthBaseUrl/oauth/token'),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': _userAgent,
+      },
       body: {
         'client_id': _clientId,
         'client_secret': _clientSecret,
@@ -119,6 +131,7 @@ class TrainingPeaksApiClient {
       Uri.parse('$_oauthBaseUrl/oauth/deauthorize'),
       headers: {
         'Authorization': 'Bearer $accessToken',
+        'User-Agent': _userAgent,
       },
     );
 
@@ -260,6 +273,59 @@ class TrainingPeaksApiClient {
       provider: _provider,
       config: _retryConfig,
     );
+  }
+
+  /// Get all events within a date range
+  ///
+  /// TrainingPeaks doesn't have a "get all events" endpoint, so we iterate
+  /// through each day in the range. 404 responses (no events) are fast.
+  ///
+  /// [days] - Number of days ahead to search (default: 90 = ~3 months)
+  ///
+  /// Note: This makes one API call per day. For 90 days, that's 90 calls.
+  /// Most will return 404 quickly.
+  Future<List<Map<String, dynamic>>> getEventsInRange(
+    String accessToken, {
+    int days = 90,
+  }) async {
+    final events = <Map<String, dynamic>>[];
+    final seenIds = <int>{};
+    final startDate = DateTime.now();
+    final endDate = startDate.add(Duration(days: days));
+
+    if (kDebugMode) {
+      print('🔍 Searching for events from ${_formatDate(startDate)} to ${_formatDate(endDate)} ($days days)');
+    }
+
+    // Iterate through each day
+    var currentDate = startDate;
+    while (currentDate.isBefore(endDate)) {
+      try {
+        final dayEvents = await getEventsByDate(accessToken, currentDate);
+        for (final event in dayEvents) {
+          final eventId = event['Id'] as int?;
+          if (eventId != null && !seenIds.contains(eventId)) {
+            seenIds.add(eventId);
+            events.add(event);
+            if (kDebugMode) {
+              print('   Found event: ${event['Name']} on ${_formatDate(currentDate)}');
+            }
+          }
+        }
+      } catch (e) {
+        // Skip individual day errors, continue with other days
+        if (kDebugMode) {
+          print('   ⚠️ Error fetching events for ${_formatDate(currentDate)}: $e');
+        }
+      }
+      currentDate = currentDate.add(const Duration(days: 1));
+    }
+
+    if (kDebugMode) {
+      print('✅ Found ${events.length} total events in $days day range');
+    }
+
+    return events;
   }
 
   /// Push nutrition data to TrainingPeaks (UNIQUE FEATURE!)
