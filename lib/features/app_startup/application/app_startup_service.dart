@@ -23,6 +23,7 @@ import '../../activities/presentation/providers/activities_controller.dart';
 import '../../events/presentation/providers/events_controller.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
+import '../../coach_mode/application/coach_service.dart';
 import 'app_startup_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
@@ -216,6 +217,11 @@ class AppStartupService {
         await _initializePushNotifications();
         debugPrint('[DEFERRED_INIT] Push notifications initialized: ${sw.elapsedMilliseconds}ms');
 
+        // 5. Sync is_coach status from Supabase (for coach mode)
+        // This picks up any admin approvals since last app launch
+        await _syncCoachStatus();
+        debugPrint('[DEFERRED_INIT] Coach status synced: ${sw.elapsedMilliseconds}ms');
+
         debugPrint('[DEFERRED_INIT] ✅ All deferred services initialized: ${sw.elapsedMilliseconds}ms');
       } catch (e, stackTrace) {
         _logger.error(
@@ -253,6 +259,43 @@ class AppStartupService {
         stackTrace: stackTrace,
       );
       // Don't rethrow - app should continue even if analytics fails
+    }
+  }
+
+  /// Sync is_coach status from Supabase to local database
+  /// This picks up any admin approvals since last app launch
+  Future<void> _syncCoachStatus() async {
+    try {
+      // Only sync if user is logged in (has session)
+      final session = _supabase.auth.currentSession;
+      if (session == null) {
+        _logger.info(
+          'Skipping coach status sync - no active session',
+          context: 'COACH_SYNC',
+        );
+        return;
+      }
+
+      final coachService = ref.read(coachServiceProvider);
+      final wasUpdated = await coachService.syncIsCoachStatus();
+
+      if (wasUpdated) {
+        _logger.info(
+          'Coach status was updated from Supabase',
+          context: 'COACH_SYNC',
+        );
+
+        // Invalidate settings controller to pick up new is_coach status
+        ref.invalidate(settingsControllerProvider);
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Coach status sync failed',
+        context: 'COACH_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - app should continue even if coach sync fails
     }
   }
 

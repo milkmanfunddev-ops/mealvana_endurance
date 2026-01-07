@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../widgets/athlete_card.dart';
@@ -10,6 +12,10 @@ import '../widgets/pending_request_card.dart';
 /// Coach Dashboard Screen - main hub for coaches to manage athletes
 class CoachDashboardScreen extends ConsumerWidget {
   const CoachDashboardScreen({super.key});
+
+  /// External Notion form URL for coach registration
+  static const String _coachRegistrationUrl =
+      'https://mealvana.notion.site/Coach-Registration-Form';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,12 +31,6 @@ class CoachDashboardScreen extends ConsumerWidget {
               ref.read(coachDashboardControllerProvider.notifier).refresh();
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // TODO: Navigate to coach settings
-            },
-          ),
         ],
       ),
       body: dashboardAsync.when(
@@ -38,13 +38,13 @@ class CoachDashboardScreen extends ConsumerWidget {
         error: (error, stack) => _buildErrorView(context, error.toString(), ref),
         data: (state) => _buildDashboard(context, state, ref),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          context.push('/coach/invite');
-        },
-        icon: const Icon(Icons.person_add),
-        label: const Text('Invite Athlete'),
-      ),
+      floatingActionButton: dashboardAsync.value?.isCoach == true
+          ? FloatingActionButton.extended(
+              onPressed: () => _showInviteAthleteDialog(context, ref),
+              icon: const Icon(Icons.person_add),
+              label: const Text('Invite Athlete'),
+            )
+          : null,
     );
   }
 
@@ -85,8 +85,8 @@ class CoachDashboardScreen extends ConsumerWidget {
     CoachDashboardState state,
     WidgetRef ref,
   ) {
-    if (!state.hasProfile) {
-      return _buildNoProfileView(context);
+    if (!state.isCoach) {
+      return _buildNotCoachView(context);
     }
 
     return RefreshIndicator(
@@ -95,9 +95,9 @@ class CoachDashboardScreen extends ConsumerWidget {
       },
       child: CustomScrollView(
         slivers: [
-          // Coach info header
+          // Stats header
           SliverToBoxAdapter(
-            child: _buildCoachHeader(context, state),
+            child: _buildStatsHeader(context, state),
           ),
 
           // Pending requests section
@@ -175,8 +175,7 @@ class CoachDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCoachHeader(BuildContext context, CoachDashboardState state) {
-    final coach = state.coach!;
+  Widget _buildStatsHeader(BuildContext context, CoachDashboardState state) {
     final theme = Theme.of(context);
 
     return Container(
@@ -191,77 +190,20 @@ class CoachDashboardScreen extends ConsumerWidget {
         ),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: theme.colorScheme.primary,
-                child: Text(
-                  coach.coachName.isNotEmpty
-                      ? coach.coachName[0].toUpperCase()
-                      : 'C',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      coach.coachName,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (coach.isVerified)
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.verified,
-                            size: 16,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Verified Coach',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ],
+          _buildStatItem(
+            context,
+            state.athleteCount.toString(),
+            'Athletes',
+            Icons.people,
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatItem(
-                context,
-                state.athleteCount.toString(),
-                'Athletes',
-                Icons.people,
-              ),
-              _buildStatItem(
-                context,
-                state.pendingRequests.length.toString(),
-                'Pending',
-                Icons.pending,
-              ),
-              _buildStatItem(
-                context,
-                '${coach.maxAthletes}',
-                'Max',
-                Icons.groups,
-              ),
-            ],
+          _buildStatItem(
+            context,
+            state.pendingRequests.length.toString(),
+            'Pending',
+            Icons.pending,
           ),
         ],
       ),
@@ -362,7 +304,7 @@ class CoachDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNoProfileView(BuildContext context) {
+  Widget _buildNotCoachView(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
@@ -377,14 +319,14 @@ class CoachDashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Set Up Your Coach Profile',
+              'Become a Coach',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              'Create your coach profile to start connecting with athletes and helping them achieve their nutrition goals.',
+              'You are not currently registered as a coach. Apply to become a certified Mealvana coach and help athletes optimize their nutrition.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -392,11 +334,14 @@ class CoachDashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 32),
             FilledButton.icon(
-              onPressed: () {
-                context.push('/coach/setup');
+              onPressed: () async {
+                final uri = Uri.parse(_coachRegistrationUrl);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               },
-              icon: const Icon(Icons.add),
-              label: const Text('Create Profile'),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Apply to Be a Coach'),
             ),
           ],
         ),
@@ -430,6 +375,73 @@ class CoachDashboardScreen extends ConsumerWidget {
                   .archiveAthlete(relationship.id);
             },
             child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showInviteAthleteDialog(BuildContext context, WidgetRef ref) {
+    final textController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Invite Athlete'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter the athlete\'s user ID to send them an invitation to connect.',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: textController,
+                decoration: const InputDecoration(
+                  labelText: 'Athlete User ID',
+                  hintText: 'Enter athlete user ID...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (textController.text.trim().isEmpty) return;
+
+              final coachService = ref.read(coachServiceProvider);
+              final result = await coachService.inviteAthlete(
+                athleteUserId: textController.text.trim(),
+              );
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                if (result != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Invitation sent successfully'),
+                    ),
+                  );
+                  ref.read(coachDashboardControllerProvider.notifier).refresh();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to send invitation'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Send Invitation'),
           ),
         ],
       ),

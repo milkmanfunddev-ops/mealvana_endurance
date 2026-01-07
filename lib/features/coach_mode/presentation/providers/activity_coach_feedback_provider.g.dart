@@ -8,26 +8,26 @@ part of 'activity_coach_feedback_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provider that loads coach feedback for a specific activity
+/// Provider that loads coach messages/comments for a specific activity
 /// Used to show feedback on the ActivityDetailScreen
 
 @ProviderFor(activityCoachFeedback)
 const activityCoachFeedbackProvider = ActivityCoachFeedbackFamily._();
 
-/// Provider that loads coach feedback for a specific activity
+/// Provider that loads coach messages/comments for a specific activity
 /// Used to show feedback on the ActivityDetailScreen
 
 final class ActivityCoachFeedbackProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<CoachFeedback>>,
-          List<CoachFeedback>,
-          FutureOr<List<CoachFeedback>>
+          AsyncValue<List<CoachMessage>>,
+          List<CoachMessage>,
+          FutureOr<List<CoachMessage>>
         >
     with
-        $FutureModifier<List<CoachFeedback>>,
-        $FutureProvider<List<CoachFeedback>> {
-  /// Provider that loads coach feedback for a specific activity
+        $FutureModifier<List<CoachMessage>>,
+        $FutureProvider<List<CoachMessage>> {
+  /// Provider that loads coach messages/comments for a specific activity
   /// Used to show feedback on the ActivityDetailScreen
   const ActivityCoachFeedbackProvider._({
     required ActivityCoachFeedbackFamily super.from,
@@ -52,12 +52,12 @@ final class ActivityCoachFeedbackProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<CoachFeedback>> $createElement(
+  $FutureProviderElement<List<CoachMessage>> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<List<CoachFeedback>> create(Ref ref) {
+  FutureOr<List<CoachMessage>> create(Ref ref) {
     final argument = this.argument as String;
     return activityCoachFeedback(ref, argument);
   }
@@ -74,13 +74,13 @@ final class ActivityCoachFeedbackProvider
 }
 
 String _$activityCoachFeedbackHash() =>
-    r'47dea39b8fcd38aa6e7404eabfadc5954add42fd';
+    r'26d244a7c64e1d53dcb4cf2722ba8c17f5369d82';
 
-/// Provider that loads coach feedback for a specific activity
+/// Provider that loads coach messages/comments for a specific activity
 /// Used to show feedback on the ActivityDetailScreen
 
 final class ActivityCoachFeedbackFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<List<CoachFeedback>>, String> {
+    with $FunctionalFamilyOverride<FutureOr<List<CoachMessage>>, String> {
   const ActivityCoachFeedbackFamily._()
     : super(
         retry: null,
@@ -90,7 +90,7 @@ final class ActivityCoachFeedbackFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Provider that loads coach feedback for a specific activity
+  /// Provider that loads coach messages/comments for a specific activity
   /// Used to show feedback on the ActivityDetailScreen
 
   ActivityCoachFeedbackProvider call(String activityId) =>

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../domain/coach_feedback.dart';
+import '../../domain/coach_message.dart';
 import '../providers/athlete_feedback_controller.dart';
 
-/// Screen for athletes to view feedback from their coaches
+/// Screen for athletes to view messages/feedback from their coaches
 class AthleteFeedbackScreen extends ConsumerWidget {
   const AthleteFeedbackScreen({super.key});
 
@@ -15,7 +15,7 @@ class AthleteFeedbackScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Coach Feedback'),
+        title: const Text('Coach Messages'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -76,14 +76,14 @@ class AthleteFeedbackScreen extends ConsumerWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
-        // Can't use async refresh directly, just trigger invalidation
+        // Trigger refresh
       },
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: state.allFeedback.length,
+        itemCount: state.allMessages.length,
         itemBuilder: (context, index) {
-          final feedback = state.allFeedback[index];
-          return _buildFeedbackCard(context, feedback, state.getCoachName(feedback.coachId));
+          final message = state.allMessages[index];
+          return _buildMessageCard(context, message);
         },
       ),
     );
@@ -98,20 +98,20 @@ class AthleteFeedbackScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.feedback_outlined,
+              Icons.chat_outlined,
               size: 80,
               color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 24),
             Text(
-              'No Feedback Yet',
+              'No Messages Yet',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              'When your coach leaves feedback on your activities, it will appear here.',
+              'When your coach sends messages or feedback, they will appear here.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -123,11 +123,7 @@ class AthleteFeedbackScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeedbackCard(
-    BuildContext context,
-    CoachFeedback feedback,
-    String coachName,
-  ) {
+  Widget _buildMessageCard(BuildContext context, CoachMessage message) {
     final theme = Theme.of(context);
 
     return Card(
@@ -137,18 +133,16 @@ class AthleteFeedbackScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with coach name and date
+            // Header with coach avatar and date
             Row(
               children: [
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Text(
-                    coachName.isNotEmpty ? coachName[0].toUpperCase() : 'C',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Icon(
+                    Icons.person,
+                    size: 18,
+                    color: theme.colorScheme.onPrimaryContainer,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -157,13 +151,13 @@ class AthleteFeedbackScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        coachName,
+                        'Coach',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        _formatDate(feedback.createdAt),
+                        _formatDate(message.createdAt),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -171,20 +165,20 @@ class AthleteFeedbackScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                _buildFeedbackTypeBadge(context, feedback.feedbackType),
+                _buildMessageTypeBadge(context, message),
               ],
             ),
 
             const SizedBox(height: 12),
 
-            // Feedback text
+            // Message text
             Text(
-              feedback.feedbackText,
+              message.messageText,
               style: theme.textTheme.bodyMedium,
             ),
 
             // Activity link if applicable
-            if (feedback.isLinkedToActivity) ...[
+            if (message.isActivityComment) ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -211,21 +205,49 @@ class AthleteFeedbackScreen extends ConsumerWidget {
                 ),
               ),
             ],
+
+            // Nutrition plan link if applicable
+            if (message.isNutritionPlanComment) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.restaurant,
+                      size: 16,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'View Nutrition Plan',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFeedbackTypeBadge(BuildContext context, FeedbackType type) {
+  Widget _buildMessageTypeBadge(BuildContext context, CoachMessage message) {
     final theme = Theme.of(context);
-    final (label, icon, color) = switch (type) {
-      FeedbackType.general => ('General', Icons.chat_bubble_outline, theme.colorScheme.primary),
-      FeedbackType.activity => ('Activity', Icons.directions_run, Colors.green),
-      FeedbackType.nutrition => ('Nutrition', Icons.restaurant, Colors.orange),
-      FeedbackType.progress => ('Progress', Icons.trending_up, Colors.blue),
-      FeedbackType.goal => ('Goal', Icons.flag, Colors.purple),
-    };
+
+    final (label, icon, color) = message.isActivityComment
+        ? ('Activity', Icons.directions_run, Colors.green)
+        : message.isNutritionPlanComment
+            ? ('Nutrition', Icons.restaurant, Colors.orange)
+            : ('Message', Icons.chat_bubble_outline, theme.colorScheme.primary);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

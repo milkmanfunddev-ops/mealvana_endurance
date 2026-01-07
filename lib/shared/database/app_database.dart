@@ -32,10 +32,9 @@ import 'tables/carb_loading_day_meals_table.dart';
 import 'tables/weather_forecasts_table.dart';
 // NEW: Feature survey table
 import 'tables/feature_survey_responses_table.dart';
-// NEW: Coach mode tables
-import 'tables/coaches_table.dart';
+// NEW: Coach mode tables (simplified - no coaches table, just is_coach flag on users)
 import 'tables/coach_athlete_relationships_table.dart';
-import 'tables/coach_feedback_table.dart';
+import 'tables/coach_messages_table.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
 
 part 'app_database.g.dart';
@@ -78,10 +77,9 @@ part 'app_database.g.dart';
     // Feature survey tables
     FeatureSurveyResponsesTable,
 
-    // Coach mode tables
-    CoachesTable,
+    // Coach mode tables (simplified schema)
     CoachAthleteRelationshipsTable,
-    CoachFeedbackTable,
+    CoachMessagesTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -102,7 +100,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(QueryExecutor e) : super(e);
 
   @override
-  int get schemaVersion => 3; // v3: Added coach mode tables (coaches, coach_athlete_relationships, coach_feedback) and is_coach column to users
+  int get schemaVersion => 3; // v3: Added simplified coach mode (is_coach flag, coach_athlete_relationships, coach_messages)
 
   /// Generate a proper UUID v4 for new records
   /// Uses the uuid package to ensure RFC 4122 compliance and exact 36-character length
@@ -623,8 +621,10 @@ class AppDatabase extends _$AppDatabase {
         // V2 -> V3 Migration
         if (from < 3) {
           // V2 -> V3 Migration (January 2025)
-          // Adds: coaches table, coach_athlete_relationships table, coach_feedback table
-          // Adds: is_coach column to users table
+          // Simplified coach mode schema:
+          // - is_coach column on users table (set by admin)
+          // - coach_athlete_relationships table
+          // - coach_messages table (bidirectional messaging)
 
           try {
             // 1. Add is_coach column to users table if missing
@@ -640,48 +640,42 @@ class AppDatabase extends _$AppDatabase {
               }
             }
 
-            // 2. Create coaches table
-            await m.createTable(coachesTable);
-            if (kDebugMode) {
-              print('✅ Created coaches table');
-            }
-
-            // 3. Create coach_athlete_relationships table
+            // 2. Create coach_athlete_relationships table
             await m.createTable(coachAthleteRelationshipsTable);
             if (kDebugMode) {
               print('✅ Created coach_athlete_relationships table');
             }
 
-            // 4. Create coach_feedback table
-            await m.createTable(coachFeedbackTable);
+            // 3. Create coach_messages table
+            await m.createTable(coachMessagesTable);
             if (kDebugMode) {
-              print('✅ Created coach_feedback table');
+              print('✅ Created coach_messages table');
             }
 
-            // 5. Create indexes for coach mode tables
+            // 4. Create indexes for coach mode tables
             await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_coaches_user_id ON coaches(user_id)'
+              'CREATE INDEX IF NOT EXISTS idx_car_coach_user ON coach_athlete_relationships(coach_user_id)'
             );
             await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_coaches_device_id ON coaches(device_id)'
+              'CREATE INDEX IF NOT EXISTS idx_car_athlete ON coach_athlete_relationships(athlete_user_id)'
             );
             await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_relationships_coach_id ON coach_athlete_relationships(coach_id)'
+              'CREATE INDEX IF NOT EXISTS idx_car_status ON coach_athlete_relationships(status)'
             );
             await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_relationships_athlete_user_id ON coach_athlete_relationships(athlete_user_id)'
+              'CREATE INDEX IF NOT EXISTS idx_cm_coach ON coach_messages(coach_user_id)'
             );
             await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_relationships_status ON coach_athlete_relationships(status)'
+              'CREATE INDEX IF NOT EXISTS idx_cm_athlete ON coach_messages(athlete_user_id)'
             );
             await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_feedback_relationship_id ON coach_feedback(relationship_id)'
+              'CREATE INDEX IF NOT EXISTS idx_cm_conversation ON coach_messages(coach_user_id, athlete_user_id, created_at)'
             );
             await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_feedback_coach_id ON coach_feedback(coach_id)'
+              'CREATE INDEX IF NOT EXISTS idx_cm_nutrition_plan ON coach_messages(nutrition_plan_id)'
             );
             await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_feedback_athlete_user_id ON coach_feedback(athlete_user_id)'
+              'CREATE INDEX IF NOT EXISTS idx_cm_activity ON coach_messages(activity_id)'
             );
 
             if (kDebugMode) {

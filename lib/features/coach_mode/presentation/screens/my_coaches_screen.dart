@@ -18,17 +18,10 @@ class MyCoachesScreen extends ConsumerWidget {
         title: const Text('My Coaches'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.feedback),
-            tooltip: 'View coach feedback',
+            icon: const Icon(Icons.message),
+            tooltip: 'View messages',
             onPressed: () {
               context.push('/athlete/feedback');
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.qr_code),
-            tooltip: 'Generate invite code',
-            onPressed: () {
-              context.push('/athlete/invite-code');
             },
           ),
           IconButton(
@@ -43,11 +36,6 @@ class MyCoachesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => _buildErrorView(context, error.toString(), ref),
         data: (state) => _buildContent(context, state, ref),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/coaches'),
-        icon: const Icon(Icons.search),
-        label: const Text('Find Coach'),
       ),
     );
   }
@@ -191,7 +179,8 @@ class MyCoachesScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Coach ID: ${request.coachId.substring(0, 8)}...',
+                        request.coachDisplayName ??
+                            'Coach ${request.coachUserId.substring(0, 8)}...',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -246,10 +235,13 @@ class MyCoachesScreen extends ConsumerWidget {
             color: theme.colorScheme.onPrimaryContainer,
           ),
         ),
-        title: Text('Coach ${relationship.coachId.substring(0, 8)}...'),
+        title: Text(
+          relationship.coachDisplayName ??
+              'Coach ${relationship.coachUserId.substring(0, 8)}...',
+        ),
         subtitle: Row(
           children: [
-            _buildPermissionBadge(context, relationship.permissionLevel),
+            _buildStatusBadge(context, relationship.status),
             const SizedBox(width: 8),
             Text(
               'Connected ${_formatDate(relationship.acceptedAt ?? relationship.createdAt)}',
@@ -259,30 +251,34 @@ class MyCoachesScreen extends ConsumerWidget {
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
-          // TODO: Navigate to coach detail or feedback view
+          // Navigate to messages with this coach
+          context.push('/athlete/feedback');
         },
       ),
     );
   }
 
-  Widget _buildPermissionBadge(BuildContext context, PermissionLevel level) {
+  Widget _buildStatusBadge(BuildContext context, RelationshipStatus status) {
     final theme = Theme.of(context);
-    final label = switch (level) {
-      PermissionLevel.viewOnly => 'View Only',
-      PermissionLevel.fullAccess => 'Full Access',
-      PermissionLevel.custom => 'Custom',
+    final (label, color) = switch (status) {
+      RelationshipStatus.active => ('Active', Colors.green),
+      RelationshipStatus.pending => ('Pending', Colors.orange),
+      RelationshipStatus.declined => ('Declined', Colors.red),
+      RelationshipStatus.archived => ('Archived', Colors.grey),
     };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer,
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,
         style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSecondaryContainer,
+          color: color,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -347,13 +343,15 @@ class MyCoachesScreen extends ConsumerWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: () => context.push('/coaches'),
-              icon: const Icon(Icons.search),
-              label: const Text('Find a Coach'),
+            const SizedBox(height: 24),
+            Text(
+              'Ask your coach to invite you to connect.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
             ),
-            const SizedBox(height: 80), // Space for FAB
           ],
         ),
       ),

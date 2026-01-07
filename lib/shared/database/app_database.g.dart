@@ -18142,1002 +18142,6 @@ class FeatureSurveyResponsesTableCompanion
   }
 }
 
-class $CoachesTableTable extends CoachesTable
-    with TableInfo<$CoachesTableTable, CoachEntry> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $CoachesTableTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
-  @override
-  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
-    'user_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
-  );
-  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
-    'deviceId',
-  );
-  @override
-  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
-    'device_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
-  );
-  static const VerificationMeta _coachNameMeta = const VerificationMeta(
-    'coachName',
-  );
-  @override
-  late final GeneratedColumn<String> coachName = GeneratedColumn<String>(
-    'coach_name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _bioMeta = const VerificationMeta('bio');
-  @override
-  late final GeneratedColumn<String> bio = GeneratedColumn<String>(
-    'bio',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _certificationsMeta = const VerificationMeta(
-    'certifications',
-  );
-  @override
-  late final GeneratedColumn<String> certifications = GeneratedColumn<String>(
-    'certifications',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('{}'),
-  );
-  static const VerificationMeta _specializationsMeta = const VerificationMeta(
-    'specializations',
-  );
-  @override
-  late final GeneratedColumn<String> specializations = GeneratedColumn<String>(
-    'specializations',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('{}'),
-  );
-  static const VerificationMeta _businessNameMeta = const VerificationMeta(
-    'businessName',
-  );
-  @override
-  late final GeneratedColumn<String> businessName = GeneratedColumn<String>(
-    'business_name',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _websiteUrlMeta = const VerificationMeta(
-    'websiteUrl',
-  );
-  @override
-  late final GeneratedColumn<String> websiteUrl = GeneratedColumn<String>(
-    'website_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _emailMeta = const VerificationMeta('email');
-  @override
-  late final GeneratedColumn<String> email = GeneratedColumn<String>(
-    'email',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
-  @override
-  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
-    'phone',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _isActiveMeta = const VerificationMeta(
-    'isActive',
-  );
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-    'is_active',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_active" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  static const VerificationMeta _isVerifiedMeta = const VerificationMeta(
-    'isVerified',
-  );
-  @override
-  late final GeneratedColumn<bool> isVerified = GeneratedColumn<bool>(
-    'is_verified',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_verified" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _maxAthletesMeta = const VerificationMeta(
-    'maxAthletes',
-  );
-  @override
-  late final GeneratedColumn<int> maxAthletes = GeneratedColumn<int>(
-    'max_athletes',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(50),
-  );
-  static const VerificationMeta _autoAcceptRequestsMeta =
-      const VerificationMeta('autoAcceptRequests');
-  @override
-  late final GeneratedColumn<bool> autoAcceptRequests = GeneratedColumn<bool>(
-    'auto_accept_requests',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("auto_accept_requests" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    userId,
-    deviceId,
-    coachName,
-    bio,
-    certifications,
-    specializations,
-    businessName,
-    websiteUrl,
-    email,
-    phone,
-    isActive,
-    isVerified,
-    maxAthletes,
-    autoAcceptRequests,
-    createdAt,
-    updatedAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'coaches';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<CoachEntry> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('user_id')) {
-      context.handle(
-        _userIdMeta,
-        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_userIdMeta);
-    }
-    if (data.containsKey('device_id')) {
-      context.handle(
-        _deviceIdMeta,
-        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_deviceIdMeta);
-    }
-    if (data.containsKey('coach_name')) {
-      context.handle(
-        _coachNameMeta,
-        coachName.isAcceptableOrUnknown(data['coach_name']!, _coachNameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_coachNameMeta);
-    }
-    if (data.containsKey('bio')) {
-      context.handle(
-        _bioMeta,
-        bio.isAcceptableOrUnknown(data['bio']!, _bioMeta),
-      );
-    }
-    if (data.containsKey('certifications')) {
-      context.handle(
-        _certificationsMeta,
-        certifications.isAcceptableOrUnknown(
-          data['certifications']!,
-          _certificationsMeta,
-        ),
-      );
-    }
-    if (data.containsKey('specializations')) {
-      context.handle(
-        _specializationsMeta,
-        specializations.isAcceptableOrUnknown(
-          data['specializations']!,
-          _specializationsMeta,
-        ),
-      );
-    }
-    if (data.containsKey('business_name')) {
-      context.handle(
-        _businessNameMeta,
-        businessName.isAcceptableOrUnknown(
-          data['business_name']!,
-          _businessNameMeta,
-        ),
-      );
-    }
-    if (data.containsKey('website_url')) {
-      context.handle(
-        _websiteUrlMeta,
-        websiteUrl.isAcceptableOrUnknown(data['website_url']!, _websiteUrlMeta),
-      );
-    }
-    if (data.containsKey('email')) {
-      context.handle(
-        _emailMeta,
-        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
-      );
-    }
-    if (data.containsKey('phone')) {
-      context.handle(
-        _phoneMeta,
-        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
-      );
-    }
-    if (data.containsKey('is_active')) {
-      context.handle(
-        _isActiveMeta,
-        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
-      );
-    }
-    if (data.containsKey('is_verified')) {
-      context.handle(
-        _isVerifiedMeta,
-        isVerified.isAcceptableOrUnknown(data['is_verified']!, _isVerifiedMeta),
-      );
-    }
-    if (data.containsKey('max_athletes')) {
-      context.handle(
-        _maxAthletesMeta,
-        maxAthletes.isAcceptableOrUnknown(
-          data['max_athletes']!,
-          _maxAthletesMeta,
-        ),
-      );
-    }
-    if (data.containsKey('auto_accept_requests')) {
-      context.handle(
-        _autoAcceptRequestsMeta,
-        autoAcceptRequests.isAcceptableOrUnknown(
-          data['auto_accept_requests']!,
-          _autoAcceptRequestsMeta,
-        ),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  CoachEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CoachEntry(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      userId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}user_id'],
-      )!,
-      deviceId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}device_id'],
-      )!,
-      coachName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}coach_name'],
-      )!,
-      bio: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}bio'],
-      ),
-      certifications: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}certifications'],
-      )!,
-      specializations: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}specializations'],
-      )!,
-      businessName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}business_name'],
-      ),
-      websiteUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}website_url'],
-      ),
-      email: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}email'],
-      ),
-      phone: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}phone'],
-      ),
-      isActive: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_active'],
-      )!,
-      isVerified: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_verified'],
-      )!,
-      maxAthletes: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}max_athletes'],
-      )!,
-      autoAcceptRequests: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}auto_accept_requests'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-    );
-  }
-
-  @override
-  $CoachesTableTable createAlias(String alias) {
-    return $CoachesTableTable(attachedDatabase, alias);
-  }
-}
-
-class CoachEntry extends DataClass implements Insertable<CoachEntry> {
-  /// UUID primary key
-  final String id;
-
-  /// References users.id - the user who is a coach
-  final String userId;
-
-  /// References users.device_id - for device-based auth
-  final String deviceId;
-
-  /// Coach's display name (min 2 characters)
-  final String coachName;
-
-  /// Coach bio/description
-  final String? bio;
-
-  /// Certifications as comma-separated values (stored as PostgreSQL array format)
-  final String certifications;
-
-  /// Specializations as comma-separated values (stored as PostgreSQL array format)
-  final String specializations;
-
-  /// Business name (optional)
-  final String? businessName;
-
-  /// Website URL (optional)
-  final String? websiteUrl;
-
-  /// Contact email (optional)
-  final String? email;
-
-  /// Contact phone (optional)
-  final String? phone;
-
-  /// Whether coach is active and accepting athletes
-  final bool isActive;
-
-  /// Whether coach has been verified by admin
-  final bool isVerified;
-
-  /// Maximum number of athletes coach can manage
-  final int maxAthletes;
-
-  /// Whether to auto-accept athlete requests
-  final bool autoAcceptRequests;
-
-  /// When the coach profile was created
-  final DateTime createdAt;
-
-  /// When the coach profile was last updated
-  final DateTime updatedAt;
-  const CoachEntry({
-    required this.id,
-    required this.userId,
-    required this.deviceId,
-    required this.coachName,
-    this.bio,
-    required this.certifications,
-    required this.specializations,
-    this.businessName,
-    this.websiteUrl,
-    this.email,
-    this.phone,
-    required this.isActive,
-    required this.isVerified,
-    required this.maxAthletes,
-    required this.autoAcceptRequests,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['user_id'] = Variable<String>(userId);
-    map['device_id'] = Variable<String>(deviceId);
-    map['coach_name'] = Variable<String>(coachName);
-    if (!nullToAbsent || bio != null) {
-      map['bio'] = Variable<String>(bio);
-    }
-    map['certifications'] = Variable<String>(certifications);
-    map['specializations'] = Variable<String>(specializations);
-    if (!nullToAbsent || businessName != null) {
-      map['business_name'] = Variable<String>(businessName);
-    }
-    if (!nullToAbsent || websiteUrl != null) {
-      map['website_url'] = Variable<String>(websiteUrl);
-    }
-    if (!nullToAbsent || email != null) {
-      map['email'] = Variable<String>(email);
-    }
-    if (!nullToAbsent || phone != null) {
-      map['phone'] = Variable<String>(phone);
-    }
-    map['is_active'] = Variable<bool>(isActive);
-    map['is_verified'] = Variable<bool>(isVerified);
-    map['max_athletes'] = Variable<int>(maxAthletes);
-    map['auto_accept_requests'] = Variable<bool>(autoAcceptRequests);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    return map;
-  }
-
-  CoachesTableCompanion toCompanion(bool nullToAbsent) {
-    return CoachesTableCompanion(
-      id: Value(id),
-      userId: Value(userId),
-      deviceId: Value(deviceId),
-      coachName: Value(coachName),
-      bio: bio == null && nullToAbsent ? const Value.absent() : Value(bio),
-      certifications: Value(certifications),
-      specializations: Value(specializations),
-      businessName: businessName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(businessName),
-      websiteUrl: websiteUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(websiteUrl),
-      email: email == null && nullToAbsent
-          ? const Value.absent()
-          : Value(email),
-      phone: phone == null && nullToAbsent
-          ? const Value.absent()
-          : Value(phone),
-      isActive: Value(isActive),
-      isVerified: Value(isVerified),
-      maxAthletes: Value(maxAthletes),
-      autoAcceptRequests: Value(autoAcceptRequests),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-    );
-  }
-
-  factory CoachEntry.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CoachEntry(
-      id: serializer.fromJson<String>(json['id']),
-      userId: serializer.fromJson<String>(json['userId']),
-      deviceId: serializer.fromJson<String>(json['deviceId']),
-      coachName: serializer.fromJson<String>(json['coachName']),
-      bio: serializer.fromJson<String?>(json['bio']),
-      certifications: serializer.fromJson<String>(json['certifications']),
-      specializations: serializer.fromJson<String>(json['specializations']),
-      businessName: serializer.fromJson<String?>(json['businessName']),
-      websiteUrl: serializer.fromJson<String?>(json['websiteUrl']),
-      email: serializer.fromJson<String?>(json['email']),
-      phone: serializer.fromJson<String?>(json['phone']),
-      isActive: serializer.fromJson<bool>(json['isActive']),
-      isVerified: serializer.fromJson<bool>(json['isVerified']),
-      maxAthletes: serializer.fromJson<int>(json['maxAthletes']),
-      autoAcceptRequests: serializer.fromJson<bool>(json['autoAcceptRequests']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'userId': serializer.toJson<String>(userId),
-      'deviceId': serializer.toJson<String>(deviceId),
-      'coachName': serializer.toJson<String>(coachName),
-      'bio': serializer.toJson<String?>(bio),
-      'certifications': serializer.toJson<String>(certifications),
-      'specializations': serializer.toJson<String>(specializations),
-      'businessName': serializer.toJson<String?>(businessName),
-      'websiteUrl': serializer.toJson<String?>(websiteUrl),
-      'email': serializer.toJson<String?>(email),
-      'phone': serializer.toJson<String?>(phone),
-      'isActive': serializer.toJson<bool>(isActive),
-      'isVerified': serializer.toJson<bool>(isVerified),
-      'maxAthletes': serializer.toJson<int>(maxAthletes),
-      'autoAcceptRequests': serializer.toJson<bool>(autoAcceptRequests),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-    };
-  }
-
-  CoachEntry copyWith({
-    String? id,
-    String? userId,
-    String? deviceId,
-    String? coachName,
-    Value<String?> bio = const Value.absent(),
-    String? certifications,
-    String? specializations,
-    Value<String?> businessName = const Value.absent(),
-    Value<String?> websiteUrl = const Value.absent(),
-    Value<String?> email = const Value.absent(),
-    Value<String?> phone = const Value.absent(),
-    bool? isActive,
-    bool? isVerified,
-    int? maxAthletes,
-    bool? autoAcceptRequests,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) => CoachEntry(
-    id: id ?? this.id,
-    userId: userId ?? this.userId,
-    deviceId: deviceId ?? this.deviceId,
-    coachName: coachName ?? this.coachName,
-    bio: bio.present ? bio.value : this.bio,
-    certifications: certifications ?? this.certifications,
-    specializations: specializations ?? this.specializations,
-    businessName: businessName.present ? businessName.value : this.businessName,
-    websiteUrl: websiteUrl.present ? websiteUrl.value : this.websiteUrl,
-    email: email.present ? email.value : this.email,
-    phone: phone.present ? phone.value : this.phone,
-    isActive: isActive ?? this.isActive,
-    isVerified: isVerified ?? this.isVerified,
-    maxAthletes: maxAthletes ?? this.maxAthletes,
-    autoAcceptRequests: autoAcceptRequests ?? this.autoAcceptRequests,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
-  CoachEntry copyWithCompanion(CoachesTableCompanion data) {
-    return CoachEntry(
-      id: data.id.present ? data.id.value : this.id,
-      userId: data.userId.present ? data.userId.value : this.userId,
-      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
-      coachName: data.coachName.present ? data.coachName.value : this.coachName,
-      bio: data.bio.present ? data.bio.value : this.bio,
-      certifications: data.certifications.present
-          ? data.certifications.value
-          : this.certifications,
-      specializations: data.specializations.present
-          ? data.specializations.value
-          : this.specializations,
-      businessName: data.businessName.present
-          ? data.businessName.value
-          : this.businessName,
-      websiteUrl: data.websiteUrl.present
-          ? data.websiteUrl.value
-          : this.websiteUrl,
-      email: data.email.present ? data.email.value : this.email,
-      phone: data.phone.present ? data.phone.value : this.phone,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
-      isVerified: data.isVerified.present
-          ? data.isVerified.value
-          : this.isVerified,
-      maxAthletes: data.maxAthletes.present
-          ? data.maxAthletes.value
-          : this.maxAthletes,
-      autoAcceptRequests: data.autoAcceptRequests.present
-          ? data.autoAcceptRequests.value
-          : this.autoAcceptRequests,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('CoachEntry(')
-          ..write('id: $id, ')
-          ..write('userId: $userId, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('coachName: $coachName, ')
-          ..write('bio: $bio, ')
-          ..write('certifications: $certifications, ')
-          ..write('specializations: $specializations, ')
-          ..write('businessName: $businessName, ')
-          ..write('websiteUrl: $websiteUrl, ')
-          ..write('email: $email, ')
-          ..write('phone: $phone, ')
-          ..write('isActive: $isActive, ')
-          ..write('isVerified: $isVerified, ')
-          ..write('maxAthletes: $maxAthletes, ')
-          ..write('autoAcceptRequests: $autoAcceptRequests, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    userId,
-    deviceId,
-    coachName,
-    bio,
-    certifications,
-    specializations,
-    businessName,
-    websiteUrl,
-    email,
-    phone,
-    isActive,
-    isVerified,
-    maxAthletes,
-    autoAcceptRequests,
-    createdAt,
-    updatedAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is CoachEntry &&
-          other.id == this.id &&
-          other.userId == this.userId &&
-          other.deviceId == this.deviceId &&
-          other.coachName == this.coachName &&
-          other.bio == this.bio &&
-          other.certifications == this.certifications &&
-          other.specializations == this.specializations &&
-          other.businessName == this.businessName &&
-          other.websiteUrl == this.websiteUrl &&
-          other.email == this.email &&
-          other.phone == this.phone &&
-          other.isActive == this.isActive &&
-          other.isVerified == this.isVerified &&
-          other.maxAthletes == this.maxAthletes &&
-          other.autoAcceptRequests == this.autoAcceptRequests &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
-}
-
-class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
-  final Value<String> id;
-  final Value<String> userId;
-  final Value<String> deviceId;
-  final Value<String> coachName;
-  final Value<String?> bio;
-  final Value<String> certifications;
-  final Value<String> specializations;
-  final Value<String?> businessName;
-  final Value<String?> websiteUrl;
-  final Value<String?> email;
-  final Value<String?> phone;
-  final Value<bool> isActive;
-  final Value<bool> isVerified;
-  final Value<int> maxAthletes;
-  final Value<bool> autoAcceptRequests;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<int> rowid;
-  const CoachesTableCompanion({
-    this.id = const Value.absent(),
-    this.userId = const Value.absent(),
-    this.deviceId = const Value.absent(),
-    this.coachName = const Value.absent(),
-    this.bio = const Value.absent(),
-    this.certifications = const Value.absent(),
-    this.specializations = const Value.absent(),
-    this.businessName = const Value.absent(),
-    this.websiteUrl = const Value.absent(),
-    this.email = const Value.absent(),
-    this.phone = const Value.absent(),
-    this.isActive = const Value.absent(),
-    this.isVerified = const Value.absent(),
-    this.maxAthletes = const Value.absent(),
-    this.autoAcceptRequests = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  CoachesTableCompanion.insert({
-    required String id,
-    required String userId,
-    required String deviceId,
-    required String coachName,
-    this.bio = const Value.absent(),
-    this.certifications = const Value.absent(),
-    this.specializations = const Value.absent(),
-    this.businessName = const Value.absent(),
-    this.websiteUrl = const Value.absent(),
-    this.email = const Value.absent(),
-    this.phone = const Value.absent(),
-    this.isActive = const Value.absent(),
-    this.isVerified = const Value.absent(),
-    this.maxAthletes = const Value.absent(),
-    this.autoAcceptRequests = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.rowid = const Value.absent(),
-  }) : id = Value(id),
-       userId = Value(userId),
-       deviceId = Value(deviceId),
-       coachName = Value(coachName);
-  static Insertable<CoachEntry> custom({
-    Expression<String>? id,
-    Expression<String>? userId,
-    Expression<String>? deviceId,
-    Expression<String>? coachName,
-    Expression<String>? bio,
-    Expression<String>? certifications,
-    Expression<String>? specializations,
-    Expression<String>? businessName,
-    Expression<String>? websiteUrl,
-    Expression<String>? email,
-    Expression<String>? phone,
-    Expression<bool>? isActive,
-    Expression<bool>? isVerified,
-    Expression<int>? maxAthletes,
-    Expression<bool>? autoAcceptRequests,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (userId != null) 'user_id': userId,
-      if (deviceId != null) 'device_id': deviceId,
-      if (coachName != null) 'coach_name': coachName,
-      if (bio != null) 'bio': bio,
-      if (certifications != null) 'certifications': certifications,
-      if (specializations != null) 'specializations': specializations,
-      if (businessName != null) 'business_name': businessName,
-      if (websiteUrl != null) 'website_url': websiteUrl,
-      if (email != null) 'email': email,
-      if (phone != null) 'phone': phone,
-      if (isActive != null) 'is_active': isActive,
-      if (isVerified != null) 'is_verified': isVerified,
-      if (maxAthletes != null) 'max_athletes': maxAthletes,
-      if (autoAcceptRequests != null)
-        'auto_accept_requests': autoAcceptRequests,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  CoachesTableCompanion copyWith({
-    Value<String>? id,
-    Value<String>? userId,
-    Value<String>? deviceId,
-    Value<String>? coachName,
-    Value<String?>? bio,
-    Value<String>? certifications,
-    Value<String>? specializations,
-    Value<String?>? businessName,
-    Value<String?>? websiteUrl,
-    Value<String?>? email,
-    Value<String?>? phone,
-    Value<bool>? isActive,
-    Value<bool>? isVerified,
-    Value<int>? maxAthletes,
-    Value<bool>? autoAcceptRequests,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<int>? rowid,
-  }) {
-    return CoachesTableCompanion(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      deviceId: deviceId ?? this.deviceId,
-      coachName: coachName ?? this.coachName,
-      bio: bio ?? this.bio,
-      certifications: certifications ?? this.certifications,
-      specializations: specializations ?? this.specializations,
-      businessName: businessName ?? this.businessName,
-      websiteUrl: websiteUrl ?? this.websiteUrl,
-      email: email ?? this.email,
-      phone: phone ?? this.phone,
-      isActive: isActive ?? this.isActive,
-      isVerified: isVerified ?? this.isVerified,
-      maxAthletes: maxAthletes ?? this.maxAthletes,
-      autoAcceptRequests: autoAcceptRequests ?? this.autoAcceptRequests,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (userId.present) {
-      map['user_id'] = Variable<String>(userId.value);
-    }
-    if (deviceId.present) {
-      map['device_id'] = Variable<String>(deviceId.value);
-    }
-    if (coachName.present) {
-      map['coach_name'] = Variable<String>(coachName.value);
-    }
-    if (bio.present) {
-      map['bio'] = Variable<String>(bio.value);
-    }
-    if (certifications.present) {
-      map['certifications'] = Variable<String>(certifications.value);
-    }
-    if (specializations.present) {
-      map['specializations'] = Variable<String>(specializations.value);
-    }
-    if (businessName.present) {
-      map['business_name'] = Variable<String>(businessName.value);
-    }
-    if (websiteUrl.present) {
-      map['website_url'] = Variable<String>(websiteUrl.value);
-    }
-    if (email.present) {
-      map['email'] = Variable<String>(email.value);
-    }
-    if (phone.present) {
-      map['phone'] = Variable<String>(phone.value);
-    }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
-    }
-    if (isVerified.present) {
-      map['is_verified'] = Variable<bool>(isVerified.value);
-    }
-    if (maxAthletes.present) {
-      map['max_athletes'] = Variable<int>(maxAthletes.value);
-    }
-    if (autoAcceptRequests.present) {
-      map['auto_accept_requests'] = Variable<bool>(autoAcceptRequests.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('CoachesTableCompanion(')
-          ..write('id: $id, ')
-          ..write('userId: $userId, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('coachName: $coachName, ')
-          ..write('bio: $bio, ')
-          ..write('certifications: $certifications, ')
-          ..write('specializations: $specializations, ')
-          ..write('businessName: $businessName, ')
-          ..write('websiteUrl: $websiteUrl, ')
-          ..write('email: $email, ')
-          ..write('phone: $phone, ')
-          ..write('isActive: $isActive, ')
-          ..write('isVerified: $isVerified, ')
-          ..write('maxAthletes: $maxAthletes, ')
-          ..write('autoAcceptRequests: $autoAcceptRequests, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $CoachAthleteRelationshipsTableTable
     extends CoachAthleteRelationshipsTable
     with
@@ -19158,12 +18162,12 @@ class $CoachAthleteRelationshipsTableTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _coachIdMeta = const VerificationMeta(
-    'coachId',
+  static const VerificationMeta _coachUserIdMeta = const VerificationMeta(
+    'coachUserId',
   );
   @override
-  late final GeneratedColumn<String> coachId = GeneratedColumn<String>(
-    'coach_id',
+  late final GeneratedColumn<String> coachUserId = GeneratedColumn<String>(
+    'coach_user_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -19180,17 +18184,6 @@ class $CoachAthleteRelationshipsTableTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _athleteDeviceIdMeta = const VerificationMeta(
-    'athleteDeviceId',
-  );
-  @override
-  late final GeneratedColumn<String> athleteDeviceId = GeneratedColumn<String>(
-    'athlete_device_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -19201,45 +18194,6 @@ class $CoachAthleteRelationshipsTableTable
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
   );
-  static const VerificationMeta _permissionLevelMeta = const VerificationMeta(
-    'permissionLevel',
-  );
-  @override
-  late final GeneratedColumn<String> permissionLevel = GeneratedColumn<String>(
-    'permission_level',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('view_only'),
-  );
-  static const VerificationMeta _customPermissionsMeta = const VerificationMeta(
-    'customPermissions',
-  );
-  @override
-  late final GeneratedColumn<String> customPermissions =
-      GeneratedColumn<String>(
-        'custom_permissions',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-        defaultValue: const Constant('''
-{
-  "view_activities": true,
-  "view_nutrition_plans": true,
-  "view_completions": true,
-  "view_notes": true,
-  "view_food_preferences": false,
-  "create_activities": false,
-  "create_nutrition_plans": false,
-  "modify_activities": false,
-  "modify_nutrition_plans": false,
-  "delete_activities": false,
-  "delete_nutrition_plans": false,
-  "add_notes": true
-}'''),
-      );
   static const VerificationMeta _requestedByMeta = const VerificationMeta(
     'requestedBy',
   );
@@ -19296,51 +18250,6 @@ class $CoachAthleteRelationshipsTableTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _coachNotesMeta = const VerificationMeta(
-    'coachNotes',
-  );
-  @override
-  late final GeneratedColumn<String> coachNotes = GeneratedColumn<String>(
-    'coach_notes',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _athleteNotesMeta = const VerificationMeta(
-    'athleteNotes',
-  );
-  @override
-  late final GeneratedColumn<String> athleteNotes = GeneratedColumn<String>(
-    'athlete_notes',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _invitationTokenMeta = const VerificationMeta(
-    'invitationToken',
-  );
-  @override
-  late final GeneratedColumn<String> invitationToken = GeneratedColumn<String>(
-    'invitation_token',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
-  );
-  static const VerificationMeta _invitationExpiresAtMeta =
-      const VerificationMeta('invitationExpiresAt');
-  @override
-  late final GeneratedColumn<DateTime> invitationExpiresAt =
-      GeneratedColumn<DateTime>(
-        'invitation_expires_at',
-        aliasedName,
-        true,
-        type: DriftSqlType.dateTime,
-        requiredDuringInsert: false,
-      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -19368,21 +18277,14 @@ class $CoachAthleteRelationshipsTableTable
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    coachId,
+    coachUserId,
     athleteUserId,
-    athleteDeviceId,
     status,
-    permissionLevel,
-    customPermissions,
     requestedBy,
     requestedAt,
     acceptedAt,
     declinedAt,
     archivedAt,
-    coachNotes,
-    athleteNotes,
-    invitationToken,
-    invitationExpiresAt,
     createdAt,
     updatedAt,
   ];
@@ -19403,13 +18305,16 @@ class $CoachAthleteRelationshipsTableTable
     } else if (isInserting) {
       context.missing(_idMeta);
     }
-    if (data.containsKey('coach_id')) {
+    if (data.containsKey('coach_user_id')) {
       context.handle(
-        _coachIdMeta,
-        coachId.isAcceptableOrUnknown(data['coach_id']!, _coachIdMeta),
+        _coachUserIdMeta,
+        coachUserId.isAcceptableOrUnknown(
+          data['coach_user_id']!,
+          _coachUserIdMeta,
+        ),
       );
     } else if (isInserting) {
-      context.missing(_coachIdMeta);
+      context.missing(_coachUserIdMeta);
     }
     if (data.containsKey('athlete_user_id')) {
       context.handle(
@@ -19422,39 +18327,10 @@ class $CoachAthleteRelationshipsTableTable
     } else if (isInserting) {
       context.missing(_athleteUserIdMeta);
     }
-    if (data.containsKey('athlete_device_id')) {
-      context.handle(
-        _athleteDeviceIdMeta,
-        athleteDeviceId.isAcceptableOrUnknown(
-          data['athlete_device_id']!,
-          _athleteDeviceIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_athleteDeviceIdMeta);
-    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
         status.isAcceptableOrUnknown(data['status']!, _statusMeta),
-      );
-    }
-    if (data.containsKey('permission_level')) {
-      context.handle(
-        _permissionLevelMeta,
-        permissionLevel.isAcceptableOrUnknown(
-          data['permission_level']!,
-          _permissionLevelMeta,
-        ),
-      );
-    }
-    if (data.containsKey('custom_permissions')) {
-      context.handle(
-        _customPermissionsMeta,
-        customPermissions.isAcceptableOrUnknown(
-          data['custom_permissions']!,
-          _customPermissionsMeta,
-        ),
       );
     }
     if (data.containsKey('requested_by')) {
@@ -19495,39 +18371,6 @@ class $CoachAthleteRelationshipsTableTable
         archivedAt.isAcceptableOrUnknown(data['archived_at']!, _archivedAtMeta),
       );
     }
-    if (data.containsKey('coach_notes')) {
-      context.handle(
-        _coachNotesMeta,
-        coachNotes.isAcceptableOrUnknown(data['coach_notes']!, _coachNotesMeta),
-      );
-    }
-    if (data.containsKey('athlete_notes')) {
-      context.handle(
-        _athleteNotesMeta,
-        athleteNotes.isAcceptableOrUnknown(
-          data['athlete_notes']!,
-          _athleteNotesMeta,
-        ),
-      );
-    }
-    if (data.containsKey('invitation_token')) {
-      context.handle(
-        _invitationTokenMeta,
-        invitationToken.isAcceptableOrUnknown(
-          data['invitation_token']!,
-          _invitationTokenMeta,
-        ),
-      );
-    }
-    if (data.containsKey('invitation_expires_at')) {
-      context.handle(
-        _invitationExpiresAtMeta,
-        invitationExpiresAt.isAcceptableOrUnknown(
-          data['invitation_expires_at']!,
-          _invitationExpiresAtMeta,
-        ),
-      );
-    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -19556,29 +18399,17 @@ class $CoachAthleteRelationshipsTableTable
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
-      coachId: attachedDatabase.typeMapping.read(
+      coachUserId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}coach_id'],
+        data['${effectivePrefix}coach_user_id'],
       )!,
       athleteUserId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}athlete_user_id'],
       )!,
-      athleteDeviceId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}athlete_device_id'],
-      )!,
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
-      )!,
-      permissionLevel: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}permission_level'],
-      )!,
-      customPermissions: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}custom_permissions'],
       )!,
       requestedBy: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -19599,22 +18430,6 @@ class $CoachAthleteRelationshipsTableTable
       archivedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}archived_at'],
-      ),
-      coachNotes: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}coach_notes'],
-      ),
-      athleteNotes: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}athlete_notes'],
-      ),
-      invitationToken: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}invitation_token'],
-      ),
-      invitationExpiresAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}invitation_expires_at'],
       ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -19638,23 +18453,14 @@ class CoachAthleteRelationshipEntry extends DataClass
   /// UUID primary key
   final String id;
 
-  /// References coaches.id - the coach in this relationship
-  final String coachId;
+  /// References users.id - the coach user (user with is_coach=true)
+  final String coachUserId;
 
   /// References users.id - the athlete user
   final String athleteUserId;
 
-  /// References users.device_id - the athlete's device
-  final String athleteDeviceId;
-
   /// Relationship status: pending, active, declined, archived
   final String status;
-
-  /// Permission level: view_only, full_access, custom
-  final String permissionLevel;
-
-  /// Custom permissions as JSON when permission_level = 'custom'
-  final String customPermissions;
 
   /// Who initiated the relationship: 'coach' or 'athlete'
   final String requestedBy;
@@ -19671,18 +18477,6 @@ class CoachAthleteRelationshipEntry extends DataClass
   /// When the relationship was archived (null if not archived)
   final DateTime? archivedAt;
 
-  /// Coach's private notes about this athlete
-  final String? coachNotes;
-
-  /// Athlete's notes about this coach
-  final String? athleteNotes;
-
-  /// Invitation token for accepting invitations via link
-  final String? invitationToken;
-
-  /// When the invitation token expires
-  final DateTime? invitationExpiresAt;
-
   /// When the record was created
   final DateTime createdAt;
 
@@ -19690,21 +18484,14 @@ class CoachAthleteRelationshipEntry extends DataClass
   final DateTime updatedAt;
   const CoachAthleteRelationshipEntry({
     required this.id,
-    required this.coachId,
+    required this.coachUserId,
     required this.athleteUserId,
-    required this.athleteDeviceId,
     required this.status,
-    required this.permissionLevel,
-    required this.customPermissions,
     required this.requestedBy,
     required this.requestedAt,
     this.acceptedAt,
     this.declinedAt,
     this.archivedAt,
-    this.coachNotes,
-    this.athleteNotes,
-    this.invitationToken,
-    this.invitationExpiresAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -19712,12 +18499,9 @@ class CoachAthleteRelationshipEntry extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['coach_id'] = Variable<String>(coachId);
+    map['coach_user_id'] = Variable<String>(coachUserId);
     map['athlete_user_id'] = Variable<String>(athleteUserId);
-    map['athlete_device_id'] = Variable<String>(athleteDeviceId);
     map['status'] = Variable<String>(status);
-    map['permission_level'] = Variable<String>(permissionLevel);
-    map['custom_permissions'] = Variable<String>(customPermissions);
     map['requested_by'] = Variable<String>(requestedBy);
     map['requested_at'] = Variable<DateTime>(requestedAt);
     if (!nullToAbsent || acceptedAt != null) {
@@ -19729,18 +18513,6 @@ class CoachAthleteRelationshipEntry extends DataClass
     if (!nullToAbsent || archivedAt != null) {
       map['archived_at'] = Variable<DateTime>(archivedAt);
     }
-    if (!nullToAbsent || coachNotes != null) {
-      map['coach_notes'] = Variable<String>(coachNotes);
-    }
-    if (!nullToAbsent || athleteNotes != null) {
-      map['athlete_notes'] = Variable<String>(athleteNotes);
-    }
-    if (!nullToAbsent || invitationToken != null) {
-      map['invitation_token'] = Variable<String>(invitationToken);
-    }
-    if (!nullToAbsent || invitationExpiresAt != null) {
-      map['invitation_expires_at'] = Variable<DateTime>(invitationExpiresAt);
-    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -19749,12 +18521,9 @@ class CoachAthleteRelationshipEntry extends DataClass
   CoachAthleteRelationshipsTableCompanion toCompanion(bool nullToAbsent) {
     return CoachAthleteRelationshipsTableCompanion(
       id: Value(id),
-      coachId: Value(coachId),
+      coachUserId: Value(coachUserId),
       athleteUserId: Value(athleteUserId),
-      athleteDeviceId: Value(athleteDeviceId),
       status: Value(status),
-      permissionLevel: Value(permissionLevel),
-      customPermissions: Value(customPermissions),
       requestedBy: Value(requestedBy),
       requestedAt: Value(requestedAt),
       acceptedAt: acceptedAt == null && nullToAbsent
@@ -19766,18 +18535,6 @@ class CoachAthleteRelationshipEntry extends DataClass
       archivedAt: archivedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(archivedAt),
-      coachNotes: coachNotes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(coachNotes),
-      athleteNotes: athleteNotes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(athleteNotes),
-      invitationToken: invitationToken == null && nullToAbsent
-          ? const Value.absent()
-          : Value(invitationToken),
-      invitationExpiresAt: invitationExpiresAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(invitationExpiresAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -19790,23 +18547,14 @@ class CoachAthleteRelationshipEntry extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return CoachAthleteRelationshipEntry(
       id: serializer.fromJson<String>(json['id']),
-      coachId: serializer.fromJson<String>(json['coachId']),
+      coachUserId: serializer.fromJson<String>(json['coachUserId']),
       athleteUserId: serializer.fromJson<String>(json['athleteUserId']),
-      athleteDeviceId: serializer.fromJson<String>(json['athleteDeviceId']),
       status: serializer.fromJson<String>(json['status']),
-      permissionLevel: serializer.fromJson<String>(json['permissionLevel']),
-      customPermissions: serializer.fromJson<String>(json['customPermissions']),
       requestedBy: serializer.fromJson<String>(json['requestedBy']),
       requestedAt: serializer.fromJson<DateTime>(json['requestedAt']),
       acceptedAt: serializer.fromJson<DateTime?>(json['acceptedAt']),
       declinedAt: serializer.fromJson<DateTime?>(json['declinedAt']),
       archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
-      coachNotes: serializer.fromJson<String?>(json['coachNotes']),
-      athleteNotes: serializer.fromJson<String?>(json['athleteNotes']),
-      invitationToken: serializer.fromJson<String?>(json['invitationToken']),
-      invitationExpiresAt: serializer.fromJson<DateTime?>(
-        json['invitationExpiresAt'],
-      ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -19816,21 +18564,14 @@ class CoachAthleteRelationshipEntry extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'coachId': serializer.toJson<String>(coachId),
+      'coachUserId': serializer.toJson<String>(coachUserId),
       'athleteUserId': serializer.toJson<String>(athleteUserId),
-      'athleteDeviceId': serializer.toJson<String>(athleteDeviceId),
       'status': serializer.toJson<String>(status),
-      'permissionLevel': serializer.toJson<String>(permissionLevel),
-      'customPermissions': serializer.toJson<String>(customPermissions),
       'requestedBy': serializer.toJson<String>(requestedBy),
       'requestedAt': serializer.toJson<DateTime>(requestedAt),
       'acceptedAt': serializer.toJson<DateTime?>(acceptedAt),
       'declinedAt': serializer.toJson<DateTime?>(declinedAt),
       'archivedAt': serializer.toJson<DateTime?>(archivedAt),
-      'coachNotes': serializer.toJson<String?>(coachNotes),
-      'athleteNotes': serializer.toJson<String?>(athleteNotes),
-      'invitationToken': serializer.toJson<String?>(invitationToken),
-      'invitationExpiresAt': serializer.toJson<DateTime?>(invitationExpiresAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -19838,44 +18579,26 @@ class CoachAthleteRelationshipEntry extends DataClass
 
   CoachAthleteRelationshipEntry copyWith({
     String? id,
-    String? coachId,
+    String? coachUserId,
     String? athleteUserId,
-    String? athleteDeviceId,
     String? status,
-    String? permissionLevel,
-    String? customPermissions,
     String? requestedBy,
     DateTime? requestedAt,
     Value<DateTime?> acceptedAt = const Value.absent(),
     Value<DateTime?> declinedAt = const Value.absent(),
     Value<DateTime?> archivedAt = const Value.absent(),
-    Value<String?> coachNotes = const Value.absent(),
-    Value<String?> athleteNotes = const Value.absent(),
-    Value<String?> invitationToken = const Value.absent(),
-    Value<DateTime?> invitationExpiresAt = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => CoachAthleteRelationshipEntry(
     id: id ?? this.id,
-    coachId: coachId ?? this.coachId,
+    coachUserId: coachUserId ?? this.coachUserId,
     athleteUserId: athleteUserId ?? this.athleteUserId,
-    athleteDeviceId: athleteDeviceId ?? this.athleteDeviceId,
     status: status ?? this.status,
-    permissionLevel: permissionLevel ?? this.permissionLevel,
-    customPermissions: customPermissions ?? this.customPermissions,
     requestedBy: requestedBy ?? this.requestedBy,
     requestedAt: requestedAt ?? this.requestedAt,
     acceptedAt: acceptedAt.present ? acceptedAt.value : this.acceptedAt,
     declinedAt: declinedAt.present ? declinedAt.value : this.declinedAt,
     archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
-    coachNotes: coachNotes.present ? coachNotes.value : this.coachNotes,
-    athleteNotes: athleteNotes.present ? athleteNotes.value : this.athleteNotes,
-    invitationToken: invitationToken.present
-        ? invitationToken.value
-        : this.invitationToken,
-    invitationExpiresAt: invitationExpiresAt.present
-        ? invitationExpiresAt.value
-        : this.invitationExpiresAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -19884,20 +18607,13 @@ class CoachAthleteRelationshipEntry extends DataClass
   ) {
     return CoachAthleteRelationshipEntry(
       id: data.id.present ? data.id.value : this.id,
-      coachId: data.coachId.present ? data.coachId.value : this.coachId,
+      coachUserId: data.coachUserId.present
+          ? data.coachUserId.value
+          : this.coachUserId,
       athleteUserId: data.athleteUserId.present
           ? data.athleteUserId.value
           : this.athleteUserId,
-      athleteDeviceId: data.athleteDeviceId.present
-          ? data.athleteDeviceId.value
-          : this.athleteDeviceId,
       status: data.status.present ? data.status.value : this.status,
-      permissionLevel: data.permissionLevel.present
-          ? data.permissionLevel.value
-          : this.permissionLevel,
-      customPermissions: data.customPermissions.present
-          ? data.customPermissions.value
-          : this.customPermissions,
       requestedBy: data.requestedBy.present
           ? data.requestedBy.value
           : this.requestedBy,
@@ -19913,18 +18629,6 @@ class CoachAthleteRelationshipEntry extends DataClass
       archivedAt: data.archivedAt.present
           ? data.archivedAt.value
           : this.archivedAt,
-      coachNotes: data.coachNotes.present
-          ? data.coachNotes.value
-          : this.coachNotes,
-      athleteNotes: data.athleteNotes.present
-          ? data.athleteNotes.value
-          : this.athleteNotes,
-      invitationToken: data.invitationToken.present
-          ? data.invitationToken.value
-          : this.invitationToken,
-      invitationExpiresAt: data.invitationExpiresAt.present
-          ? data.invitationExpiresAt.value
-          : this.invitationExpiresAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -19934,21 +18638,14 @@ class CoachAthleteRelationshipEntry extends DataClass
   String toString() {
     return (StringBuffer('CoachAthleteRelationshipEntry(')
           ..write('id: $id, ')
-          ..write('coachId: $coachId, ')
+          ..write('coachUserId: $coachUserId, ')
           ..write('athleteUserId: $athleteUserId, ')
-          ..write('athleteDeviceId: $athleteDeviceId, ')
           ..write('status: $status, ')
-          ..write('permissionLevel: $permissionLevel, ')
-          ..write('customPermissions: $customPermissions, ')
           ..write('requestedBy: $requestedBy, ')
           ..write('requestedAt: $requestedAt, ')
           ..write('acceptedAt: $acceptedAt, ')
           ..write('declinedAt: $declinedAt, ')
           ..write('archivedAt: $archivedAt, ')
-          ..write('coachNotes: $coachNotes, ')
-          ..write('athleteNotes: $athleteNotes, ')
-          ..write('invitationToken: $invitationToken, ')
-          ..write('invitationExpiresAt: $invitationExpiresAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -19958,21 +18655,14 @@ class CoachAthleteRelationshipEntry extends DataClass
   @override
   int get hashCode => Object.hash(
     id,
-    coachId,
+    coachUserId,
     athleteUserId,
-    athleteDeviceId,
     status,
-    permissionLevel,
-    customPermissions,
     requestedBy,
     requestedAt,
     acceptedAt,
     declinedAt,
     archivedAt,
-    coachNotes,
-    athleteNotes,
-    invitationToken,
-    invitationExpiresAt,
     createdAt,
     updatedAt,
   );
@@ -19981,21 +18671,14 @@ class CoachAthleteRelationshipEntry extends DataClass
       identical(this, other) ||
       (other is CoachAthleteRelationshipEntry &&
           other.id == this.id &&
-          other.coachId == this.coachId &&
+          other.coachUserId == this.coachUserId &&
           other.athleteUserId == this.athleteUserId &&
-          other.athleteDeviceId == this.athleteDeviceId &&
           other.status == this.status &&
-          other.permissionLevel == this.permissionLevel &&
-          other.customPermissions == this.customPermissions &&
           other.requestedBy == this.requestedBy &&
           other.requestedAt == this.requestedAt &&
           other.acceptedAt == this.acceptedAt &&
           other.declinedAt == this.declinedAt &&
           other.archivedAt == this.archivedAt &&
-          other.coachNotes == this.coachNotes &&
-          other.athleteNotes == this.athleteNotes &&
-          other.invitationToken == this.invitationToken &&
-          other.invitationExpiresAt == this.invitationExpiresAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -20003,109 +18686,72 @@ class CoachAthleteRelationshipEntry extends DataClass
 class CoachAthleteRelationshipsTableCompanion
     extends UpdateCompanion<CoachAthleteRelationshipEntry> {
   final Value<String> id;
-  final Value<String> coachId;
+  final Value<String> coachUserId;
   final Value<String> athleteUserId;
-  final Value<String> athleteDeviceId;
   final Value<String> status;
-  final Value<String> permissionLevel;
-  final Value<String> customPermissions;
   final Value<String> requestedBy;
   final Value<DateTime> requestedAt;
   final Value<DateTime?> acceptedAt;
   final Value<DateTime?> declinedAt;
   final Value<DateTime?> archivedAt;
-  final Value<String?> coachNotes;
-  final Value<String?> athleteNotes;
-  final Value<String?> invitationToken;
-  final Value<DateTime?> invitationExpiresAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const CoachAthleteRelationshipsTableCompanion({
     this.id = const Value.absent(),
-    this.coachId = const Value.absent(),
+    this.coachUserId = const Value.absent(),
     this.athleteUserId = const Value.absent(),
-    this.athleteDeviceId = const Value.absent(),
     this.status = const Value.absent(),
-    this.permissionLevel = const Value.absent(),
-    this.customPermissions = const Value.absent(),
     this.requestedBy = const Value.absent(),
     this.requestedAt = const Value.absent(),
     this.acceptedAt = const Value.absent(),
     this.declinedAt = const Value.absent(),
     this.archivedAt = const Value.absent(),
-    this.coachNotes = const Value.absent(),
-    this.athleteNotes = const Value.absent(),
-    this.invitationToken = const Value.absent(),
-    this.invitationExpiresAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CoachAthleteRelationshipsTableCompanion.insert({
     required String id,
-    required String coachId,
+    required String coachUserId,
     required String athleteUserId,
-    required String athleteDeviceId,
     this.status = const Value.absent(),
-    this.permissionLevel = const Value.absent(),
-    this.customPermissions = const Value.absent(),
     required String requestedBy,
     this.requestedAt = const Value.absent(),
     this.acceptedAt = const Value.absent(),
     this.declinedAt = const Value.absent(),
     this.archivedAt = const Value.absent(),
-    this.coachNotes = const Value.absent(),
-    this.athleteNotes = const Value.absent(),
-    this.invitationToken = const Value.absent(),
-    this.invitationExpiresAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
-       coachId = Value(coachId),
+       coachUserId = Value(coachUserId),
        athleteUserId = Value(athleteUserId),
-       athleteDeviceId = Value(athleteDeviceId),
        requestedBy = Value(requestedBy);
   static Insertable<CoachAthleteRelationshipEntry> custom({
     Expression<String>? id,
-    Expression<String>? coachId,
+    Expression<String>? coachUserId,
     Expression<String>? athleteUserId,
-    Expression<String>? athleteDeviceId,
     Expression<String>? status,
-    Expression<String>? permissionLevel,
-    Expression<String>? customPermissions,
     Expression<String>? requestedBy,
     Expression<DateTime>? requestedAt,
     Expression<DateTime>? acceptedAt,
     Expression<DateTime>? declinedAt,
     Expression<DateTime>? archivedAt,
-    Expression<String>? coachNotes,
-    Expression<String>? athleteNotes,
-    Expression<String>? invitationToken,
-    Expression<DateTime>? invitationExpiresAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (coachId != null) 'coach_id': coachId,
+      if (coachUserId != null) 'coach_user_id': coachUserId,
       if (athleteUserId != null) 'athlete_user_id': athleteUserId,
-      if (athleteDeviceId != null) 'athlete_device_id': athleteDeviceId,
       if (status != null) 'status': status,
-      if (permissionLevel != null) 'permission_level': permissionLevel,
-      if (customPermissions != null) 'custom_permissions': customPermissions,
       if (requestedBy != null) 'requested_by': requestedBy,
       if (requestedAt != null) 'requested_at': requestedAt,
       if (acceptedAt != null) 'accepted_at': acceptedAt,
       if (declinedAt != null) 'declined_at': declinedAt,
       if (archivedAt != null) 'archived_at': archivedAt,
-      if (coachNotes != null) 'coach_notes': coachNotes,
-      if (athleteNotes != null) 'athlete_notes': athleteNotes,
-      if (invitationToken != null) 'invitation_token': invitationToken,
-      if (invitationExpiresAt != null)
-        'invitation_expires_at': invitationExpiresAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -20114,42 +18760,28 @@ class CoachAthleteRelationshipsTableCompanion
 
   CoachAthleteRelationshipsTableCompanion copyWith({
     Value<String>? id,
-    Value<String>? coachId,
+    Value<String>? coachUserId,
     Value<String>? athleteUserId,
-    Value<String>? athleteDeviceId,
     Value<String>? status,
-    Value<String>? permissionLevel,
-    Value<String>? customPermissions,
     Value<String>? requestedBy,
     Value<DateTime>? requestedAt,
     Value<DateTime?>? acceptedAt,
     Value<DateTime?>? declinedAt,
     Value<DateTime?>? archivedAt,
-    Value<String?>? coachNotes,
-    Value<String?>? athleteNotes,
-    Value<String?>? invitationToken,
-    Value<DateTime?>? invitationExpiresAt,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
     return CoachAthleteRelationshipsTableCompanion(
       id: id ?? this.id,
-      coachId: coachId ?? this.coachId,
+      coachUserId: coachUserId ?? this.coachUserId,
       athleteUserId: athleteUserId ?? this.athleteUserId,
-      athleteDeviceId: athleteDeviceId ?? this.athleteDeviceId,
       status: status ?? this.status,
-      permissionLevel: permissionLevel ?? this.permissionLevel,
-      customPermissions: customPermissions ?? this.customPermissions,
       requestedBy: requestedBy ?? this.requestedBy,
       requestedAt: requestedAt ?? this.requestedAt,
       acceptedAt: acceptedAt ?? this.acceptedAt,
       declinedAt: declinedAt ?? this.declinedAt,
       archivedAt: archivedAt ?? this.archivedAt,
-      coachNotes: coachNotes ?? this.coachNotes,
-      athleteNotes: athleteNotes ?? this.athleteNotes,
-      invitationToken: invitationToken ?? this.invitationToken,
-      invitationExpiresAt: invitationExpiresAt ?? this.invitationExpiresAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -20162,23 +18794,14 @@ class CoachAthleteRelationshipsTableCompanion
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
-    if (coachId.present) {
-      map['coach_id'] = Variable<String>(coachId.value);
+    if (coachUserId.present) {
+      map['coach_user_id'] = Variable<String>(coachUserId.value);
     }
     if (athleteUserId.present) {
       map['athlete_user_id'] = Variable<String>(athleteUserId.value);
     }
-    if (athleteDeviceId.present) {
-      map['athlete_device_id'] = Variable<String>(athleteDeviceId.value);
-    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
-    }
-    if (permissionLevel.present) {
-      map['permission_level'] = Variable<String>(permissionLevel.value);
-    }
-    if (customPermissions.present) {
-      map['custom_permissions'] = Variable<String>(customPermissions.value);
     }
     if (requestedBy.present) {
       map['requested_by'] = Variable<String>(requestedBy.value);
@@ -20194,20 +18817,6 @@ class CoachAthleteRelationshipsTableCompanion
     }
     if (archivedAt.present) {
       map['archived_at'] = Variable<DateTime>(archivedAt.value);
-    }
-    if (coachNotes.present) {
-      map['coach_notes'] = Variable<String>(coachNotes.value);
-    }
-    if (athleteNotes.present) {
-      map['athlete_notes'] = Variable<String>(athleteNotes.value);
-    }
-    if (invitationToken.present) {
-      map['invitation_token'] = Variable<String>(invitationToken.value);
-    }
-    if (invitationExpiresAt.present) {
-      map['invitation_expires_at'] = Variable<DateTime>(
-        invitationExpiresAt.value,
-      );
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -20225,21 +18834,14 @@ class CoachAthleteRelationshipsTableCompanion
   String toString() {
     return (StringBuffer('CoachAthleteRelationshipsTableCompanion(')
           ..write('id: $id, ')
-          ..write('coachId: $coachId, ')
+          ..write('coachUserId: $coachUserId, ')
           ..write('athleteUserId: $athleteUserId, ')
-          ..write('athleteDeviceId: $athleteDeviceId, ')
           ..write('status: $status, ')
-          ..write('permissionLevel: $permissionLevel, ')
-          ..write('customPermissions: $customPermissions, ')
           ..write('requestedBy: $requestedBy, ')
           ..write('requestedAt: $requestedAt, ')
           ..write('acceptedAt: $acceptedAt, ')
           ..write('declinedAt: $declinedAt, ')
           ..write('archivedAt: $archivedAt, ')
-          ..write('coachNotes: $coachNotes, ')
-          ..write('athleteNotes: $athleteNotes, ')
-          ..write('invitationToken: $invitationToken, ')
-          ..write('invitationExpiresAt: $invitationExpiresAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -20248,12 +18850,12 @@ class CoachAthleteRelationshipsTableCompanion
   }
 }
 
-class $CoachFeedbackTableTable extends CoachFeedbackTable
-    with TableInfo<$CoachFeedbackTableTable, CoachFeedbackEntry> {
+class $CoachMessagesTableTable extends CoachMessagesTable
+    with TableInfo<$CoachMessagesTableTable, CoachMessageEntry> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $CoachFeedbackTableTable(this.attachedDatabase, [this._alias]);
+  $CoachMessagesTableTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -20263,23 +18865,12 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _relationshipIdMeta = const VerificationMeta(
-    'relationshipId',
+  static const VerificationMeta _coachUserIdMeta = const VerificationMeta(
+    'coachUserId',
   );
   @override
-  late final GeneratedColumn<String> relationshipId = GeneratedColumn<String>(
-    'relationship_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _coachIdMeta = const VerificationMeta(
-    'coachId',
-  );
-  @override
-  late final GeneratedColumn<String> coachId = GeneratedColumn<String>(
-    'coach_id',
+  late final GeneratedColumn<String> coachUserId = GeneratedColumn<String>(
+    'coach_user_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -20296,16 +18887,27 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _activityIdMeta = const VerificationMeta(
-    'activityId',
+  static const VerificationMeta _senderUserIdMeta = const VerificationMeta(
+    'senderUserId',
   );
   @override
-  late final GeneratedColumn<String> activityId = GeneratedColumn<String>(
-    'activity_id',
+  late final GeneratedColumn<String> senderUserId = GeneratedColumn<String>(
+    'sender_user_id',
     aliasedName,
-    true,
+    false,
     type: DriftSqlType.string,
-    requiredDuringInsert: false,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _messageTextMeta = const VerificationMeta(
+    'messageText',
+  );
+  @override
+  late final GeneratedColumn<String> messageText = GeneratedColumn<String>(
+    'message_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _nutritionPlanIdMeta = const VerificationMeta(
     'nutritionPlanId',
@@ -20318,42 +18920,29 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _feedbackTextMeta = const VerificationMeta(
-    'feedbackText',
+  static const VerificationMeta _activityIdMeta = const VerificationMeta(
+    'activityId',
   );
   @override
-  late final GeneratedColumn<String> feedbackText = GeneratedColumn<String>(
-    'feedback_text',
+  late final GeneratedColumn<String> activityId = GeneratedColumn<String>(
+    'activity_id',
     aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _feedbackTypeMeta = const VerificationMeta(
-    'feedbackType',
-  );
-  @override
-  late final GeneratedColumn<String> feedbackType = GeneratedColumn<String>(
-    'feedback_type',
-    aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('general'),
   );
-  static const VerificationMeta _isVisibleToAthleteMeta =
-      const VerificationMeta('isVisibleToAthlete');
+  static const VerificationMeta _isReadMeta = const VerificationMeta('isRead');
   @override
-  late final GeneratedColumn<bool> isVisibleToAthlete = GeneratedColumn<bool>(
-    'is_visible_to_athlete',
+  late final GeneratedColumn<bool> isRead = GeneratedColumn<bool>(
+    'is_read',
     aliasedName,
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_visible_to_athlete" IN (0, 1))',
+      'CHECK ("is_read" IN (0, 1))',
     ),
-    defaultValue: const Constant(true),
+    defaultValue: const Constant(false),
   );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
@@ -20382,14 +18971,13 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    relationshipId,
-    coachId,
+    coachUserId,
     athleteUserId,
-    activityId,
+    senderUserId,
+    messageText,
     nutritionPlanId,
-    feedbackText,
-    feedbackType,
-    isVisibleToAthlete,
+    activityId,
+    isRead,
     createdAt,
     updatedAt,
   ];
@@ -20397,10 +18985,10 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'coach_feedback';
+  static const String $name = 'coach_messages';
   @override
   VerificationContext validateIntegrity(
-    Insertable<CoachFeedbackEntry> instance, {
+    Insertable<CoachMessageEntry> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -20410,24 +18998,16 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
     } else if (isInserting) {
       context.missing(_idMeta);
     }
-    if (data.containsKey('relationship_id')) {
+    if (data.containsKey('coach_user_id')) {
       context.handle(
-        _relationshipIdMeta,
-        relationshipId.isAcceptableOrUnknown(
-          data['relationship_id']!,
-          _relationshipIdMeta,
+        _coachUserIdMeta,
+        coachUserId.isAcceptableOrUnknown(
+          data['coach_user_id']!,
+          _coachUserIdMeta,
         ),
       );
     } else if (isInserting) {
-      context.missing(_relationshipIdMeta);
-    }
-    if (data.containsKey('coach_id')) {
-      context.handle(
-        _coachIdMeta,
-        coachId.isAcceptableOrUnknown(data['coach_id']!, _coachIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_coachIdMeta);
+      context.missing(_coachUserIdMeta);
     }
     if (data.containsKey('athlete_user_id')) {
       context.handle(
@@ -20440,11 +19020,27 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
     } else if (isInserting) {
       context.missing(_athleteUserIdMeta);
     }
-    if (data.containsKey('activity_id')) {
+    if (data.containsKey('sender_user_id')) {
       context.handle(
-        _activityIdMeta,
-        activityId.isAcceptableOrUnknown(data['activity_id']!, _activityIdMeta),
+        _senderUserIdMeta,
+        senderUserId.isAcceptableOrUnknown(
+          data['sender_user_id']!,
+          _senderUserIdMeta,
+        ),
       );
+    } else if (isInserting) {
+      context.missing(_senderUserIdMeta);
+    }
+    if (data.containsKey('message_text')) {
+      context.handle(
+        _messageTextMeta,
+        messageText.isAcceptableOrUnknown(
+          data['message_text']!,
+          _messageTextMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_messageTextMeta);
     }
     if (data.containsKey('nutrition_plan_id')) {
       context.handle(
@@ -20455,33 +19051,16 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
         ),
       );
     }
-    if (data.containsKey('feedback_text')) {
+    if (data.containsKey('activity_id')) {
       context.handle(
-        _feedbackTextMeta,
-        feedbackText.isAcceptableOrUnknown(
-          data['feedback_text']!,
-          _feedbackTextMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_feedbackTextMeta);
-    }
-    if (data.containsKey('feedback_type')) {
-      context.handle(
-        _feedbackTypeMeta,
-        feedbackType.isAcceptableOrUnknown(
-          data['feedback_type']!,
-          _feedbackTypeMeta,
-        ),
+        _activityIdMeta,
+        activityId.isAcceptableOrUnknown(data['activity_id']!, _activityIdMeta),
       );
     }
-    if (data.containsKey('is_visible_to_athlete')) {
+    if (data.containsKey('is_read')) {
       context.handle(
-        _isVisibleToAthleteMeta,
-        isVisibleToAthlete.isAcceptableOrUnknown(
-          data['is_visible_to_athlete']!,
-          _isVisibleToAthleteMeta,
-        ),
+        _isReadMeta,
+        isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -20502,44 +19081,40 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  CoachFeedbackEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+  CoachMessageEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CoachFeedbackEntry(
+    return CoachMessageEntry(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
-      relationshipId: attachedDatabase.typeMapping.read(
+      coachUserId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}relationship_id'],
-      )!,
-      coachId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}coach_id'],
+        data['${effectivePrefix}coach_user_id'],
       )!,
       athleteUserId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}athlete_user_id'],
       )!,
-      activityId: attachedDatabase.typeMapping.read(
+      senderUserId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}activity_id'],
-      ),
+        data['${effectivePrefix}sender_user_id'],
+      )!,
+      messageText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message_text'],
+      )!,
       nutritionPlanId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}nutrition_plan_id'],
       ),
-      feedbackText: attachedDatabase.typeMapping.read(
+      activityId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}feedback_text'],
-      )!,
-      feedbackType: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}feedback_type'],
-      )!,
-      isVisibleToAthlete: attachedDatabase.typeMapping.read(
+        data['${effectivePrefix}activity_id'],
+      ),
+      isRead: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
-        data['${effectivePrefix}is_visible_to_athlete'],
+        data['${effectivePrefix}is_read'],
       )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -20553,55 +19128,51 @@ class $CoachFeedbackTableTable extends CoachFeedbackTable
   }
 
   @override
-  $CoachFeedbackTableTable createAlias(String alias) {
-    return $CoachFeedbackTableTable(attachedDatabase, alias);
+  $CoachMessagesTableTable createAlias(String alias) {
+    return $CoachMessagesTableTable(attachedDatabase, alias);
   }
 }
 
-class CoachFeedbackEntry extends DataClass
-    implements Insertable<CoachFeedbackEntry> {
+class CoachMessageEntry extends DataClass
+    implements Insertable<CoachMessageEntry> {
   /// UUID primary key
   final String id;
 
-  /// References coach_athlete_relationships.id - the relationship this feedback belongs to
-  final String relationshipId;
+  /// References users.id - the coach user in this conversation
+  final String coachUserId;
 
-  /// References coaches.id - the coach who created the feedback
-  final String coachId;
-
-  /// References users.id - the athlete user receiving feedback
+  /// References users.id - the athlete user in this conversation
   final String athleteUserId;
 
-  /// Optional link to specific activity (references activities.id)
-  final String? activityId;
+  /// References users.id - who sent this specific message
+  final String senderUserId;
 
-  /// Optional link to specific nutrition plan (references nutrition_plans.id)
+  /// The message content
+  final String messageText;
+
+  /// Optional link to a nutrition plan (references nutrition_plans.id)
   final String? nutritionPlanId;
 
-  /// The feedback content (min 1 character)
-  final String feedbackText;
+  /// Optional link to an activity (references activities.id)
+  final String? activityId;
 
-  /// Type of feedback: general, activity, nutrition, progress, goal
-  final String feedbackType;
+  /// Whether the message has been read by the recipient
+  final bool isRead;
 
-  /// Controls whether athlete can see this feedback
-  final bool isVisibleToAthlete;
-
-  /// When the feedback was created
+  /// When the message was created
   final DateTime createdAt;
 
-  /// When the feedback was last updated
+  /// When the message was last updated
   final DateTime updatedAt;
-  const CoachFeedbackEntry({
+  const CoachMessageEntry({
     required this.id,
-    required this.relationshipId,
-    required this.coachId,
+    required this.coachUserId,
     required this.athleteUserId,
-    this.activityId,
+    required this.senderUserId,
+    required this.messageText,
     this.nutritionPlanId,
-    required this.feedbackText,
-    required this.feedbackType,
-    required this.isVisibleToAthlete,
+    this.activityId,
+    required this.isRead,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -20609,58 +19180,55 @@ class CoachFeedbackEntry extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['relationship_id'] = Variable<String>(relationshipId);
-    map['coach_id'] = Variable<String>(coachId);
+    map['coach_user_id'] = Variable<String>(coachUserId);
     map['athlete_user_id'] = Variable<String>(athleteUserId);
-    if (!nullToAbsent || activityId != null) {
-      map['activity_id'] = Variable<String>(activityId);
-    }
+    map['sender_user_id'] = Variable<String>(senderUserId);
+    map['message_text'] = Variable<String>(messageText);
     if (!nullToAbsent || nutritionPlanId != null) {
       map['nutrition_plan_id'] = Variable<String>(nutritionPlanId);
     }
-    map['feedback_text'] = Variable<String>(feedbackText);
-    map['feedback_type'] = Variable<String>(feedbackType);
-    map['is_visible_to_athlete'] = Variable<bool>(isVisibleToAthlete);
+    if (!nullToAbsent || activityId != null) {
+      map['activity_id'] = Variable<String>(activityId);
+    }
+    map['is_read'] = Variable<bool>(isRead);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
 
-  CoachFeedbackTableCompanion toCompanion(bool nullToAbsent) {
-    return CoachFeedbackTableCompanion(
+  CoachMessagesTableCompanion toCompanion(bool nullToAbsent) {
+    return CoachMessagesTableCompanion(
       id: Value(id),
-      relationshipId: Value(relationshipId),
-      coachId: Value(coachId),
+      coachUserId: Value(coachUserId),
       athleteUserId: Value(athleteUserId),
-      activityId: activityId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(activityId),
+      senderUserId: Value(senderUserId),
+      messageText: Value(messageText),
       nutritionPlanId: nutritionPlanId == null && nullToAbsent
           ? const Value.absent()
           : Value(nutritionPlanId),
-      feedbackText: Value(feedbackText),
-      feedbackType: Value(feedbackType),
-      isVisibleToAthlete: Value(isVisibleToAthlete),
+      activityId: activityId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(activityId),
+      isRead: Value(isRead),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
   }
 
-  factory CoachFeedbackEntry.fromJson(
+  factory CoachMessageEntry.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CoachFeedbackEntry(
+    return CoachMessageEntry(
       id: serializer.fromJson<String>(json['id']),
-      relationshipId: serializer.fromJson<String>(json['relationshipId']),
-      coachId: serializer.fromJson<String>(json['coachId']),
+      coachUserId: serializer.fromJson<String>(json['coachUserId']),
       athleteUserId: serializer.fromJson<String>(json['athleteUserId']),
-      activityId: serializer.fromJson<String?>(json['activityId']),
+      senderUserId: serializer.fromJson<String>(json['senderUserId']),
+      messageText: serializer.fromJson<String>(json['messageText']),
       nutritionPlanId: serializer.fromJson<String?>(json['nutritionPlanId']),
-      feedbackText: serializer.fromJson<String>(json['feedbackText']),
-      feedbackType: serializer.fromJson<String>(json['feedbackType']),
-      isVisibleToAthlete: serializer.fromJson<bool>(json['isVisibleToAthlete']),
+      activityId: serializer.fromJson<String?>(json['activityId']),
+      isRead: serializer.fromJson<bool>(json['isRead']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -20670,71 +19238,65 @@ class CoachFeedbackEntry extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'relationshipId': serializer.toJson<String>(relationshipId),
-      'coachId': serializer.toJson<String>(coachId),
+      'coachUserId': serializer.toJson<String>(coachUserId),
       'athleteUserId': serializer.toJson<String>(athleteUserId),
-      'activityId': serializer.toJson<String?>(activityId),
+      'senderUserId': serializer.toJson<String>(senderUserId),
+      'messageText': serializer.toJson<String>(messageText),
       'nutritionPlanId': serializer.toJson<String?>(nutritionPlanId),
-      'feedbackText': serializer.toJson<String>(feedbackText),
-      'feedbackType': serializer.toJson<String>(feedbackType),
-      'isVisibleToAthlete': serializer.toJson<bool>(isVisibleToAthlete),
+      'activityId': serializer.toJson<String?>(activityId),
+      'isRead': serializer.toJson<bool>(isRead),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
 
-  CoachFeedbackEntry copyWith({
+  CoachMessageEntry copyWith({
     String? id,
-    String? relationshipId,
-    String? coachId,
+    String? coachUserId,
     String? athleteUserId,
-    Value<String?> activityId = const Value.absent(),
+    String? senderUserId,
+    String? messageText,
     Value<String?> nutritionPlanId = const Value.absent(),
-    String? feedbackText,
-    String? feedbackType,
-    bool? isVisibleToAthlete,
+    Value<String?> activityId = const Value.absent(),
+    bool? isRead,
     DateTime? createdAt,
     DateTime? updatedAt,
-  }) => CoachFeedbackEntry(
+  }) => CoachMessageEntry(
     id: id ?? this.id,
-    relationshipId: relationshipId ?? this.relationshipId,
-    coachId: coachId ?? this.coachId,
+    coachUserId: coachUserId ?? this.coachUserId,
     athleteUserId: athleteUserId ?? this.athleteUserId,
-    activityId: activityId.present ? activityId.value : this.activityId,
+    senderUserId: senderUserId ?? this.senderUserId,
+    messageText: messageText ?? this.messageText,
     nutritionPlanId: nutritionPlanId.present
         ? nutritionPlanId.value
         : this.nutritionPlanId,
-    feedbackText: feedbackText ?? this.feedbackText,
-    feedbackType: feedbackType ?? this.feedbackType,
-    isVisibleToAthlete: isVisibleToAthlete ?? this.isVisibleToAthlete,
+    activityId: activityId.present ? activityId.value : this.activityId,
+    isRead: isRead ?? this.isRead,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
-  CoachFeedbackEntry copyWithCompanion(CoachFeedbackTableCompanion data) {
-    return CoachFeedbackEntry(
+  CoachMessageEntry copyWithCompanion(CoachMessagesTableCompanion data) {
+    return CoachMessageEntry(
       id: data.id.present ? data.id.value : this.id,
-      relationshipId: data.relationshipId.present
-          ? data.relationshipId.value
-          : this.relationshipId,
-      coachId: data.coachId.present ? data.coachId.value : this.coachId,
+      coachUserId: data.coachUserId.present
+          ? data.coachUserId.value
+          : this.coachUserId,
       athleteUserId: data.athleteUserId.present
           ? data.athleteUserId.value
           : this.athleteUserId,
-      activityId: data.activityId.present
-          ? data.activityId.value
-          : this.activityId,
+      senderUserId: data.senderUserId.present
+          ? data.senderUserId.value
+          : this.senderUserId,
+      messageText: data.messageText.present
+          ? data.messageText.value
+          : this.messageText,
       nutritionPlanId: data.nutritionPlanId.present
           ? data.nutritionPlanId.value
           : this.nutritionPlanId,
-      feedbackText: data.feedbackText.present
-          ? data.feedbackText.value
-          : this.feedbackText,
-      feedbackType: data.feedbackType.present
-          ? data.feedbackType.value
-          : this.feedbackType,
-      isVisibleToAthlete: data.isVisibleToAthlete.present
-          ? data.isVisibleToAthlete.value
-          : this.isVisibleToAthlete,
+      activityId: data.activityId.present
+          ? data.activityId.value
+          : this.activityId,
+      isRead: data.isRead.present ? data.isRead.value : this.isRead,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -20742,16 +19304,15 @@ class CoachFeedbackEntry extends DataClass
 
   @override
   String toString() {
-    return (StringBuffer('CoachFeedbackEntry(')
+    return (StringBuffer('CoachMessageEntry(')
           ..write('id: $id, ')
-          ..write('relationshipId: $relationshipId, ')
-          ..write('coachId: $coachId, ')
+          ..write('coachUserId: $coachUserId, ')
           ..write('athleteUserId: $athleteUserId, ')
-          ..write('activityId: $activityId, ')
+          ..write('senderUserId: $senderUserId, ')
+          ..write('messageText: $messageText, ')
           ..write('nutritionPlanId: $nutritionPlanId, ')
-          ..write('feedbackText: $feedbackText, ')
-          ..write('feedbackType: $feedbackType, ')
-          ..write('isVisibleToAthlete: $isVisibleToAthlete, ')
+          ..write('activityId: $activityId, ')
+          ..write('isRead: $isRead, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -20761,134 +19322,124 @@ class CoachFeedbackEntry extends DataClass
   @override
   int get hashCode => Object.hash(
     id,
-    relationshipId,
-    coachId,
+    coachUserId,
     athleteUserId,
-    activityId,
+    senderUserId,
+    messageText,
     nutritionPlanId,
-    feedbackText,
-    feedbackType,
-    isVisibleToAthlete,
+    activityId,
+    isRead,
     createdAt,
     updatedAt,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CoachFeedbackEntry &&
+      (other is CoachMessageEntry &&
           other.id == this.id &&
-          other.relationshipId == this.relationshipId &&
-          other.coachId == this.coachId &&
+          other.coachUserId == this.coachUserId &&
           other.athleteUserId == this.athleteUserId &&
-          other.activityId == this.activityId &&
+          other.senderUserId == this.senderUserId &&
+          other.messageText == this.messageText &&
           other.nutritionPlanId == this.nutritionPlanId &&
-          other.feedbackText == this.feedbackText &&
-          other.feedbackType == this.feedbackType &&
-          other.isVisibleToAthlete == this.isVisibleToAthlete &&
+          other.activityId == this.activityId &&
+          other.isRead == this.isRead &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
 
-class CoachFeedbackTableCompanion extends UpdateCompanion<CoachFeedbackEntry> {
+class CoachMessagesTableCompanion extends UpdateCompanion<CoachMessageEntry> {
   final Value<String> id;
-  final Value<String> relationshipId;
-  final Value<String> coachId;
+  final Value<String> coachUserId;
   final Value<String> athleteUserId;
-  final Value<String?> activityId;
+  final Value<String> senderUserId;
+  final Value<String> messageText;
   final Value<String?> nutritionPlanId;
-  final Value<String> feedbackText;
-  final Value<String> feedbackType;
-  final Value<bool> isVisibleToAthlete;
+  final Value<String?> activityId;
+  final Value<bool> isRead;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
-  const CoachFeedbackTableCompanion({
+  const CoachMessagesTableCompanion({
     this.id = const Value.absent(),
-    this.relationshipId = const Value.absent(),
-    this.coachId = const Value.absent(),
+    this.coachUserId = const Value.absent(),
     this.athleteUserId = const Value.absent(),
-    this.activityId = const Value.absent(),
+    this.senderUserId = const Value.absent(),
+    this.messageText = const Value.absent(),
     this.nutritionPlanId = const Value.absent(),
-    this.feedbackText = const Value.absent(),
-    this.feedbackType = const Value.absent(),
-    this.isVisibleToAthlete = const Value.absent(),
+    this.activityId = const Value.absent(),
+    this.isRead = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  CoachFeedbackTableCompanion.insert({
+  CoachMessagesTableCompanion.insert({
     required String id,
-    required String relationshipId,
-    required String coachId,
+    required String coachUserId,
     required String athleteUserId,
-    this.activityId = const Value.absent(),
+    required String senderUserId,
+    required String messageText,
     this.nutritionPlanId = const Value.absent(),
-    required String feedbackText,
-    this.feedbackType = const Value.absent(),
-    this.isVisibleToAthlete = const Value.absent(),
+    this.activityId = const Value.absent(),
+    this.isRead = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
-       relationshipId = Value(relationshipId),
-       coachId = Value(coachId),
+       coachUserId = Value(coachUserId),
        athleteUserId = Value(athleteUserId),
-       feedbackText = Value(feedbackText);
-  static Insertable<CoachFeedbackEntry> custom({
+       senderUserId = Value(senderUserId),
+       messageText = Value(messageText);
+  static Insertable<CoachMessageEntry> custom({
     Expression<String>? id,
-    Expression<String>? relationshipId,
-    Expression<String>? coachId,
+    Expression<String>? coachUserId,
     Expression<String>? athleteUserId,
-    Expression<String>? activityId,
+    Expression<String>? senderUserId,
+    Expression<String>? messageText,
     Expression<String>? nutritionPlanId,
-    Expression<String>? feedbackText,
-    Expression<String>? feedbackType,
-    Expression<bool>? isVisibleToAthlete,
+    Expression<String>? activityId,
+    Expression<bool>? isRead,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (relationshipId != null) 'relationship_id': relationshipId,
-      if (coachId != null) 'coach_id': coachId,
+      if (coachUserId != null) 'coach_user_id': coachUserId,
       if (athleteUserId != null) 'athlete_user_id': athleteUserId,
-      if (activityId != null) 'activity_id': activityId,
+      if (senderUserId != null) 'sender_user_id': senderUserId,
+      if (messageText != null) 'message_text': messageText,
       if (nutritionPlanId != null) 'nutrition_plan_id': nutritionPlanId,
-      if (feedbackText != null) 'feedback_text': feedbackText,
-      if (feedbackType != null) 'feedback_type': feedbackType,
-      if (isVisibleToAthlete != null)
-        'is_visible_to_athlete': isVisibleToAthlete,
+      if (activityId != null) 'activity_id': activityId,
+      if (isRead != null) 'is_read': isRead,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  CoachFeedbackTableCompanion copyWith({
+  CoachMessagesTableCompanion copyWith({
     Value<String>? id,
-    Value<String>? relationshipId,
-    Value<String>? coachId,
+    Value<String>? coachUserId,
     Value<String>? athleteUserId,
-    Value<String?>? activityId,
+    Value<String>? senderUserId,
+    Value<String>? messageText,
     Value<String?>? nutritionPlanId,
-    Value<String>? feedbackText,
-    Value<String>? feedbackType,
-    Value<bool>? isVisibleToAthlete,
+    Value<String?>? activityId,
+    Value<bool>? isRead,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
-    return CoachFeedbackTableCompanion(
+    return CoachMessagesTableCompanion(
       id: id ?? this.id,
-      relationshipId: relationshipId ?? this.relationshipId,
-      coachId: coachId ?? this.coachId,
+      coachUserId: coachUserId ?? this.coachUserId,
       athleteUserId: athleteUserId ?? this.athleteUserId,
-      activityId: activityId ?? this.activityId,
+      senderUserId: senderUserId ?? this.senderUserId,
+      messageText: messageText ?? this.messageText,
       nutritionPlanId: nutritionPlanId ?? this.nutritionPlanId,
-      feedbackText: feedbackText ?? this.feedbackText,
-      feedbackType: feedbackType ?? this.feedbackType,
-      isVisibleToAthlete: isVisibleToAthlete ?? this.isVisibleToAthlete,
+      activityId: activityId ?? this.activityId,
+      isRead: isRead ?? this.isRead,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -20901,29 +19452,26 @@ class CoachFeedbackTableCompanion extends UpdateCompanion<CoachFeedbackEntry> {
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
-    if (relationshipId.present) {
-      map['relationship_id'] = Variable<String>(relationshipId.value);
-    }
-    if (coachId.present) {
-      map['coach_id'] = Variable<String>(coachId.value);
+    if (coachUserId.present) {
+      map['coach_user_id'] = Variable<String>(coachUserId.value);
     }
     if (athleteUserId.present) {
       map['athlete_user_id'] = Variable<String>(athleteUserId.value);
     }
-    if (activityId.present) {
-      map['activity_id'] = Variable<String>(activityId.value);
+    if (senderUserId.present) {
+      map['sender_user_id'] = Variable<String>(senderUserId.value);
+    }
+    if (messageText.present) {
+      map['message_text'] = Variable<String>(messageText.value);
     }
     if (nutritionPlanId.present) {
       map['nutrition_plan_id'] = Variable<String>(nutritionPlanId.value);
     }
-    if (feedbackText.present) {
-      map['feedback_text'] = Variable<String>(feedbackText.value);
+    if (activityId.present) {
+      map['activity_id'] = Variable<String>(activityId.value);
     }
-    if (feedbackType.present) {
-      map['feedback_type'] = Variable<String>(feedbackType.value);
-    }
-    if (isVisibleToAthlete.present) {
-      map['is_visible_to_athlete'] = Variable<bool>(isVisibleToAthlete.value);
+    if (isRead.present) {
+      map['is_read'] = Variable<bool>(isRead.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -20939,16 +19487,15 @@ class CoachFeedbackTableCompanion extends UpdateCompanion<CoachFeedbackEntry> {
 
   @override
   String toString() {
-    return (StringBuffer('CoachFeedbackTableCompanion(')
+    return (StringBuffer('CoachMessagesTableCompanion(')
           ..write('id: $id, ')
-          ..write('relationshipId: $relationshipId, ')
-          ..write('coachId: $coachId, ')
+          ..write('coachUserId: $coachUserId, ')
           ..write('athleteUserId: $athleteUserId, ')
-          ..write('activityId: $activityId, ')
+          ..write('senderUserId: $senderUserId, ')
+          ..write('messageText: $messageText, ')
           ..write('nutritionPlanId: $nutritionPlanId, ')
-          ..write('feedbackText: $feedbackText, ')
-          ..write('feedbackType: $feedbackType, ')
-          ..write('isVisibleToAthlete: $isVisibleToAthlete, ')
+          ..write('activityId: $activityId, ')
+          ..write('isRead: $isRead, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -20990,11 +19537,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WeatherForecastsTableTable(this);
   late final $FeatureSurveyResponsesTableTable featureSurveyResponsesTable =
       $FeatureSurveyResponsesTableTable(this);
-  late final $CoachesTableTable coachesTable = $CoachesTableTable(this);
   late final $CoachAthleteRelationshipsTableTable
   coachAthleteRelationshipsTable = $CoachAthleteRelationshipsTableTable(this);
-  late final $CoachFeedbackTableTable coachFeedbackTable =
-      $CoachFeedbackTableTable(this);
+  late final $CoachMessagesTableTable coachMessagesTable =
+      $CoachMessagesTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -21016,9 +19562,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     carbLoadingDayMealsTable,
     weatherForecastsTable,
     featureSurveyResponsesTable,
-    coachesTable,
     coachAthleteRelationshipsTable,
-    coachFeedbackTable,
+    coachMessagesTable,
   ];
 }
 
@@ -29008,466 +27553,17 @@ typedef $$FeatureSurveyResponsesTableTableProcessedTableManager =
       FeatureSurveyResponseEntry,
       PrefetchHooks Function()
     >;
-typedef $$CoachesTableTableCreateCompanionBuilder =
-    CoachesTableCompanion Function({
-      required String id,
-      required String userId,
-      required String deviceId,
-      required String coachName,
-      Value<String?> bio,
-      Value<String> certifications,
-      Value<String> specializations,
-      Value<String?> businessName,
-      Value<String?> websiteUrl,
-      Value<String?> email,
-      Value<String?> phone,
-      Value<bool> isActive,
-      Value<bool> isVerified,
-      Value<int> maxAthletes,
-      Value<bool> autoAcceptRequests,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<int> rowid,
-    });
-typedef $$CoachesTableTableUpdateCompanionBuilder =
-    CoachesTableCompanion Function({
-      Value<String> id,
-      Value<String> userId,
-      Value<String> deviceId,
-      Value<String> coachName,
-      Value<String?> bio,
-      Value<String> certifications,
-      Value<String> specializations,
-      Value<String?> businessName,
-      Value<String?> websiteUrl,
-      Value<String?> email,
-      Value<String?> phone,
-      Value<bool> isActive,
-      Value<bool> isVerified,
-      Value<int> maxAthletes,
-      Value<bool> autoAcceptRequests,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<int> rowid,
-    });
-
-class $$CoachesTableTableFilterComposer
-    extends Composer<_$AppDatabase, $CoachesTableTable> {
-  $$CoachesTableTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get userId => $composableBuilder(
-    column: $table.userId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get deviceId => $composableBuilder(
-    column: $table.deviceId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get coachName => $composableBuilder(
-    column: $table.coachName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get bio => $composableBuilder(
-    column: $table.bio,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get certifications => $composableBuilder(
-    column: $table.certifications,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get specializations => $composableBuilder(
-    column: $table.specializations,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get businessName => $composableBuilder(
-    column: $table.businessName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get websiteUrl => $composableBuilder(
-    column: $table.websiteUrl,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get email => $composableBuilder(
-    column: $table.email,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get phone => $composableBuilder(
-    column: $table.phone,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isVerified => $composableBuilder(
-    column: $table.isVerified,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get maxAthletes => $composableBuilder(
-    column: $table.maxAthletes,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get autoAcceptRequests => $composableBuilder(
-    column: $table.autoAcceptRequests,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$CoachesTableTableOrderingComposer
-    extends Composer<_$AppDatabase, $CoachesTableTable> {
-  $$CoachesTableTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get userId => $composableBuilder(
-    column: $table.userId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get deviceId => $composableBuilder(
-    column: $table.deviceId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get coachName => $composableBuilder(
-    column: $table.coachName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get bio => $composableBuilder(
-    column: $table.bio,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get certifications => $composableBuilder(
-    column: $table.certifications,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get specializations => $composableBuilder(
-    column: $table.specializations,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get businessName => $composableBuilder(
-    column: $table.businessName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get websiteUrl => $composableBuilder(
-    column: $table.websiteUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get email => $composableBuilder(
-    column: $table.email,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get phone => $composableBuilder(
-    column: $table.phone,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isVerified => $composableBuilder(
-    column: $table.isVerified,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get maxAthletes => $composableBuilder(
-    column: $table.maxAthletes,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get autoAcceptRequests => $composableBuilder(
-    column: $table.autoAcceptRequests,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$CoachesTableTableAnnotationComposer
-    extends Composer<_$AppDatabase, $CoachesTableTable> {
-  $$CoachesTableTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get userId =>
-      $composableBuilder(column: $table.userId, builder: (column) => column);
-
-  GeneratedColumn<String> get deviceId =>
-      $composableBuilder(column: $table.deviceId, builder: (column) => column);
-
-  GeneratedColumn<String> get coachName =>
-      $composableBuilder(column: $table.coachName, builder: (column) => column);
-
-  GeneratedColumn<String> get bio =>
-      $composableBuilder(column: $table.bio, builder: (column) => column);
-
-  GeneratedColumn<String> get certifications => $composableBuilder(
-    column: $table.certifications,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get specializations => $composableBuilder(
-    column: $table.specializations,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get businessName => $composableBuilder(
-    column: $table.businessName,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get websiteUrl => $composableBuilder(
-    column: $table.websiteUrl,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => column);
-
-  GeneratedColumn<String> get phone =>
-      $composableBuilder(column: $table.phone, builder: (column) => column);
-
-  GeneratedColumn<bool> get isActive =>
-      $composableBuilder(column: $table.isActive, builder: (column) => column);
-
-  GeneratedColumn<bool> get isVerified => $composableBuilder(
-    column: $table.isVerified,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get maxAthletes => $composableBuilder(
-    column: $table.maxAthletes,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get autoAcceptRequests => $composableBuilder(
-    column: $table.autoAcceptRequests,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-}
-
-class $$CoachesTableTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $CoachesTableTable,
-          CoachEntry,
-          $$CoachesTableTableFilterComposer,
-          $$CoachesTableTableOrderingComposer,
-          $$CoachesTableTableAnnotationComposer,
-          $$CoachesTableTableCreateCompanionBuilder,
-          $$CoachesTableTableUpdateCompanionBuilder,
-          (
-            CoachEntry,
-            BaseReferences<_$AppDatabase, $CoachesTableTable, CoachEntry>,
-          ),
-          CoachEntry,
-          PrefetchHooks Function()
-        > {
-  $$CoachesTableTableTableManager(_$AppDatabase db, $CoachesTableTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$CoachesTableTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$CoachesTableTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$CoachesTableTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<String> userId = const Value.absent(),
-                Value<String> deviceId = const Value.absent(),
-                Value<String> coachName = const Value.absent(),
-                Value<String?> bio = const Value.absent(),
-                Value<String> certifications = const Value.absent(),
-                Value<String> specializations = const Value.absent(),
-                Value<String?> businessName = const Value.absent(),
-                Value<String?> websiteUrl = const Value.absent(),
-                Value<String?> email = const Value.absent(),
-                Value<String?> phone = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
-                Value<bool> isVerified = const Value.absent(),
-                Value<int> maxAthletes = const Value.absent(),
-                Value<bool> autoAcceptRequests = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => CoachesTableCompanion(
-                id: id,
-                userId: userId,
-                deviceId: deviceId,
-                coachName: coachName,
-                bio: bio,
-                certifications: certifications,
-                specializations: specializations,
-                businessName: businessName,
-                websiteUrl: websiteUrl,
-                email: email,
-                phone: phone,
-                isActive: isActive,
-                isVerified: isVerified,
-                maxAthletes: maxAthletes,
-                autoAcceptRequests: autoAcceptRequests,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                required String id,
-                required String userId,
-                required String deviceId,
-                required String coachName,
-                Value<String?> bio = const Value.absent(),
-                Value<String> certifications = const Value.absent(),
-                Value<String> specializations = const Value.absent(),
-                Value<String?> businessName = const Value.absent(),
-                Value<String?> websiteUrl = const Value.absent(),
-                Value<String?> email = const Value.absent(),
-                Value<String?> phone = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
-                Value<bool> isVerified = const Value.absent(),
-                Value<int> maxAthletes = const Value.absent(),
-                Value<bool> autoAcceptRequests = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => CoachesTableCompanion.insert(
-                id: id,
-                userId: userId,
-                deviceId: deviceId,
-                coachName: coachName,
-                bio: bio,
-                certifications: certifications,
-                specializations: specializations,
-                businessName: businessName,
-                websiteUrl: websiteUrl,
-                email: email,
-                phone: phone,
-                isActive: isActive,
-                isVerified: isVerified,
-                maxAthletes: maxAthletes,
-                autoAcceptRequests: autoAcceptRequests,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$CoachesTableTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $CoachesTableTable,
-      CoachEntry,
-      $$CoachesTableTableFilterComposer,
-      $$CoachesTableTableOrderingComposer,
-      $$CoachesTableTableAnnotationComposer,
-      $$CoachesTableTableCreateCompanionBuilder,
-      $$CoachesTableTableUpdateCompanionBuilder,
-      (
-        CoachEntry,
-        BaseReferences<_$AppDatabase, $CoachesTableTable, CoachEntry>,
-      ),
-      CoachEntry,
-      PrefetchHooks Function()
-    >;
 typedef $$CoachAthleteRelationshipsTableTableCreateCompanionBuilder =
     CoachAthleteRelationshipsTableCompanion Function({
       required String id,
-      required String coachId,
+      required String coachUserId,
       required String athleteUserId,
-      required String athleteDeviceId,
       Value<String> status,
-      Value<String> permissionLevel,
-      Value<String> customPermissions,
       required String requestedBy,
       Value<DateTime> requestedAt,
       Value<DateTime?> acceptedAt,
       Value<DateTime?> declinedAt,
       Value<DateTime?> archivedAt,
-      Value<String?> coachNotes,
-      Value<String?> athleteNotes,
-      Value<String?> invitationToken,
-      Value<DateTime?> invitationExpiresAt,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -29475,21 +27571,14 @@ typedef $$CoachAthleteRelationshipsTableTableCreateCompanionBuilder =
 typedef $$CoachAthleteRelationshipsTableTableUpdateCompanionBuilder =
     CoachAthleteRelationshipsTableCompanion Function({
       Value<String> id,
-      Value<String> coachId,
+      Value<String> coachUserId,
       Value<String> athleteUserId,
-      Value<String> athleteDeviceId,
       Value<String> status,
-      Value<String> permissionLevel,
-      Value<String> customPermissions,
       Value<String> requestedBy,
       Value<DateTime> requestedAt,
       Value<DateTime?> acceptedAt,
       Value<DateTime?> declinedAt,
       Value<DateTime?> archivedAt,
-      Value<String?> coachNotes,
-      Value<String?> athleteNotes,
-      Value<String?> invitationToken,
-      Value<DateTime?> invitationExpiresAt,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -29509,8 +27598,8 @@ class $$CoachAthleteRelationshipsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get coachId => $composableBuilder(
-    column: $table.coachId,
+  ColumnFilters<String> get coachUserId => $composableBuilder(
+    column: $table.coachUserId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -29519,23 +27608,8 @@ class $$CoachAthleteRelationshipsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get athleteDeviceId => $composableBuilder(
-    column: $table.athleteDeviceId,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get status => $composableBuilder(
     column: $table.status,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get permissionLevel => $composableBuilder(
-    column: $table.permissionLevel,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get customPermissions => $composableBuilder(
-    column: $table.customPermissions,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -29564,26 +27638,6 @@ class $$CoachAthleteRelationshipsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get coachNotes => $composableBuilder(
-    column: $table.coachNotes,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get athleteNotes => $composableBuilder(
-    column: $table.athleteNotes,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get invitationToken => $composableBuilder(
-    column: $table.invitationToken,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get invitationExpiresAt => $composableBuilder(
-    column: $table.invitationExpiresAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -29609,8 +27663,8 @@ class $$CoachAthleteRelationshipsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get coachId => $composableBuilder(
-    column: $table.coachId,
+  ColumnOrderings<String> get coachUserId => $composableBuilder(
+    column: $table.coachUserId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -29619,23 +27673,8 @@ class $$CoachAthleteRelationshipsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get athleteDeviceId => $composableBuilder(
-    column: $table.athleteDeviceId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get permissionLevel => $composableBuilder(
-    column: $table.permissionLevel,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get customPermissions => $composableBuilder(
-    column: $table.customPermissions,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -29664,26 +27703,6 @@ class $$CoachAthleteRelationshipsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get coachNotes => $composableBuilder(
-    column: $table.coachNotes,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get athleteNotes => $composableBuilder(
-    column: $table.athleteNotes,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get invitationToken => $composableBuilder(
-    column: $table.invitationToken,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get invitationExpiresAt => $composableBuilder(
-    column: $table.invitationExpiresAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -29707,31 +27726,18 @@ class $$CoachAthleteRelationshipsTableTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get coachId =>
-      $composableBuilder(column: $table.coachId, builder: (column) => column);
+  GeneratedColumn<String> get coachUserId => $composableBuilder(
+    column: $table.coachUserId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get athleteUserId => $composableBuilder(
     column: $table.athleteUserId,
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get athleteDeviceId => $composableBuilder(
-    column: $table.athleteDeviceId,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
-
-  GeneratedColumn<String> get permissionLevel => $composableBuilder(
-    column: $table.permissionLevel,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get customPermissions => $composableBuilder(
-    column: $table.customPermissions,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<String> get requestedBy => $composableBuilder(
     column: $table.requestedBy,
@@ -29755,26 +27761,6 @@ class $$CoachAthleteRelationshipsTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get archivedAt => $composableBuilder(
     column: $table.archivedAt,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get coachNotes => $composableBuilder(
-    column: $table.coachNotes,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get athleteNotes => $composableBuilder(
-    column: $table.athleteNotes,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get invitationToken => $composableBuilder(
-    column: $table.invitationToken,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get invitationExpiresAt => $composableBuilder(
-    column: $table.invitationExpiresAt,
     builder: (column) => column,
   );
 
@@ -29832,41 +27818,27 @@ class $$CoachAthleteRelationshipsTableTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                Value<String> coachId = const Value.absent(),
+                Value<String> coachUserId = const Value.absent(),
                 Value<String> athleteUserId = const Value.absent(),
-                Value<String> athleteDeviceId = const Value.absent(),
                 Value<String> status = const Value.absent(),
-                Value<String> permissionLevel = const Value.absent(),
-                Value<String> customPermissions = const Value.absent(),
                 Value<String> requestedBy = const Value.absent(),
                 Value<DateTime> requestedAt = const Value.absent(),
                 Value<DateTime?> acceptedAt = const Value.absent(),
                 Value<DateTime?> declinedAt = const Value.absent(),
                 Value<DateTime?> archivedAt = const Value.absent(),
-                Value<String?> coachNotes = const Value.absent(),
-                Value<String?> athleteNotes = const Value.absent(),
-                Value<String?> invitationToken = const Value.absent(),
-                Value<DateTime?> invitationExpiresAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CoachAthleteRelationshipsTableCompanion(
                 id: id,
-                coachId: coachId,
+                coachUserId: coachUserId,
                 athleteUserId: athleteUserId,
-                athleteDeviceId: athleteDeviceId,
                 status: status,
-                permissionLevel: permissionLevel,
-                customPermissions: customPermissions,
                 requestedBy: requestedBy,
                 requestedAt: requestedAt,
                 acceptedAt: acceptedAt,
                 declinedAt: declinedAt,
                 archivedAt: archivedAt,
-                coachNotes: coachNotes,
-                athleteNotes: athleteNotes,
-                invitationToken: invitationToken,
-                invitationExpiresAt: invitationExpiresAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -29874,41 +27846,27 @@ class $$CoachAthleteRelationshipsTableTableTableManager
           createCompanionCallback:
               ({
                 required String id,
-                required String coachId,
+                required String coachUserId,
                 required String athleteUserId,
-                required String athleteDeviceId,
                 Value<String> status = const Value.absent(),
-                Value<String> permissionLevel = const Value.absent(),
-                Value<String> customPermissions = const Value.absent(),
                 required String requestedBy,
                 Value<DateTime> requestedAt = const Value.absent(),
                 Value<DateTime?> acceptedAt = const Value.absent(),
                 Value<DateTime?> declinedAt = const Value.absent(),
                 Value<DateTime?> archivedAt = const Value.absent(),
-                Value<String?> coachNotes = const Value.absent(),
-                Value<String?> athleteNotes = const Value.absent(),
-                Value<String?> invitationToken = const Value.absent(),
-                Value<DateTime?> invitationExpiresAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CoachAthleteRelationshipsTableCompanion.insert(
                 id: id,
-                coachId: coachId,
+                coachUserId: coachUserId,
                 athleteUserId: athleteUserId,
-                athleteDeviceId: athleteDeviceId,
                 status: status,
-                permissionLevel: permissionLevel,
-                customPermissions: customPermissions,
                 requestedBy: requestedBy,
                 requestedAt: requestedAt,
                 acceptedAt: acceptedAt,
                 declinedAt: declinedAt,
                 archivedAt: archivedAt,
-                coachNotes: coachNotes,
-                athleteNotes: athleteNotes,
-                invitationToken: invitationToken,
-                invitationExpiresAt: invitationExpiresAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -29942,40 +27900,38 @@ typedef $$CoachAthleteRelationshipsTableTableProcessedTableManager =
       CoachAthleteRelationshipEntry,
       PrefetchHooks Function()
     >;
-typedef $$CoachFeedbackTableTableCreateCompanionBuilder =
-    CoachFeedbackTableCompanion Function({
+typedef $$CoachMessagesTableTableCreateCompanionBuilder =
+    CoachMessagesTableCompanion Function({
       required String id,
-      required String relationshipId,
-      required String coachId,
+      required String coachUserId,
       required String athleteUserId,
-      Value<String?> activityId,
+      required String senderUserId,
+      required String messageText,
       Value<String?> nutritionPlanId,
-      required String feedbackText,
-      Value<String> feedbackType,
-      Value<bool> isVisibleToAthlete,
+      Value<String?> activityId,
+      Value<bool> isRead,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
-typedef $$CoachFeedbackTableTableUpdateCompanionBuilder =
-    CoachFeedbackTableCompanion Function({
+typedef $$CoachMessagesTableTableUpdateCompanionBuilder =
+    CoachMessagesTableCompanion Function({
       Value<String> id,
-      Value<String> relationshipId,
-      Value<String> coachId,
+      Value<String> coachUserId,
       Value<String> athleteUserId,
-      Value<String?> activityId,
+      Value<String> senderUserId,
+      Value<String> messageText,
       Value<String?> nutritionPlanId,
-      Value<String> feedbackText,
-      Value<String> feedbackType,
-      Value<bool> isVisibleToAthlete,
+      Value<String?> activityId,
+      Value<bool> isRead,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
 
-class $$CoachFeedbackTableTableFilterComposer
-    extends Composer<_$AppDatabase, $CoachFeedbackTableTable> {
-  $$CoachFeedbackTableTableFilterComposer({
+class $$CoachMessagesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CoachMessagesTableTable> {
+  $$CoachMessagesTableTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -29987,13 +27943,8 @@ class $$CoachFeedbackTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get relationshipId => $composableBuilder(
-    column: $table.relationshipId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get coachId => $composableBuilder(
-    column: $table.coachId,
+  ColumnFilters<String> get coachUserId => $composableBuilder(
+    column: $table.coachUserId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30002,8 +27953,13 @@ class $$CoachFeedbackTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get activityId => $composableBuilder(
-    column: $table.activityId,
+  ColumnFilters<String> get senderUserId => $composableBuilder(
+    column: $table.senderUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get messageText => $composableBuilder(
+    column: $table.messageText,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30012,18 +27968,13 @@ class $$CoachFeedbackTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get feedbackText => $composableBuilder(
-    column: $table.feedbackText,
+  ColumnFilters<String> get activityId => $composableBuilder(
+    column: $table.activityId,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get feedbackType => $composableBuilder(
-    column: $table.feedbackType,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isVisibleToAthlete => $composableBuilder(
-    column: $table.isVisibleToAthlete,
+  ColumnFilters<bool> get isRead => $composableBuilder(
+    column: $table.isRead,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30038,9 +27989,9 @@ class $$CoachFeedbackTableTableFilterComposer
   );
 }
 
-class $$CoachFeedbackTableTableOrderingComposer
-    extends Composer<_$AppDatabase, $CoachFeedbackTableTable> {
-  $$CoachFeedbackTableTableOrderingComposer({
+class $$CoachMessagesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CoachMessagesTableTable> {
+  $$CoachMessagesTableTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -30052,13 +28003,8 @@ class $$CoachFeedbackTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get relationshipId => $composableBuilder(
-    column: $table.relationshipId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get coachId => $composableBuilder(
-    column: $table.coachId,
+  ColumnOrderings<String> get coachUserId => $composableBuilder(
+    column: $table.coachUserId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -30067,8 +28013,13 @@ class $$CoachFeedbackTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get activityId => $composableBuilder(
-    column: $table.activityId,
+  ColumnOrderings<String> get senderUserId => $composableBuilder(
+    column: $table.senderUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get messageText => $composableBuilder(
+    column: $table.messageText,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -30077,18 +28028,13 @@ class $$CoachFeedbackTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get feedbackText => $composableBuilder(
-    column: $table.feedbackText,
+  ColumnOrderings<String> get activityId => $composableBuilder(
+    column: $table.activityId,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get feedbackType => $composableBuilder(
-    column: $table.feedbackType,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isVisibleToAthlete => $composableBuilder(
-    column: $table.isVisibleToAthlete,
+  ColumnOrderings<bool> get isRead => $composableBuilder(
+    column: $table.isRead,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -30103,9 +28049,9 @@ class $$CoachFeedbackTableTableOrderingComposer
   );
 }
 
-class $$CoachFeedbackTableTableAnnotationComposer
-    extends Composer<_$AppDatabase, $CoachFeedbackTableTable> {
-  $$CoachFeedbackTableTableAnnotationComposer({
+class $$CoachMessagesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CoachMessagesTableTable> {
+  $$CoachMessagesTableTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -30115,21 +28061,23 @@ class $$CoachFeedbackTableTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get relationshipId => $composableBuilder(
-    column: $table.relationshipId,
+  GeneratedColumn<String> get coachUserId => $composableBuilder(
+    column: $table.coachUserId,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get coachId =>
-      $composableBuilder(column: $table.coachId, builder: (column) => column);
 
   GeneratedColumn<String> get athleteUserId => $composableBuilder(
     column: $table.athleteUserId,
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get activityId => $composableBuilder(
-    column: $table.activityId,
+  GeneratedColumn<String> get senderUserId => $composableBuilder(
+    column: $table.senderUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get messageText => $composableBuilder(
+    column: $table.messageText,
     builder: (column) => column,
   );
 
@@ -30138,20 +28086,13 @@ class $$CoachFeedbackTableTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get feedbackText => $composableBuilder(
-    column: $table.feedbackText,
+  GeneratedColumn<String> get activityId => $composableBuilder(
+    column: $table.activityId,
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get feedbackType => $composableBuilder(
-    column: $table.feedbackType,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isVisibleToAthlete => $composableBuilder(
-    column: $table.isVisibleToAthlete,
-    builder: (column) => column,
-  );
+  GeneratedColumn<bool> get isRead =>
+      $composableBuilder(column: $table.isRead, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -30160,68 +28101,66 @@ class $$CoachFeedbackTableTableAnnotationComposer
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
 
-class $$CoachFeedbackTableTableTableManager
+class $$CoachMessagesTableTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $CoachFeedbackTableTable,
-          CoachFeedbackEntry,
-          $$CoachFeedbackTableTableFilterComposer,
-          $$CoachFeedbackTableTableOrderingComposer,
-          $$CoachFeedbackTableTableAnnotationComposer,
-          $$CoachFeedbackTableTableCreateCompanionBuilder,
-          $$CoachFeedbackTableTableUpdateCompanionBuilder,
+          $CoachMessagesTableTable,
+          CoachMessageEntry,
+          $$CoachMessagesTableTableFilterComposer,
+          $$CoachMessagesTableTableOrderingComposer,
+          $$CoachMessagesTableTableAnnotationComposer,
+          $$CoachMessagesTableTableCreateCompanionBuilder,
+          $$CoachMessagesTableTableUpdateCompanionBuilder,
           (
-            CoachFeedbackEntry,
+            CoachMessageEntry,
             BaseReferences<
               _$AppDatabase,
-              $CoachFeedbackTableTable,
-              CoachFeedbackEntry
+              $CoachMessagesTableTable,
+              CoachMessageEntry
             >,
           ),
-          CoachFeedbackEntry,
+          CoachMessageEntry,
           PrefetchHooks Function()
         > {
-  $$CoachFeedbackTableTableTableManager(
+  $$CoachMessagesTableTableTableManager(
     _$AppDatabase db,
-    $CoachFeedbackTableTable table,
+    $CoachMessagesTableTable table,
   ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$CoachFeedbackTableTableFilterComposer($db: db, $table: table),
+              $$CoachMessagesTableTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$CoachFeedbackTableTableOrderingComposer($db: db, $table: table),
+              $$CoachMessagesTableTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$CoachFeedbackTableTableAnnotationComposer(
+              $$CoachMessagesTableTableAnnotationComposer(
                 $db: db,
                 $table: table,
               ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                Value<String> relationshipId = const Value.absent(),
-                Value<String> coachId = const Value.absent(),
+                Value<String> coachUserId = const Value.absent(),
                 Value<String> athleteUserId = const Value.absent(),
-                Value<String?> activityId = const Value.absent(),
+                Value<String> senderUserId = const Value.absent(),
+                Value<String> messageText = const Value.absent(),
                 Value<String?> nutritionPlanId = const Value.absent(),
-                Value<String> feedbackText = const Value.absent(),
-                Value<String> feedbackType = const Value.absent(),
-                Value<bool> isVisibleToAthlete = const Value.absent(),
+                Value<String?> activityId = const Value.absent(),
+                Value<bool> isRead = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => CoachFeedbackTableCompanion(
+              }) => CoachMessagesTableCompanion(
                 id: id,
-                relationshipId: relationshipId,
-                coachId: coachId,
+                coachUserId: coachUserId,
                 athleteUserId: athleteUserId,
-                activityId: activityId,
+                senderUserId: senderUserId,
+                messageText: messageText,
                 nutritionPlanId: nutritionPlanId,
-                feedbackText: feedbackText,
-                feedbackType: feedbackType,
-                isVisibleToAthlete: isVisibleToAthlete,
+                activityId: activityId,
+                isRead: isRead,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -30229,27 +28168,25 @@ class $$CoachFeedbackTableTableTableManager
           createCompanionCallback:
               ({
                 required String id,
-                required String relationshipId,
-                required String coachId,
+                required String coachUserId,
                 required String athleteUserId,
-                Value<String?> activityId = const Value.absent(),
+                required String senderUserId,
+                required String messageText,
                 Value<String?> nutritionPlanId = const Value.absent(),
-                required String feedbackText,
-                Value<String> feedbackType = const Value.absent(),
-                Value<bool> isVisibleToAthlete = const Value.absent(),
+                Value<String?> activityId = const Value.absent(),
+                Value<bool> isRead = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => CoachFeedbackTableCompanion.insert(
+              }) => CoachMessagesTableCompanion.insert(
                 id: id,
-                relationshipId: relationshipId,
-                coachId: coachId,
+                coachUserId: coachUserId,
                 athleteUserId: athleteUserId,
-                activityId: activityId,
+                senderUserId: senderUserId,
+                messageText: messageText,
                 nutritionPlanId: nutritionPlanId,
-                feedbackText: feedbackText,
-                feedbackType: feedbackType,
-                isVisibleToAthlete: isVisibleToAthlete,
+                activityId: activityId,
+                isRead: isRead,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -30262,25 +28199,25 @@ class $$CoachFeedbackTableTableTableManager
       );
 }
 
-typedef $$CoachFeedbackTableTableProcessedTableManager =
+typedef $$CoachMessagesTableTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $CoachFeedbackTableTable,
-      CoachFeedbackEntry,
-      $$CoachFeedbackTableTableFilterComposer,
-      $$CoachFeedbackTableTableOrderingComposer,
-      $$CoachFeedbackTableTableAnnotationComposer,
-      $$CoachFeedbackTableTableCreateCompanionBuilder,
-      $$CoachFeedbackTableTableUpdateCompanionBuilder,
+      $CoachMessagesTableTable,
+      CoachMessageEntry,
+      $$CoachMessagesTableTableFilterComposer,
+      $$CoachMessagesTableTableOrderingComposer,
+      $$CoachMessagesTableTableAnnotationComposer,
+      $$CoachMessagesTableTableCreateCompanionBuilder,
+      $$CoachMessagesTableTableUpdateCompanionBuilder,
       (
-        CoachFeedbackEntry,
+        CoachMessageEntry,
         BaseReferences<
           _$AppDatabase,
-          $CoachFeedbackTableTable,
-          CoachFeedbackEntry
+          $CoachMessagesTableTable,
+          CoachMessageEntry
         >,
       ),
-      CoachFeedbackEntry,
+      CoachMessageEntry,
       PrefetchHooks Function()
     >;
 
@@ -30329,14 +28266,12 @@ class $AppDatabaseManager {
         _db,
         _db.featureSurveyResponsesTable,
       );
-  $$CoachesTableTableTableManager get coachesTable =>
-      $$CoachesTableTableTableManager(_db, _db.coachesTable);
   $$CoachAthleteRelationshipsTableTableTableManager
   get coachAthleteRelationshipsTable =>
       $$CoachAthleteRelationshipsTableTableTableManager(
         _db,
         _db.coachAthleteRelationshipsTable,
       );
-  $$CoachFeedbackTableTableTableManager get coachFeedbackTable =>
-      $$CoachFeedbackTableTableTableManager(_db, _db.coachFeedbackTable);
+  $$CoachMessagesTableTableTableManager get coachMessagesTable =>
+      $$CoachMessagesTableTableTableManager(_db, _db.coachMessagesTable);
 }

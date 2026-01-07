@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../domain/coach_feedback.dart';
+import '../../domain/coach_message.dart';
 import '../providers/activity_coach_feedback_provider.dart';
 
-/// Widget to display coach feedback for a specific activity
+/// Widget to display coach comments/feedback for a specific activity
 /// Can be embedded in the ActivityDetailScreen
 class ActivityCoachFeedbackWidget extends ConsumerWidget {
   const ActivityCoachFeedbackWidget({
@@ -21,16 +21,16 @@ class ActivityCoachFeedbackWidget extends ConsumerWidget {
     return feedbackAsync.when(
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
-      data: (feedback) {
-        if (feedback.isEmpty) {
+      data: (messages) {
+        if (messages.isEmpty) {
           return const SizedBox.shrink();
         }
-        return _buildFeedbackSection(context, feedback);
+        return _buildFeedbackSection(context, messages);
       },
     );
   }
 
-  Widget _buildFeedbackSection(BuildContext context, List<CoachFeedback> feedback) {
+  Widget _buildFeedbackSection(BuildContext context, List<CoachMessage> messages) {
     final theme = Theme.of(context);
 
     return Container(
@@ -61,7 +61,7 @@ class ActivityCoachFeedbackWidget extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${feedback.length}',
+                  '${messages.length}',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.bold,
@@ -73,13 +73,13 @@ class ActivityCoachFeedbackWidget extends ConsumerWidget {
           const SizedBox(height: 12),
 
           // Feedback cards
-          ...feedback.map((f) => _buildFeedbackCard(context, f)),
+          ...messages.map((m) => _buildFeedbackCard(context, m)),
         ],
       ),
     );
   }
 
-  Widget _buildFeedbackCard(BuildContext context, CoachFeedback feedback) {
+  Widget _buildFeedbackCard(BuildContext context, CoachMessage message) {
     final theme = Theme.of(context);
 
     return Card(
@@ -94,24 +94,28 @@ class ActivityCoachFeedbackWidget extends ConsumerWidget {
               children: [
                 CircleAvatar(
                   radius: 12,
-                  backgroundColor: theme.colorScheme.primary,
+                  backgroundColor: message.isSentByCoach
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.secondary,
                   child: Icon(
                     Icons.person,
                     size: 14,
-                    color: theme.colorScheme.onPrimary,
+                    color: message.isSentByCoach
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.onSecondary,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Coach Feedback',
+                    message.isSentByCoach ? 'Coach' : 'You',
                     style: theme.textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
                 Text(
-                  _formatDate(feedback.createdAt),
+                  _formatDate(message.createdAt),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -120,7 +124,7 @@ class ActivityCoachFeedbackWidget extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              feedback.feedbackText,
+              message.messageText,
               style: theme.textTheme.bodyMedium,
             ),
           ],

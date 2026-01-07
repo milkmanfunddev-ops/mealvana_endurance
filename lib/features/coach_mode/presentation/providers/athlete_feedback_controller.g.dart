@@ -38,7 +38,7 @@ final class AthleteFeedbackControllerProvider
 }
 
 String _$athleteFeedbackControllerHash() =>
-    r'a69d2274c4b06529525f8bdd0994249c32767a01';
+    r'8e1197703a79e2d994d7e1a874b3ed4958c60c95';
 
 abstract class _$AthleteFeedbackController
     extends $AsyncNotifier<AthleteFeedbackState> {

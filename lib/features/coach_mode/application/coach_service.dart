@@ -6,7 +6,7 @@ import '../../../shared/services/logging_service.dart';
 import '../data/coach_repository.dart';
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
-import '../domain/coach_feedback.dart' as domain;
+import '../domain/coach_message.dart';
 
 part 'coach_service.g.dart';
 
@@ -21,6 +21,7 @@ CoachService coachService(Ref ref) {
 
 /// Service for coach mode business logic
 /// Handles orchestration between coach operations and user context
+/// Note: Coach status is determined by is_coach flag on users table (set by admin)
 class CoachService {
   const CoachService({
     required CoachRepository repository,
@@ -54,129 +55,25 @@ class CoachService {
     }
   }
 
-  /// Get the current user's coach profile (if they are a coach)
-  Future<Coach?> getCurrentCoachProfile() async {
+  /// Get the current user's coach info (if they are a coach)
+  Future<CoachInfo?> getCurrentCoachInfo() async {
     try {
       final profile = await _database.getCurrentUserProfile();
       if (profile == null || !profile.isCoach) return null;
 
-      return await _repository.getCoachByUserId(profile.id);
+      return CoachInfo(
+        userId: profile.id,
+        deviceId: profile.deviceId,
+        isCoach: profile.isCoach,
+      );
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to get current coach profile',
+        'Failed to get current coach info',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,
       );
       return null;
-    }
-  }
-
-  // ============================================================================
-  // COACH PROFILE MANAGEMENT
-  // ============================================================================
-
-  /// Update the current user's coach profile (full object)
-  Future<Coach?> updateCoachProfileFull(Coach coach) async {
-    try {
-      return await _repository.updateCoach(coach);
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update coach profile',
-        context: 'COACH_SERVICE',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Update the current user's coach profile with specific fields
-  Future<Coach?> updateCoachProfile({
-    required String displayName,
-    String? bio,
-    List<CoachSpecialization> specializations = const [],
-  }) async {
-    try {
-      final existing = await getCurrentCoachProfile();
-      if (existing == null) {
-        _logger.warning(
-          'Cannot update coach profile: no existing profile',
-          context: 'COACH_SERVICE',
-        );
-        return null;
-      }
-
-      final updated = existing.copyWith(
-        coachName: displayName,
-        bio: bio,
-        specializations: specializations.map((s) => s.name).toList(),
-        updatedAt: DateTime.now(),
-      );
-
-      return await _repository.updateCoach(updated);
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update coach profile',
-        context: 'COACH_SERVICE',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Create a new coach profile with simplified parameters
-  Future<Coach?> createCoachProfile({
-    required String displayName,
-    String? bio,
-    List<CoachSpecialization> specializations = const [],
-  }) async {
-    try {
-      final profile = await _database.getCurrentUserProfile();
-      if (profile == null) {
-        _logger.warning(
-          'Cannot create coach profile: no user profile found',
-          context: 'COACH_SERVICE',
-        );
-        return null;
-      }
-
-      if (!profile.isCoach) {
-        _logger.warning(
-          'User is not authorized to be a coach',
-          context: 'COACH_SERVICE',
-          data: {'userId': profile.id},
-        );
-        return null;
-      }
-
-      // Check if coach profile already exists
-      final existing = await _repository.getCoachByUserId(profile.id);
-      if (existing != null) {
-        _logger.info(
-          'Coach profile already exists',
-          context: 'COACH_SERVICE',
-          data: {'coachId': existing.id},
-        );
-        return existing;
-      }
-
-      return await _repository.createCoach(
-        userId: profile.id,
-        deviceId: profile.deviceId,
-        coachName: displayName,
-        bio: bio,
-        specializations: specializations.map((s) => s.name).toList(),
-      );
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create coach profile',
-        context: 'COACH_SERVICE',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
     }
   }
 
@@ -187,10 +84,10 @@ class CoachService {
   /// Get all athletes for the current coach
   Future<List<CoachAthleteRelationship>> getMyAthletes() async {
     try {
-      final coach = await getCurrentCoachProfile();
-      if (coach == null) return [];
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null || !profile.isCoach) return [];
 
-      return await _repository.getActiveRelationshipsForCoach(coach.id);
+      return await _repository.getActiveRelationshipsForCoach(profile.id);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get athletes',
@@ -205,10 +102,10 @@ class CoachService {
   /// Get pending athlete requests for the current coach
   Future<List<CoachAthleteRelationship>> getPendingAthleteRequests() async {
     try {
-      final coach = await getCurrentCoachProfile();
-      if (coach == null) return [];
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null || !profile.isCoach) return [];
 
-      final all = await _repository.getRelationshipsForCoach(coach.id);
+      final all = await _repository.getRelationshipsForCoach(profile.id);
       return all
           .where((r) => r.status == RelationshipStatus.pending)
           .toList();
@@ -226,22 +123,20 @@ class CoachService {
   /// Invite an athlete to connect with the coach
   Future<CoachAthleteRelationship?> inviteAthlete({
     required String athleteUserId,
-    required String athleteDeviceId,
   }) async {
     try {
-      final coach = await getCurrentCoachProfile();
-      if (coach == null) {
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null || !profile.isCoach) {
         _logger.warning(
-          'Cannot invite athlete: no coach profile',
+          'Cannot invite athlete: user is not a coach',
           context: 'COACH_SERVICE',
         );
         return null;
       }
 
       return await _repository.createRelationship(
-        coachId: coach.id,
+        coachUserId: profile.id,
         athleteUserId: athleteUserId,
-        athleteDeviceId: athleteDeviceId,
         requestedBy: 'coach',
       );
     } catch (e, stackTrace) {
@@ -389,18 +284,24 @@ class CoachService {
   }
 
   // ============================================================================
-  // FEEDBACK MANAGEMENT
+  // MESSAGING (Bidirectional)
   // ============================================================================
 
-  /// Get feedback for a specific relationship
-  Future<List<domain.CoachFeedback>> getFeedbackForRelationship(
-    String relationshipId,
-  ) async {
+  /// Get conversation messages between coach and athlete
+  Future<List<CoachMessage>> getConversation({
+    required String coachUserId,
+    required String athleteUserId,
+    int? limit,
+  }) async {
     try {
-      return await _repository.getFeedbackForRelationship(relationshipId);
+      return await _repository.getMessagesForConversation(
+        coachUserId: coachUserId,
+        athleteUserId: athleteUserId,
+        limit: limit,
+      );
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to get feedback',
+        'Failed to get conversation',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,
@@ -409,39 +310,85 @@ class CoachService {
     }
   }
 
-  /// Add feedback for an athlete
-  Future<domain.CoachFeedback?> addFeedback({
-    required String relationshipId,
+  /// Get comments/messages for a nutrition plan
+  Future<List<CoachMessage>> getNutritionPlanComments(
+    String nutritionPlanId,
+  ) async {
+    try {
+      return await _repository.getMessagesForNutritionPlan(nutritionPlanId);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get nutrition plan comments',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return [];
+    }
+  }
+
+  /// Get comments/messages for an activity
+  Future<List<CoachMessage>> getActivityComments(String activityId) async {
+    try {
+      return await _repository.getMessagesForActivity(activityId);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get activity comments',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return [];
+    }
+  }
+
+  /// Get unread message count for current user
+  Future<int> getUnreadMessageCount() async {
+    try {
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null) return 0;
+
+      return await _repository.getUnreadMessageCount(profile.id);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get unread message count',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return 0;
+    }
+  }
+
+  /// Send a message in a conversation
+  Future<CoachMessage?> sendMessage({
+    required String coachUserId,
     required String athleteUserId,
-    required String feedbackText,
-    domain.FeedbackType feedbackType = domain.FeedbackType.general,
-    String? activityId,
+    required String messageText,
     String? nutritionPlanId,
-    bool isVisibleToAthlete = true,
+    String? activityId,
   }) async {
     try {
-      final coach = await getCurrentCoachProfile();
-      if (coach == null) {
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null) {
         _logger.warning(
-          'Cannot add feedback: no coach profile',
+          'Cannot send message: no user profile',
           context: 'COACH_SERVICE',
         );
         return null;
       }
 
-      return await _repository.createFeedback(
-        relationshipId: relationshipId,
-        coachId: coach.id,
+      return await _repository.sendMessage(
+        coachUserId: coachUserId,
         athleteUserId: athleteUserId,
-        feedbackText: feedbackText,
-        feedbackType: feedbackType,
-        activityId: activityId,
+        senderUserId: profile.id,
+        messageText: messageText,
         nutritionPlanId: nutritionPlanId,
-        isVisibleToAthlete: isVisibleToAthlete,
+        activityId: activityId,
       );
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to add feedback',
+        'Failed to send message',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,
@@ -450,30 +397,37 @@ class CoachService {
     }
   }
 
-  /// Update feedback
-  Future<domain.CoachFeedback?> updateFeedback(
-    domain.CoachFeedback feedback,
-  ) async {
+  /// Mark messages as read in a conversation
+  Future<void> markConversationAsRead({
+    required String coachUserId,
+    required String athleteUserId,
+  }) async {
     try {
-      return await _repository.updateFeedback(feedback);
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null) return;
+
+      await _repository.markMessagesAsRead(
+        coachUserId: coachUserId,
+        athleteUserId: athleteUserId,
+        readerUserId: profile.id,
+      );
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to update feedback',
+        'Failed to mark conversation as read',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,
       );
-      rethrow;
     }
   }
 
-  /// Delete feedback
-  Future<void> deleteFeedback(String feedbackId) async {
+  /// Delete a message (current user must be the sender)
+  Future<void> deleteMessage(String messageId) async {
     try {
-      await _repository.deleteFeedback(feedbackId);
+      await _repository.deleteMessage(messageId);
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to delete feedback',
+        'Failed to delete message',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,
@@ -487,7 +441,7 @@ class CoachService {
   // ============================================================================
 
   /// Get all available/active coaches for browsing
-  Future<List<Coach>> getAvailableCoaches() async {
+  Future<List<CoachInfo>> getAvailableCoaches() async {
     try {
       return await _repository.getActiveCoaches();
     } catch (e, stackTrace) {
@@ -501,53 +455,8 @@ class CoachService {
     }
   }
 
-  // ============================================================================
-  // INVITE CODE OPERATIONS
-  // ============================================================================
-
-  /// Redeem a coach invite code to become a coach
-  /// Returns a map with 'success', 'message', and 'error' keys
-  Future<Map<String, dynamic>> redeemCoachInviteCode(String code) async {
-    try {
-      final profile = await _database.getCurrentUserProfile();
-      if (profile == null) {
-        _logger.warning(
-          'Cannot redeem invite code: no user profile',
-          context: 'COACH_SERVICE',
-        );
-        return {
-          'success': false,
-          'error': 'No user profile found. Please complete onboarding first.',
-        };
-      }
-
-      if (profile.isCoach) {
-        return {
-          'success': false,
-          'error': 'You are already registered as a coach.',
-        };
-      }
-
-      return await _repository.redeemInviteCode(
-        code: code,
-        userId: profile.id,
-      );
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to redeem invite code',
-        context: 'COACH_SERVICE',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      return {
-        'success': false,
-        'error': 'An error occurred. Please try again.',
-      };
-    }
-  }
-
   /// Request to connect with a coach (athlete initiates)
-  Future<bool> requestCoachConnection(String coachId) async {
+  Future<bool> requestCoachConnection(String coachUserId) async {
     try {
       final profile = await _database.getCurrentUserProfile();
       if (profile == null) {
@@ -559,9 +468,8 @@ class CoachService {
       }
 
       final relationship = await _repository.createRelationship(
-        coachId: coachId,
+        coachUserId: coachUserId,
         athleteUserId: profile.id,
-        athleteDeviceId: profile.deviceId,
         requestedBy: 'athlete',
       );
 
@@ -569,6 +477,44 @@ class CoachService {
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to request coach connection',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  // ============================================================================
+  // IS_COACH SYNC (for admin-approved coach status)
+  // ============================================================================
+
+  /// Sync is_coach status from Supabase to local database
+  /// Call this on app startup to pick up any admin approvals
+  Future<bool> syncIsCoachStatus() async {
+    try {
+      final profile = await _database.getCurrentUserProfile();
+      if (profile == null) return false;
+
+      // Fetch latest status from Supabase
+      final isCoach = await _repository.fetchIsCoachFromSupabase(profile.id);
+      if (isCoach == null) return false;
+
+      // If status changed, update local database
+      if (isCoach != profile.isCoach) {
+        await _repository.updateLocalUserIsCoach(profile.id, isCoach);
+        _logger.info(
+          'Synced is_coach status from Supabase',
+          context: 'COACH_SERVICE',
+          data: {'userId': profile.id, 'isCoach': isCoach},
+        );
+        return true; // Status was updated
+      }
+
+      return false; // No change
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync is_coach status',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,

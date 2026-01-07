@@ -615,12 +615,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLink(
             context: context,
             icon: FontAwesomeIcons.userPlus,
-            title: 'Become a Coach',
-            subtitle: 'Enter invite code',
+            title: 'Apply to Coach',
+            subtitle: 'Register as a coach',
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
-              analytics.analytics.track('settings_become_coach_tapped');
-              context.push('/become-coach');
+              analytics.analytics.track('settings_apply_coach_tapped');
+              context.push('/coach/apply');
             },
           ),
         ],

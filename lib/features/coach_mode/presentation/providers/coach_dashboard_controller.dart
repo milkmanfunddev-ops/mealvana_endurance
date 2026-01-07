@@ -10,14 +10,14 @@ part 'coach_dashboard_controller.g.dart';
 
 /// State for the coach dashboard
 class CoachDashboardState {
-  final Coach? coach;
+  final CoachInfo? coachInfo;
   final List<CoachAthleteRelationship> activeAthletes;
   final List<CoachAthleteRelationship> pendingRequests;
   final bool isLoading;
   final String? error;
 
   const CoachDashboardState({
-    this.coach,
+    this.coachInfo,
     this.activeAthletes = const [],
     this.pendingRequests = const [],
     this.isLoading = false,
@@ -25,14 +25,14 @@ class CoachDashboardState {
   });
 
   CoachDashboardState copyWith({
-    Coach? coach,
+    CoachInfo? coachInfo,
     List<CoachAthleteRelationship>? activeAthletes,
     List<CoachAthleteRelationship>? pendingRequests,
     bool? isLoading,
     String? error,
   }) {
     return CoachDashboardState(
-      coach: coach ?? this.coach,
+      coachInfo: coachInfo ?? this.coachInfo,
       activeAthletes: activeAthletes ?? this.activeAthletes,
       pendingRequests: pendingRequests ?? this.pendingRequests,
       isLoading: isLoading ?? this.isLoading,
@@ -46,8 +46,8 @@ class CoachDashboardState {
   /// Whether coach has any pending requests
   bool get hasPendingRequests => pendingRequests.isNotEmpty;
 
-  /// Whether coach profile is set up
-  bool get hasProfile => coach != null;
+  /// Whether user is a coach
+  bool get isCoach => coachInfo?.isCoach ?? false;
 }
 
 @riverpod
@@ -62,11 +62,11 @@ class CoachDashboardController extends _$CoachDashboardController {
   /// Load all dashboard data
   Future<CoachDashboardState> _loadDashboard() async {
     try {
-      final coach = await _coachService.getCurrentCoachProfile();
-      
-      if (coach == null) {
+      final coachInfo = await _coachService.getCurrentCoachInfo();
+
+      if (coachInfo == null) {
         return const CoachDashboardState(
-          error: 'No coach profile found. Please set up your coach profile.',
+          error: 'You are not registered as a coach. Please apply via the coach registration form.',
         );
       }
 
@@ -74,7 +74,7 @@ class CoachDashboardController extends _$CoachDashboardController {
       final pendingRequests = await _coachService.getPendingAthleteRequests();
 
       return CoachDashboardState(
-        coach: coach,
+        coachInfo: coachInfo,
         activeAthletes: activeAthletes,
         pendingRequests: pendingRequests,
       );
@@ -100,7 +100,7 @@ class CoachDashboardController extends _$CoachDashboardController {
 
     try {
       await _coachService.acceptAthleteRequest(relationshipId);
-      
+
       // Refresh to get updated lists
       final activeAthletes = await _coachService.getMyAthletes();
       final pendingRequests = await _coachService.getPendingAthleteRequests();
@@ -127,7 +127,7 @@ class CoachDashboardController extends _$CoachDashboardController {
 
     try {
       await _coachService.declineAthleteRequest(relationshipId);
-      
+
       // Remove from pending list
       final updatedPending = currentState.pendingRequests
           .where((r) => r.id != relationshipId)
@@ -154,7 +154,7 @@ class CoachDashboardController extends _$CoachDashboardController {
 
     try {
       await _coachService.archiveAthlete(relationshipId);
-      
+
       // Remove from active list
       final updatedActive = currentState.activeAthletes
           .where((r) => r.id != relationshipId)

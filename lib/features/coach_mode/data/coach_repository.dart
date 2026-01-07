@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -11,7 +10,7 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
-import '../domain/coach_feedback.dart' as domain;
+import '../domain/coach_message.dart';
 
 part 'coach_repository.g.dart';
 
@@ -25,7 +24,8 @@ CoachRepository coachRepository(Ref ref) {
 }
 
 /// Repository for managing coach mode data following FOA pattern
-/// Handles coaches, coach-athlete relationships, and feedback
+/// Handles coach-athlete relationships and bidirectional messaging
+/// Note: Coach status is determined by is_coach flag on users table (set by admin)
 class CoachRepository {
   const CoachRepository({
     required SupabaseClient supabase,
@@ -35,7 +35,6 @@ class CoachRepository {
         _database = database,
         _logger = logger;
 
-  // ignore: unused_field - Will be used for Supabase sync in future
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
@@ -43,21 +42,25 @@ class CoachRepository {
   static const _uuid = Uuid();
 
   // ============================================================================
-  // COACH PROFILE OPERATIONS
+  // COACH INFO OPERATIONS (from users table)
   // ============================================================================
 
-  /// Get coach profile for a user
-  Future<Coach?> getCoachByUserId(String userId) async {
+  /// Get coach info for a user (basic info from users table)
+  Future<CoachInfo?> getCoachInfoByUserId(String userId) async {
     try {
-      final result = await (_database.select(_database.coachesTable)
-            ..where((t) => t.userId.equals(userId)))
+      final result = await (_database.select(_database.userProfilesTable)
+            ..where((t) => t.id.equals(userId) & t.isCoach.equals(true)))
           .getSingleOrNull();
 
       if (result == null) return null;
-      return _mapToCoachDomain(result);
+      return CoachInfo(
+        userId: result.id,
+        deviceId: result.deviceId,
+        isCoach: result.isCoach,
+      );
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to get coach by user ID',
+        'Failed to get coach info by user ID',
         context: 'COACH_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
@@ -66,130 +69,21 @@ class CoachRepository {
     }
   }
 
-  /// Get coach profile by device ID
-  Future<Coach?> getCoachByDeviceId(String deviceId) async {
+  /// Get all users with is_coach=true (for coach directory)
+  Future<List<CoachInfo>> getActiveCoaches() async {
     try {
-      final result = await (_database.select(_database.coachesTable)
-            ..where((t) => t.deviceId.equals(deviceId)))
-          .getSingleOrNull();
-
-      if (result == null) return null;
-      return _mapToCoachDomain(result);
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get coach by device ID',
-        context: 'COACH_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Create a new coach profile
-  Future<Coach> createCoach({
-    required String userId,
-    required String deviceId,
-    required String coachName,
-    String? bio,
-    List<String>? certifications,
-    List<String>? specializations,
-  }) async {
-    try {
-      final id = _uuid.v4();
-      final now = DateTime.now();
-
-      final companion = CoachesTableCompanion.insert(
-        id: id,
-        userId: userId,
-        deviceId: deviceId,
-        coachName: coachName,
-        bio: Value(bio),
-        certifications: Value(_listToPostgresArray(certifications ?? [])),
-        specializations: Value(_listToPostgresArray(specializations ?? [])),
-        createdAt: Value(now),
-        updatedAt: Value(now),
-      );
-
-      await _database.into(_database.coachesTable).insert(companion);
-
-      _logger.info(
-        'Created coach profile',
-        context: 'COACH_REPOSITORY',
-        data: {'coachId': id, 'userId': userId},
-      );
-
-      return Coach(
-        id: id,
-        userId: userId,
-        deviceId: deviceId,
-        coachName: coachName,
-        bio: bio,
-        certifications: certifications ?? [],
-        specializations: specializations ?? [],
-        createdAt: now,
-        updatedAt: now,
-      );
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create coach',
-        context: 'COACH_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Update coach profile
-  Future<Coach> updateCoach(Coach coach) async {
-    try {
-      final updatedAt = DateTime.now();
-
-      await (_database.update(_database.coachesTable)
-            ..where((t) => t.id.equals(coach.id)))
-          .write(CoachesTableCompanion(
-        coachName: Value(coach.coachName),
-        bio: Value(coach.bio),
-        certifications: Value(_listToPostgresArray(coach.certifications)),
-        specializations: Value(_listToPostgresArray(coach.specializations)),
-        businessName: Value(coach.businessName),
-        websiteUrl: Value(coach.websiteUrl),
-        email: Value(coach.email),
-        phone: Value(coach.phone),
-        isActive: Value(coach.isActive),
-        maxAthletes: Value(coach.maxAthletes),
-        autoAcceptRequests: Value(coach.autoAcceptRequests),
-        updatedAt: Value(updatedAt),
-      ));
-
-      _logger.info(
-        'Updated coach profile',
-        context: 'COACH_REPOSITORY',
-        data: {'coachId': coach.id},
-      );
-
-      return coach.copyWith(updatedAt: updatedAt);
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update coach',
-        context: 'COACH_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Get all active coaches for directory browsing
-  Future<List<Coach>> getActiveCoaches() async {
-    try {
-      final results = await (_database.select(_database.coachesTable)
-            ..where((t) => t.isActive.equals(true))
-            ..orderBy([(t) => OrderingTerm.asc(t.coachName)]))
+      final results = await (_database.select(_database.userProfilesTable)
+            ..where((t) => t.isCoach.equals(true))
+            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
           .get();
 
-      return results.map(_mapToCoachDomain).toList();
+      return results
+          .map((r) => CoachInfo(
+                userId: r.id,
+                deviceId: r.deviceId,
+                isCoach: r.isCoach,
+              ))
+          .toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get active coaches',
@@ -205,14 +99,14 @@ class CoachRepository {
   // RELATIONSHIP OPERATIONS
   // ============================================================================
 
-  /// Get all relationships for a coach
+  /// Get all relationships for a coach (user with is_coach=true)
   Future<List<CoachAthleteRelationship>> getRelationshipsForCoach(
-    String coachId,
+    String coachUserId,
   ) async {
     try {
       final results = await (_database
               .select(_database.coachAthleteRelationshipsTable)
-            ..where((t) => t.coachId.equals(coachId))
+            ..where((t) => t.coachUserId.equals(coachUserId))
             ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
           .get();
 
@@ -253,13 +147,13 @@ class CoachRepository {
 
   /// Get active relationships for a coach
   Future<List<CoachAthleteRelationship>> getActiveRelationshipsForCoach(
-    String coachId,
+    String coachUserId,
   ) async {
     try {
       final results = await (_database
               .select(_database.coachAthleteRelationshipsTable)
             ..where((t) =>
-                t.coachId.equals(coachId) & t.status.equals('active'))
+                t.coachUserId.equals(coachUserId) & t.status.equals('active'))
             ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
           .get();
 
@@ -277,9 +171,8 @@ class CoachRepository {
 
   /// Create a new coach-athlete relationship request
   Future<CoachAthleteRelationship> createRelationship({
-    required String coachId,
+    required String coachUserId,
     required String athleteUserId,
-    required String athleteDeviceId,
     required String requestedBy,
   }) async {
     try {
@@ -288,9 +181,8 @@ class CoachRepository {
 
       final companion = CoachAthleteRelationshipsTableCompanion.insert(
         id: id,
-        coachId: coachId,
+        coachUserId: coachUserId,
         athleteUserId: athleteUserId,
-        athleteDeviceId: athleteDeviceId,
         requestedBy: requestedBy,
         requestedAt: Value(now),
         createdAt: Value(now),
@@ -304,16 +196,18 @@ class CoachRepository {
       _logger.info(
         'Created coach-athlete relationship',
         context: 'COACH_REPOSITORY',
-        data: {'relationshipId': id, 'coachId': coachId, 'athleteUserId': athleteUserId},
+        data: {
+          'relationshipId': id,
+          'coachUserId': coachUserId,
+          'athleteUserId': athleteUserId
+        },
       );
 
       return CoachAthleteRelationship(
         id: id,
-        coachId: coachId,
+        coachUserId: coachUserId,
         athleteUserId: athleteUserId,
-        athleteDeviceId: athleteDeviceId,
         status: RelationshipStatus.pending,
-        permissionLevel: PermissionLevel.viewOnly,
         requestedBy: requestedBy,
         requestedAt: now,
         createdAt: now,
@@ -331,7 +225,8 @@ class CoachRepository {
   }
 
   /// Accept a relationship request
-  Future<CoachAthleteRelationship> acceptRelationship(String relationshipId) async {
+  Future<CoachAthleteRelationship> acceptRelationship(
+      String relationshipId) async {
     try {
       final now = DateTime.now();
 
@@ -343,9 +238,10 @@ class CoachRepository {
         updatedAt: Value(now),
       ));
 
-      final result = await (_database.select(_database.coachAthleteRelationshipsTable)
-            ..where((t) => t.id.equals(relationshipId)))
-          .getSingle();
+      final result =
+          await (_database.select(_database.coachAthleteRelationshipsTable)
+                ..where((t) => t.id.equals(relationshipId)))
+              .getSingle();
 
       _logger.info(
         'Accepted relationship',
@@ -366,7 +262,8 @@ class CoachRepository {
   }
 
   /// Decline a relationship request
-  Future<CoachAthleteRelationship> declineRelationship(String relationshipId) async {
+  Future<CoachAthleteRelationship> declineRelationship(
+      String relationshipId) async {
     try {
       final now = DateTime.now();
 
@@ -378,9 +275,10 @@ class CoachRepository {
         updatedAt: Value(now),
       ));
 
-      final result = await (_database.select(_database.coachAthleteRelationshipsTable)
-            ..where((t) => t.id.equals(relationshipId)))
-          .getSingle();
+      final result =
+          await (_database.select(_database.coachAthleteRelationshipsTable)
+                ..where((t) => t.id.equals(relationshipId)))
+              .getSingle();
 
       _logger.info(
         'Declined relationship',
@@ -401,7 +299,8 @@ class CoachRepository {
   }
 
   /// Archive a relationship
-  Future<CoachAthleteRelationship> archiveRelationship(String relationshipId) async {
+  Future<CoachAthleteRelationship> archiveRelationship(
+      String relationshipId) async {
     try {
       final now = DateTime.now();
 
@@ -413,9 +312,10 @@ class CoachRepository {
         updatedAt: Value(now),
       ));
 
-      final result = await (_database.select(_database.coachAthleteRelationshipsTable)
-            ..where((t) => t.id.equals(relationshipId)))
-          .getSingle();
+      final result =
+          await (_database.select(_database.coachAthleteRelationshipsTable)
+                ..where((t) => t.id.equals(relationshipId)))
+              .getSingle();
 
       _logger.info(
         'Archived relationship',
@@ -436,23 +336,31 @@ class CoachRepository {
   }
 
   // ============================================================================
-  // FEEDBACK OPERATIONS
+  // MESSAGE OPERATIONS (bidirectional messaging)
   // ============================================================================
 
-  /// Get feedback for a relationship
-  Future<List<domain.CoachFeedback>> getFeedbackForRelationship(
-    String relationshipId,
-  ) async {
+  /// Get messages for a coach-athlete conversation
+  Future<List<CoachMessage>> getMessagesForConversation({
+    required String coachUserId,
+    required String athleteUserId,
+    int? limit,
+  }) async {
     try {
-      final results = await (_database.select(_database.coachFeedbackTable)
-            ..where((t) => t.relationshipId.equals(relationshipId))
-            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-          .get();
+      var query = _database.select(_database.coachMessagesTable)
+        ..where((t) =>
+            t.coachUserId.equals(coachUserId) &
+            t.athleteUserId.equals(athleteUserId))
+        ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]);
 
-      return results.map(_mapToFeedbackDomain).toList();
+      if (limit != null) {
+        query = query..limit(limit);
+      }
+
+      final results = await query.get();
+      return results.map(_mapToMessageDomain).toList();
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to get feedback for relationship',
+        'Failed to get messages for conversation',
         context: 'COACH_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
@@ -461,59 +369,125 @@ class CoachRepository {
     }
   }
 
-  /// Create new feedback
-  Future<domain.CoachFeedback> createFeedback({
-    required String relationshipId,
-    required String coachId,
+  /// Get messages/comments for a nutrition plan
+  Future<List<CoachMessage>> getMessagesForNutritionPlan(
+      String nutritionPlanId) async {
+    try {
+      final results = await (_database.select(_database.coachMessagesTable)
+            ..where((t) => t.nutritionPlanId.equals(nutritionPlanId))
+            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+          .get();
+
+      return results.map(_mapToMessageDomain).toList();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get messages for nutrition plan',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get messages/comments for an activity
+  Future<List<CoachMessage>> getMessagesForActivity(String activityId) async {
+    try {
+      final results = await (_database.select(_database.coachMessagesTable)
+            ..where((t) => t.activityId.equals(activityId))
+            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+          .get();
+
+      return results.map(_mapToMessageDomain).toList();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get messages for activity',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get unread message count for a user
+  Future<int> getUnreadMessageCount(String userId) async {
+    try {
+      // User can be either coach or athlete in the conversation
+      // Count messages where they are the recipient (not the sender) and unread
+      final results = await (_database.select(_database.coachMessagesTable)
+            ..where((t) =>
+                (t.coachUserId.equals(userId) | t.athleteUserId.equals(userId)) &
+                t.senderUserId.isNotValue(userId) &
+                t.isRead.equals(false)))
+          .get();
+
+      return results.length;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get unread message count',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return 0;
+    }
+  }
+
+  /// Send a message in a coach-athlete conversation
+  Future<CoachMessage> sendMessage({
+    required String coachUserId,
     required String athleteUserId,
-    required String feedbackText,
-    domain.FeedbackType feedbackType = domain.FeedbackType.general,
-    String? activityId,
+    required String senderUserId,
+    required String messageText,
     String? nutritionPlanId,
-    bool isVisibleToAthlete = true,
+    String? activityId,
   }) async {
     try {
       final id = _uuid.v4();
       final now = DateTime.now();
 
-      final companion = CoachFeedbackTableCompanion.insert(
+      final companion = CoachMessagesTableCompanion.insert(
         id: id,
-        relationshipId: relationshipId,
-        coachId: coachId,
+        coachUserId: coachUserId,
         athleteUserId: athleteUserId,
-        feedbackText: feedbackText,
-        feedbackType: Value(feedbackType.name),
-        activityId: Value(activityId),
+        senderUserId: senderUserId,
+        messageText: messageText,
         nutritionPlanId: Value(nutritionPlanId),
-        isVisibleToAthlete: Value(isVisibleToAthlete),
+        activityId: Value(activityId),
+        isRead: const Value(false),
         createdAt: Value(now),
         updatedAt: Value(now),
       );
 
-      await _database.into(_database.coachFeedbackTable).insert(companion);
+      await _database.into(_database.coachMessagesTable).insert(companion);
 
       _logger.info(
-        'Created coach feedback',
+        'Sent coach message',
         context: 'COACH_REPOSITORY',
-        data: {'feedbackId': id, 'relationshipId': relationshipId},
+        data: {
+          'messageId': id,
+          'coachUserId': coachUserId,
+          'athleteUserId': athleteUserId,
+          'senderUserId': senderUserId,
+        },
       );
 
-      return domain.CoachFeedback(
+      return CoachMessage(
         id: id,
-        relationshipId: relationshipId,
-        coachId: coachId,
+        coachUserId: coachUserId,
         athleteUserId: athleteUserId,
-        feedbackText: feedbackText,
-        feedbackType: feedbackType,
-        activityId: activityId,
+        senderUserId: senderUserId,
+        messageText: messageText,
         nutritionPlanId: nutritionPlanId,
-        isVisibleToAthlete: isVisibleToAthlete,
+        activityId: activityId,
+        isRead: false,
         createdAt: now,
         updatedAt: now,
       );
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to create feedback',
+        'Failed to send message',
         context: 'COACH_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
@@ -522,30 +496,38 @@ class CoachRepository {
     }
   }
 
-  /// Update feedback
-  Future<domain.CoachFeedback> updateFeedback(domain.CoachFeedback feedback) async {
+  /// Mark messages as read
+  Future<void> markMessagesAsRead({
+    required String coachUserId,
+    required String athleteUserId,
+    required String readerUserId,
+  }) async {
     try {
-      final updatedAt = DateTime.now();
-
-      await (_database.update(_database.coachFeedbackTable)
-            ..where((t) => t.id.equals(feedback.id)))
-          .write(CoachFeedbackTableCompanion(
-        feedbackText: Value(feedback.feedbackText),
-        feedbackType: Value(feedback.feedbackType.name),
-        isVisibleToAthlete: Value(feedback.isVisibleToAthlete),
-        updatedAt: Value(updatedAt),
+      // Mark all messages in this conversation as read where:
+      // - The reader is not the sender (they're the recipient)
+      await (_database.update(_database.coachMessagesTable)
+            ..where((t) =>
+                t.coachUserId.equals(coachUserId) &
+                t.athleteUserId.equals(athleteUserId) &
+                t.senderUserId.isNotValue(readerUserId) &
+                t.isRead.equals(false)))
+          .write(CoachMessagesTableCompanion(
+        isRead: const Value(true),
+        updatedAt: Value(DateTime.now()),
       ));
 
       _logger.info(
-        'Updated coach feedback',
+        'Marked messages as read',
         context: 'COACH_REPOSITORY',
-        data: {'feedbackId': feedback.id},
+        data: {
+          'coachUserId': coachUserId,
+          'athleteUserId': athleteUserId,
+          'readerUserId': readerUserId,
+        },
       );
-
-      return feedback.copyWith(updatedAt: updatedAt);
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to update feedback',
+        'Failed to mark messages as read',
         context: 'COACH_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
@@ -554,21 +536,21 @@ class CoachRepository {
     }
   }
 
-  /// Delete feedback
-  Future<void> deleteFeedback(String feedbackId) async {
+  /// Delete a message (only sender can delete)
+  Future<void> deleteMessage(String messageId) async {
     try {
-      await (_database.delete(_database.coachFeedbackTable)
-            ..where((t) => t.id.equals(feedbackId)))
+      await (_database.delete(_database.coachMessagesTable)
+            ..where((t) => t.id.equals(messageId)))
           .go();
 
       _logger.info(
-        'Deleted coach feedback',
+        'Deleted coach message',
         context: 'COACH_REPOSITORY',
-        data: {'feedbackId': feedbackId},
+        data: {'messageId': messageId},
       );
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to delete feedback',
+        'Failed to delete message',
         context: 'COACH_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
@@ -578,59 +560,12 @@ class CoachRepository {
   }
 
   // ============================================================================
-  // INVITE CODE OPERATIONS
+  // USER PROFILE OPERATIONS (for coach mode)
   // ============================================================================
 
-  /// Redeem a coach invite code via Supabase RPC
-  /// Returns a map with 'success', 'message', and 'error' keys
-  Future<Map<String, dynamic>> redeemInviteCode({
-    required String code,
-    required String userId,
-  }) async {
-    try {
-      final response = await _supabase.rpc(
-        'redeem_coach_invite_code',
-        params: {
-          'p_code': code.toUpperCase().trim(),
-          'p_user_id': userId,
-        },
-      );
-
-      _logger.info(
-        'Redeem invite code response',
-        context: 'COACH_REPOSITORY',
-        data: {'response': response},
-      );
-
-      // Response is the JSON from the function
-      if (response is Map<String, dynamic>) {
-        // If successful, update local database
-        if (response['success'] == true) {
-          await _updateLocalUserIsCoach(userId, true);
-        }
-        return response;
-      }
-
-      return {
-        'success': false,
-        'error': 'Unexpected response format',
-      };
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to redeem invite code',
-        context: 'COACH_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
-    }
-  }
-
   /// Update local user profile to set is_coach flag
-  Future<void> _updateLocalUserIsCoach(String userId, bool isCoach) async {
+  /// Used when syncing is_coach status from Supabase
+  Future<void> updateLocalUserIsCoach(String userId, bool isCoach) async {
     try {
       await (_database.update(_database.userProfilesTable)
             ..where((t) => t.id.equals(userId)))
@@ -654,96 +589,66 @@ class CoachRepository {
   }
 
   // ============================================================================
-  // HELPER METHODS
+  // IS_COACH SYNC OPERATIONS
   // ============================================================================
 
-  /// Convert PostgreSQL array format to list
-  List<String> _postgresArrayToList(String? arrayString) {
-    if (arrayString == null || arrayString.isEmpty || arrayString == '{}') {
-      return [];
+  /// Fetch the latest is_coach status from Supabase for a user
+  /// Returns true if user is a coach, false otherwise
+  Future<bool?> fetchIsCoachFromSupabase(String userId) async {
+    try {
+      final response = await _supabase
+          .from('users')
+          .select('is_coach')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response == null) return null;
+      return response['is_coach'] as bool? ?? false;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to fetch is_coach from Supabase',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
     }
-    // Remove braces and split by comma
-    final inner = arrayString.substring(1, arrayString.length - 1);
-    if (inner.isEmpty) return [];
-    return inner.split(',').map((s) => s.trim()).toList();
   }
 
-  /// Convert list to PostgreSQL array format
-  String _listToPostgresArray(List<String> list) {
-    if (list.isEmpty) return '{}';
-    return '{${list.join(',')}}';
-  }
-
-  /// Map Drift CoachEntry to domain Coach
-  Coach _mapToCoachDomain(CoachEntry entry) {
-    return Coach(
-      id: entry.id,
-      userId: entry.userId,
-      deviceId: entry.deviceId,
-      coachName: entry.coachName,
-      bio: entry.bio,
-      certifications: _postgresArrayToList(entry.certifications),
-      specializations: _postgresArrayToList(entry.specializations),
-      businessName: entry.businessName,
-      websiteUrl: entry.websiteUrl,
-      email: entry.email,
-      phone: entry.phone,
-      isActive: entry.isActive,
-      isVerified: entry.isVerified,
-      maxAthletes: entry.maxAthletes,
-      autoAcceptRequests: entry.autoAcceptRequests,
-      createdAt: entry.createdAt,
-      updatedAt: entry.updatedAt,
-    );
-  }
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
 
   /// Map Drift CoachAthleteRelationshipEntry to domain
   CoachAthleteRelationship _mapToRelationshipDomain(
     CoachAthleteRelationshipEntry entry,
   ) {
-    CustomPermissions permissions = const CustomPermissions();
-    if (entry.customPermissions.isNotEmpty) {
-      try {
-        permissions = CustomPermissions.fromJson(
-          jsonDecode(entry.customPermissions) as Map<String, dynamic>,
-        );
-      } catch (_) {
-        // Use default permissions if JSON parsing fails
-      }
-    }
-
     return CoachAthleteRelationship(
       id: entry.id,
-      coachId: entry.coachId,
+      coachUserId: entry.coachUserId,
       athleteUserId: entry.athleteUserId,
-      athleteDeviceId: entry.athleteDeviceId,
       status: RelationshipStatus.fromString(entry.status),
-      permissionLevel: PermissionLevel.fromString(entry.permissionLevel),
-      customPermissions: permissions,
       requestedBy: entry.requestedBy,
       requestedAt: entry.requestedAt,
       acceptedAt: entry.acceptedAt,
       declinedAt: entry.declinedAt,
       archivedAt: entry.archivedAt,
-      coachNotes: entry.coachNotes,
-      athleteNotes: entry.athleteNotes,
       createdAt: entry.createdAt,
       updatedAt: entry.updatedAt,
     );
   }
 
-  /// Map Drift CoachFeedbackEntry to domain
-  domain.CoachFeedback _mapToFeedbackDomain(CoachFeedbackEntry entry) {
-    return domain.CoachFeedback(
+  /// Map Drift CoachMessageEntry to domain
+  CoachMessage _mapToMessageDomain(CoachMessageEntry entry) {
+    return CoachMessage(
       id: entry.id,
-      relationshipId: entry.relationshipId,
-      coachId: entry.coachId,
+      coachUserId: entry.coachUserId,
       athleteUserId: entry.athleteUserId,
-      activityId: entry.activityId,
+      senderUserId: entry.senderUserId,
+      messageText: entry.messageText,
       nutritionPlanId: entry.nutritionPlanId,
-      feedbackText: entry.feedbackText,
-      feedbackType: domain.FeedbackType.fromString(entry.feedbackType),
-      isVisibleToAthlete: entry.isVisibleToAthlete,
+      activityId: entry.activityId,
+      isRead: entry.isRead,
       createdAt: entry.createdAt,
       updatedAt: entry.updatedAt,
     );

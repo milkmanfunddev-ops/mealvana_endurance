@@ -16,14 +16,12 @@ class InviteAthleteController extends _$InviteAthleteController {
   /// Send an invitation to an athlete
   Future<bool> inviteAthlete({
     required String athleteUserId,
-    required String athleteDeviceId,
   }) async {
     state = const AsyncLoading();
 
     try {
       final relationship = await _coachService.inviteAthlete(
         athleteUserId: athleteUserId,
-        athleteDeviceId: athleteDeviceId,
       );
 
       state = const AsyncData(null);

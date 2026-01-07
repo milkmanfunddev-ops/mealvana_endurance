@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/coach_athlete_relationship.dart';
-import '../../domain/coach_feedback.dart';
+import '../../domain/coach_message.dart';
 import '../providers/athlete_detail_controller.dart';
 
 /// Screen showing detailed view of an athlete for coaches
@@ -39,13 +39,11 @@ class AthleteDetailScreen extends ConsumerWidget {
         error: (error, stack) => _buildErrorView(context, error.toString(), ref),
         data: (state) => _buildContent(context, state, ref),
       ),
-      floatingActionButton: detailAsync.value?.canAddFeedback == true
-          ? FloatingActionButton.extended(
-              onPressed: () => _showAddFeedbackDialog(context, ref),
-              icon: const Icon(Icons.add_comment),
-              label: const Text('Add Feedback'),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showSendMessageDialog(context, ref),
+        icon: const Icon(Icons.add_comment),
+        label: const Text('Send Message'),
+      ),
     );
   }
 
@@ -102,13 +100,13 @@ class AthleteDetailScreen extends ConsumerWidget {
                 icon: const Icon(Icons.directions_run),
                 text: 'Activities (${state.activities.length})',
               ),
-              Tab(
-                icon: const Icon(Icons.restaurant),
+              const Tab(
+                icon: Icon(Icons.restaurant),
                 text: 'Nutrition',
               ),
               Tab(
                 icon: const Icon(Icons.comment),
-                text: 'Feedback (${state.feedback.length})',
+                text: 'Messages (${state.messages.length})',
               ),
             ],
           ),
@@ -119,7 +117,7 @@ class AthleteDetailScreen extends ConsumerWidget {
               children: [
                 _buildActivitiesTab(context, state),
                 _buildNutritionTab(context, state),
-                _buildFeedbackTab(context, state, ref),
+                _buildMessagesTab(context, state, ref),
               ],
             ),
           ),
@@ -154,19 +152,14 @@ class AthleteDetailScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Athlete ${relationship.athleteUserId.substring(0, 8)}...',
+                  relationship.athleteDisplayName ??
+                      'Athlete ${relationship.athleteUserId.substring(0, 8)}...',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    _buildStatusChip(context, relationship.status),
-                    const SizedBox(width: 8),
-                    _buildPermissionChip(context, relationship.permissionLevel),
-                  ],
-                ),
+                _buildStatusChip(context, relationship.status),
               ],
             ),
           ),
@@ -201,38 +194,7 @@ class AthleteDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPermissionChip(BuildContext context, PermissionLevel level) {
-    final theme = Theme.of(context);
-    final label = switch (level) {
-      PermissionLevel.viewOnly => 'View Only',
-      PermissionLevel.fullAccess => 'Full Access',
-      PermissionLevel.custom => 'Custom',
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSecondaryContainer,
-        ),
-      ),
-    );
-  }
-
   Widget _buildActivitiesTab(BuildContext context, AthleteDetailState state) {
-    if (!state.canViewActivities) {
-      return _buildNoPermissionView(
-        context,
-        'Activities',
-        Icons.directions_run,
-      );
-    }
-
     if (state.activities.isEmpty) {
       return _buildEmptyView(
         context,
@@ -262,14 +224,6 @@ class AthleteDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildNutritionTab(BuildContext context, AthleteDetailState state) {
-    if (!state.canViewNutritionPlans) {
-      return _buildNoPermissionView(
-        context,
-        'Nutrition Plans',
-        Icons.restaurant,
-      );
-    }
-
     return _buildEmptyView(
       context,
       'No Nutrition Plans',
@@ -278,39 +232,43 @@ class AthleteDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeedbackTab(
+  Widget _buildMessagesTab(
     BuildContext context,
     AthleteDetailState state,
     WidgetRef ref,
   ) {
-    if (state.feedback.isEmpty) {
+    if (state.messages.isEmpty) {
       return _buildEmptyView(
         context,
-        'No Feedback',
-        'Tap the button below to add your first feedback.',
+        'No Messages',
+        'Tap the button below to send your first message.',
         Icons.comment,
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: state.feedback.length,
+      itemCount: state.messages.length,
       itemBuilder: (context, index) {
-        final feedback = state.feedback[index];
-        return _buildFeedbackCard(context, feedback, ref);
+        final message = state.messages[index];
+        return _buildMessageCard(context, message, ref);
       },
     );
   }
 
-  Widget _buildFeedbackCard(
+  Widget _buildMessageCard(
     BuildContext context,
-    CoachFeedback feedback,
+    CoachMessage message,
     WidgetRef ref,
   ) {
     final theme = Theme.of(context);
+    final isFromCoach = message.isSentByCoach;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: isFromCoach
+          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+          : theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -318,89 +276,89 @@ class AthleteDetailScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                _buildFeedbackTypeBadge(context, feedback.feedbackType),
-                const Spacer(),
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: isFromCoach
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.secondary,
+                  child: Icon(
+                    Icons.person,
+                    size: 14,
+                    color: isFromCoach
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.onSecondary,
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Text(
-                  _formatDate(feedback.createdAt),
+                  isFromCoach ? 'You' : 'Athlete',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                if (message.isActivityComment || message.isNutritionPlanComment)
+                  _buildMessageTypeBadge(context, message),
+                const SizedBox(width: 8),
+                Text(
+                  _formatDate(message.createdAt),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, size: 20),
-                  onSelected: (value) {
-                    if (value == 'delete') {
-                      _confirmDeleteFeedback(context, ref, feedback);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Text('Edit'),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Text('Delete'),
-                    ),
-                  ],
-                ),
+                // Only show delete option for messages sent by coach
+                if (isFromCoach)
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 20),
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        _confirmDeleteMessage(context, ref, message);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Text('Delete'),
+                      ),
+                    ],
+                  ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              feedback.feedbackText,
+              message.messageText,
               style: theme.textTheme.bodyMedium,
             ),
-            if (!feedback.isVisibleToAthlete) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.visibility_off,
-                    size: 14,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Private note',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFeedbackTypeBadge(BuildContext context, FeedbackType type) {
+  Widget _buildMessageTypeBadge(BuildContext context, CoachMessage message) {
     final theme = Theme.of(context);
-    final (label, icon) = switch (type) {
-      FeedbackType.general => ('General', Icons.chat),
-      FeedbackType.activity => ('Activity', Icons.directions_run),
-      FeedbackType.nutrition => ('Nutrition', Icons.restaurant),
-      FeedbackType.progress => ('Progress', Icons.trending_up),
-      FeedbackType.goal => ('Goal', Icons.flag),
-    };
+
+    final (label, icon, color) = message.isActivityComment
+        ? ('Activity', Icons.directions_run, Colors.green)
+        : ('Nutrition', Icons.restaurant, Colors.orange);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: theme.colorScheme.onPrimaryContainer),
+          Icon(icon, size: 12, color: color),
           const SizedBox(width: 4),
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
+              color: color,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -438,128 +396,63 @@ class AthleteDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNoPermissionView(
-    BuildContext context,
-    String feature,
-    IconData icon,
-  ) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock, size: 64, color: theme.colorScheme.outline),
-            const SizedBox(height: 16),
-            Text(
-              'No Access to $feature',
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'You don\'t have permission to view this athlete\'s $feature.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAddFeedbackDialog(BuildContext context, WidgetRef ref) {
+  void _showSendMessageDialog(BuildContext context, WidgetRef ref) {
     final textController = TextEditingController();
-    FeedbackType selectedType = FeedbackType.general;
-    bool isPrivate = false;
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Add Feedback'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DropdownButtonFormField<FeedbackType>(
-                  value: selectedType,
-                  decoration: const InputDecoration(
-                    labelText: 'Feedback Type',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: FeedbackType.values.map((type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type.name[0].toUpperCase() + type.name.substring(1)),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => selectedType = value);
-                    }
-                  },
+      builder: (context) => AlertDialog(
+        title: const Text('Send Message'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: textController,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Message',
+                  hintText: 'Enter your message for the athlete...',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: textController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Feedback',
-                    hintText: 'Enter your feedback for the athlete...',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Private Note'),
-                  subtitle: const Text('Only visible to you'),
-                  value: isPrivate,
-                  onChanged: (value) {
-                    setState(() => isPrivate = value);
-                  },
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (textController.text.trim().isNotEmpty) {
-                  ref
-                      .read(athleteDetailControllerProvider(relationshipId).notifier)
-                      .addFeedback(
-                        feedbackText: textController.text.trim(),
-                        feedbackType: selectedType,
-                      );
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (textController.text.trim().isNotEmpty) {
+                ref
+                    .read(athleteDetailControllerProvider(relationshipId).notifier)
+                    .sendMessage(
+                      messageText: textController.text.trim(),
+                    );
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Send'),
+          ),
+        ],
       ),
     );
   }
 
-  void _confirmDeleteFeedback(
+  void _confirmDeleteMessage(
     BuildContext context,
     WidgetRef ref,
-    CoachFeedback feedback,
+    CoachMessage message,
   ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Feedback'),
-        content: const Text('Are you sure you want to delete this feedback?'),
+        title: const Text('Delete Message'),
+        content: const Text('Are you sure you want to delete this message?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -570,7 +463,7 @@ class AthleteDetailScreen extends ConsumerWidget {
               Navigator.pop(context);
               ref
                   .read(athleteDetailControllerProvider(relationshipId).notifier)
-                  .deleteFeedback(feedback.id);
+                  .deleteMessage(message.id);
             },
             child: const Text('Delete'),
           ),

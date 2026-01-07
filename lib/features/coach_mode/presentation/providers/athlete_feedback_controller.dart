@@ -1,36 +1,28 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../application/coach_service.dart';
-import '../../domain/coach_feedback.dart';
+import '../../domain/coach_message.dart';
 
 part 'athlete_feedback_controller.g.dart';
 
 /// State for the athlete feedback screen
+/// Shows all messages/comments from coaches to this athlete
 class AthleteFeedbackState {
-  final List<CoachFeedback> allFeedback;
-  final Map<String, String> coachNames; // coachId -> coach name
+  final List<CoachMessage> allMessages;
 
   const AthleteFeedbackState({
-    this.allFeedback = const [],
-    this.coachNames = const {},
+    this.allMessages = const [],
   });
 
-  bool get isEmpty => allFeedback.isEmpty;
-  bool get hasFeedback => allFeedback.isNotEmpty;
-  int get feedbackCount => allFeedback.length;
-
-  /// Get coach name by ID, with fallback
-  String getCoachName(String coachId) {
-    return coachNames[coachId] ?? 'Coach';
-  }
+  bool get isEmpty => allMessages.isEmpty;
+  bool get hasMessages => allMessages.isNotEmpty;
+  int get messageCount => allMessages.length;
 
   AthleteFeedbackState copyWith({
-    List<CoachFeedback>? allFeedback,
-    Map<String, String>? coachNames,
+    List<CoachMessage>? allMessages,
   }) {
     return AthleteFeedbackState(
-      allFeedback: allFeedback ?? this.allFeedback,
-      coachNames: coachNames ?? this.coachNames,
+      allMessages: allMessages ?? this.allMessages,
     );
   }
 }
@@ -41,10 +33,10 @@ class AthleteFeedbackController extends _$AthleteFeedbackController {
 
   @override
   FutureOr<AthleteFeedbackState> build() async {
-    return _loadFeedback();
+    return _loadMessages();
   }
 
-  Future<AthleteFeedbackState> _loadFeedback() async {
+  Future<AthleteFeedbackState> _loadMessages() async {
     // Get all active coach relationships for this athlete
     final coaches = await _coachService.getMyCoaches();
 
@@ -52,31 +44,26 @@ class AthleteFeedbackController extends _$AthleteFeedbackController {
       return const AthleteFeedbackState();
     }
 
-    // Collect all feedback from all coaches
-    final allFeedback = <CoachFeedback>[];
-    final coachNames = <String, String>{};
+    // Collect all messages from all coaches
+    final allMessages = <CoachMessage>[];
 
     for (final relationship in coaches) {
-      // Get feedback for this relationship
-      final feedback = await _coachService.getFeedbackForRelationship(
-        relationship.id,
+      // Get conversation with this coach
+      final messages = await _coachService.getConversation(
+        coachUserId: relationship.coachUserId,
+        athleteUserId: relationship.athleteUserId,
       );
 
-      // Only include feedback visible to athlete
-      final visibleFeedback = feedback.where((f) => f.isVisibleToAthlete);
-      allFeedback.addAll(visibleFeedback);
-
-      // Store coach name (we'd need to look this up from the coaches table)
-      // For now use a placeholder - in a real implementation we'd join with coaches table
-      coachNames[relationship.coachId] = 'Coach ${relationship.coachId.substring(0, 8)}';
+      // Filter to only messages from coach (not athlete's own messages)
+      final coachMessages = messages.where((m) => m.isSentByCoach);
+      allMessages.addAll(coachMessages);
     }
 
     // Sort by date (newest first)
-    allFeedback.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    allMessages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return AthleteFeedbackState(
-      allFeedback: allFeedback,
-      coachNames: coachNames,
+      allMessages: allMessages,
     );
   }
 

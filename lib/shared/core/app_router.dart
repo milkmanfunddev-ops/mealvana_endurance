@@ -51,12 +51,8 @@ import '../screens/food_detail_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_dashboard_screen.dart';
 import '../../features/coach_mode/presentation/screens/athlete_detail_screen.dart';
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
-import '../../features/coach_mode/presentation/screens/coach_profile_setup_screen.dart';
-import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
-import '../../features/coach_mode/presentation/screens/invite_athlete_screen.dart';
-import '../../features/coach_mode/presentation/screens/generate_invite_code_screen.dart';
 import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.dart';
-import '../../features/coach_mode/presentation/screens/become_coach_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_registration_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
@@ -522,46 +518,18 @@ class AppRouter {
         builder: (context, state) => const MyCoachesScreen(),
       ),
 
-      // Coach Profile Setup - Create or edit coach profile
-      GoRoute(
-        path: '/coach/setup',
-        name: 'coach-profile-setup',
-        builder: (context, state) => const CoachProfileSetupScreen(),
-      ),
-
-      // Coach Directory - Athletes browse available coaches
-      GoRoute(
-        path: '/coaches',
-        name: 'coach-directory',
-        builder: (context, state) => const CoachDirectoryScreen(),
-      ),
-
-      // Invite Athlete - Coaches enter athlete invite codes
-      GoRoute(
-        path: '/coach/invite',
-        name: 'coach-invite-athlete',
-        builder: (context, state) => const InviteAthleteScreen(),
-      ),
-
-      // Generate Invite Code - Athletes create codes for coaches
-      GoRoute(
-        path: '/athlete/invite-code',
-        name: 'athlete-invite-code',
-        builder: (context, state) => const GenerateInviteCodeScreen(),
-      ),
-
-      // Athlete Feedback - Athletes view feedback from coaches
+      // Athlete Feedback - Athletes view messages from coaches
       GoRoute(
         path: '/athlete/feedback',
         name: 'athlete-feedback',
         builder: (context, state) => const AthleteFeedbackScreen(),
       ),
 
-      // Become a Coach - Enter invite code to unlock coach mode
+      // Coach Registration - Apply to become a coach
       GoRoute(
-        path: '/become-coach',
-        name: 'become-coach',
-        builder: (context, state) => const BecomeCoachScreen(),
+        path: '/coach/apply',
+        name: 'coach-apply',
+        builder: (context, state) => const CoachRegistrationScreen(),
       ),
     ],
 

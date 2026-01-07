@@ -44,7 +44,8 @@ class AthleteCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Athlete ${relationship.athleteUserId.substring(0, 8)}...',
+                      relationship.athleteDisplayName ??
+                          'Athlete ${relationship.athleteUserId.substring(0, 8)}...',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -52,7 +53,7 @@ class AthleteCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        _buildPermissionBadge(context),
+                        _buildStatusBadge(context),
                         const SizedBox(width: 8),
                         Text(
                           'Since ${_formatDate(relationship.acceptedAt ?? relationship.createdAt)}',
@@ -71,6 +72,8 @@ class AthleteCard extends StatelessWidget {
                 onSelected: (value) {
                   if (value == 'archive') {
                     onArchive?.call();
+                  } else if (value == 'view') {
+                    onTap?.call();
                   }
                 },
                 itemBuilder: (context) => [
@@ -83,10 +86,10 @@ class AthleteCard extends StatelessWidget {
                     ),
                   ),
                   const PopupMenuItem(
-                    value: 'feedback',
+                    value: 'message',
                     child: ListTile(
                       leading: Icon(Icons.comment),
-                      title: Text('Add Feedback'),
+                      title: Text('Send Message'),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
@@ -108,12 +111,13 @@ class AthleteCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPermissionBadge(BuildContext context) {
+  Widget _buildStatusBadge(BuildContext context) {
     final theme = Theme.of(context);
-    final (label, color) = switch (relationship.permissionLevel) {
-      PermissionLevel.viewOnly => ('View Only', theme.colorScheme.tertiary),
-      PermissionLevel.fullAccess => ('Full Access', theme.colorScheme.primary),
-      PermissionLevel.custom => ('Custom', theme.colorScheme.secondary),
+    final (label, color) = switch (relationship.status) {
+      RelationshipStatus.active => ('Active', Colors.green),
+      RelationshipStatus.pending => ('Pending', Colors.orange),
+      RelationshipStatus.declined => ('Declined', Colors.red),
+      RelationshipStatus.archived => ('Archived', Colors.grey),
     };
 
     return Container(
