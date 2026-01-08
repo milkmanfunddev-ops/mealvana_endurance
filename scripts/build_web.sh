@@ -126,13 +126,26 @@ echo ""
 echo "Building Flutter web app..."
 echo "========================================"
 
+# Show the dart defines file for debugging
+echo "Contents of .dart_defines.json:"
+cat .dart_defines.json
+echo ""
+echo "========================================"
+
 if [ "$BUILD_MODE" = "release" ]; then
+  echo "Running: $FLUTTER build web --release --wasm --pwa-strategy=none -t lib/main_web.dart --dart-define-from-file=.dart_defines.json"
   $FLUTTER build web \
     --release \
     --wasm \
     --pwa-strategy=none \
     -t lib/main_web.dart \
-    --dart-define-from-file=.dart_defines.json
+    --dart-define-from-file=.dart_defines.json 2>&1
+  BUILD_EXIT_CODE=$?
+  echo "Flutter build exit code: $BUILD_EXIT_CODE"
+  if [ $BUILD_EXIT_CODE -ne 0 ]; then
+    echo "ERROR: Flutter build failed with exit code $BUILD_EXIT_CODE"
+    exit $BUILD_EXIT_CODE
+  fi
 else
   $FLUTTER build web \
     --profile \
