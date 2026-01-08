@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'shared/services/app_config.dart';
+import 'shared/services/app_external_deps.dart';
 import 'shared/widgets/root_app_widget.dart';
 
 /// Global navigator key for Sentry feedback widget screenshot capture
@@ -109,12 +111,19 @@ Future<void> _runMealvanaApp(AppConfig config, Stopwatch mainStopwatch) async {
   );
   debugPrint('[STARTUP] Supabase.initialize completed: ${mainStopwatch.elapsedMilliseconds}ms');
 
+  // Initialize SharedPreferences (non-recoverable, required for app startup)
+  debugPrint('[STARTUP] Starting SharedPreferences.getInstance...');
+  final sharedPreferences = await SharedPreferences.getInstance();
+  debugPrint('[STARTUP] SharedPreferences initialized: ${mainStopwatch.elapsedMilliseconds}ms');
+
   debugPrint('[STARTUP] Calling runApp...');
   runApp(
     SentryWidget(
       child: ProviderScope(
         overrides: [
           appConfigProvider.overrideWithValue(config),
+          // Override sharedPreferencesProvider with initialized instance
+          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
         ],
         child: const RootAppWidget(),
       ),

@@ -97,3 +97,4 @@ secrets/
 
 # Tool cache files (contain tokens)
 tool/.final_surge_token.json
+.vercel
