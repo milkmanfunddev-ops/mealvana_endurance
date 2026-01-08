@@ -107,9 +107,26 @@ Future<void> runMigrationV2ToV3(
     }
   }
 
-  // 6. Create coach_athlete_relationships table
+  // 6. Create coach_athlete_relationships table using raw SQL
+  // (schema class not available in Schema3 - tables added after schema generation)
   try {
-    await m.createTable(schema.coachAthleteRelationships);
+    await db.customStatement('''
+      CREATE TABLE IF NOT EXISTS coach_athlete_relationships (
+        id TEXT PRIMARY KEY NOT NULL,
+        coach_user_id TEXT NOT NULL,
+        athlete_user_id TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'declined', 'archived')),
+        requested_by TEXT NOT NULL CHECK (requested_by IN ('coach', 'athlete')),
+        requested_at INTEGER NOT NULL,
+        accepted_at INTEGER,
+        declined_at INTEGER,
+        archived_at INTEGER,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        UNIQUE(coach_user_id, athlete_user_id),
+        CHECK (coach_user_id != athlete_user_id)
+      )
+    ''');
     if (kDebugMode) {
       print('Created coach_athlete_relationships table');
     }
@@ -120,9 +137,23 @@ Future<void> runMigrationV2ToV3(
     }
   }
 
-  // 7. Create coach_messages table
+  // 7. Create coach_messages table using raw SQL
   try {
-    await m.createTable(schema.coachMessages);
+    await db.customStatement('''
+      CREATE TABLE IF NOT EXISTS coach_messages (
+        id TEXT PRIMARY KEY NOT NULL,
+        coach_user_id TEXT NOT NULL,
+        athlete_user_id TEXT NOT NULL,
+        sender_user_id TEXT NOT NULL,
+        message TEXT NOT NULL,
+        nutrition_plan_id TEXT,
+        activity_id TEXT,
+        is_read INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        CHECK (sender_user_id = coach_user_id OR sender_user_id = athlete_user_id)
+      )
+    ''');
     if (kDebugMode) {
       print('Created coach_messages table');
     }

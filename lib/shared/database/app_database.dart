@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mealvana_endurance/shared/database/schema_versions.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
 import 'dart:math';

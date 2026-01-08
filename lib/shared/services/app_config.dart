@@ -288,6 +288,11 @@ class AppConfig {
       // External API keys
       usdaApiKey: usdaApiKey,
 
+      // TrainingPeaks configuration - not used on web (OAuth requires mobile deep links)
+      trainingPeaksClientId: '',
+      trainingPeaksClientSecret: '',
+      trainingPeaksUseSandbox: true, // Default to sandbox for safety
+
       // Debug settings
       enableDebugLogging: kDebugMode,
       enableSentryProfiling: false, // Disable profiling on web
