@@ -133,10 +133,10 @@ echo ""
 echo "========================================"
 
 if [ "$BUILD_MODE" = "release" ]; then
-  echo "Running: $FLUTTER build web --release --wasm --pwa-strategy=none -t lib/main_web.dart --dart-define-from-file=.dart_defines.json"
+  # Note: NOT using --wasm flag because sqlite3/drift packages use dart:ffi which is incompatible with Wasm
+  echo "Running: $FLUTTER build web --release --pwa-strategy=none -t lib/main_web.dart --dart-define-from-file=.dart_defines.json"
   $FLUTTER build web \
     --release \
-    --wasm \
     --pwa-strategy=none \
     -t lib/main_web.dart \
     --dart-define-from-file=.dart_defines.json 2>&1
