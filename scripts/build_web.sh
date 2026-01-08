@@ -83,19 +83,29 @@ USDA_API_KEY="${USDA_API_KEY:-}"
 # Generate .dart_defines.json
 echo "Generating .dart_defines.json..."
 
-cat > .dart_defines.json << EOF
-{
-  "SUPABASE_URL": "$SUPABASE_URL",
-  "SUPABASE_ANON_KEY": "$SUPABASE_ANON_KEY",
-  "SENTRY_DSN": "$SENTRY_DSN",
-  "SENTRY_ENVIRONMENT": "$SENTRY_ENVIRONMENT",
-  "MIXPANEL_PROJECT_TOKEN": "$MIXPANEL_PROJECT_TOKEN",
-  "WIREDASH_PROJECT_ID": "$WIREDASH_PROJECT_ID",
-  "WIREDASH_SECRET": "$WIREDASH_SECRET",
-  "USDA_API_KEY": "$USDA_API_KEY",
-  "APP_ENVIRONMENT": "$APP_ENVIRONMENT"
-}
-EOF
+# Use printf to avoid heredoc issues with special characters
+# Strip any trailing newlines/whitespace from env vars
+SUPABASE_URL=$(echo -n "$SUPABASE_URL" | tr -d '\n\r')
+SUPABASE_ANON_KEY=$(echo -n "$SUPABASE_ANON_KEY" | tr -d '\n\r')
+SENTRY_DSN=$(echo -n "$SENTRY_DSN" | tr -d '\n\r')
+SENTRY_ENVIRONMENT=$(echo -n "$SENTRY_ENVIRONMENT" | tr -d '\n\r')
+MIXPANEL_PROJECT_TOKEN=$(echo -n "$MIXPANEL_PROJECT_TOKEN" | tr -d '\n\r')
+WIREDASH_PROJECT_ID=$(echo -n "$WIREDASH_PROJECT_ID" | tr -d '\n\r')
+WIREDASH_SECRET=$(echo -n "$WIREDASH_SECRET" | tr -d '\n\r')
+USDA_API_KEY=$(echo -n "$USDA_API_KEY" | tr -d '\n\r')
+APP_ENVIRONMENT=$(echo -n "$APP_ENVIRONMENT" | tr -d '\n\r')
+
+printf '%s\n' '{' \
+  "  \"SUPABASE_URL\": \"$SUPABASE_URL\"," \
+  "  \"SUPABASE_ANON_KEY\": \"$SUPABASE_ANON_KEY\"," \
+  "  \"SENTRY_DSN\": \"$SENTRY_DSN\"," \
+  "  \"SENTRY_ENVIRONMENT\": \"$SENTRY_ENVIRONMENT\"," \
+  "  \"MIXPANEL_PROJECT_TOKEN\": \"$MIXPANEL_PROJECT_TOKEN\"," \
+  "  \"WIREDASH_PROJECT_ID\": \"$WIREDASH_PROJECT_ID\"," \
+  "  \"WIREDASH_SECRET\": \"$WIREDASH_SECRET\"," \
+  "  \"USDA_API_KEY\": \"$USDA_API_KEY\"," \
+  "  \"APP_ENVIRONMENT\": \"$APP_ENVIRONMENT\"" \
+  '}' > .dart_defines.json
 
 echo ".dart_defines.json created successfully"
 echo ""
