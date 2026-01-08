@@ -110,6 +110,16 @@ printf '%s\n' '{' \
 echo ".dart_defines.json created successfully"
 echo ""
 
+# Create placeholder .env files for Flutter asset bundling
+# These are required by pubspec.yaml assets but are gitignored
+# Web builds use dart-defines instead of dotenv, so these can be empty
+echo "Creating placeholder .env files for asset bundling..."
+touch .env
+touch .env.dev.local
+touch .env.prod.local
+echo "Placeholder .env files created"
+echo ""
+
 # Determine Flutter binary path
 # On Vercel, Flutter is cloned to ./flutter
 # Locally, use system Flutter
