@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../auth/domain/user_preferences.dart';
 import '../../../events/domain/event.dart';
 import '../../../carb_loading/domain/carb_loading_plan_simple.dart';
 import '../../application/coach_service.dart';
@@ -18,6 +19,7 @@ part 'athlete_detail_controller.g.dart';
 /// State for viewing an athlete's details (coach perspective)
 class AthleteDetailState {
   final CoachAthleteRelationship relationship;
+  final UserProfile? athleteProfile;
   final List<Event> events;
   final List<CarbLoadingPlan> carbLoadingPlans;
   final List<Activity> activities;
@@ -27,6 +29,7 @@ class AthleteDetailState {
 
   const AthleteDetailState({
     required this.relationship,
+    this.athleteProfile,
     this.events = const [],
     this.carbLoadingPlans = const [],
     this.activities = const [],
@@ -37,6 +40,7 @@ class AthleteDetailState {
 
   AthleteDetailState copyWith({
     CoachAthleteRelationship? relationship,
+    UserProfile? athleteProfile,
     List<Event>? events,
     List<CarbLoadingPlan>? carbLoadingPlans,
     List<Activity>? activities,
@@ -46,6 +50,7 @@ class AthleteDetailState {
   }) {
     return AthleteDetailState(
       relationship: relationship ?? this.relationship,
+      athleteProfile: athleteProfile ?? this.athleteProfile,
       events: events ?? this.events,
       carbLoadingPlans: carbLoadingPlans ?? this.carbLoadingPlans,
       activities: activities ?? this.activities,
@@ -83,6 +88,18 @@ class AthleteDetailController extends _$AthleteDetailController {
       // Fetch athlete's data from local database
       final db = ref.read(appDatabaseProvider);
 
+      // Load athlete profile by user ID
+      final athleteProfile = await db.getUserProfileById(relationship.athleteUserId);
+
+      // Debug logging
+      print('🔍 DEBUG: Loading athlete ${relationship.athleteUserId}');
+      print('🔍 DEBUG: Profile found: ${athleteProfile != null}');
+      if (athleteProfile != null) {
+        print('🔍 DEBUG: First name: ${athleteProfile.firstName}');
+        print('🔍 DEBUG: Last name: ${athleteProfile.lastName}');
+        print('🔍 DEBUG: Display name: ${athleteProfile.displayName}');
+      }
+
       // Load athlete events using Drift select syntax
       final eventEntries = await (db.select(db.eventsTable)
             ..where((t) => t.userId.equals(relationship.athleteUserId))
@@ -107,6 +124,7 @@ class AthleteDetailController extends _$AthleteDetailController {
 
       return AthleteDetailState(
         relationship: relationship,
+        athleteProfile: athleteProfile,
         messages: messages,
         events: events,
         activities: activities,

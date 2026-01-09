@@ -57,6 +57,10 @@ class MyCoachesController extends _$MyCoachesController {
       // This ensures we see when coaches accept/decline our requests
       await _coachService.syncRelationshipsFromSupabase();
 
+      // Sync coach data (names, etc.) from Supabase
+      // This ensures we have coach first_name/last_name in local DB
+      await _coachService.syncMyCoachesData();
+
       final activeCoaches = await _coachService.getMyCoaches();
       final pendingRequests = await _coachService.getPendingCoachRequests();
 

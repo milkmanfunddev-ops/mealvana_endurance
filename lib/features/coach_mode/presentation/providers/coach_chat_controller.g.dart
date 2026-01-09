@@ -60,7 +60,7 @@ final class CoachChatControllerProvider
 }
 
 String _$coachChatControllerHash() =>
-    r'1055085e6f0b6feac1622611f1ada06e4a13d00b';
+    r'c7054835a5bef0f00b8a4c2730ef769499431e6c';
 
 /// Controller for the unified coach-athlete chat screen
 /// Supports Supabase Realtime for instant message delivery

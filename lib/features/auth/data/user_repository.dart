@@ -1008,6 +1008,8 @@ class UserRepository {
         'swimming_css_seconds_per_100m': anonymousProfile.cssPacePer100mSeconds,
         'typical_wetsuit': anonymousProfile.typicalWetsuit,
         'typical_swim_cap_type': anonymousProfile.typicalSwimCapType,
+        'first_name': anonymousProfile.firstName,
+        'last_name': anonymousProfile.lastName,
         'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'id');
 

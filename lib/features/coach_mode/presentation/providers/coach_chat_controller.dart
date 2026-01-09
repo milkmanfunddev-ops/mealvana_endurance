@@ -33,6 +33,10 @@ class CoachChatController extends _$CoachChatController {
   }
 
   Future<CoachChatState> _loadChat(String relationshipId) async {
+    // Sync relationships and coach data first
+    await _coachService.syncRelationshipsFromSupabase();
+    await _coachService.syncMyCoachesData();
+
     // Get relationship details
     final relationship = await _coachService.getRelationshipById(relationshipId);
     if (relationship == null) {
@@ -127,7 +131,7 @@ class CoachChatController extends _$CoachChatController {
           .where((m) => m.id != message.id)
           .toList();
       final updatedMessages = [...currentState.messages, message.copyWith(status: MessageStatus.sent)];
-      updatedMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      _stableSort(updatedMessages);
 
       state = AsyncData(currentState.copyWith(
         messages: updatedMessages,
@@ -139,7 +143,7 @@ class CoachChatController extends _$CoachChatController {
 
     // Add message to list and sort by createdAt (oldest first for chat display)
     final updatedMessages = [...currentState.messages, message];
-    updatedMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    _stableSort(updatedMessages);
 
     _logger.info(
       'Adding new message to chat',
@@ -170,6 +174,17 @@ class CoachChatController extends _$CoachChatController {
       await _coachService.unsubscribeFromConversation(_channel!);
       _channel = null;
     }
+  }
+
+  /// Stable sort messages by createdAt timestamp, with message ID as tiebreaker
+  /// This ensures consistent ordering even when messages have identical timestamps
+  void _stableSort(List<CoachMessage> messages) {
+    messages.sort((a, b) {
+      final timeComparison = a.createdAt.compareTo(b.createdAt);
+      if (timeComparison != 0) return timeComparison;
+      // Use message ID as tiebreaker for stable sort when timestamps are identical
+      return a.id.compareTo(b.id);
+    });
   }
 
   /// Send a new message with offline queueing support
@@ -215,7 +230,7 @@ class CoachChatController extends _$CoachChatController {
             .where((m) => m.id != optimisticMessage.id)
             .toList();
         final updatedMessages = [...newState.messages, sentMessage.copyWith(status: MessageStatus.sent)];
-        updatedMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        _stableSort(updatedMessages);
 
         state = AsyncData(newState.copyWith(
           messages: updatedMessages,
@@ -310,7 +325,7 @@ class CoachChatController extends _$CoachChatController {
               .where((m) => m.id != message.id)
               .toList();
           final updatedMessagesInner = [...newState.messages, sentMessage.copyWith(status: MessageStatus.sent)];
-          updatedMessagesInner.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          _stableSort(updatedMessagesInner);
 
           state = AsyncData(newState.copyWith(
             messages: updatedMessagesInner,

@@ -33,11 +33,11 @@ class ChatMessageBubble extends StatelessWidget {
           if (!isFromCurrentUser) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: theme.colorScheme.secondaryContainer,
+              backgroundColor: theme.colorScheme.surfaceContainerHigh,
               child: Icon(
                 Icons.person,
                 size: 18,
-                color: theme.colorScheme.onSecondaryContainer,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(width: 8),
@@ -47,13 +47,13 @@ class ChatMessageBubble extends StatelessWidget {
           Flexible(
             child: Container(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75,
+                maxWidth: MediaQuery.of(context).size.width * 0.85,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: isFromCurrentUser
                     ? theme.colorScheme.primaryContainer
-                    : theme.colorScheme.secondaryContainer,
+                    : const Color(0xFFD92D20), // Coral/red for coach messages - contrasts with purple background
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -72,7 +72,7 @@ class ChatMessageBubble extends StatelessWidget {
                         senderName,
                         style: theme.textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSecondaryContainer,
+                          color: Colors.white.withOpacity(0.9),
                         ),
                       ),
                     ),
@@ -83,7 +83,7 @@ class ChatMessageBubble extends StatelessWidget {
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: isFromCurrentUser
                           ? theme.colorScheme.onPrimaryContainer
-                          : theme.colorScheme.onSecondaryContainer,
+                          : Colors.white,
                     ),
                   ),
 
@@ -97,7 +97,7 @@ class ChatMessageBubble extends StatelessWidget {
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: (isFromCurrentUser
                                   ? theme.colorScheme.onPrimaryContainer
-                                  : theme.colorScheme.onSecondaryContainer)
+                                  : Colors.white)
                               .withOpacity(0.7),
                         ),
                       ),

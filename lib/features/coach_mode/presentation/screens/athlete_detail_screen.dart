@@ -104,7 +104,7 @@ class AthleteDetailScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Column(
         children: [
           // Athlete header
@@ -113,6 +113,10 @@ class AthleteDetailScreen extends ConsumerWidget {
           // Tab bar
           TabBar(
             tabs: [
+              const Tab(
+                icon: Icon(Icons.person),
+                text: 'Profile',
+              ),
               Tab(
                 icon: const Icon(Icons.calendar_today),
                 text: 'Events (${state.events.length})',
@@ -132,6 +136,7 @@ class AthleteDetailScreen extends ConsumerWidget {
           Expanded(
             child: TabBarView(
               children: [
+                _buildProfileTab(context, state),
                 _buildEventsTab(context, state),
                 _buildCarbLoadingTab(context, state),
                 _buildActivitiesTab(context, state),
@@ -146,6 +151,16 @@ class AthleteDetailScreen extends ConsumerWidget {
   Widget _buildAthleteHeader(BuildContext context, AthleteDetailState state) {
     final theme = Theme.of(context);
     final relationship = state.relationship;
+    final athleteProfile = state.athleteProfile;
+
+    // Use profile first/last name if available, fallback to relationship display name
+    String athleteName;
+    if (athleteProfile != null) {
+      athleteName = athleteProfile.displayName;
+    } else {
+      athleteName = relationship.athleteDisplayName ??
+          'Athlete ${relationship.athleteUserId.substring(0, 8)}...';
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -169,8 +184,7 @@ class AthleteDetailScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  relationship.athleteDisplayName ??
-                      'Athlete ${relationship.athleteUserId.substring(0, 8)}...',
+                  athleteName,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -207,6 +221,225 @@ class AthleteDetailScreen extends ConsumerWidget {
           color: color,
           fontWeight: FontWeight.w500,
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileTab(BuildContext context, AthleteDetailState state) {
+    final theme = Theme.of(context);
+    final profile = state.athleteProfile;
+
+    if (profile == null) {
+      return _buildEmptyView(
+        context,
+        'No Profile Data',
+        'Profile information is not available yet. Try refreshing.',
+        Icons.person_off,
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Personal Information
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.person, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Personal Information',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                _buildProfileRow('Name', profile.displayName),
+                if (profile.firstName != null)
+                  _buildProfileRow('First Name', profile.firstName!),
+                if (profile.lastName != null)
+                  _buildProfileRow('Last Name', profile.lastName!),
+                _buildProfileRow('Gender', profile.gender.name.toUpperCase()),
+                _buildProfileRow('Birthday', _formatDate(profile.birthday)),
+                _buildProfileRow(
+                  'Height',
+                  '${profile.heightFeet}\'${profile.heightInches}"',
+                ),
+                _buildProfileRow(
+                  'Weight',
+                  '${profile.weightPounds.toStringAsFixed(1)} lbs',
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Training Preferences
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.fitness_center, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Training Preferences',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                _buildProfileRow(
+                  'Runs with Water Bottle',
+                  profile.runsWithWaterBottle ? 'Yes' : 'No',
+                ),
+                _buildProfileRow(
+                  'Gut Training Level',
+                  profile.gutTraining.name.toUpperCase(),
+                ),
+                if (profile.giSensitivity != null)
+                  _buildProfileRow(
+                    'GI Sensitivity',
+                    profile.giSensitivity! ? 'Yes' : 'No',
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Cycling Details (if available)
+        if (profile.ftpWatts != null ||
+            profile.typicalBikeBottles != null ||
+            profile.hasAeroBottle != null ||
+            profile.hasBentoBox != null)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.directions_bike,
+                          color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Cycling Details',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24),
+                  if (profile.ftpWatts != null)
+                    _buildProfileRow('FTP', '${profile.ftpWatts} watts'),
+                  if (profile.typicalBikeBottles != null)
+                    _buildProfileRow(
+                      'Bike Bottles',
+                      '${profile.typicalBikeBottles}',
+                    ),
+                  if (profile.hasAeroBottle != null)
+                    _buildProfileRow(
+                      'Has Aero Bottle',
+                      profile.hasAeroBottle! ? 'Yes' : 'No',
+                    ),
+                  if (profile.hasBentoBox != null)
+                    _buildProfileRow(
+                      'Has Bento Box',
+                      profile.hasBentoBox! ? 'Yes' : 'No',
+                    ),
+                ],
+              ),
+            ),
+          ),
+        const SizedBox(height: 16),
+
+        // Swimming Details (if available)
+        if (profile.cssPacePer100mSeconds != null ||
+            profile.typicalWetsuit != null ||
+            profile.typicalSwimCapType != null)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.pool, color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Swimming Details',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24),
+                  if (profile.cssPacePer100mSeconds != null)
+                    _buildProfileRow(
+                      'CSS Pace',
+                      '${profile.cssPacePer100mSeconds}s per 100m',
+                    ),
+                  if (profile.typicalWetsuit != null)
+                    _buildProfileRow(
+                      'Typical Wetsuit',
+                      profile.typicalWetsuit! ? 'Yes' : 'No',
+                    ),
+                  if (profile.typicalSwimCapType != null)
+                    _buildProfileRow(
+                      'Swim Cap Type',
+                      profile.typicalSwimCapType!,
+                    ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildProfileRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

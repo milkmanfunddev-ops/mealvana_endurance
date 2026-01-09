@@ -156,8 +156,13 @@ class CoachRepository {
     String athleteUserId,
   ) async {
     try {
-      // Join with user_profiles to get coach display name (sender_name field)
+      // Join with both coaches and user_profiles tables to get coach display name
+      // Priority: coaches table (has first_name/last_name) > user_profiles (has sender_name)
       final query = _database.select(_database.coachAthleteRelationshipsTable).join([
+        leftOuterJoin(
+          _database.coachesTable,
+          _database.coachesTable.userId.equalsExp(_database.coachAthleteRelationshipsTable.coachUserId),
+        ),
         leftOuterJoin(
           _database.userProfilesTable,
           _database.userProfilesTable.id.equalsExp(_database.coachAthleteRelationshipsTable.coachUserId),
@@ -170,11 +175,12 @@ class CoachRepository {
 
       return results.map((row) {
         final relationship = row.readTable(_database.coachAthleteRelationshipsTable);
+        final coachEntry = row.readTableOrNull(_database.coachesTable);
         final coachProfile = row.readTableOrNull(_database.userProfilesTable);
 
         return _mapToRelationshipDomain(
           relationship,
-          coachDisplayName: _getDisplayNameFromProfile(coachProfile, relationship.coachUserId),
+          coachDisplayName: _getCoachDisplayName(coachEntry, coachProfile, relationship.coachUserId),
         );
       }).toList();
     } catch (e, stackTrace) {
@@ -628,6 +634,64 @@ class CoachRepository {
     }
   }
 
+  /// Sync coach records from Supabase to local database
+  /// This should be called when loading My Coaches screen to ensure we have coach names
+  Future<void> syncCoachesFromSupabase(List<String> coachUserIds) async {
+    if (coachUserIds.isEmpty) return;
+
+    try {
+      // Fetch coach records from Supabase for the given user IDs
+      final response = await _supabase
+          .from('coaches')
+          .select('*')
+          .inFilter('user_id', coachUserIds)
+          .eq('application_status', 'approved');
+
+      final List<dynamic> results = response as List<dynamic>;
+
+      for (final r in results) {
+        final now = DateTime.now();
+
+        // Upsert into local coaches table
+        await _database
+            .into(_database.coachesTable)
+            .insertOnConflictUpdate(CoachesTableCompanion.insert(
+              id: r['id'] as String,
+              userId: r['user_id'] as String,
+              firstName: r['first_name'] as String,
+              lastName: r['last_name'] as String,
+              email: r['email'] as String,
+              bio: Value(r['bio'] as String?),
+              applicationStatus: Value(r['application_status'] as String? ?? 'pending'),
+              reviewedBy: Value(r['reviewed_by'] as String?),
+              reviewedAt: Value(r['reviewed_at'] != null
+                  ? DateTime.parse(r['reviewed_at'] as String)
+                  : null),
+              rejectionReason: Value(r['rejection_reason'] as String?),
+              createdAt: Value(r['created_at'] != null
+                  ? DateTime.parse(r['created_at'] as String)
+                  : now),
+              updatedAt: Value(r['updated_at'] != null
+                  ? DateTime.parse(r['updated_at'] as String)
+                  : now),
+            ));
+      }
+
+      _logger.info(
+        'Synced ${results.length} coach records from Supabase',
+        context: 'COACH_REPOSITORY',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync coaches from Supabase',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - this is not critical for app functionality
+    }
+  }
+
   // ============================================================================
   // MESSAGE OPERATIONS (bidirectional messaging)
   // ============================================================================
@@ -845,7 +909,7 @@ class CoachRepository {
   }) async {
     try {
       final id = _uuid.v4();
-      final now = DateTime.now();
+      final now = DateTime.now().toUtc();
 
       // Insert into Supabase first (this triggers realtime for other party)
       await _supabase.from('coach_messages').insert({
@@ -898,10 +962,15 @@ class CoachRepository {
   Future<CoachAthleteRelationship?> getRelationshipById(
       String relationshipId) async {
     try {
-      // Join with user_profiles to get both coach and athlete display names
+      // Join with coaches and user_profiles tables to get coach display name
       final query = _database
           .select(_database.coachAthleteRelationshipsTable)
           .join([
+        leftOuterJoin(
+          _database.coachesTable,
+          _database.coachesTable.userId.equalsExp(
+              _database.coachAthleteRelationshipsTable.coachUserId),
+        ),
         leftOuterJoin(
           _database.userProfilesTable,
           _database.userProfilesTable.id.equalsExp(
@@ -917,6 +986,7 @@ class CoachRepository {
       final row = results.first;
       final relationship =
           row.readTable(_database.coachAthleteRelationshipsTable);
+      final coachEntry = row.readTableOrNull(_database.coachesTable);
       final coachProfile = row.readTableOrNull(_database.userProfilesTable);
 
       // Also try to get athlete display name
@@ -926,7 +996,7 @@ class CoachRepository {
 
       return _mapToRelationshipDomain(
         relationship,
-        coachDisplayName: _getDisplayNameFromProfile(coachProfile, relationship.coachUserId),
+        coachDisplayName: _getCoachDisplayName(coachEntry, coachProfile, relationship.coachUserId),
         athleteDisplayName: _getDisplayNameFromProfile(athleteProfile, relationship.athleteUserId),
       );
     } catch (e, stackTrace) {
@@ -1047,7 +1117,7 @@ class CoachRepository {
   }) async {
     try {
       final id = _uuid.v4();
-      final now = DateTime.now();
+      final now = DateTime.now().toUtc();
 
       // Insert into Supabase first (for cross-device sync and realtime)
       await _supabase.from('coach_messages').insert({
@@ -1340,6 +1410,54 @@ class CoachRepository {
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
+
+  /// Get coach display name, prioritizing coaches table over user_profiles
+  /// Priority: coaches table (first_name + last_name) > user_profiles (firstName/lastName/senderName) > userId fallback
+  String? _getCoachDisplayName(CoachEntry? coachEntry, UserProfileEntry? profile, String userId) {
+    // Priority 1: Try coaches table first (where coaches submit their application)
+    if (coachEntry != null) {
+      final firstName = coachEntry.firstName.trim();
+      final lastName = coachEntry.lastName.trim();
+
+      if (firstName.isNotEmpty && lastName.isNotEmpty) {
+        return '$firstName $lastName';
+      }
+
+      if (firstName.isNotEmpty) {
+        return firstName;
+      }
+
+      if (lastName.isNotEmpty) {
+        return lastName;
+      }
+    }
+
+    // Priority 2: Fall back to user_profiles table
+    if (profile != null) {
+      final hasFirstName = profile.firstName != null && profile.firstName!.trim().isNotEmpty;
+      final hasLastName = profile.lastName != null && profile.lastName!.trim().isNotEmpty;
+
+      if (hasFirstName && hasLastName) {
+        return '${profile.firstName!.trim()} ${profile.lastName!.trim()}';
+      }
+
+      if (hasFirstName) {
+        return profile.firstName!.trim();
+      }
+
+      if (hasLastName) {
+        return profile.lastName!.trim();
+      }
+
+      // Try sender_name field (legacy)
+      if (profile.senderName != null && profile.senderName!.trim().isNotEmpty) {
+        return profile.senderName!.trim();
+      }
+    }
+
+    // Fallback: Shortened user ID (remove hyphens for cleaner display)
+    return 'Coach ${userId.replaceAll('-', '').substring(0, 8).toUpperCase()}';
+  }
 
   /// Get display name from a user profile entry
   /// Priority: firstName + lastName > firstName only > lastName only > senderName > userId fallback

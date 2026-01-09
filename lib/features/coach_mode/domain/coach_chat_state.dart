@@ -23,9 +23,15 @@ class CoachChatState {
   final String currentUserId;
 
   /// All messages (sent + pending) in chronological order
+  /// Uses stable sort with createdAt as primary key and id as tiebreaker
   List<CoachMessage> get allMessages {
     final all = [...messages, ...pendingMessages];
-    all.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    all.sort((a, b) {
+      final timeComparison = a.createdAt.compareTo(b.createdAt);
+      if (timeComparison != 0) return timeComparison;
+      // Use message ID as tiebreaker for stable sort when timestamps are identical
+      return a.id.compareTo(b.id);
+    });
     return all;
   }
 

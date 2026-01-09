@@ -178,9 +178,11 @@ class CoachDashboardScreen extends ConsumerWidget {
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            theme.colorScheme.primaryContainer,
-            theme.colorScheme.secondaryContainer,
+            theme.colorScheme.primary.withOpacity(0.15),
+            theme.colorScheme.tertiary.withOpacity(0.15),
           ],
         ),
         borderRadius: BorderRadius.circular(16),

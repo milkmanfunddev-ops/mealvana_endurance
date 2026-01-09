@@ -200,8 +200,13 @@ class DataSyncService {
         context: 'ATHLETE_SYNC',
       );
 
-      // Query Supabase for athlete's data in parallel
+      // Query Supabase for athlete's data in parallel (including profile)
       final responses = await Future.wait([
+        _supabase
+            .from('users')
+            .select('*')
+            .eq('id', athleteUserId)
+            .maybeSingle(),
         _supabase
             .from('events')
             .select('*')
@@ -221,9 +226,29 @@ class DataSyncService {
       ]);
 
       // Save to local database using existing sync methods
-      final eventsData = responses[0] as List<dynamic>;
-      final activitiesData = responses[1] as List<dynamic>;
-      final carbLoadingData = responses[2] as List<dynamic>;
+      final profileData = responses[0] as Map<String, dynamic>?;
+      final eventsData = responses[1] as List<dynamic>;
+      final activitiesData = responses[2] as List<dynamic>;
+      final carbLoadingData = responses[3] as List<dynamic>;
+
+      // Sync athlete profile first
+      if (profileData != null) {
+        _logger.info(
+          'Syncing athlete profile: ${profileData['first_name']} ${profileData['last_name']}',
+          context: 'ATHLETE_SYNC',
+          data: {
+            'athlete_user_id': athleteUserId,
+            'has_first_name': profileData['first_name'] != null,
+            'has_last_name': profileData['last_name'] != null,
+          },
+        );
+        await _saveRemoteUserProfile(profileData, athleteUserId);
+      } else {
+        _logger.warning(
+          'No profile data found for athlete $athleteUserId in Supabase',
+          context: 'ATHLETE_SYNC',
+        );
+      }
 
       if (eventsData.isNotEmpty) {
         await _syncAthleteEvents(eventsData);
@@ -236,8 +261,9 @@ class DataSyncService {
       }
 
       _logger.info(
-        'Successfully synced athlete data: ${eventsData.length} events, '
-        '${activitiesData.length} activities, ${carbLoadingData.length} carb loading plans',
+        'Successfully synced athlete data: profile=${profileData != null}, '
+        '${eventsData.length} events, ${activitiesData.length} activities, '
+        '${carbLoadingData.length} carb loading plans',
         context: 'ATHLETE_SYNC',
       );
     } catch (e, stackTrace) {
@@ -326,6 +352,9 @@ class DataSyncService {
         'prefers_cycling_power': false, // Not in domain model, default
         'swimming_css_seconds_per_100m': localUser.cssPacePer100mSeconds,
         'prefers_swimming_pace': false, // Not in domain model, default
+        // Coach mode athlete identification fields
+        'first_name': localUser.firstName,
+        'last_name': localUser.lastName,
       };
 
       // Upsert user profile to Supabase
@@ -380,6 +409,8 @@ class DataSyncService {
             DateTime.now()),
         updatedAt: Value(DateTime.tryParse(remoteUser['updated_at'] as String? ?? '') ??
             DateTime.now()),
+        firstName: Value(remoteUser['first_name'] as String?),
+        lastName: Value(remoteUser['last_name'] as String?),
       );
 
       await _database

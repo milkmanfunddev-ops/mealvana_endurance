@@ -763,6 +763,37 @@ class CoachService {
     }
   }
 
+  /// Sync coach data for athlete's coaches
+  /// This ensures we have the coach names (first_name, last_name) in local DB
+  Future<void> syncMyCoachesData() async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) return;
+
+      // Get all relationships where user is athlete
+      final relationships = await _repository.getRelationshipsForAthlete(profile.id);
+
+      // Extract unique coach user IDs
+      final coachUserIds = relationships
+          .map((r) => r.coachUserId)
+          .toSet()
+          .toList();
+
+      if (coachUserIds.isEmpty) return;
+
+      // Sync coach data from Supabase
+      await _repository.syncCoachesFromSupabase(coachUserIds);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync my coaches data',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - this is not critical for app functionality
+    }
+  }
+
   /// Subscribe to relationship changes using Supabase Realtime
   /// Returns a RealtimeChannel that should be unsubscribed when done
   Future<RealtimeChannel?> subscribeToRelationshipChanges({
