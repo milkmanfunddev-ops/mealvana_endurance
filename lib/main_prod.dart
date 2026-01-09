@@ -19,22 +19,16 @@ final GlobalKey<NavigatorState> sentryNavigatorKey = GlobalKey<NavigatorState>()
 /// Loads .env.prod.local configuration
 Future<void> main() async {
   runZonedGuarded(() async {
-    final mainStopwatch = Stopwatch()..start();
-
     // Initialize widgets binding for Sentry frame tracking BEFORE Sentry init
     SentryWidgetsFlutterBinding.ensureInitialized();
-    debugPrint('[STARTUP] Widget binding initialized: ${mainStopwatch.elapsedMilliseconds}ms');
 
     // Load production environment variables
     await dotenv.load(fileName: '.env.prod.local');
-    debugPrint('[STARTUP] dotenv loaded (.env.prod.local): ${mainStopwatch.elapsedMilliseconds}ms');
 
     // Create app configuration from loaded env
     final config = AppConfig.fromEnv();
-    debugPrint('[STARTUP] AppConfig created (prod flavor): ${mainStopwatch.elapsedMilliseconds}ms');
 
     // Initialize Sentry with configuration from .env
-    debugPrint('[STARTUP] Starting Sentry init...');
     await SentryFlutter.init(
       (options) {
         // DSN configuration from AppConfig
@@ -107,10 +101,7 @@ Future<void> main() async {
       },
     );
 
-    debugPrint('[STARTUP] Sentry init completed: ${mainStopwatch.elapsedMilliseconds}ms');
-
-    debugPrint('[STARTUP] Starting Supabase and runApp...');
-    await _runMealvanaApp(config, mainStopwatch);
+    await _runMealvanaApp(config);
   }, (exception, stackTrace) async {
     // Capture any uncaught exceptions
     await Sentry.captureException(exception, stackTrace: stackTrace);
@@ -118,22 +109,17 @@ Future<void> main() async {
 }
 
 /// App runner function called after Sentry initialization
-Future<void> _runMealvanaApp(AppConfig config, Stopwatch mainStopwatch) async {
+Future<void> _runMealvanaApp(AppConfig config) async {
   // Initialize Supabase (non-recoverable initialization) using config
-  debugPrint('[STARTUP] Starting Supabase.initialize...');
   await Supabase.initialize(
     url: config.supabaseUrl,
     anonKey: config.supabaseAnonKey,
   );
-  debugPrint('[STARTUP] Supabase.initialize completed: ${mainStopwatch.elapsedMilliseconds}ms');
 
   // Initialize SharedPreferences (non-recoverable, required for app startup)
-  debugPrint('[STARTUP] Starting SharedPreferences.getInstance...');
   final sharedPreferences = await SharedPreferences.getInstance();
-  debugPrint('[STARTUP] SharedPreferences initialized: ${mainStopwatch.elapsedMilliseconds}ms');
 
   // Entry point following Andrea Bizzotto's pattern with runZonedGuarded pattern
-  debugPrint('[STARTUP] Calling runApp...');
   // Widget hierarchy:
   // 1. SentryWidget - Wraps app to enable screenshot capture and session replay
   // 2. ProviderScope - Riverpod state management

@@ -35,7 +35,9 @@ import '../providers/events_controller.dart';
 /// CRITICAL: NO carb loading configuration here.
 /// Carb loading is configured separately from the Event Detail Screen.
 class EventCreationScreen extends ConsumerStatefulWidget {
-  const EventCreationScreen({super.key});
+  final String? forUserId; // NEW: If provided, create event for this user (coach creating for athlete)
+
+  const EventCreationScreen({super.key, this.forUserId});
 
   @override
   ConsumerState<EventCreationScreen> createState() => _EventCreationScreenState();
@@ -459,6 +461,7 @@ class _EventCreationScreenState extends ConsumerState<EventCreationScreen> {
       // Create the event without creating an activity
       await eventsController.createEvent(
         activityId: null, // No activity yet
+        forUserId: widget.forUserId, // NEW: Pass forUserId for coach-created events
         eventType: _selectedSportCategory,
         eventSubtype: _selectedSubtype!.name,
         eventName: _eventNameController.text.trim(),

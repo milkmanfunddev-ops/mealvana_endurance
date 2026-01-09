@@ -426,6 +426,28 @@ class $UserProfilesTableTable extends UserProfilesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _firstNameMeta = const VerificationMeta(
+    'firstName',
+  );
+  @override
+  late final GeneratedColumn<String> firstName = GeneratedColumn<String>(
+    'first_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastNameMeta = const VerificationMeta(
+    'lastName',
+  );
+  @override
+  late final GeneratedColumn<String> lastName = GeneratedColumn<String>(
+    'last_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _dietaryPreferenceMeta = const VerificationMeta(
     'dietaryPreference',
   );
@@ -465,21 +487,6 @@ class $UserProfilesTableTable extends UserProfilesTable
     ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _isCoachMeta = const VerificationMeta(
-    'isCoach',
-  );
-  @override
-  late final GeneratedColumn<bool> isCoach = GeneratedColumn<bool>(
-    'is_coach',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_coach" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -516,10 +523,11 @@ class $UserProfilesTableTable extends UserProfilesTable
     autoGenerateNutrition,
     completionReminders,
     senderName,
+    firstName,
+    lastName,
     dietaryPreference,
     allergies,
     needsUpload,
-    isCoach,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -801,6 +809,18 @@ class $UserProfilesTableTable extends UserProfilesTable
         senderName.isAcceptableOrUnknown(data['sender_name']!, _senderNameMeta),
       );
     }
+    if (data.containsKey('first_name')) {
+      context.handle(
+        _firstNameMeta,
+        firstName.isAcceptableOrUnknown(data['first_name']!, _firstNameMeta),
+      );
+    }
+    if (data.containsKey('last_name')) {
+      context.handle(
+        _lastNameMeta,
+        lastName.isAcceptableOrUnknown(data['last_name']!, _lastNameMeta),
+      );
+    }
     if (data.containsKey('dietary_preference')) {
       context.handle(
         _dietaryPreferenceMeta,
@@ -823,12 +843,6 @@ class $UserProfilesTableTable extends UserProfilesTable
           data['needs_upload']!,
           _needsUploadMeta,
         ),
-      );
-    }
-    if (data.containsKey('is_coach')) {
-      context.handle(
-        _isCoachMeta,
-        isCoach.isAcceptableOrUnknown(data['is_coach']!, _isCoachMeta),
       );
     }
     return context;
@@ -979,6 +993,14 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.string,
         data['${effectivePrefix}sender_name'],
       ),
+      firstName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}first_name'],
+      ),
+      lastName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_name'],
+      ),
       dietaryPreference: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}dietary_preference'],
@@ -990,10 +1012,6 @@ class $UserProfilesTableTable extends UserProfilesTable
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
-      )!,
-      isCoach: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_coach'],
       )!,
     );
   }
@@ -1096,6 +1114,12 @@ class UserProfileEntry extends DataClass
   final bool completionReminders;
   final String? senderName;
 
+  /// User's first name (optional, used for coach mode athlete identification)
+  final String? firstName;
+
+  /// User's last name (optional, used for coach mode athlete identification)
+  final String? lastName;
+
   /// User's dietary preference (single-select, nullable - user can skip in onboarding)
   /// Values: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb
   final String? dietaryPreference;
@@ -1107,10 +1131,6 @@ class UserProfileEntry extends DataClass
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   final bool needsUpload;
-
-  /// Whether this user has coach privileges (can manage athletes)
-  /// Set via admin/backend - not user-editable
-  final bool isCoach;
   const UserProfileEntry({
     required this.id,
     required this.deviceId,
@@ -1146,10 +1166,11 @@ class UserProfileEntry extends DataClass
     required this.autoGenerateNutrition,
     required this.completionReminders,
     this.senderName,
+    this.firstName,
+    this.lastName,
     this.dietaryPreference,
     required this.allergies,
     required this.needsUpload,
-    required this.isCoach,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1214,12 +1235,17 @@ class UserProfileEntry extends DataClass
     if (!nullToAbsent || senderName != null) {
       map['sender_name'] = Variable<String>(senderName);
     }
+    if (!nullToAbsent || firstName != null) {
+      map['first_name'] = Variable<String>(firstName);
+    }
+    if (!nullToAbsent || lastName != null) {
+      map['last_name'] = Variable<String>(lastName);
+    }
     if (!nullToAbsent || dietaryPreference != null) {
       map['dietary_preference'] = Variable<String>(dietaryPreference);
     }
     map['allergies'] = Variable<String>(allergies);
     map['needs_upload'] = Variable<bool>(needsUpload);
-    map['is_coach'] = Variable<bool>(isCoach);
     return map;
   }
 
@@ -1277,12 +1303,17 @@ class UserProfileEntry extends DataClass
       senderName: senderName == null && nullToAbsent
           ? const Value.absent()
           : Value(senderName),
+      firstName: firstName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firstName),
+      lastName: lastName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastName),
       dietaryPreference: dietaryPreference == null && nullToAbsent
           ? const Value.absent()
           : Value(dietaryPreference),
       allergies: Value(allergies),
       needsUpload: Value(needsUpload),
-      isCoach: Value(isCoach),
     );
   }
 
@@ -1350,12 +1381,13 @@ class UserProfileEntry extends DataClass
         json['completionReminders'],
       ),
       senderName: serializer.fromJson<String?>(json['senderName']),
+      firstName: serializer.fromJson<String?>(json['firstName']),
+      lastName: serializer.fromJson<String?>(json['lastName']),
       dietaryPreference: serializer.fromJson<String?>(
         json['dietaryPreference'],
       ),
       allergies: serializer.fromJson<String>(json['allergies']),
       needsUpload: serializer.fromJson<bool>(json['needsUpload']),
-      isCoach: serializer.fromJson<bool>(json['isCoach']),
     );
   }
   @override
@@ -1400,10 +1432,11 @@ class UserProfileEntry extends DataClass
       'autoGenerateNutrition': serializer.toJson<bool>(autoGenerateNutrition),
       'completionReminders': serializer.toJson<bool>(completionReminders),
       'senderName': serializer.toJson<String?>(senderName),
+      'firstName': serializer.toJson<String?>(firstName),
+      'lastName': serializer.toJson<String?>(lastName),
       'dietaryPreference': serializer.toJson<String?>(dietaryPreference),
       'allergies': serializer.toJson<String>(allergies),
       'needsUpload': serializer.toJson<bool>(needsUpload),
-      'isCoach': serializer.toJson<bool>(isCoach),
     };
   }
 
@@ -1442,10 +1475,11 @@ class UserProfileEntry extends DataClass
     bool? autoGenerateNutrition,
     bool? completionReminders,
     Value<String?> senderName = const Value.absent(),
+    Value<String?> firstName = const Value.absent(),
+    Value<String?> lastName = const Value.absent(),
     Value<String?> dietaryPreference = const Value.absent(),
     String? allergies,
     bool? needsUpload,
-    bool? isCoach,
   }) => UserProfileEntry(
     id: id ?? this.id,
     deviceId: deviceId ?? this.deviceId,
@@ -1482,12 +1516,13 @@ class UserProfileEntry extends DataClass
     autoGenerateNutrition: autoGenerateNutrition ?? this.autoGenerateNutrition,
     completionReminders: completionReminders ?? this.completionReminders,
     senderName: senderName.present ? senderName.value : this.senderName,
+    firstName: firstName.present ? firstName.value : this.firstName,
+    lastName: lastName.present ? lastName.value : this.lastName,
     dietaryPreference: dietaryPreference.present
         ? dietaryPreference.value
         : this.dietaryPreference,
     allergies: allergies ?? this.allergies,
     needsUpload: needsUpload ?? this.needsUpload,
-    isCoach: isCoach ?? this.isCoach,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
     return UserProfileEntry(
@@ -1579,6 +1614,8 @@ class UserProfileEntry extends DataClass
       senderName: data.senderName.present
           ? data.senderName.value
           : this.senderName,
+      firstName: data.firstName.present ? data.firstName.value : this.firstName,
+      lastName: data.lastName.present ? data.lastName.value : this.lastName,
       dietaryPreference: data.dietaryPreference.present
           ? data.dietaryPreference.value
           : this.dietaryPreference,
@@ -1586,7 +1623,6 @@ class UserProfileEntry extends DataClass
       needsUpload: data.needsUpload.present
           ? data.needsUpload.value
           : this.needsUpload,
-      isCoach: data.isCoach.present ? data.isCoach.value : this.isCoach,
     );
   }
 
@@ -1627,10 +1663,11 @@ class UserProfileEntry extends DataClass
           ..write('autoGenerateNutrition: $autoGenerateNutrition, ')
           ..write('completionReminders: $completionReminders, ')
           ..write('senderName: $senderName, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
           ..write('dietaryPreference: $dietaryPreference, ')
           ..write('allergies: $allergies, ')
-          ..write('needsUpload: $needsUpload, ')
-          ..write('isCoach: $isCoach')
+          ..write('needsUpload: $needsUpload')
           ..write(')'))
         .toString();
   }
@@ -1671,10 +1708,11 @@ class UserProfileEntry extends DataClass
     autoGenerateNutrition,
     completionReminders,
     senderName,
+    firstName,
+    lastName,
     dietaryPreference,
     allergies,
     needsUpload,
-    isCoach,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1714,10 +1752,11 @@ class UserProfileEntry extends DataClass
           other.autoGenerateNutrition == this.autoGenerateNutrition &&
           other.completionReminders == this.completionReminders &&
           other.senderName == this.senderName &&
+          other.firstName == this.firstName &&
+          other.lastName == this.lastName &&
           other.dietaryPreference == this.dietaryPreference &&
           other.allergies == this.allergies &&
-          other.needsUpload == this.needsUpload &&
-          other.isCoach == this.isCoach);
+          other.needsUpload == this.needsUpload);
 }
 
 class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
@@ -1755,10 +1794,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<bool> autoGenerateNutrition;
   final Value<bool> completionReminders;
   final Value<String?> senderName;
+  final Value<String?> firstName;
+  final Value<String?> lastName;
   final Value<String?> dietaryPreference;
   final Value<String> allergies;
   final Value<bool> needsUpload;
-  final Value<bool> isCoach;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
     this.id = const Value.absent(),
@@ -1795,10 +1835,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.autoGenerateNutrition = const Value.absent(),
     this.completionReminders = const Value.absent(),
     this.senderName = const Value.absent(),
+    this.firstName = const Value.absent(),
+    this.lastName = const Value.absent(),
     this.dietaryPreference = const Value.absent(),
     this.allergies = const Value.absent(),
     this.needsUpload = const Value.absent(),
-    this.isCoach = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UserProfilesTableCompanion.insert({
@@ -1836,10 +1877,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.autoGenerateNutrition = const Value.absent(),
     this.completionReminders = const Value.absent(),
     this.senderName = const Value.absent(),
+    this.firstName = const Value.absent(),
+    this.lastName = const Value.absent(),
     this.dietaryPreference = const Value.absent(),
     this.allergies = const Value.absent(),
     this.needsUpload = const Value.absent(),
-    this.isCoach = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        deviceId = Value(deviceId);
@@ -1878,10 +1920,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<bool>? autoGenerateNutrition,
     Expression<bool>? completionReminders,
     Expression<String>? senderName,
+    Expression<String>? firstName,
+    Expression<String>? lastName,
     Expression<String>? dietaryPreference,
     Expression<String>? allergies,
     Expression<bool>? needsUpload,
-    Expression<bool>? isCoach,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1931,10 +1974,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       if (completionReminders != null)
         'completion_reminders': completionReminders,
       if (senderName != null) 'sender_name': senderName,
+      if (firstName != null) 'first_name': firstName,
+      if (lastName != null) 'last_name': lastName,
       if (dietaryPreference != null) 'dietary_preference': dietaryPreference,
       if (allergies != null) 'allergies': allergies,
       if (needsUpload != null) 'needs_upload': needsUpload,
-      if (isCoach != null) 'is_coach': isCoach,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1974,10 +2018,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<bool>? autoGenerateNutrition,
     Value<bool>? completionReminders,
     Value<String?>? senderName,
+    Value<String?>? firstName,
+    Value<String?>? lastName,
     Value<String?>? dietaryPreference,
     Value<String>? allergies,
     Value<bool>? needsUpload,
-    Value<bool>? isCoach,
     Value<int>? rowid,
   }) {
     return UserProfilesTableCompanion(
@@ -2019,10 +2064,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           autoGenerateNutrition ?? this.autoGenerateNutrition,
       completionReminders: completionReminders ?? this.completionReminders,
       senderName: senderName ?? this.senderName,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       dietaryPreference: dietaryPreference ?? this.dietaryPreference,
       allergies: allergies ?? this.allergies,
       needsUpload: needsUpload ?? this.needsUpload,
-      isCoach: isCoach ?? this.isCoach,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2146,6 +2192,12 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (senderName.present) {
       map['sender_name'] = Variable<String>(senderName.value);
     }
+    if (firstName.present) {
+      map['first_name'] = Variable<String>(firstName.value);
+    }
+    if (lastName.present) {
+      map['last_name'] = Variable<String>(lastName.value);
+    }
     if (dietaryPreference.present) {
       map['dietary_preference'] = Variable<String>(dietaryPreference.value);
     }
@@ -2154,9 +2206,6 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     }
     if (needsUpload.present) {
       map['needs_upload'] = Variable<bool>(needsUpload.value);
-    }
-    if (isCoach.present) {
-      map['is_coach'] = Variable<bool>(isCoach.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -2201,10 +2250,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('autoGenerateNutrition: $autoGenerateNutrition, ')
           ..write('completionReminders: $completionReminders, ')
           ..write('senderName: $senderName, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
           ..write('dietaryPreference: $dietaryPreference, ')
           ..write('allergies: $allergies, ')
           ..write('needsUpload: $needsUpload, ')
-          ..write('isCoach: $isCoach, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -19650,16 +19700,19 @@ class $CoachesTableTable extends CoachesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _statusMeta = const VerificationMeta('status');
-  @override
-  late final GeneratedColumn<String> status = GeneratedColumn<String>(
-    'status',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('pending'),
+  static const VerificationMeta _applicationStatusMeta = const VerificationMeta(
+    'applicationStatus',
   );
+  @override
+  late final GeneratedColumn<String> applicationStatus =
+      GeneratedColumn<String>(
+        'application_status',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('pending'),
+      );
   static const VerificationMeta _reviewedByMeta = const VerificationMeta(
     'reviewedBy',
   );
@@ -19725,7 +19778,7 @@ class $CoachesTableTable extends CoachesTable
     lastName,
     email,
     bio,
-    status,
+    applicationStatus,
     reviewedBy,
     reviewedAt,
     rejectionReason,
@@ -19787,10 +19840,13 @@ class $CoachesTableTable extends CoachesTable
         bio.isAcceptableOrUnknown(data['bio']!, _bioMeta),
       );
     }
-    if (data.containsKey('status')) {
+    if (data.containsKey('application_status')) {
       context.handle(
-        _statusMeta,
-        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+        _applicationStatusMeta,
+        applicationStatus.isAcceptableOrUnknown(
+          data['application_status']!,
+          _applicationStatusMeta,
+        ),
       );
     }
     if (data.containsKey('reviewed_by')) {
@@ -19859,9 +19915,9 @@ class $CoachesTableTable extends CoachesTable
         DriftSqlType.string,
         data['${effectivePrefix}bio'],
       ),
-      status: attachedDatabase.typeMapping.read(
+      applicationStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}status'],
+        data['${effectivePrefix}application_status'],
       )!,
       reviewedBy: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -19912,7 +19968,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
   final String? bio;
 
   /// Application status: pending, approved, rejected
-  final String status;
+  final String applicationStatus;
 
   /// Admin who reviewed the application
   final String? reviewedBy;
@@ -19935,7 +19991,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
     required this.lastName,
     required this.email,
     this.bio,
-    required this.status,
+    required this.applicationStatus,
     this.reviewedBy,
     this.reviewedAt,
     this.rejectionReason,
@@ -19953,7 +20009,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
     if (!nullToAbsent || bio != null) {
       map['bio'] = Variable<String>(bio);
     }
-    map['status'] = Variable<String>(status);
+    map['application_status'] = Variable<String>(applicationStatus);
     if (!nullToAbsent || reviewedBy != null) {
       map['reviewed_by'] = Variable<String>(reviewedBy);
     }
@@ -19976,7 +20032,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
       lastName: Value(lastName),
       email: Value(email),
       bio: bio == null && nullToAbsent ? const Value.absent() : Value(bio),
-      status: Value(status),
+      applicationStatus: Value(applicationStatus),
       reviewedBy: reviewedBy == null && nullToAbsent
           ? const Value.absent()
           : Value(reviewedBy),
@@ -20003,7 +20059,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
       lastName: serializer.fromJson<String>(json['lastName']),
       email: serializer.fromJson<String>(json['email']),
       bio: serializer.fromJson<String?>(json['bio']),
-      status: serializer.fromJson<String>(json['status']),
+      applicationStatus: serializer.fromJson<String>(json['applicationStatus']),
       reviewedBy: serializer.fromJson<String?>(json['reviewedBy']),
       reviewedAt: serializer.fromJson<DateTime?>(json['reviewedAt']),
       rejectionReason: serializer.fromJson<String?>(json['rejectionReason']),
@@ -20021,7 +20077,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
       'lastName': serializer.toJson<String>(lastName),
       'email': serializer.toJson<String>(email),
       'bio': serializer.toJson<String?>(bio),
-      'status': serializer.toJson<String>(status),
+      'applicationStatus': serializer.toJson<String>(applicationStatus),
       'reviewedBy': serializer.toJson<String?>(reviewedBy),
       'reviewedAt': serializer.toJson<DateTime?>(reviewedAt),
       'rejectionReason': serializer.toJson<String?>(rejectionReason),
@@ -20037,7 +20093,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
     String? lastName,
     String? email,
     Value<String?> bio = const Value.absent(),
-    String? status,
+    String? applicationStatus,
     Value<String?> reviewedBy = const Value.absent(),
     Value<DateTime?> reviewedAt = const Value.absent(),
     Value<String?> rejectionReason = const Value.absent(),
@@ -20050,7 +20106,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
     lastName: lastName ?? this.lastName,
     email: email ?? this.email,
     bio: bio.present ? bio.value : this.bio,
-    status: status ?? this.status,
+    applicationStatus: applicationStatus ?? this.applicationStatus,
     reviewedBy: reviewedBy.present ? reviewedBy.value : this.reviewedBy,
     reviewedAt: reviewedAt.present ? reviewedAt.value : this.reviewedAt,
     rejectionReason: rejectionReason.present
@@ -20067,7 +20123,9 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
       lastName: data.lastName.present ? data.lastName.value : this.lastName,
       email: data.email.present ? data.email.value : this.email,
       bio: data.bio.present ? data.bio.value : this.bio,
-      status: data.status.present ? data.status.value : this.status,
+      applicationStatus: data.applicationStatus.present
+          ? data.applicationStatus.value
+          : this.applicationStatus,
       reviewedBy: data.reviewedBy.present
           ? data.reviewedBy.value
           : this.reviewedBy,
@@ -20091,7 +20149,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
           ..write('lastName: $lastName, ')
           ..write('email: $email, ')
           ..write('bio: $bio, ')
-          ..write('status: $status, ')
+          ..write('applicationStatus: $applicationStatus, ')
           ..write('reviewedBy: $reviewedBy, ')
           ..write('reviewedAt: $reviewedAt, ')
           ..write('rejectionReason: $rejectionReason, ')
@@ -20109,7 +20167,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
     lastName,
     email,
     bio,
-    status,
+    applicationStatus,
     reviewedBy,
     reviewedAt,
     rejectionReason,
@@ -20126,7 +20184,7 @@ class CoachEntry extends DataClass implements Insertable<CoachEntry> {
           other.lastName == this.lastName &&
           other.email == this.email &&
           other.bio == this.bio &&
-          other.status == this.status &&
+          other.applicationStatus == this.applicationStatus &&
           other.reviewedBy == this.reviewedBy &&
           other.reviewedAt == this.reviewedAt &&
           other.rejectionReason == this.rejectionReason &&
@@ -20141,7 +20199,7 @@ class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
   final Value<String> lastName;
   final Value<String> email;
   final Value<String?> bio;
-  final Value<String> status;
+  final Value<String> applicationStatus;
   final Value<String?> reviewedBy;
   final Value<DateTime?> reviewedAt;
   final Value<String?> rejectionReason;
@@ -20155,7 +20213,7 @@ class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
     this.lastName = const Value.absent(),
     this.email = const Value.absent(),
     this.bio = const Value.absent(),
-    this.status = const Value.absent(),
+    this.applicationStatus = const Value.absent(),
     this.reviewedBy = const Value.absent(),
     this.reviewedAt = const Value.absent(),
     this.rejectionReason = const Value.absent(),
@@ -20170,7 +20228,7 @@ class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
     required String lastName,
     required String email,
     this.bio = const Value.absent(),
-    this.status = const Value.absent(),
+    this.applicationStatus = const Value.absent(),
     this.reviewedBy = const Value.absent(),
     this.reviewedAt = const Value.absent(),
     this.rejectionReason = const Value.absent(),
@@ -20189,7 +20247,7 @@ class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
     Expression<String>? lastName,
     Expression<String>? email,
     Expression<String>? bio,
-    Expression<String>? status,
+    Expression<String>? applicationStatus,
     Expression<String>? reviewedBy,
     Expression<DateTime>? reviewedAt,
     Expression<String>? rejectionReason,
@@ -20204,7 +20262,7 @@ class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
       if (lastName != null) 'last_name': lastName,
       if (email != null) 'email': email,
       if (bio != null) 'bio': bio,
-      if (status != null) 'status': status,
+      if (applicationStatus != null) 'application_status': applicationStatus,
       if (reviewedBy != null) 'reviewed_by': reviewedBy,
       if (reviewedAt != null) 'reviewed_at': reviewedAt,
       if (rejectionReason != null) 'rejection_reason': rejectionReason,
@@ -20221,7 +20279,7 @@ class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
     Value<String>? lastName,
     Value<String>? email,
     Value<String?>? bio,
-    Value<String>? status,
+    Value<String>? applicationStatus,
     Value<String?>? reviewedBy,
     Value<DateTime?>? reviewedAt,
     Value<String?>? rejectionReason,
@@ -20236,7 +20294,7 @@ class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
       lastName: lastName ?? this.lastName,
       email: email ?? this.email,
       bio: bio ?? this.bio,
-      status: status ?? this.status,
+      applicationStatus: applicationStatus ?? this.applicationStatus,
       reviewedBy: reviewedBy ?? this.reviewedBy,
       reviewedAt: reviewedAt ?? this.reviewedAt,
       rejectionReason: rejectionReason ?? this.rejectionReason,
@@ -20267,8 +20325,8 @@ class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
     if (bio.present) {
       map['bio'] = Variable<String>(bio.value);
     }
-    if (status.present) {
-      map['status'] = Variable<String>(status.value);
+    if (applicationStatus.present) {
+      map['application_status'] = Variable<String>(applicationStatus.value);
     }
     if (reviewedBy.present) {
       map['reviewed_by'] = Variable<String>(reviewedBy.value);
@@ -20300,7 +20358,7 @@ class CoachesTableCompanion extends UpdateCompanion<CoachEntry> {
           ..write('lastName: $lastName, ')
           ..write('email: $email, ')
           ..write('bio: $bio, ')
-          ..write('status: $status, ')
+          ..write('applicationStatus: $applicationStatus, ')
           ..write('reviewedBy: $reviewedBy, ')
           ..write('reviewedAt: $reviewedAt, ')
           ..write('rejectionReason: $rejectionReason, ')
@@ -21786,10 +21844,11 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<bool> autoGenerateNutrition,
       Value<bool> completionReminders,
       Value<String?> senderName,
+      Value<String?> firstName,
+      Value<String?> lastName,
       Value<String?> dietaryPreference,
       Value<String> allergies,
       Value<bool> needsUpload,
-      Value<bool> isCoach,
       Value<int> rowid,
     });
 typedef $$UserProfilesTableTableUpdateCompanionBuilder =
@@ -21828,10 +21887,11 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<bool> autoGenerateNutrition,
       Value<bool> completionReminders,
       Value<String?> senderName,
+      Value<String?> firstName,
+      Value<String?> lastName,
       Value<String?> dietaryPreference,
       Value<String> allergies,
       Value<bool> needsUpload,
-      Value<bool> isCoach,
       Value<int> rowid,
     });
 
@@ -22019,6 +22079,16 @@ class $$UserProfilesTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastName => $composableBuilder(
+    column: $table.lastName,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get dietaryPreference => $composableBuilder(
     column: $table.dietaryPreference,
     builder: (column) => ColumnFilters(column),
@@ -22031,11 +22101,6 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isCoach => $composableBuilder(
-    column: $table.isCoach,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -22219,6 +22284,16 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastName => $composableBuilder(
+    column: $table.lastName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get dietaryPreference => $composableBuilder(
     column: $table.dietaryPreference,
     builder: (column) => ColumnOrderings(column),
@@ -22231,11 +22306,6 @@ class $$UserProfilesTableTableOrderingComposer
 
   ColumnOrderings<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isCoach => $composableBuilder(
-    column: $table.isCoach,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -22406,6 +22476,12 @@ class $$UserProfilesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get firstName =>
+      $composableBuilder(column: $table.firstName, builder: (column) => column);
+
+  GeneratedColumn<String> get lastName =>
+      $composableBuilder(column: $table.lastName, builder: (column) => column);
+
   GeneratedColumn<String> get dietaryPreference => $composableBuilder(
     column: $table.dietaryPreference,
     builder: (column) => column,
@@ -22418,9 +22494,6 @@ class $$UserProfilesTableTableAnnotationComposer
     column: $table.needsUpload,
     builder: (column) => column,
   );
-
-  GeneratedColumn<bool> get isCoach =>
-      $composableBuilder(column: $table.isCoach, builder: (column) => column);
 }
 
 class $$UserProfilesTableTableTableManager
@@ -22498,10 +22571,11 @@ class $$UserProfilesTableTableTableManager
                 Value<bool> autoGenerateNutrition = const Value.absent(),
                 Value<bool> completionReminders = const Value.absent(),
                 Value<String?> senderName = const Value.absent(),
+                Value<String?> firstName = const Value.absent(),
+                Value<String?> lastName = const Value.absent(),
                 Value<String?> dietaryPreference = const Value.absent(),
                 Value<String> allergies = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
-                Value<bool> isCoach = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
                 id: id,
@@ -22538,10 +22612,11 @@ class $$UserProfilesTableTableTableManager
                 autoGenerateNutrition: autoGenerateNutrition,
                 completionReminders: completionReminders,
                 senderName: senderName,
+                firstName: firstName,
+                lastName: lastName,
                 dietaryPreference: dietaryPreference,
                 allergies: allergies,
                 needsUpload: needsUpload,
-                isCoach: isCoach,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -22581,10 +22656,11 @@ class $$UserProfilesTableTableTableManager
                 Value<bool> autoGenerateNutrition = const Value.absent(),
                 Value<bool> completionReminders = const Value.absent(),
                 Value<String?> senderName = const Value.absent(),
+                Value<String?> firstName = const Value.absent(),
+                Value<String?> lastName = const Value.absent(),
                 Value<String?> dietaryPreference = const Value.absent(),
                 Value<String> allergies = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
-                Value<bool> isCoach = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
                 id: id,
@@ -22621,10 +22697,11 @@ class $$UserProfilesTableTableTableManager
                 autoGenerateNutrition: autoGenerateNutrition,
                 completionReminders: completionReminders,
                 senderName: senderName,
+                firstName: firstName,
+                lastName: lastName,
                 dietaryPreference: dietaryPreference,
                 allergies: allergies,
                 needsUpload: needsUpload,
-                isCoach: isCoach,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -30344,7 +30421,7 @@ typedef $$CoachesTableTableCreateCompanionBuilder =
       required String lastName,
       required String email,
       Value<String?> bio,
-      Value<String> status,
+      Value<String> applicationStatus,
       Value<String?> reviewedBy,
       Value<DateTime?> reviewedAt,
       Value<String?> rejectionReason,
@@ -30360,7 +30437,7 @@ typedef $$CoachesTableTableUpdateCompanionBuilder =
       Value<String> lastName,
       Value<String> email,
       Value<String?> bio,
-      Value<String> status,
+      Value<String> applicationStatus,
       Value<String?> reviewedBy,
       Value<DateTime?> reviewedAt,
       Value<String?> rejectionReason,
@@ -30408,8 +30485,8 @@ class $$CoachesTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get status => $composableBuilder(
-    column: $table.status,
+  ColumnFilters<String> get applicationStatus => $composableBuilder(
+    column: $table.applicationStatus,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30478,8 +30555,8 @@ class $$CoachesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get status => $composableBuilder(
-    column: $table.status,
+  ColumnOrderings<String> get applicationStatus => $composableBuilder(
+    column: $table.applicationStatus,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -30536,8 +30613,10 @@ class $$CoachesTableTableAnnotationComposer
   GeneratedColumn<String> get bio =>
       $composableBuilder(column: $table.bio, builder: (column) => column);
 
-  GeneratedColumn<String> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => column);
+  GeneratedColumn<String> get applicationStatus => $composableBuilder(
+    column: $table.applicationStatus,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get reviewedBy => $composableBuilder(
     column: $table.reviewedBy,
@@ -30598,7 +30677,7 @@ class $$CoachesTableTableTableManager
                 Value<String> lastName = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String?> bio = const Value.absent(),
-                Value<String> status = const Value.absent(),
+                Value<String> applicationStatus = const Value.absent(),
                 Value<String?> reviewedBy = const Value.absent(),
                 Value<DateTime?> reviewedAt = const Value.absent(),
                 Value<String?> rejectionReason = const Value.absent(),
@@ -30612,7 +30691,7 @@ class $$CoachesTableTableTableManager
                 lastName: lastName,
                 email: email,
                 bio: bio,
-                status: status,
+                applicationStatus: applicationStatus,
                 reviewedBy: reviewedBy,
                 reviewedAt: reviewedAt,
                 rejectionReason: rejectionReason,
@@ -30628,7 +30707,7 @@ class $$CoachesTableTableTableManager
                 required String lastName,
                 required String email,
                 Value<String?> bio = const Value.absent(),
-                Value<String> status = const Value.absent(),
+                Value<String> applicationStatus = const Value.absent(),
                 Value<String?> reviewedBy = const Value.absent(),
                 Value<DateTime?> reviewedAt = const Value.absent(),
                 Value<String?> rejectionReason = const Value.absent(),
@@ -30642,7 +30721,7 @@ class $$CoachesTableTableTableManager
                 lastName: lastName,
                 email: email,
                 bio: bio,
-                status: status,
+                applicationStatus: applicationStatus,
                 reviewedBy: reviewedBy,
                 reviewedAt: reviewedAt,
                 rejectionReason: rejectionReason,

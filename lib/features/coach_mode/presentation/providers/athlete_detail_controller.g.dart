@@ -53,7 +53,7 @@ final class AthleteDetailControllerProvider
 }
 
 String _$athleteDetailControllerHash() =>
-    r'627360ed16eb72cb5752dec199cb09d9ab00e671';
+    r'3aa3178c42c343ebd1492b2e24ad34a058c7b1b6';
 
 final class AthleteDetailControllerFamily extends $Family
     with

@@ -383,6 +383,7 @@ class EmailAuthService extends _$EmailAuthService {
         final prefs = ref.read(sharedPreferencesProvider);
         await prefs.remove('last_sync_timestamp_$newUserId');
 
+        // Sync all data including coach status (handled by edge function)
         await ref.read(syncCoordinatorProvider.notifier).sync(
           userId: newUserId,
           trigger: SyncTrigger.oauthSignIn,

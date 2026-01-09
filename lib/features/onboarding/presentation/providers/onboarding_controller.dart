@@ -403,6 +403,8 @@ class OnboardingController extends _$OnboardingController {
     required int heightInches,
     required double weightPounds,
     required bool runsWithWaterBottle,
+    String? firstName,
+    String? lastName,
   }) {
     _cachedUserProfileData = {
       'gender': gender,
@@ -411,6 +413,8 @@ class OnboardingController extends _$OnboardingController {
       'heightInches': heightInches,
       'weightPounds': weightPounds,
       'runsWithWaterBottle': runsWithWaterBottle,
+      'firstName': firstName,
+      'lastName': lastName,
     };
     DebugLogger.debug('📝 Cached user profile data');
   }
@@ -498,6 +502,8 @@ class OnboardingController extends _$OnboardingController {
           runsWithWaterBottle: data['runsWithWaterBottle'] as bool,
           authProvider: authProvider,
           isAnonymous: isAnonymous,
+          firstName: data['firstName'] as String?,
+          lastName: data['lastName'] as String?,
         );
         DebugLogger.info('✅ User profile created: ${_currentUser!.id}');
       } else {

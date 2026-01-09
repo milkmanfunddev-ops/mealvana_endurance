@@ -73,45 +73,23 @@ class SyncCoordinator extends _$SyncCoordinator {
   }) async {
     // Prevent concurrent syncs
     if (_syncInProgress) {
-      _logger.info(
-        'Sync already in progress, skipping duplicate request',
-        context: 'SYNC_COORDINATOR',
-        data: {'trigger': trigger.name, 'userId': userId},
-      );
       return true; // Return true since a sync is happening
     }
 
     // Check network connectivity before attempting sync
     final connectivityResult = await Connectivity().checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
-      _logger.info(
-        'Skipping sync - device is offline',
-        context: 'SYNC_COORDINATOR',
-        data: {'trigger': trigger.name, 'userId': userId},
-      );
       return false; // Return false since sync was skipped (offline-first: user can continue)
     }
 
     _syncInProgress = true;
     state = SyncState.syncing;
 
-    _logger.info(
-      'Starting sync',
-      context: 'SYNC_COORDINATOR',
-      data: {
-        'trigger': trigger.name,
-        'userId': userId,
-        'connectivity': connectivityResult.toString(),
-      },
-    );
-
     try {
       // STEP 1: Upload dirty records FIRST (protect user data)
-      _logger.info('Step 1: Uploading dirty records', context: 'SYNC_COORDINATOR');
-      final uploadResults = await _dataSyncService.uploadDirtyRecords(userId);
+      await _dataSyncService.uploadDirtyRecords(userId);
 
       // STEP 2: Download fresh data from Supabase (includes user profile sync)
-      _logger.info('Step 2: Downloading fresh data', context: 'SYNC_COORDINATOR');
       final success = await _dataSyncService.syncAllData(userId);
 
       if (success) {
@@ -122,28 +100,6 @@ class SyncCoordinator extends _$SyncCoordinator {
         if (!skipInvalidation) {
           _invalidateAllProviders();
         }
-
-        _logger.info(
-          'Sync completed successfully',
-          context: 'SYNC_COORDINATOR',
-          data: {
-            'trigger': trigger.name,
-            'userId': userId,
-            'uploadedTables': uploadResults.keys.length,
-            'lastSyncTime': _lastSyncTime?.toIso8601String(),
-            'skippedInvalidation': skipInvalidation,
-          },
-        );
-      } else {
-        _logger.warning(
-          'Sync completed with errors',
-          context: 'SYNC_COORDINATOR',
-          data: {
-            'trigger': trigger.name,
-            'userId': userId,
-            'uploadedTables': uploadResults.keys.length,
-          },
-        );
       }
 
       return success;
@@ -170,11 +126,6 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// - activities_list_screen.dart (1 location)
   /// - events_list_screen.dart (1 location)
   void _invalidateAllProviders() {
-    _logger.info(
-      'Invalidating all data providers',
-      context: 'SYNC_COORDINATOR',
-    );
-
     // User identity
     ref.invalidate(userIdProvider);
 

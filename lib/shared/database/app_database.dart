@@ -1614,8 +1614,6 @@ class AppDatabase extends _$AppDatabase {
       // Convert null to DietaryPreference.none for UI (database stores null, UI uses none enum)
       dietaryPreference: DietaryPreference.fromDbValue(dbUser.dietaryPreference) ?? DietaryPreference.none,
       allergies: Allergy.fromDbArray(dbUser.allergies),
-      // Coach mode
-      isCoach: dbUser.isCoach,
       // Sharing preferences
       senderName: dbUser.senderName,
     );

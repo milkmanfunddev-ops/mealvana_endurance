@@ -400,8 +400,7 @@ create table users
                    (ARRAY ['monday'::text, 'tuesday'::text, 'wednesday'::text, 'thursday'::text, 'friday'::text, 'saturday'::text, 'sunday'::text])),
     auto_generate_nutrition       boolean                  default true                            not null,
     completion_reminders          boolean                  default true                            not null,
-    sender_name                   text,
-    is_coach                      boolean                  default false
+    sender_name                   text
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -441,8 +440,6 @@ comment on column users.auto_generate_nutrition is 'Whether to auto-generate nut
 comment on column users.completion_reminders is 'Whether to send activity completion reminders';
 
 comment on column users.sender_name is 'Name used when sharing nutrition plans via email';
-
-comment on column users.is_coach is 'Flag indicating user has coach privileges. Set by admin only.';
 
 alter table users
     owner to postgres;
@@ -1024,10 +1021,6 @@ create index idx_users_dietary_preference
 create index idx_users_updated_at
     on users (updated_at);
 
-create index idx_users_is_coach
-    on users (is_coach)
-    where (is_coach = true);
-
 grant delete, insert, references, select, trigger, truncate, update on users to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on users to authenticated;
@@ -1036,32 +1029,35 @@ grant delete, insert, references, select, trigger, truncate, update on users to 
 
 create table integrations
 (
-    id                     uuid                     default gen_random_uuid() not null
+    id                          uuid                     default gen_random_uuid() not null
         primary key,
-    user_id                uuid                                               not null
+    user_id                     uuid                                               not null
         references users
             on delete cascade,
-    provider               text                                               not null
+    provider                    text                                               not null
         constraint integrations_provider_check
             check (provider = ANY
                    (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text])),
-    access_token           text                                               not null,
-    refresh_token          text,
-    token_expires_at       timestamp with time zone,
-    provider_athlete_id    text                                               not null,
-    provider_athlete_name  text,
-    provider_athlete_email text,
-    is_active              boolean                  default true,
-    last_sync_at           timestamp with time zone,
-    last_sync_status       text
+    access_token                text                                               not null,
+    refresh_token               text,
+    token_expires_at            timestamp with time zone,
+    provider_athlete_id         text                                               not null,
+    provider_athlete_name       text,
+    provider_athlete_email      text,
+    is_active                   boolean                  default true,
+    last_sync_at                timestamp with time zone,
+    last_sync_status            text
         constraint integrations_last_sync_status_check
             check ((last_sync_status IS NULL) OR
                    (last_sync_status = ANY (ARRAY ['success'::text, 'error'::text, 'pending'::text]))),
-    last_sync_error        text,
-    created_at             timestamp with time zone default now(),
-    updated_at             timestamp with time zone default now(),
+    last_sync_error             text,
+    created_at                  timestamp with time zone default now(),
+    updated_at                  timestamp with time zone default now(),
+    threshold_pace_min_per_mile real,
     unique (user_id, provider)
 );
+
+comment on column integrations.threshold_pace_min_per_mile is 'Athlete threshold pace in minutes per mile (e.g., 7.5 = 7:30/mi). Used to calculate accurate workout pace from Training Peaks IF and Structure data. Fetched from provider speed zones during sync.';
 
 alter table integrations
     owner to postgres;
@@ -1191,6 +1187,43 @@ grant delete, insert, references, select, trigger, truncate, update on coach_mes
 grant delete, insert, references, select, trigger, truncate, update on coach_messages to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on coach_messages to service_role;
+
+create table coaches
+(
+    id                 uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id            uuid                                               not null
+        unique
+        references users
+            on delete cascade,
+    first_name         text                                               not null,
+    last_name          text                                               not null,
+    email              text                                               not null
+        unique,
+    bio                text,
+    application_status text                     default 'pending'::text   not null
+        constraint coaches_application_status_check
+            check (application_status = ANY (ARRAY ['pending'::text, 'approved'::text, 'rejected'::text])),
+    submitted_at       timestamp with time zone default now()             not null,
+    approved_at        timestamp with time zone,
+    created_at         timestamp with time zone default now()             not null,
+    updated_at         timestamp with time zone default now()             not null
+);
+
+alter table coaches
+    owner to postgres;
+
+create index idx_coaches_status
+    on coaches (application_status);
+
+create index idx_coaches_user_id
+    on coaches (user_id);
+
+grant delete, insert, references, select, trigger, truncate, update on coaches to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on coaches to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on coaches to service_role;
 
 create function set_limit(real) returns real
     strict

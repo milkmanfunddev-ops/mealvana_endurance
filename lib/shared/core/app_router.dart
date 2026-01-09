@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,6 +47,7 @@ import '../../features/carb_loading/presentation/screens/create_custom_carb_load
 import '../../features/carb_loading/domain/meal_type.dart';
 import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
+import '../../features/events/presentation/screens/event_creation_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
@@ -55,6 +57,7 @@ import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
 import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_registration_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
 
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
@@ -152,6 +155,7 @@ class AppRouter {
             initialPace: extra?['goalPace'] as double?,
             activityId: extra?['activityId'] as String?,
             eventId: extra?['eventId'] as String?,
+            forUserId: extra?['forUserId'] as String?, // NEW: For coach creating for athlete
             // Activity type for tab selection
             activityType: extra?['activityType'] as String?,
             // Cycling-specific parameters
@@ -184,6 +188,7 @@ class AppRouter {
             initialPace: extra?['goalPace'] as double?,
             activityId: extra?['activityId'] as String?,
             eventId: extra?['eventId'] as String?,
+            forUserId: extra?['forUserId'] as String?, // NEW: For coach creating for athlete
             // Activity type for tab selection
             activityType: extra?['activityType'] as String?,
             // Cycling-specific parameters
@@ -287,6 +292,18 @@ class AppRouter {
         path: '/events',
         name: 'events-list',
         builder: (context, state) => const EventsListScreen(),
+      ),
+
+      // Event creation - supports coach creating for athlete
+      GoRoute(
+        path: '/events/create',
+        name: 'events-create',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return EventCreationScreen(
+            forUserId: extra?['forUserId'] as String?,
+          );
+        },
       ),
 
       // Pro Version Screen - Premium features showcase
@@ -536,51 +553,70 @@ class AppRouter {
 
       // ============================================================================
       // COACH MODE ROUTES
+      // Web-only: /coach, /coach/apply, /coach/athlete/:id (coach features)
+      // Mobile-only: /my-coaches, /coach-directory, /athlete/feedback (athlete features)
       // ============================================================================
 
-      // Coach Dashboard - Main hub for coaches to manage athletes
+      // Coach Dashboard - Main hub for coaches to manage athletes (WEB ONLY)
       GoRoute(
         path: '/coach',
         name: 'coach-dashboard',
+        redirect: (context, state) => kIsWeb ? null : '/settings',
         builder: (context, state) => const CoachDashboardScreen(),
       ),
 
-      // Athlete Detail - View athlete's activities and add feedback
+      // Athlete Detail - View athlete's activities and add feedback (WEB ONLY)
       GoRoute(
         path: '/coach/athlete/:relationshipId',
         name: 'coach-athlete-detail',
+        redirect: (context, state) => kIsWeb ? null : '/settings',
         builder: (context, state) {
           final relationshipId = state.pathParameters['relationshipId']!;
           return AthleteDetailScreen(relationshipId: relationshipId);
         },
       ),
 
-      // My Coaches - Athlete's view of connected coaches
+      // My Coaches - Athlete's view of connected coaches (MOBILE ONLY)
       GoRoute(
         path: '/my-coaches',
         name: 'my-coaches',
+        redirect: (context, state) => kIsWeb ? '/settings' : null,
         builder: (context, state) => const MyCoachesScreen(),
       ),
 
-      // Athlete Feedback - Athletes view messages from coaches
+      // Athlete Feedback - Athletes view messages from coaches (MOBILE ONLY)
       GoRoute(
         path: '/athlete/feedback',
         name: 'athlete-feedback',
+        redirect: (context, state) => kIsWeb ? '/settings' : null,
         builder: (context, state) => const AthleteFeedbackScreen(),
       ),
 
-      // Coach Registration - Apply to become a coach
+      // Coach Registration - Apply to become a coach (WEB ONLY)
       GoRoute(
         path: '/coach/apply',
         name: 'coach-apply',
+        redirect: (context, state) => kIsWeb ? null : '/settings',
         builder: (context, state) => const CoachRegistrationScreen(),
       ),
 
-      // Coach Directory - Athletes browse and request coaches
+      // Coach Directory - Athletes browse and request coaches (MOBILE ONLY)
       GoRoute(
         path: '/coach-directory',
         name: 'coach-directory',
+        redirect: (context, state) => kIsWeb ? '/settings' : null,
         builder: (context, state) => const CoachDirectoryScreen(),
+      ),
+
+      // Coach Chat - Unified chat screen for both coaches and athletes
+      // Accessible on both web and mobile platforms
+      GoRoute(
+        path: '/chat/:relationshipId',
+        name: 'coach-chat',
+        builder: (context, state) {
+          final relationshipId = state.pathParameters['relationshipId']!;
+          return CoachChatScreen(relationshipId: relationshipId);
+        },
       ),
     ],
 

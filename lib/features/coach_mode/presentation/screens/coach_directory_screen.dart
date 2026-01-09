@@ -234,20 +234,16 @@ class CoachDirectoryScreen extends ConsumerWidget {
     if (!context.mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Coach request sent! You will be notified when they respond.'),
-          backgroundColor: Colors.green,
-        ),
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Coach request sent! You will be notified when they respond.',
       );
       // Navigate back to My Coaches screen
       context.pop();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to send coach request. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
+      MealvanaSnackbar.showError(
+        context,
+        'Failed to send coach request. Please try again.',
       );
     }
   }

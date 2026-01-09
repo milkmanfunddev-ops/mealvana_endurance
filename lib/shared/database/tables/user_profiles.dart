@@ -96,6 +96,12 @@ class UserProfilesTable extends Table {
   // Sharing preferences
   TextColumn get senderName => text().nullable().named('sender_name')(); // Name used when sharing plans
 
+  // User identity - optional first and last name for coach mode identification
+  /// User's first name (optional, used for coach mode athlete identification)
+  TextColumn get firstName => text().nullable().named('first_name')();
+  /// User's last name (optional, used for coach mode athlete identification)
+  TextColumn get lastName => text().nullable().named('last_name')();
+
   // NEW: Dietary preference and allergies for onboarding revamp
   /// User's dietary preference (single-select, nullable - user can skip in onboarding)
   /// Values: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb
@@ -109,9 +115,9 @@ class UserProfilesTable extends Table {
   /// Used for background sync after onboarding registration
   BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();
 
-  /// Whether this user has coach privileges (can manage athletes)
-  /// Set via admin/backend - not user-editable
-  BoolColumn get isCoach => boolean().withDefault(const Constant(false)).named('is_coach')();
+  // NOTE: is_coach column removed - coach status is now determined by
+  // checking the coaches table for an approved record.
+  // The column may still exist in older databases but is no longer used.
 
   @override
   Set<Column> get primaryKey => {id};

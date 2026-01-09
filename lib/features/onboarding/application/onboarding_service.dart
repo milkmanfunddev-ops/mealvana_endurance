@@ -28,6 +28,8 @@ class OnboardingService {
     required bool runsWithWaterBottle,
     String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
     bool isAnonymous = true, // false when user signs up with email/OAuth
+    String? firstName,
+    String? lastName,
   }) async {
 
     final user = await _authService.createUser(
@@ -39,6 +41,8 @@ class OnboardingService {
       runsWithWaterBottle: runsWithWaterBottle,
       authProvider: authProvider,
       isAnonymous: isAnonymous,
+      firstName: firstName,
+      lastName: lastName,
     );
 
     // Track user registration

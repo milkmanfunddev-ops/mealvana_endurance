@@ -30,6 +30,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   GutTraining? _gutTraining;
   SweatRateCat? _sweatRate;
 
+  // Optional name fields for coach mode athlete identification
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+
   bool _hasChanges = false;
   bool _isSaving = false;
 
@@ -57,6 +61,13 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         if (settingsState.weightPounds != null) {
           _weightController.text = settingsState.weightPounds.toString();
         }
+        // Optional name fields
+        if (settingsState.firstName != null) {
+          _firstNameController.text = settingsState.firstName!;
+        }
+        if (settingsState.lastName != null) {
+          _lastNameController.text = settingsState.lastName!;
+        }
       }
     });
   }
@@ -66,6 +77,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     _heightFeetController.dispose();
     _heightInchesController.dispose();
     _weightController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     super.dispose();
   }
 
@@ -86,12 +99,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
     // Validate birthday is selected
     if (_birthday == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select your birthday'),
-          backgroundColor: AppColors.dragonfruit,
-        ),
-      );
+      MealvanaSnackbar.showWarning(context, 'Please select your birthday');
       return;
     }
 
@@ -117,6 +125,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         runsWithWaterBottle: _runsWithWaterBottle,
         gutTrainingLevel: _gutTraining,
         sweatRate: _sweatRate,
+        firstName: _firstNameController.text.trim().isNotEmpty ? _firstNameController.text.trim() : null,
+        lastName: _lastNameController.text.trim().isNotEmpty ? _lastNameController.text.trim() : null,
       );
 
       if (mounted) {
@@ -289,6 +299,35 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Name fields (optional) - row with first and last name
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  context: context,
+                  controller: _firstNameController,
+                  hint: 'First name (optional)',
+                  icon: FontAwesomeIcons.user,
+                  keyboardType: TextInputType.name,
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: _buildTextField(
+                  context: context,
+                  controller: _lastNameController,
+                  hint: 'Last name (optional)',
+                  icon: FontAwesomeIcons.user,
+                  keyboardType: TextInputType.name,
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -604,6 +643,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    TextCapitalization textCapitalization = TextCapitalization.none,
     String? suffix,
     String? Function(String?)? validator,
   }) {
@@ -623,6 +663,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
           validator: validator,
           onChanged: (_) => _markChanged(),
           decoration: InputDecoration(

@@ -25,7 +25,7 @@ CoachRepository coachRepository(Ref ref) {
 
 /// Repository for managing coach mode data following FOA pattern
 /// Handles coach-athlete relationships and bidirectional messaging
-/// Note: Coach status is determined by is_coach flag on users table (set by admin)
+/// Note: Coach status is determined by approved record in coaches table (set by admin)
 class CoachRepository {
   const CoachRepository({
     required SupabaseClient supabase,
@@ -42,22 +42,30 @@ class CoachRepository {
   static const _uuid = Uuid();
 
   // ============================================================================
-  // COACH INFO OPERATIONS (from users table)
+  // COACH INFO OPERATIONS (from coaches table)
   // ============================================================================
 
-  /// Get coach info for a user (basic info from users table)
+  /// Get coach info for a user (from coaches table)
+  /// Returns null if user is not an approved coach
   Future<CoachInfo?> getCoachInfoByUserId(String userId) async {
     try {
-      final result = await (_database.select(_database.userProfilesTable)
-            ..where((t) => t.id.equals(userId) & t.isCoach.equals(true)))
+      // Check the local coaches table for an approved record
+      final result = await (_database.select(_database.coachesTable)
+            ..where((t) => t.userId.equals(userId) & t.applicationStatus.equals('approved')))
           .getSingleOrNull();
 
       if (result == null) return null;
+
+      // Get user profile for device ID
+      final userProfile = await (_database.select(_database.userProfilesTable)
+            ..where((t) => t.id.equals(userId)))
+          .getSingleOrNull();
+
       return CoachInfo(
-        userId: result.id,
-        deviceId: result.deviceId,
-        isCoach: result.isCoach,
-        displayName: result.senderName,
+        userId: result.userId,
+        deviceId: userProfile?.deviceId ?? '',
+        isCoach: true, // If we have an approved record, they're a coach
+        displayName: '${result.firstName} ${result.lastName}'.trim(),
       );
     } catch (e, stackTrace) {
       _logger.error(
@@ -77,7 +85,7 @@ class CoachRepository {
       final response = await _supabase
           .from('coaches')
           .select('user_id, first_name, last_name, email, bio')
-          .eq('status', 'approved')
+          .eq('application_status', 'approved')
           .order('created_at', ascending: true);
 
       final List<dynamic> results = response as List<dynamic>;
@@ -106,17 +114,32 @@ class CoachRepository {
   // ============================================================================
 
   /// Get all relationships for a coach (user with is_coach=true)
+  /// Joins with user_profiles to get athlete display names
   Future<List<CoachAthleteRelationship>> getRelationshipsForCoach(
     String coachUserId,
   ) async {
     try {
-      final results = await (_database
-              .select(_database.coachAthleteRelationshipsTable)
-            ..where((t) => t.coachUserId.equals(coachUserId))
-            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-          .get();
+      // Join with user_profiles to get athlete display name
+      final query = _database.select(_database.coachAthleteRelationshipsTable).join([
+        leftOuterJoin(
+          _database.userProfilesTable,
+          _database.userProfilesTable.id.equalsExp(_database.coachAthleteRelationshipsTable.athleteUserId),
+        ),
+      ])
+        ..where(_database.coachAthleteRelationshipsTable.coachUserId.equals(coachUserId))
+        ..orderBy([OrderingTerm.desc(_database.coachAthleteRelationshipsTable.createdAt)]);
 
-      return results.map(_mapToRelationshipDomain).toList();
+      final results = await query.get();
+
+      return results.map((row) {
+        final relationship = row.readTable(_database.coachAthleteRelationshipsTable);
+        final athleteProfile = row.readTableOrNull(_database.userProfilesTable);
+
+        return _mapToRelationshipDomain(
+          relationship,
+          athleteDisplayName: _getDisplayNameFromProfile(athleteProfile, relationship.athleteUserId),
+        );
+      }).toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get relationships for coach',
@@ -151,7 +174,7 @@ class CoachRepository {
 
         return _mapToRelationshipDomain(
           relationship,
-          coachDisplayName: coachProfile?.senderName,
+          coachDisplayName: _getDisplayNameFromProfile(coachProfile, relationship.coachUserId),
         );
       }).toList();
     } catch (e, stackTrace) {
@@ -166,18 +189,33 @@ class CoachRepository {
   }
 
   /// Get active relationships for a coach
+  /// Joins with user_profiles to get athlete display names
   Future<List<CoachAthleteRelationship>> getActiveRelationshipsForCoach(
     String coachUserId,
   ) async {
     try {
-      final results = await (_database
-              .select(_database.coachAthleteRelationshipsTable)
-            ..where((t) =>
-                t.coachUserId.equals(coachUserId) & t.status.equals('active'))
-            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
-          .get();
+      // Join with user_profiles to get athlete display name
+      final query = _database.select(_database.coachAthleteRelationshipsTable).join([
+        leftOuterJoin(
+          _database.userProfilesTable,
+          _database.userProfilesTable.id.equalsExp(_database.coachAthleteRelationshipsTable.athleteUserId),
+        ),
+      ])
+        ..where(_database.coachAthleteRelationshipsTable.coachUserId.equals(coachUserId) &
+                _database.coachAthleteRelationshipsTable.status.equals('active'))
+        ..orderBy([OrderingTerm.asc(_database.coachAthleteRelationshipsTable.createdAt)]);
 
-      return results.map(_mapToRelationshipDomain).toList();
+      final results = await query.get();
+
+      return results.map((row) {
+        final relationship = row.readTable(_database.coachAthleteRelationshipsTable);
+        final athleteProfile = row.readTableOrNull(_database.userProfilesTable);
+
+        return _mapToRelationshipDomain(
+          relationship,
+          athleteDisplayName: _getDisplayNameFromProfile(athleteProfile, relationship.athleteUserId),
+        );
+      }).toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get active relationships for coach',
@@ -189,7 +227,36 @@ class CoachRepository {
     }
   }
 
+  /// Check if there is an active coach-athlete relationship
+  /// Used to validate if a coach can create/edit activities for an athlete
+  /// Returns true if coach has active relationship with athlete, false otherwise
+  Future<bool> isActiveCoachAthleteRelationship({
+    required String coachUserId,
+    required String athleteUserId,
+  }) async {
+    try {
+      final relationship = await (_database
+              .select(_database.coachAthleteRelationshipsTable)
+            ..where((r) =>
+                r.coachUserId.equals(coachUserId) &
+                r.athleteUserId.equals(athleteUserId) &
+                r.status.equals('active')))
+          .getSingleOrNull();
+
+      return relationship != null;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to check coach-athlete relationship',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
   /// Create a new coach-athlete relationship request
+  /// Writes to both local Drift database AND Supabase for cross-device sync
   Future<CoachAthleteRelationship> createRelationship({
     required String coachUserId,
     required String athleteUserId,
@@ -199,6 +266,19 @@ class CoachRepository {
       final id = _uuid.v4();
       final now = DateTime.now();
 
+      // Insert into Supabase first (for cross-device sync)
+      await _supabase.from('coach_athlete_relationships').insert({
+        'id': id,
+        'coach_user_id': coachUserId,
+        'athlete_user_id': athleteUserId,
+        'status': 'pending',
+        'requested_by': requestedBy,
+        'requested_at': now.toIso8601String(),
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      });
+
+      // Also save to local Drift database
       final companion = CoachAthleteRelationshipsTableCompanion.insert(
         id: id,
         coachUserId: coachUserId,
@@ -212,16 +292,6 @@ class CoachRepository {
       await _database
           .into(_database.coachAthleteRelationshipsTable)
           .insert(companion);
-
-      _logger.info(
-        'Created coach-athlete relationship',
-        context: 'COACH_REPOSITORY',
-        data: {
-          'relationshipId': id,
-          'coachUserId': coachUserId,
-          'athleteUserId': athleteUserId
-        },
-      );
 
       return CoachAthleteRelationship(
         id: id,
@@ -245,11 +315,23 @@ class CoachRepository {
   }
 
   /// Accept a relationship request
+  /// Updates both local Drift database AND Supabase for cross-device sync
   Future<CoachAthleteRelationship> acceptRelationship(
       String relationshipId) async {
     try {
       final now = DateTime.now();
 
+      // Update Supabase first (for cross-device sync)
+      await _supabase
+          .from('coach_athlete_relationships')
+          .update({
+            'status': 'active',
+            'accepted_at': now.toIso8601String(),
+            'updated_at': now.toIso8601String(),
+          })
+          .eq('id', relationshipId);
+
+      // Update local Drift database
       await (_database.update(_database.coachAthleteRelationshipsTable)
             ..where((t) => t.id.equals(relationshipId)))
           .write(CoachAthleteRelationshipsTableCompanion(
@@ -262,12 +344,6 @@ class CoachRepository {
           await (_database.select(_database.coachAthleteRelationshipsTable)
                 ..where((t) => t.id.equals(relationshipId)))
               .getSingle();
-
-      _logger.info(
-        'Accepted relationship',
-        context: 'COACH_REPOSITORY',
-        data: {'relationshipId': relationshipId},
-      );
 
       return _mapToRelationshipDomain(result);
     } catch (e, stackTrace) {
@@ -282,11 +358,23 @@ class CoachRepository {
   }
 
   /// Decline a relationship request
+  /// Updates both local Drift database AND Supabase for cross-device sync
   Future<CoachAthleteRelationship> declineRelationship(
       String relationshipId) async {
     try {
       final now = DateTime.now();
 
+      // Update Supabase first (for cross-device sync)
+      await _supabase
+          .from('coach_athlete_relationships')
+          .update({
+            'status': 'declined',
+            'declined_at': now.toIso8601String(),
+            'updated_at': now.toIso8601String(),
+          })
+          .eq('id', relationshipId);
+
+      // Update local Drift database
       await (_database.update(_database.coachAthleteRelationshipsTable)
             ..where((t) => t.id.equals(relationshipId)))
           .write(CoachAthleteRelationshipsTableCompanion(
@@ -299,12 +387,6 @@ class CoachRepository {
           await (_database.select(_database.coachAthleteRelationshipsTable)
                 ..where((t) => t.id.equals(relationshipId)))
               .getSingle();
-
-      _logger.info(
-        'Declined relationship',
-        context: 'COACH_REPOSITORY',
-        data: {'relationshipId': relationshipId},
-      );
 
       return _mapToRelationshipDomain(result);
     } catch (e, stackTrace) {
@@ -319,11 +401,23 @@ class CoachRepository {
   }
 
   /// Archive a relationship
+  /// Updates both local Drift database AND Supabase for cross-device sync
   Future<CoachAthleteRelationship> archiveRelationship(
       String relationshipId) async {
     try {
       final now = DateTime.now();
 
+      // Update Supabase first (for cross-device sync)
+      await _supabase
+          .from('coach_athlete_relationships')
+          .update({
+            'status': 'archived',
+            'archived_at': now.toIso8601String(),
+            'updated_at': now.toIso8601String(),
+          })
+          .eq('id', relationshipId);
+
+      // Update local Drift database
       await (_database.update(_database.coachAthleteRelationshipsTable)
             ..where((t) => t.id.equals(relationshipId)))
           .write(CoachAthleteRelationshipsTableCompanion(
@@ -337,12 +431,6 @@ class CoachRepository {
                 ..where((t) => t.id.equals(relationshipId)))
               .getSingle();
 
-      _logger.info(
-        'Archived relationship',
-        context: 'COACH_REPOSITORY',
-        data: {'relationshipId': relationshipId},
-      );
-
       return _mapToRelationshipDomain(result);
     } catch (e, stackTrace) {
       _logger.error(
@@ -355,9 +443,502 @@ class CoachRepository {
     }
   }
 
+  /// Subscribe to relationship changes for a user (coach or athlete)
+  /// Returns a RealtimeChannel that should be unsubscribed when done
+  RealtimeChannel subscribeToRelationshipChanges({
+    required String userId,
+    required void Function(CoachAthleteRelationship) onRelationshipChanged,
+  }) {
+    final channelName = 'relationships:$userId';
+
+    final channel = _supabase
+        .channel(channelName)
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'coach_athlete_relationships',
+          callback: (payload) async {
+            try {
+              final record = payload.newRecord.isNotEmpty
+                  ? payload.newRecord
+                  : payload.oldRecord;
+
+              // Check if this relationship involves our user
+              final coachUserId = record['coach_user_id'] as String?;
+              final athleteUserId = record['athlete_user_id'] as String?;
+
+              if (coachUserId != userId && athleteUserId != userId) return;
+
+              // For inserts and updates, sync to local DB and notify
+              if (payload.eventType != PostgresChangeEvent.delete) {
+                final now = DateTime.now();
+                final relationship = CoachAthleteRelationship(
+                  id: record['id'] as String,
+                  coachUserId: record['coach_user_id'] as String,
+                  athleteUserId: record['athlete_user_id'] as String,
+                  status: RelationshipStatus.fromString(
+                      record['status'] as String? ?? 'pending'),
+                  requestedBy: record['requested_by'] as String,
+                  requestedAt: record['requested_at'] != null
+                      ? DateTime.parse(record['requested_at'] as String)
+                      : now,
+                  acceptedAt: record['accepted_at'] != null
+                      ? DateTime.parse(record['accepted_at'] as String)
+                      : null,
+                  declinedAt: record['declined_at'] != null
+                      ? DateTime.parse(record['declined_at'] as String)
+                      : null,
+                  archivedAt: record['archived_at'] != null
+                      ? DateTime.parse(record['archived_at'] as String)
+                      : null,
+                  createdAt: record['created_at'] != null
+                      ? DateTime.parse(record['created_at'] as String)
+                      : now,
+                  updatedAt: record['updated_at'] != null
+                      ? DateTime.parse(record['updated_at'] as String)
+                      : now,
+                );
+
+                // Sync to local database
+                await _syncRelationshipToLocal(relationship);
+
+                onRelationshipChanged(relationship);
+              }
+            } catch (e, stackTrace) {
+              _logger.error(
+                'Failed to process realtime relationship change',
+                context: 'COACH_REPOSITORY',
+                error: e,
+                stackTrace: stackTrace,
+              );
+            }
+          },
+        )
+        .subscribe();
+
+    return channel;
+  }
+
+  /// Unsubscribe from relationship changes
+  Future<void> unsubscribeFromRelationshipChanges(
+      RealtimeChannel channel) async {
+    try {
+      await channel.unsubscribe();
+      await _supabase.removeChannel(channel);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to unsubscribe from relationship changes',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Sync a relationship from Supabase to local Drift database
+  Future<void> _syncRelationshipToLocal(
+      CoachAthleteRelationship relationship) async {
+    try {
+      final companion = CoachAthleteRelationshipsTableCompanion(
+        id: Value(relationship.id),
+        coachUserId: Value(relationship.coachUserId),
+        athleteUserId: Value(relationship.athleteUserId),
+        status: Value(relationship.status.name),
+        requestedBy: Value(relationship.requestedBy),
+        requestedAt: Value(relationship.requestedAt),
+        acceptedAt: Value(relationship.acceptedAt),
+        declinedAt: Value(relationship.declinedAt),
+        archivedAt: Value(relationship.archivedAt),
+        createdAt: Value(relationship.createdAt),
+        updatedAt: Value(relationship.updatedAt),
+      );
+
+      await _database
+          .into(_database.coachAthleteRelationshipsTable)
+          .insertOnConflictUpdate(companion);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync relationship to local DB',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Fetch all relationships for a user from Supabase and sync to local DB
+  /// Call this on dashboard load to ensure local DB is up-to-date
+  Future<List<CoachAthleteRelationship>> syncRelationshipsFromSupabase(
+      String userId) async {
+    try {
+      // Fetch relationships where user is coach OR athlete
+      final response = await _supabase
+          .from('coach_athlete_relationships')
+          .select()
+          .or('coach_user_id.eq.$userId,athlete_user_id.eq.$userId')
+          .order('created_at', ascending: false);
+
+      final List<dynamic> results = response as List<dynamic>;
+      final relationships = <CoachAthleteRelationship>[];
+
+      final now = DateTime.now();
+      for (final r in results) {
+        final relationship = CoachAthleteRelationship(
+          id: r['id'] as String,
+          coachUserId: r['coach_user_id'] as String,
+          athleteUserId: r['athlete_user_id'] as String,
+          status:
+              RelationshipStatus.fromString(r['status'] as String? ?? 'pending'),
+          requestedBy: r['requested_by'] as String,
+          requestedAt: r['requested_at'] != null
+              ? DateTime.parse(r['requested_at'] as String)
+              : now,
+          acceptedAt: r['accepted_at'] != null
+              ? DateTime.parse(r['accepted_at'] as String)
+              : null,
+          declinedAt: r['declined_at'] != null
+              ? DateTime.parse(r['declined_at'] as String)
+              : null,
+          archivedAt: r['archived_at'] != null
+              ? DateTime.parse(r['archived_at'] as String)
+              : null,
+          createdAt: r['created_at'] != null
+              ? DateTime.parse(r['created_at'] as String)
+              : now,
+          updatedAt: r['updated_at'] != null
+              ? DateTime.parse(r['updated_at'] as String)
+              : now,
+        );
+
+        // Sync to local database
+        await _syncRelationshipToLocal(relationship);
+        relationships.add(relationship);
+      }
+
+      return relationships;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync relationships from Supabase',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Return empty list on error - local cache may still have data
+      return [];
+    }
+  }
+
   // ============================================================================
   // MESSAGE OPERATIONS (bidirectional messaging)
   // ============================================================================
+
+  /// Get ONLY general chat messages (excludes activity and nutrition plan comments)
+  /// Used for the dedicated chat screen
+  /// Queries Supabase directly for real-time accuracy (historical messages)
+  Future<List<CoachMessage>> getGeneralChatMessages({
+    required String coachUserId,
+    required String athleteUserId,
+    int? limit,
+  }) async {
+    try {
+      // Query Supabase directly to get all historical messages
+      var query = _supabase
+          .from('coach_messages')
+          .select('*')
+          .eq('coach_user_id', coachUserId)
+          .eq('athlete_user_id', athleteUserId)
+          .isFilter('activity_id', null)
+          .isFilter('nutrition_plan_id', null)
+          .order('created_at', ascending: true); // Oldest first for chat display
+
+      if (limit != null) {
+        query = query.limit(limit);
+      }
+
+      final response = await query;
+      final List<dynamic> data = response as List<dynamic>;
+
+      final messages = data.map((json) {
+        final m = json as Map<String, dynamic>;
+        return CoachMessage(
+          id: m['id'] as String,
+          coachUserId: m['coach_user_id'] as String,
+          athleteUserId: m['athlete_user_id'] as String,
+          senderUserId: m['sender_user_id'] as String,
+          messageText: m['message_text'] as String,
+          activityId: m['activity_id'] as String?,
+          nutritionPlanId: m['nutrition_plan_id'] as String?,
+          isRead: m['is_read'] as bool? ?? false,
+          createdAt: DateTime.parse(m['created_at'] as String),
+          updatedAt: DateTime.parse(m['updated_at'] as String),
+        );
+      }).toList();
+
+      // Also cache to local Drift for offline access
+      for (final message in messages) {
+        final companion = CoachMessagesTableCompanion.insert(
+          id: message.id,
+          coachUserId: message.coachUserId,
+          athleteUserId: message.athleteUserId,
+          senderUserId: message.senderUserId,
+          messageText: message.messageText,
+          nutritionPlanId: Value(message.nutritionPlanId),
+          activityId: Value(message.activityId),
+          isRead: Value(message.isRead),
+          createdAt: Value(message.createdAt),
+          updatedAt: Value(message.updatedAt),
+        );
+
+        await _database
+            .into(_database.coachMessagesTable)
+            .insert(companion, mode: InsertMode.insertOrReplace);
+      }
+
+      return messages;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get general chat messages from Supabase',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Subscribe to new messages for a conversation using Supabase Realtime
+  /// Returns a RealtimeChannel that should be unsubscribed when done
+  RealtimeChannel subscribeToConversation({
+    required String coachUserId,
+    required String athleteUserId,
+    required void Function(CoachMessage) onNewMessage,
+  }) {
+    final channelName = 'chat:$coachUserId:$athleteUserId';
+
+    _logger.info(
+      'Setting up realtime subscription for conversation',
+      context: 'COACH_REPOSITORY',
+      data: {
+        'channelName': channelName,
+        'coachUserId': coachUserId,
+        'athleteUserId': athleteUserId,
+      },
+    );
+
+    final channel = _supabase
+        .channel(channelName)
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'coach_messages',
+          // REMOVED FILTER: Let all messages through, filter in callback
+          // This ensures we don't miss messages due to overly restrictive filters
+          callback: (payload) {
+            _logger.info(
+              'Realtime event received',
+              context: 'COACH_REPOSITORY',
+              data: {
+                'eventType': payload.eventType.toString(),
+                'table': payload.table,
+                'newRecord': payload.newRecord,
+              },
+            );
+
+            try {
+              final newRecord = payload.newRecord;
+
+              // Check if this message is for our conversation
+              final messageCoachUserId = newRecord['coach_user_id'] as String?;
+              final messageAthleteUserId = newRecord['athlete_user_id'] as String?;
+
+              if (messageCoachUserId != coachUserId || messageAthleteUserId != athleteUserId) {
+                _logger.info(
+                  'Message not for our conversation, skipping',
+                  context: 'COACH_REPOSITORY',
+                  data: {
+                    'expected_coach_user_id': coachUserId,
+                    'expected_athlete_user_id': athleteUserId,
+                    'received_coach_user_id': messageCoachUserId,
+                    'received_athlete_user_id': messageAthleteUserId,
+                  },
+                );
+                return;
+              }
+
+              final message = CoachMessage(
+                id: newRecord['id'] as String,
+                coachUserId: newRecord['coach_user_id'] as String,
+                athleteUserId: newRecord['athlete_user_id'] as String,
+                senderUserId: newRecord['sender_user_id'] as String,
+                messageText: newRecord['message_text'] as String,
+                nutritionPlanId: newRecord['nutrition_plan_id'] as String?,
+                activityId: newRecord['activity_id'] as String?,
+                isRead: newRecord['is_read'] as bool? ?? false,
+                createdAt: DateTime.parse(newRecord['created_at'] as String),
+                updatedAt: DateTime.parse(newRecord['updated_at'] as String),
+              );
+
+              // Only notify for general messages (not activity/plan comments)
+              if (message.isGeneralMessage) {
+                _logger.info(
+                  'Calling onNewMessage callback',
+                  context: 'COACH_REPOSITORY',
+                  data: {'messageId': message.id},
+                );
+                onNewMessage(message);
+              } else {
+                _logger.info(
+                  'Message is not a general message, skipping',
+                  context: 'COACH_REPOSITORY',
+                  data: {
+                    'messageId': message.id,
+                    'isActivityComment': message.isActivityComment,
+                    'isNutritionPlanComment': message.isNutritionPlanComment,
+                  },
+                );
+              }
+            } catch (e, stackTrace) {
+              _logger.error(
+                'Failed to parse realtime message',
+                context: 'COACH_REPOSITORY',
+                error: e,
+                stackTrace: stackTrace,
+              );
+            }
+          },
+        )
+        .subscribe();
+
+    _logger.info(
+      'Realtime subscription created and subscribed',
+      context: 'COACH_REPOSITORY',
+      data: {
+        'channelName': channelName,
+      },
+    );
+
+    return channel;
+  }
+
+  /// Unsubscribe from a conversation channel
+  Future<void> unsubscribeFromConversation(RealtimeChannel channel) async {
+    try {
+      await channel.unsubscribe();
+      await _supabase.removeChannel(channel);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to unsubscribe from conversation',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Send a chat message to Supabase (for realtime sync)
+  /// Also saves to local Drift database
+  Future<CoachMessage> sendChatMessageToSupabase({
+    required String coachUserId,
+    required String athleteUserId,
+    required String senderUserId,
+    required String messageText,
+  }) async {
+    try {
+      final id = _uuid.v4();
+      final now = DateTime.now();
+
+      // Insert into Supabase first (this triggers realtime for other party)
+      await _supabase.from('coach_messages').insert({
+        'id': id,
+        'coach_user_id': coachUserId,
+        'athlete_user_id': athleteUserId,
+        'sender_user_id': senderUserId,
+        'message_text': messageText,
+        'is_read': false,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+        // activity_id and nutrition_plan_id are NULL for general chat
+      });
+
+      // Also save to local Drift database
+      final companion = CoachMessagesTableCompanion.insert(
+        id: id,
+        coachUserId: coachUserId,
+        athleteUserId: athleteUserId,
+        senderUserId: senderUserId,
+        messageText: messageText,
+        isRead: const Value(false),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      );
+      await _database.into(_database.coachMessagesTable).insert(companion);
+
+      return CoachMessage(
+        id: id,
+        coachUserId: coachUserId,
+        athleteUserId: athleteUserId,
+        senderUserId: senderUserId,
+        messageText: messageText,
+        isRead: false,
+        createdAt: now,
+        updatedAt: now,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to send chat message to Supabase',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get a relationship by ID (works for both coach and athlete perspective)
+  Future<CoachAthleteRelationship?> getRelationshipById(
+      String relationshipId) async {
+    try {
+      // Join with user_profiles to get both coach and athlete display names
+      final query = _database
+          .select(_database.coachAthleteRelationshipsTable)
+          .join([
+        leftOuterJoin(
+          _database.userProfilesTable,
+          _database.userProfilesTable.id.equalsExp(
+              _database.coachAthleteRelationshipsTable.coachUserId),
+        ),
+      ])
+        ..where(
+            _database.coachAthleteRelationshipsTable.id.equals(relationshipId));
+
+      final results = await query.get();
+      if (results.isEmpty) return null;
+
+      final row = results.first;
+      final relationship =
+          row.readTable(_database.coachAthleteRelationshipsTable);
+      final coachProfile = row.readTableOrNull(_database.userProfilesTable);
+
+      // Also try to get athlete display name
+      final athleteProfile = await (_database.select(_database.userProfilesTable)
+            ..where((t) => t.id.equals(relationship.athleteUserId)))
+          .getSingleOrNull();
+
+      return _mapToRelationshipDomain(
+        relationship,
+        coachDisplayName: _getDisplayNameFromProfile(coachProfile, relationship.coachUserId),
+        athleteDisplayName: _getDisplayNameFromProfile(athleteProfile, relationship.athleteUserId),
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get relationship by ID',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
 
   /// Get messages for a coach-athlete conversation
   Future<List<CoachMessage>> getMessagesForConversation({
@@ -455,6 +1036,7 @@ class CoachRepository {
   }
 
   /// Send a message in a coach-athlete conversation
+  /// Writes to both Supabase (for cross-device sync) AND local Drift database
   Future<CoachMessage> sendMessage({
     required String coachUserId,
     required String athleteUserId,
@@ -467,6 +1049,21 @@ class CoachRepository {
       final id = _uuid.v4();
       final now = DateTime.now();
 
+      // Insert into Supabase first (for cross-device sync and realtime)
+      await _supabase.from('coach_messages').insert({
+        'id': id,
+        'coach_user_id': coachUserId,
+        'athlete_user_id': athleteUserId,
+        'sender_user_id': senderUserId,
+        'message_text': messageText,
+        'nutrition_plan_id': nutritionPlanId,
+        'activity_id': activityId,
+        'is_read': false,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      });
+
+      // Also save to local Drift database
       final companion = CoachMessagesTableCompanion.insert(
         id: id,
         coachUserId: coachUserId,
@@ -481,17 +1078,6 @@ class CoachRepository {
       );
 
       await _database.into(_database.coachMessagesTable).insert(companion);
-
-      _logger.info(
-        'Sent coach message',
-        context: 'COACH_REPOSITORY',
-        data: {
-          'messageId': id,
-          'coachUserId': coachUserId,
-          'athleteUserId': athleteUserId,
-          'senderUserId': senderUserId,
-        },
-      );
 
       return CoachMessage(
         id: id,
@@ -535,16 +1121,6 @@ class CoachRepository {
         isRead: const Value(true),
         updatedAt: Value(DateTime.now()),
       ));
-
-      _logger.info(
-        'Marked messages as read',
-        context: 'COACH_REPOSITORY',
-        data: {
-          'coachUserId': coachUserId,
-          'athleteUserId': athleteUserId,
-          'readerUserId': readerUserId,
-        },
-      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to mark messages as read',
@@ -562,12 +1138,6 @@ class CoachRepository {
       await (_database.delete(_database.coachMessagesTable)
             ..where((t) => t.id.equals(messageId)))
           .go();
-
-      _logger.info(
-        'Deleted coach message',
-        context: 'COACH_REPOSITORY',
-        data: {'messageId': messageId},
-      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete message',
@@ -606,11 +1176,6 @@ class CoachRepository {
       for (final user in localResults) {
         final cleanId = user.id.replaceAll('-', '').toUpperCase();
         if (cleanId.startsWith(codePrefix)) {
-          _logger.info(
-            'Found user by athlete code (local)',
-            context: 'COACH_REPOSITORY',
-            data: {'code': code, 'userId': user.id},
-          );
           return user.id;
         }
       }
@@ -624,11 +1189,6 @@ class CoachRepository {
         if (userId != null) {
           final cleanId = userId.replaceAll('-', '').toUpperCase();
           if (cleanId.startsWith(codePrefix)) {
-            _logger.info(
-              'Found user by athlete code (Supabase)',
-              context: 'COACH_REPOSITORY',
-              data: {'code': code, 'userId': userId},
-            );
             return userId;
           }
         }
@@ -651,34 +1211,63 @@ class CoachRepository {
     }
   }
 
-  /// Update local user profile to set is_coach flag
-  /// Used when syncing is_coach status from Supabase
-  Future<void> updateLocalUserIsCoach(String userId, bool isCoach) async {
-    try {
-      await (_database.update(_database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .write(UserProfilesTableCompanion(
-        isCoach: Value(isCoach),
-        updatedAt: Value(DateTime.now()),
-      ));
+  // ============================================================================
+  // COACH STATUS OPERATIONS (using coaches table)
+  // ============================================================================
 
-      _logger.info(
-        'Updated local user is_coach flag',
+  /// Check if a user is an approved coach by querying the local coaches table
+  /// This is the primary method to determine coach status
+  Future<bool> isUserApprovedCoach(String userId) async {
+    try {
+      final result = await (_database.select(_database.coachesTable)
+            ..where((t) => t.userId.equals(userId) & t.applicationStatus.equals('approved')))
+          .getSingleOrNull();
+
+      return result != null;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to check if user is approved coach',
         context: 'COACH_REPOSITORY',
-        data: {'userId': userId, 'isCoach': isCoach},
+        error: e,
+        stackTrace: stackTrace,
       );
-    } catch (e) {
-      _logger.warning(
-        'Failed to update local is_coach flag (non-critical)',
-        context: 'COACH_REPOSITORY',
-        data: {'error': e.toString()},
-      );
+      return false;
     }
   }
 
-  // ============================================================================
-  // IS_COACH SYNC OPERATIONS
-  // ============================================================================
+  /// Get the coach record for a user from local database (if they are a coach)
+  Future<Coach?> getCoachRecordForUser(String userId) async {
+    try {
+      final result = await (_database.select(_database.coachesTable)
+            ..where((t) => t.userId.equals(userId)))
+          .getSingleOrNull();
+
+      if (result == null) return null;
+
+      return Coach(
+        id: result.id,
+        userId: result.userId,
+        firstName: result.firstName,
+        lastName: result.lastName,
+        email: result.email,
+        bio: result.bio,
+        status: result.applicationStatus,
+        reviewedBy: result.reviewedBy,
+        reviewedAt: result.reviewedAt,
+        rejectionReason: result.rejectionReason,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get coach record for user',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
 
   /// Fetch the latest coach status from Supabase coaches table for a user
   /// Returns true if user has an approved coach record, false otherwise
@@ -687,9 +1276,9 @@ class CoachRepository {
       // Check the coaches table for an approved record
       final response = await _supabase
           .from('coaches')
-          .select('status')
+          .select('application_status')
           .eq('user_id', userId)
-          .eq('status', 'approved')
+          .eq('application_status', 'approved')
           .maybeSingle();
 
       // User is a coach if they have an approved record
@@ -736,16 +1325,6 @@ class CoachRepository {
         'updated_at': now.toIso8601String(),
       });
 
-      _logger.info(
-        'Submitted coach application',
-        context: 'COACH_REPOSITORY',
-        data: {
-          'applicationId': id,
-          'userId': userId,
-          'email': email,
-        },
-      );
-
       return true;
     } catch (e, stackTrace) {
       _logger.error(
@@ -761,6 +1340,41 @@ class CoachRepository {
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
+
+  /// Get display name from a user profile entry
+  /// Priority: firstName + lastName > firstName only > lastName only > senderName > userId fallback
+  String? _getDisplayNameFromProfile(UserProfileEntry? profile, String userId) {
+    if (profile == null) {
+      // Fallback to shortened user ID
+      return 'Athlete ${userId.replaceAll('-', '').substring(0, 8).toUpperCase()}';
+    }
+
+    // Priority 1: Full name (first + last)
+    final hasFirstName = profile.firstName != null && profile.firstName!.trim().isNotEmpty;
+    final hasLastName = profile.lastName != null && profile.lastName!.trim().isNotEmpty;
+
+    if (hasFirstName && hasLastName) {
+      return '${profile.firstName!.trim()} ${profile.lastName!.trim()}';
+    }
+
+    // Priority 2: First name only
+    if (hasFirstName) {
+      return profile.firstName!.trim();
+    }
+
+    // Priority 3: Last name only
+    if (hasLastName) {
+      return profile.lastName!.trim();
+    }
+
+    // Priority 4: Sender name (legacy field)
+    if (profile.senderName != null && profile.senderName!.trim().isNotEmpty) {
+      return profile.senderName!.trim();
+    }
+
+    // Fallback: Shortened user ID (remove hyphens for cleaner display)
+    return 'Athlete ${userId.replaceAll('-', '').substring(0, 8).toUpperCase()}';
+  }
 
   /// Map Drift CoachAthleteRelationshipEntry to domain
   CoachAthleteRelationship _mapToRelationshipDomain(

@@ -53,6 +53,10 @@ class MyCoachesController extends _$MyCoachesController {
 
   Future<MyCoachesState> _loadCoaches() async {
     try {
+      // Sync relationships from Supabase first to get latest data
+      // This ensures we see when coaches accept/decline our requests
+      await _coachService.syncRelationshipsFromSupabase();
+
       final activeCoaches = await _coachService.getMyCoaches();
       final pendingRequests = await _coachService.getPendingCoachRequests();
 

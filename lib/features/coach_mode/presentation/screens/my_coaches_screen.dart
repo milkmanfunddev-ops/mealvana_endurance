@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/my_coaches_controller.dart';
 
@@ -21,13 +17,6 @@ class MyCoachesScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('My Coaches'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.message),
-            tooltip: 'View messages',
-            onPressed: () {
-              context.push('/athlete/feedback');
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
@@ -82,7 +71,7 @@ class MyCoachesScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     if (!state.hasCoaches && !state.hasPendingRequests) {
-      return _buildEmptyView(context, ref);
+      return _buildEmptyView(context);
     }
 
     return RefreshIndicator(
@@ -92,14 +81,6 @@ class MyCoachesScreen extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // My Athlete Code section - always show at top
-          _buildAthleteCodeSection(context, ref),
-          const SizedBox(height: 24),
-
-          // Find a Coach button
-          _buildFindCoachButton(context),
-          const SizedBox(height: 24),
-
           // Pending requests section
           if (state.hasPendingRequests) ...[
             _buildSectionHeader(
@@ -125,150 +106,6 @@ class MyCoachesScreen extends ConsumerWidget {
             ...state.activeCoaches.map(
               (coach) => _buildCoachCard(context, coach),
             ),
-        ],
-      ),
-    );
-  }
-
-  /// Build the Find a Coach button
-  Widget _buildFindCoachButton(BuildContext context) {
-    return BaseCard(
-      child: InkWell(
-        onTap: () => context.push('/coach-directory'),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.electrolyte.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.search,
-                  color: AppColors.electrolyte,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Find a Coach',
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Browse available coaches and send a request',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Build the athlete code section so athletes can share their code with coaches
-  Widget _buildAthleteCodeSection(BuildContext context, WidgetRef ref) {
-    final settingsAsync = ref.watch(settingsControllerProvider);
-    final athleteCode = settingsAsync.asData?.value.athleteCode;
-
-    if (athleteCode == null) {
-      return const SizedBox.shrink();
-    }
-
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                FontAwesomeIcons.idCard,
-                size: 20,
-                color: AppColors.electrolyte,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                'My Athlete Code',
-                style: AppTextStyles.subtitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.sm,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.electrolyte.withValues(alpha: 0.1),
-                    borderRadius: AppRadius.cardRadius,
-                    border: Border.all(
-                      color: AppColors.electrolyte.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Text(
-                    athleteCode,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.electrolyte,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 20,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              IconButton(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: athleteCode));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Athlete code copied!'),
-                      backgroundColor: AppColors.electrolyte,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                icon: Icon(
-                  FontAwesomeIcons.copy,
-                  size: AppIconSizes.controlIcon,
-                  color: AppColors.electrolyte,
-                ),
-                tooltip: 'Copy athlete code',
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Share this code with your coach to connect',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
         ],
       ),
     );
@@ -417,10 +254,10 @@ class MyCoachesScreen extends ConsumerWidget {
             ),
           ],
         ),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: const Icon(Icons.chat),
         onTap: () {
-          // Navigate to messages with this coach
-          context.push('/athlete/feedback');
+          // Navigate to chat with this coach
+          context.push('/chat/${relationship.id}');
         },
       ),
     );
@@ -471,11 +308,17 @@ class MyCoachesScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Ask your coach to send you a connection request.',
+              'Browse our directory to find and connect with a coach.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => context.push('/coach-directory'),
+              icon: const Icon(Icons.search),
+              label: const Text('Find a Coach'),
             ),
           ],
         ),
@@ -483,51 +326,11 @@ class MyCoachesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyView(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Show athlete code at top
-          _buildAthleteCodeSection(context, ref),
-          const SizedBox(height: 24),
-
-          // Find a Coach button
-          _buildFindCoachButton(context),
-          const SizedBox(height: 32),
-
-          // Empty state message
-          Icon(
-            Icons.sports,
-            size: 80,
-            color: theme.colorScheme.primary.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Connect with a Coach',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Share your training and nutrition data with a coach to get personalized guidance and feedback.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Browse the coach directory above, or share your athlete code with your coach to connect.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
+  Widget _buildEmptyView(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: _buildNoCoachesCard(context),
       ),
     );
   }

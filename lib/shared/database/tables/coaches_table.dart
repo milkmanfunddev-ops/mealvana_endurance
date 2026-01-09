@@ -23,8 +23,8 @@ class CoachesTable extends Table {
   TextColumn get bio => text().nullable()();
 
   /// Application status: pending, approved, rejected
-  TextColumn get status =>
-      text().withDefault(const Constant('pending'))();
+  TextColumn get applicationStatus =>
+      text().withDefault(const Constant('pending')).named('application_status')();
 
   /// Admin who reviewed the application
   TextColumn get reviewedBy => text().nullable().named('reviewed_by')();
@@ -52,7 +52,7 @@ class CoachesTable extends Table {
   @override
   List<String> get customConstraints => [
         'UNIQUE(user_id)',
-        "CHECK (status IN ('pending', 'approved', 'rejected'))",
+        "CHECK (application_status IN ('pending', 'approved', 'rejected'))",
         // Use length() for SQLite (char_length() is PostgreSQL only)
         'CHECK (length(trim(first_name)) >= 1)',
         'CHECK (length(trim(last_name)) >= 1)',

@@ -6,11 +6,13 @@ import '../../features/calendar/presentation/providers/calendar_view_provider.da
 import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../features/feature_survey/presentation/screens/feature_survey_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/providers/settings_controller.dart';
 import '../../theme/kyle_design/app_colors.dart';
 import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 import 'sync_status_indicator.dart';
 
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_dashboard_screen.dart';
 import '../../features/coach_mode/presentation/providers/my_coaches_controller.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
@@ -38,15 +40,26 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    // Check if user has active coaches to show the Coach tab
+
+    // Check if user is a coach (from settings controller)
+    final settingsAsync = ref.watch(settingsControllerProvider);
+    final isCoach = settingsAsync.asData?.value.isCoach ?? false;
+
+    // Check if user has active coaches (as an athlete)
     final myCoachesState = ref.watch(myCoachesControllerProvider);
     final hasCoaches = myCoachesState.value?.hasCoaches ?? false;
 
+    // Show coach tab if user is a coach OR has coaches
+    final showCoachTab = isCoach || hasCoaches;
+
     // Build the list of screens dynamically
+    // If user is a coach, show coach dashboard; if athlete with coaches, show my coaches
     final screens = [
       const ActivitiesListScreen(), // 0: Activities (Calendar)
-      if (hasCoaches) const MyCoachesScreen(), // 1: Coach (Conditional)
+      if (showCoachTab)
+        isCoach
+          ? const CoachDashboardScreen()  // Coach sees dashboard
+          : const MyCoachesScreen(),       // Athlete sees their coaches
       const FeatureSurveyScreen(), // 1 or 2: Survey
       const SettingsScreen(), // 2 or 3: Settings
     ];
@@ -79,7 +92,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           ),
           FloatingActionButtonsBar(
             activeButton: _currentIndex,
-            showCoachTab: hasCoaches,
+            showCoachTab: showCoachTab,
             onCalendarTap: () {
               // Navigate to Activities tab if not already there
               if (_currentIndex != 0) {
@@ -99,13 +112,13 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             onSurveyTap: () {
               setState(() {
                 // If coach tab is visible, Survey is at index 2, otherwise 1
-                _currentIndex = hasCoaches ? 2 : 1;
+                _currentIndex = showCoachTab ? 2 : 1;
               });
             },
             onMenuTap: () {
               setState(() {
                 // If coach tab is visible, Settings is at index 3, otherwise 2
-                _currentIndex = hasCoaches ? 3 : 2;
+                _currentIndex = showCoachTab ? 3 : 2;
               });
             },
             onAddTap: () {

@@ -45,7 +45,9 @@ serve(async (req)=>{
       return query;
     };
     // Parallel fetch all data (PHASE 1: Added user profile to prevent FK violations)
-    const [userProfileResult, nutritionFoodsResult, carbLoadingFoodsResult, activitiesResult, eventsResult, carbLoadingPlansResult, carbLoadingDaysResult, foodPreferencesResult] = await Promise.allSettled([
+    // NOTE: Coach messages are now synced on-demand in the ActivityCoachFeedbackWidget
+    // This reduces payload size and ensures athletes see feedback immediately when viewing activities
+    const [userProfileResult, nutritionFoodsResult, carbLoadingFoodsResult, activitiesResult, eventsResult, carbLoadingPlansResult, carbLoadingDaysResult, foodPreferencesResult, coachStatusResult, relationshipsResult] = await Promise.allSettled([
       // 0. User Profile (PHASE 1: Added to ensure user exists before dependent records)
       // FIXED: Query by 'id' instead of 'device_id' (user_id is now the auth UUID)
       // Note: User profile sync always fetches latest if updated
@@ -79,7 +81,12 @@ serve(async (req)=>{
           carb_loading_plans!inner(user_id)
         `).eq('carb_loading_plans.user_id', user_id)),
       // 7. Food Preferences - user's liked/disliked foods
-      addFilter(supabaseClient.from('food_preferences').select('*').eq('user_id', user_id))
+      addFilter(supabaseClient.from('food_preferences').select('*').eq('user_id', user_id)),
+      // 8. Coach Record - get the full coach record if user is an approved coach
+      // Returns the complete coach record for syncing to local database
+      supabaseClient.from('coaches').select('*').eq('user_id', user_id).eq('application_status', 'approved').maybeSingle(),
+      // 9. Coach-Athlete Relationships - get all relationships where user is coach OR athlete
+      addFilter(supabaseClient.from('coach_athlete_relationships').select('*').or(`coach_user_id.eq.${user_id},athlete_user_id.eq.${user_id}`).order('created_at', { ascending: false }))
     ]);
     // Process results and handle errors gracefully
     const response = {
@@ -117,6 +124,70 @@ serve(async (req)=>{
     extractData(carbLoadingPlansResult, 'carb_loading_plans');
     extractData(carbLoadingDaysResult, 'carb_loading_days');
     extractData(foodPreferencesResult, 'food_preferences');
+    extractData(relationshipsResult, 'coach_athlete_relationships');
+    // NOTE: coach_messages removed - now synced on-demand in ActivityCoachFeedbackWidget
+
+    // Coach record - returns full coach record if user is an approved coach
+    // This syncs to local coaches table for offline access
+    if (coachStatusResult.status === 'fulfilled' && !coachStatusResult.value.error) {
+      // Return the full coach record (null if user is not an approved coach)
+      response.data.coach_record = coachStatusResult.value.data;
+    } else {
+      // On error, return null (don't grant coach access on error)
+      response.data.coach_record = null;
+      const error = coachStatusResult.status === 'fulfilled' ? coachStatusResult.value.error : coachStatusResult.reason;
+      if (error) {
+        console.error(`✗ coach_record: ${error?.message || 'Unknown error'}`);
+      }
+    }
+
+    // COACH DATA SYNC: OPTIMIZATION (2026-01-09)
+    // Previously: Synced ALL athlete data for ALL relationships on every OAuth sign-in
+    // Problem: Coach with 50 athletes = 600-2350 records on EVERY sync (slow, wasteful)
+    // Solution: Use on-demand sync when coach views specific athlete details
+    //
+    // BACKWARDS COMPATIBILITY: Older app versions expect these fields, so we return empty arrays
+    // Newer app versions (with on-demand sync) will use syncAthleteData() instead
+    if (response.data.coach_record && response.data.coach_athlete_relationships?.length > 0) {
+      console.log(`User is a coach with ${response.data.coach_athlete_relationships.length} relationships`);
+      console.log('Skipping bulk athlete data sync - use on-demand sync per athlete instead');
+
+      // Return empty arrays for backwards compatibility with older app versions
+      response.data.athlete_events = [];
+      response.data.athlete_activities = [];
+      response.data.athlete_profiles = [];
+      response.data.athlete_carb_loading_plans = [];
+    }
+
+    // ATHLETE DATA SYNC: If user is an athlete with coaches, fetch coach profiles
+    // This allows athletes to see their coaches' names instead of "Coach 607F9DD5..."
+    if (!response.data.coach_record && response.data.coach_athlete_relationships?.length > 0) {
+      console.log(`User is an athlete with ${response.data.coach_athlete_relationships.length} relationships, fetching coach profiles...`);
+
+      // Get unique coach user IDs from relationships
+      const coachUserIds = response.data.coach_athlete_relationships
+        .filter((r: any) => r.athlete_user_id === user_id)
+        .map((r: any) => r.coach_user_id);
+
+      if (coachUserIds.length > 0) {
+        console.log(`Fetching profiles for ${coachUserIds.length} coaches`);
+
+        // Fetch coach profiles (basic info for display names)
+        const coachProfilesResult = await supabaseClient
+          .from('users')
+          .select('id, first_name, last_name, sender_name')
+          .in('id', coachUserIds);
+
+        if (coachProfilesResult.error) {
+          console.error(`✗ coach_profiles: ${coachProfilesResult.error.message}`);
+          response.data.coach_profiles = [];
+        } else {
+          response.data.coach_profiles = coachProfilesResult.data || [];
+          console.log(`✓ coach_profiles: ${response.data.coach_profiles.length} records`);
+        }
+      }
+    }
+
     // Note: carb_loading_foods now has meal_types as a text[] column
     // No transformation needed - the array is already in the correct format
     // Also get essential foods (Water, Salt, etc.) - ONLY if full sync or if updated

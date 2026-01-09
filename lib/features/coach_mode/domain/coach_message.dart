@@ -1,3 +1,10 @@
+/// Message send status for offline queue management
+enum MessageStatus {
+  sending, // Message is being sent (optimistic)
+  sent, // Message successfully saved to Supabase
+  failed, // Message failed to send (will retry)
+}
+
 /// Coach message domain model
 /// Represents a bidirectional message between a coach and an athlete.
 /// Can also be used for comments on nutrition plans or activities.
@@ -16,6 +23,9 @@ class CoachMessage {
   // Optional: populated when fetching messages with user info
   final String? senderDisplayName;
 
+  // Message status for offline queue management (null = sent, for backward compatibility)
+  final MessageStatus status;
+
   const CoachMessage({
     required this.id,
     required this.coachUserId,
@@ -28,6 +38,7 @@ class CoachMessage {
     required this.createdAt,
     required this.updatedAt,
     this.senderDisplayName,
+    this.status = MessageStatus.sent,
   });
 
   CoachMessage copyWith({
@@ -42,6 +53,7 @@ class CoachMessage {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? senderDisplayName,
+    MessageStatus? status,
   }) {
     return CoachMessage(
       id: id ?? this.id,
@@ -55,6 +67,7 @@ class CoachMessage {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       senderDisplayName: senderDisplayName ?? this.senderDisplayName,
+      status: status ?? this.status,
     );
   }
 

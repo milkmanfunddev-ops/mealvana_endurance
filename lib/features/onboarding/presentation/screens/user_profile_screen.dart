@@ -43,10 +43,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   DateTime? _selectedBirthday;
   bool _runsWithWaterBottle = false;
 
-  // Future fields (not yet in database schema - commented out for future use)
-  // final _nameController = TextEditingController();
-  // String _selectedActivityLevel = 'Intermediate';
-  // String _selectedGoal = 'Marathon';
+  // Optional name fields (for coach mode athlete identification)
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
 
   @override
   void initState() {
@@ -62,6 +61,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       _heightInchesController.text = cachedData['heightInches'].toString();
       _weightController.text = cachedData['weightPounds'].toString();
       _runsWithWaterBottle = cachedData['runsWithWaterBottle'] as bool;
+      // Optional name fields
+      if (cachedData['firstName'] != null) {
+        _firstNameController.text = cachedData['firstName'] as String;
+      }
+      if (cachedData['lastName'] != null) {
+        _lastNameController.text = cachedData['lastName'] as String;
+      }
     }
 
     ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
@@ -74,7 +80,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     _heightFeetController.dispose();
     _heightInchesController.dispose();
     _weightController.dispose();
-    // _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     super.dispose();
   }
 
@@ -223,6 +230,37 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Name fields (optional) - row with first and last name
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  context: context,
+                  controller: _firstNameController,
+                  label: 'First Name',
+                  hint: 'First name (optional)',
+                  icon: FontAwesomeIcons.user,
+                  keyboardType: TextInputType.name,
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: _buildTextField(
+                  context: context,
+                  controller: _lastNameController,
+                  label: 'Last Name',
+                  hint: 'Last name (optional)',
+                  icon: FontAwesomeIcons.user,
+                  keyboardType: TextInputType.name,
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -549,6 +587,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    TextCapitalization textCapitalization = TextCapitalization.none,
     String? suffix,
     String? Function(String?)? validator,
   }) {
@@ -559,6 +598,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
@@ -726,6 +766,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       heightInches: int.parse(_heightInchesController.text),
       weightPounds: double.parse(_weightController.text),
       runsWithWaterBottle: _runsWithWaterBottle,
+      firstName: _firstNameController.text.trim().isNotEmpty ? _firstNameController.text.trim() : null,
+      lastName: _lastNameController.text.trim().isNotEmpty ? _lastNameController.text.trim() : null,
     );
 
     if (mounted) {

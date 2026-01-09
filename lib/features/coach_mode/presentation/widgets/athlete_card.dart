@@ -7,12 +7,14 @@ class AthleteCard extends StatelessWidget {
   final CoachAthleteRelationship relationship;
   final VoidCallback? onTap;
   final VoidCallback? onArchive;
+  final VoidCallback? onMessage;
 
   const AthleteCard({
     super.key,
     required this.relationship,
     this.onTap,
     this.onArchive,
+    this.onMessage,
   });
 
   @override
@@ -74,6 +76,8 @@ class AthleteCard extends StatelessWidget {
                     onArchive?.call();
                   } else if (value == 'view') {
                     onTap?.call();
+                  } else if (value == 'message') {
+                    onMessage?.call();
                   }
                 },
                 itemBuilder: (context) => [

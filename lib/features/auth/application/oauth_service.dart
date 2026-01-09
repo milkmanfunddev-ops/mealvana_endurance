@@ -6,8 +6,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
-// Explicitly import AuthException to use it in catch blocks
+// Explicitly import AuthException and LaunchMode to use in catch blocks and web OAuth
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase show AuthException;
+import 'package:supabase_flutter/supabase_flutter.dart' show LaunchMode;
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
@@ -674,6 +675,7 @@ class OAuthService extends _$OAuthService {
         await _supabase.auth.linkIdentity(
           OAuthProvider.apple,
           redirectTo: _getWebRedirectUrl(),
+          authScreenLaunchMode: LaunchMode.platformDefault, // Use platform default for web
         );
 
         // Note: The OAuth flow will redirect the browser, so we won't reach this
@@ -731,6 +733,7 @@ class OAuthService extends _$OAuthService {
         await _supabase.auth.linkIdentity(
           OAuthProvider.google,
           redirectTo: _getWebRedirectUrl(),
+          authScreenLaunchMode: LaunchMode.platformDefault, // Use platform default for web
         );
 
         // Note: The OAuth flow will redirect the browser, so we won't reach this
@@ -782,6 +785,7 @@ class OAuthService extends _$OAuthService {
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.apple,
         redirectTo: _getWebRedirectUrl(),
+        authScreenLaunchMode: LaunchMode.platformDefault, // Use platform default for web
       );
 
       // Note: The OAuth flow will redirect the browser, so we won't reach this
@@ -819,6 +823,7 @@ class OAuthService extends _$OAuthService {
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: _getWebRedirectUrl(),
+        authScreenLaunchMode: LaunchMode.platformDefault, // Use platform default for web
       );
 
       // Note: The OAuth flow will redirect the browser, so we won't reach this

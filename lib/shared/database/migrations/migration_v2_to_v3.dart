@@ -17,6 +17,7 @@ import '../schema_versions.dart';
 ///
 /// COACH MODE:
 /// - Adds is_coach column to users table (boolean flag set by admin)
+/// - Adds first_name and last_name columns to users table (optional, for athlete identification)
 /// - Creates coach_athlete_relationships table for coach-athlete connections
 /// - Creates coach_messages table for bidirectional messaging
 /// - Creates indexes for coach mode tables
@@ -107,8 +108,53 @@ Future<void> runMigrationV2ToV3(
     }
   }
 
-  // 6. Create coach_athlete_relationships table using raw SQL
+  // 5b. Add first_name and last_name columns to users table
+  // These are optional fields for coach mode athlete identification
+  if (!usersColumnNames.contains('first_name')) {
+    await db.customStatement('ALTER TABLE users ADD COLUMN first_name TEXT');
+    if (kDebugMode) {
+      print('Added first_name column to users table');
+    }
+  }
+  if (!usersColumnNames.contains('last_name')) {
+    await db.customStatement('ALTER TABLE users ADD COLUMN last_name TEXT');
+    if (kDebugMode) {
+      print('Added last_name column to users table');
+    }
+  }
+
+  // 6. Create coaches table using raw SQL
   // (schema class not available in Schema3 - tables added after schema generation)
+  try {
+    await db.customStatement('''
+      CREATE TABLE IF NOT EXISTS coaches (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL UNIQUE,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        bio TEXT,
+        application_status TEXT NOT NULL DEFAULT 'pending' CHECK (application_status IN ('pending', 'approved', 'rejected')),
+        reviewed_by TEXT,
+        reviewed_at INTEGER,
+        rejection_reason TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        CHECK (length(trim(first_name)) >= 1),
+        CHECK (length(trim(last_name)) >= 1)
+      )
+    ''');
+    if (kDebugMode) {
+      print('Created coaches table');
+    }
+  } catch (e) {
+    // Table may already exist
+    if (kDebugMode) {
+      print('coaches table note: $e');
+    }
+  }
+
+  // 7. Create coach_athlete_relationships table using raw SQL
   try {
     await db.customStatement('''
       CREATE TABLE IF NOT EXISTS coach_athlete_relationships (
@@ -137,7 +183,7 @@ Future<void> runMigrationV2ToV3(
     }
   }
 
-  // 7. Create coach_messages table using raw SQL
+  // 8. Create coach_messages table using raw SQL
   try {
     await db.customStatement('''
       CREATE TABLE IF NOT EXISTS coach_messages (
@@ -145,13 +191,14 @@ Future<void> runMigrationV2ToV3(
         coach_user_id TEXT NOT NULL,
         athlete_user_id TEXT NOT NULL,
         sender_user_id TEXT NOT NULL,
-        message TEXT NOT NULL,
+        message_text TEXT NOT NULL,
         nutrition_plan_id TEXT,
         activity_id TEXT,
         is_read INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
-        CHECK (sender_user_id = coach_user_id OR sender_user_id = athlete_user_id)
+        CHECK (sender_user_id IN (coach_user_id, athlete_user_id)),
+        CHECK (length(trim(message_text)) > 0)
       )
     ''');
     if (kDebugMode) {
@@ -164,7 +211,7 @@ Future<void> runMigrationV2ToV3(
     }
   }
 
-  // 8. Create indexes for coach mode tables
+  // 9. Create indexes for coach mode tables
   try {
     await db.customStatement(
       'CREATE INDEX IF NOT EXISTS idx_car_coach_user ON coach_athlete_relationships(coach_user_id)'

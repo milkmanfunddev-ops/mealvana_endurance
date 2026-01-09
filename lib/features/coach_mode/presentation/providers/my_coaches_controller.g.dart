@@ -34,7 +34,7 @@ final class MyCoachesControllerProvider
 }
 
 String _$myCoachesControllerHash() =>
-    r'28fc108ceea94bf4c61621881c5c9d5e00b1fec5';
+    r'10c8699058b5e2e35bbdfa31931ddd5e77b898a7';
 
 abstract class _$MyCoachesController extends $AsyncNotifier<MyCoachesState> {
   FutureOr<MyCoachesState> build();

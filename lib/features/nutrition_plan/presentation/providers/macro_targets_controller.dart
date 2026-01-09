@@ -330,6 +330,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     double? humidityPct,
     String? activityId, // Link to calendar activity/event
     String? eventId, // Link to calendar event (for provider invalidation)
+    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
     // CRITICAL FIX: Ensure state is loaded before proceeding
     // state.value can be null if build() hasn't completed yet
@@ -353,6 +354,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         humidityPct: humidityPct,
         activityId: activityId,
         eventId: eventId,
+        forUserId: forUserId, // NEW: Pass through forUserId in recursive call
       );
     }
 
@@ -405,6 +407,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           finalActivityId = await activitiesController.createActivity(
             title: "$distance mi Run",
             scheduledDateTime: scheduledDateTime,
+            forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
             activityType: ActivityType.running,
             distanceMiles: distance,
             paceTargetMinutesPerMile: paceMinutes,
@@ -484,6 +487,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     required double humidityPct,
     String? activityId,
     String? eventId,
+    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
     final currentState = state.value;
     if (currentState == null) return;
@@ -527,6 +531,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           finalActivityId = await activitiesController.createActivity(
             title: "$distanceMiles mi Ride",
             scheduledDateTime: scheduledDateTime,
+            forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
             activityType: ActivityType.cycling,
             distanceMiles: distanceMiles,
             cyclingSpeedMph: speedMph,
@@ -772,6 +777,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     double? humidityPct,
     String? activityId,
     String? eventId,
+    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
     // Delegate to the main generateMacros method
     await generateMacros(
@@ -788,6 +794,7 @@ class MacroTargetsController extends _$MacroTargetsController {
       humidityPct: humidityPct,
       activityId: activityId,
       eventId: eventId,
+      forUserId: forUserId, // NEW: Pass through forUserId
     );
   }
 
@@ -804,7 +811,8 @@ class MacroTargetsController extends _$MacroTargetsController {
     required TimeOfDay scheduledTime,
     String? activityId,
     String? eventId,
-  }) async {
+    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
+  }) async{
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -852,6 +860,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           finalActivityId = await activitiesController.createActivity(
             title: "$distanceMeters m Swim",
             scheduledDateTime: scheduledDateTime,
+            forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
             activityType: ActivityType.swimming,
             distanceMiles: distanceMiles,
             swimmingPacePer100mSeconds: paceSecondsper100m,

@@ -127,7 +127,21 @@ create table users
                                                        (ARRAY ['none'::text, 'latex'::text, 'silicone'::text, 'neoprene'::text]))),
     gi_sensitivity                boolean,
     dietary_preference            dietary_preference_enum,
-    allergies                     allergy_enum[]           default '{}'::allergy_enum[]
+    allergies                     allergy_enum[]           default '{}'::allergy_enum[],
+    sweat_rate                    text                     default 'medium'::text                  not null
+        constraint check_sweat_rate
+            check (sweat_rate = ANY (ARRAY ['light'::text, 'medium'::text, 'heavy'::text])),
+    calendar_week_start           text                     default 'monday'::text                  not null
+        constraint check_calendar_week_start
+            check (calendar_week_start = ANY (ARRAY ['sunday'::text, 'monday'::text])),
+    default_activity_time         text                     default '07:00:00'::text                not null,
+    default_activity_day          text                     default 'saturday'::text                not null
+        constraint check_default_activity_day
+            check (default_activity_day = ANY
+                   (ARRAY ['monday'::text, 'tuesday'::text, 'wednesday'::text, 'thursday'::text, 'friday'::text, 'saturday'::text, 'sunday'::text])),
+    auto_generate_nutrition       boolean                  default true                            not null,
+    completion_reminders          boolean                  default true                            not null,
+    sender_name                   text
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -153,6 +167,20 @@ comment on column users.gi_sensitivity is 'Whether user has GI sensitivity issue
 comment on column users.dietary_preference is 'User dietary preference: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb. NULL means no preference set.';
 
 comment on column users.allergies is 'Array of user allergies for food filtering. Empty array means no allergies.';
+
+comment on column users.sweat_rate is 'User sweat rate category: light, medium, heavy. Used for hydration calculations.';
+
+comment on column users.calendar_week_start is 'Calendar week start preference: sunday or monday';
+
+comment on column users.default_activity_time is 'Default time for new activities in HH:MM:SS format';
+
+comment on column users.default_activity_day is 'Default day of week for new activities';
+
+comment on column users.auto_generate_nutrition is 'Whether to auto-generate nutrition plans for synced activities';
+
+comment on column users.completion_reminders is 'Whether to send activity completion reminders';
+
+comment on column users.sender_name is 'Name used when sharing nutrition plans via email';
 
 alter table users
     owner to postgres;
@@ -1001,32 +1029,35 @@ grant delete, insert, references, select, trigger, truncate, update on public_ev
 
 create table integrations
 (
-    id                     uuid                     default gen_random_uuid() not null
+    id                          uuid                     default gen_random_uuid() not null
         primary key,
-    user_id                uuid                                               not null
+    user_id                     uuid                                               not null
         references users
             on delete cascade,
-    provider               text                                               not null
+    provider                    text                                               not null
         constraint integrations_provider_check
             check (provider = ANY
                    (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text])),
-    access_token           text                                               not null,
-    refresh_token          text,
-    token_expires_at       timestamp with time zone,
-    provider_athlete_id    text                                               not null,
-    provider_athlete_name  text,
-    provider_athlete_email text,
-    is_active              boolean                  default true,
-    last_sync_at           timestamp with time zone,
-    last_sync_status       text
+    access_token                text                                               not null,
+    refresh_token               text,
+    token_expires_at            timestamp with time zone,
+    provider_athlete_id         text                                               not null,
+    provider_athlete_name       text,
+    provider_athlete_email      text,
+    is_active                   boolean                  default true,
+    last_sync_at                timestamp with time zone,
+    last_sync_status            text
         constraint integrations_last_sync_status_check
             check ((last_sync_status IS NULL) OR
                    (last_sync_status = ANY (ARRAY ['success'::text, 'error'::text, 'pending'::text]))),
-    last_sync_error        text,
-    created_at             timestamp with time zone default now(),
-    updated_at             timestamp with time zone default now(),
+    last_sync_error             text,
+    created_at                  timestamp with time zone default now(),
+    updated_at                  timestamp with time zone default now(),
+    threshold_pace_min_per_mile real,
     unique (user_id, provider)
 );
+
+comment on column integrations.threshold_pace_min_per_mile is 'Athlete threshold pace in minutes per mile (e.g., 7.5 = 7:30/mi). Used to calculate accurate workout pace from Training Peaks IF and Structure data. Fetched from provider speed zones during sync.';
 
 alter table integrations
     owner to postgres;
@@ -1043,6 +1074,156 @@ grant delete, insert, references, select, trigger, truncate, update on integrati
 grant delete, insert, references, select, trigger, truncate, update on integrations to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on integrations to service_role;
+
+create table coach_athlete_relationships
+(
+    id              uuid                     default gen_random_uuid() not null
+        primary key,
+    coach_user_id   uuid                                               not null
+        references users
+            on delete cascade,
+    athlete_user_id uuid                                               not null
+        references users
+            on delete cascade,
+    status          text                     default 'pending'::text   not null
+        constraint check_status
+            check (status = ANY (ARRAY ['pending'::text, 'active'::text, 'declined'::text, 'archived'::text])),
+    requested_by    text                                               not null
+        constraint check_requested_by
+            check (requested_by = ANY (ARRAY ['coach'::text, 'athlete'::text])),
+    requested_at    timestamp with time zone default now(),
+    accepted_at     timestamp with time zone,
+    declined_at     timestamp with time zone,
+    archived_at     timestamp with time zone,
+    created_at      timestamp with time zone default now(),
+    updated_at      timestamp with time zone default now(),
+    unique (coach_user_id, athlete_user_id),
+    constraint check_different_users
+        check (coach_user_id <> athlete_user_id)
+);
+
+comment on table coach_athlete_relationships is 'Tracks connections between coaches and athletes';
+
+alter table coach_athlete_relationships
+    owner to postgres;
+
+create index idx_car_coach
+    on coach_athlete_relationships (coach_user_id);
+
+create index idx_car_athlete
+    on coach_athlete_relationships (athlete_user_id);
+
+create index idx_car_status
+    on coach_athlete_relationships (status);
+
+create index idx_car_active
+    on coach_athlete_relationships (coach_user_id, status)
+    where (status = 'active'::text);
+
+grant delete, insert, references, select, trigger, truncate, update on coach_athlete_relationships to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_athlete_relationships to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_athlete_relationships to service_role;
+
+create table coach_messages
+(
+    id                uuid                     default gen_random_uuid() not null
+        primary key,
+    coach_user_id     uuid                                               not null
+        references users
+            on delete cascade,
+    athlete_user_id   uuid                                               not null
+        references users
+            on delete cascade,
+    sender_user_id    uuid                                               not null
+        references users
+            on delete cascade,
+    message_text      text                                               not null
+        constraint message_not_empty
+            check (char_length(TRIM(BOTH FROM message_text)) > 0),
+    nutrition_plan_id text,
+    activity_id       text
+                                                                         references activities
+                                                                             on delete set null,
+    is_read           boolean                  default false,
+    created_at        timestamp with time zone default now(),
+    updated_at        timestamp with time zone default now(),
+    constraint check_sender
+        check ((sender_user_id = coach_user_id) OR (sender_user_id = athlete_user_id))
+);
+
+comment on table coach_messages is 'Bidirectional messaging and comments between coaches and athletes';
+
+comment on column coach_messages.nutrition_plan_id is 'Optional reference to nutrition plan (stored as TEXT, not FK since plans are in activity.nutrition_plan_data JSON)';
+
+comment on column coach_messages.activity_id is 'When set, this message is a comment on an activity';
+
+alter table coach_messages
+    owner to postgres;
+
+create index idx_cm_coach
+    on coach_messages (coach_user_id);
+
+create index idx_cm_athlete
+    on coach_messages (athlete_user_id);
+
+create index idx_cm_conversation
+    on coach_messages (coach_user_id asc, athlete_user_id asc, created_at desc);
+
+create index idx_cm_activity
+    on coach_messages (activity_id)
+    where (activity_id IS NOT NULL);
+
+create index idx_cm_unread
+    on coach_messages (athlete_user_id, is_read)
+    where (is_read = false);
+
+create index idx_cm_created
+    on coach_messages (created_at desc);
+
+grant delete, insert, references, select, trigger, truncate, update on coach_messages to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_messages to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_messages to service_role;
+
+create table coaches
+(
+    id                 uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id            uuid                                               not null
+        unique
+        references users
+            on delete cascade,
+    first_name         text                                               not null,
+    last_name          text                                               not null,
+    email              text                                               not null
+        unique,
+    bio                text,
+    application_status text                     default 'pending'::text   not null
+        constraint coaches_application_status_check
+            check (application_status = ANY (ARRAY ['pending'::text, 'approved'::text, 'rejected'::text])),
+    submitted_at       timestamp with time zone default now()             not null,
+    approved_at        timestamp with time zone,
+    created_at         timestamp with time zone default now()             not null,
+    updated_at         timestamp with time zone default now()             not null
+);
+
+alter table coaches
+    owner to postgres;
+
+create index idx_coaches_status
+    on coaches (application_status);
+
+create index idx_coaches_user_id
+    on coaches (user_id);
+
+grant delete, insert, references, select, trigger, truncate, update on coaches to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on coaches to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on coaches to service_role;
 
 create function delete_nutrition_plan_by_device_plan_id(p_device_id text, p_plan_id text) returns boolean
     language plpgsql

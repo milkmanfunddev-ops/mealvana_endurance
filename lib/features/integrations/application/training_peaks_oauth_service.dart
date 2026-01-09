@@ -61,7 +61,12 @@ class TrainingPeaksOAuthService {
     final state = _generateState();
 
     // 2. Build OAuth authorization URL
-    final redirectUri = '$_callbackUrlScheme://callback';
+    // On web, use HTTPS callback URL pointing to auth.html
+    // On mobile, use custom scheme
+    final redirectUri = kIsWeb
+        ? '${Uri.base.origin}/auth.html'  // Web: https://domain.com/auth.html
+        : '$_callbackUrlScheme://callback';    // Mobile: com.milkman.mealvanaendurance://callback
+
     final authUrl = Uri.parse('$_oauthBaseUrl/OAuth/Authorize').replace(
       queryParameters: {
         'response_type': 'code',
@@ -78,9 +83,15 @@ class TrainingPeaksOAuthService {
     }
 
     // 3. Launch OAuth flow via flutter_web_auth_2
+    // On web, callbackUrlScheme should be the base URL (e.g., "https")
+    // On mobile, it's the custom scheme (e.g., "com.milkman.mealvanaendurance")
+    final callbackScheme = kIsWeb
+        ? Uri.base.scheme  // Web: "https" or "http"
+        : _callbackUrlScheme;  // Mobile: "com.milkman.mealvanaendurance"
+
     final result = await FlutterWebAuth2.authenticate(
       url: authUrl.toString(),
-      callbackUrlScheme: _callbackUrlScheme,
+      callbackUrlScheme: callbackScheme,
       options: const FlutterWebAuth2Options(
         preferEphemeral: true, // Don't persist cookies
       ),

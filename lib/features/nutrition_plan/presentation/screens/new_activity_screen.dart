@@ -51,6 +51,7 @@ class NewActivityScreen extends ConsumerStatefulWidget {
     this.initialPace,
     this.activityId,
     this.eventId,
+    this.forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
     // Activity type for tab selection
     this.activityType,
     // Cycling-specific parameters
@@ -73,6 +74,7 @@ class NewActivityScreen extends ConsumerStatefulWidget {
   final double? initialPace;
   final String? activityId;
   final String? eventId;
+  final String? forUserId; // NEW: Target athlete user ID (when coach is creating for athlete)
 
   /// Activity type for selecting the correct sport tab (e.g., 'running', 'cycling', 'swimming')
   final String? activityType;
@@ -317,10 +319,11 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   Future<void> _handleGeneratePlan(NewActivityCoordinator coordinator) async {
     try {
       DebugLogger.info('🎯 NEW ACTIVITY: Starting macro generation from UI...');
-      DebugLogger.info('🔗 NEW ACTIVITY: activityId=${widget.activityId}, eventId=${widget.eventId}');
+      DebugLogger.info('🔗 NEW ACTIVITY: activityId=${widget.activityId}, eventId=${widget.eventId}, forUserId=${widget.forUserId}');
       await coordinator.generateMacros(
         activityId: widget.activityId,
         eventId: widget.eventId,
+        forUserId: widget.forUserId, // NEW: Pass through forUserId for coach-created activities
       );
       DebugLogger.info('✅ NEW ACTIVITY: Coordinator generateMacros completed');
 

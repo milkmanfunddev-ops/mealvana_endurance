@@ -48,4 +48,4 @@ final class CoachServiceProvider
   }
 }
 
-String _$coachServiceHash() => r'0649052be560b877cd97d54519ff9e6bc6449739';
+String _$coachServiceHash() => r'62572e85504e8dcf48b4a8549dac4f2aa6317c3c';

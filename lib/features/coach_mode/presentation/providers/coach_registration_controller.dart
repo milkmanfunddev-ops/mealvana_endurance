@@ -28,16 +28,6 @@ class CoachRegistrationController extends _$CoachRegistrationController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info(
-        'Submitting coach application',
-        context: 'COACH_REGISTRATION_CONTROLLER',
-        data: {
-          'firstName': firstName,
-          'lastName': lastName,
-          'email': email,
-        },
-      );
-
       final success = await _coachService.submitCoachApplication(
         firstName: firstName,
         lastName: lastName,
@@ -52,11 +42,6 @@ class CoachRegistrationController extends _$CoachRegistrationController {
         );
         throw Exception('Failed to submit application. Please try again.');
       }
-
-      _logger.info(
-        'Coach application submitted successfully',
-        context: 'COACH_REGISTRATION_CONTROLLER',
-      );
 
       return;
     });

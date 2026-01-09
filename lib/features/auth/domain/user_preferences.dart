@@ -58,11 +58,16 @@ class UserProfile {
   final DietaryPreference? dietaryPreference;
   final List<Allergy> allergies;
 
-  // Coach mode flag (set by admin/backend)
-  final bool isCoach;
+  // NOTE: isCoach field removed - coach status is now determined by
+  // checking the coaches table for an approved record.
+  // Use CoachRepository.isUserApprovedCoach(userId) instead.
 
   // Sharing preferences
   final String? senderName; // Display name used when sharing plans
+
+  // User identity - optional for coach mode athlete identification
+  final String? firstName;
+  final String? lastName;
 
   UserProfile({
     required this.id,
@@ -95,11 +100,39 @@ class UserProfile {
     // Dietary preference and allergies
     this.dietaryPreference,
     this.allergies = const [],
-    // Coach mode
-    this.isCoach = false,
     // Sharing preferences
     this.senderName,
+    // User identity
+    this.firstName,
+    this.lastName,
   });
+
+  /// Returns the best available display name for the user.
+  /// Priority: firstName > lastName > userId fallback
+  String get displayName {
+    if (firstName != null && firstName!.isNotEmpty) {
+      if (lastName != null && lastName!.isNotEmpty) {
+        return '$firstName $lastName';
+      }
+      return firstName!;
+    }
+    if (lastName != null && lastName!.isNotEmpty) {
+      return lastName!;
+    }
+    // Fallback to shortened user ID
+    return 'Athlete ${id.substring(0, 8).toUpperCase()}';
+  }
+
+  /// Returns just the first name if available, otherwise a shorter fallback
+  String get shortDisplayName {
+    if (firstName != null && firstName!.isNotEmpty) {
+      return firstName!;
+    }
+    if (lastName != null && lastName!.isNotEmpty) {
+      return lastName!;
+    }
+    return 'Athlete ${id.substring(0, 6).toUpperCase()}';
+  }
 
   /// Calculate age from birthday
   int get age {
@@ -219,9 +252,12 @@ class UserProfile {
       dietaryPreference: DietaryPreference.fromDbValue(json['dietary_preference'] as String?),
       allergies: _parseAllergiesFromJson(json['allergies']),
       // Coach mode
-      isCoach: json['is_coach'] as bool? ?? false,
+      // isCoach: json['is_coach'] as bool? ?? false,
       // Sharing preferences
       senderName: json['sender_name'] as String?,
+      // User identity
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
     );
   }
 
@@ -254,6 +290,9 @@ class UserProfile {
       'allergies': Allergy.toDbArray(allergies),
       // Sharing preferences
       'sender_name': senderName,
+      // User identity
+      'first_name': firstName,
+      'last_name': lastName,
       // Note: is_coach is NOT synced to Supabase - coach status lives in coaches table
       // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
       // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields
@@ -291,10 +330,11 @@ class UserProfile {
     // Dietary preference and allergies
     DietaryPreference? dietaryPreference,
     List<Allergy>? allergies,
-    // Coach mode
-    bool? isCoach,
     // Sharing preferences
     String? senderName,
+    // User identity
+    String? firstName,
+    String? lastName,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -327,10 +367,11 @@ class UserProfile {
       // Dietary preference and allergies
       dietaryPreference: dietaryPreference ?? this.dietaryPreference,
       allergies: allergies ?? this.allergies,
-      // Coach mode
-      isCoach: isCoach ?? this.isCoach,
       // Sharing preferences
       senderName: senderName ?? this.senderName,
+      // User identity
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
     );
   }
 }

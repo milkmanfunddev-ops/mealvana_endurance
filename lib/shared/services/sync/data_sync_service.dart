@@ -8,6 +8,7 @@ import '../logging_service.dart';
 import '../food_management/product_type_mapper.dart';
 import '../../../features/nutrition_plan/data/food_repository.dart';
 import '../../../features/carb_loading/application/carb_loading_food_sync_service.dart';
+import '../../../features/coach_mode/data/coach_repository.dart';
 import '../../../features/auth/domain/user_preferences.dart';
 
 import '../../../shared/services/app_external_deps.dart';
@@ -24,6 +25,7 @@ DataSyncService dataSyncService(Ref ref) {
     logger: ref.read(appLoggerProvider),
     foodRepository: ref.read(foodRepositoryProvider),
     carbLoadingFoodSyncService: ref.read(carbLoadingFoodSyncServiceProvider),
+    coachRepository: ref.read(coachRepositoryProvider),
   );
 }
 
@@ -38,17 +40,20 @@ class DataSyncService {
     required AppLogger logger,
     required FoodRepository foodRepository,
     required CarbLoadingFoodSyncService carbLoadingFoodSyncService,
+    required CoachRepository coachRepository,
   })  : _ref = ref,
         _supabase = supabase,
         _database = database,
         _logger = logger,
         _foodRepository = foodRepository,
-        _carbLoadingFoodSyncService = carbLoadingFoodSyncService;
+        _carbLoadingFoodSyncService = carbLoadingFoodSyncService,
+        _coachRepository = coachRepository;
 
   final Ref _ref;
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+  final CoachRepository _coachRepository;
 
   /// Helper to safely convert ID from server (may be int or String) to String
   /// This handles the transition from BIGINT to UUID schema
@@ -102,51 +107,31 @@ class DataSyncService {
   /// Non-blocking: app continues with cached data if sync fails
   Future<bool> syncAllData(String userId) async {
     try {
-      _logger.info(
-        'Starting syncAllData',
-        context: 'DATA_SYNC',
-        data: {'userId': userId},
-      );
-
       // Get last sync timestamp
       final prefs = _ref.read(sharedPreferencesProvider);
       final lastSyncTimestamp = prefs.getString('last_sync_timestamp_$userId');
 
       // STEP 0: CRITICAL - Sync user profile first to prevent FK violations
-      _logger.info('STEP 0: Syncing user profile', context: 'DATA_SYNC');
       await syncUsers(userId);
 
       // STEP 1: CRITICAL - Upload dirty records FIRST to prevent data loss
-      _logger.info('STEP 1: Uploading dirty records', context: 'DATA_SYNC');
       await _uploadDirtyRecords(userId);
 
       // STEP 2: Try edge function for fast parallel download
-      _logger.info('STEP 2: Trying edge function sync', context: 'DATA_SYNC');
       final edgeFunctionSuccess = await _tryEdgeFunctionSync(userId, lastSyncTimestamp);
 
       if (edgeFunctionSuccess) {
-        _logger.info(
-          'Edge function sync completed successfully',
-          context: 'DATA_SYNC',
-          data: {'userId': userId},
-        );
         // Invalidate calendar providers to refresh UI with synced data
         _invalidateCalendarProviders();
         return true;
       }
 
       // STEP 3: Fallback to client-side download if edge function fails
-      _logger.info('STEP 3: Falling back to client-side download', context: 'DATA_SYNC');
       await _clientSideDownload(userId);
 
       // Update timestamp on successful client-side sync too
       await prefs.setString('last_sync_timestamp_$userId', DateTime.now().toIso8601String());
 
-      _logger.info(
-        'Client-side sync completed successfully',
-        context: 'DATA_SYNC',
-        data: {'userId': userId},
-      );
       // Invalidate calendar providers to refresh UI with synced data
       _invalidateCalendarProviders();
       return true;
@@ -158,6 +143,111 @@ class DataSyncService {
         stackTrace: stackTrace,
       );
       return false;
+    }
+  }
+
+  /// Sync coach messages for a specific activity from Supabase
+  /// This is a lightweight, focused sync triggered when viewing an activity's feedback
+  /// Returns immediately with fresh data from Supabase
+  Future<void> syncCoachMessagesForActivity(String activityId) async {
+    try {
+      _logger.info(
+        'Syncing coach messages for activity $activityId',
+        context: 'ACTIVITY_FEEDBACK_SYNC',
+      );
+
+      // Query Supabase directly for messages related to this activity
+      final response = await _supabase
+          .from('coach_messages')
+          .select('*')
+          .eq('activity_id', activityId)
+          .order('created_at', ascending: false);
+
+      final messages = response as List<dynamic>;
+
+      if (messages.isNotEmpty) {
+        // Use existing _syncCoachMessages to save to local database
+        await _syncCoachMessages(messages);
+
+        _logger.info(
+          'Successfully synced ${messages.length} messages for activity $activityId',
+          context: 'ACTIVITY_FEEDBACK_SYNC',
+        );
+      } else {
+        _logger.info(
+          'No messages found for activity $activityId',
+          context: 'ACTIVITY_FEEDBACK_SYNC',
+        );
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync coach messages for activity $activityId',
+        context: 'ACTIVITY_FEEDBACK_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Sync data for a specific athlete (lightweight, on-demand)
+  /// This is triggered when a coach views athlete details and taps refresh
+  /// Fetches only the specified athlete's events, activities, and carb loading plans
+  Future<void> syncAthleteData(String athleteUserId) async {
+    try {
+      _logger.info(
+        'Syncing data for athlete $athleteUserId',
+        context: 'ATHLETE_SYNC',
+      );
+
+      // Query Supabase for athlete's data in parallel
+      final responses = await Future.wait([
+        _supabase
+            .from('events')
+            .select('*')
+            .eq('user_id', athleteUserId)
+            .order('created_at', ascending: false),
+        _supabase
+            .from('activities')
+            .select('*, nutrition_plan_data')
+            .eq('user_id', athleteUserId)
+            .isFilter('deleted_at', null)
+            .order('scheduled_date_time', ascending: false),
+        _supabase
+            .from('carb_loading_plans')
+            .select('*')
+            .eq('user_id', athleteUserId)
+            .order('generated_at', ascending: false),
+      ]);
+
+      // Save to local database using existing sync methods
+      final eventsData = responses[0] as List<dynamic>;
+      final activitiesData = responses[1] as List<dynamic>;
+      final carbLoadingData = responses[2] as List<dynamic>;
+
+      if (eventsData.isNotEmpty) {
+        await _syncAthleteEvents(eventsData);
+      }
+      if (activitiesData.isNotEmpty) {
+        await _syncAthleteActivities(activitiesData);
+      }
+      if (carbLoadingData.isNotEmpty) {
+        await _syncAthleteCarbLoadingPlans(carbLoadingData);
+      }
+
+      _logger.info(
+        'Successfully synced athlete data: ${eventsData.length} events, '
+        '${activitiesData.length} activities, ${carbLoadingData.length} carb loading plans',
+        context: 'ATHLETE_SYNC',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync athlete data for $athleteUserId',
+        context: 'ATHLETE_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
     }
   }
 
@@ -184,16 +274,6 @@ class DataSyncService {
           localUser.id.toLowerCase() != userId.toLowerCase();
 
       if (needsRemoteFetch) {
-        _logger.info(
-          'Local user profile missing or mismatched - fetching from Supabase',
-          context: 'USER_SYNC',
-          data: {
-            'userId': userId,
-            'localUserId': localUser?.id,
-            'reason': localUser == null ? 'no_local_profile' : 'user_id_mismatch',
-          },
-        );
-
         final remoteUser = await _supabase
             .from('users')
             .select('*')
@@ -201,12 +281,6 @@ class DataSyncService {
             .maybeSingle();
 
         if (remoteUser != null) {
-          _logger.info(
-            'Found remote user profile - saving locally',
-            context: 'USER_SYNC',
-            data: {'userId': userId},
-          );
-
           // Save the remote profile to local database
           await _saveRemoteUserProfile(remoteUser, userId);
 
@@ -215,11 +289,6 @@ class DataSyncService {
             currentAuthUserId: userId,
           );
         } else {
-          _logger.info(
-            'No remote user profile found - user may need to complete onboarding',
-            context: 'USER_SYNC',
-            data: {'userId': userId},
-          );
           return; // No profile anywhere - user needs to onboard
         }
       }
@@ -316,12 +385,6 @@ class DataSyncService {
       await _database
           .into(_database.userProfilesTable)
           .insert(companion, mode: InsertMode.insertOrReplace);
-
-      _logger.info(
-        'Successfully saved remote user profile to local database',
-        context: 'USER_SYNC',
-        data: {'userId': userId},
-      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to save remote user profile locally',
@@ -394,7 +457,7 @@ class DataSyncService {
       }
 
       // Sync the data to local database
-      await _syncDataFromEdgeFunction(data['data'] as Map<String, dynamic>);
+      await _syncDataFromEdgeFunction(data['data'] as Map<String, dynamic>, userId);
 
       // Update last sync timestamp
       if (data['timestamp'] != null) {
@@ -411,7 +474,7 @@ class DataSyncService {
   }
 
   /// Sync data from edge function response to local database
-  Future<void> _syncDataFromEdgeFunction(Map<String, dynamic> data) async {
+  Future<void> _syncDataFromEdgeFunction(Map<String, dynamic> data, String userId) async {
     try {
       // // Sync foods (nutrition_foods from edge function)
       final nutritionFoods = data['nutrition_foods'] as List<dynamic>?;
@@ -486,18 +549,50 @@ class DataSyncService {
         await _syncFoodPreferencesFromEdgeFunction(foodPreferences);
       }
 
-      // _logger.info(
-      //   'Edge function data sync to local DB completed',
-      //   context: 'EDGE_SYNC',
-      //   data: {
-      //     'activities': activities?.length ?? 0,
-      //     'events': events?.length ?? 0,
-      //     'carbLoadingPlans': carbLoadingPlans?.length ?? 0,
-      //     'carbLoadingDays': carbLoadingDays?.length ?? 0,
-      //     'foodPreferences': foodPreferences?.length ?? 0,
-      //   },
-      // );
-  
+      // Sync coach record if user is an approved coach
+      // The edge function returns the full coach record (not just a boolean)
+      final coachRecord = data['coach_record'] as Map<String, dynamic>?;
+      if (coachRecord != null) {
+        await _syncCoachRecord(coachRecord);
+      }
+
+      // Sync coach-athlete relationships
+      final relationships = data['coach_athlete_relationships'] as List<dynamic>?;
+      if (relationships != null && relationships.isNotEmpty) {
+        await _syncCoachAthleteRelationships(relationships);
+      }
+
+      // NOTE: Coach messages are now synced on-demand in ActivityCoachFeedbackWidget
+      // This ensures athletes see feedback immediately when viewing activities
+      // instead of waiting for the next app-level sync
+
+      // Sync athlete data for coaches (events, activities, profiles)
+      final athleteEvents = data['athlete_events'] as List<dynamic>?;
+      if (athleteEvents != null && athleteEvents.isNotEmpty) {
+        await _syncAthleteEvents(athleteEvents);
+      }
+
+      final athleteActivities = data['athlete_activities'] as List<dynamic>?;
+      if (athleteActivities != null && athleteActivities.isNotEmpty) {
+        await _syncAthleteActivities(athleteActivities);
+      }
+
+      final athleteProfiles = data['athlete_profiles'] as List<dynamic>?;
+      if (athleteProfiles != null && athleteProfiles.isNotEmpty) {
+        await _syncAthleteProfiles(athleteProfiles);
+      }
+
+      final athleteCarbLoadingPlans = data['athlete_carb_loading_plans'] as List<dynamic>?;
+      if (athleteCarbLoadingPlans != null && athleteCarbLoadingPlans.isNotEmpty) {
+        await _syncAthleteCarbLoadingPlans(athleteCarbLoadingPlans);
+      }
+
+      // Sync coach profiles for athletes (so athletes can see their coaches' names)
+      final coachProfiles = data['coach_profiles'] as List<dynamic>?;
+      if (coachProfiles != null && coachProfiles.isNotEmpty) {
+        await _syncCoachProfiles(coachProfiles);
+      }
+
     } catch (e, stackTrace) {
       _logger.error('[EDGE_SYNC] Failed to sync edge function data to local DB',
         context: 'EDGE_SYNC',
@@ -672,16 +767,6 @@ class DataSyncService {
       final activityId = _toRequiredStringId(data['id'], 'activity.id');
       final userId = _toRequiredStringId(data['user_id'], 'activity.user_id');
 
-      _logger.info(
-        '💾 UPSERTING activity from sync',
-        context: 'DATA_SYNC',
-        data: {
-          'activityId': activityId,
-          'userId': userId,
-          'title': data['title'],
-        },
-      );
-
       final existingActivity = await (_database.select(_database.activitiesTable)
             ..where((tbl) => tbl.id.equals(activityId)))
           .getSingleOrNull();
@@ -691,11 +776,6 @@ class DataSyncService {
       // CRITICAL: Preserve local data if it has pending changes (needsUpload = true)
       // Phone data is the source of truth - never overwrite local changes
       if (existingActivity != null && (existingActivity.needsUpload ?? false)) {
-        _logger.info(
-          '⏭️ Skipping activity upsert - has pending local changes',
-          context: 'DATA_SYNC',
-          data: {'activityId': activityId},
-        );
         return; // Keep local version with pending changes
       }
 
@@ -737,15 +817,6 @@ class DataSyncService {
         await _database
             .into(_database.activitiesTable)
             .insert(companion, mode: InsertMode.insertOrReplace);
-
-        _logger.info(
-          '✅ Activity upserted successfully',
-          context: 'DATA_SYNC',
-          data: {
-            'activityId': activityId,
-            'userId': userId,
-          },
-        );
       }
     } catch (e, stackTrace) {
       _logger.error(
@@ -881,12 +952,6 @@ class DataSyncService {
                 carbLoadingStartDate: Value(startDate),
                 // Don't mark as needsUpload since we're syncing FROM server
               ));
-
-          _logger.info(
-            'Updated event has_carb_loading flag during carb plan sync',
-            context: 'CARB_PLAN_SYNC',
-            data: {'eventId': eventId, 'planId': data['id']},
-          );
         }
       }
     } catch (e, stackTrace) {
@@ -960,10 +1025,6 @@ class DataSyncService {
   Future<void> _syncFoodPreferencesFromEdgeFunction(List<dynamic> foodPreferences) async {
     try {
       if (foodPreferences.isEmpty) {
-        _logger.info(
-          'No food preferences to sync from edge function',
-          context: 'FOOD_PREF_SYNC',
-        );
         return;
       }
 
@@ -1021,16 +1082,343 @@ class DataSyncService {
         sliderLevels: sliderLevels.isEmpty ? null : sliderLevels,
         mergeMode: true,
       );
-
-      _logger.info(
-        'Synced ${preferences.length} food preferences from edge function',
-        context: 'FOOD_PREF_SYNC',
-        data: {'userId': userId, 'count': preferences.length},
-      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to sync food preferences from edge function',
         context: 'FOOD_PREF_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - continue with other syncs
+    }
+  }
+
+  /// Sync coach record from edge function response to local database
+  /// Inserts or updates the coach record in the local coaches table
+  Future<void> _syncCoachRecord(Map<String, dynamic> coachData) async {
+    try {
+      final coachId = coachData['id'] as String?;
+      if (coachId == null) {
+        _logger.warning(
+          'Coach record missing id, skipping sync',
+          context: 'COACH_SYNC',
+        );
+        return;
+      }
+
+      // Parse and save to local coaches table
+      final companion = CoachesTableCompanion.insert(
+        id: coachId,
+        userId: coachData['user_id'] as String,
+        firstName: coachData['first_name'] as String,
+        lastName: coachData['last_name'] as String,
+        email: coachData['email'] as String,
+        bio: Value(coachData['bio'] as String?),
+        applicationStatus: Value(coachData['application_status'] as String? ?? 'pending'),
+        reviewedBy: Value(coachData['reviewed_by'] as String?),
+        reviewedAt: Value(
+          coachData['reviewed_at'] != null
+              ? DateTime.parse(coachData['reviewed_at'] as String)
+              : null,
+        ),
+        rejectionReason: Value(coachData['rejection_reason'] as String?),
+        createdAt: Value(
+          coachData['created_at'] != null
+              ? DateTime.parse(coachData['created_at'] as String)
+              : DateTime.now(),
+        ),
+        updatedAt: Value(
+          coachData['updated_at'] != null
+              ? DateTime.parse(coachData['updated_at'] as String)
+              : DateTime.now(),
+        ),
+      );
+
+      await _database
+          .into(_database.coachesTable)
+          .insert(companion, mode: InsertMode.insertOrReplace);
+
+      _logger.info(
+        'Synced coach record to local DB',
+        context: 'COACH_SYNC',
+        data: {
+          'coach_id': coachId,
+          'user_id': coachData['user_id'],
+          'status': coachData['application_status'],
+        },
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync coach record from edge function',
+        context: 'COACH_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - continue with other syncs
+    }
+  }
+
+  /// Sync coach-athlete relationships from edge function response
+  Future<void> _syncCoachAthleteRelationships(List<dynamic> relationships) async {
+    try {
+      for (final r in relationships) {
+        final data = r as Map<String, dynamic>;
+        final id = data['id'] as String?;
+        if (id == null) continue;
+
+        final companion = CoachAthleteRelationshipsTableCompanion.insert(
+          id: id,
+          coachUserId: data['coach_user_id'] as String,
+          athleteUserId: data['athlete_user_id'] as String,
+          requestedBy: data['requested_by'] as String,
+          status: Value(data['status'] as String? ?? 'pending'),
+          requestedAt: Value(
+            data['requested_at'] != null
+                ? DateTime.parse(data['requested_at'] as String)
+                : DateTime.now(),
+          ),
+          acceptedAt: Value(
+            data['accepted_at'] != null
+                ? DateTime.parse(data['accepted_at'] as String)
+                : null,
+          ),
+          declinedAt: Value(
+            data['declined_at'] != null
+                ? DateTime.parse(data['declined_at'] as String)
+                : null,
+          ),
+          archivedAt: Value(
+            data['archived_at'] != null
+                ? DateTime.parse(data['archived_at'] as String)
+                : null,
+          ),
+          createdAt: Value(
+            data['created_at'] != null
+                ? DateTime.parse(data['created_at'] as String)
+                : DateTime.now(),
+          ),
+          updatedAt: Value(
+            data['updated_at'] != null
+                ? DateTime.parse(data['updated_at'] as String)
+                : DateTime.now(),
+          ),
+        );
+
+        await _database
+            .into(_database.coachAthleteRelationshipsTable)
+            .insert(companion, mode: InsertMode.insertOrReplace);
+      }
+
+      _logger.info(
+        'Synced ${relationships.length} coach-athlete relationships',
+        context: 'COACH_SYNC',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync coach-athlete relationships',
+        context: 'COACH_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - continue with other syncs
+    }
+  }
+
+  /// Sync coach messages from edge function response
+  Future<void> _syncCoachMessages(List<dynamic> messages) async {
+    try {
+      for (final m in messages) {
+        final data = m as Map<String, dynamic>;
+        final id = data['id'] as String?;
+        if (id == null) continue;
+
+        final companion = CoachMessagesTableCompanion.insert(
+          id: id,
+          coachUserId: data['coach_user_id'] as String,
+          athleteUserId: data['athlete_user_id'] as String,
+          senderUserId: data['sender_user_id'] as String,
+          messageText: data['message_text'] as String,
+          nutritionPlanId: Value(data['nutrition_plan_id'] as String?),
+          activityId: Value(data['activity_id'] as String?),
+          isRead: Value(_toBool(data['is_read'])),
+          createdAt: Value(
+            data['created_at'] != null
+                ? DateTime.parse(data['created_at'] as String)
+                : DateTime.now(),
+          ),
+          updatedAt: Value(
+            data['updated_at'] != null
+                ? DateTime.parse(data['updated_at'] as String)
+                : DateTime.now(),
+          ),
+        );
+
+        await _database
+            .into(_database.coachMessagesTable)
+            .insert(companion, mode: InsertMode.insertOrReplace);
+      }
+
+      _logger.info(
+        'Synced ${messages.length} coach messages',
+        context: 'COACH_SYNC',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync coach messages',
+        context: 'COACH_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - continue with other syncs
+    }
+  }
+
+  /// Sync athlete events for coaches
+  Future<void> _syncAthleteEvents(List<dynamic> events) async {
+    try {
+      for (final eventData in events) {
+        final eventMap = eventData as Map<String, dynamic>;
+        await _upsertEvent(eventMap, eventMap['user_id'] as String);
+      }
+
+      _logger.info(
+        'Synced ${events.length} athlete events for coach',
+        context: 'COACH_SYNC',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync athlete events',
+        context: 'COACH_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - continue with other syncs
+    }
+  }
+
+  /// Sync athlete activities for coaches
+  Future<void> _syncAthleteActivities(List<dynamic> activities) async {
+    try {
+      for (final activityData in activities) {
+        await _upsertActivity(activityData as Map<String, dynamic>);
+      }
+
+      _logger.info(
+        'Synced ${activities.length} athlete activities for coach',
+        context: 'COACH_SYNC',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync athlete activities',
+        context: 'COACH_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - continue with other syncs
+    }
+  }
+
+  /// Sync athlete profiles for coaches (limited fields)
+  Future<void> _syncAthleteProfiles(List<dynamic> profiles) async {
+    try {
+      for (final p in profiles) {
+        final data = p as Map<String, dynamic>;
+        final id = data['id'] as String?;
+        if (id == null) continue;
+
+        // Use insertOrReplace to update existing profiles or insert new ones
+        // Only sync the fields that coaches need to see
+        // Note: Convert body_weight_kg to weightPounds if provided
+        double? weightPounds;
+        if (data['body_weight_kg'] != null) {
+          final kg = (data['body_weight_kg'] as num).toDouble();
+          weightPounds = kg * 2.20462; // Convert kg to pounds
+        }
+
+        final companion = UserProfilesTableCompanion(
+          id: Value(id),
+          firstName: Value(data['first_name'] as String?),
+          lastName: Value(data['last_name'] as String?),
+          senderName: Value(data['sender_name'] as String?),
+          weightPounds: Value(weightPounds),
+          dietaryPreference: Value(data['dietary_preference'] as String?),
+          allergies: Value(data['allergies'] as String? ?? '{}'),
+          updatedAt: Value(DateTime.now()),
+        );
+
+        await _database
+            .into(_database.userProfilesTable)
+            .insertOnConflictUpdate(companion);
+      }
+
+      _logger.info(
+        'Synced ${profiles.length} athlete profiles for coach',
+        context: 'COACH_SYNC',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync athlete profiles',
+        context: 'COACH_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - continue with other syncs
+    }
+  }
+
+  /// Sync athlete carb loading plans for coaches
+  Future<void> _syncAthleteCarbLoadingPlans(List<dynamic> plans) async {
+    try {
+      for (final planData in plans) {
+        final planMap = planData as Map<String, dynamic>;
+        await _upsertCarbLoadingPlan(planMap);
+      }
+
+      _logger.info(
+        'Synced ${plans.length} athlete carb loading plans for coach',
+        context: 'COACH_SYNC',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync athlete carb loading plans',
+        context: 'COACH_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - continue with other syncs
+    }
+  }
+
+  /// Sync coach profiles for athletes (so athletes can see coach names)
+  Future<void> _syncCoachProfiles(List<dynamic> profiles) async {
+    try {
+      for (final p in profiles) {
+        final data = p as Map<String, dynamic>;
+        final id = data['id'] as String?;
+        if (id == null) continue;
+
+        // Only sync display name fields for coaches
+        final companion = UserProfilesTableCompanion(
+          id: Value(id),
+          firstName: Value(data['first_name'] as String?),
+          lastName: Value(data['last_name'] as String?),
+          senderName: Value(data['sender_name'] as String?),
+          updatedAt: Value(DateTime.now()),
+        );
+
+        await _database
+            .into(_database.userProfilesTable)
+            .insertOnConflictUpdate(companion);
+      }
+
+      _logger.info(
+        'Synced ${profiles.length} coach profiles for athlete',
+        context: 'COACH_SYNC',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync coach profiles',
+        context: 'COACH_SYNC',
         error: e,
         stackTrace: stackTrace,
       );
@@ -1047,12 +1435,6 @@ class DataSyncService {
 
     try {
       await _database.ensureUserDataSyncColumns();
-
-      _logger.info(
-        'Starting upload of dirty records via edge function',
-        context: 'DATA_SYNC',
-        data: {'userId': userId},
-      );
 
       // Clean duplicates from Drift before collecting records
       await _cleanDuplicatesFromDrift(userId);
@@ -1110,18 +1492,11 @@ class DataSyncService {
 
       // If nothing to upload via edge function, handle user profile separately and return
       if (!hasEdgeFunctionRecords) {
-        _logger.info(
-          'No dirty records for edge function upload (user profile handled separately)',
-          context: 'DATA_SYNC',
-          data: {'hasUserProfile': dirtyUserProfile != null},
-        );
-
         // Upload user profile separately if needed
         if (dirtyUserProfile != null) {
           try {
             await _uploadUserProfile(dirtyUserProfile);
             uploadResults['users'] = true;
-            _logger.info('User profile uploaded successfully', context: 'DATA_SYNC');
 
             // Also upload food preferences to the normalized table
             await _uploadFoodPreferences(dirtyUserProfile.id);
@@ -1172,15 +1547,6 @@ class DataSyncService {
       }
 
       // Call upload-all-data edge function (duplicates already cleaned from Drift)
-      _logger.info(
-        'Calling upload-all-data edge function',
-        context: 'DATA_SYNC',
-        data: {
-          'userId': userId,
-          'tableCount': dirtyRecords.keys.length,
-        },
-      );
-
       final response = await _supabase.functions.invoke(
         'upload-all-data',
         body: {
@@ -1207,12 +1573,6 @@ class DataSyncService {
         if (success) {
           // Clear needs_upload flag for this table
           await _clearNeedsUploadFlag(tableName, userId);
-
-          _logger.info(
-            'Successfully uploaded $tableName',
-            context: 'DATA_SYNC',
-            data: {'uploaded': result['uploaded']},
-          );
         } else {
           _logger.warning(
             'Failed to upload $tableName',
@@ -1237,16 +1597,6 @@ class DataSyncService {
         }
       }
 
-      _logger.info(
-        'Upload completed via edge function',
-        context: 'DATA_SYNC',
-        data: {
-          'userId': userId,
-          'successful': uploadResults.values.where((v) => v).length,
-          'failed': uploadResults.values.where((v) => !v).length,
-        },
-      );
-
       return uploadResults;
     } catch (e, stackTrace) {
       _logger.error(
@@ -1264,7 +1614,6 @@ class DataSyncService {
   /// Deletes older duplicates permanently from the local database
   Future<void> _cleanDuplicatesFromDrift(String userId) async {
     try {
-      _logger.info('Scanning for duplicate records in Drift', context: 'DATA_SYNC');
       int totalDuplicatesDeleted = 0;
 
       // Clean each table (using actual SQLite table names, not Drift class names)
@@ -1319,8 +1668,6 @@ class DataSyncService {
             'user_id': userId,
           },
         );
-      } else {
-        _logger.info('No duplicate records found in Drift', context: 'DATA_SYNC');
       }
     } catch (e, stackTrace) {
       _logger.error(
@@ -1545,11 +1892,6 @@ class DataSyncService {
           await _database.customStatement(
             'UPDATE users SET needs_upload = 0 WHERE rowid = ?',
             [rowid],
-          );
-          _logger.info(
-            'Cleared needs_upload for older user',
-            context: 'DATA_SYNC',
-            data: {'rowid': rowid},
           );
         }
       }
@@ -2154,12 +2496,6 @@ class DataSyncService {
   /// Uses consolidated upsert-user-profile edge function
   Future<void> _uploadUserProfile(UserProfileEntry profile) async {
     try {
-      _logger.info(
-        'Uploading user profile to Supabase',
-        context: 'USER_SYNC',
-        data: {'userId': profile.id},
-      );
-
       // Use Supabase direct upsert instead of edge function for simplicity
       // Edge function can be used later if needed for additional business logic
       final userData = {
@@ -2198,12 +2534,6 @@ class DataSyncService {
       await (_database.update(_database.userProfilesTable)
             ..where((tbl) => tbl.id.equals(profile.id)))
           .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
-
-      _logger.info(
-        'User profile uploaded successfully',
-        context: 'USER_SYNC',
-        data: {'userId': profile.id},
-      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to upload user profile',
@@ -2224,19 +2554,8 @@ class DataSyncService {
       final entries = await _database.getAllFoodPreferenceEntries(userId);
 
       if (entries.isEmpty) {
-        _logger.info(
-          'No food preferences to upload',
-          context: 'FOOD_PREF_SYNC',
-          data: {'userId': userId},
-        );
         return;
       }
-
-      _logger.info(
-        'Uploading ${entries.length} food preferences to Supabase',
-        context: 'FOOD_PREF_SYNC',
-        data: {'userId': userId, 'count': entries.length},
-      );
 
       // Convert to Supabase format
       final rows = entries.map((entry) => {
@@ -2253,12 +2572,6 @@ class DataSyncService {
       await _supabase.from('food_preferences').upsert(
         rows,
         onConflict: 'user_id,food_name', // Use composite unique key
-      );
-
-      _logger.info(
-        'Food preferences uploaded successfully',
-        context: 'FOOD_PREF_SYNC',
-        data: {'userId': userId, 'count': entries.length},
       );
     } catch (e, stackTrace) {
       _logger.error(
@@ -2295,10 +2608,6 @@ class DataSyncService {
           .get();
 
       if (profileCount.isEmpty) {
-        _logger.info(
-          'Fresh device detected - no user profile',
-          context: 'DATA_SYNC',
-        );
         return true;
       }
 
@@ -2307,38 +2616,21 @@ class DataSyncService {
       final lastSync = prefs.getString('last_sync_timestamp_$userId');
 
       if (lastSync == null) {
-        _logger.info(
-          'Fresh device detected - no sync timestamp',
-          context: 'DATA_SYNC',
-        );
         return true;
       }
 
       // Check 3: Is sync very old? (>30 days = treat as fresh)
       final lastSyncDate = DateTime.tryParse(lastSync);
       if (lastSyncDate == null) {
-        _logger.info(
-          'Fresh device detected - invalid sync timestamp',
-          context: 'DATA_SYNC',
-        );
         return true;
       }
 
       final daysSinceSync = DateTime.now().difference(lastSyncDate).inDays;
 
       if (daysSinceSync > 30) {
-        _logger.info(
-          'Sync very old ($daysSinceSync days) - treating as fresh device',
-          context: 'DATA_SYNC',
-        );
         return true;
       }
 
-      _logger.info(
-        'Device has recent data - incremental sync',
-        context: 'DATA_SYNC',
-        data: {'daysSinceSync': daysSinceSync},
-      );
       return false;
     } catch (e, stackTrace) {
       _logger.error(
@@ -2355,7 +2647,6 @@ class DataSyncService {
   /// This ensures activities and events synced from external sources
   /// (Final Surge, TrainingPeaks, etc.) are reflected in the UI immediately
   void _invalidateCalendarProviders() {
-    _logger.info('Invalidating calendar providers after sync', context: 'DATA_SYNC');
     _ref.invalidate(calendarControllerProvider);
     _ref.invalidate(allEventsControllerProvider);
     _ref.invalidate(nextUpcomingEventProvider);

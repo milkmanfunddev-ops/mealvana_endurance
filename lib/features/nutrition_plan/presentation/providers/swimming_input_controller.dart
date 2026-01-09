@@ -255,6 +255,7 @@ class SwimmingInputController extends _$SwimmingInputController {
   Future<void> generateMacros({
     String? activityId,
     String? eventId,
+    String? forUserId,
   }) async {
     final currentState = state;
 
@@ -271,6 +272,7 @@ class SwimmingInputController extends _$SwimmingInputController {
       scheduledTime: currentState.selectedTime,
       activityId: activityId,
       eventId: eventId,
+      forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
     );
   }
 }

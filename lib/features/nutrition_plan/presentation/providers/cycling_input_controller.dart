@@ -272,6 +272,7 @@ class CyclingInputController extends _$CyclingInputController {
   Future<void> generateMacros({
     String? activityId,
     String? eventId,
+    String? forUserId,
   }) async {
     DebugLogger.info('🚴 CYCLING CONTROLLER: generateMacros called - activityId: $activityId');
     final currentState = state;
@@ -299,6 +300,7 @@ class CyclingInputController extends _$CyclingInputController {
       humidityPct: currentState.humidityPct,
       activityId: activityId,
       eventId: eventId,
+      forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
     );
     DebugLogger.info('🚴 CYCLING CONTROLLER: distancePageGutEntryController.generateCyclingMacros completed!');
   }

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -72,8 +71,6 @@ class AppStartupService {
       // AGGRESSIVE FIX: If null values detected, fix them immediately
       if (needsRecovery) {
         try {
-          _logger.info('Attempting to fix null values in database', context: 'DATABASE');
-
           // First check which columns exist (migration may have been interrupted)
           final usersColumns = await db.customSelect("PRAGMA table_info(users)").get();
           final columnNames = usersColumns.map((row) => row.read<String>('name')).toSet();
@@ -103,11 +100,8 @@ class AppStartupService {
             "UPDATE users SET needs_upload = 0 WHERE needs_upload IS NULL"
           );
 
-          _logger.info('Successfully fixed null values', context: 'DATABASE');
-
           // Verify fix worked
           await db.select(db.userProfilesTable).get();
-          _logger.info('Database verification passed after fix', context: 'DATABASE');
         } catch (fixError) {
           _logger.error(
             'Failed to fix null values - will delete and recreate database',
@@ -120,10 +114,8 @@ class AppStartupService {
           await AppDatabase.deleteAndResync();
           ref.invalidate(appDatabaseProvider);
 
-          // Re-read the provider to get fresh database
-          final freshDb = ref.read(appDatabaseProvider);
-
-          _logger.info('Database recreated successfully', context: 'DATABASE');
+          // Re-read the provider to trigger fresh database creation
+          ref.read(appDatabaseProvider);
           return; // Exit early - fresh database is ready
         }
       }
@@ -154,14 +146,7 @@ class AppStartupService {
           throw Exception('Fresh database creation failed after corruption recovery');
         }
 
-        _logger.info(
-          'Database recovered successfully - will sync on next login',
-          context: 'DATABASE',
-        );
-
         // Trigger full sync will happen automatically when user session is detected
-      } else {
-        _logger.info('Database health check passed', context: 'DATABASE');
       }
 
     } catch (e, stackTrace) {
@@ -175,7 +160,6 @@ class AppStartupService {
       try {
         await AppDatabase.deleteAndResync();
         ref.invalidate(appDatabaseProvider);
-        _logger.info('Database recovered after catastrophic failure', context: 'DATABASE');
       } catch (recoveryError) {
         _logger.error(
           'Database recovery failed - app cannot continue',
@@ -197,32 +181,22 @@ class AppStartupService {
     // Wait for first frame to render before initializing these services
     // This avoids Android DeviceInfoPlugin deadlock
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      debugPrint('[DEFERRED_INIT] Post-frame: Starting deferred initialization...');
-      final sw = Stopwatch()..start();
-
       try {
         // 1. Initialize device info (safe after first frame)
         await DeviceInfoService.instance.initialize();
-        debugPrint('[DEFERRED_INIT] Device info initialized: ${sw.elapsedMilliseconds}ms');
 
         // 2. Initialize analytics with device ID
         await _initializeAnalytics();
-        debugPrint('[DEFERRED_INIT] Analytics initialized: ${sw.elapsedMilliseconds}ms');
 
         // 3. Check user session for analytics identification
         await checkUserSession();
-        debugPrint('[DEFERRED_INIT] User session checked: ${sw.elapsedMilliseconds}ms');
 
         // 4. Initialize push notifications
         await _initializePushNotifications();
-        debugPrint('[DEFERRED_INIT] Push notifications initialized: ${sw.elapsedMilliseconds}ms');
 
         // 5. Sync is_coach status from Supabase (for coach mode)
         // This picks up any admin approvals since last app launch
         await _syncCoachStatus();
-        debugPrint('[DEFERRED_INIT] Coach status synced: ${sw.elapsedMilliseconds}ms');
-
-        debugPrint('[DEFERRED_INIT] ✅ All deferred services initialized: ${sw.elapsedMilliseconds}ms');
       } catch (e, stackTrace) {
         _logger.error(
           'Deferred initialization failed',
@@ -262,32 +236,18 @@ class AppStartupService {
     }
   }
 
-  /// Sync is_coach status from Supabase to local database
-  /// This picks up any admin approvals since last app launch
+  /// Refresh coach status from local coaches table
+  /// The coach record is synced via sync-all-data edge function
+  /// This just ensures the settings controller is aware of coach status
   Future<void> _syncCoachStatus() async {
     try {
       // Only sync if user is logged in (has session)
       final session = _supabase.auth.currentSession;
-      if (session == null) {
-        _logger.info(
-          'Skipping coach status sync - no active session',
-          context: 'COACH_SYNC',
-        );
-        return;
-      }
+      if (session == null) return;
 
-      final coachService = ref.read(coachServiceProvider);
-      final wasUpdated = await coachService.syncIsCoachStatus();
-
-      if (wasUpdated) {
-        _logger.info(
-          'Coach status was updated from Supabase',
-          context: 'COACH_SYNC',
-        );
-
-        // Invalidate settings controller to pick up new is_coach status
-        ref.invalidate(settingsControllerProvider);
-      }
+      // Coach record is synced during data sync, just invalidate settings
+      // to ensure it picks up the latest coach status from local coaches table
+      ref.invalidate(settingsControllerProvider);
     } catch (e, stackTrace) {
       _logger.error(
         'Coach status sync failed',
@@ -304,13 +264,7 @@ class AppStartupService {
     try {
       final config = ref.read(appConfigProvider);
 
-      if (config.oneSignalAppId.isEmpty) {
-        _logger.info(
-          'OneSignal App ID not configured - skipping push notification initialization',
-          context: 'PUSH_NOTIFICATIONS',
-        );
-        return;
-      }
+      if (config.oneSignalAppId.isEmpty) return;
 
       // Initialize OneSignal
       await PushNotificationService.initialize(config.oneSignalAppId);
@@ -320,13 +274,7 @@ class AppStartupService {
       await PushNotificationService.login(deviceId);
 
       // Request permission - shows iOS prompt if not already granted
-      final permissionGranted = await PushNotificationService.requestPermission();
-
-      _logger.info(
-        'Push notifications initialized successfully',
-        context: 'PUSH_NOTIFICATIONS',
-        data: {'permission_granted': permissionGranted},
-      );
+      await PushNotificationService.requestPermission();
     } catch (e, stackTrace) {
       _logger.error(
         'Push notification initialization failed',
@@ -379,9 +327,21 @@ class AppStartupService {
   /// because we're already handling the state in the startup flow
   bool _isSigningOutDueToMismatch = false;
 
+  /// Flag to prevent clearing cached onboarding data during onboarding sign-out
+  /// During email signup, we sign out any existing session to create a fresh user.
+  /// This flag prevents the auth listener from invalidating providers and losing
+  /// the cached onboarding data (user profile, sports, preferences, etc.)
+  bool _isOnboardingSignOut = false;
+
   /// Flag to skip setting up auth listener when in "logged out with local data" state
   /// This prevents infinite loop: listener setup -> signedOut event -> invalidate -> repeat
   bool _skipAuthListenerSetup = false;
+
+  /// Mark that the next sign-out is due to onboarding (to preserve cached data)
+  /// Called by email_signup_screen before signing out existing session
+  void markOnboardingSignOut() {
+    _isOnboardingSignOut = true;
+  }
 
   /// Initialize Supabase Anonymous Authentication
   /// Creates or restores an anonymous auth session for the user
@@ -402,49 +362,7 @@ class AppStartupService {
         if (localProfile != null && localProfile.onboardingCompleted) {
           // Profile found matching this session - user is properly authenticated
           // No mismatch handling needed since getCurrentUserProfile already filters by auth ID
-          final localAuthUserId = localProfile.authUserId;
-          final localId = localProfile.id;
-
-          // Session matches (always true here since we filtered by auth ID)
-          final sessionMatches = true;
-
-          if (!sessionMatches) {
-            // MISMATCH: Orphan session doesn't match local data
-            // This happens when a new anonymous session was created after logout
-            // but old local data was preserved. Clear the orphan session.
-            _logger.info(
-              'Session mismatch detected - clearing orphan Supabase session',
-              context: 'AUTH',
-              data: {
-                'session_user_id': sessionUserId,
-                'local_id': localId,
-                'local_auth_user_id': localAuthUserId,
-              },
-            );
-            _sentry.addBreadcrumb(
-              message: 'Clearing orphan Supabase session - mismatch with local data',
-              category: 'auth',
-              data: {
-                'session_user_id': sessionUserId,
-                'local_id': localId,
-                'local_auth_user_id': localAuthUserId,
-              },
-            );
-
-            // Set flags to prevent infinite loop
-            // 1. Skip provider invalidation in signedOut handler
-            // 2. Skip auth listener setup in finally block
-            _isSigningOutDueToMismatch = true;
-            _skipAuthListenerSetup = true;
-
-            // Sign out to clear the orphan session
-            // Local data is preserved - user can sign back in
-            await _supabase.auth.signOut();
-
-            // Return early - app will be in "logged out with local data" state
-            // Router will redirect to welcome screen
-            return;
-          }
+          // Session always matches here since we filtered by auth ID in getCurrentUserProfile
         }
 
         // Session matches local data (or no local data) - proceed normally
@@ -505,10 +423,6 @@ class AppStartupService {
       // Check if we should skip listener setup (logged out with local data state)
       if (_skipAuthListenerSetup) {
         _skipAuthListenerSetup = false; // Reset flag
-        _logger.info(
-          'Skipping auth listener setup - in logged out with local data state',
-          context: 'AUTH',
-        );
       } else {
         // Setup auth state listener ONCE, regardless of path taken
         // This prevents duplicate listeners that cause race conditions
@@ -544,9 +458,12 @@ class AppStartupService {
       // Handle sign-out events
       if (event == AuthChangeEvent.signedOut) {
         // Check if this is a mismatch-triggered signout (during startup)
-        // If so, skip provider invalidation to prevent infinite loop
+        // or an onboarding signout (creating fresh user during signup)
+        // If so, skip provider invalidation to prevent data loss
         final wasMismatchSignOut = _isSigningOutDueToMismatch;
+        final wasOnboardingSignOut = _isOnboardingSignOut;
         _isSigningOutDueToMismatch = false; // Reset flag
+        _isOnboardingSignOut = false; // Reset flag
 
         // NOTE: session?.user.id is null here because session is already cleared
         // Sync timestamp is cleared in SettingsController.signOut() BEFORE sign-out
@@ -555,6 +472,7 @@ class AppStartupService {
         await _analytics.track('user_signed_out', properties: {
           'timestamp': DateTime.now().toIso8601String(),
           'was_mismatch_signout': wasMismatchSignOut,
+          'was_onboarding_signout': wasOnboardingSignOut,
         });
 
         try {
@@ -562,14 +480,10 @@ class AppStartupService {
           // This allows users to sign back in offline and see their data
           // Data is already isolated by user_id via getCurrentUserProfile()
 
-          // Skip provider invalidation if this was a mismatch signout
-          // The startup flow is already handling the state correctly
-          if (wasMismatchSignOut) {
-            _logger.info(
-              'Mismatch signout handled - skipping provider invalidation',
-              context: 'AUTH',
-            );
-          } else {
+          // Skip provider invalidation if this was a mismatch or onboarding signout
+          // - Mismatch: The startup flow is already handling the state correctly
+          // - Onboarding: We need to preserve cached onboarding data for saveAllOnboardingData()
+          if (!wasMismatchSignOut && !wasOnboardingSignOut) {
             // User-initiated signout - invalidate providers so UI shows login screen
             ref.invalidate(userIdProvider);
             ref.invalidate(activitiesControllerProvider);
@@ -577,17 +491,14 @@ class AppStartupService {
             ref.invalidate(nextUpcomingEventProvider);
             ref.invalidate(settingsControllerProvider);
             ref.invalidate(appStartupProvider);
-
-            _logger.info(
-              'User signed out - keeping local data for offline access',
-              context: 'AUTH',
-            );
           }
 
           _sentry.addBreadcrumb(
             message: wasMismatchSignOut
                 ? 'Mismatch signout - no invalidation needed'
-                : 'User signed out - local data preserved',
+                : wasOnboardingSignOut
+                    ? 'Onboarding signout - preserving cached data'
+                    : 'User signed out - local data preserved',
             category: 'auth',
             data: {
               'timestamp': DateTime.now().toIso8601String(),
@@ -646,7 +557,6 @@ class AppStartupService {
       );
 
       if (userProfile == null || userProfile.onboardingCompleted != true) {
-        _logger.info('Skipping post-auth sync - onboarding not complete', context: 'AUTH');
         return;
       }
     } catch (e) {
@@ -667,8 +577,6 @@ class AppStartupService {
 
       // Invalidate settings provider after profile is loaded
       ref.invalidate(settingsControllerProvider);
-
-      _logger.info('Post-auth user data sync completed', context: 'AUTH');
     } catch (e) {
       _logger.error('Failed to sync remote profile on sign in', context: 'AUTH', error: e);
     }
@@ -682,7 +590,6 @@ class AppStartupService {
         userId: userId,
         trigger: SyncTrigger.manual,
       );
-      _logger.info('Full sync completed for device-based user', context: 'AUTH');
     } catch (e) {
       _logger.error('Full sync failed after auth', context: 'AUTH', error: e);
       // Don't rethrow - user can manually sync later

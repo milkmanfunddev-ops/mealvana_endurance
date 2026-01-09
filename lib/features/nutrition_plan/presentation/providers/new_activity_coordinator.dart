@@ -86,6 +86,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
   Future<void> generateMacros({
     String? activityId,
     String? eventId,
+    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
     DebugLogger.info('🎮 COORDINATOR: generateMacros called for sport: ${state.selectedTab.name}');
 
@@ -103,6 +104,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           await ref.read(runningInputControllerProvider.notifier).generateMacros(
             activityId: activityId,
             eventId: eventId,
+            forUserId: forUserId, // NEW: Pass through forUserId
           );
           DebugLogger.info('🎮 COORDINATOR: runningInputController.generateMacros returned');
           break;
@@ -111,6 +113,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           await ref.read(cyclingInputControllerProvider.notifier).generateMacros(
             activityId: activityId,
             eventId: eventId,
+            forUserId: forUserId, // NEW: Pass through forUserId
           );
           DebugLogger.info('🎮 COORDINATOR: cyclingInputController.generateMacros returned');
           break;
@@ -119,6 +122,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           await ref.read(swimmingInputControllerProvider.notifier).generateMacros(
             activityId: activityId,
             eventId: eventId,
+            forUserId: forUserId, // NEW: Pass through forUserId
           );
           DebugLogger.info('🎮 COORDINATOR: swimmingInputController.generateMacros returned');
           break;

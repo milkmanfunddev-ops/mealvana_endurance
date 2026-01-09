@@ -98,7 +98,7 @@ class Coach {
       lastName: json['last_name'] as String,
       email: json['email'] as String,
       bio: json['bio'] as String?,
-      status: json['status'] as String? ?? 'pending',
+      status: json['application_status'] as String? ?? 'pending',
       reviewedBy: json['reviewed_by'] as String?,
       reviewedAt: json['reviewed_at'] != null
           ? DateTime.parse(json['reviewed_at'] as String)
@@ -117,7 +117,7 @@ class Coach {
       'last_name': lastName,
       'email': email,
       'bio': bio,
-      'status': status,
+      'application_status': status,
       'reviewed_by': reviewedBy,
       'reviewed_at': reviewedAt?.toIso8601String(),
       'rejection_reason': rejectionReason,

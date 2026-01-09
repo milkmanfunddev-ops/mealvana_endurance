@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../widgets/athlete_card.dart';
@@ -39,13 +37,6 @@ class CoachDashboardScreen extends ConsumerWidget {
         error: (error, stack) => _buildErrorView(context, error.toString(), ref),
         data: (state) => _buildDashboard(context, state, ref),
       ),
-      floatingActionButton: dashboardAsync.value?.isCoach == true
-          ? FloatingActionButton.extended(
-              onPressed: () => _showInviteAthleteDialog(context, ref),
-              icon: const Icon(Icons.person_add),
-              label: const Text('Invite Athlete'),
-            )
-          : null,
     );
   }
 
@@ -157,6 +148,9 @@ class CoachDashboardScreen extends ConsumerWidget {
                     relationship: athlete,
                     onTap: () {
                       context.push('/coach/athlete/${athlete.id}');
+                    },
+                    onMessage: () {
+                      context.push('/chat/${athlete.id}');
                     },
                     onArchive: () {
                       _showArchiveConfirmation(context, ref, athlete);
@@ -294,7 +288,7 @@ class CoachDashboardScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap "Invite Athlete" to connect with your first athlete',
+            'Athletes can request to connect with you from the Coach Directory',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
@@ -382,81 +376,4 @@ class CoachDashboardScreen extends ConsumerWidget {
     );
   }
 
-  void _showInviteAthleteDialog(BuildContext context, WidgetRef ref) {
-    final textController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Invite Athlete'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Enter your athlete\'s code to send them an invitation to connect.',
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Athletes can find their code in Settings → Coach Connection',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: textController,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Athlete Code',
-                  hintText: 'ATH-XXXXXXXX',
-                  helperText: 'Example: ATH-FE36370A',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final code = textController.text.trim();
-              if (code.isEmpty) return;
-
-              final coachService = ref.read(coachServiceProvider);
-              final result = await coachService.inviteAthleteByCode(
-                athleteCode: code,
-              );
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                if (result != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Invitation sent successfully!'),
-                      backgroundColor: AppColors.electrolyte,
-                    ),
-                  );
-                  ref.read(coachDashboardControllerProvider.notifier).refresh();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Athlete not found. Please check the code and try again.'),
-                      backgroundColor: AppColors.dragonfruit,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Send Invitation'),
-          ),
-        ],
-      ),
-    );
-  }
 }

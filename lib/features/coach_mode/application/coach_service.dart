@@ -1,5 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../features/auth/domain/user_preferences.dart' as domain;
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
@@ -16,35 +18,50 @@ CoachService coachService(Ref ref) {
     repository: ref.read(coachRepositoryProvider),
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    supabase: Supabase.instance.client,
   );
 }
 
 /// Service for coach mode business logic
 /// Handles orchestration between coach operations and user context
-/// Note: Coach status is determined by is_coach flag on users table (set by admin)
+/// Note: Coach status is determined by approved record in coaches table (set by admin)
 class CoachService {
   const CoachService({
     required CoachRepository repository,
     required AppDatabase database,
     required AppLogger logger,
+    required SupabaseClient supabase,
   })  : _repository = repository,
         _database = database,
-        _logger = logger;
+        _logger = logger,
+        _supabase = supabase;
 
   final CoachRepository _repository;
   final AppDatabase _database;
   final AppLogger _logger;
+  final SupabaseClient _supabase;
+
+  /// Get the current authenticated user's ID from Supabase
+  String? get _currentAuthUserId => _supabase.auth.currentUser?.id;
+
+  /// Helper method to get current user profile with auth context
+  Future<domain.UserProfile?> _getCurrentProfile() async {
+    return await _database.getCurrentUserProfile(
+      currentAuthUserId: _currentAuthUserId,
+    );
+  }
 
   // ============================================================================
   // COACH STATUS CHECKS
   // ============================================================================
 
   /// Check if the current user is a coach
+  /// Checks the coaches table for an approved record
   Future<bool> isCurrentUserCoach() async {
     try {
-      final profile = await _database.getCurrentUserProfile();
+      final profile = await _getCurrentProfile();
       if (profile == null) return false;
-      return profile.isCoach;
+      return await _repository.isUserApprovedCoach(profile.id);
     } catch (e) {
       _logger.warning(
         'Failed to check coach status',
@@ -55,18 +72,32 @@ class CoachService {
     }
   }
 
-  /// Get the current user's coach info (if they are a coach)
+  /// Get the current user's coach record (if they are an approved coach)
+  Future<Coach?> getCurrentCoachRecord() async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) return null;
+
+      return await _repository.getCoachRecordForUser(profile.id);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get current coach record',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Get the current user's coach info (simplified view for UI)
+  /// Used by coach dashboard and other UI components
   Future<CoachInfo?> getCurrentCoachInfo() async {
     try {
-      final profile = await _database.getCurrentUserProfile();
-      if (profile == null || !profile.isCoach) return null;
+      final profile = await _getCurrentProfile();
+      if (profile == null) return null;
 
-      return CoachInfo(
-        userId: profile.id,
-        deviceId: profile.deviceId,
-        isCoach: profile.isCoach,
-        displayName: profile.senderName,
-      );
+      return await _repository.getCoachInfoByUserId(profile.id);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get current coach info',
@@ -85,8 +116,12 @@ class CoachService {
   /// Get all athletes for the current coach
   Future<List<CoachAthleteRelationship>> getMyAthletes() async {
     try {
-      final profile = await _database.getCurrentUserProfile();
-      if (profile == null || !profile.isCoach) return [];
+      final profile = await _getCurrentProfile();
+      if (profile == null) return [];
+
+      // Check coaches table for approved status
+      final isCoach = await _repository.isUserApprovedCoach(profile.id);
+      if (!isCoach) return [];
 
       return await _repository.getActiveRelationshipsForCoach(profile.id);
     } catch (e, stackTrace) {
@@ -103,8 +138,12 @@ class CoachService {
   /// Get pending athlete requests for the current coach
   Future<List<CoachAthleteRelationship>> getPendingAthleteRequests() async {
     try {
-      final profile = await _database.getCurrentUserProfile();
-      if (profile == null || !profile.isCoach) return [];
+      final profile = await _getCurrentProfile();
+      if (profile == null) return [];
+
+      // Check coaches table for approved status
+      final isCoach = await _repository.isUserApprovedCoach(profile.id);
+      if (!isCoach) return [];
 
       final all = await _repository.getRelationshipsForCoach(profile.id);
       return all
@@ -128,8 +167,18 @@ class CoachService {
     required String athleteCode,
   }) async {
     try {
-      final profile = await _database.getCurrentUserProfile();
-      if (profile == null || !profile.isCoach) {
+      final profile = await _getCurrentProfile();
+      if (profile == null) {
+        _logger.warning(
+          'Cannot invite athlete: no user profile',
+          context: 'COACH_SERVICE',
+        );
+        return null;
+      }
+
+      // Check coaches table for approved status
+      final isCoach = await _repository.isUserApprovedCoach(profile.id);
+      if (!isCoach) {
         _logger.warning(
           'Cannot invite athlete: user is not a coach',
           context: 'COACH_SERVICE',
@@ -178,8 +227,18 @@ class CoachService {
     required String athleteUserId,
   }) async {
     try {
-      final profile = await _database.getCurrentUserProfile();
-      if (profile == null || !profile.isCoach) {
+      final profile = await _getCurrentProfile();
+      if (profile == null) {
+        _logger.warning(
+          'Cannot invite athlete: no user profile',
+          context: 'COACH_SERVICE',
+        );
+        return null;
+      }
+
+      // Check coaches table for approved status
+      final isCoach = await _repository.isUserApprovedCoach(profile.id);
+      if (!isCoach) {
         _logger.warning(
           'Cannot invite athlete: user is not a coach',
           context: 'COACH_SERVICE',
@@ -261,7 +320,7 @@ class CoachService {
   /// Get all coaches for the current athlete
   Future<List<CoachAthleteRelationship>> getMyCoaches() async {
     try {
-      final profile = await _database.getCurrentUserProfile();
+      final profile = await _getCurrentProfile();
       if (profile == null) return [];
 
       final all = await _repository.getRelationshipsForAthlete(profile.id);
@@ -282,7 +341,7 @@ class CoachService {
   /// Get pending coach requests for the current athlete
   Future<List<CoachAthleteRelationship>> getPendingCoachRequests() async {
     try {
-      final profile = await _database.getCurrentUserProfile();
+      final profile = await _getCurrentProfile();
       if (profile == null) return [];
 
       final all = await _repository.getRelationshipsForAthlete(profile.id);
@@ -398,7 +457,7 @@ class CoachService {
   /// Get unread message count for current user
   Future<int> getUnreadMessageCount() async {
     try {
-      final profile = await _database.getCurrentUserProfile();
+      final profile = await _getCurrentProfile();
       if (profile == null) return 0;
 
       return await _repository.getUnreadMessageCount(profile.id);
@@ -422,7 +481,7 @@ class CoachService {
     String? activityId,
   }) async {
     try {
-      final profile = await _database.getCurrentUserProfile();
+      final profile = await _getCurrentProfile();
       if (profile == null) {
         _logger.warning(
           'Cannot send message: no user profile',
@@ -456,7 +515,7 @@ class CoachService {
     required String athleteUserId,
   }) async {
     try {
-      final profile = await _database.getCurrentUserProfile();
+      final profile = await _getCurrentProfile();
       if (profile == null) return;
 
       await _repository.markMessagesAsRead(
@@ -490,6 +549,109 @@ class CoachService {
   }
 
   // ============================================================================
+  // CHAT (General messaging - no activity/plan context)
+  // ============================================================================
+
+  /// Get general chat messages (excludes activity and nutrition plan comments)
+  /// Used for the dedicated chat screen
+  Future<List<CoachMessage>> getGeneralChatMessages({
+    required String coachUserId,
+    required String athleteUserId,
+    int? limit,
+  }) async {
+    try {
+      return await _repository.getGeneralChatMessages(
+        coachUserId: coachUserId,
+        athleteUserId: athleteUserId,
+        limit: limit,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get general chat messages',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return [];
+    }
+  }
+
+  /// Subscribe to new messages in a conversation using Supabase Realtime
+  /// Returns a RealtimeChannel that should be unsubscribed when done
+  RealtimeChannel subscribeToConversation({
+    required String coachUserId,
+    required String athleteUserId,
+    required void Function(CoachMessage) onNewMessage,
+  }) {
+    return _repository.subscribeToConversation(
+      coachUserId: coachUserId,
+      athleteUserId: athleteUserId,
+      onNewMessage: onNewMessage,
+    );
+  }
+
+  /// Unsubscribe from a conversation channel
+  Future<void> unsubscribeFromConversation(RealtimeChannel channel) async {
+    await _repository.unsubscribeFromConversation(channel);
+  }
+
+  /// Send a general chat message (not linked to activity or nutrition plan)
+  /// Used by the dedicated chat screen
+  Future<CoachMessage?> sendChatMessage({
+    required String coachUserId,
+    required String athleteUserId,
+    required String messageText,
+  }) async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) {
+        _logger.warning(
+          'Cannot send chat message: no user profile',
+          context: 'COACH_SERVICE',
+        );
+        return null;
+      }
+
+      return await _repository.sendChatMessageToSupabase(
+        coachUserId: coachUserId,
+        athleteUserId: athleteUserId,
+        senderUserId: profile.id,
+        messageText: messageText,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to send chat message',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get a relationship by ID (works for both coach and athlete perspective)
+  Future<CoachAthleteRelationship?> getRelationshipById(
+      String relationshipId) async {
+    try {
+      return await _repository.getRelationshipById(relationshipId);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get relationship by ID',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Get the current user's ID
+  Future<String?> getCurrentUserId() async {
+    final profile = await _getCurrentProfile();
+    return profile?.id;
+  }
+
+  // ============================================================================
   // COACH DIRECTORY (Athlete browsing coaches)
   // ============================================================================
 
@@ -511,7 +673,7 @@ class CoachService {
   /// Request to connect with a coach (athlete initiates)
   Future<bool> requestCoachConnection(String coachUserId) async {
     try {
-      final profile = await _database.getCurrentUserProfile();
+      final profile = await _getCurrentProfile();
       if (profile == null) {
         _logger.warning(
           'Cannot request coach: no user profile',
@@ -551,7 +713,7 @@ class CoachService {
     String? bio,
   }) async {
     try {
-      final profile = await _database.getCurrentUserProfile();
+      final profile = await _getCurrentProfile();
       if (profile == null) {
         _logger.warning(
           'Cannot submit coach application: no user profile',
@@ -579,35 +741,75 @@ class CoachService {
   }
 
   // ============================================================================
-  // IS_COACH SYNC (for admin-approved coach status)
+  // RELATIONSHIP SYNC & REALTIME
   // ============================================================================
 
-  /// Sync is_coach status from Supabase to local database
-  /// Call this on app startup to pick up any admin approvals
-  Future<bool> syncIsCoachStatus() async {
+  /// Sync all relationships from Supabase to local database
+  /// Call this when loading the dashboard to ensure we have latest data
+  Future<List<CoachAthleteRelationship>> syncRelationshipsFromSupabase() async {
     try {
-      final profile = await _database.getCurrentUserProfile();
-      if (profile == null) return false;
+      final profile = await _getCurrentProfile();
+      if (profile == null) return [];
 
-      // Fetch latest status from Supabase
-      final isCoach = await _repository.fetchIsCoachFromSupabase(profile.id);
-      if (isCoach == null) return false;
-
-      // If status changed, update local database
-      if (isCoach != profile.isCoach) {
-        await _repository.updateLocalUserIsCoach(profile.id, isCoach);
-        _logger.info(
-          'Synced is_coach status from Supabase',
-          context: 'COACH_SERVICE',
-          data: {'userId': profile.id, 'isCoach': isCoach},
-        );
-        return true; // Status was updated
-      }
-
-      return false; // No change
+      return await _repository.syncRelationshipsFromSupabase(profile.id);
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to sync is_coach status',
+        'Failed to sync relationships from Supabase',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return [];
+    }
+  }
+
+  /// Subscribe to relationship changes using Supabase Realtime
+  /// Returns a RealtimeChannel that should be unsubscribed when done
+  Future<RealtimeChannel?> subscribeToRelationshipChanges({
+    required void Function(CoachAthleteRelationship) onRelationshipChanged,
+  }) async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) return null;
+
+      return _repository.subscribeToRelationshipChanges(
+        userId: profile.id,
+        onRelationshipChanged: onRelationshipChanged,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to subscribe to relationship changes',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Unsubscribe from relationship changes
+  Future<void> unsubscribeFromRelationshipChanges(
+      RealtimeChannel channel) async {
+    await _repository.unsubscribeFromRelationshipChanges(channel);
+  }
+
+  // ============================================================================
+  // COACH RECORD SYNC
+  // ============================================================================
+
+  /// Check if the current user has an approved coach record
+  /// This is used by the data sync service to determine coach status
+  /// Note: Coach record is synced during sync-all-data, so this is for manual checks
+  Future<bool> checkCoachStatusFromSupabase() async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) return false;
+
+      // Fetch latest status from Supabase coaches table
+      return await _repository.fetchIsCoachFromSupabase(profile.id) ?? false;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to check coach status from Supabase',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,

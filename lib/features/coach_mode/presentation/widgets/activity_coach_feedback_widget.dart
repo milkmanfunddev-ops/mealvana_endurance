@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_message.dart';
 import '../providers/activity_coach_feedback_provider.dart';
+import '../providers/activity_coach_feedback_sync_provider.dart';
 
 /// Widget to display coach comments/feedback for a specific activity
 /// Can be embedded in the ActivityDetailScreen
+///
+/// Supports a shared comment thread visible to all connected coaches.
+/// Both coaches and athletes can comment on the activity.
 class ActivityCoachFeedbackWidget extends ConsumerStatefulWidget {
   const ActivityCoachFeedbackWidget({
     super.key,
@@ -17,6 +23,8 @@ class ActivityCoachFeedbackWidget extends ConsumerStatefulWidget {
 
   final String activityId;
   final bool isCoachView;
+  /// For coach view: the athlete who owns the activity
+  /// For athlete view: can be null (will use current user)
   final String? activityUserId;
 
   @override
@@ -26,6 +34,11 @@ class ActivityCoachFeedbackWidget extends ConsumerStatefulWidget {
 class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedbackWidget> {
   final _commentController = TextEditingController();
   bool _isSending = false;
+  bool _isExpanded = false;
+
+  /// Cached coach user ID for athlete view (to avoid repeated lookups)
+  String? _cachedCoachUserId;
+  bool _hasLoadedCoachId = false;
 
   @override
   void dispose() {
@@ -33,16 +46,34 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
     super.dispose();
   }
 
-  Future<void> _handleSendComment() async {
+  /// Get a valid coach_user_id for athlete comments
+  /// Strategy: Use coach from existing comments, or first connected coach
+  Future<String?> _getCoachUserIdForAthlete(List<CoachMessage> existingMessages) async {
+    // Return cached value if available
+    if (_hasLoadedCoachId) return _cachedCoachUserId;
+
+    // Try to get coach from existing messages first
+    if (existingMessages.isNotEmpty) {
+      _cachedCoachUserId = existingMessages.first.coachUserId;
+      _hasLoadedCoachId = true;
+      return _cachedCoachUserId;
+    }
+
+    // Fall back to first active coach relationship
+    final coachService = ref.read(coachServiceProvider);
+    final coaches = await coachService.getMyCoaches();
+
+    if (coaches.isNotEmpty) {
+      _cachedCoachUserId = coaches.first.coachUserId;
+    }
+
+    _hasLoadedCoachId = true;
+    return _cachedCoachUserId;
+  }
+
+  Future<void> _handleSendComment(List<CoachMessage> existingMessages) async {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
-
-    if (widget.activityUserId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: Cannot determine athlete')),
-      );
-      return;
-    }
 
     setState(() {
       _isSending = true;
@@ -50,32 +81,36 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
 
     try {
       final db = ref.read(appDatabaseProvider);
-      final profile = await db.getCurrentUserProfile();
-      
+      final currentAuthUserId = Supabase.instance.client.auth.currentUser?.id;
+      final profile = await db.getCurrentUserProfile(
+        currentAuthUserId: currentAuthUserId,
+      );
+
       if (profile == null) {
         throw Exception('User profile not found');
       }
 
       final coachService = ref.read(coachServiceProvider);
-      
-      // Determine IDs based on view mode
-      // If Coach View: I am the coach, athlete is activityUserId
-      // If Athlete View: I am the athlete... wait, athletes can't initiate comments easily on activity 
-      // without picking a coach. For now, we only support Coach commenting on activity.
-      
+
       String coachUserId;
       String athleteUserId;
 
       if (widget.isCoachView) {
+        // Coach view: I am the coach, athlete is activityUserId
+        if (widget.activityUserId == null) {
+          throw Exception('Cannot determine athlete');
+        }
         coachUserId = profile.id;
         athleteUserId = widget.activityUserId!;
       } else {
-        // Fallback for athlete replying? 
-        // For now, assume this input is primarily for coaches.
-        // If an athlete wants to reply, they should probably do it in the message center 
-        // or we need to know which coach thread this is.
-        // Let's disable input for athletes for now unless we have context.
-        throw Exception('Commenting not supported for athletes in this view yet');
+        // Athlete view: I am the athlete, need to find a coach
+        athleteUserId = profile.id;
+
+        final resolvedCoachId = await _getCoachUserIdForAthlete(existingMessages);
+        if (resolvedCoachId == null) {
+          throw Exception('No connected coach found');
+        }
+        coachUserId = resolvedCoachId;
       }
 
       await coachService.sendMessage(
@@ -88,17 +123,13 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
       _commentController.clear();
       // Refresh the comments list
       ref.invalidate(activityCoachFeedbackProvider(widget.activityId));
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Comment sent')),
-        );
+        MealvanaSnackbar.showSuccess(context, 'Comment sent');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send comment: $e')),
-        );
+        MealvanaSnackbar.showError(context, 'Failed to send comment: $e');
       }
     } finally {
       if (mounted) {
@@ -111,38 +142,217 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Trigger sync when widget loads to get latest coach feedback from Supabase
+    // This ensures athletes see new messages immediately without manual refresh
+    ref.listen(
+      activityCoachFeedbackSyncProvider(widget.activityId),
+      (_, __) {}, // Just trigger, sync provider handles invalidation
+    );
+
     final feedbackAsync = ref.watch(activityCoachFeedbackProvider(widget.activityId));
 
-    return Column(
-      children: [
-        feedbackAsync.when(
-          loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
-          data: (messages) {
-            if (messages.isEmpty && !widget.isCoachView) {
-              return const SizedBox.shrink();
-            }
-            return _buildFeedbackSection(context, messages);
-          },
+    return feedbackAsync.when(
+      loading: () => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.3),
+          ),
+          borderRadius: BorderRadius.circular(12),
         ),
-        
-        // Input section for coaches
-        if (widget.isCoachView)
-          _buildInputSection(context),
-      ],
+        child: Row(
+          children: [
+            Icon(
+              Icons.comment,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Loading coach feedback...',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ],
+        ),
+      ),
+      error: (error, _) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: theme.colorScheme.error.withValues(alpha: 0.3),
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 20,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Failed to load coach feedback: ${error.toString()}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                ref.invalidate(activityCoachFeedbackSyncProvider(widget.activityId));
+                ref.invalidate(activityCoachFeedbackProvider(widget.activityId));
+              },
+              tooltip: 'Retry',
+            ),
+          ],
+        ),
+      ),
+      data: (messages) => _buildContent(context, messages),
     );
   }
 
-  Widget _buildInputSection(BuildContext context) {
+  Widget _buildContent(BuildContext context, List<CoachMessage> messages) {
+    // For athlete view with no messages, check if they have coaches
+    if (messages.isEmpty && !widget.isCoachView) {
+      // Show section with input if athlete might have coaches
+      return FutureBuilder<String?>(
+        future: _getCoachUserIdForAthlete(messages),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox.shrink();
+          }
+          // Only show if athlete has at least one coach
+          if (snapshot.data != null) {
+            return _buildFeedbackSectionWithInput(context, messages, showInput: true);
+          }
+          return const SizedBox.shrink();
+        },
+      );
+    }
+
+    // For athlete view with messages - check if we can comment
+    if (!widget.isCoachView && messages.isNotEmpty) {
+      return FutureBuilder<String?>(
+        future: _getCoachUserIdForAthlete(messages),
+        builder: (context, snapshot) {
+          final canComment = snapshot.data != null;
+          return _buildFeedbackSectionWithInput(context, messages, showInput: canComment);
+        },
+      );
+    }
+
+    // Coach view: always show input
+    return _buildFeedbackSectionWithInput(context, messages, showInput: widget.isCoachView);
+  }
+
+  Widget _buildFeedbackSectionWithInput(
+    BuildContext context,
+    List<CoachMessage> messages, {
+    required bool showInput,
+  }) {
+    final theme = Theme.of(context);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          // Collapsible header
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.comment,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.isCoachView ? 'Activity Feedback' : 'Coach Feedback',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (messages.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${messages.length}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    _isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expandable content
+          if (_isExpanded) ...[
+            Divider(height: 1, color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+            if (messages.isNotEmpty || showInput)
+              _buildFeedbackSection(context, messages),
+            if (showInput)
+              _buildInputSection(context, messages),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputSection(BuildContext context, List<CoachMessage> messages) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _commentController,
               decoration: InputDecoration(
-                hintText: 'Add a comment...',
+                hintText: widget.isCoachView
+                    ? 'Add feedback...'
+                    : 'Reply to coach...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -154,13 +364,13 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
           ),
           const SizedBox(width: 8),
           IconButton.filled(
-            onPressed: _isSending ? null : _handleSendComment,
-            icon: _isSending 
+            onPressed: _isSending ? null : () => _handleSendComment(messages),
+            icon: _isSending
               ? const SizedBox(
-                  width: 20, 
-                  height: 20, 
+                  width: 20,
+                  height: 20,
                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                ) 
+                )
               : const Icon(Icons.send),
           ),
         ],
@@ -171,47 +381,27 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
   Widget _buildFeedbackSection(BuildContext context, List<CoachMessage> messages) {
     final theme = Theme.of(context);
 
-    return Container(
-      margin: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section header
-          Row(
-            children: [
-              Icon(
-                Icons.comment,
-                size: 20,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Coach Feedback',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+          // Empty state hint
+          if (messages.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                widget.isCoachView
+                    ? 'No feedback yet. Add a comment below.'
+                    : 'No feedback from your coach yet.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${messages.length}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+            ),
 
-          // Feedback cards
-          ...messages.map((m) => _buildFeedbackCard(context, m)),
+          // Feedback cards (oldest first for natural reading order)
+          ...messages.reversed.map((m) => _buildFeedbackCard(context, m)),
         ],
       ),
     );
@@ -219,10 +409,21 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
 
   Widget _buildFeedbackCard(BuildContext context, CoachMessage message) {
     final theme = Theme.of(context);
+    final isFromCoach = message.isSentByCoach;
+
+    // Determine label based on view mode and sender
+    String senderLabel;
+    if (widget.isCoachView) {
+      senderLabel = isFromCoach ? 'You' : 'Athlete';
+    } else {
+      senderLabel = isFromCoach ? 'Coach' : 'You';
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+      color: isFromCoach
+          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+          : theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -232,13 +433,13 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
               children: [
                 CircleAvatar(
                   radius: 12,
-                  backgroundColor: message.isSentByCoach
+                  backgroundColor: isFromCoach
                       ? theme.colorScheme.primary
                       : theme.colorScheme.secondary,
                   child: Icon(
                     Icons.person,
                     size: 14,
-                    color: message.isSentByCoach
+                    color: isFromCoach
                         ? theme.colorScheme.onPrimary
                         : theme.colorScheme.onSecondary,
                   ),
@@ -246,7 +447,7 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    message.isSentByCoach ? 'Coach' : 'You',
+                    senderLabel,
                     style: theme.textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),

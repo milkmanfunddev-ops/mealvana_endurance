@@ -7,6 +7,7 @@ import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../data/events_repository.dart';
 import '../../activities/application/activities_service.dart';
+import '../../coach_mode/data/coach_repository.dart';
 
 part 'events_service.g.dart';
 
@@ -17,6 +18,7 @@ EventsService eventsService(Ref ref) {
     ref.read(appLoggerProvider),
     ref.read(eventsRepositoryProvider),
     ref.read(activitiesServiceProvider),
+    ref.read(coachRepositoryProvider),
   );
 }
 
@@ -27,12 +29,14 @@ class EventsService {
   final AppLogger _logger;
   final EventsRepository _eventsRepository;
   final ActivitiesService _activitiesService;
+  final CoachRepository _coachRepository;
 
   EventsService(
     this._database,
     this._logger,
     this._eventsRepository,
     this._activitiesService,
+    this._coachRepository,
   );
 
   /// Get event for a specific activity
@@ -117,8 +121,10 @@ class EventsService {
   }
 
   /// Create an event (optionally linked to an activity)
+  /// If [forUserId] is provided and different from [deviceId], validates coach-athlete relationship
   Future<domain.Event> createEvent({
     required String deviceId,
+    String? forUserId, // NEW: If provided, create event for this user (coach creating for athlete)
     String? activityId,
     required ActivityType eventType,
     String? eventSubtype,
@@ -137,6 +143,31 @@ class EventsService {
     String? packetPickupInfo,
   }) async {
     try {
+      // Determine the owner of the event
+      final ownerId = forUserId ?? deviceId;
+
+      // Validate coach-athlete relationship if creating for someone else
+      if (forUserId != null && forUserId != deviceId) {
+        final hasActiveRelationship = await _coachRepository
+            .isActiveCoachAthleteRelationship(
+          coachUserId: deviceId,
+          athleteUserId: forUserId,
+        );
+
+        if (!hasActiveRelationship) {
+          _logger.error(
+            'Coach does not have active relationship with athlete',
+            context: 'EVENTS_SERVICE',
+            data: {
+              'coachUserId': deviceId,
+              'athleteUserId': forUserId,
+            },
+          );
+          throw Exception(
+              'Not authorized to create events for this athlete');
+        }
+      }
+
       final now = DateTime.now();
 
       // Parse eventDate from startTime if available
@@ -157,7 +188,7 @@ class EventsService {
 
       final event = domain.Event(
         id: '', // Empty string - repository will assign actual ID
-        userId: deviceId,
+        userId: ownerId, // Use ownerId (athlete if coach is creating for them)
         activityId: activityId,
         eventType: eventType,
         eventSubtype: eventSubtype,
@@ -190,11 +221,35 @@ class EventsService {
   }
 
   /// Update an existing event
+  /// If [currentUserId] is provided and different from event.userId, validates coach-athlete relationship
   Future<void> updateEvent({
     required String deviceId,
     required domain.Event event,
+    String? currentUserId, // NEW: Current user ID (for validation if coach is editing athlete's event)
   }) async {
     try {
+      // Validate coach-athlete relationship if editing for someone else
+      if (currentUserId != null && currentUserId != event.userId) {
+        final hasActiveRelationship = await _coachRepository
+            .isActiveCoachAthleteRelationship(
+          coachUserId: currentUserId,
+          athleteUserId: event.userId,
+        );
+
+        if (!hasActiveRelationship) {
+          _logger.error(
+            'Coach does not have active relationship with athlete',
+            context: 'EVENTS_SERVICE',
+            data: {
+              'coachUserId': currentUserId,
+              'athleteUserId': event.userId,
+            },
+          );
+          throw Exception(
+              'Not authorized to update events for this athlete');
+        }
+      }
+
       final updatedEvent = event.copyWith(updatedAt: DateTime.now());
 
       await _eventsRepository.updateEvent(
@@ -208,11 +263,36 @@ class EventsService {
   }
 
   /// Delete an event
+  /// If [currentUserId] is provided, validates coach-athlete relationship for cross-user deletion
   Future<void> deleteEvent({
     required String deviceId,
     required String eventId,
+    String? currentUserId, // NEW: Current user ID (for validation if coach is deleting athlete's event)
+    String? eventOwnerId, // NEW: Event owner ID (for validation)
   }) async {
     try {
+      // Validate coach-athlete relationship if deleting for someone else
+      if (currentUserId != null && eventOwnerId != null && currentUserId != eventOwnerId) {
+        final hasActiveRelationship = await _coachRepository
+            .isActiveCoachAthleteRelationship(
+          coachUserId: currentUserId,
+          athleteUserId: eventOwnerId,
+        );
+
+        if (!hasActiveRelationship) {
+          _logger.error(
+            'Coach does not have active relationship with athlete',
+            context: 'EVENTS_SERVICE',
+            data: {
+              'coachUserId': currentUserId,
+              'athleteUserId': eventOwnerId,
+            },
+          );
+          throw Exception(
+              'Not authorized to delete events for this athlete');
+        }
+      }
+
       await _eventsRepository.deleteEvent(
         deviceId: deviceId,
         eventId: eventId,

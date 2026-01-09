@@ -35,7 +35,7 @@ final class CoachRegistrationControllerProvider
 }
 
 String _$coachRegistrationControllerHash() =>
-    r'f3b62a0bbde9b662017d1e2c0ce89fc84a180723';
+    r'490980348eb12a41e5a74c9d2ba804de420500ae';
 
 abstract class _$CoachRegistrationController extends $AsyncNotifier<void> {
   FutureOr<void> build();

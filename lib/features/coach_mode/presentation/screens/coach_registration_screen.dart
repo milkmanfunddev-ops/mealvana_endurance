@@ -453,26 +453,18 @@ class _CoachRegistrationScreenState
 
     if (success) {
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Application submitted! We\'ll review it shortly.',
-          ),
-          backgroundColor: AppColors.electrolyte,
-        ),
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Application submitted! We\'ll review it shortly.',
       );
 
       // Navigate back
       context.pop();
     } else {
       // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Failed to submit application. Please try again.',
-          ),
-          backgroundColor: AppColors.dragonfruit,
-        ),
+      MealvanaSnackbar.showError(
+        context,
+        'Failed to submit application. Please try again.',
       );
     }
   }

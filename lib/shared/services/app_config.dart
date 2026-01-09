@@ -288,10 +288,19 @@ class AppConfig {
       // External API keys
       usdaApiKey: usdaApiKey,
 
-      // TrainingPeaks configuration - not used on web (OAuth requires mobile deep links)
-      trainingPeaksClientId: '',
-      trainingPeaksClientSecret: '',
-      trainingPeaksUseSandbox: true, // Default to sandbox for safety
+      // TrainingPeaks configuration - read from dart-define for web builds
+      trainingPeaksClientId: const String.fromEnvironment(
+        'TRAININGPEAKS_CLIENT_ID',
+        defaultValue: 'mealvana',
+      ),
+      trainingPeaksClientSecret: const String.fromEnvironment(
+        'TRAININGPEAKS_CLIENT_SECRET',
+        defaultValue: '',
+      ),
+      trainingPeaksUseSandbox: const String.fromEnvironment(
+        'TRAININGPEAKS_USE_SANDBOX',
+        defaultValue: 'true',
+      ) == 'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,

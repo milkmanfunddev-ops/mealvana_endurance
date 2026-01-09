@@ -33,29 +33,13 @@ class ActivitiesController extends _$ActivitiesController {
     final userId = await ref.read(userIdProvider.future);
 
     // STALE-WHILE-REVALIDATE: Load cached data immediately
-    _logger.info(
-      'Loading cached activities',
-      context: 'ACTIVITIES_CONTROLLER',
-      data: {'userId': userId},
-    );
-
     final cachedActivities = await _service.getAllActivities(userId);
 
     // Only sync once per controller instance lifecycle
     // Prevents infinite loop: build → sync → invalidate → rebuild → (no sync)
     if (!_syncTriggered) {
       _syncTriggered = true;
-      _logger.info(
-        'Triggering initial background sync',
-        context: 'ACTIVITIES_CONTROLLER',
-        data: {'userId': userId},
-      );
       unawaited(_syncInBackground(userId));
-    } else {
-      _logger.info(
-        'Skipping sync - already triggered for this controller instance',
-        context: 'ACTIVITIES_CONTROLLER',
-      );
     }
 
     return cachedActivities;
@@ -66,21 +50,10 @@ class ActivitiesController extends _$ActivitiesController {
   /// On success, sync coordinator invalidates providers triggering rebuild
   Future<void> _syncInBackground(String userId) async {
     try {
-      _logger.info(
-        'Triggering background sync',
-        context: 'ACTIVITIES_CONTROLLER',
-        data: {'userId': userId},
-      );
-
       await ref.read(syncCoordinatorProvider.notifier).sync(
             userId: userId,
             trigger: SyncTrigger.pullToRefresh,
           );
-
-      _logger.info(
-        'Background sync completed',
-        context: 'ACTIVITIES_CONTROLLER',
-      );
     } catch (e, stackTrace) {
       _logger.error(
         'Background sync failed',
@@ -93,9 +66,11 @@ class ActivitiesController extends _$ActivitiesController {
   }
 
   /// Create a new activity
+  /// If [forUserId] is provided, creates activity for that user (coach creating for athlete)
   Future<String> createActivity({
     required String title,
     required DateTime scheduledDateTime,
+    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
     ActivityType activityType = ActivityType.running,
     double? distanceMiles,
     int? durationMinutes,
@@ -124,6 +99,7 @@ class ActivitiesController extends _$ActivitiesController {
       final createdActivity = await _service.createActivity(
         deviceId: deviceIdValue,
         userId: deviceIdValue,
+        forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
         activityType: activityType,
         title: title,
         scheduledDateTime: scheduledDateTime,

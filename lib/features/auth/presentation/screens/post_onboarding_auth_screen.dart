@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
+import '../../../app_startup/application/app_startup_service.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
@@ -39,10 +41,13 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+    final appStartupService = ref.read(appStartupServiceProvider);
 
     // For signup mode (onboarding), sign out any existing session first
     // This ensures we create a fresh new user, not link to an old one
+    // Mark this as an onboarding sign-out to preserve cached onboarding data
     if (!isLogin && supabase.auth.currentUser != null) {
+      appStartupService.markOnboardingSignOut();
       await supabase.auth.signOut();
     }
 
@@ -52,6 +57,10 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     if (!mounted) return;
 
     if (success) {
+      // On web, the OAuth flow triggers a redirect, so we shouldn't navigate manually.
+      // The browser will reload the app after the user authenticates.
+      if (kIsWeb) return;
+
       // Login mode: Navigate directly (no onboarding data to save)
       // Signup mode: Save cached onboarding data before navigating
       if (isLogin) {
@@ -71,10 +80,13 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+    final appStartupService = ref.read(appStartupServiceProvider);
 
     // For signup mode (onboarding), sign out any existing session first
     // This ensures we create a fresh new user, not link to an old one
+    // Mark this as an onboarding sign-out to preserve cached onboarding data
     if (!isLogin && supabase.auth.currentUser != null) {
+      appStartupService.markOnboardingSignOut();
       await supabase.auth.signOut();
     }
 
@@ -84,6 +96,10 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     if (!mounted) return;
 
     if (success) {
+      // On web, the OAuth flow triggers a redirect, so we shouldn't navigate manually.
+      // The browser will reload the app after the user authenticates.
+      if (kIsWeb) return;
+
       // Login mode: Navigate directly (no onboarding data to save)
       // Signup mode: Save cached onboarding data before navigating
       if (isLogin) {
@@ -169,6 +185,10 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
   Future<void> _signInWithGoogle() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final success = await controller.signInWithGoogle();
+    
+    // On web, the OAuth flow triggers a redirect, so we shouldn't navigate manually
+    if (kIsWeb) return;
+
     if (success && mounted) {
       // This is always a sign-in (orphaning anonymous user), so navigate directly
       await _navigateToMain();
@@ -178,6 +198,10 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
   Future<void> _signInWithApple() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final success = await controller.signInWithApple();
+    
+    // On web, the OAuth flow triggers a redirect, so we shouldn't navigate manually
+    if (kIsWeb) return;
+
     if (success && mounted) {
       // This is always a sign-in (orphaning anonymous user), so navigate directly
       await _navigateToMain();

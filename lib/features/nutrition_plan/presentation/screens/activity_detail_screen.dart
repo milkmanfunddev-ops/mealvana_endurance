@@ -233,13 +233,14 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             _buildNutritionSections(context, state),
           if (state.nutritionPlan == null)
             _buildNoNutritionPlanState(context, state),
-          // Coach feedback section (if any)
+          const SizedBox(height: AppSpacing.md),
+          // Collapsible coach feedback section
           ActivityCoachFeedbackWidget(
             activityId: widget.activityId,
             isCoachView: widget.isCoachView,
             activityUserId: activity.userId,
           ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.lg),
           _buildActionButtons(context, state),
           const SizedBox(height: AppSpacing.xxxl),
         ],
@@ -773,6 +774,14 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   Widget _buildActionButtons(BuildContext context, ActivityDetailState state) {
     if (state.isCompleted) {
       return _buildCompletedState(context, state);
+    }
+
+    // Coach view: Only show Save button (for saving feedback/notes)
+    if (widget.isCoachView) {
+      return KylePrimaryButton(
+        text: state.isSaving ? 'Saving...' : 'Save',
+        onPressed: state.isSaving ? null : () => _saveWorkout(context, state),
+      );
     }
 
     if (state.isNewActivity) {

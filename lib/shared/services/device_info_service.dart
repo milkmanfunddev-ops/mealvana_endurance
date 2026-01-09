@@ -25,9 +25,6 @@ class DeviceInfoService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    final sw = Stopwatch()..start();
-    debugPrint('[DEVICE_INFO] Initializing...');
-
     try {
       final deviceInfo = DeviceInfoPlugin();
 
@@ -64,9 +61,7 @@ class DeviceInfoService {
       }
 
       _isInitialized = true;
-      debugPrint('[DEVICE_INFO] Initialized in ${sw.elapsedMilliseconds}ms (ID: $_cachedDeviceId)');
     } catch (e) {
-      debugPrint('[DEVICE_INFO] Error: $e - using fallback');
       _cachedDeviceId = _generateFallbackId();
       _cachedDeviceInfo = {
         'os_version': 'unknown',
@@ -84,7 +79,6 @@ class DeviceInfoService {
   /// Returns a fallback ID if not initialized (should not happen in normal flow).
   String get deviceId {
     if (!_isInitialized) {
-      debugPrint('[DEVICE_INFO] WARNING: Accessed before initialization, using fallback');
       return _generateFallbackId();
     }
     return _cachedDeviceId ?? _generateFallbackId();

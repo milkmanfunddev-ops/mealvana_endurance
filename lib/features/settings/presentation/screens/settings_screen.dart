@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -171,12 +172,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () {
                 // Copy user ID to clipboard
                 Clipboard.setData(ClipboardData(text: userId));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('User ID copied to clipboard'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                MealvanaSnackbar.showSuccess(context, 'User ID copied to clipboard');
               },
               child: Text(
                 'User ID: $userId',
@@ -589,51 +585,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildCoachModeLink(BuildContext context) {
-    // Note: This is only called on web (checked by parent)
     final settingsAsync = ref.watch(settingsControllerProvider);
     final isCoach = settingsAsync.asData?.value.isCoach ?? false;
 
-    if (isCoach) {
-      // User is a coach - show Coach Dashboard
+    if (kIsWeb) {
+      // WEB: Coach registration and dashboard are web-only
+      if (isCoach) {
+        // User is a coach - show Coach Dashboard
+        return _buildQuickLink(
+          context: context,
+          icon: FontAwesomeIcons.userTie,
+          title: 'Coach Dashboard',
+          subtitle: 'Manage your athletes',
+          onTap: () {
+            final analytics = ref.read(appExternalDepsProvider);
+            analytics.analytics.track('settings_coach_dashboard_tapped');
+            context.push('/coach');
+          },
+        );
+      } else {
+        // User is not a coach - show Apply to Coach option (web only)
+        return _buildQuickLink(
+          context: context,
+          icon: FontAwesomeIcons.userPlus,
+          title: 'Apply to Coach',
+          subtitle: 'Register as a coach',
+          onTap: () {
+            final analytics = ref.read(appExternalDepsProvider);
+            analytics.analytics.track('settings_apply_coach_tapped');
+            context.push('/coach/apply');
+          },
+        );
+      }
+    } else {
+      // MOBILE: Athletes can view their coaches
       return _buildQuickLink(
         context: context,
-        icon: FontAwesomeIcons.userTie,
-        title: 'Coach Dashboard',
-        subtitle: 'Manage your athletes',
+        icon: FontAwesomeIcons.userGroup,
+        title: 'My Coaches',
+        subtitle: 'View and chat with your coaches',
         onTap: () {
           final analytics = ref.read(appExternalDepsProvider);
-          analytics.analytics.track('settings_coach_dashboard_tapped');
-          context.push('/coach');
+          analytics.analytics.track('settings_my_coaches_tapped');
+          context.push('/my-coaches');
         },
-      );
-    } else {
-      // User is not a coach - show My Coaches and Become a Coach options
-      return Column(
-        children: [
-          _buildQuickLink(
-            context: context,
-            icon: FontAwesomeIcons.userGroup,
-            title: 'My Coaches',
-            subtitle: 'Connect with coaches',
-            onTap: () {
-              final analytics = ref.read(appExternalDepsProvider);
-              analytics.analytics.track('settings_my_coaches_tapped');
-              context.push('/my-coaches');
-            },
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _buildQuickLink(
-            context: context,
-            icon: FontAwesomeIcons.userPlus,
-            title: 'Apply to Coach',
-            subtitle: 'Register as a coach',
-            onTap: () {
-              final analytics = ref.read(appExternalDepsProvider);
-              analytics.analytics.track('settings_apply_coach_tapped');
-              context.push('/coach/apply');
-            },
-          ),
-        ],
       );
     }
   }

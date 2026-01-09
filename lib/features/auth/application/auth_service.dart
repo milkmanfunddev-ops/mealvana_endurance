@@ -44,6 +44,8 @@ class AuthService {
     Map<String, FoodPreference>? foodPreferences,
     String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
     bool isAnonymous = true, // false when user signs up with email/OAuth
+    String? firstName,
+    String? lastName,
   }) async {
     try {
       // Get or create Supabase auth session
@@ -110,6 +112,9 @@ class AuthService {
         cssPacePer100mSeconds: null,
         typicalWetsuit: null,
         typicalSwimCapType: null,
+        // Optional name fields for coach mode athlete identification
+        firstName: firstName,
+        lastName: lastName,
       );
 
       // Save locally first (offline-first) and mark for background upload

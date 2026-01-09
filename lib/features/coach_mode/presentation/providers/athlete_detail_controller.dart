@@ -1,17 +1,25 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../events/domain/event.dart';
+import '../../../carb_loading/domain/carb_loading_plan_simple.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../../domain/coach_message.dart';
+import 'athlete_data_sync_provider.dart';
 
 part 'athlete_detail_controller.g.dart';
 
 /// State for viewing an athlete's details (coach perspective)
 class AthleteDetailState {
   final CoachAthleteRelationship relationship;
+  final List<Event> events;
+  final List<CarbLoadingPlan> carbLoadingPlans;
   final List<Activity> activities;
   final List<CoachMessage> messages;
   final bool isLoading;
@@ -19,6 +27,8 @@ class AthleteDetailState {
 
   const AthleteDetailState({
     required this.relationship,
+    this.events = const [],
+    this.carbLoadingPlans = const [],
     this.activities = const [],
     this.messages = const [],
     this.isLoading = false,
@@ -27,6 +37,8 @@ class AthleteDetailState {
 
   AthleteDetailState copyWith({
     CoachAthleteRelationship? relationship,
+    List<Event>? events,
+    List<CarbLoadingPlan>? carbLoadingPlans,
     List<Activity>? activities,
     List<CoachMessage>? messages,
     bool? isLoading,
@@ -34,6 +46,8 @@ class AthleteDetailState {
   }) {
     return AthleteDetailState(
       relationship: relationship ?? this.relationship,
+      events: events ?? this.events,
+      carbLoadingPlans: carbLoadingPlans ?? this.carbLoadingPlans,
       activities: activities ?? this.activities,
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
@@ -66,13 +80,37 @@ class AthleteDetailController extends _$AthleteDetailController {
         athleteUserId: relationship.athleteUserId,
       );
 
-      // TODO: Fetch athlete's activities via a new service method
-      // For now, return empty activities list
+      // Fetch athlete's data from local database
+      final db = ref.read(appDatabaseProvider);
+
+      // Load athlete events using Drift select syntax
+      final eventEntries = await (db.select(db.eventsTable)
+            ..where((t) => t.userId.equals(relationship.athleteUserId))
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+          .get();
+      final events = eventEntries.map((e) => _mapEventEntry(e)).toList();
+
+      // Load athlete activities using Drift select syntax
+      final activityEntries = await (db.select(db.activitiesTable)
+            ..where((t) => t.userId.equals(relationship.athleteUserId) & t.deletedAt.isNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.scheduledDateTime)]))
+          .get();
+      final activities = activityEntries.map((a) => _mapActivityEntry(a)).toList();
+
+      // Load athlete carb loading plans using Drift select syntax
+      // NOTE: Carb loading plans currently disabled due to schema mismatch.
+      // Database table (carb_loading_plans) schema doesn't match domain model (CarbLoadingPlan).
+      // Table has: totalDays, startDate, endDate, dailyCarbTargetGrams
+      // Domain expects: raceDate, raceDistance, trainingVolume, dailyCarbTargetG, daySelections
+      // This requires schema migration or repository layer transformation.
+      final carbLoadingPlans = <CarbLoadingPlan>[];
 
       return AthleteDetailState(
         relationship: relationship,
         messages: messages,
-        activities: [],
+        events: events,
+        activities: activities,
+        carbLoadingPlans: carbLoadingPlans,
       );
     } catch (e) {
       return AthleteDetailState(
@@ -80,6 +118,59 @@ class AthleteDetailController extends _$AthleteDetailController {
         error: 'Failed to load athlete details: ${e.toString()}',
       );
     }
+  }
+
+  /// Map event entry from database to domain model
+  Event _mapEventEntry(dynamic entry) {
+    return Event(
+      id: entry.id,
+      userId: entry.userId,
+      activityId: entry.activityId,
+      eventType: _parseActivityType(entry.eventType),
+      eventSubtype: entry.eventSubtype,
+      eventName: entry.eventName,
+      location: entry.location,
+      registrationUrl: entry.registrationUrl,
+      eventDate: entry.eventDate,
+      startTime: entry.startTime,
+      goalTimeMinutes: entry.goalTimeMinutes,
+      goalPaceMinutesPerMile: entry.goalPaceMinutesPerMile,
+      predictedFinishTimeMinutes: entry.predictedFinishTimeMinutes,
+      hasCarbLoading: entry.hasCarbLoading ?? false,
+      carbLoadingDays: entry.carbLoadingDays,
+      carbLoadingStartDate: entry.carbLoadingStartDate,
+      bibNumber: entry.bibNumber,
+      waveStartTime: entry.waveStartTime,
+      packetPickupInfo: entry.packetPickupInfo,
+      actualFinishTimeMinutes: entry.actualFinishTimeMinutes,
+      finalPlacement: entry.finalPlacement,
+      ageGroupPlacement: entry.ageGroupPlacement,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+    );
+  }
+
+  /// Map activity entry from database to domain model
+  Activity _mapActivityEntry(dynamic entry) {
+    return Activity(
+      id: entry.id,
+      userId: entry.userId,
+      title: entry.title,
+      activityType: _parseActivityType(entry.activityType),
+      scheduledDateTime: entry.scheduledDateTime,
+      durationMinutes: entry.durationMinutes,
+      distanceMiles: entry.distanceMiles,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+    );
+  }
+
+  /// Parse activity type from database string
+  ActivityType _parseActivityType(String? type) {
+    return ActivityType.values.firstWhere(
+      (e) => e.dbValue == type || e.name == type,
+      orElse: () => ActivityType.running,
+    );
   }
 
   CoachAthleteRelationship _createPlaceholderRelationship(String id) {
@@ -160,15 +251,25 @@ class AthleteDetailController extends _$AthleteDetailController {
     }
   }
 
-  /// Refresh athlete data
+  /// Refresh athlete data from server
   Future<void> refresh() async {
     final currentState = state.value;
     if (currentState == null) return;
 
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => _loadAthleteDetails(currentState.relationship.id),
-    );
+
+    state = await AsyncValue.guard(() async {
+      // Trigger on-demand sync for this athlete from Supabase
+      await ref.read(
+        athleteDataSyncProvider(
+          currentState.relationship.id,
+          currentState.relationship.athleteUserId,
+        ).future,
+      );
+
+      // Reload data from local database (now fresh)
+      return await _loadAthleteDetails(currentState.relationship.id);
+    });
   }
 
   /// Clear error

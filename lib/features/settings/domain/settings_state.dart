@@ -66,6 +66,10 @@ class SettingsState {
   // Coach mode
   final bool isCoach;
 
+  // Optional name fields for coach mode athlete identification
+  final String? firstName;
+  final String? lastName;
+
   /// Generate a short, shareable athlete code from the user ID
   /// Format: ATH-XXXXXXXX (first 8 chars of UUID, uppercase)
   /// Returns null if no userId
@@ -131,6 +135,8 @@ class SettingsState {
     this.authUserId,
     this.email,
     this.isCoach = false,
+    this.firstName,
+    this.lastName,
     this.accountSectionTitle = 'Account',
     this.accountStatusAnonymous = 'Not signed in',
     this.accountStatusAuthenticated = 'Signed in',
@@ -185,6 +191,8 @@ class SettingsState {
     String? authUserId,
     String? email,
     bool? isCoach,
+    String? firstName,
+    String? lastName,
     String? accountSectionTitle,
     String? accountStatusAnonymous,
     String? accountStatusAuthenticated,
@@ -238,6 +246,8 @@ class SettingsState {
       authUserId: authUserId ?? this.authUserId,
       email: email ?? this.email,
       isCoach: isCoach ?? this.isCoach,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       accountSectionTitle: accountSectionTitle ?? this.accountSectionTitle,
       accountStatusAnonymous: accountStatusAnonymous ?? this.accountStatusAnonymous,
       accountStatusAuthenticated: accountStatusAuthenticated ?? this.accountStatusAuthenticated,

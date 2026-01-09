@@ -261,6 +261,7 @@ class RunningInputController extends _$RunningInputController {
   Future<void> generateMacros({
     String? activityId,
     String? eventId,
+    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
     final currentState = state;
 
@@ -289,6 +290,7 @@ class RunningInputController extends _$RunningInputController {
       humidityPct: currentState.humidityPct,
       activityId: activityId,
       eventId: eventId,
+      forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
     );
 
     DebugLogger.info('✅ RUNNING CONTROLLER: generateRunningMacros completed successfully');

@@ -53,7 +53,8 @@ class PendingRequestCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Athlete: ${relationship.athleteUserId.substring(0, 8)}...',
+                        relationship.athleteDisplayName ??
+                            'Athlete ${relationship.athleteUserId.substring(0, 8).toUpperCase()}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),

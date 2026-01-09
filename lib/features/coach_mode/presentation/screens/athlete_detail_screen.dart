@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/coach_athlete_relationship.dart';
-import '../../domain/coach_message.dart';
 import '../providers/athlete_detail_controller.dart';
 
 /// Screen showing detailed view of an athlete for coaches
@@ -25,13 +24,31 @@ class AthleteDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Athlete Details'),
         actions: [
+          // Chat button - opens dedicated chat screen
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.chat),
+            tooltip: 'Open Chat',
             onPressed: () {
-              ref
-                  .read(athleteDetailControllerProvider(relationshipId).notifier)
-                  .refresh();
+              context.push('/chat/$relationshipId');
             },
+          ),
+          // Refresh button - syncs athlete data from Supabase
+          IconButton(
+            icon: detailAsync.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+            tooltip: 'Refresh athlete data',
+            onPressed: detailAsync.isLoading
+                ? null
+                : () {
+                    ref
+                        .read(athleteDetailControllerProvider(relationshipId).notifier)
+                        .refresh();
+                  },
           ),
         ],
       ),
@@ -40,10 +57,9 @@ class AthleteDetailScreen extends ConsumerWidget {
         error: (error, stack) => _buildErrorView(context, error.toString(), ref),
         data: (state) => _buildContent(context, state, ref),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showSendMessageDialog(context, ref),
-        icon: const Icon(Icons.add_comment),
-        label: const Text('Send Message'),
+      floatingActionButton: detailAsync.maybeWhen(
+        data: (state) => _buildCreateWorkoutFab(context, state),
+        orElse: () => null,
       ),
     );
   }
@@ -98,16 +114,16 @@ class AthleteDetailScreen extends ConsumerWidget {
           TabBar(
             tabs: [
               Tab(
-                icon: const Icon(Icons.directions_run),
-                text: 'Activities (${state.activities.length})',
-              ),
-              const Tab(
-                icon: Icon(Icons.restaurant),
-                text: 'Nutrition',
+                icon: const Icon(Icons.calendar_today),
+                text: 'Events (${state.events.length})',
               ),
               Tab(
-                icon: const Icon(Icons.comment),
-                text: 'Messages (${state.messages.length})',
+                icon: const Icon(Icons.restaurant),
+                text: 'Carb Loading',
+              ),
+              Tab(
+                icon: const Icon(Icons.directions_run),
+                text: 'Activities (${state.activities.length})',
               ),
             ],
           ),
@@ -116,9 +132,9 @@ class AthleteDetailScreen extends ConsumerWidget {
           Expanded(
             child: TabBarView(
               children: [
+                _buildEventsTab(context, state),
+                _buildCarbLoadingTab(context, state),
                 _buildActivitiesTab(context, state),
-                _buildNutritionTab(context, state),
-                _buildMessagesTab(context, state, ref),
               ],
             ),
           ),
@@ -230,148 +246,71 @@ class AthleteDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNutritionTab(BuildContext context, AthleteDetailState state) {
-    return _buildEmptyView(
-      context,
-      'No Nutrition Plans',
-      'Nutrition plan viewing coming soon.',
-      Icons.restaurant,
-    );
-  }
-
-  Widget _buildMessagesTab(
-    BuildContext context,
-    AthleteDetailState state,
-    WidgetRef ref,
-  ) {
-    if (state.messages.isEmpty) {
+  Widget _buildEventsTab(BuildContext context, AthleteDetailState state) {
+    if (state.events.isEmpty) {
       return _buildEmptyView(
         context,
-        'No Messages',
-        'Tap the button below to send your first message.',
-        Icons.comment,
+        'No Events',
+        'This athlete has no upcoming events.',
+        Icons.calendar_today,
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: state.messages.length,
+      itemCount: state.events.length,
       itemBuilder: (context, index) {
-        final message = state.messages[index];
-        return _buildMessageCard(context, message, ref);
+        final event = state.events[index];
+        return Card(
+          child: ListTile(
+            leading: const Icon(Icons.event),
+            title: Text(event.eventName ?? 'Unnamed Event'),
+            subtitle: Text(
+              event.eventDate != null 
+                ? _formatDate(event.eventDate!)
+                : 'No Date',
+            ),
+          ),
+        );
       },
     );
   }
 
-  Widget _buildMessageCard(
-    BuildContext context,
-    CoachMessage message,
-    WidgetRef ref,
-  ) {
-    final theme = Theme.of(context);
-    final isFromCoach = message.isSentByCoach;
+  Widget _buildCarbLoadingTab(BuildContext context, AthleteDetailState state) {
+    if (state.carbLoadingPlans.isEmpty) {
+      return _buildEmptyView(
+        context,
+        'No Carb Loading Plans',
+        'This athlete has no active carb loading plans.',
+        Icons.restaurant,
+      );
+    }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      color: isFromCoach
-          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-          : theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 12,
-                  backgroundColor: isFromCoach
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.secondary,
-                  child: Icon(
-                    Icons.person,
-                    size: 14,
-                    color: isFromCoach
-                        ? theme.colorScheme.onPrimary
-                        : theme.colorScheme.onSecondary,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  isFromCoach ? 'You' : 'Athlete',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                if (message.isActivityComment || message.isNutritionPlanComment)
-                  _buildMessageTypeBadge(context, message),
-                const SizedBox(width: 8),
-                Text(
-                  _formatDate(message.createdAt),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                // Only show delete option for messages sent by coach
-                if (isFromCoach)
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, size: 20),
-                    onSelected: (value) {
-                      if (value == 'delete') {
-                        _confirmDeleteMessage(context, ref, message);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Text('Delete'),
-                      ),
-                    ],
-                  ),
-              ],
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: state.carbLoadingPlans.length,
+      itemBuilder: (context, index) {
+        final plan = state.carbLoadingPlans[index];
+        return Card(
+          child: ListTile(
+            leading: const Icon(Icons.restaurant_menu),
+            title: Text('${plan.raceDistance.displayName} - ${_formatDate(plan.raceDate)}'),
+            subtitle: Text(
+              '${plan.dailyCarbTargetG}g carbs/day • ${plan.dailyServingsTarget} servings',
             ),
-            const SizedBox(height: 8),
-            Text(
-              message.messageText,
-              style: theme.textTheme.bodyMedium,
+            trailing: Icon(
+              plan.isActive ? Icons.check_circle : Icons.pause_circle,
+              color: plan.isActive ? Colors.green : Colors.grey,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageTypeBadge(BuildContext context, CoachMessage message) {
-    final theme = Theme.of(context);
-
-    final (label, icon, color) = message.isActivityComment
-        ? ('Activity', Icons.directions_run, Colors.green)
-        : ('Nutrition', Icons.restaurant, Colors.orange);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
+            onTap: () {
+              // TODO: Navigate to plan details
+            },
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+
 
   Widget _buildEmptyView(
     BuildContext context,
@@ -403,83 +342,59 @@ class AthleteDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _showSendMessageDialog(BuildContext context, WidgetRef ref) {
-    final textController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Send Message'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: textController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Message',
-                  hintText: 'Enter your message for the athlete...',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (textController.text.trim().isNotEmpty) {
-                ref
-                    .read(athleteDetailControllerProvider(relationshipId).notifier)
-                    .sendMessage(
-                      messageText: textController.text.trim(),
-                    );
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Send'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmDeleteMessage(
-    BuildContext context,
-    WidgetRef ref,
-    CoachMessage message,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Message'),
-        content: const Text('Are you sure you want to delete this message?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref
-                  .read(athleteDetailControllerProvider(relationshipId).notifier)
-                  .deleteMessage(message.id);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Widget _buildCreateWorkoutFab(BuildContext context, AthleteDetailState state) {
+    return FloatingActionButton(
+      onPressed: () => _showCreateWorkoutMenu(context, state),
+      tooltip: 'Create Workout',
+      child: const Icon(Icons.add),
+    );
+  }
+
+  void _showCreateWorkoutMenu(BuildContext context, AthleteDetailState state) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            Text(
+              'Create Workout for Athlete',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.directions_run),
+              title: const Text('Create Activity'),
+              subtitle: const Text('Create a training activity'),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/distancepacegut', extra: {
+                  'forUserId': state.relationship.athleteUserId,
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.event),
+              title: const Text('Create Event'),
+              subtitle: const Text('Create a race or event'),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/events/create', extra: {
+                  'forUserId': state.relationship.athleteUserId,
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
   }
 }

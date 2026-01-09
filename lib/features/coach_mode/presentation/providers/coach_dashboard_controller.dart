@@ -70,6 +70,10 @@ class CoachDashboardController extends _$CoachDashboardController {
         );
       }
 
+      // Sync relationships from Supabase first to get latest data
+      // This ensures we see requests created by athletes on other devices
+      await _coachService.syncRelationshipsFromSupabase();
+
       final activeAthletes = await _coachService.getMyAthletes();
       final pendingRequests = await _coachService.getPendingAthleteRequests();
 

@@ -12,6 +12,7 @@ import '../../../content/domain/content_keys.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../../onboarding/domain/dietary_preference.dart';
 import '../../../onboarding/domain/allergy.dart';
+import '../../../coach_mode/data/coach_repository.dart';
 import '../../domain/settings_state.dart';
 
 part 'settings_controller.g.dart';
@@ -26,6 +27,13 @@ class SettingsController extends _$SettingsController {
   ContentService get _contentService => ref.read(contentServiceProvider);
   Future<UserRepository> get _userRepository async =>
       await ref.read(userRepositoryProvider.future);
+  CoachRepository get _coachRepository => ref.read(coachRepositoryProvider);
+
+  /// Check if user is an approved coach by querying the local coaches table
+  Future<bool> _checkIsApprovedCoach(String? userId) async {
+    if (userId == null) return false;
+    return await _coachRepository.isUserApprovedCoach(userId);
+  }
 
   @override
   FutureOr<SettingsState> build() async {
@@ -202,8 +210,11 @@ class SettingsController extends _$SettingsController {
       authProvider: displayProfile?.authProvider ?? 'anonymous',
       authUserId: displayProfile?.authUserId,
       email: supabaseUser?.email,
-      // Coach mode
-      isCoach: displayProfile?.isCoach ?? false,
+      // Coach mode - check coaches table for approved status
+      isCoach: await _checkIsApprovedCoach(displayProfile?.id),
+      // Optional name fields for coach mode athlete identification
+      firstName: displayProfile?.firstName,
+      lastName: displayProfile?.lastName,
     );
   }
 
@@ -333,6 +344,8 @@ class SettingsController extends _$SettingsController {
     PaceUnit? preferredPaceUnit,
     GutTraining? gutTrainingLevel,
     SweatRateCat? sweatRate,
+    String? firstName,
+    String? lastName,
   }) async {
     final currentState = state.value;
     if (currentState == null) return;
@@ -350,6 +363,8 @@ class SettingsController extends _$SettingsController {
         preferredPaceUnit: preferredPaceUnit ?? currentState.preferredPaceUnit,
         gutTrainingLevel: gutTrainingLevel ?? currentState.gutTrainingLevel,
         sweatRate: sweatRate ?? currentState.sweatRate,
+        firstName: firstName,
+        lastName: lastName,
         isSaving: true,
       ),
     );
@@ -483,6 +498,9 @@ class SettingsController extends _$SettingsController {
         typicalSwimCapType: currentState.typicalSwimCapType ?? existingProfile.typicalSwimCapType,
         dietaryPreference: currentState.dietaryPreference ?? existingProfile.dietaryPreference,
         allergies: currentState.allergies.isNotEmpty ? currentState.allergies : existingProfile.allergies,
+        // Optional name fields for coach mode athlete identification
+        firstName: currentState.firstName ?? existingProfile.firstName,
+        lastName: currentState.lastName ?? existingProfile.lastName,
       );
 
       await userRepository.updateUserProfile(updatedProfile);

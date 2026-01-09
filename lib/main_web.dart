@@ -30,30 +30,13 @@ final GlobalKey<NavigatorState> sentryNavigatorKey = GlobalKey<NavigatorState>()
 ///   --dart-define=APP_ENVIRONMENT=prod
 Future<void> main() async {
   runZonedGuarded(() async {
-    final mainStopwatch = Stopwatch()..start();
-
     // Initialize widgets binding for Sentry frame tracking
     SentryWidgetsFlutterBinding.ensureInitialized();
-    debugPrint('[STARTUP] Widget binding initialized: ${mainStopwatch.elapsedMilliseconds}ms');
-
-    // Debug: Print dart defines to verify they're being passed
-    debugPrint('[STARTUP] Checking dart defines...');
-    debugPrint('[STARTUP] SUPABASE_URL: ${const String.fromEnvironment('SUPABASE_URL', defaultValue: 'NOT SET')}');
-    debugPrint('[STARTUP] APP_ENVIRONMENT: ${const String.fromEnvironment('APP_ENVIRONMENT', defaultValue: 'NOT SET')}');
 
     // Create app configuration from dart defines (web-safe)
-    late final AppConfig config;
-    try {
-      config = AppConfig.fromDartDefines();
-      debugPrint('[STARTUP] AppConfig created (web): ${mainStopwatch.elapsedMilliseconds}ms');
-    } catch (e, st) {
-      debugPrint('[STARTUP] ERROR creating AppConfig: $e');
-      debugPrint('[STARTUP] Stack trace: $st');
-      rethrow;
-    }
+    final config = AppConfig.fromDartDefines();
 
     // Initialize Sentry
-    debugPrint('[STARTUP] Starting Sentry init...');
     await SentryFlutter.init(
       (options) {
         options.dsn = config.sentryDsn;
@@ -92,31 +75,20 @@ Future<void> main() async {
       },
     );
 
-    debugPrint('[STARTUP] Sentry init completed: ${mainStopwatch.elapsedMilliseconds}ms');
-
-    debugPrint('[STARTUP] Starting Supabase and runApp...');
-    await _runMealvanaApp(config, mainStopwatch);
+    await _runMealvanaApp(config);
   }, (exception, stackTrace) async {
-    debugPrint('[STARTUP] UNCAUGHT ERROR: $exception');
-    debugPrint('[STARTUP] Stack trace: $stackTrace');
     await Sentry.captureException(exception, stackTrace: stackTrace);
   });
 }
 
-Future<void> _runMealvanaApp(AppConfig config, Stopwatch mainStopwatch) async {
-  debugPrint('[STARTUP] Starting Supabase.initialize...');
+Future<void> _runMealvanaApp(AppConfig config) async {
   await Supabase.initialize(
     url: config.supabaseUrl,
     anonKey: config.supabaseAnonKey,
   );
-  debugPrint('[STARTUP] Supabase.initialize completed: ${mainStopwatch.elapsedMilliseconds}ms');
 
   // Initialize SharedPreferences (non-recoverable, required for app startup)
-  debugPrint('[STARTUP] Starting SharedPreferences.getInstance...');
   final sharedPreferences = await SharedPreferences.getInstance();
-  debugPrint('[STARTUP] SharedPreferences initialized: ${mainStopwatch.elapsedMilliseconds}ms');
-
-  debugPrint('[STARTUP] Calling runApp...');
   runApp(
     SentryWidget(
       child: ProviderScope(

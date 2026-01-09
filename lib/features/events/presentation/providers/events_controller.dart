@@ -28,8 +28,10 @@ class EventsController extends _$EventsController {
 
   /// Create a new event
   /// Note: Does NOT invalidate the provider - calling code should handle refresh
+  /// If [forUserId] is provided, creates event for that user (coach creating for athlete)
   Future<String> createEvent({
     String? activityId,
+    String? forUserId, // NEW: If provided, create event for this user (coach creating for athlete)
     required ActivityType eventType,
     String? eventSubtype,
     String? eventName,
@@ -61,6 +63,7 @@ class EventsController extends _$EventsController {
       // Use cached service reference (no ref access after this point)
       final createdEvent = await service.createEvent(
         deviceId: deviceIdValue,
+        forUserId: forUserId, // NEW: Pass through forUserId for coach-created events
         activityId: activityId,
         eventType: eventType,
         eventSubtype: eventSubtype,

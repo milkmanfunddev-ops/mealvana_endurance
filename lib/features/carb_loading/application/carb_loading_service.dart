@@ -4,6 +4,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../data/carb_loading_repository.dart';
+import '../../coach_mode/data/coach_repository.dart';
 
 part 'carb_loading_service.g.dart';
 
@@ -13,6 +14,7 @@ CarbLoadingService carbLoadingService(Ref ref) {
     ref.read(appDatabaseProvider),
     ref.read(appLoggerProvider),
     ref.read(carbLoadingRepositoryProvider),
+    ref.read(coachRepositoryProvider),
   );
 }
 
@@ -22,28 +24,57 @@ class CarbLoadingService {
   final AppDatabase _database;
   final AppLogger _logger;
   final CarbLoadingRepository _carbLoadingRepository;
+  final CoachRepository _coachRepository;
 
   CarbLoadingService(
     this._database,
     this._logger,
     this._carbLoadingRepository,
+    this._coachRepository,
   );
 
   /// Create a carb loading plan for an event
   /// This generates day records for each carb loading day based on the protocol
+  /// If [forUserId] is provided and different from [userId], validates coach-athlete relationship
   Future<void> createCarbLoadingPlan({
     required String deviceId,
     required String userId,
+    String? forUserId, // NEW: If provided, create plan for this user (coach creating for athlete)
     String? eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
     try {
+      // Determine the owner of the plan
+      final ownerId = forUserId ?? userId;
+
+      // Validate coach-athlete relationship if creating for someone else
+      if (forUserId != null && forUserId != userId) {
+        final hasActiveRelationship = await _coachRepository
+            .isActiveCoachAthleteRelationship(
+          coachUserId: userId,
+          athleteUserId: forUserId,
+        );
+
+        if (!hasActiveRelationship) {
+          _logger.error(
+            'Coach does not have active relationship with athlete',
+            context: 'CARB_LOADING_SERVICE',
+            data: {
+              'coachUserId': userId,
+              'athleteUserId': forUserId,
+            },
+          );
+          throw Exception(
+              'Not authorized to create carb loading plans for this athlete');
+        }
+      }
+
       // Call repository which will invoke edge function to create plan and auto-generate days
       await _carbLoadingRepository.createCarbLoadingPlan(
         deviceId: deviceId,
-        userId: userId,
+        userId: ownerId, // Use ownerId (athlete if coach is creating for them)
         eventId: eventId,
         protocolDays: protocolDays,
         raceDate: raceDate,
@@ -71,11 +102,36 @@ class CarbLoadingService {
   }
 
   /// Delete carb loading plan and associated day records
+  /// If [currentUserId] is provided, validates coach-athlete relationship for cross-user deletion
   Future<void> deleteCarbLoadingPlan({
     required String deviceId,
     required String eventId,
+    String? currentUserId, // NEW: Current user ID (for validation if coach is deleting athlete's plan)
+    String? planOwnerId, // NEW: Plan owner ID (for validation)
   }) async {
     try {
+      // Validate coach-athlete relationship if deleting for someone else
+      if (currentUserId != null && planOwnerId != null && currentUserId != planOwnerId) {
+        final hasActiveRelationship = await _coachRepository
+            .isActiveCoachAthleteRelationship(
+          coachUserId: currentUserId,
+          athleteUserId: planOwnerId,
+        );
+
+        if (!hasActiveRelationship) {
+          _logger.error(
+            'Coach does not have active relationship with athlete',
+            context: 'CARB_LOADING_SERVICE',
+            data: {
+              'coachUserId': currentUserId,
+              'athleteUserId': planOwnerId,
+            },
+          );
+          throw Exception(
+              'Not authorized to delete carb loading plans for this athlete');
+        }
+      }
+
       // First, look up the plan by eventId to get the actual planId
       final plan = await getCarbLoadingPlan(eventId);
 
@@ -125,22 +181,33 @@ class CarbLoadingService {
   }
 
   /// Update carb loading protocol (delete old plan and create new one)
+  /// If [forUserId] is provided, creates plan for this user (coach updating athlete's plan)
   Future<void> updateCarbLoadingProtocol({
     required String deviceId,
     required String userId,
+    String? forUserId, // NEW: If provided, update plan for this user (coach updating athlete's plan)
     required String eventId,
     required int newProtocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
     try {
-      // Delete existing plan
-      await deleteCarbLoadingPlan(deviceId: deviceId, eventId: eventId);
+      // Determine the owner
+      final ownerId = forUserId ?? userId;
 
-      // Create new plan
+      // Delete existing plan (validation happens in deleteCarbLoadingPlan)
+      await deleteCarbLoadingPlan(
+        deviceId: deviceId,
+        eventId: eventId,
+        currentUserId: userId,
+        planOwnerId: ownerId,
+      );
+
+      // Create new plan (validation happens in createCarbLoadingPlan)
       await createCarbLoadingPlan(
         deviceId: deviceId,
         userId: userId,
+        forUserId: forUserId,
         eventId: eventId,
         protocolDays: newProtocolDays,
         raceDate: raceDate,
