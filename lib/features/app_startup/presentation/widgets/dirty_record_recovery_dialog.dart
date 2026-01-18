@@ -99,11 +99,12 @@ class DirtyRecordRecoveryDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.r),
       ),
-      child: Padding(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             // Warning icon
             Container(
               width: 80.w,
@@ -204,6 +205,7 @@ class DirtyRecordRecoveryDialog extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

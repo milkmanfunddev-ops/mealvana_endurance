@@ -88,11 +88,11 @@
 - [x] Add backup file structure with metadata (app_version, schema_version, timestamp)
 - [x] Write tests: `test/new_sync/dirty_record_backup_service_test.dart`
 
-### 2.4 Recovery Dialog [CLAIMED: claude-sonnet-4.5-20260118-2]
-- [ ] Create recovery dialog widget for dirty record backup
-- [ ] Integrate into AppStartupService to check for backups on startup
-- [ ] Handle user choice: upload now vs discard
-- [ ] Write test: `test/new_sync/recovery_dialog_test.dart`
+### 2.4 Recovery Dialog [DONE: claude-sonnet-4.5-20260118-2]
+- [x] Create recovery dialog widget for dirty record backup
+- [x] Integrate into AppStartupService to check for backups on startup
+- [x] Handle user choice: upload now vs discard
+- [x] Write test: `test/new_sync/recovery_dialog_test.dart` (9 tests, all passing)
 
 ---
 
@@ -239,13 +239,13 @@
 | Phase | Tasks | Completed | Remaining |
 |-------|-------|-----------|-----------|
 | Phase 1 | 15 | 8 | 7 |
-| Phase 2 | 12 | 6 | 6 |
+| Phase 2 | 12 | 7 | 5 |
 | Phase 3 | 27 | 0 | 27 |
 | Phase 4 | 9 | 0 | 9 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **14** | **66** |
+| **Total** | **80** | **15** | **65** |
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118 completed Phase 2.2 (SyncCoordinator v2 with ensureSynced and 11 passing tests)
+*Last agent activity*: claude-sonnet-4.5-20260118-2 completed Phase 2.4 (Recovery Dialog with 9 passing tests)

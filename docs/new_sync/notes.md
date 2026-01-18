@@ -330,3 +330,57 @@ Phase 2 is now complete:
 
 After Phase 2.4, Phase 3 will migrate all repositories to implement SyncableRepository.
 
+
+## 2026-01-18 - Phase 2.4 Recovery Dialog Complete
+
+**Completed by**: claude-sonnet-4.5-20260118-2
+
+**What was done:**
+
+1. **Created DirtyRecordRecoveryDialog widget**
+   - Location: `lib/features/app_startup/presentation/widgets/dirty_record_recovery_dialog.dart`
+   - Shows backup metadata (timestamp, record count, repositories)
+   - Two action buttons: "Upload Now" (primary) and "Discard" (secondary)
+   - Returns RecoveryChoice enum (upload/discard)
+   - Uses SingleChildScrollView for proper overflow handling
+   - Follows existing AppTheme patterns and ScreenUtil for responsive sizing
+   - Not dismissible by tapping outside (barrierDismissible: false)
+
+2. **Integrated recovery flow into AppStartupService**
+   - Added `checkAndHandleDirtyRecordBackup(BuildContext)` method
+   - Checks for backup on startup
+   - Shows dialog if backup exists
+   - Handles user choice (upload or discard)
+   - Deletes backup file after handling
+   - Added `_uploadBackupRecords()` helper to upload dirty records per repository
+   - Added `_getTableNameFromRepositoryKey()` helper to map repository keys to Supabase tables
+   - Full error handling and analytics tracking
+
+3. **Created comprehensive tests**
+   - Location: `test/new_sync/recovery_dialog_test.dart`
+   - 9 tests, all passing
+   - Tests dialog display, metadata formatting, button interactions, and choices
+   - Uses ScreenUtilInit wrapper for proper responsive testing
+   - Tests overflow handling (SingleChildScrollView)
+
+**Key Design Decisions:**
+
+1. **Dialog Design**: Used AlertDialog pattern with custom styling matching AppTheme
+2. **User-friendly names**: Repository keys converted to readable names (e.g., "activities" → "Activities")
+3. **Relative timestamps**: Backup time shown as "30 minutes ago" for better UX
+4. **Forced choice**: Dialog cannot be dismissed without choosing upload or discard
+5. **Scrollable content**: SingleChildScrollView prevents overflow on smaller screens
+
+**Next Steps:**
+
+- Phase 2.4 is DONE (7/12 Phase 2 tasks complete)
+- Can integrate into actual app startup flow when needed
+- Method `checkAndHandleDirtyRecordBackup(context)` is ready to be called from AppStartupWidget or AppStartupProvider
+
+**Testing:**
+
+```bash
+flutter test test/new_sync/recovery_dialog_test.dart
+# 00:09 +9: All tests passed!
+```
+

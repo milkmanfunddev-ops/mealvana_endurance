@@ -99,7 +99,9 @@ void main() {
       await tester.tap(find.text('Show Dialog'));
       await tester.pumpAndSettle();
 
-      // Tap upload button
+      // Scroll to make button visible and tap it
+      await tester.ensureVisible(find.text('Upload Now'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Upload Now'));
       await tester.pumpAndSettle();
 
@@ -136,7 +138,9 @@ void main() {
       await tester.tap(find.text('Show Dialog'));
       await tester.pumpAndSettle();
 
-      // Tap discard button
+      // Scroll to make button visible and tap it
+      await tester.ensureVisible(find.text('Discard'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Discard'));
       await tester.pumpAndSettle();
 
