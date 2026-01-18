@@ -134,12 +134,12 @@
 - [ ] repositoryKey = 'user_foods', dependencies = ['users']
 - [ ] Write tests: `test/new_sync/user_foods_repository_test.dart`
 
-### 3.6 CarbLoadingRepository
-- [ ] Modify `lib/features/carb_loading/data/carb_loading_repository.dart`
-- [ ] Split into multiple repository keys or handle as group
-- [ ] carb_loading_plans: dependencies = ['users', 'events']
-- [ ] carb_loading_days: dependencies = ['carb_loading_plans']
-- [ ] Write tests: `test/new_sync/carb_loading_repository_sync_test.dart`
+### 3.6 CarbLoadingRepository [DONE: claude-sonnet-4.5-20260118]
+- [x] Modify `lib/features/carb_loading/data/carb_loading_repository.dart`
+- [x] Implement SyncableRepository mixin
+- [x] repositoryKey = 'carb_loading_plans', dependencies = ['users', 'events']
+- [x] Multi-table sync (plans → days) in single transaction
+- [x] Write tests: `test/new_sync/carb_loading_repository_sync_test.dart` (8 tests, all passing)
 
 ### 3.7 FoodRepository [DONE: claude-sonnet-4.5-20260118-task3.7]
 - [x] Modify `lib/features/nutrition_plan/data/food_repository.dart`
@@ -240,12 +240,12 @@
 |-------|-------|-----------|-----------|
 | Phase 1 | 15 | 9 | 6 |
 | Phase 2 | 12 | 7 | 5 |
-| Phase 3 | 27 | 9 | 18 |
+| Phase 3 | 27 | 10 | 17 |
 | Phase 4 | 9 | 0 | 9 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **17** | **63** |
+| **Total** | **80** | **18** | **62** |
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118-task3.7 completed Phase 3.7 (FoodRepository with 12 passing tests)
+*Last agent activity*: claude-sonnet-4.5-20260118 completed Phase 3.6 (CarbLoadingRepository with 8 passing tests and multi-table sync)
