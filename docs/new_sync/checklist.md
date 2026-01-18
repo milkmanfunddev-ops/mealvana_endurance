@@ -80,13 +80,13 @@
 - [ ] Write tests: `test/new_sync/sync_coordinator_v2_test.dart`
 
 ### 2.3 DirtyRecordBackupService [CLAIMED: claude-sonnet-4.5-20260118]
-- [ ] Create `lib/shared/services/dirty_record_backup_service.dart`
-- [ ] Implement `backupDirtyRecords(records)` - save to App Support JSON
-- [ ] Implement `hasBackup()` - check if backup file exists
-- [ ] Implement `recoverBackup()` - read and parse backup file
-- [ ] Implement `deleteBackup()` - remove backup file after recovery
-- [ ] Add backup file structure with metadata (app_version, schema_version, timestamp)
-- [ ] Write tests: `test/new_sync/dirty_record_backup_service_test.dart`
+- [x] Create `lib/shared/services/dirty_record_backup_service.dart`
+- [x] Implement `backupDirtyRecords(records)` - save to App Support JSON
+- [x] Implement `hasBackup()` - check if backup file exists
+- [x] Implement `recoverBackup()` - read and parse backup file
+- [x] Implement `deleteBackup()` - remove backup file after recovery
+- [x] Add backup file structure with metadata (app_version, schema_version, timestamp)
+- [x] Write tests: `test/new_sync/dirty_record_backup_service_test.dart`
 
 ### 2.4 Recovery Dialog
 - [ ] Create recovery dialog widget for dirty record backup
