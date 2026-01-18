@@ -41,9 +41,8 @@ import 'tables/coach_athlete_relationships_table.dart';
 import 'tables/coach_messages_table.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
 
-// Migration files (extracted for modularity)
-import 'migrations/migration_v1_to_v2.dart';
-import 'migrations/migration_v2_to_v3.dart';
+// Migration strategy simplified - removed step-by-step migrations
+// Schema changes now trigger delete & resync via VersionCheckService
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -146,11 +145,12 @@ class AppDatabase extends _$AppDatabase {
 
   // Note: product_types table has been dropped - now using product_type_enum
 
-  /// V1 database setup with seed database support and migration strategy
+  /// V3 database setup with simplified migration strategy
+  /// Schema changes trigger delete & resync via VersionCheckService (Phase 4.3)
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
-      // Called when database is first created (version 0 -> 1)
+      // Called when database is first created (version 0 -> current)
       onCreate: (Migrator m) async {
         // Check which tables already exist (from seed DB)
         final existingTablesResult = await customSelect(
@@ -213,12 +213,7 @@ class AppDatabase extends _$AppDatabase {
         await _normalizeUserFoodTimestamps();
       },
 
-      // Called when upgrading from older version - uses Drift's official stepByStep migrations
-      // Migration logic extracted to lib/shared/database/migrations/ for modularity
-      onUpgrade: stepByStep(
-        from1To2: (m, schema) => runMigrationV1ToV2(this, m, schema),
-        from2To3: (m, schema) => runMigrationV2ToV3(this, m, schema),
-      ),
+      // No onUpgrade - schema changes trigger delete & resync via VersionCheckService
     );
   }
 

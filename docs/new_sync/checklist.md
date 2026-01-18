@@ -152,7 +152,7 @@
 - [x] repositoryKey = 'feedback', dependencies = ['users']
 - [x] Write tests: `test/new_sync/feedback_repository_sync_test.dart` (13 tests, all passing)
 
-### 3.9 CoachRepository
+### 3.9 CoachRepository [CLAIMED: claude-sonnet-4.5-20260118-task3.9]
 - [ ] Modify `lib/features/coach_mode/data/coach_repository.dart`
 - [ ] Multiple repository keys: coaches, coach_athlete_relationships, coach_messages
 - [ ] Handle on-demand athlete sync (keep separate from staleness pattern)
@@ -162,17 +162,17 @@
 
 ## Phase 4: Migration Simplification
 
-### 4.1 Remove Step-by-Step Migrations
-- [ ] Delete `lib/shared/database/migrations/migration_v1_to_v2.dart`
-- [ ] Delete `lib/shared/database/migrations/migration_v2_to_v3.dart`
-- [ ] Update imports in `app_database.dart`
-- [ ] Verify no other code depends on these files
+### 4.1 Remove Step-by-Step Migrations [DONE: claude-sonnet-4.5-20260118-p4]
+- [x] Delete `lib/shared/database/migrations/migration_v1_to_v2.dart`
+- [x] Delete `lib/shared/database/migrations/migration_v2_to_v3.dart`
+- [x] Update imports in `app_database.dart`
+- [x] Verify no other code depends on these files
 
-### 4.2 Simplify app_database.dart
-- [ ] Remove `onUpgrade: stepByStep(...)` block
-- [ ] Keep only `onCreate` for fresh installs
-- [ ] Remove schema_versions.dart dependency for migrations
-- [ ] Update `beforeOpen` to only enable foreign keys
+### 4.2 Simplify app_database.dart [DONE: claude-sonnet-4.5-20260118-p4]
+- [x] Remove `onUpgrade: stepByStep(...)` block
+- [x] Keep only `onCreate` for fresh installs
+- [x] Remove schema_versions.dart dependency for migrations
+- [x] Update `beforeOpen` to only enable foreign keys
 
 ### 4.3 Implement Schema Resync in VersionCheckService
 - [ ] Add method `performSchemaResync()`
@@ -241,11 +241,11 @@
 | Phase 1 | 15 | 9 | 6 |
 | Phase 2 | 12 | 7 | 5 |
 | Phase 3 | 27 | 10 | 17 |
-| Phase 4 | 9 | 0 | 9 |
+| Phase 4 | 9 | 8 | 1 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **18** | **62** |
+| **Total** | **80** | **26** | **54** |
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118 completed Phase 3.6 (CarbLoadingRepository with 8 passing tests and multi-table sync)
+*Last agent activity*: claude-sonnet-4.5-20260118-p4 completed Phase 4.1-4.2 (removed step-by-step migrations, simplified app_database.dart)

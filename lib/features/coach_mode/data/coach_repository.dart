@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/data/syncable_repository.dart';
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
 import '../domain/coach_message.dart';
@@ -24,9 +25,10 @@ CoachRepository coachRepository(Ref ref) {
 }
 
 /// Repository for managing coach mode data following FOA pattern
+/// Implements SyncableRepository for new sync architecture
 /// Handles coach-athlete relationships and bidirectional messaging
 /// Note: Coach status is determined by approved record in coaches table (set by admin)
-class CoachRepository {
+class CoachRepository with SyncableRepository {
   const CoachRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
@@ -40,6 +42,261 @@ class CoachRepository {
   final AppLogger _logger;
 
   static const _uuid = Uuid();
+
+  // ============================================================================
+  // SyncableRepository Implementation
+  // ============================================================================
+
+  @override
+  String get repositoryKey => 'coaches';
+
+  @override
+  List<String> get dependencies => ['users'];
+
+  @override
+  Future<SyncResult> syncFromRemote(String userId) async {
+    try {
+      _logger.info(
+        'Syncing coach data from Supabase',
+        context: 'COACH_REPOSITORY',
+        data: {'userId': userId},
+      );
+
+      int totalSynced = 0;
+
+      // 1. Sync coach record if user is a coach
+      final coachResponse = await _supabase
+          .from('coaches')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (coachResponse != null) {
+        final coachJson = coachResponse as Map<String, dynamic>;
+        final now = DateTime.now();
+
+        // Upsert coach record to local Drift database
+        await _database
+            .into(_database.coachesTable)
+            .insertOnConflictUpdate(CoachesTableCompanion.insert(
+              id: coachJson['id'] as String,
+              userId: coachJson['user_id'] as String,
+              firstName: coachJson['first_name'] as String,
+              lastName: coachJson['last_name'] as String,
+              email: coachJson['email'] as String,
+              bio: Value(coachJson['bio'] as String?),
+              applicationStatus: Value(coachJson['application_status'] as String? ?? 'pending'),
+              reviewedBy: Value(coachJson['reviewed_by'] as String?),
+              reviewedAt: Value(coachJson['reviewed_at'] != null
+                  ? DateTime.parse(coachJson['reviewed_at'] as String)
+                  : null),
+              rejectionReason: Value(coachJson['rejection_reason'] as String?),
+              createdAt: Value(coachJson['created_at'] != null
+                  ? DateTime.parse(coachJson['created_at'] as String)
+                  : now),
+              updatedAt: Value(coachJson['updated_at'] != null
+                  ? DateTime.parse(coachJson['updated_at'] as String)
+                  : now),
+            ));
+
+        totalSynced++;
+      }
+
+      // 2. Sync coach_athlete_relationships where user is coach OR athlete
+      final relationshipsResponse = await _supabase
+          .from('coach_athlete_relationships')
+          .select('*')
+          .or('coach_user_id.eq.$userId,athlete_user_id.eq.$userId')
+          .order('created_at', ascending: false);
+
+      final relationships = relationshipsResponse as List<dynamic>;
+
+      if (relationships.isNotEmpty) {
+        // Batch insert relationships
+        await _database.batch((batch) {
+          for (final relJson in relationships) {
+            final r = relJson as Map<String, dynamic>;
+            final now = DateTime.now();
+
+            final companion = CoachAthleteRelationshipsTableCompanion.insert(
+              id: r['id'] as String,
+              coachUserId: r['coach_user_id'] as String,
+              athleteUserId: r['athlete_user_id'] as String,
+              status: Value(r['status'] as String? ?? 'pending'),
+              requestedBy: r['requested_by'] as String,
+              requestedAt: Value(r['requested_at'] != null
+                  ? DateTime.parse(r['requested_at'] as String)
+                  : now),
+              acceptedAt: Value(r['accepted_at'] != null
+                  ? DateTime.parse(r['accepted_at'] as String)
+                  : null),
+              declinedAt: Value(r['declined_at'] != null
+                  ? DateTime.parse(r['declined_at'] as String)
+                  : null),
+              archivedAt: Value(r['archived_at'] != null
+                  ? DateTime.parse(r['archived_at'] as String)
+                  : null),
+              createdAt: Value(r['created_at'] != null
+                  ? DateTime.parse(r['created_at'] as String)
+                  : now),
+              updatedAt: Value(r['updated_at'] != null
+                  ? DateTime.parse(r['updated_at'] as String)
+                  : now),
+            );
+
+            batch.insert(
+              _database.coachAthleteRelationshipsTable,
+              companion,
+              mode: InsertMode.insertOrReplace,
+            );
+          });
+        });
+
+        totalSynced += relationships.length;
+      }
+
+      // Update last sync timestamp
+      await setLastSyncTime(DateTime.now());
+
+      _logger.info(
+        'Successfully synced coach data',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'userId': userId,
+          'coachRecord': coachResponse != null ? 1 : 0,
+          'relationships': relationships.length,
+          'total': totalSynced,
+        },
+      );
+
+      return SyncResult.successful(totalSynced);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync coach data from Supabase',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
+      );
+      return SyncResult.failed(e.toString());
+    }
+  }
+
+  @override
+  Future<UploadResult> uploadDirtyRecords(String userId) async {
+    try {
+      _logger.info(
+        'Uploading dirty coach records to Supabase',
+        context: 'COACH_REPOSITORY',
+        data: {'userId': userId},
+      );
+
+      int totalUploaded = 0;
+
+      // 1. Upload dirty coach records (if user is a coach)
+      final dirtyCoachRecords = await (_database.select(_database.coachesTable)
+            ..where((t) =>
+                t.userId.equals(userId) &
+                t.needsUpload.equals(true)))
+          .get();
+
+      if (dirtyCoachRecords.isNotEmpty) {
+        for (final coach in dirtyCoachRecords) {
+          await _supabase.from('coaches').upsert({
+            'id': coach.id,
+            'user_id': coach.userId,
+            'first_name': coach.firstName,
+            'last_name': coach.lastName,
+            'email': coach.email,
+            'bio': coach.bio,
+            'application_status': coach.applicationStatus,
+            'reviewed_by': coach.reviewedBy,
+            'reviewed_at': coach.reviewedAt?.toIso8601String(),
+            'rejection_reason': coach.rejectionReason,
+            'created_at': coach.createdAt.toIso8601String(),
+            'updated_at': coach.updatedAt.toIso8601String(),
+          });
+        }
+
+        // Clear dirty flags
+        await _database.batch((batch) {
+          for (final coach in dirtyCoachRecords) {
+            batch.update(
+              _database.coachesTable,
+              const CoachesTableCompanion(needsUpload: Value(false)),
+              where: (t) => t.id.equals(coach.id),
+            );
+          }
+        });
+
+        totalUploaded += dirtyCoachRecords.length;
+      }
+
+      // 2. Upload dirty relationships (where user is coach OR athlete)
+      final dirtyRelationships = await (_database
+              .select(_database.coachAthleteRelationshipsTable)
+            ..where((t) =>
+                (t.coachUserId.equals(userId) | t.athleteUserId.equals(userId)) &
+                t.needsUpload.equals(true)))
+          .get();
+
+      if (dirtyRelationships.isNotEmpty) {
+        for (final rel in dirtyRelationships) {
+          await _supabase.from('coach_athlete_relationships').upsert({
+            'id': rel.id,
+            'coach_user_id': rel.coachUserId,
+            'athlete_user_id': rel.athleteUserId,
+            'status': rel.status,
+            'requested_by': rel.requestedBy,
+            'requested_at': rel.requestedAt.toIso8601String(),
+            'accepted_at': rel.acceptedAt?.toIso8601String(),
+            'declined_at': rel.declinedAt?.toIso8601String(),
+            'archived_at': rel.archivedAt?.toIso8601String(),
+            'created_at': rel.createdAt.toIso8601String(),
+            'updated_at': rel.updatedAt.toIso8601String(),
+          });
+        }
+
+        // Clear dirty flags
+        await _database.batch((batch) {
+          for (final rel in dirtyRelationships) {
+            batch.update(
+              _database.coachAthleteRelationshipsTable,
+              const CoachAthleteRelationshipsTableCompanion(needsUpload: Value(false)),
+              where: (t) => t.id.equals(rel.id),
+            );
+          }
+        });
+
+        totalUploaded += dirtyRelationships.length;
+      }
+
+      if (totalUploaded == 0) {
+        return UploadResult.nothingToUpload();
+      }
+
+      _logger.info(
+        'Successfully uploaded dirty coach records',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'coaches': dirtyCoachRecords.length,
+          'relationships': dirtyRelationships.length,
+          'total': totalUploaded,
+        },
+      );
+
+      return UploadResult.successful(totalUploaded);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to upload dirty coach records',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
+      );
+      return UploadResult.failed(e.toString());
+    }
+  }
 
   // ============================================================================
   // COACH INFO OPERATIONS (from coaches table)
