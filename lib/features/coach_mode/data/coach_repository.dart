@@ -149,7 +149,7 @@ class CoachRepository with SyncableRepository {
               companion,
               mode: InsertMode.insertOrReplace,
             );
-          });
+          }
         });
 
         totalSynced += relationships.length;
@@ -191,101 +191,22 @@ class CoachRepository with SyncableRepository {
         data: {'userId': userId},
       );
 
-      int totalUploaded = 0;
+      // NOTE: CoachRepository tables (coaches, coach_athlete_relationships) do not have
+      // needs_upload columns like other repositories. The existing methods already
+      // write directly to both Drift AND Supabase (see createRelationship, acceptRelationship, etc.).
+      // This is a dual-write pattern for cross-device realtime sync.
+      //
+      // For this sync architecture implementation, uploadDirtyRecords is a no-op
+      // because there are no dirty records to upload - all changes are already synced
+      // to Supabase immediately when they occur.
 
-      // 1. Upload dirty coach records (if user is a coach)
-      final dirtyCoachRecords = await (_database.select(_database.coachesTable)
-            ..where((t) =>
-                t.userId.equals(userId) &
-                t.needsUpload.equals(true)))
-          .get();
-
-      if (dirtyCoachRecords.isNotEmpty) {
-        for (final coach in dirtyCoachRecords) {
-          await _supabase.from('coaches').upsert({
-            'id': coach.id,
-            'user_id': coach.userId,
-            'first_name': coach.firstName,
-            'last_name': coach.lastName,
-            'email': coach.email,
-            'bio': coach.bio,
-            'application_status': coach.applicationStatus,
-            'reviewed_by': coach.reviewedBy,
-            'reviewed_at': coach.reviewedAt?.toIso8601String(),
-            'rejection_reason': coach.rejectionReason,
-            'created_at': coach.createdAt.toIso8601String(),
-            'updated_at': coach.updatedAt.toIso8601String(),
-          });
-        }
-
-        // Clear dirty flags
-        await _database.batch((batch) {
-          for (final coach in dirtyCoachRecords) {
-            batch.update(
-              _database.coachesTable,
-              const CoachesTableCompanion(needsUpload: Value(false)),
-              where: (t) => t.id.equals(coach.id),
-            );
-          }
-        });
-
-        totalUploaded += dirtyCoachRecords.length;
-      }
-
-      // 2. Upload dirty relationships (where user is coach OR athlete)
-      final dirtyRelationships = await (_database
-              .select(_database.coachAthleteRelationshipsTable)
-            ..where((t) =>
-                (t.coachUserId.equals(userId) | t.athleteUserId.equals(userId)) &
-                t.needsUpload.equals(true)))
-          .get();
-
-      if (dirtyRelationships.isNotEmpty) {
-        for (final rel in dirtyRelationships) {
-          await _supabase.from('coach_athlete_relationships').upsert({
-            'id': rel.id,
-            'coach_user_id': rel.coachUserId,
-            'athlete_user_id': rel.athleteUserId,
-            'status': rel.status,
-            'requested_by': rel.requestedBy,
-            'requested_at': rel.requestedAt.toIso8601String(),
-            'accepted_at': rel.acceptedAt?.toIso8601String(),
-            'declined_at': rel.declinedAt?.toIso8601String(),
-            'archived_at': rel.archivedAt?.toIso8601String(),
-            'created_at': rel.createdAt.toIso8601String(),
-            'updated_at': rel.updatedAt.toIso8601String(),
-          });
-        }
-
-        // Clear dirty flags
-        await _database.batch((batch) {
-          for (final rel in dirtyRelationships) {
-            batch.update(
-              _database.coachAthleteRelationshipsTable,
-              const CoachAthleteRelationshipsTableCompanion(needsUpload: Value(false)),
-              where: (t) => t.id.equals(rel.id),
-            );
-          }
-        });
-
-        totalUploaded += dirtyRelationships.length;
-      }
-
-      if (totalUploaded == 0) {
-        return UploadResult.nothingToUpload();
-      }
-
-      _logger.info(
-        'Successfully uploaded dirty coach records',
+      _logger.debug(
+        'CoachRepository uses dual-write pattern - no dirty records to upload',
         context: 'COACH_REPOSITORY',
-        data: {
-          'coaches': dirtyCoachRecords.length,
-          'relationships': dirtyRelationships.length,
-          'total': totalUploaded,
-        },
+        data: {'userId': userId},
       );
 
-      return UploadResult.successful(totalUploaded);
+      return UploadResult.nothingToUpload();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to upload dirty coach records',

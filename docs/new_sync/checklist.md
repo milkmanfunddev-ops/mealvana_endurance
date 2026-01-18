@@ -128,11 +128,11 @@
 - [x] repositoryKey = 'food_preferences', dependencies = ['users', 'foods']
 - [x] Write tests: `test/new_sync/food_preferences_repository_test.dart` (8 tests, all passing)
 
-### 3.5 UserFoodsRepository (NEW)
-- [ ] Create `lib/features/user_foods/data/user_foods_repository.dart`
-- [ ] Extract from UserRepository
-- [ ] repositoryKey = 'user_foods', dependencies = ['users']
-- [ ] Write tests: `test/new_sync/user_foods_repository_test.dart`
+### 3.5 UserFoodsRepository (NEW) [DONE: claude-sonnet-4.5-20260118-task3.5]
+- [x] Create `lib/features/user_foods/data/user_foods_repository.dart`
+- [x] Extract from UserRepository
+- [x] repositoryKey = 'user_foods', dependencies = ['users']
+- [x] Write tests: `test/new_sync/user_foods_repository_test.dart` (8 tests, all passing)
 
 ### 3.6 CarbLoadingRepository [DONE: claude-sonnet-4.5-20260118]
 - [x] Modify `lib/features/carb_loading/data/carb_loading_repository.dart`
@@ -152,11 +152,11 @@
 - [x] repositoryKey = 'feedback', dependencies = ['users']
 - [x] Write tests: `test/new_sync/feedback_repository_sync_test.dart` (13 tests, all passing)
 
-### 3.9 CoachRepository [CLAIMED: claude-sonnet-4.5-20260118-task3.9]
-- [ ] Modify `lib/features/coach_mode/data/coach_repository.dart`
-- [ ] Multiple repository keys: coaches, coach_athlete_relationships, coach_messages
-- [ ] Handle on-demand athlete sync (keep separate from staleness pattern)
-- [ ] Write tests: `test/new_sync/coach_repository_sync_test.dart`
+### 3.9 CoachRepository [DONE: claude-sonnet-4.5-20260118-task3.9]
+- [x] Modify `lib/features/coach_mode/data/coach_repository.dart`
+- [x] Multiple repository keys: coaches, coach_athlete_relationships, coach_messages
+- [x] Handle on-demand athlete sync (keep separate from staleness pattern)
+- [x] Write tests: `test/new_sync/coach_repository_sync_test.dart` (7 tests, all passing)
 
 ---
 
@@ -240,12 +240,12 @@
 |-------|-------|-----------|-----------|
 | Phase 1 | 15 | 9 | 6 |
 | Phase 2 | 12 | 7 | 5 |
-| Phase 3 | 27 | 10 | 17 |
+| Phase 3 | 27 | 14 | 13 |
 | Phase 4 | 9 | 8 | 1 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **26** | **54** |
+| **Total** | **80** | **30** | **50** |
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118-p4 completed Phase 4.1-4.2 (removed step-by-step migrations, simplified app_database.dart)
+*Last agent activity*: claude-sonnet-4.5-20260118-task3.5 completed Phase 3.5 (UserFoodsRepository with 8 passing tests)
