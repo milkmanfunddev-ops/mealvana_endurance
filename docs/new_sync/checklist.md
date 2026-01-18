@@ -25,15 +25,15 @@
 - [ ] Test migration locally with `supabase db reset` (requires human with Supabase CLI)
 - [x] Write test: `test/new_sync/app_config_migration_test.dart`
 
-### 1.2 Core Models [CLAIMED: claude-sync-agent-20260118]
-- [ ] Create `lib/shared/models/sync_result.dart`
+### 1.2 Core Models [DONE: claude-sync-agent-20260118]
+- [x] Create `lib/shared/models/sync_result.dart`
   - SyncResult class with success/failure states
   - Count of synced records
   - Error information
-- [ ] Create `lib/shared/models/version_check_result.dart`
-  - VersionCheckResult enum (ok, updateRequired, resyncRequired)
+- [x] Create `lib/shared/models/version_check_result.dart`
+  - VersionCheckResult sealed class (ok, updateRequired, resyncRequired)
   - Current vs required version info
-- [ ] Write tests: `test/new_sync/models_test.dart`
+- [x] Write tests: `test/new_sync/sync_models_test.dart` (29 tests, all passing)
 
 ### 1.3 VersionCheckService
 - [ ] Create `lib/shared/services/version_check_service.dart`
@@ -63,12 +63,12 @@
 
 ## Phase 2: Repository Base Class
 
-### 2.1 SyncableRepository Abstract Class [CLAIMED: claude-opus-4.5-20260118]
-- [ ] Create `lib/shared/data/syncable_repository.dart`
-- [ ] Define abstract methods: repositoryKey, dependencies, isStale, syncFromRemote, uploadDirtyRecords
-- [ ] Implement SharedPreferences timestamp storage (getLastSyncTime, setLastSyncTime)
-- [ ] Implement isStale() with 24-hour threshold
-- [ ] Write tests: `test/new_sync/syncable_repository_test.dart`
+### 2.1 SyncableRepository Abstract Class [DONE: claude-opus-4.5-20260118]
+- [x] Create `lib/shared/data/syncable_repository.dart`
+- [x] Define abstract methods: repositoryKey, dependencies, isStale, syncFromRemote, uploadDirtyRecords
+- [x] Implement SharedPreferences timestamp storage (getLastSyncTime, setLastSyncTime)
+- [x] Implement isStale() with 24-hour threshold
+- [x] Write tests: `test/new_sync/syncable_repository_test.dart`
 
 ### 2.2 SyncCoordinator v2
 - [ ] Refactor `lib/shared/services/sync/sync_coordinator.dart`
@@ -238,14 +238,14 @@
 
 | Phase | Tasks | Completed | Remaining |
 |-------|-------|-----------|-----------|
-| Phase 1 | 15 | 4 | 11 |
-| Phase 2 | 12 | 0 | 12 |
+| Phase 1 | 15 | 7 | 8 |
+| Phase 2 | 12 | 5 | 7 |
 | Phase 3 | 27 | 0 | 27 |
 | Phase 4 | 9 | 0 | 9 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **4** | **76** |
+| **Total** | **80** | **12** | **68** |
 
 ---
 
-*Last agent activity*: claude-sync-agent-20260118 completed Phase 1.1 (app_config table migration)
+*Last agent activity*: claude-opus-4.5-20260118 completed Phase 2.1 (SyncableRepository with 21 passing tests)

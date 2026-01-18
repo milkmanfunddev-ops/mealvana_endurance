@@ -4,8 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Mock implementation of SyncableRepository for testing
 class MockSyncableRepository extends SyncableRepository {
+  final String _repositoryKey;
+
+  MockSyncableRepository({String repositoryKey = 'test_repo'})
+      : _repositoryKey = repositoryKey;
+
   @override
-  String get repositoryKey => 'test_repo';
+  String get repositoryKey => _repositoryKey;
 
   @override
   List<String> get dependencies => ['users'];
@@ -219,8 +224,8 @@ void main() {
       });
 
       test('multiple repositories use different SharedPreferences keys', () async {
-        final repo1 = MockSyncableRepository();
-        final repo2 = MockSyncableRepository()..repositoryKey = 'other_repo';
+        final repo1 = MockSyncableRepository(repositoryKey: 'repo1');
+        final repo2 = MockSyncableRepository(repositoryKey: 'repo2');
 
         final time1 = DateTime.now();
         final time2 = time1.add(const Duration(hours: 5));
