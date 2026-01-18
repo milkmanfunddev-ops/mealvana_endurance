@@ -44,13 +44,13 @@
 - [ ] Handle network failures gracefully (use cached result)
 - [ ] Write tests: `test/new_sync/version_check_service_test.dart`
 
-### 1.4 ForceUpgradeScreen
-- [ ] Create `lib/features/app_startup/presentation/screens/force_upgrade_screen.dart`
-- [ ] Display current version vs required version
-- [ ] Platform-specific app store links (iOS/Android)
-- [ ] Block all navigation (no back button)
-- [ ] Add to GoRouter routes
-- [ ] Write widget test: `test/new_sync/force_upgrade_screen_test.dart`
+### 1.4 ForceUpgradeScreen [DONE: claude-sonnet-4.5-20260118]
+- [x] Create `lib/features/app_startup/presentation/screens/force_upgrade_screen.dart`
+- [x] Display current version vs required version
+- [x] Platform-specific app store links (iOS/Android/Web)
+- [x] Block all navigation (PopScope with canPop: false)
+- [x] Add to GoRouter routes
+- [x] Write widget test: `test/new_sync/force_upgrade_screen_test.dart` (6 tests, all passing)
 
 ### 1.5 Integrate Version Check into Startup
 - [ ] Modify `lib/features/app_startup/application/app_startup_provider.dart`
@@ -70,7 +70,7 @@
 - [x] Implement isStale() with 24-hour threshold
 - [x] Write tests: `test/new_sync/syncable_repository_test.dart`
 
-### 2.2 SyncCoordinator v2
+### 2.2 SyncCoordinator v2 [CLAIMED: claude-sonnet-4.5-20260118]
 - [ ] Refactor `lib/shared/services/sync/sync_coordinator.dart`
 - [ ] Add static dependency graph map
 - [ ] Add `ensureSynced(repoKey, userId)` method
@@ -88,7 +88,7 @@
 - [x] Add backup file structure with metadata (app_version, schema_version, timestamp)
 - [x] Write tests: `test/new_sync/dirty_record_backup_service_test.dart`
 
-### 2.4 Recovery Dialog
+### 2.4 Recovery Dialog [CLAIMED: claude-sonnet-4.5-20260118-2]
 - [ ] Create recovery dialog widget for dirty record backup
 - [ ] Integrate into AppStartupService to check for backups on startup
 - [ ] Handle user choice: upload now vs discard
@@ -238,14 +238,14 @@
 
 | Phase | Tasks | Completed | Remaining |
 |-------|-------|-----------|-----------|
-| Phase 1 | 15 | 7 | 8 |
+| Phase 1 | 15 | 8 | 7 |
 | Phase 2 | 12 | 5 | 7 |
 | Phase 3 | 27 | 0 | 27 |
 | Phase 4 | 9 | 0 | 9 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **12** | **68** |
+| **Total** | **80** | **13** | **67** |
 
 ---
 
-*Last agent activity*: claude-opus-4.5-20260118 completed Phase 2.1 (SyncableRepository with 21 passing tests)
+*Last agent activity*: claude-sonnet-4.5-20260118 completed Phase 1.4 (ForceUpgradeScreen with 6 passing tests)

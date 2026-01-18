@@ -6,6 +6,7 @@ import '../../features/app_startup/application/app_startup_provider.dart';
 import '../../main.dart' show sentryNavigatorKey;
 
 // Import all screens
+import '../../features/app_startup/presentation/screens/force_upgrade_screen.dart';
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/new_activity_screen.dart';
 import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
@@ -106,6 +107,21 @@ class AppRouter {
         );
       },
       routes: [
+        // Force Upgrade Screen - Mandatory update required
+        GoRoute(
+          path: '/force-upgrade',
+          name: 'force-upgrade',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final currentVersion = extra?['currentVersion'] as String? ?? '0.0.0';
+            final requiredVersion = extra?['requiredVersion'] as String? ?? '0.0.0';
+            return ForceUpgradeScreen(
+              currentVersion: currentVersion,
+              requiredVersion: requiredVersion,
+            );
+          },
+        ),
+
         // Welcome Screen
       GoRoute(
         path: '/welcome',
