@@ -4,6 +4,8 @@ import 'app_startup_service.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/version_check_service.dart';
+import '../../../shared/models/version_check_result.dart';
 import '../../../features/auth/domain/user_preferences.dart';
 
 part 'app_startup_provider.g.dart';
@@ -15,6 +17,12 @@ class AppStartupData {
     required this.hasCompletedOnboarding,
     this.activityIdNeedingFeedback,
     this.isLoggedOut = false,
+    this.forceUpgradeRequired = false,
+    this.currentVersion,
+    this.requiredVersion,
+    this.resyncRequired = false,
+    this.localSchemaVersion,
+    this.remoteSchemaVersion,
   });
 
   final UserProfile? user;
@@ -24,6 +32,16 @@ class AppStartupData {
   /// True when user has logged out but still has local data
   /// In this state: no Supabase session, but local profile exists with onboardingCompleted = true
   final bool isLoggedOut;
+
+  /// True when app version is below minimum required version
+  final bool forceUpgradeRequired;
+  final String? currentVersion;
+  final String? requiredVersion;
+
+  /// True when schema version mismatch requires database resync
+  final bool resyncRequired;
+  final int? localSchemaVersion;
+  final int? remoteSchemaVersion;
 }
 
 /// AsyncNotifier for app startup initialization using Drift
@@ -36,6 +54,47 @@ class AppStartup extends _$AppStartup {
   Future<AppStartupData> build() async {
     try {
       final AppStartupService startupService = ref.read(appStartupServiceProvider);
+
+      // 0. VERSION CHECK: Check app version and schema version BEFORE database initialization
+      // This prevents incompatible app versions from accessing the database
+      final versionCheckService = ref.read(versionCheckServiceProvider);
+      final versionCheckResult = await versionCheckService.checkVersion();
+
+      // Handle version check results
+      if (versionCheckResult.isUpdateRequired) {
+        final updateResult = versionCheckResult as VersionCheckUpdateRequired;
+        _logger.warning(
+          'Force upgrade required: current=${updateResult.currentVersion}, required=${updateResult.requiredVersion}',
+          context: 'VERSION_CHECK',
+        );
+        return AppStartupData(
+          user: null,
+          hasCompletedOnboarding: false,
+          forceUpgradeRequired: true,
+          currentVersion: updateResult.currentVersion,
+          requiredVersion: updateResult.requiredVersion,
+        );
+      }
+
+      if (versionCheckResult.isResyncRequired) {
+        final resyncResult = versionCheckResult as VersionCheckResyncRequired;
+        _logger.warning(
+          'Schema resync required: local=${resyncResult.localSchemaVersion}, remote=${resyncResult.remoteSchemaVersion}',
+          context: 'VERSION_CHECK',
+        );
+        // TODO: Trigger schema resync in Phase 4
+        // For now, log and continue - resync will be implemented later
+        return AppStartupData(
+          user: null,
+          hasCompletedOnboarding: false,
+          resyncRequired: true,
+          localSchemaVersion: resyncResult.localSchemaVersion,
+          remoteSchemaVersion: resyncResult.remoteSchemaVersion,
+        );
+      }
+
+      // Version check passed - continue with normal startup
+      _logger.info('Version check passed - continuing with normal startup', context: 'VERSION_CHECK');
 
       // 1. CRITICAL PATH: Run only essential initializations in parallel
       // Analytics and device info are deferred to avoid Android startup deadlock

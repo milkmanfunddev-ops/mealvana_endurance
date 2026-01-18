@@ -71,7 +71,12 @@ class AppRouter {
       navigatorKey: sentryNavigatorKey,
       // Redirect logic based on app startup state
       redirect: (context, state) {
-        // Allow navigation to any route - don't block
+        // Allow navigation to force-upgrade route always
+        if (state.uri.path == '/force-upgrade') {
+          return null;
+        }
+
+        // Allow navigation to any other route - don't block
         // The initial '/' will be redirected based on app state
         if (state.uri.path != '/') {
           return null; // Allow navigation to specific routes
@@ -82,6 +87,15 @@ class AppRouter {
 
         return appStartupState.maybeWhen(
           data: (appStartupData) {
+            // CRITICAL: Force upgrade required - block all other navigation
+            if (appStartupData.forceUpgradeRequired) {
+              return '/force-upgrade';
+            }
+            // CRITICAL: Schema resync required - block all other navigation
+            // TODO: Replace with resync screen in Phase 4
+            if (appStartupData.resyncRequired) {
+              return '/welcome'; // Temporary: go to welcome until resync implemented
+            }
             // User not created yet - go to welcome
             if (appStartupData.user == null) {
               return '/welcome';
@@ -112,9 +126,25 @@ class AppRouter {
           path: '/force-upgrade',
           name: 'force-upgrade',
           builder: (context, state) {
+            // Try to get version info from appStartupProvider
+            final appStartupState = ref.read(appStartupProvider);
+            String currentVersion = '0.0.0';
+            String requiredVersion = '0.0.0';
+
+            appStartupState.whenData((data) {
+              if (data.forceUpgradeRequired) {
+                currentVersion = data.currentVersion ?? '0.0.0';
+                requiredVersion = data.requiredVersion ?? '0.0.0';
+              }
+            });
+
+            // Also check for explicit extra data (for testing or direct navigation)
             final extra = state.extra as Map<String, dynamic>?;
-            final currentVersion = extra?['currentVersion'] as String? ?? '0.0.0';
-            final requiredVersion = extra?['requiredVersion'] as String? ?? '0.0.0';
+            if (extra != null) {
+              currentVersion = extra['currentVersion'] as String? ?? currentVersion;
+              requiredVersion = extra['requiredVersion'] as String? ?? requiredVersion;
+            }
+
             return ForceUpgradeScreen(
               currentVersion: currentVersion,
               requiredVersion: requiredVersion,

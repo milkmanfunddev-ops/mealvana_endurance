@@ -8,11 +8,13 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../core/utils/debug_logger.dart';
+import '../../../shared/data/syncable_repository.dart';
 
 part 'user_repository.g.dart';
 
 /// Repository for managing user profile data in Drift database and Supabase
-class UserRepository {
+/// Level 0 repository (no dependencies) - must sync first in the sync hierarchy
+class UserRepository with SyncableRepository {
   UserRepository({
     required this.database,
     required this.supabase,
@@ -22,6 +24,141 @@ class UserRepository {
   final AppDatabase database;
   final SupabaseClient supabase;
   final SentryReporter sentry;
+
+  // ========== SyncableRepository Implementation ==========
+
+  @override
+  String get repositoryKey => 'users';
+
+  @override
+  List<String> get dependencies => []; // Level 0 - no dependencies
+
+  @override
+  Future<SyncResult> syncFromRemote(String userId) async {
+    try {
+      // Query Supabase for this user's profile
+      final response = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response == null) {
+        // User doesn't exist on server - nothing to sync
+        return SyncResult.successful(0);
+      }
+
+      // Parse user profile from Supabase response
+      final userProfile = _parseUserFromSupabase(response, userId);
+
+      // Save to local Drift database
+      await saveUserProfile(userProfile);
+
+      // Update last sync timestamp
+      await setLastSyncTime(DateTime.now());
+
+      sentry.addBreadcrumb(
+        message: 'User profile synced from Supabase',
+        category: 'sync',
+        data: {'user_id': userId, 'repository': repositoryKey},
+      );
+
+      return SyncResult.successful(1);
+    } catch (e, stackTrace) {
+      await sentry.reportNetworkError(
+        e,
+        url: 'supabase:users:sync',
+        method: 'SELECT',
+        stackTrace: stackTrace,
+      );
+      return SyncResult.failed(e.toString());
+    }
+  }
+
+  @override
+  Future<UploadResult> uploadDirtyRecords(String userId) async {
+    try {
+      // Query Drift for user profile with needs_upload = true
+      // Use multiple where clauses (Drift AND logic)
+      final dirtyUser = await (database.select(database.userProfilesTable)
+            ..where((t) => t.id.equals(userId))
+            ..where((t) => t.needsUpload.equals(true)))
+          .getSingleOrNull();
+
+      if (dirtyUser == null) {
+        // No dirty records to upload
+        return UploadResult.nothingToUpload();
+      }
+
+      // Convert to UserProfile domain object using UserDao's helper
+      final userProfile = _convertToDomainUserProfile(dirtyUser);
+
+      // Upload to Supabase
+      await supabase.from('users').upsert(
+        userProfile.toJson(),
+        onConflict: 'id',
+      );
+
+      // Clear dirty flag in local database
+      await database.update(database.userProfilesTable).replace(
+            dirtyUser.copyWith(needsUpload: false),
+          );
+
+      sentry.addBreadcrumb(
+        message: 'Uploaded dirty user profile to Supabase',
+        category: 'sync',
+        data: {'user_id': userId, 'repository': repositoryKey},
+      );
+
+      return UploadResult.successful(1);
+    } catch (e, stackTrace) {
+      await sentry.reportNetworkError(
+        e,
+        url: 'supabase:users:upload',
+        method: 'UPSERT',
+        stackTrace: stackTrace,
+      );
+      return UploadResult.failed(e.toString());
+    }
+  }
+
+  /// Convert database entry to domain model
+  /// Same as UserDao._convertToDomainUserProfile but accessible here
+  UserProfile _convertToDomainUserProfile(UserProfileEntry dbUser) {
+    return UserProfile(
+      id: dbUser.id,
+      deviceId: dbUser.deviceId,
+      authUserId: dbUser.authUserId,
+      authProvider: dbUser.authProvider,
+      isAnonymous: dbUser.isAnonymous,
+      gender: Gender.values.firstWhere(
+        (g) => g.name == dbUser.gender,
+        orElse: () => Gender.other,
+      ),
+      birthday: dbUser.birthday ?? DateTime.now(),
+      heightFeet: dbUser.heightFeet ?? 0,
+      heightInches: dbUser.heightInches ?? 0,
+      weightPounds: dbUser.weightPounds ?? 0.0,
+      runsWithWaterBottle: dbUser.runsWithWaterBottle,
+      gutTraining: GutTraining.values.firstWhere(
+        (g) => g.name == dbUser.gutTrainingLevel,
+        orElse: () => GutTraining.moderate,
+      ),
+      onboardingCompleted: dbUser.onboardingCompleted,
+      createdAt: dbUser.createdAt,
+      updatedAt: dbUser.updatedAt,
+      appVersion: dbUser.appVersion ?? '',
+      swipeHintShown: dbUser.swipeHintShown,
+      // Dietary preference and allergies (onboarding revamp)
+      // Convert null to DietaryPreference.none for UI
+      dietaryPreference:
+          DietaryPreference.fromDbValue(dbUser.dietaryPreference) ??
+              DietaryPreference.none,
+      allergies: Allergy.fromDbArray(dbUser.allergies),
+    );
+  }
+
+  // ========== End SyncableRepository Implementation ==========
 
   /// Save user profile
   /// [needsUpload] - If true, marks profile for background upload to Supabase (for new registrations)

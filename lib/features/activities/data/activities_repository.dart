@@ -8,6 +8,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/data/syncable_repository.dart';
 import '../domain/activity.dart' as domain;
 
 part 'activities_repository.g.dart';
@@ -22,8 +23,8 @@ ActivitiesRepository activitiesRepository(Ref ref) {
 }
 
 /// Repository for managing activities following FOA pattern
-/// Prepares for server-authoritative sync with edge functions
-class ActivitiesRepository {
+/// Implements SyncableRepository for new sync architecture
+class ActivitiesRepository with SyncableRepository {
   const ActivitiesRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
@@ -35,6 +36,172 @@ class ActivitiesRepository {
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+
+  // ========================================================================
+  // SyncableRepository Implementation
+  // ========================================================================
+
+  @override
+  String get repositoryKey => 'activities';
+
+  @override
+  List<String> get dependencies => ['users'];
+
+  @override
+  Future<SyncResult> syncFromRemote(String userId) async {
+    try {
+      _logger.info(
+        'Syncing activities from Supabase',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'userId': userId},
+      );
+
+      // Direct Supabase query (no edge function)
+      final response = await _supabase
+          .from('activities')
+          .select('*')
+          .eq('user_id', userId)
+          .isFilter('deleted_at', null)
+          .order('created_at', ascending: false);
+
+      // Save to Drift using batch operations
+      await _database.batch((batch) {
+        for (final activityJson in response as List) {
+          final activity = _mapJsonToActivityDomain(activityJson);
+          batch.insert(
+            _database.activitiesTable,
+            _mapDomainToCompanion(activity),
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
+
+      // Update last sync timestamp
+      await setLastSyncTime(DateTime.now());
+
+      _logger.info(
+        'Activities synced successfully',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'userId': userId, 'count': response.length},
+      );
+
+      return SyncResult.successful(response.length);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync activities from remote',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
+      );
+      return SyncResult.failed(e.toString());
+    }
+  }
+
+  @override
+  Future<UploadResult> uploadDirtyRecords(String userId) async {
+    try {
+      // Query Drift for records with needsUpload = true
+      final dirtyRecords = await (_database.select(_database.activitiesTable)
+            ..where((t) =>
+                t.userId.lower().equals(userId.toLowerCase()) &
+                t.needsUpload.equals(true)))
+          .get();
+
+      if (dirtyRecords.isEmpty) {
+        return UploadResult.nothingToUpload();
+      }
+
+      _logger.info(
+        'Uploading dirty activities',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'userId': userId, 'count': dirtyRecords.length},
+      );
+
+      // Convert to JSON for Supabase upsert
+      final recordsToUpload = dirtyRecords.map((record) {
+        return {
+          'id': record.id,
+          'user_id': record.userId,
+          'activity_type': record.activityType,
+          'title': record.title,
+          'scheduled_date_time': record.scheduledDateTime.toIso8601String(),
+          'status': record.status,
+          'distance_miles': record.distanceMiles,
+          'duration_minutes': record.durationMinutes,
+          'pace_target_minutes_per_mile': record.paceTargetMinutesPerMile,
+          'intensity_level': record.intensityLevel,
+          'intensity_target': record.intensityTarget,
+          'time_before_minutes': record.timeBeforeMinutes,
+          'notes': record.notes,
+          'cycling_speed_mph': record.cyclingSpeedMph,
+          'cycling_terrain': record.cyclingTerrain,
+          'cycling_indoor_outdoor': record.cyclingIndoorOutdoor,
+          'cycling_elevation_gain_ft': record.cyclingElevationGainFt,
+          'cycling_session_goal': record.cyclingSessionGoal,
+          'swimming_pace_per_100m_seconds': record.swimmingPacePer100mSeconds,
+          'swimming_pool_or_open_water': record.swimmingPoolOrOpenWater,
+          'swimming_water_temp_c': record.swimmingWaterTempC,
+          'completed_at': record.completedAt?.toIso8601String(),
+          'actual_distance_miles': record.actualDistanceMiles,
+          'actual_duration_minutes': record.actualDurationMinutes,
+          'completion_rating': record.completionRating,
+          'completion_notes': record.completionNotes,
+          'nutrition_plan_data': record.nutritionPlanData,
+          'reminder_enabled': record.reminderEnabled,
+          'reminder_days_before': record.reminderDaysBefore,
+          'reminder_time_of_day': record.reminderTimeOfDay,
+          'reminder_recurring': record.reminderRecurring,
+          'synced_from_provider': record.syncedFromProvider,
+          'provider_workout_id': record.providerWorkoutId,
+          'provider_workout_url': record.providerWorkoutUrl,
+          'last_synced_at': record.lastSyncedAt?.toIso8601String(),
+          'workout_subtype': record.workoutSubtype,
+          'pace_min_minutes_per_mile': record.paceMinMinutesPerMile,
+          'pace_max_minutes_per_mile': record.paceMaxMinutesPerMile,
+          'created_at': record.createdAt.toIso8601String(),
+          'updated_at': record.updatedAt.toIso8601String(),
+        };
+      }).toList();
+
+      // Upload to Supabase with upsert
+      await _supabase
+          .from('activities')
+          .upsert(recordsToUpload);
+
+      // Clear dirty flags on success
+      await _database.batch((batch) {
+        for (final record in dirtyRecords) {
+          batch.update(
+            _database.activitiesTable,
+            const ActivitiesTableCompanion(needsUpload: Value(false)),
+            where: (t) => t.id.equals(record.id),
+          );
+        }
+      });
+
+      _logger.info(
+        'Dirty activities uploaded successfully',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'userId': userId, 'count': dirtyRecords.length},
+      );
+
+      return UploadResult.successful(dirtyRecords.length);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to upload dirty activities',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
+      );
+      return UploadResult.failed(e.toString());
+    }
+  }
+
+  // ========================================================================
+  // Existing Repository Methods (Backwards Compatibility)
+  // ========================================================================
 
   /// Create a new activity (save to Drift first, then sync to Supabase for final ID)
   ///
@@ -906,6 +1073,59 @@ class ActivitiesRepository {
       );
       return null;
     }
+  }
+
+  /// Map domain Activity to ActivitiesTableCompanion for database operations
+  ActivitiesTableCompanion _mapDomainToCompanion(domain.Activity activity) {
+    return ActivitiesTableCompanion(
+      id: Value(activity.id),
+      userId: Value(activity.userId),
+      activityType: Value(activity.activityType.name),
+      title: Value(activity.title),
+      scheduledDateTime: Value(activity.scheduledDateTime),
+      status: Value(activity.status.name),
+      distanceMiles: Value(activity.distanceMiles),
+      durationMinutes: Value(activity.durationMinutes),
+      paceTargetMinutesPerMile: Value(activity.paceTargetMinutesPerMile),
+      intensityLevel: Value(activity.intensityLevel?.name),
+      intensityTarget: Value(activity.intensityTarget),
+      timeBeforeMinutes: Value(activity.timeBeforeMinutes),
+      notes: Value(activity.notes),
+      cyclingSpeedMph: Value(activity.cyclingSpeedMph),
+      cyclingTerrain: Value(activity.cyclingTerrain),
+      cyclingIndoorOutdoor: Value(activity.cyclingIndoorOutdoor),
+      cyclingElevationGainFt: Value(activity.cyclingElevationGainFt),
+      cyclingSessionGoal: Value(activity.cyclingSessionGoal),
+      swimmingPacePer100mSeconds: Value(activity.swimmingPacePer100mSeconds),
+      swimmingPoolOrOpenWater: Value(activity.swimmingPoolOrOpenWater),
+      swimmingWaterTempC: Value(activity.swimmingWaterTempC),
+      completedAt: Value(activity.completedAt),
+      actualDistanceMiles: Value(activity.actualDistanceMiles),
+      actualDurationMinutes: Value(activity.actualDurationMinutes),
+      completionRating: Value(activity.completionRating),
+      completionNotes: Value(activity.completionNotes),
+      nutritionPlanData: Value(
+        activity.nutritionPlanData != null
+            ? jsonEncode(activity.nutritionPlanData)
+            : null,
+      ),
+      reminderEnabled: Value(activity.reminderEnabled),
+      reminderDaysBefore: Value(activity.reminderDaysBefore),
+      reminderTimeOfDay: Value(activity.reminderTimeOfDay),
+      reminderRecurring: Value(activity.reminderRecurring),
+      syncedFromProvider: Value(activity.syncedFromProvider),
+      providerWorkoutId: Value(activity.providerWorkoutId),
+      providerWorkoutUrl: Value(activity.providerWorkoutUrl),
+      lastSyncedAt: Value(activity.lastSyncedAt),
+      workoutSubtype: Value(activity.workoutSubtype),
+      paceMinMinutesPerMile: Value(activity.paceMinMinutesPerMile),
+      paceMaxMinutesPerMile: Value(activity.paceMaxMinutesPerMile),
+      createdAt: Value(activity.createdAt),
+      updatedAt: Value(activity.updatedAt),
+      deletedAt: Value(activity.deletedAt),
+      needsUpload: Value(activity.needsUpload ?? false),
+      localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
+    );
   }
 
   /// Migrate activities from one user ID to another

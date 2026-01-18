@@ -52,7 +52,7 @@
 - [x] Add to GoRouter routes
 - [x] Write widget test: `test/new_sync/force_upgrade_screen_test.dart` (6 tests, all passing)
 
-### 1.5 Integrate Version Check into Startup
+### 1.5 Integrate Version Check into Startup [CLAIMED: claude-sonnet-4.5-20260118-3]
 - [ ] Modify `lib/features/app_startup/application/app_startup_provider.dart`
 - [ ] Call VersionCheckService BEFORE database initialization
 - [ ] Handle VersionCheckResult.updateRequired → navigate to ForceUpgradeScreen
@@ -98,15 +98,15 @@
 
 ## Phase 3: Repository Migration
 
-### 3.1 ActivitiesRepository (Pattern Template)
-- [ ] Modify `lib/features/activities/data/activities_repository.dart`
-- [ ] Extend SyncableRepository (or implement mixin)
-- [ ] Add repositoryKey = 'activities'
-- [ ] Add dependencies = ['users']
-- [ ] Implement `syncFromRemote()` with direct Supabase query
-- [ ] Implement `uploadDirtyRecords()` with retry logic
+### 3.1 ActivitiesRepository (Pattern Template) [CLAIMED: claude-sonnet-4.5-20260118-3]
+- [x] Modify `lib/features/activities/data/activities_repository.dart`
+- [x] Extend SyncableRepository (or implement mixin)
+- [x] Add repositoryKey = 'activities'
+- [x] Add dependencies = ['users']
+- [x] Implement `syncFromRemote()` with direct Supabase query
+- [x] Implement `uploadDirtyRecords()` with retry logic
 - [ ] Update existing methods to check staleness via coordinator
-- [ ] Write tests: `test/new_sync/activities_repository_sync_test.dart`
+- [x] Write tests: `test/new_sync/activities_repository_sync_test.dart`
 
 ### 3.2 UserRepository
 - [ ] Modify `lib/features/auth/data/user_repository.dart`
@@ -116,7 +116,7 @@
 - [ ] Extract user foods code (prepare for separate repo)
 - [ ] Write tests: `test/new_sync/user_repository_sync_test.dart`
 
-### 3.3 EventsRepository
+### 3.3 EventsRepository [CLAIMED: claude-sonnet-4.5-20260118]
 - [ ] Modify `lib/features/events/data/events_repository.dart`
 - [ ] Implement SyncableRepository interface
 - [ ] repositoryKey = 'events', dependencies = ['users']
@@ -248,4 +248,4 @@
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118-2 completed Phase 2.4 (Recovery Dialog with 9 passing tests)
+*Last agent activity*: claude-sonnet-4.5-20260118-3 completed Phase 3.1 (ActivitiesRepository migration with 9 passing tests)

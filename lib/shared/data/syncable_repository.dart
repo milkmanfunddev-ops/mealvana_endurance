@@ -53,9 +53,9 @@ class UploadResult {
       );
 }
 
-/// Abstract base class for repositories that support synchronization.
+/// Mixin for repositories that support synchronization.
 ///
-/// This class provides the core interface for repository-level sync with:
+/// This mixin provides the core interface for repository-level sync with:
 /// - Staleness tracking (24-hour threshold by default)
 /// - SharedPreferences-based timestamp storage
 /// - Dependency declaration for sync ordering
@@ -66,7 +66,7 @@ class UploadResult {
 /// - Specify [dependencies] that must be synced first
 /// - Implement [syncFromRemote] to download data from Supabase
 /// - Implement [uploadDirtyRecords] to upload local changes
-abstract class SyncableRepository {
+mixin SyncableRepository {
   /// Unique identifier for this repository used in SharedPreferences.
   ///
   /// Examples: 'users', 'activities', 'events', 'food_preferences'

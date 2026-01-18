@@ -77,4 +77,4 @@ final class VersionCheckServiceProvider
 }
 
 String _$versionCheckServiceHash() =>
-    r'79e3e41fb0854dcca780d1c9b6a8419c3243b466';
+    r'0aa7e9b6ff71ce0086a0d69d2947363b9bf43879';

@@ -3,11 +3,13 @@ import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/data/syncable_repository.dart';
 import '../../carb_loading/data/carb_loading_repository.dart';
 import '../domain/event.dart' as domain;
 
@@ -25,7 +27,7 @@ EventsRepository eventsRepository(Ref ref) {
 
 /// Repository for managing events following FOA pattern
 /// Prepares for server-authoritative sync with edge functions
-class EventsRepository {
+class EventsRepository implements SyncableRepository {
   const EventsRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
@@ -40,6 +42,169 @@ class EventsRepository {
   final AppDatabase _database;
   final AppLogger _logger;
   final CarbLoadingRepository _carbLoadingRepository;
+
+  // ========================================================================
+  // SyncableRepository Implementation
+  // ========================================================================
+
+  @override
+  String get repositoryKey => 'events';
+
+  @override
+  List<String> get dependencies => ['users'];
+
+  @override
+  Future<bool> isStale() async {
+    final lastSync = await getLastSyncTime();
+    if (lastSync == null) return true;
+
+    const staleDuration = Duration(hours: 24);
+    return DateTime.now().difference(lastSync) > staleDuration;
+  }
+
+  @override
+  Future<DateTime?> getLastSyncTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '${repositoryKey}_last_sync';
+    final timestamp = prefs.getString(key);
+
+    if (timestamp == null) return null;
+
+    try {
+      return DateTime.parse(timestamp);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> setLastSyncTime(DateTime time) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '${repositoryKey}_last_sync';
+    await prefs.setString(key, time.toIso8601String());
+  }
+
+  @override
+  Future<SyncResult> syncFromRemote(String userId) async {
+    try {
+      _logger.info(
+        'Syncing events from Supabase',
+        context: 'EVENTS_REPOSITORY',
+        data: {'userId': userId},
+      );
+
+      // Direct Supabase query - get all events for this user
+      final response = await _supabase
+          .from('events')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      if (response == null) {
+        return SyncResult.successful(0);
+      }
+
+      // Cast response to List<Map<String, dynamic>>
+      final events = response as List<dynamic>;
+
+      // Save to Drift using batch insert
+      await _database.batch((batch) {
+        for (final eventJson in events) {
+          final eventMap = eventJson as Map<String, dynamic>;
+          final companion = _mapSupabaseJsonToCompanion(eventMap);
+          batch.insert(
+            _database.eventsTable,
+            companion,
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
+
+      await setLastSyncTime(DateTime.now());
+
+      _logger.info(
+        'Successfully synced events from Supabase',
+        context: 'EVENTS_REPOSITORY',
+        data: {'userId': userId, 'count': events.length},
+      );
+
+      return SyncResult.successful(events.length);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync events from Supabase',
+        context: 'EVENTS_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
+      );
+      return SyncResult.failed(e.toString());
+    }
+  }
+
+  @override
+  Future<UploadResult> uploadDirtyRecords(String userId) async {
+    try {
+      _logger.info(
+        'Uploading dirty events to Supabase',
+        context: 'EVENTS_REPOSITORY',
+        data: {'userId': userId},
+      );
+
+      // Query Drift for dirty records
+      final dirtyRecords = await (_database.select(_database.eventsTable)
+            ..where((t) => t.needsUpload.equals(true) & t.userId.equals(userId)))
+          .get();
+
+      if (dirtyRecords.isEmpty) {
+        return UploadResult.nothingToUpload();
+      }
+
+      _logger.debug(
+        'Found dirty events to upload',
+        context: 'EVENTS_REPOSITORY',
+        data: {'count': dirtyRecords.length},
+      );
+
+      // Upload to Supabase
+      final eventsToUpload = dirtyRecords.map((record) {
+        return _toSupabaseJson(_mapToEventDomain(record), record.userId);
+      }).toList();
+
+      await _supabase.from('events').upsert(eventsToUpload);
+
+      // Clear dirty flags
+      await _database.batch((batch) {
+        for (final record in dirtyRecords) {
+          batch.update(
+            _database.eventsTable,
+            const EventsTableCompanion(needsUpload: Value(false)),
+            where: (t) => t.id.equals(record.id),
+          );
+        }
+      });
+
+      _logger.info(
+        'Successfully uploaded dirty events',
+        context: 'EVENTS_REPOSITORY',
+        data: {'count': dirtyRecords.length},
+      );
+
+      return UploadResult.successful(dirtyRecords.length);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to upload dirty events',
+        context: 'EVENTS_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
+      );
+      return UploadResult.failed(e.toString());
+    }
+  }
+
+  // ========================================================================
+  // Existing Methods
+  // ========================================================================
 
   /// Create a new event (offline-first: save to Drift first, then sync immediately if possible)
   Future<domain.Event> createEvent({
@@ -527,6 +692,39 @@ class EventsRepository {
       default:
         return ActivityType.running;
     }
+  }
+
+  /// Map Supabase JSON (snake_case) to Drift EventsTableCompanion
+  EventsTableCompanion _mapSupabaseJsonToCompanion(Map<String, dynamic> json) {
+    return EventsTableCompanion.insert(
+      id: Value(json['id'] as String),
+      userId: json['user_id'] as String,
+      activityId: Value(json['activity_id'] as String?),
+      eventType: json['event_type'] as String,
+      eventSubtype: Value(json['event_subtype'] as String?),
+      eventName: Value(json['event_name'] as String?),
+      location: Value(json['location'] as String?),
+      registrationUrl: Value(json['registration_url'] as String?),
+      eventDate: Value(json['event_date'] != null ? DateTime.parse(json['event_date'] as String) : null),
+      startTime: Value(json['start_time'] as String?),
+      goalTimeMinutes: Value(json['goal_time_minutes'] as int?),
+      goalPaceMinutesPerMile: Value(json['goal_pace_minutes_per_mile'] as double?),
+      predictedFinishTimeMinutes: Value(json['predicted_finish_time_minutes'] as int?),
+      hasCarbLoading: Value(json['has_carb_loading'] as bool? ?? false),
+      carbLoadingDays: Value(json['carb_loading_days'] as int?),
+      carbLoadingStartDate: Value(json['carb_loading_start_date'] != null ? DateTime.parse(json['carb_loading_start_date'] as String) : null),
+      hasNutritionPlan: Value(json['has_nutrition_plan'] as bool? ?? false),
+      bibNumber: Value(json['bib_number'] as String?),
+      waveStartTime: Value(json['wave_start_time'] as String?),
+      packetPickupInfo: Value(json['packet_pickup_info'] as String?),
+      actualFinishTimeMinutes: Value(json['actual_finish_time_minutes'] as int?),
+      finalPlacement: Value(json['final_placement'] as int?),
+      ageGroupPlacement: Value(json['age_group_placement'] as int?),
+      needsUpload: const Value(false), // Coming from server, so not dirty
+      localUpdatedAt: Value(DateTime.now()),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
   }
 
 }
