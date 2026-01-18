@@ -810,8 +810,12 @@ class CarbLoadingRepository with SyncableRepository {
       endDate: DateTime.parse(json['end_date'] as String),
       dailyCarbTargetGrams: json['daily_carb_target_grams'] as int,
       generatedAt: DateTime.parse(json['generated_at'] as String),
-      algorithmVersion: Value(json['algorithm_version'] as String?),
-      adherenceScore: Value(json['adherence_score'] as double?),
+      algorithmVersion: json['algorithm_version'] != null
+          ? Value(json['algorithm_version'] as String)
+          : const Value.absent(),
+      adherenceScore: json['adherence_score'] != null
+          ? Value(json['adherence_score'] as double)
+          : const Value.absent(),
       completedAt: json['completed_at'] != null ? Value(DateTime.parse(json['completed_at'] as String)) : const Value.absent(),
       needsUpload: const Value(false), // Coming from server, not dirty
       localUpdatedAt: Value(DateTime.now()),
@@ -826,7 +830,9 @@ class CarbLoadingRepository with SyncableRepository {
       planDate: DateTime.parse(json['plan_date'] as String),
       dayNumber: json['day_number'] as int,
       carbTargetGrams: json['carb_target_grams'] as int,
-      carbProtocolGPerKg: Value(json['carb_protocol_g_per_kg'] as double?),
+      carbProtocolGPerKg: json['carb_protocol_g_per_kg'] != null
+          ? Value(json['carb_protocol_g_per_kg'] as double)
+          : const Value.absent(),
       mealCount: Value(json['meal_count'] as int? ?? 6),
       breakfastPercent: Value(json['breakfast_percent'] as double? ?? 16.67),
       morningSnackPercent: Value(json['morning_snack_percent'] as double? ?? 16.67),
@@ -834,23 +840,12 @@ class CarbLoadingRepository with SyncableRepository {
       afternoonSnackPercent: Value(json['afternoon_snack_percent'] as double? ?? 16.67),
       dinnerPercent: Value(json['dinner_percent'] as double? ?? 16.67),
       eveningSnackPercent: Value(json['evening_snack_percent'] as double? ?? 16.67),
-      loggedCarbsGrams: Value(json['logged_carbs_grams'] as int?),
-      loggedCalories: Value(json['logged_calories'] as int?),
-      completed: Value(json['completed'] as bool? ?? false),
-      needsUpload: const Value(false), // Coming from server, not dirty
-      localUpdatedAt: Value(DateTime.now()),
-    );
-  }
-
-  /// Map Supabase JSON (snake_case) to Drift CarbLoadingDayMealsTableCompanion
-  CarbLoadingDayMealsTableCompanion _mapMealJsonToCompanion(Map<String, dynamic> json) {
-    return CarbLoadingDayMealsTableCompanion.insert(
-      id: Value(json['id'] as String),
-      carbLoadingDayId: json['carb_loading_day_id'] as String,
-      foodId: json['food_id'] as String,
-      mealTime: json['meal_time'] as String,
-      servings: json['servings'] as double,
-      carbsGrams: json['carbs_grams'] as int,
+      loggedCarbsGrams: json['logged_carbs_grams'] != null
+          ? Value(json['logged_carbs_grams'] as int)
+          : const Value.absent(),
+      loggedCalories: json['logged_calories'] != null
+          ? Value(json['logged_calories'] as int)
+          : const Value.absent(),
       completed: Value(json['completed'] as bool? ?? false),
       needsUpload: const Value(false), // Coming from server, not dirty
       localUpdatedAt: Value(DateTime.now()),
@@ -894,20 +889,6 @@ class CarbLoadingRepository with SyncableRepository {
       'logged_carbs_grams': day.loggedCarbsGrams,
       'logged_calories': day.loggedCalories,
       'completed': day.completed,
-      'local_updated_at': DateTime.now().toIso8601String(),
-    };
-  }
-
-  /// Map Drift CarbLoadingDayMeal to Supabase JSON (snake_case)
-  Map<String, dynamic> _mapMealToSupabaseJson(CarbLoadingDayMeal meal) {
-    return {
-      'id': meal.id,
-      'carb_loading_day_id': meal.carbLoadingDayId,
-      'food_id': meal.foodId,
-      'meal_time': meal.mealTime,
-      'servings': meal.servings,
-      'carbs_grams': meal.carbsGrams,
-      'completed': meal.completed,
       'local_updated_at': DateTime.now().toIso8601String(),
     };
   }

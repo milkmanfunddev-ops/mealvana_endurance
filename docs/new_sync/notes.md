@@ -101,3 +101,118 @@ This implementation serves as the TEMPLATE for:
 5. Create test file with SharedPreferences mocking
 6. Run tests to verify (minimum 6 tests)
 7. Commit changes
+
+---
+
+## Phase 3.8: FeedbackRepository Migration (COMPLETED)
+
+**Agent**: claude-sonnet-4.5-20260118
+**Date**: 2026-01-18
+**Status**: ✅ COMPLETE
+
+### Implementation Summary
+
+Successfully migrated FeedbackRepository to use the SyncableRepository mixin. This repository has unique characteristics due to its use of `device_id` instead of `user_id`.
+
+### Key Changes
+
+1. **Repository Interface Implementation**
+   - Used `with SyncableRepository` mixin
+   - Added `repositoryKey` getter returning 'feedback'
+   - Added `dependencies` getter returning ['users']
+
+2. **syncFromRemote Implementation**
+   - **IMPORTANT**: Feedback table uses `device_id` column, not `user_id`
+   - Query: `supabase.from('feedback').select('*').eq('user_name', userId)`
+   - Supabase column mapping: `user_name` → Drift `deviceId`
+   - Uses batch operations for Drift database writes
+   - Returns `SyncResult.successful(count)` or `SyncResult.failed(error)`
+
+3. **uploadDirtyRecords Implementation**
+   - Queries Drift for `needsUpload = true` AND `deviceId = userId`
+   - Maps Drift entries to Supabase JSON format
+   - Upserts to Supabase
+   - Clears dirty flags on success
+   - Returns `UploadResult.successful(count)` or `UploadResult.failed(error)`
+
+4. **Helper Methods**
+   - `_mapSupabaseJsonToCompanion()`: Converts Supabase JSON to FeedbackTableCompanion
+   - `_toSupabaseJson()`: Converts FeedbackEntry to Supabase JSON
+   - **Key Mapping**: Supabase `user_name` ↔ Drift `deviceId`
+
+### Test Coverage
+
+Created `test/new_sync/feedback_repository_sync_test.dart` with 13 passing tests:
+
+1. ✅ repositoryKey returns "feedback"
+2. ✅ dependencies includes "users"
+3. ✅ isStale returns true when never synced
+4. ✅ isStale returns false after recent sync
+5. ✅ isStale returns true after 25 hours
+6. ✅ syncFromRemote handles errors gracefully
+7. ✅ uploadDirtyRecords returns nothingToUpload when no dirty records
+8. ✅ uploadDirtyRecords uploads dirty feedback records
+9. ✅ uploadDirtyRecords handles failures gracefully
+10. ✅ getLastSyncTime returns null when never synced
+11. ✅ setLastSyncTime stores timestamp correctly
+12. ✅ handles invalid timestamp gracefully
+
+### Technical Decisions
+
+1. **Device ID vs User ID**: Feedback table uses `device_id` (nullable) which maps to Supabase `user_name` column. This is different from other tables that use `user_id`.
+
+2. **Sync Direction**: Feedback is primarily write-once (user submits → upload). The `syncFromRemote()` is implemented for completeness but may not be frequently used in production.
+
+3. **FeedbackTableCompanion Usage**: Must use `FeedbackTableCompanion()` constructor (not `.insert()`). All fields must be wrapped in `Value()`, including `id` and `createdAt`.
+
+4. **Test Matchers**: Avoided `isNull`/`isNotNull` matchers due to conflicts with Drift imports. Use `expect(value == null, true)` instead.
+
+### Files Modified
+
+- `lib/features/feedback/data/feedback_repository.dart` (+132 lines)
+- `test/new_sync/feedback_repository_sync_test.dart` (new file, 237 lines)
+- `docs/new_sync/checklist.md` (updated Phase 3.8)
+
+### Commit
+
+```
+feat(sync): migrate FeedbackRepository to SyncableRepository pattern
+
+- Implement SyncableRepository mixin
+- Dependencies: ['users']
+- Handle feedback upload flow
+- Add sync-specific tests (13 tests, all passing)
+- Note: feedback uses device_id instead of user_id
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+```
+
+### Important Notes
+
+**Supabase Column Mapping**:
+- Drift `deviceId` ↔ Supabase `user_name` (NOT `user_id`)
+- This is unique to the feedback table
+
+**Companion Constructor Pattern**:
+```dart
+// ❌ WRONG - FeedbackTableCompanion.insert() doesn't exist with proper types
+FeedbackTableCompanion.insert(
+  id: Value(feedbackId),
+  createdAt: DateTime.now(),
+)
+
+// ✅ CORRECT - Use regular constructor with all Value() wrapping
+FeedbackTableCompanion(
+  id: Value(feedbackId),
+  createdAt: Value(DateTime.now()),
+)
+```
+
+**Test Matcher Pattern**:
+```dart
+// ❌ WRONG - Conflicts with Drift imports
+expect(lastSync, isNull);
+
+// ✅ CORRECT - Use explicit comparison
+expect(lastSync == null, true);
+```

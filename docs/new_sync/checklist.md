@@ -147,10 +147,10 @@
 - [x] Seed data handling (may not need frequent sync)
 - [x] Write tests: `test/new_sync/food_repository_sync_test.dart` (12 tests, all passing)
 
-### 3.8 FeedbackRepository [CLAIMED: claude-sonnet-4.5-20260118]
-- [ ] Modify `lib/features/feedback/data/feedback_repository.dart`
-- [ ] repositoryKey = 'feedback', dependencies = ['users']
-- [ ] Write tests: `test/new_sync/feedback_repository_sync_test.dart`
+### 3.8 FeedbackRepository [DONE: claude-sonnet-4.5-20260118]
+- [x] Modify `lib/features/feedback/data/feedback_repository.dart`
+- [x] repositoryKey = 'feedback', dependencies = ['users']
+- [x] Write tests: `test/new_sync/feedback_repository_sync_test.dart` (13 tests, all passing)
 
 ### 3.9 CoachRepository
 - [ ] Modify `lib/features/coach_mode/data/coach_repository.dart`
