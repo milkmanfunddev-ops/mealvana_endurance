@@ -52,12 +52,12 @@
 - [x] Add to GoRouter routes
 - [x] Write widget test: `test/new_sync/force_upgrade_screen_test.dart` (6 tests, all passing)
 
-### 1.5 Integrate Version Check into Startup [CLAIMED: claude-sonnet-4.5-20260118-3]
-- [ ] Modify `lib/features/app_startup/application/app_startup_provider.dart`
-- [ ] Call VersionCheckService BEFORE database initialization
-- [ ] Handle VersionCheckResult.updateRequired → navigate to ForceUpgradeScreen
-- [ ] Handle VersionCheckResult.resyncRequired → trigger schema resync
-- [ ] Write integration test: `test/new_sync/app_startup_version_check_test.dart`
+### 1.5 Integrate Version Check into Startup [DONE: claude-sonnet-4.5-20260118-3]
+- [x] Modify `lib/features/app_startup/application/app_startup_provider.dart`
+- [x] Call VersionCheckService BEFORE database initialization
+- [x] Handle VersionCheckResult.updateRequired → navigate to ForceUpgradeScreen
+- [x] Handle VersionCheckResult.resyncRequired → trigger schema resync (placeholder for Phase 4)
+- [x] Write integration test: `test/new_sync/app_startup_version_check_test.dart` (4 tests, all passing)
 
 ---
 
@@ -116,11 +116,11 @@
 - [ ] Extract user foods code (prepare for separate repo)
 - [ ] Write tests: `test/new_sync/user_repository_sync_test.dart`
 
-### 3.3 EventsRepository [CLAIMED: claude-sonnet-4.5-20260118]
-- [ ] Modify `lib/features/events/data/events_repository.dart`
-- [ ] Implement SyncableRepository interface
-- [ ] repositoryKey = 'events', dependencies = ['users']
-- [ ] Write tests: `test/new_sync/events_repository_sync_test.dart`
+### 3.3 EventsRepository [DONE: claude-sonnet-4.5-20260118]
+- [x] Modify `lib/features/events/data/events_repository.dart`
+- [x] Implement SyncableRepository interface
+- [x] repositoryKey = 'events', dependencies = ['users']
+- [x] Write tests: `test/new_sync/events_repository_sync_test.dart` (8 tests, all passing)
 
 ### 3.4 FoodPreferencesRepository (NEW)
 - [ ] Create `lib/features/food_preferences/data/food_preferences_repository.dart`
@@ -238,14 +238,14 @@
 
 | Phase | Tasks | Completed | Remaining |
 |-------|-------|-----------|-----------|
-| Phase 1 | 15 | 8 | 7 |
+| Phase 1 | 15 | 9 | 6 |
 | Phase 2 | 12 | 7 | 5 |
 | Phase 3 | 27 | 0 | 27 |
 | Phase 4 | 9 | 0 | 9 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **15** | **65** |
+| **Total** | **80** | **16** | **64** |
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118-3 completed Phase 3.1 (ActivitiesRepository migration with 9 passing tests)
+*Last agent activity*: claude-sonnet-4.5-20260118-3 completed Phase 1.5 (Version Check integration with 4 passing tests)
