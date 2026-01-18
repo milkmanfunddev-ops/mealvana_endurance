@@ -122,11 +122,11 @@
 - [x] repositoryKey = 'events', dependencies = ['users']
 - [x] Write tests: `test/new_sync/events_repository_sync_test.dart` (8 tests, all passing)
 
-### 3.4 FoodPreferencesRepository (NEW)
-- [ ] Create `lib/features/food_preferences/data/food_preferences_repository.dart`
-- [ ] Extract from UserRepository
-- [ ] repositoryKey = 'food_preferences', dependencies = ['users', 'foods']
-- [ ] Write tests: `test/new_sync/food_preferences_repository_test.dart`
+### 3.4 FoodPreferencesRepository (NEW) [DONE: claude-sonnet-4.5-20260118-4]
+- [x] Create `lib/features/food_preferences/data/food_preferences_repository.dart`
+- [x] Extract from UserRepository
+- [x] repositoryKey = 'food_preferences', dependencies = ['users', 'foods']
+- [x] Write tests: `test/new_sync/food_preferences_repository_test.dart` (8 tests, all passing)
 
 ### 3.5 UserFoodsRepository (NEW)
 - [ ] Create `lib/features/user_foods/data/user_foods_repository.dart`
@@ -141,13 +141,13 @@
 - [ ] carb_loading_days: dependencies = ['carb_loading_plans']
 - [ ] Write tests: `test/new_sync/carb_loading_repository_sync_test.dart`
 
-### 3.7 FoodRepository
-- [ ] Modify `lib/features/nutrition_plan/data/food_repository.dart`
-- [ ] repositoryKey = 'foods', dependencies = []
-- [ ] Seed data handling (may not need frequent sync)
-- [ ] Write tests: `test/new_sync/food_repository_sync_test.dart`
+### 3.7 FoodRepository [DONE: claude-sonnet-4.5-20260118-task3.7]
+- [x] Modify `lib/features/nutrition_plan/data/food_repository.dart`
+- [x] repositoryKey = 'foods', dependencies = []
+- [x] Seed data handling (may not need frequent sync)
+- [x] Write tests: `test/new_sync/food_repository_sync_test.dart` (12 tests, all passing)
 
-### 3.8 FeedbackRepository
+### 3.8 FeedbackRepository [CLAIMED: claude-sonnet-4.5-20260118]
 - [ ] Modify `lib/features/feedback/data/feedback_repository.dart`
 - [ ] repositoryKey = 'feedback', dependencies = ['users']
 - [ ] Write tests: `test/new_sync/feedback_repository_sync_test.dart`
@@ -240,12 +240,12 @@
 |-------|-------|-----------|-----------|
 | Phase 1 | 15 | 9 | 6 |
 | Phase 2 | 12 | 7 | 5 |
-| Phase 3 | 27 | 0 | 27 |
+| Phase 3 | 27 | 9 | 18 |
 | Phase 4 | 9 | 0 | 9 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **16** | **64** |
+| **Total** | **80** | **17** | **63** |
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118-3 completed Phase 1.5 (Version Check integration with 4 passing tests)
+*Last agent activity*: claude-sonnet-4.5-20260118-task3.7 completed Phase 3.7 (FoodRepository with 12 passing tests)

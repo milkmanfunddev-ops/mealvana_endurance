@@ -9,18 +9,84 @@ import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/data/syncable_repository.dart';
 import '../../onboarding/domain/allergy.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 
 /// Repository for accessing food data from Supabase
 /// Replaces the hardcoded FoodDatabase with dynamic data
-class FoodRepository {
+/// Implements SyncableRepository for new sync architecture
+class FoodRepository with SyncableRepository {
   FoodRepository(this._supabase, this._database, {AppLogger? logger})
       : _logger = logger ?? const NoopAppLogger();
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+
+  // ========================================================================
+  // SyncableRepository Implementation
+  // ========================================================================
+
+  @override
+  String get repositoryKey => 'foods';
+
+  @override
+  List<String> get dependencies => []; // Level 0 - seed/reference data with no dependencies
+
+  @override
+  Future<SyncResult> syncFromRemote(String userId) async {
+    try {
+      _logger.info(
+        'Syncing foods from Supabase',
+        context: 'FOOD_REPOSITORY',
+        data: {'note': 'Global reference data - userId not used'},
+      );
+
+      // Query all foods from Supabase - this is global reference data
+      final response = await _supabase
+          .from('foods')
+          .select('*')
+          .order('name', ascending: true);
+
+      // Clear existing foods and repopulate (using existing sync logic)
+      await _syncFoodsToLocalDatabase(response as List<dynamic>);
+
+      // Update last sync timestamp
+      await setLastSyncTime(DateTime.now());
+
+      _logger.info(
+        'Foods synced successfully',
+        context: 'FOOD_REPOSITORY',
+        data: {'count': response.length},
+      );
+
+      return SyncResult.successful(response.length);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync foods from remote',
+        context: 'FOOD_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return SyncResult.failed(e.toString());
+    }
+  }
+
+  @override
+  Future<UploadResult> uploadDirtyRecords(String userId) async {
+    // Foods are read-only reference data managed by backend
+    // No dirty records to upload
+    _logger.debug(
+      'Foods are read-only - no dirty records to upload',
+      context: 'FOOD_REPOSITORY',
+    );
+    return UploadResult.nothingToUpload();
+  }
+
+  // ========================================================================
+  // Existing Methods (unchanged)
+  // ========================================================================
 
   /// Get all foods using get-foods Edge Function
   /// Use this for "Recommended Alternatives"
