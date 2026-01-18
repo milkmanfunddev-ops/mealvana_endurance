@@ -18,14 +18,14 @@
 
 ## Phase 1: Foundation
 
-### 1.1 Supabase app_config Table
-- [ ] Create migration file: `supabase/migrations/20260118_create_app_config_table.sql`
-- [ ] Add RLS policies (public read, service role write)
-- [ ] Insert initial values (min_app_version, current_schema_version)
-- [ ] Test migration locally with `supabase db reset`
-- [ ] Write test: `test/new_sync/app_config_test.dart`
+### 1.1 Supabase app_config Table [DONE: claude-sync-agent-20260118]
+- [x] Create migration file: `supabase/migrations/20260118_create_app_config_table.sql`
+- [x] Add RLS policies (public read, service role write)
+- [x] Insert initial values (min_app_version, current_schema_version)
+- [ ] Test migration locally with `supabase db reset` (requires human with Supabase CLI)
+- [x] Write test: `test/new_sync/app_config_migration_test.dart`
 
-### 1.2 Core Models
+### 1.2 Core Models [CLAIMED: claude-sync-agent-20260118]
 - [ ] Create `lib/shared/models/sync_result.dart`
   - SyncResult class with success/failure states
   - Count of synced records
@@ -63,7 +63,7 @@
 
 ## Phase 2: Repository Base Class
 
-### 2.1 SyncableRepository Abstract Class
+### 2.1 SyncableRepository Abstract Class [CLAIMED: claude-opus-4.5-20260118]
 - [ ] Create `lib/shared/data/syncable_repository.dart`
 - [ ] Define abstract methods: repositoryKey, dependencies, isStale, syncFromRemote, uploadDirtyRecords
 - [ ] Implement SharedPreferences timestamp storage (getLastSyncTime, setLastSyncTime)
@@ -79,7 +79,7 @@
 - [ ] Keep existing `sync()` method for backwards compatibility
 - [ ] Write tests: `test/new_sync/sync_coordinator_v2_test.dart`
 
-### 2.3 DirtyRecordBackupService
+### 2.3 DirtyRecordBackupService [CLAIMED: claude-sonnet-4.5-20260118]
 - [ ] Create `lib/shared/services/dirty_record_backup_service.dart`
 - [ ] Implement `backupDirtyRecords(records)` - save to App Support JSON
 - [ ] Implement `hasBackup()` - check if backup file exists
@@ -238,14 +238,14 @@
 
 | Phase | Tasks | Completed | Remaining |
 |-------|-------|-----------|-----------|
-| Phase 1 | 15 | 0 | 15 |
+| Phase 1 | 15 | 4 | 11 |
 | Phase 2 | 12 | 0 | 12 |
 | Phase 3 | 27 | 0 | 27 |
 | Phase 4 | 9 | 0 | 9 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **0** | **80** |
+| **Total** | **80** | **4** | **76** |
 
 ---
 
-*Last agent activity*: None yet
+*Last agent activity*: claude-sync-agent-20260118 completed Phase 1.1 (app_config table migration)

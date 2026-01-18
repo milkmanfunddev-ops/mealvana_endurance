@@ -39,7 +39,39 @@
 
 ### Phase 1 Notes
 
-*(Agents: Add notes here as you work on Phase 1)*
+#### 2026-01-18 - app_config Migration Created (claude-sync-agent-20260118)
+
+**Migration File Created**: `supabase/migrations/20260118_create_app_config_table.sql`
+
+**Implementation Details**:
+- Created app_config table with id, key, value, description, updated_at columns
+- Added UNIQUE constraint on key column for integrity
+- Added index on key column for performance (idx_app_config_key)
+- Implemented RLS policies:
+  - Public read access for all users (anon, authenticated)
+  - Service role only for insert/update/delete operations
+- Initial config values:
+  - min_app_version: '1.12.0'
+  - current_schema_version: '3'
+  - maintenance_mode: 'false'
+  - force_resync_before: '' (empty, for future use)
+- Added trigger to auto-update updated_at timestamp on row updates
+- Used `ON CONFLICT (key) DO NOTHING` for idempotency
+- Added table and column comments for documentation
+
+**Test File Created**: `test/new_sync/app_config_migration_test.dart`
+
+**Test Coverage**:
+- Migration file existence check
+- Required SQL statements verification (CREATE TABLE, RLS, policies, trigger)
+- Initial values validation
+- Best practices verification (IF NOT EXISTS, indexes, comments)
+
+**All tests pass successfully** (4/4 tests green)
+
+**Next Steps**:
+- Human needs to test migration with `supabase db reset` to verify it runs correctly in dev environment
+- Migration ready for deployment once tested
 
 ---
 
@@ -126,7 +158,7 @@ final response = await supabase
 
 | Date | Agent ID | Task | Status | Notes |
 |------|----------|------|--------|-------|
-| | | | | |
+| 2026-01-18 | claude-sync-agent-20260118 | Phase 1.1 - app_config table migration | Complete | Created migration and tests, all tests pass |
 
 ---
 
