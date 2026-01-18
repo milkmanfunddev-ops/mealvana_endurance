@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -18,7 +19,7 @@ part 'version_check_service.g.dart';
 ///
 /// Results are cached in SharedPreferences to handle network failures gracefully.
 @Riverpod(keepAlive: true)
-VersionCheckService versionCheckService(VersionCheckServiceRef ref) {
+VersionCheckService versionCheckService(Ref ref) {
   final supabase = Supabase.instance.client;
   final database = ref.watch(appDatabaseProvider);
   return VersionCheckService(supabase: supabase, database: database);
