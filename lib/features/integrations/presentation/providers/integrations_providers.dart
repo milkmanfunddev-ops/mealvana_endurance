@@ -23,10 +23,6 @@ Future<PackageInfo> packageInfo(Ref ref) async {
   return PackageInfo.fromPlatform();
 }
 
-/// Final Surge Client ID
-/// TODO: Move to environment variables
-const _finalSurgeClientId = 'BD5D0C2B-7507-405B-8A3F-DB161288E6FC';
-
 /// Base callback URL scheme for OAuth
 const _baseCallbackScheme = 'com.milkman.mealvanaendurance';
 
@@ -46,7 +42,8 @@ String _getCallbackScheme(bool isDev) {
 /// Provider for Final Surge API client
 @Riverpod(keepAlive: true)
 FinalSurgeApiClient finalSurgeApiClient(Ref ref) {
-  return FinalSurgeApiClient(clientId: _finalSurgeClientId);
+  final config = ref.watch(appConfigProvider);
+  return FinalSurgeApiClient(clientId: config.finalSurgeClientId);
 }
 
 /// Provider for integrations repository
@@ -70,7 +67,7 @@ FinalSurgeOAuthService finalSurgeOAuthService(Ref ref) {
   return FinalSurgeOAuthService(
     apiClient: apiClient,
     repository: repository,
-    clientId: _finalSurgeClientId,
+    clientId: config.finalSurgeClientId,
     callbackUrlScheme: _getCallbackScheme(config.isDevelopment),
   );
 }

@@ -3,6 +3,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../logging_service.dart';
 import 'data_sync_service.dart';
+import '../../data/syncable_repository.dart';
 
 // Provider imports for invalidation
 import '../../../features/activities/presentation/providers/activities_controller.dart';
@@ -43,6 +44,29 @@ enum SyncState {
 /// NOT synced on app startup - returning users see cached data until pull-to-refresh
 @Riverpod(keepAlive: true)
 class SyncCoordinator extends _$SyncCoordinator {
+  /// Repository dependency graph for dependency resolution
+  static const Map<String, List<String>> _dependencies = {
+    'users': [],
+    'foods': [],
+    'carb_loading_foods': [],
+    'activities': ['users'],
+    'events': ['users'],
+    'food_preferences': ['users', 'foods'],
+    'user_foods': ['users'],
+    'coaches': ['users'],
+    'coach_athlete_relationships': ['coaches', 'users'],
+    'carb_loading_plans': ['users', 'events'],
+    'carb_loading_days': ['carb_loading_plans'],
+    'carb_loading_day_meals': ['carb_loading_days', 'carb_loading_foods'],
+    'coach_messages': ['coach_athlete_relationships'],
+  };
+
+  /// Track what's currently being synced to prevent infinite loops
+  final Set<String> _syncingNow = {};
+
+  /// Track last sync times per repository for staleness checks
+  final Map<String, DateTime> _lastSyncTimes = {};
+
   /// Sync lock to prevent concurrent syncs
   bool _syncInProgress = false;
 
@@ -57,7 +81,124 @@ class SyncCoordinator extends _$SyncCoordinator {
   AppLogger get _logger => ref.read(appLoggerProvider);
   DataSyncService get _dataSyncService => ref.read(dataSyncServiceProvider);
 
-  /// Single entry point for ALL sync operations
+  /// Ensures a repository's data is fresh (synced within staleness threshold).
+  ///
+  /// This is the NEW sync pattern for repository-level sync with dependency resolution.
+  /// Call this from controllers when they need fresh data:
+  ///
+  /// ```dart
+  /// @override
+  /// FutureOr<StateType> build() async {
+  ///   await syncCoordinator.ensureSynced('activities', userId);
+  ///   // Now safe to query activities
+  /// }
+  /// ```
+  ///
+  /// How it works:
+  /// 1. Checks if repository data is stale (>24h since last sync)
+  /// 2. If fresh, returns immediately (no-op)
+  /// 3. If stale, recursively syncs dependencies FIRST
+  /// 4. Uploads dirty records for this repository
+  /// 5. Syncs fresh data from Supabase
+  /// 6. Updates timestamp
+  ///
+  /// [repoKey] - Repository identifier from dependency graph
+  /// [userId] - Current user ID for scoped queries
+  /// [repository] - Optional repository instance for actual sync (Phase 3)
+  ///
+  /// Returns immediately if:
+  /// - Already syncing this repository (prevents infinite loops)
+  /// - Data is fresh (<24h since last sync)
+  Future<void> ensureSynced(
+    String repoKey,
+    String userId, {
+    SyncableRepository? repository,
+  }) async {
+    // 1. Prevent infinite loops - if already syncing this repo, return
+    if (_syncingNow.contains(repoKey)) {
+      _logger.debug(
+        'Skipping sync - already in progress',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey},
+      );
+      return;
+    }
+
+    // 2. Check if data is stale - if fresh, return immediately
+    if (!await _isStale(repoKey, repository)) {
+      _logger.debug(
+        'Skipping sync - data is fresh',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey},
+      );
+      return;
+    }
+
+    // 3. Mark as syncing
+    _syncingNow.add(repoKey);
+
+    try {
+      // 4. Sync dependencies FIRST (recursive)
+      final deps = _dependencies[repoKey] ?? [];
+      for (final dep in deps) {
+        await ensureSynced(dep, userId);
+      }
+
+      // 5. Upload dirty records (if repository provided)
+      if (repository != null) {
+        await repository.uploadDirtyRecords(userId);
+      }
+
+      // 6. Sync this repository (if repository provided)
+      if (repository != null) {
+        await repository.syncFromRemote(userId);
+      }
+
+      // 7. Update timestamp
+      _lastSyncTimes[repoKey] = DateTime.now();
+
+      _logger.info(
+        'Repository synced successfully',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey},
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Repository sync failed',
+        context: 'SYNC_COORDINATOR',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'repoKey': repoKey, 'userId': userId},
+      );
+      // Don't rethrow - best effort sync
+    } finally {
+      _syncingNow.remove(repoKey);
+    }
+  }
+
+  /// Check if a repository's data is stale and needs syncing.
+  ///
+  /// Data is stale if:
+  /// - Never been synced (no timestamp in memory)
+  /// - Last sync was more than 24 hours ago
+  ///
+  /// If repository instance is provided, delegates to repository.isStale()
+  /// which checks SharedPreferences. Otherwise uses in-memory cache.
+  Future<bool> _isStale(String repoKey, SyncableRepository? repository) async {
+    // If repository provided, use its staleness check (SharedPreferences)
+    if (repository != null) {
+      return await repository.isStale();
+    }
+
+    // Otherwise use in-memory cache (for Phase 2 - before repos implement SyncableRepository)
+    final lastSync = _lastSyncTimes[repoKey];
+    if (lastSync == null) return true;
+
+    const staleDuration = Duration(hours: 24);
+    return DateTime.now().difference(lastSync) > staleDuration;
+  }
+
+  /// Single entry point for ALL sync operations (LEGACY - kept for backwards compatibility)
   ///
   /// Returns true if sync completed successfully, false otherwise
   /// Silently handles errors (logs only, no UI feedback)

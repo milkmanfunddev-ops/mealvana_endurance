@@ -19,6 +19,9 @@ class AppConfig {
     required this.trainingPeaksClientId,
     required this.trainingPeaksClientSecret,
     required this.trainingPeaksUseSandbox,
+    required this.finalSurgeClientId,
+    required this.finalSurgeClientSecret,
+    required this.finalSurgeBaseUrl,
     required this.devModeEnabled,
     required this.appEnvironment,
     this.enableDebugLogging = false,
@@ -52,6 +55,11 @@ class AppConfig {
   final String trainingPeaksClientId;
   final String trainingPeaksClientSecret;
   final bool trainingPeaksUseSandbox;
+
+  // Final Surge integration
+  final String finalSurgeClientId;
+  final String finalSurgeClientSecret;
+  final String finalSurgeBaseUrl;
 
   // Environment configuration
   final bool devModeEnabled;
@@ -144,8 +152,26 @@ class AppConfig {
         'TRAININGPEAKS_CLIENT_SECRET',
         fallback: '',
       ),
-      // Use sandbox in dev, production API in prod
-      trainingPeaksUseSandbox: isDevMode,
+      // Use sandbox unless explicitly set to 'false' in .env
+      // This allows prod builds to use sandbox during testing
+      trainingPeaksUseSandbox: dotenv.get(
+        'TRAININGPEAKS_USE_SANDBOX',
+        fallback: 'true',
+      ) == 'true',
+
+      // Final Surge integration
+      finalSurgeClientId: dotenv.get(
+        'FINAL_SURGE_CLIENT_ID',
+        fallback: 'BD5D0C2B-7507-405B-8A3F-DB161288E6FC',
+      ),
+      finalSurgeClientSecret: dotenv.get(
+        'FINAL_SURGE_CLIENT_SECRET',
+        fallback: '',
+      ),
+      finalSurgeBaseUrl: dotenv.get(
+        'FINAL_SURGE_BASE_URL',
+        fallback: 'https://log.finalsurge.com',
+      ),
 
       // Debug settings
       enableDebugLogging: kDebugMode,
@@ -170,6 +196,9 @@ class AppConfig {
     String? trainingPeaksClientId,
     String? trainingPeaksClientSecret,
     bool trainingPeaksUseSandbox = true,
+    String? finalSurgeClientId,
+    String? finalSurgeClientSecret,
+    String? finalSurgeBaseUrl,
     bool devModeEnabled = true,
     String appEnvironment = 'dev',
     bool enableDebugLogging = true,
@@ -190,6 +219,9 @@ class AppConfig {
       trainingPeaksClientId: trainingPeaksClientId ?? 'test-tp-client-id',
       trainingPeaksClientSecret: trainingPeaksClientSecret ?? 'test-tp-secret',
       trainingPeaksUseSandbox: trainingPeaksUseSandbox,
+      finalSurgeClientId: finalSurgeClientId ?? 'test-fs-client-id',
+      finalSurgeClientSecret: finalSurgeClientSecret ?? 'test-fs-secret',
+      finalSurgeBaseUrl: finalSurgeBaseUrl ?? 'https://log.finalsurge.com',
       devModeEnabled: devModeEnabled,
       appEnvironment: appEnvironment,
       enableDebugLogging: enableDebugLogging,
@@ -301,6 +333,20 @@ class AppConfig {
         'TRAININGPEAKS_USE_SANDBOX',
         defaultValue: 'true',
       ) == 'true',
+
+      // Final Surge configuration - read from dart-define for web builds
+      finalSurgeClientId: const String.fromEnvironment(
+        'FINAL_SURGE_CLIENT_ID',
+        defaultValue: 'BD5D0C2B-7507-405B-8A3F-DB161288E6FC',
+      ),
+      finalSurgeClientSecret: const String.fromEnvironment(
+        'FINAL_SURGE_CLIENT_SECRET',
+        defaultValue: '',
+      ),
+      finalSurgeBaseUrl: const String.fromEnvironment(
+        'FINAL_SURGE_BASE_URL',
+        defaultValue: 'https://log.finalsurge.com',
+      ),
 
       // Debug settings
       enableDebugLogging: kDebugMode,

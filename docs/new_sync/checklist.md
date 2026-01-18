@@ -70,14 +70,14 @@
 - [x] Implement isStale() with 24-hour threshold
 - [x] Write tests: `test/new_sync/syncable_repository_test.dart`
 
-### 2.2 SyncCoordinator v2 [CLAIMED: claude-sonnet-4.5-20260118]
-- [ ] Refactor `lib/shared/services/sync/sync_coordinator.dart`
-- [ ] Add static dependency graph map
-- [ ] Add `ensureSynced(repoKey, userId)` method
-- [ ] Implement recursive dependency resolution
-- [ ] Add `_syncingNow` set to prevent infinite loops
-- [ ] Keep existing `sync()` method for backwards compatibility
-- [ ] Write tests: `test/new_sync/sync_coordinator_v2_test.dart`
+### 2.2 SyncCoordinator v2 [DONE: claude-sonnet-4.5-20260118]
+- [x] Refactor `lib/shared/services/sync/sync_coordinator.dart`
+- [x] Add static dependency graph map
+- [x] Add `ensureSynced(repoKey, userId)` method
+- [x] Implement recursive dependency resolution
+- [x] Add `_syncingNow` set to prevent infinite loops
+- [x] Keep existing `sync()` method for backwards compatibility
+- [x] Write tests: `test/new_sync/sync_coordinator_v2_test.dart` (11 tests, all passing)
 
 ### 2.3 DirtyRecordBackupService [CLAIMED: claude-sonnet-4.5-20260118]
 - [x] Create `lib/shared/services/dirty_record_backup_service.dart`
@@ -239,13 +239,13 @@
 | Phase | Tasks | Completed | Remaining |
 |-------|-------|-----------|-----------|
 | Phase 1 | 15 | 8 | 7 |
-| Phase 2 | 12 | 5 | 7 |
+| Phase 2 | 12 | 6 | 6 |
 | Phase 3 | 27 | 0 | 27 |
 | Phase 4 | 9 | 0 | 9 |
 | Phase 5 | 5 | 0 | 5 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **13** | **67** |
+| **Total** | **80** | **14** | **66** |
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118 completed Phase 1.4 (ForceUpgradeScreen with 6 passing tests)
+*Last agent activity*: claude-sonnet-4.5-20260118 completed Phase 2.2 (SyncCoordinator v2 with ensureSynced and 11 passing tests)

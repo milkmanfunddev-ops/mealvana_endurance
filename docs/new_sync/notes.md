@@ -243,3 +243,90 @@ final response = await supabase
 ---
 
 *Last updated*: 2026-01-18
+
+## 2026-01-18 - Phase 2.2: SyncCoordinator v2 Implementation
+
+**Agent**: claude-sonnet-4.5-20260118
+**Status**: DONE
+**Tests**: 11/11 passing
+
+### Changes Made
+
+1. **Added to SyncCoordinator**:
+   - Static dependency graph map (`_dependencies`) with all 13 repository keys
+   - `_syncingNow` Set to prevent infinite loops during recursive sync
+   - `_lastSyncTimes` Map for in-memory staleness tracking
+   - `ensureSynced(String repoKey, String userId, {SyncableRepository? repository})` method
+
+2. **ensureSynced Implementation**:
+   - Returns immediately if repository is already syncing (loop prevention)
+   - Returns immediately if data is not stale (<24h since last sync)
+   - Recursively syncs dependencies first
+   - Uploads dirty records (if repository provided)
+   - Syncs fresh data from Supabase (if repository provided)
+   - Updates timestamp in both in-memory cache and SharedPreferences
+   - Catches and logs errors without rethrowing (best-effort sync)
+
+3. **_isStale Helper**:
+   - Delegates to `repository.isStale()` if repository instance provided (checks SharedPreferences)
+   - Falls back to in-memory `_lastSyncTimes` cache for Phase 2 (before repos implement SyncableRepository)
+   - 24-hour staleness threshold
+
+4. **Backwards Compatibility**:
+   - Existing `sync()` method preserved unchanged
+   - Marked as "LEGACY" in comments
+
+### Test Coverage
+
+Created `test/new_sync/sync_coordinator_v2_test.dart` with 11 tests:
+
+1. Should return immediately if data is not stale
+2. Should sync if data is stale
+3. Should sync dependencies before syncing repository
+4. Should prevent infinite loops with circular dependencies
+5. Should handle sync errors gracefully
+6. Should handle upload errors gracefully
+7. Should sync if never synced before
+8. Should work without repository instance (in-memory cache)
+9. Should handle complex dependency chains
+10. Should update timestamp after successful sync
+11. Should preserve legacy `sync()` method
+
+### Dependency Graph
+
+Complete dependency graph with 13 repository keys:
+- Level 0: users, foods, carb_loading_foods (no dependencies)
+- Level 1: activities, events, food_preferences, user_foods, coaches (depend on users/foods)
+- Level 2: coach_athlete_relationships, carb_loading_plans
+- Level 3: carb_loading_days
+- Level 4: carb_loading_day_meals
+- Level 5: coach_messages
+
+### Design Decisions
+
+1. **Optional repository parameter**: Allows Phase 2 to work without repository instances (uses in-memory cache). Phase 3 will pass actual repositories.
+
+2. **In-memory fallback**: `_lastSyncTimes` map provides staleness tracking before repositories implement SyncableRepository interface.
+
+3. **Best-effort sync**: Errors are logged but not propagated - sync continues even if individual repos fail.
+
+4. **Recursive dependency resolution**: Each call to `ensureSynced` automatically syncs dependencies first, ensuring correct order.
+
+5. **Loop prevention**: `_syncingNow` set prevents calling `ensureSynced` on the same repo while it's already syncing.
+
+### Integration Notes
+
+- Controllers will call `await syncCoordinator.ensureSynced('activities', userId)` in their `build()` methods
+- No changes needed to existing code - new pattern is opt-in
+- Legacy `sync()` method continues to work for existing features
+
+### Next Steps
+
+Phase 2 is now complete:
+- ✅ 2.1 SyncableRepository abstract class
+- ✅ 2.2 SyncCoordinator v2 with ensureSynced
+- ✅ 2.3 DirtyRecordBackupService
+- ⏳ 2.4 Recovery Dialog (next task)
+
+After Phase 2.4, Phase 3 will migrate all repositories to implement SyncableRepository.
+

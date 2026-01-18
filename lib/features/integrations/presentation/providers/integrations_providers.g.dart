@@ -103,7 +103,7 @@ final class FinalSurgeApiClientProvider
 }
 
 String _$finalSurgeApiClientHash() =>
-    r'd16df8aa0f57816cc9a81dbdaf61b5c3f0ba6f59';
+    r'bf7c09759311fa491284d292dabf5268fa3420b2';
 
 /// Provider for integrations repository
 
@@ -209,7 +209,7 @@ final class FinalSurgeOAuthServiceProvider
 }
 
 String _$finalSurgeOAuthServiceHash() =>
-    r'd68b2a776ef4d0cce65f1f8309812e6659c2819b';
+    r'33791283b35be4de459a4ea916ac881bf97619a1';
 
 /// Provider for Final Surge transformer
 

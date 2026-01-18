@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -23,6 +24,9 @@ import '../../events/presentation/providers/events_controller.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../coach_mode/application/coach_service.dart';
+import '../../../shared/services/dirty_record_backup_service.dart';
+import '../../../shared/models/dirty_record_backup.dart';
+import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import 'app_startup_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
@@ -721,6 +725,211 @@ class AppStartupService {
         error: e
       );
       return null; // Continue without feedback check if it fails
+    }
+  }
+
+  /// Check for dirty record backups on startup and prompt for recovery
+  ///
+  /// This should be called early in app startup, after database initialization
+  /// but before any sync operations. If a backup is found, the user is prompted
+  /// to either upload the records or discard them.
+  ///
+  /// Returns true if backup was handled (uploaded or discarded), false if no backup exists
+  Future<bool> checkAndHandleDirtyRecordBackup(BuildContext context) async {
+    try {
+      final backupService = DirtyRecordBackupService(logger: _logger);
+
+      // Check if backup exists
+      final hasBackup = await backupService.hasBackup();
+      if (!hasBackup) {
+        return false; // No backup to handle
+      }
+
+      // Recover the backup
+      final backup = await backupService.recoverBackup();
+      if (backup == null) {
+        _logger.warning(
+          'Backup file exists but could not be recovered',
+          context: 'DIRTY_RECORD_RECOVERY',
+        );
+        return false;
+      }
+
+      // Show recovery dialog to user
+      if (!context.mounted) {
+        _logger.warning(
+          'Context not mounted, cannot show recovery dialog',
+          context: 'DIRTY_RECORD_RECOVERY',
+        );
+        return false;
+      }
+
+      final userChoice = await DirtyRecordRecoveryDialog.show(context, backup);
+
+      if (userChoice == null) {
+        // User dismissed dialog (shouldn't happen since barrierDismissible: false)
+        _logger.warning(
+          'Recovery dialog dismissed without choice',
+          context: 'DIRTY_RECORD_RECOVERY',
+        );
+        return false;
+      }
+
+      // Handle user choice
+      if (userChoice == RecoveryChoice.upload) {
+        await _uploadBackupRecords(backup);
+        await _analytics.track('dirty_records_uploaded', properties: {
+          'record_count': backup.totalRecordCount,
+          'repositories': backup.dirtyRecords.keys.toList(),
+        });
+      } else {
+        await _analytics.track('dirty_records_discarded', properties: {
+          'record_count': backup.totalRecordCount,
+          'repositories': backup.dirtyRecords.keys.toList(),
+        });
+      }
+
+      // Delete backup file regardless of choice
+      await backupService.deleteBackup();
+
+      _logger.info(
+        'Dirty record backup handled successfully',
+        data: {
+          'choice': userChoice.name,
+          'record_count': backup.totalRecordCount,
+        },
+      );
+
+      return true;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to handle dirty record backup',
+        context: 'DIRTY_RECORD_RECOVERY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
+      await _sentry.reportCriticalError(
+        e,
+        stackTrace: stackTrace,
+        context: 'dirty_record_recovery_failed',
+        tags: {
+          'error_type': 'recovery_handler_failed',
+          'operation': 'check_and_handle_backup',
+        },
+      );
+
+      // Don't rethrow - app should continue even if recovery fails
+      return false;
+    }
+  }
+
+  /// Upload backed up dirty records to Supabase
+  ///
+  /// This attempts to upload all dirty records from the backup to Supabase.
+  /// Records are uploaded per repository using direct Supabase queries.
+  Future<void> _uploadBackupRecords(DirtyRecordBackup backup) async {
+    int successCount = 0;
+    int failureCount = 0;
+
+    // Upload records for each repository
+    for (final entry in backup.dirtyRecords.entries) {
+      final repositoryKey = entry.key;
+      final records = entry.value;
+
+      if (records.isEmpty) continue;
+
+      try {
+        // Determine table name from repository key
+        final tableName = _getTableNameFromRepositoryKey(repositoryKey);
+
+        // Upload records using upsert
+        await _supabase.from(tableName).upsert(records);
+
+        successCount += records.length;
+
+        _logger.info(
+          'Successfully uploaded backup records',
+          data: {
+            'repository': repositoryKey,
+            'table': tableName,
+            'count': records.length,
+          },
+        );
+      } catch (e, stackTrace) {
+        failureCount += records.length;
+
+        _logger.error(
+          'Failed to upload backup records',
+          context: repositoryKey.toUpperCase(),
+          error: e,
+          stackTrace: stackTrace,
+        );
+
+        // Log to Sentry but continue with other repositories
+        await _sentry.reportCriticalError(
+          e,
+          stackTrace: stackTrace,
+          context: 'backup_upload_failed_$repositoryKey',
+          tags: {
+            'error_type': 'backup_upload_failed',
+            'repository': repositoryKey,
+            'record_count': records.length.toString(),
+          },
+        );
+      }
+    }
+
+    // Log final results
+    _logger.info(
+      'Backup upload completed',
+      data: {
+        'total_records': backup.totalRecordCount,
+        'success_count': successCount,
+        'failure_count': failureCount,
+      },
+    );
+
+    // Track analytics
+    await _analytics.track('backup_upload_completed', properties: {
+      'total_records': backup.totalRecordCount,
+      'success_count': successCount,
+      'failure_count': failureCount,
+      'success_rate': backup.totalRecordCount > 0
+          ? (successCount / backup.totalRecordCount)
+          : 0,
+    });
+  }
+
+  /// Map repository key to Supabase table name
+  String _getTableNameFromRepositoryKey(String repositoryKey) {
+    switch (repositoryKey) {
+      case 'activities':
+        return 'activities';
+      case 'events':
+        return 'events';
+      case 'carb_loading_plans':
+        return 'carb_loading_plans';
+      case 'carb_loading_days':
+        return 'carb_loading_days';
+      case 'carb_loading_day_meals':
+        return 'carb_loading_day_meals';
+      case 'food_preferences':
+        return 'food_preferences';
+      case 'user_foods':
+        return 'user_foods';
+      case 'carb_loading_user_foods':
+        return 'carb_loading_user_foods';
+      case 'feedback':
+        return 'feedback';
+      case 'coaches':
+        return 'coaches';
+      case 'coach_athlete_relationships':
+        return 'coach_athlete_relationships';
+      case 'coach_messages':
+        return 'coach_messages';
+      default:
+        throw ArgumentError('Unknown repository key: $repositoryKey');
     }
   }
 }

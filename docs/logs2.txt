@@ -1,1140 +1,134 @@
-Launching lib/main_dev.dart on iphone 15 pro max in debug mode...
-Xcode build done.                                           47.0s
-Connecting to VM Service at ws://127.0.0.1:59296/hM_3_H7JHms=/ws
-Connected to the VM Service.
-flutter: [STARTUP] Widget binding initialized: 30ms
-flutter: [STARTUP] dotenv loaded (.env.dev.local): 54ms
-flutter: [STARTUP] AppConfig created (dev flavor): 55ms
-flutter: [STARTUP] Starting Sentry init...
-flutter: [STARTUP] Sentry init completed: 138ms
-flutter: [STARTUP] Starting Supabase and runApp...
-flutter: [STARTUP] Starting Supabase.initialize...
-flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: [STARTUP] Supabase.initialize completed: 176ms
-flutter: [STARTUP] Calling runApp...
-flutter: [APP_STARTUP] Starting critical path initialization...
-flutter: [APP_STARTUP] initializeDatabase started
-flutter: [APP_STARTUP] initializeSupabaseAuth started
-flutter: [APP_STARTUP] setSentryUserContext started
-flutter: [APP_STARTUP] setSentryUserContext completed: 52ms
-flutter: [APP_STARTUP] initializeSupabaseAuth completed: 3349ms
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:26.992 (+0:00:03.359613)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATABASE] Database health check passed\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [APP_STARTUP] initializeDatabase completed: 3368ms
-flutter: [APP_STARTUP] Critical path completed: 3374ms
-flutter: [APP_STARTUP] Scheduling deferred initialization (analytics, device info, push)...
-flutter: [APP_STARTUP] Getting navigation data...
-flutter: [APP_STARTUP] User profile loaded: 3375ms
-flutter: [APP_STARTUP] Checking pending feedback...
-flutter: [APP_STARTUP] Pending feedback checked: 3385ms
-flutter: [APP_STARTUP] ✅ STARTUP COMPLETE: 3385ms total
-flutter: [DEFERRED_INIT] Post-frame: Starting deferred initialization...
-flutter: [DEVICE_INFO] Initializing...
-flutter: [DEVICE_INFO] Initialized in 10ms (ID: D4E4F1A2-617C-4D85-A3B9-C97B02D7801D)
-flutter: [DEFERRED_INIT] Device info initialized: 11ms
-flutter: [DEFERRED_INIT] Analytics initialized: 12ms
-flutter: [DEFERRED_INIT] User session checked: 16ms
-flutter: PushNotificationService: Initialized with app ID: 335e597f...
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.248 (+0:00:03.615369)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Loading cached activities\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.252 (+0:00:03.619112)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Loading cached activities\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: PushNotificationService: Logged in user: D4E4F1A2-617C-4D85-A3B9-C97B02D7801D
-flutter: PushNotificationService: Permission granted
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.262 (+0:00:03.629750)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [PUSH_NOTIFICATIONS] Push notifications initialized successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {permission_granted: true}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [DEFERRED_INIT] Push notifications initialized: 34ms
-flutter: [DEFERRED_INIT] ✅ All deferred services initialized: 34ms
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.379 (+0:00:03.746259)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Triggering initial background sync\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.380 (+0:00:03.747906)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Triggering background sync\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.383 (+0:00:03.751012)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Skipping sync - already triggered for this controller instance\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.387 (+0:00:03.754699)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Starting sync\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {trigger: pullToRefresh, userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, connectivity: [ConnectivityResult.wifi]}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.389 (+0:00:03.756266)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Step 1: Uploading dirty records\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.394 (+0:00:03.761556)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting upload of dirty records via edge function\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.395 (+0:00:03.762503)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Scanning for duplicate records in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.428 (+0:00:03.795490)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No duplicate records found in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.433 (+0:00:03.800176)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No dirty records for edge function upload (user profile handled separately)\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {hasUserProfile: true}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:27.434 (+0:00:03.801717)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [USER_SYNC] Uploading user profile to Supabase\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.676 (+0:00:05.044027)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [USER_SYNC] User profile uploaded successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.678 (+0:00:05.045683)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] User profile uploaded successfully\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ Null check operator used on a null value\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ #0   $FoodPreferencesTableTable.map (package:mealvana_endurance/shared/database/app_database.g.dart:2326:8)\^[[0m
-flutter: \^[[38;5;196m│ #1   MappedListIterable.elementAt (dart:_internal/iterable.dart:442:31)\^[[0m
-flutter: \^[[38;5;196m│ #2   ListIterator.moveNext (dart:_internal/iterable.dart:371:26)\^[[0m
-flutter: \^[[38;5;196m│ #3   new _GrowableList._ofEfficientLengthIterable (dart:core-patch/growable_array.dart:194:27)\^[[0m
-flutter: \^[[38;5;196m│ #4   new _GrowableList.of (dart:core-patch/growable_array.dart:154:28)\^[[0m
-flutter: \^[[38;5;196m│ #5   new List.of (dart:core-patch/array_patch.dart:39:18)\^[[0m
-flutter: \^[[38;5;196m│ #6   ListIterable.toList (dart:_internal/iterable.dart:224:7)\^[[0m
-flutter: \^[[38;5;196m│ #7   MapAndAwait.mapAsyncAndAwait (package:drift/src/utils/async.dart:12:26)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 14:18:28.682 (+0:00:05.049340)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [FOOD_PREF_SYNC] Failed to upload food preferences\^[[0m
-flutter: \^[[38;5;196m│ ⛔ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.684 (+0:00:05.051549)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Step 2: Downloading fresh data\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.685 (+0:00:05.052978)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting syncAllData\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.688 (+0:00:05.055227)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 0: Syncing user profile\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.782 (+0:00:05.149370)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 1: Uploading dirty records\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.783 (+0:00:05.150987)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting upload of dirty records via edge function\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.784 (+0:00:05.151950)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Scanning for duplicate records in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.788 (+0:00:05.155983)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No duplicate records found in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.796 (+0:00:05.163186)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No dirty records for edge function upload (user profile handled separately)\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {hasUserProfile: false}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:28.797 (+0:00:05.164268)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 2: Trying edge function sync\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:29.616 (+0:00:05.983759)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Edge function sync completed successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:29.618 (+0:00:05.985162)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Invalidating all data providers\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:29.619 (+0:00:05.986591)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Sync completed successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {trigger: pullToRefresh, userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, uploadedTables: 2, lastSyncTime: 2025-12-24T14:18:29.617894, skippedInvalidation: false}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:29.620 (+0:00:05.987616)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Background sync completed\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:29.654 (+0:00:06.021505)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Loading cached activities\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:18:29.674 (+0:00:06.041886)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Skipping sync - already triggered for this controller instance\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [FOOD_PREFS] 🔄 Starting food preferences load...
-flutter: [FOOD_PREFS] 🔍 Getting current user profile...
-flutter: [FOOD_PREFS] ✅ User profile retrieved, deviceId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter: [FOOD_PREFS] 📦 Starting parallel data load (primary foods, additional foods, user foods, preferences)...
-flutter: [FOOD_PREFS] 🌐 Fetching primary foods from Supabase...
-flutter: [FOOD_PREFS] 🌐 Fetching additional foods from Supabase...
-flutter: [FOOD_PREFS] 💾 Fetching user foods from local database...
-flutter: [FOOD_PREFS] 🔐 Checking auth and loading preferences...
-flutter: [FOOD_PREFS] 📊 Loading slider levels...
-flutter: [FOOD_PREFS] ✅ User foods loaded: 0 items
-flutter: [FOOD_PREFS] 👤 User authenticated, fetching preferences...
-flutter: [FOOD_PREFS] ✅ Preferences loaded: 0 items
-flutter: [FOOD_PREFS] ✅ Slider levels loaded: 0
-flutter: [FOOD_PREFS] ✅ Additional foods loaded: 19 items
-flutter: [FOOD_PREFS] ✅ Primary foods loaded: 10 items
-flutter: [FOOD_PREFS] 🔄 Converting user foods to FoodItems...
-flutter: [FOOD_PREFS] 🎨 Setting state with loaded data...
-flutter: [FOOD_PREFS] 🎉 Food preferences load completed successfully! (10 primary foods, 0 user foods)
-flutter: 👤 Allergies - Current user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter: ⚠️ Allergies count: 2
-flutter: 🚀 Allergies - Starting save process for user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter: 📋 Allergies - Removed:
-flutter: 📋 Allergies - Added: Gluten
-flutter: 📞 Allergies - Calling onboarding service
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:19:20.796 (+0:00:57.163587)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Allergies saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Allergies - Save completed successfully
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:19:21.042 (+0:00:57.410019)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [FoodRepository] Found 8 foods to avoid based on diet/allergies\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {dietaryPreference: null, allergiesCount: 1, foodsToAvoidCount: 8}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:19:21.044 (+0:00:57.411588)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Saving food preferences via consolidated edge function\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, count: 8}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [FOOD_PREFS] 🔄 Starting food preferences load...
-flutter: [FOOD_PREFS] 🔍 Getting current user profile...
-flutter: [FOOD_PREFS] ✅ User profile retrieved, deviceId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter: [FOOD_PREFS] 📦 Starting parallel data load (primary foods, additional foods, user foods, preferences)...
-flutter: [FOOD_PREFS] 🌐 Fetching primary foods from Supabase...
-flutter: [FOOD_PREFS] 🌐 Fetching additional foods from Supabase...
-flutter: [FOOD_PREFS] 💾 Fetching user foods from local database...
-flutter: [FOOD_PREFS] 🔐 Checking auth and loading preferences...
-flutter: [FOOD_PREFS] 📊 Loading slider levels...
-flutter: [FOOD_PREFS] ✅ User foods loaded: 0 items
-flutter: [FOOD_PREFS] 👤 User authenticated, fetching preferences...
-flutter: [FOOD_PREFS] ✅ Preferences loaded: 0 items
-flutter: [FOOD_PREFS] ✅ Slider levels loaded: 0
-flutter: [FOOD_PREFS] ✅ Primary foods loaded: 10 items
-flutter: [FOOD_PREFS] ✅ Additional foods loaded: 19 items
-flutter: [FOOD_PREFS] 🔄 Converting user foods to FoodItems...
-flutter: [FOOD_PREFS] 🎨 Setting state with loaded data...
-flutter: [FOOD_PREFS] 🎉 Food preferences load completed successfully! (10 primary foods, 0 user foods)
-flutter: ❌ Failed to update food preferences for allergies: Exception: Failed to save food preferences. Please check your internet connection and try again.
-flutter: 📍 Stack trace: #0      AuthService.saveFoodPreferences (package:mealvana_endurance/features/auth/application/auth_service.dart:443:7)
-flutter: <asynchronous suspension>
-flutter: #1      OnboardingController._updateFoodPreferencesForAllergies (package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart:273:11)
-flutter: <asynchronous suspension>
-flutter: #2      OnboardingController.saveAllergies.<anonymous closure> (package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart:230:9)
-flutter: <asynchronous suspension>
-flutter: #3      AsyncValue.guard (package:riverpod/src/core/async_value.dart:505:30)
-flutter: <asynchronous suspension>
-flutter: #4      OnboardingController.saveAllergies (package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart:212:13)
-flutter: <asynchronous suspension>
-flutter: #5      _AllergiesScreenState._continue (package:mealvana_endurance/features/onboarding/presentation/screens/allergies_screen.dart:159:25)
-flutter: <asynchronous suspension>
-flutter:
-flutter: 🎉 Allergies - Save operation completed without errors
-flutter: 👤 Dietary preference - Current user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter: 🥗 Dietary preference: vegetarian
-flutter: 🚀 Dietary preference - Starting save process for user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter: 📋 Dietary preference - Old: Paleo, New: Vegetarian
-flutter: 📞 Dietary preference - Calling onboarding service
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:20:29.634 (+0:02:06.001247)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Dietary preference saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Dietary preference - Save completed successfully
-flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:167:5)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ 14:20:29.637 (+0:02:06.004483)\^[[0m
-flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ [AUTH] Failed to remove food preferences by source: SqliteException(1): while preparing statement, no such column: "preference_source" - should this be a string literal in single-quotes?, SQL logic error (code 1)\^[[0m
-flutter: \^[[38;5;208m│ ⚠️   Causing statement (at position 61): DELETE FROM "food_preferences_table" WHERE "user_id" = ? AND "preference_source" = ?;\^[[0m
-flutter: \^[[38;5;208m│ ⚠️ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, source: dietary:paleo}\^[[0m
-flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🗑️ Removed 0 food avoids for old diet: Paleo
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:20:30.006 (+0:02:06.373114)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [FoodRepository] Found 0 foods to avoid based on diet/allergies\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {dietaryPreference: vegetarian, allergiesCount: 0, foodsToAvoidCount: 0}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Food preferences updated for allergen/dietary restrictions
-flutter: 🎉 Dietary preference - Save operation completed without errors
-flutter: [FOOD_PREFS] 🔄 Starting food preferences load...
-flutter: [FOOD_PREFS] 🔍 Getting current user profile...
-flutter: [FOOD_PREFS] ✅ User profile retrieved, deviceId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter: [FOOD_PREFS] 📦 Starting parallel data load (primary foods, additional foods, user foods, preferences)...
-flutter: [FOOD_PREFS] 🌐 Fetching primary foods from Supabase...
-flutter: [FOOD_PREFS] 🌐 Fetching additional foods from Supabase...
-flutter: [FOOD_PREFS] 💾 Fetching user foods from local database...
-flutter: [FOOD_PREFS] 🔐 Checking auth and loading preferences...
-flutter: [FOOD_PREFS] 📊 Loading slider levels...
-flutter: [FOOD_PREFS] ✅ User foods loaded: 0 items
-flutter: [FOOD_PREFS] 👤 User authenticated, fetching preferences...
-flutter: [FOOD_PREFS] ✅ Preferences loaded: 0 items
-flutter: [FOOD_PREFS] ✅ Slider levels loaded: 0
-flutter: [FOOD_PREFS] ✅ Primary foods loaded: 10 items
-flutter: [FOOD_PREFS] ✅ Additional foods loaded: 19 items
-flutter: [FOOD_PREFS] 🔄 Converting user foods to FoodItems...
-flutter: [FOOD_PREFS] 🎨 Setting state with loaded data...
-flutter: [FOOD_PREFS] 🎉 Food preferences load completed successfully! (10 primary foods, 0 user foods)
-flutter: 👤 Allergies - Current user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter: ⚠️ Allergies count: 1
-flutter: 🚀 Allergies - Starting save process for user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter: 📋 Allergies - Removed:
-flutter: 📋 Allergies - Added:
-flutter: 📞 Allergies - Calling onboarding service
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:20:58.706 (+0:02:35.073473)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Allergies saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Allergies - Save completed successfully
-flutter: 🎉 Allergies - Save operation completed without errors
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:35.298 (+0:06:11.665471)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Starting sync\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {trigger: preLogout, userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, connectivity: [ConnectivityResult.wifi]}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:35.302 (+0:06:11.669197)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Step 1: Uploading dirty records\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:35.303 (+0:06:11.670279)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting upload of dirty records via edge function\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:35.304 (+0:06:11.671464)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Scanning for duplicate records in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:35.310 (+0:06:11.677078)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No duplicate records found in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:35.314 (+0:06:11.681946)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No dirty records for edge function upload (user profile handled separately)\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {hasUserProfile: true}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:35.315 (+0:06:11.683046)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [USER_SYNC] Uploading user profile to Supabase\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.031 (+0:06:12.398079)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [USER_SYNC] User profile uploaded successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.032 (+0:06:12.399704)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] User profile uploaded successfully\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ Null check operator used on a null value\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ #0   $FoodPreferencesTableTable.map (package:mealvana_endurance/shared/database/app_database.g.dart:2326:8)\^[[0m
-flutter: \^[[38;5;196m│ #1   MappedListIterable.elementAt (dart:_internal/iterable.dart:442:31)\^[[0m
-flutter: \^[[38;5;196m│ #2   ListIterator.moveNext (dart:_internal/iterable.dart:371:26)\^[[0m
-flutter: \^[[38;5;196m│ #3   new _GrowableList._ofEfficientLengthIterable (dart:core-patch/growable_array.dart:194:27)\^[[0m
-flutter: \^[[38;5;196m│ #4   new _GrowableList.of (dart:core-patch/growable_array.dart:154:28)\^[[0m
-flutter: \^[[38;5;196m│ #5   new List.of (dart:core-patch/array_patch.dart:39:18)\^[[0m
-flutter: \^[[38;5;196m│ #6   ListIterable.toList (dart:_internal/iterable.dart:224:7)\^[[0m
-flutter: \^[[38;5;196m│ #7   MapAndAwait.mapAsyncAndAwait (package:drift/src/utils/async.dart:12:26)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 14:24:36.036 (+0:06:12.403065)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [FOOD_PREF_SYNC] Failed to upload food preferences\^[[0m
-flutter: \^[[38;5;196m│ ⛔ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.037 (+0:06:12.404862)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Step 2: Downloading fresh data\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.038 (+0:06:12.405876)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting syncAllData\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.039 (+0:06:12.406957)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 0: Syncing user profile\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.172 (+0:06:12.539404)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 1: Uploading dirty records\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.173 (+0:06:12.540502)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting upload of dirty records via edge function\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.174 (+0:06:12.541306)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Scanning for duplicate records in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.180 (+0:06:12.548041)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No duplicate records found in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.185 (+0:06:12.552648)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No dirty records for edge function upload (user profile handled separately)\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {hasUserProfile: false}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.186 (+0:06:12.553710)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 2: Trying edge function sync\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.850 (+0:06:13.217478)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Edge function sync completed successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.851 (+0:06:13.218914)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Invalidating all data providers\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.852 (+0:06:13.220018)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Sync completed successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {trigger: preLogout, userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, uploadedTables: 2, lastSyncTime: 2025-12-24T14:24:36.851735, skippedInvalidation: false}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.862 (+0:06:13.229236)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] User signed out - keeping local data for offline access\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [APP_STARTUP] Starting critical path initialization...
-flutter: [APP_STARTUP] initializeDatabase started
-flutter: [APP_STARTUP] initializeSupabaseAuth started
-flutter: [APP_STARTUP] setSentryUserContext started
-flutter: [APP_STARTUP] setSentryUserContext completed: 17ms
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.892 (+0:06:13.259087)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Logged out user with local data detected - skipping anonymous auth\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.893 (+0:06:13.260985)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Skipping auth listener setup - in logged out with local data state\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [APP_STARTUP] initializeSupabaseAuth completed: 26ms
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.896 (+0:06:13.263418)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Loading cached activities\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.898 (+0:06:13.265595)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Loading cached activities\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.935 (+0:06:13.302952)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATABASE] Database health check passed\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [APP_STARTUP] initializeDatabase completed: 68ms
-flutter: [APP_STARTUP] Critical path completed: 69ms
-flutter: [APP_STARTUP] Scheduling deferred initialization (analytics, device info, push)...
-flutter: [APP_STARTUP] Getting navigation data...
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.942 (+0:06:13.309433)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Skipping sync - already triggered for this controller instance\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [DEFERRED_INIT] Post-frame: Starting deferred initialization...
-flutter: [DEFERRED_INIT] Device info initialized: 0ms
-flutter: [DEFERRED_INIT] Analytics initialized: 0ms
-flutter: [APP_STARTUP] User profile loaded: 87ms
-flutter: [APP_STARTUP] Checking pending feedback...
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:36.956 (+0:06:13.323779)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_CONTROLLER] Skipping sync - already triggered for this controller instance\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [DEFERRED_INIT] User session checked: 6ms
-flutter: PushNotificationService: Logged in user: D4E4F1A2-617C-4D85-A3B9-C97B02D7801D
-flutter: [APP_STARTUP] Pending feedback checked: 141ms
-flutter: [APP_STARTUP] User is logged out but has local data - will redirect to welcome
-flutter: [APP_STARTUP] ✅ STARTUP COMPLETE: 142ms total
-flutter: PushNotificationService: Permission granted
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:24:37.019 (+0:06:13.386621)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [PUSH_NOTIFICATIONS] Push notifications initialized successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {permission_granted: true}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: [DEFERRED_INIT] Push notifications initialized: 66ms
-flutter: [DEFERRED_INIT] ✅ All deferred services initialized: 66ms
-flutter: 📝 Cached user profile data
-flutter: 📝 Cached 1 sports: running
-flutter: 📝 Cached sport preferences
-flutter: 📝 Cached dietary preference: vegan
-flutter: 📝 Cached 1 allergies
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:02.505 (+0:06:38.872491)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Post-onboarding auth: User skipped authentication\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 📦 Starting batch save of all onboarding data
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:02.513 (+0:06:38.880343)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] No auth session found, creating anonymous session for new user\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:02.843 (+0:06:39.210126)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Creating new user\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {device_id: D4E4F1A2-617C-4D85-A3B9-C97B02D7801D, user_id: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:02.864 (+0:06:39.231271)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] User profile saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ User profile created: 22e12c32-aaae-4494-9463-e951b21d56e3
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:02.874 (+0:06:39.241468)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Sport preferences saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Sport preferences saved
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:02.880 (+0:06:39.247274)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Dietary preference saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Dietary preference saved
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:02.885 (+0:06:39.252872)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Allergies saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Allergies saved
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.056 (+0:06:39.423374)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Post-auth user data sync completed\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.059 (+0:06:39.426656)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Starting sync\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {trigger: manual, userId: 22e12c32-aaae-4494-9463-e951b21d56e3, connectivity: [ConnectivityResult.wifi]}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.061 (+0:06:39.428153)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Step 1: Uploading dirty records\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.062 (+0:06:39.429366)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting upload of dirty records via edge function\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.063 (+0:06:39.430513)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Scanning for duplicate records in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.069 (+0:06:39.436453)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No duplicate records found in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ Bad state: Too many elements\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ #0   List.single (dart:core-patch/growable_array.dart:363:5)\^[[0m
-flutter: \^[[38;5;196m│ #1   Selectable.getSingleOrNull (package:drift/src/runtime/query_builder/statements/query.dart:253:19)\^[[0m
-flutter: \^[[38;5;196m│ #2   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #3   DataSyncService.uploadDirtyRecords (package:mealvana_endurance/shared/services/sync/data_sync_service.dart:1052:32)\^[[0m
-flutter: \^[[38;5;196m│ #4   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #5   SyncCoordinator.sync (package:mealvana_endurance/shared/services/sync/sync_coordinator.dart:111:29)\^[[0m
-flutter: \^[[38;5;196m│ #6   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #7   AppStartupService._performPostAuthSync (package:mealvana_endurance/features/app_startup/application/app_startup_service.dart:642:7)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 14:25:03.072 (+0:06:39.439737)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [DATA_SYNC] Upload via edge function failed\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.074 (+0:06:39.441779)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Step 2: Downloading fresh data\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.075 (+0:06:39.442727)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting syncAllData\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.076 (+0:06:39.443854)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 0: Syncing user profile\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.080 (+0:06:39.447245)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [USER_SYNC] Local user profile missing or mismatched - fetching from Supabase\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3, localUserId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, reason: user_id_mismatch}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.083 (+0:06:39.450644)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [FoodRepository] Found 12 foods to avoid based on diet/allergies\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {dietaryPreference: vegan, allergiesCount: 1, foodsToAvoidCount: 12}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Auto-set 12 foods to dislike based on diet/allergies
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.085 (+0:06:39.452261)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Saving food preferences via consolidated edge function\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3, count: 17}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.179 (+0:06:39.546485)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [USER_SYNC] No remote user profile found - user may need to complete onboarding\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.181 (+0:06:39.548235)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 1: Uploading dirty records\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.183 (+0:06:39.550145)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Starting upload of dirty records via edge function\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.184 (+0:06:39.551323)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Scanning for duplicate records in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.225 (+0:06:39.592809)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] No duplicate records found in Drift\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ Bad state: Too many elements\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ #0   List.single (dart:core-patch/growable_array.dart:363:5)\^[[0m
-flutter: \^[[38;5;196m│ #1   Selectable.getSingleOrNull (package:drift/src/runtime/query_builder/statements/query.dart:253:19)\^[[0m
-flutter: \^[[38;5;196m│ #2   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #3   DataSyncService.uploadDirtyRecords (package:mealvana_endurance/shared/services/sync/data_sync_service.dart:1052:32)\^[[0m
-flutter: \^[[38;5;196m│ #4   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #5   DataSyncService._uploadDirtyRecords (package:mealvana_endurance/shared/services/sync/data_sync_service.dart:1620:5)\^[[0m
-flutter: \^[[38;5;196m│ #6   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #7   DataSyncService.syncAllData (package:mealvana_endurance/shared/services/sync/data_sync_service.dart:120:7)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 14:25:03.228 (+0:06:39.595314)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [DATA_SYNC] Upload via edge function failed\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.229 (+0:06:39.596719)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] STEP 2: Trying edge function sync\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ❌ Batch save failed: Exception: Failed to save food preferences. Please check your internet connection and try again.
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.596 (+0:06:39.963357)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [DATA_SYNC] Edge function sync completed successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.597 (+0:06:39.965049)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Invalidating all data providers\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.599 (+0:06:39.966189)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [SYNC_COORDINATOR] Sync completed successfully\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {trigger: manual, userId: 22e12c32-aaae-4494-9463-e951b21d56e3, uploadedTables: 0, lastSyncTime: 2025-12-24T14:25:03.597898, skippedInvalidation: false}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:03.600 (+0:06:39.967270)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Full sync completed for device-based user\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:19.268 (+0:06:55.635170)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Post-onboarding auth: User skipped authentication\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 📦 Starting batch save of all onboarding data
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:19.478 (+0:06:55.845711)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Creating new user\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {device_id: D4E4F1A2-617C-4D85-A3B9-C97B02D7801D, user_id: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:19.508 (+0:06:55.875669)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] User profile saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ User profile created: 22e12c32-aaae-4494-9463-e951b21d56e3
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:19.514 (+0:06:55.881822)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Sport preferences saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Sport preferences saved
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:19.520 (+0:06:55.887371)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Dietary preference saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Dietary preference saved
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:19.526 (+0:06:55.893845)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Allergies saved locally and marked for background upload\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Allergies saved
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:19.709 (+0:06:56.076406)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [FoodRepository] Found 12 foods to avoid based on diet/allergies\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {dietaryPreference: vegan, allergiesCount: 1, foodsToAvoidCount: 12}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Auto-set 12 foods to dislike based on diet/allergies
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 14:25:19.711 (+0:06:56.078349)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH] Saving food preferences via consolidated edge function\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {userId: 22e12c32-aaae-4494-9463-e951b21d56e3, count: 17}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ❌ Batch save failed: Exception: Failed to save food preferences. Please check your internet connection and try again.
+Restarted application in 1,692ms.
+W/Sentry  ( 7349): Sentry has been already initialized. Previous configuration will be overwritten.
+D/sentry-native( 7349): shutting down backend
+W/Sentry  ( 7349): Failed to shutdown the async connection async sender  within 0 ms. Trying to force it now.
+W/sentry-native( 7349): sentry_close() called, but options was empty
+I/sentry-native( 7349): using database path "/data/data/com.milkman.mealvanaendurance/cache/sentry/9f5b15b7ae6f78a1b5056948b8ce2792f3498c99/.sentry-native"
+D/sentry-native( 7349): starting backend
+D/sentry-native( 7349): using existing signal stack (size: 32768, flags: 0)
+D/sentry-native( 7349): processing and pruning old runs
+W/Sentry  ( 7349): Current session is not ended, we'd need to end it.
+I/flutter ( 7349): supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+W/Sentry  ( 7349): Current session is not ended, we'd need to end it.
+I/flutter ( 7349): ✅ Schema validation passed (20 tables verified)
+I/flutter ( 7349): PushNotificationService: Initialized with app ID: 335e597f...
+D/OneSignal( 7349): [main] initWithContext(context: com.milkman.mealvanaendurance.MainActivity@92912a, appId: 335e597f-9862-4fa1-91f9-506d546ef953)
+D/OneSignal( 7349): [main] initWithContext: SDK already initialized
+D/OneSignal( 7349): [main] InAppMessagesManager.addLifecycleListener(listener: com.onesignal.flutter.OneSignalInAppMessages@4765f2f)
+D/OneSignal( 7349): [main] InAppMessagesManager.addClickListener(listener: com.onesignal.flutter.OneSignalInAppMessages@4765f2f)
+D/OneSignal( 7349): [main] NotificationsManager.addClickListener(handler: com.onesignal.flutter.OneSignalNotifications@4c1093c)
+D/OneSignal( 7349): [main] login(externalId: BP4A.251205.006, jwtBearerToken: null)
+I/flutter ( 7349): PushNotificationService: Logged in user: BP4A.251205.006
+D/WindowOnBackDispatcher( 7349): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@2339c87
+D/OneSignal( 7349): [main] NotificationsManager.addForegroundLifecycleListener(listener: com.onesignal.flutter.OneSignalNotifications@4c1093c)
+D/OneSignal( 7349): [main] NotificationsManager.addPermissionObserver(observer: com.onesignal.flutter.OneSignalNotifications@4c1093c)
+I/flutter ( 7349): PushNotificationService: Permission granted
+I/flutter ( 7349): supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+D/OneSignal( 7349): [main] login(externalId: BP4A.251205.006, jwtBearerToken: null)
+I/flutter ( 7349): PushNotificationService: Logged in user: BP4A.251205.006
+I/flutter ( 7349): PushNotificationService: Permission granted
+D/WindowOnBackDispatcher( 7349): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@b4ec940
+I/flutter ( 7349): 🆕 Generated new temp user ID for onboarding: 22d99944-1fe9-4a5a-a637-b1758f5cace7
+I/flutter ( 7349): 🔑 ConnectTrainingController: Using temp user ID: 22d99944-1fe9-4a5a-a637-b1758f5cace7
+I/flutter ( 7349):    (user profile exists: false, onboardingCompleted: null)
+I/flutter ( 7349):    (current auth: 851a1207-a80b-4a5a-bedc-df4fdac22b2b)
+I/flutter ( 7349): 🔐 Starting TrainingPeaks OAuth flow...
+I/flutter ( 7349):    Auth URL: https://oauth.trainingpeaks.com/OAuth/Authorize?response_type=code&client_id=mealvana&scope=athlete%3Aprofile+events%3Aread+workouts%3Aread+nutrition%3Awrite+nutrition%3Aread&redirect_uri=com.milkman.mealvanaendurance%3A%2F%2Fcallback&state=683793f4cc43c69a6efa114096981506df895ea6bc371bcfec61ca6098251019
+D/OneSignal( 7349): [main] ApplicationService.onActivityPaused(0,APP_CLOSE): com.milkman.mealvanaendurance.MainActivity@92912a
+D/VRI[MainActivity]( 7349): visibilityChanged oldVisibility=true newVisibility=false
+W/alvanaendurance( 7349): Cleared Reference was only reachable from finalizer (only reported once)
+D/OneSignal( 7349): [main] ApplicationService.onActivityStopped(0,APP_CLOSE): com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [main] ApplicationService: current activity=null
+D/OneSignal( 7349): [main] ApplicationService.handleLostFocus: application already out of focus
+D/ViewRootImpl( 7349): Skipping stats log for color mode
+D/OneSignal( 7349): [main] ApplicationService.onActivityStarted(0,APP_CLOSE): com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [main] ApplicationService: current activity=com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [main] ApplicationService.handleFocus: application is now in focus, nextResumeIsFirstActivity=false
+D/OneSignal( 7349): [main] BackgroundManager cancel background sync
+D/OneSignal( 7349): [main] SessionService.onFocus() - fired from start: false
+D/OneSignal( 7349): [main] SessionService: New session started at 1768324852730
+D/OneSignal( 7349): [main] InfluenceManager.restartSessionIfNeeded(entryAction: APP_OPEN):
+D/OneSignal( 7349):  channelTrackers: [ChannelTracker{tag=notification_id, influenceType=UNATTRIBUTED, indirectIds=null, directId=null}, ChannelTracker{tag=iam_id, influenceType=UNATTRIBUTED, indirectIds=null, directId=null}]
+D/OneSignal( 7349): [main] ChannelTracker.getLastReceivedIds: lastChannelObjectReceived: []
+D/OneSignal( 7349): [main] InfluenceManager.restartSessionIfNeeded: lastIds: []
+D/OneSignal( 7349): [main] ChannelTracker.getLastReceivedIds: lastChannelObjectReceived: []
+D/OneSignal( 7349): [main] InfluenceManager.restartSessionIfNeeded: lastIds: []
+D/OneSignal( 7349): [main] OutcomeEventsController.sessionStarted: Cleaning outcomes for new session
+D/OneSignal( 7349): [main] OperationRepo.enqueue(operation: {"name":"track-session-start","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b"}, flush: true)
+D/OneSignal( 7349): [main] OperationRepo.enqueue(operation: {"name":"refresh-user","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b"}, flush: false)
+D/OneSignal( 7349): [main] ApplicationService.onActivityResumed(1,APP_OPEN): com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [OpRepo] processQueueForever:ops:
+D/OneSignal( 7349): [bucket:4, retries:0, operation:{"name":"track-session-start","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b","id":"1dfa0446-cc7f-4205-9087-49c5b35fe4a3"}
+D/OneSignal( 7349): ]
+D/OneSignal( 7349): [OpRepo] UpdateUserOperationExecutor(operation: [{"name":"track-session-start","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b","id":"1dfa0446-cc7f-4205-9087-49c5b35fe4a3"}])
+D/OneSignal( 7349): [DefaultDispatcher-worker-1] HttpClient: Request Sent = PATCH https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/users/by/onesignal_id/1b02063b-d3ea-40b1-a49b-b0fdbfac833b - Body: {"refresh_device_metadata":true,"deltas":{"session_count":1}} - Headers: Accept=[application/vnd.onesignal.v1+json], Content-Type=[application/json; charset=UTF-8], OneSignal-Install-Id=[7ab08b17-37eb-48e8-94c0-a6c08f3e730c], OneSignal-Subscription-Id=[65091d0d-b1fe-4d94-9170-4dbbf3f3f110], SDK-Version=[onesignal/android/050135], SDK-Wrapper=[onesignal/flutter/050304]
+D/InsetsController( 7349): hide(ime())
+I/ImeTracker( 7349): com.milkman.mealvanaendurance:1a6ff8b7: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+D/OneSignal( 7349): [DefaultDispatcher-worker-1] HttpClient: Got Response = PATCH https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/users/by/onesignal_id/1b02063b-d3ea-40b1-a49b-b0fdbfac833b - STATUS: 202 - Body: {"properties":{"country":"US","last_active":1768324852,"ip":"164.111.163.1"},"ryw_token":"10000000003534149680","ryw_delay":500}
+D/OneSignal( 7349): [OpRepo] OperationRepo: execute response = SUCCESS
+D/OneSignal( 7349): [OpRepo] retryAfterSeconds: null
+D/OneSignal( 7349): [DefaultDispatcher-worker-1] HttpClient: Request Sent = GET https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/subscriptions/65091d0d-b1fe-4d94-9170-4dbbf3f3f110/iams - Body: null - Headers: Accept=[application/vnd.onesignal.v1+json], OneSignal-Install-Id=[7ab08b17-37eb-48e8-94c0-a6c08f3e730c], OneSignal-Subscription-Id=[65091d0d-b1fe-4d94-9170-4dbbf3f3f110], SDK-Version=[onesignal/android/050135], SDK-Wrapper=[onesignal/flutter/050304]
+D/OneSignal( 7349): [OpRepo] processQueueForever:ops:
+D/OneSignal( 7349): [bucket:4, retries:0, operation:{"name":"refresh-user","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b","id":"c406febd-67f4-45ff-9de9-d5ea75f534e6"}
+D/OneSignal( 7349): ]
+D/OneSignal( 7349): [OpRepo] RefreshUserOperationExecutor(operation: [{"name":"refresh-user","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b","id":"c406febd-67f4-45ff-9de9-d5ea75f534e6"}])
+D/OneSignal( 7349): [DefaultDispatcher-worker-3] HttpClient: Request Sent = GET https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/users/by/onesignal_id/1b02063b-d3ea-40b1-a49b-b0fdbfac833b - Body: null - Headers: Accept=[application/vnd.onesignal.v1+json], OneSignal-Install-Id=[7ab08b17-37eb-48e8-94c0-a6c08f3e730c], OneSignal-Subscription-Id=[65091d0d-b1fe-4d94-9170-4dbbf3f3f110], SDK-Version=[onesignal/android/050135], SDK-Wrapper=[onesignal/flutter/050304]
+D/OneSignal( 7349): [DefaultDispatcher-worker-1] HttpClient: Got Response = GET https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/subscriptions/65091d0d-b1fe-4d94-9170-4dbbf3f3f110/iams - STATUS: 200 - Body: {"in_app_messages":[]}
+D/OneSignal( 7349): [Thread-32] InAppMessagesManager.evaluateInAppMessages()
+D/OneSignal( 7349): [DefaultDispatcher-worker-3] HttpClient: Got Response = GET https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/users/by/onesignal_id/1b02063b-d3ea-40b1-a49b-b0fdbfac833b - STATUS: 200 - Body: {"properties":{"language":"en","timezone_id":"America/Chicago","country":"US","first_active":1766098280,"last_active":1768324852,"ip":"164.111.163.1"},"identity":{"external_id":"BP4A.251205.006","onesignal_id":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b"},"subscriptions":[{"id":"65091d0d-b1fe-4d94-9170-4dbbf3f3f110","app_id":"335e597f-9862-4fa1-91f9-506d546ef953","type":"AndroidPush","token":"dTZvyiRqQYGhs9NIDSSMZL:APA91bGJA3DqJlzd27mbs33cqczz3eXIsvj3Ka1mV6vdT8IliQJygUKRGf2I8mN7681yrASG6yAmBvqY0kp6xt5ZyF3Buzv-LLpaOEQDu30IjpPSJxe1J_Y","enabled":true,"notification_types":1,"session_time":559,"session_count":10,"sdk":"050135","device_model":"Pixel 7","device_os":"16","rooted":false,"test_type":0,"app_version":"63","net_type":0,"carrier":"Verizon ","web_auth":"","web_p256":""},{"id":"8a571da6-58e0-4726-8d7a-b315d69abcd3","app_id":"335e597f-9862-4fa1-91f9-506d546ef953","type":"AndroidPush","token":"dcuxGzLgR22OgGcJNMne1u:APA91bHRIQBAEcszaTrFjgnBOYcNInjgN7x0XUqnriz0mGbqSssEcs0IKq5qhU9tt5wCuaZYmE6ldhLNhrC3Ph-z8fFu7f_Oz0NH8CudqUnx7SY9cYQwGuM","enabled":true,"notification_types":1,"session_time":735,"session_count":10,"sdk":"050135","device_model":"Pixel 7","device_os":"16","rooted":false,"test_type":0,"app_version":"55","net_type":0,"carrier":"Verizon ","web_auth":"","web_p256":""},{"id":"a8728b7e-299d-455e-a315-e1a535100b26","app_id":"335e597f-9862-4fa1-91f9-506d546ef953","type":"AndroidPush","token":"fqz4W311R_iubmmUYlZbtU:APA91bH-j_ahtjXQ6HzzNSqcfSjrg2qdYv_G1mdMLscL2gCoja6ZzVz4wacu1su9pofCJc2iUlYfHlZ5HoVAV9zGx9fzflZTzR_Dd5id9hkNJ_yGGdGXGhY","enabled":true,"notification_types":1,"session_time":654,"session_count":8,"sdk":"050135","device_model":"Pixel 7","device_os":"16","rooted":false,"test_type":0,"app_version":"63","net_type":0,"carrier":"Verizon ","web_auth":"","web_p256":""},{"id":"afa16126-0c07-498e-8949-002d460fb7bb","app_id":"335e597f-9862-4fa1-91f9-506d546ef953","type":"AndroidPush","token":"fc9K1q7cR_CzkEC5qoNyk0:APA91bFvp_7sdQAc44SPDWAWqnwnM4unlpKeCrl_r3pMJau9tq9uwdwpVm_iZ3NNbwvmEBBgFzKwT-A8qAwOM1rKqTjFceJmU9DT09XNu2rluvIoqgG3flg","enabled":true,"notification_types":1,"session_time":828,"session_count":4,"sdk":"050135","device_model":"Pixel 7","device_os":"16","rooted":false,"test_type":0,"app_version":"49","net_type":0,"carrier":"Verizon ","web_auth":"","web_p256":""}]}
+D/OneSignal( 7349): [OpRepo] OperationRepo: execute response = SUCCESS
+D/OneSignal( 7349): [OpRepo] retryAfterSeconds: null
+I/flutter ( 7349): 🔐 Starting TrainingPeaks OAuth flow...
+I/flutter ( 7349):    Auth URL: https://oauth.trainingpeaks.com/OAuth/Authorize?response_type=code&client_id=mealvana&scope=athlete%3Aprofile+events%3Aread+workouts%3Aread+nutrition%3Awrite+nutrition%3Aread&redirect_uri=com.milkman.mealvanaendurance%3A%2F%2Fcallback&state=2796eb5ae6dd4411ed05f49d12c0654637cc493fcc1e96af92c002f68e092bbf
+D/OneSignal( 7349): [main] ApplicationService.onActivityPaused(1,APP_OPEN): com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [OpRepo] processQueueForever:ops:
+D/OneSignal( 7349): null
+D/VRI[MainActivity]( 7349): visibilityChanged oldVisibility=true newVisibility=false
+D/OneSignal( 7349): [main] ApplicationService.onActivityStopped(1,APP_OPEN): com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [main] ApplicationService: current activity=null
+D/OneSignal( 7349): [main] ApplicationService.handleLostFocus: application is now out of focus
+D/OneSignal( 7349): [main] LocationController scheduleUpdate not possible, location shared not enabled
+D/OneSignal( 7349): [main] OSBackgroundSync scheduleSyncServiceAsJob:atTime: 30000
+I/OneSignal( 7349): [main] OSBackgroundSync scheduleSyncServiceAsJob:result: 1
+D/OneSignal( 7349): [main] SessionService.onUnfocused adding time 1650 for total: 1650
+D/ViewRootImpl( 7349): Skipping stats log for color mode
+D/OneSignal( 7349): [main] ApplicationService.onActivityStarted(0,APP_CLOSE): com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [main] ApplicationService: current activity=com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [main] ApplicationService.handleFocus: application is now in focus, nextResumeIsFirstActivity=false
+D/OneSignal( 7349): [main] BackgroundManager cancel background sync
+D/OneSignal( 7349): [main] SessionService.onFocus() - fired from start: false
+D/OneSignal( 7349): [main] InfluenceManager.attemptSessionUpgrade(entryAction: APP_OPEN, directId: null)
+D/OneSignal( 7349): [main] InfluenceManager.attemptSessionUpgrade: try UNATTRIBUTED to INDIRECT upgrade
+D/OneSignal( 7349): [main] ChannelTracker.getLastReceivedIds: lastChannelObjectReceived: []
+D/OneSignal( 7349): [main] ChannelTracker.getLastReceivedIds: lastChannelObjectReceived: []
+D/OneSignal( 7349): [main] InfluenceManager.attemptSessionUpgrade: Trackers after update attempt: [ChannelTracker{tag=notification_id, influenceType=UNATTRIBUTED, indirectIds=null, directId=null}, ChannelTracker{tag=iam_id, influenceType=UNATTRIBUTED, indirectIds=null, directId=null}]
+D/OneSignal( 7349): [main] ApplicationService.onActivityResumed(1,APP_OPEN): com.milkman.mealvanaendurance.MainActivity@92912a
+D/InsetsController( 7349): hide(ime())
+I/ImeTracker( 7349): com.milkman.mealvanaendurance:2e67a4d5: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+D/OneSignal( 7349): [OpRepo] processQueueForever:ops:
+D/OneSignal( 7349): null
+I/flutter ( 7349): 🔐 Starting TrainingPeaks OAuth flow...
+I/flutter ( 7349):    Auth URL: https://oauth.trainingpeaks.com/OAuth/Authorize?response_type=code&client_id=mealvana&scope=athlete%3Aprofile+events%3Aread+workouts%3Aread+nutrition%3Awrite+nutrition%3Aread&redirect_uri=com.milkman.mealvanaendurance%3A%2F%2Fcallback&state=0e252bcf533f4dcc43e3c2d068971eb0c14473694916ab0c01a5a8255cc4faf4
+D/OneSignal( 7349): [main] ApplicationService.onActivityPaused(1,APP_OPEN): com.milkman.mealvanaendurance.MainActivity@92912a
+D/VRI[MainActivity]( 7349): visibilityChanged oldVisibility=true newVisibility=false
+D/OneSignal( 7349): [main] ApplicationService.onActivityStopped(1,APP_OPEN): com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [main] ApplicationService: current activity=null
+D/OneSignal( 7349): [main] ApplicationService.handleLostFocus: application is now out of focus
+D/OneSignal( 7349): [main] LocationController scheduleUpdate not possible, location shared not enabled
+D/OneSignal( 7349): [main] OSBackgroundSync scheduleSyncServiceAsJob:atTime: 30000
+I/OneSignal( 7349): [main] OSBackgroundSync scheduleSyncServiceAsJob:result: 1
+D/OneSignal( 7349): [main] SessionService.onUnfocused adding time 15936 for total: 17586
+D/ViewRootImpl( 7349): Skipping stats log for color mode
+D/OneSignal( 7349): [main] ApplicationService.onActivityStarted(0,APP_CLOSE): com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [main] ApplicationService: current activity=com.milkman.mealvanaendurance.MainActivity@92912a
+D/OneSignal( 7349): [main] ApplicationService.handleFocus: application is now in focus, nextResumeIsFirstActivity=false
+D/OneSignal( 7349): [main] BackgroundManager cancel background sync
+D/OneSignal( 7349): [main] SessionService.onFocus() - fired from start: false
+D/OneSignal( 7349): [main] InfluenceManager.attemptSessionUpgrade(entryAction: APP_OPEN, directId: null)
+D/OneSignal( 7349): [main] InfluenceManager.attemptSessionUpgrade: try UNATTRIBUTED to INDIRECT upgrade
+D/OneSignal( 7349): [main] ChannelTracker.getLastReceivedIds: lastChannelObjectReceived: []
+D/OneSignal( 7349): [main] ChannelTracker.getLastReceivedIds: lastChannelObjectReceived: []
+D/OneSignal( 7349): [main] InfluenceManager.attemptSessionUpgrade: Trackers after update attempt: [ChannelTracker{tag=notification_id, influenceType=UNATTRIBUTED, indirectIds=null, directId=null}, ChannelTracker{tag=iam_id, influenceType=UNATTRIBUTED, indirectIds=null, directId=null}]
+D/OneSignal( 7349): [main] ApplicationService.onActivityResumed(1,APP_OPEN): com.milkman.mealvanaendurance.MainActivity@92912a
+D/InsetsController( 7349): hide(ime())
+I/ImeTracker( 7349): com.milkman.mealvanaendurance:83443480: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
