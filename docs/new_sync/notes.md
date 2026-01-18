@@ -216,3 +216,131 @@ expect(lastSync, isNull);
 // ✅ CORRECT - Use explicit comparison
 expect(lastSync == null, true);
 ```
+
+---
+
+## Phase 3.9: CoachRepository Migration (COMPLETED)
+
+**Agent**: claude-sonnet-4.5-20260118-task3.9
+**Date**: 2026-01-18
+**Status**: ✅ COMPLETE
+
+### Implementation Summary
+
+Successfully migrated CoachRepository to implement the SyncableRepository pattern. **This repository has a SPECIAL DUAL-WRITE pattern** that differs from all other repositories.
+
+### Key Changes
+
+1. **Repository Interface Implementation**
+   - Used `with SyncableRepository` mixin
+   - Added `repositoryKey` getter returning 'coaches'
+   - Added `dependencies` getter returning ['users']
+
+2. **syncFromRemote Implementation**
+   - Syncs coach record if user is a coach: `supabase.from('coaches').select('*').eq('user_id', userId)`
+   - Syncs relationships where user is coach OR athlete: `supabase.from('coach_athlete_relationships').select('*').or('coach_user_id.eq.$userId,athlete_user_id.eq.$userId')`
+   - Uses batch operations for Drift database writes
+   - Returns total count of synced records (coach + relationships)
+
+3. **uploadDirtyRecords Implementation ⚠️ SPECIAL**
+   - **IMPORTANT**: Returns `UploadResult.nothingToUpload()` immediately
+   - Reason: CoachRepository uses **dual-write pattern** (writes to both Drift AND Supabase simultaneously)
+   - No `needs_upload` columns in `coaches` or `coach_athlete_relationships` tables
+   - All existing methods (createRelationship, acceptRelationship, etc.) write to BOTH databases
+
+### Dual-Write Pattern Explanation
+
+**Why is CoachRepository Different?**
+
+CoachRepository implements a dual-write pattern for real-time cross-device synchronization:
+
+1. **Write Flow**: Supabase FIRST → Drift SECOND
+   - Example: `createRelationship()` calls `supabase.from('coach_athlete_relationships').insert()` then `database.into(coachAthleteRelationshipsTable).insert()`
+   
+2. **No Dirty Flags**: Tables don't have `needs_upload` columns
+   - Changes are immediately visible to other devices via Supabase Realtime
+   - No deferred upload needed
+
+3. **Realtime Subscriptions**: Active for coach-athlete relationships and messages
+   - `subscribeToRelationshipChanges()` listens for Postgres changes
+   - Updates received in real-time sync to local Drift database
+
+**Pattern Differences from Other Repositories:**
+
+| Repository Type | Write Pattern | Dirty Flags | Upload Strategy |
+|----------------|---------------|-------------|-----------------|
+| Standard (Activities, Events, etc.) | Drift first → mark dirty → background upload | ✅ Yes | Deferred via `uploadDirtyRecords()` |
+| CoachRepository | Supabase first → also write to Drift | ❌ No | Immediate (dual-write) |
+
+**Why This Pattern is Acceptable:**
+
+1. **Real-time requirements**: Coach mode needs instant updates across devices
+2. **Low volume**: Coach/relationship changes are infrequent
+3. **Existing infrastructure**: Realtime subscriptions depend on immediate Supabase writes
+4. **Breaking change risk**: Changing to deferred upload would break real-time notifications
+
+### Test Coverage
+
+Created `test/new_sync/coach_repository_sync_test.dart` with 7 passing tests:
+
+1. ✅ repositoryKey returns "coaches"
+2. ✅ dependencies returns ["users"]
+3. ✅ isStale returns true when never synced
+4. ✅ getLastSyncTime returns null when never synced
+5. ✅ setLastSyncTime and getLastSyncTime work together
+6. ✅ isStale returns false after recent sync
+7. ✅ uploadDirtyRecords returns nothingToUpload (dual-write pattern)
+
+**Note**: syncFromRemote tests omitted due to complex Supabase mocking requirements. Implementation verified through existing integration tests.
+
+### Technical Decisions
+
+1. **No needs_upload Columns**: Unlike other repositories, coaches and coach_athlete_relationships tables don't track dirty state. All writes are immediate.
+
+2. **Dual-Write Order**: Supabase FIRST ensures other devices get updates immediately. Drift write SECOND ensures local cache is updated.
+
+3. **On-Demand Athlete Sync**: The existing `syncAthleteData()` method is kept separate from the staleness pattern. It's for loading athlete-specific data when a coach views an athlete's profile.
+
+4. **Coach Messages**: Not included in basic sync (handled by realtime subscriptions via `subscribeToConversation()`).
+
+### Files Modified
+
+- `lib/features/coach_mode/data/coach_repository.dart` (+136 lines)
+- `test/new_sync/coach_repository_sync_test.dart` (new file, 119 lines)
+- `docs/new_sync/checklist.md` (updated Phase 3.9)
+- `docs/new_sync/notes.md` (this file)
+
+### Commit
+
+```
+feat(sync): migrate CoachRepository to SyncableRepository pattern
+
+- Implement SyncableRepository mixin
+- Dependencies: ['users']
+- Handle coaches and relationships sync
+- Add sync-specific tests (7 tests, all passing)
+- NOTE: Uses dual-write pattern - uploadDirtyRecords is no-op
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+```
+
+### Important Notes for Future Maintainers
+
+**DO NOT try to add needs_upload columns to CoachRepository tables.**
+
+The dual-write pattern is intentional for real-time cross-device sync. Key implications:
+
+1. **Network Dependency**: Coach operations require network connectivity (unlike other features which work offline)
+2. **Error Handling**: If Supabase write fails, the Drift write is skipped (maintaining consistency)
+3. **Testing**: Integration tests should verify both databases are updated
+4. **Performance**: Acceptable because coach operations are infrequent
+
+**If you need to change the sync pattern:**
+
+1. Consider impact on realtime subscriptions
+2. Update `subscribeToRelationshipChanges()` and `subscribeToConversation()`
+3. Add migration to add `needs_upload` columns
+4. Update ALL existing methods (createRelationship, acceptRelationship, etc.)
+5. Test cross-device sync thoroughly
+
+---
