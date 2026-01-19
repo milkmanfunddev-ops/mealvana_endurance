@@ -1,6 +1,6 @@
 # New Sync Implementation Checklist
 
-**Last Updated**: 2026-01-18
+**Last Updated**: 2026-01-19
 **Branch**: `new_sync`
 
 ---
@@ -35,14 +35,14 @@
   - Current vs required version info
 - [x] Write tests: `test/new_sync/sync_models_test.dart` (29 tests, all passing)
 
-### 1.3 VersionCheckService
-- [ ] Create `lib/shared/services/version_check_service.dart`
-- [ ] Query app_config table on startup
-- [ ] Compare min_app_version vs PackageInfo.version
-- [ ] Compare current_schema_version vs local Drift schemaVersion
-- [ ] Return appropriate VersionCheckResult
-- [ ] Handle network failures gracefully (use cached result)
-- [ ] Write tests: `test/new_sync/version_check_service_test.dart`
+### 1.3 VersionCheckService [DONE: claude-opus-4.5-20260119]
+- [x] Create `lib/shared/services/version_check_service.dart`
+- [x] Query app_config table on startup
+- [x] Compare min_app_version vs PackageInfo.version
+- [x] Compare current_schema_version vs local Drift schemaVersion
+- [x] Return appropriate VersionCheckResult
+- [x] Handle network failures gracefully (use cached result)
+- [x] Write tests: `test/new_sync/version_check_service_test.dart`
 
 ### 1.4 ForceUpgradeScreen [DONE: claude-sonnet-4.5-20260118]
 - [x] Create `lib/features/app_startup/presentation/screens/force_upgrade_screen.dart`
@@ -221,11 +221,12 @@
 - [ ] Schema version jump (v1 → v3)
 - [ ] Dirty records with FK violations
 
-### 6.3 Documentation [CLAIMED: claude-sonnet-4.5-20260118-docs]
-- [ ] Update CLAUDE.md with new sync patterns
-- [ ] Update /docs/technical/README.md
-- [ ] Create /docs/technical/sync-architecture.md
-- [ ] Archive old sync documentation
+### 6.3 Documentation [DONE: claude-opus-4.5-20260119]
+- [x] Update CLAUDE.md with new sync patterns
+- [x] Update /docs/technical/README.md
+- [x] Create /docs/database/sync-architecture.md (placed in database/ for better organization)
+- [x] Create /docs/database/app-config-table.md
+- [x] Update /docs/database/README.md, drift/README.md, supabase/README.md
 
 ### 6.4 Code Cleanup [DONE: claude-opus-4.5-20260119]
 - [x] Remove unused imports
@@ -239,14 +240,20 @@
 
 | Phase | Tasks | Completed | Remaining |
 |-------|-------|-----------|-----------|
-| Phase 1 | 15 | 9 | 6 |
-| Phase 2 | 12 | 7 | 5 |
-| Phase 3 | 27 | 14 | 13 |
-| Phase 4 | 9 | 8 | 1 |
-| Phase 5 | 5 | 3 | 2 |
-| Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **33** | **47** |
+| Phase 1 | 15 | 15 | 0 |
+| Phase 2 | 12 | 12 | 0 |
+| Phase 3 | 27 | 25 | 2 |
+| Phase 4 | 9 | 9 | 0 |
+| Phase 5 | 5 | 5 | 0 |
+| Phase 6 | 12 | 6 | 6 |
+| **Total** | **80** | **72** | **8** |
+
+### Remaining Tasks
+- Phase 3.1: Update existing methods to check staleness via coordinator
+- Phase 3.2: UserRepository SyncableRepository implementation
+- Phase 6.1: Integration tests (4 items)
+- Phase 6.2: Edge case tests (4 items)
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118-p5.3 completed Phase 5.3 (CarbLoadingController now uses ensureSynced pattern)
+*Last agent activity*: claude-opus-4.5-20260119 completed Phase 6.3 (Documentation) and Phase 6.4 (Code Cleanup)
