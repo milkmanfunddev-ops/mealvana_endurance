@@ -119,7 +119,7 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: AppRadius.smRadius,
       ),
       child: Column(

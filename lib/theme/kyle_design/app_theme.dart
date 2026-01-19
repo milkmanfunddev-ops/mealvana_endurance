@@ -169,28 +169,28 @@ class AppTheme {
       // Segmented Buttons
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.selected)) {
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
               return AppColors.orange;
             }
             return Colors.transparent;
           }),
-          foregroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.selected)) {
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
               return AppColors.textLight;
             }
             return AppColors.textLight;
           }),
-          side: MaterialStateProperty.all(
+          side: WidgetStateProperty.all(
             const BorderSide(color: AppColors.borderLight),
           ),
-          shape: MaterialStateProperty.all(
+          shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
               borderRadius: AppRadius.segmentedControlRadius,
             ),
           ),
-          textStyle: MaterialStateProperty.all(AppTextStyles.segmentedControl),
-          padding: MaterialStateProperty.all(
+          textStyle: WidgetStateProperty.all(AppTextStyles.segmentedControl),
+          padding: WidgetStateProperty.all(
             const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
           ),
         ),
@@ -210,14 +210,14 @@ class AppTheme {
       
       // Switches
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.electrolyte;
           }
           return AppColors.surfaceLight;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.electrolyte.withOpacity(0.5);
           }
           return AppColors.borderLightSecondary;
@@ -421,28 +421,28 @@ class AppTheme {
       // Segmented Buttons
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.selected)) {
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
               return AppColors.orange;
             }
             return Colors.transparent;
           }),
-          foregroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.selected)) {
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
               return AppColors.textDark;
             }
             return AppColors.textDark;
           }),
-          side: MaterialStateProperty.all(
+          side: WidgetStateProperty.all(
             const BorderSide(color: AppColors.borderDark),
           ),
-          shape: MaterialStateProperty.all(
+          shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
               borderRadius: AppRadius.segmentedControlRadius,
             ),
           ),
-          textStyle: MaterialStateProperty.all(AppTextStyles.segmentedControl),
-          padding: MaterialStateProperty.all(
+          textStyle: WidgetStateProperty.all(AppTextStyles.segmentedControl),
+          padding: WidgetStateProperty.all(
             const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
           ),
         ),
@@ -462,14 +462,14 @@ class AppTheme {
       
       // Switches
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.electrolyte;
           }
           return AppColors.surfaceDark;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.electrolyte.withOpacity(0.5);
           }
           return AppColors.borderDarkSecondary;

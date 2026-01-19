@@ -9,13 +9,9 @@ import '../../main.dart' show sentryNavigatorKey;
 import '../../features/app_startup/presentation/screens/force_upgrade_screen.dart';
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/new_activity_screen.dart';
-import '../../features/onboarding/presentation/screens/user_profile_screen.dart';
-import '../../features/onboarding/presentation/screens/sport_preferences_screen.dart';
 // New onboarding PageView (December 2025 redesign)
 // Note: Old food_preferences_screen.dart moved to /archived folder (replaced by food_preferences_v2_screen.dart)
 import '../../features/onboarding/presentation/screens/onboarding_pageview_screen.dart';
-import '../../features/onboarding/domain/dietary_preference.dart';
-import '../../features/onboarding/domain/allergy.dart';
 // Onboarding screens that support both onboarding and settings modes
 import '../../features/onboarding/presentation/screens/dietary_preference_screen.dart';
 import '../../features/onboarding/presentation/screens/allergies_screen.dart';

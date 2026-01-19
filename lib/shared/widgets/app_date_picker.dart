@@ -48,10 +48,9 @@ Future<DateTime?> showAppDatePicker({
     letterSpacing: -0.5,
   );
 
-  TransitionBuilder themedBuilder = (context, child) {
+  Widget themedBuilder(BuildContext context, Widget? child) {
     final themedChild = Theme(
       data: theme.copyWith(
-        useMaterial3: true,
         textTheme: theme.textTheme.copyWith(
           headlineLarge: headerStyle, // Used for the selected date in header
           headlineMedium: headerStyle,
@@ -81,7 +80,7 @@ Future<DateTime?> showAppDatePicker({
     );
 
     return builder != null ? builder(context, themedChild) : themedChild;
-  };
+  }
 
   return showDatePicker(
     context: context,

@@ -1,5 +1,6 @@
 /// Kyle's Design System - Complete Component Library
 /// Export all components for easy importing
+library;
 export 'buttons/primary_button.dart';
 export 'buttons/secondary_button.dart';
 export 'buttons/tertiary_button.dart';
