@@ -90,14 +90,94 @@ Some synced tables have extra Drift-only columns:
 - `users.temp_plan_data` - Persists unsaved plans
 - `users.swipe_hint_shown` - UI state tracking
 
+## Synchronization Strategy
+
+### Repository-Level Sync (Current)
+
+The app uses a **repository-level sync strategy** with staleness tracking:
+
+**Key Characteristics:**
+- **24-Hour Staleness Threshold**: Data is considered stale after 24 hours
+- **Timestamp Storage**: Last sync times stored in SharedPreferences (key: `{repositoryKey}_last_sync`)
+- **Dependency Resolution**: Repositories declare dependencies (e.g., activities depends on users)
+- **On-Demand Syncing**: Controllers call `ensureSynced()` to get fresh data when needed
+- **No App Startup Sync**: Returning users see cached data until stale or manually refreshed
+
+**Sync Flow:**
+1. Controller checks if data is stale (>24h since last sync)
+2. If fresh, returns immediately (no network call)
+3. If stale, recursively syncs dependencies first
+4. Uploads dirty records for repository
+5. Downloads fresh data from Supabase
+6. Updates sync timestamp in SharedPreferences
+
+**Example Usage:**
+```dart
+@override
+FutureOr<List<Activity>> build() async {
+  final userId = await ref.watch(userIdProvider.future);
+  await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
+    'activities',
+    userId,
+    repository: this,
+  );
+  // Now safe to query activities - data is fresh
+  return await _db.getAllActivities();
+}
+```
+
+**Benefits:**
+- Reduced network usage (only sync what's needed)
+- Faster app startup (no sync blocking)
+- Automatic dependency management
+- Offline-first with smart online updates
+
+### Server-Side Version Control
+
+The database architecture includes **app_config** table for server-controlled versioning:
+
+**Table: app_config**
+- **Location**: Supabase PostgreSQL
+- **Purpose**: Stores application configuration and version control
+- **Schema**:
+  ```sql
+  CREATE TABLE app_config (
+    id UUID PRIMARY KEY,
+    key TEXT NOT NULL UNIQUE,
+    value TEXT NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  )
+  ```
+
+**Configuration Keys:**
+| Key | Purpose | Example Value |
+|-----|---------|---------------|
+| `min_app_version` | Minimum app version allowed | `"1.12.0"` |
+| `current_schema_version` | Current Drift schema version | `"3"` |
+| `maintenance_mode` | Blocks sync during maintenance | `"false"` |
+| `force_resync_before` | Versions requiring full resync | `""` |
+
+**RLS Policies:**
+- **Public Read**: All users can read config (for version checks)
+- **Service Role Write**: Only backend can modify config
+
+**Schema Version Control:**
+The app checks `current_schema_version` against local Drift schema to determine if database migration is needed. This enables:
+- Server-controlled schema updates
+- Simplified migration strategy (delete and resync instead of complex migrations)
+- Centralized version management
+
 ## Key Design Decisions
 
 1. **Device-Based Authentication**: No traditional user accounts, uses `device_id`
 2. **Offline-First**: Full functionality without internet
-3. **Selective Sync**: Only core tables sync to Supabase
-4. **Proper Drift Migrations**: Using Drift's built-in migration system with schema version bumps
-5. **Idempotent Migrations**: All migrations check column existence before adding to prevent errors
-6. **Simple Rollback**: If migration fails, delete local DB and resync from Supabase
+3. **Repository-Level Sync**: Each repository tracks its own staleness and syncs independently
+4. **24-Hour Staleness**: Data older than 24 hours is automatically refreshed
+5. **SharedPreferences Timestamps**: Sync times persisted outside database for resync safety
+6. **Dependency Resolution**: Automated sync ordering based on foreign key relationships
+7. **Simple Schema Migrations**: Delete local DB and resync for schema changes
+8. **Server Version Control**: Backend manages minimum versions and schema compatibility
 
 ## Critical Schema Notes
 
@@ -246,9 +326,14 @@ final foods = await db.getFoodsByCategory('before_run');
 
 ## Documentation Files
 
-- [Drift Schema Details](drift/schema.md) - Complete table structures
-- [Supabase Tables](supabase/tables.md) - Cloud database details
-- [Migration Strategy](drift/migration-strategy.md) - Schema versioning
+### Core Architecture
+- [Sync Architecture](sync-architecture.md) - **START HERE** - Repository-level sync with staleness tracking
+- [Drift Database](drift/README.md) - Complete local SQLite schema and implementation
+- [Supabase Database](supabase/README.md) - Cloud PostgreSQL backend details
+
+### Version Control & Migration
+- [App Config Table](app-config-table.md) - Server-controlled version management
+- [Server-Side Versioning Plan](server-side-versioning-plan.md) - Comprehensive migration strategy
 
 ## Recent Fixes Applied
 
@@ -299,4 +384,4 @@ Added sport suitability filtering:
 - **Schema Location**: `/database_schemas/v1/` (preserved for reference)
 
 ---
-*Last updated: December 2025 - Schema Version 2*
+*Last updated: January 2026 - Schema Version 2 with Repository-Level Sync*

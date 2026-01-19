@@ -6,11 +6,40 @@ Supabase provides the PostgreSQL cloud backend for data synchronization and back
 
 ## Current Status
 
-- **Tables**: 13 production tables (plus calendar feature tables for local-first functionality)
+- **Tables**: 14 production tables (13 data tables + 1 config table)
 - **Authentication**: Device-based (no user accounts)
 - **Access**: Via Edge Functions and direct client connections
+- **Version Control**: Server-managed via `app_config` table
 
 ## Recent Schema Changes
+
+### January 18, 2026: App Config Table for Version Control
+- **Table**: `app_config`
+- **Purpose**: Server-controlled version management and feature flags
+- **Schema**:
+  ```sql
+  CREATE TABLE app_config (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key TEXT NOT NULL UNIQUE,
+    value TEXT NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+  ```
+- **Configuration Keys**:
+  - `min_app_version`: Minimum app version required to connect (`"1.12.0"`)
+  - `current_schema_version`: Expected Drift schema version (`"3"`)
+  - `maintenance_mode`: When true, blocks all sync operations (`"false"`)
+  - `force_resync_before`: App versions requiring full database resync (`""`)
+- **RLS Policies**:
+  - Public read access (all users can check version)
+  - Service role write access (only backend can modify)
+- **Benefits**:
+  - Server controls when schema migrations happen
+  - Enables simplified migration strategy (delete and resync)
+  - Centralized version management
+  - No app updates required for config changes
+- **Migration**: `/supabase/migrations/20260118_create_app_config_table.sql`
 
 ### December 14, 2025: Dietary Preferences & Allergies
 - **Tables**: `users`, `foods`
@@ -118,10 +147,67 @@ final response = await supabase.functions.invoke(
 
 ## Sync Strategy
 
-- Pull fresh food data on app startup
-- Push user data changes immediately
-- Handle conflicts with version numbers
-- Offline queue for failed syncs
+### Repository-Level Sync (Current)
+
+The app uses a **repository-level sync strategy** instead of syncing all data at startup:
+
+**Staleness Tracking:**
+- Each repository tracks its last sync time in SharedPreferences
+- Key format: `{repositoryKey}_last_sync` (e.g., `activities_last_sync`, `events_last_sync`)
+- Staleness threshold: 24 hours per repository
+- Controllers call `ensureSynced()` when they need fresh data
+
+**Sync Flow:**
+1. Controller checks if repository data is stale (>24h since last sync)
+2. If fresh, skip sync (use cached data)
+3. If stale, sync dependencies first (e.g., users before activities)
+4. Upload dirty records to Supabase (protect user changes)
+5. Download fresh data from Supabase
+6. Update sync timestamp in SharedPreferences
+
+**Sync Timestamps (SharedPreferences):**
+```dart
+// Stored per repository
+'users_last_sync' → '2026-01-18T14:30:00Z'
+'activities_last_sync' → '2026-01-18T15:45:00Z'
+'events_last_sync' → '2026-01-18T15:45:00Z'
+'food_preferences_last_sync' → '2026-01-17T08:00:00Z' // Stale
+```
+
+**Benefits:**
+- Reduces network usage (only sync what's needed)
+- Faster app startup (no blocking sync)
+- Automatic dependency management
+- Offline-first with smart online updates
+
+**Dependency Graph:**
+```
+users → (no dependencies)
+foods → (no dependencies)
+activities → [users]
+events → [users]
+food_preferences → [users, foods]
+carb_loading_plans → [users, events]
+```
+
+### Schema Version Control
+
+The app checks `app_config.current_schema_version` to determine if local database needs migration:
+
+**Version Check Process:**
+1. App queries `app_config` table for `current_schema_version`
+2. Compares with local Drift schema version
+3. If mismatch:
+   - Upload dirty records (backup user changes)
+   - Delete local SQLite database
+   - Recreate fresh database
+   - Download all data from Supabase
+4. If match: Continue normal operation
+
+**Configuration Management:**
+- Update `current_schema_version` to trigger client migrations
+- Set `maintenance_mode = true` to block all syncs
+- Increase `min_app_version` to force app updates
 
 ## Local Development
 

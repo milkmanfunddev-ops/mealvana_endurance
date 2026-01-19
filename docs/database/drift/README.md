@@ -239,10 +239,74 @@ Performance indexes are created for:
 - Frequently queried columns (`created_at`, `synced`, `barcode`)
 - Junction table lookups
 
+## Synchronization and Versioning
+
+### Repository-Level Sync Strategy
+
+The database uses a **repository-level sync** approach instead of syncing all data at app startup:
+
+**Staleness Tracking:**
+- Each repository tracks its last sync time in SharedPreferences
+- Key pattern: `{repositoryKey}_last_sync` (e.g., `activities_last_sync`)
+- Staleness threshold: 24 hours (configurable per repository)
+- Controllers call `ensureSynced()` before querying data
+
+**Why SharedPreferences for Timestamps?**
+- Persists across database resyncs (when local DB is deleted)
+- Lightweight and fast to access
+- Survives app restarts
+- Doesn't pollute database schema with sync metadata
+
+**Dependency Resolution:**
+Repositories declare dependencies for automatic sync ordering:
+```dart
+// Example: Activities repository
+@override
+String get repositoryKey => 'activities';
+
+@override
+List<String> get dependencies => ['users']; // Sync users first
+```
+
+**Dirty Record Tracking:**
+- Upload dirty records BEFORE downloading fresh data
+- Prevents data loss during schema migrations
+- Each repository manages its own dirty flag handling
+
+### Server-Side Version Control
+
+The app uses `app_config` table in Supabase to control versioning and migrations:
+
+**Schema Version Checking:**
+1. App reads `current_schema_version` from app_config table
+2. Compares with local Drift `schemaVersion` property
+3. If mismatch:
+   - App uploads dirty records (protect user data)
+   - App deletes local SQLite database
+   - App recreates fresh database (onCreate runs)
+   - App downloads all data from Supabase
+4. If match: Normal operation continues
+
+**Benefits:**
+- Server controls when schema migrations happen
+- No complex step-by-step Drift migrations
+- Simple rollback: delete DB and resync
+- Dirty records always uploaded first (no data loss)
+
+**Configuration Keys:**
+- `min_app_version`: Force app updates for breaking changes
+- `current_schema_version`: Server's expected schema version
+- `maintenance_mode`: Block syncs during backend maintenance
+- `force_resync_before`: Force resync for specific app versions
+
 ## Migration Strategy
 
 ### Current Implementation (v2)
-Schema version 2 with proper Drift migrations implemented. V1 baseline is preserved for reference.
+Schema version 2 with **simplified migration strategy**:
+- **No step-by-step migrations**: Server-controlled version checks replace complex Drift migrations
+- **Delete and resync**: When schema mismatch detected, local DB is deleted and recreated
+- **Dirty record backup**: User changes are uploaded before database deletion
+- V1 baseline is preserved for reference
 
 **V2 Migration Details (December 2025)**:
 - **Migration Type**: Idempotent with column existence checks
