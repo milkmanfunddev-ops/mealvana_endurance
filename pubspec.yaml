@@ -135,6 +135,10 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+  test: any
+  path_provider_platform_interface: any
+  riverpod: any
+  matcher: any
 flutter:
 
   # The following line ensures that the Material Icons font is
