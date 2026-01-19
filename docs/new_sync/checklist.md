@@ -174,14 +174,14 @@
 - [x] Remove schema_versions.dart dependency for migrations
 - [x] Update `beforeOpen` to only enable foreign keys
 
-### 4.3 Implement Schema Resync in VersionCheckService
-- [ ] Add method `performSchemaResync()`
-- [ ] Check for dirty records first
-- [ ] Upload dirty records (with backup on failure)
-- [ ] Delete database files
-- [ ] Recreate database
-- [ ] Trigger full sync
-- [ ] Write tests: `test/new_sync/schema_resync_test.dart`
+### 4.3 Implement Schema Resync in VersionCheckService [DONE: claude-opus-4.5-20260119]
+- [x] Add method `performSchemaResync()`
+- [x] Check for dirty records first
+- [x] Upload dirty records (with backup on failure)
+- [x] Delete database files
+- [x] Recreate database
+- [x] Trigger full sync
+- [x] Write tests: `test/new_sync/schema_resync_test.dart` (15 tests, all passing)
 
 ---
 
