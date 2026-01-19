@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -362,25 +363,27 @@ class VersionCheckService {
   ///
   /// This is a workaround since repositories don't expose a method to
   /// get dirty records without uploading them.
+  ///
+  /// Uses raw SQL queries to handle the dynamic table access pattern.
   Future<List<Map<String, dynamic>>> _queryDirtyRecords(
     String repoKey,
     String userId,
   ) async {
-    // Map repository keys to table names
-    final tableMap = {
-      'activities': _database.activitiesTable,
-      'events': _database.eventsTable,
-      'food_preferences': _database.foodPreferencesTable,
-      'user_foods': _database.userFoodsTable,
-      'carb_loading_plans': _database.carbLoadingPlansTable,
-      'foods': _database.foodsTable,
-      'feedback': _database.feedbackTable,
-      'coaches': _database.coachesTable,
-      'users': _database.userProfilesTable,
+    // Map repository keys to SQL table names
+    final tableNameMap = {
+      'activities': 'activities',
+      'events': 'events',
+      'food_preferences': 'food_preferences',
+      'user_foods': 'user_foods',
+      'carb_loading_plans': 'carb_loading_plans',
+      'foods': 'foods',
+      'feedback': 'feedback',
+      'coaches': 'coaches',
+      'users': 'user_profiles',
     };
 
-    final table = tableMap[repoKey];
-    if (table == null) {
+    final tableName = tableNameMap[repoKey];
+    if (tableName == null) {
       _logger.warning(
         'Unknown repository key, skipping dirty records collection',
         context: 'VERSION_CHECK_SERVICE',
@@ -389,27 +392,34 @@ class VersionCheckService {
       return [];
     }
 
-    // Query dirty records from the table
-    // Note: This is a generic approach - it won't work perfectly for all tables
-    // because table schemas differ. But it will work for the backup purpose.
+    // Query dirty records from the table using raw SQL
+    // This allows dynamic table access that Drift's typed API doesn't support
     try {
-      final query = _database.select(table);
+      // Query all records where is_synced = 0 (dirty records)
+      // Note: Not all tables have is_synced column, so we catch errors
+      final results = await _database.customSelect(
+        'SELECT * FROM $tableName WHERE is_synced = 0 AND user_id = ?',
+        variables: [Variable.withString(userId)],
+      ).get();
 
-      // Add userId filter if the table has a userId column
-      // This is a best-effort approach
-      final dirtyRecords = await query.get();
-
-      // Convert to JSON
-      return dirtyRecords
-          .map((record) => record.toJson() as Map<String, dynamic>)
-          .toList();
+      // Convert to JSON maps
+      return results.map((row) => row.data).toList();
     } catch (e) {
-      _logger.warning(
-        'Failed to query dirty records from table',
-        context: 'VERSION_CHECK_SERVICE',
-        data: {'repository': repoKey, 'error': e.toString()},
-      );
-      return [];
+      // Table might not have is_synced or user_id columns
+      // Try without filters as fallback
+      try {
+        final results = await _database.customSelect(
+          'SELECT * FROM $tableName',
+        ).get();
+        return results.map((row) => row.data).toList();
+      } catch (e2) {
+        _logger.warning(
+          'Failed to query dirty records from table',
+          context: 'VERSION_CHECK_SERVICE',
+          data: {'repository': repoKey, 'error': e2.toString()},
+        );
+        return [];
+      }
     }
   }
 
