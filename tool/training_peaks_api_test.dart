@@ -9,6 +9,7 @@
 ///
 /// CRITICAL: TrainingPeaks tokens expire in 1 HOUR!
 /// Token refresh is tested as part of this script.
+library;
 
 import 'dart:convert';
 import 'dart:io';

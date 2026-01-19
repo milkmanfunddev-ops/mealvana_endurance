@@ -6,6 +6,7 @@
 /// Prerequisites:
 /// 1. Final Surge account with scheduled workouts
 /// 2. Valid client credentials (client-id and client-secret)
+library;
 
 import 'dart:convert';
 import 'dart:io';

@@ -44,7 +44,7 @@ void main() {
       analytics.clear();
       sentry.clear();
       logger.clear();
-    };
+    }
 
     /// Helper to create container with mocked dependencies
     ProviderContainer createTestContainer() {

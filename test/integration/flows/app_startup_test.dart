@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 
-import 'package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
@@ -423,11 +422,8 @@ void main() {
         expectedRoute = '/welcome';
       } else if (!hasCompletedOnboarding) {
         expectedRoute = '/onboarding/food-preferences';
-      } else if (activityIdNeedingFeedback != null) {
-        expectedRoute = '/plan-how-well/$activityIdNeedingFeedback';
-      } else {
-        expectedRoute = '/main';
-      }
+      } else      expectedRoute = '/plan-how-well/$activityIdNeedingFeedback';
+    
 
       logTestResult('expected_route', expectedRoute);
 

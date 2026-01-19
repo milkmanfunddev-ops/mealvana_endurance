@@ -1,7 +1,7 @@
 /// User test fixtures for consistent test data
 library;
 
-import '../../../lib/features/auth/domain/user_preferences.dart';
+import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 
 /// User test fixtures
 class UserFixtures {

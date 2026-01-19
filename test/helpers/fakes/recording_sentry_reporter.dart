@@ -83,7 +83,7 @@ class RecordingSentryReporter implements SentryReporter {
   final List<MessageRecord> messages = [];
 
   bool _userContextCleared = false;
-  bool _enabled = true;
+  final bool _enabled = true;
 
   @override
   Future<void> reportCriticalError(

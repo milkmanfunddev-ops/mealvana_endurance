@@ -3,6 +3,7 @@
 /// These tests verify that the migration code runs successfully
 /// and preserves user data correctly. We use in-memory databases
 /// to test the actual migration logic without strict schema verification.
+library;
 import 'package:drift/drift.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:test/test.dart' as test_pkg;
