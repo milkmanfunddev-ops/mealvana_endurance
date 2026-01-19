@@ -3,7 +3,7 @@ import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Mock implementation of SyncableRepository for testing
-class MockSyncableRepository extends SyncableRepository {
+class MockSyncableRepository with SyncableRepository {
   final String _repositoryKey;
 
   MockSyncableRepository({String repositoryKey = 'test_repo'})
