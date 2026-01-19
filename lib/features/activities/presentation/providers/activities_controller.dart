@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../application/activities_service.dart';
+import '../../data/activities_repository.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/providers/user_id_provider.dart';
@@ -13,17 +14,14 @@ part 'activities_controller.g.dart';
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)
 ///
-/// STALE-WHILE-REVALIDATE PATTERN:
-/// - Loads cached Drift data immediately (0-50ms)
-/// - Syncs in background without blocking UI
-/// - UI refreshes when sync completes (via ref.invalidateSelf)
+/// NEW SYNC PATTERN (Phase 5.1):
+/// - Uses ensureSynced() for dependency-aware, staleness-based sync
+/// - Syncs activities (and users dependency) only when stale (>24h)
+/// - Errors handled gracefully - user sees cached data on failure
 @riverpod
 class ActivitiesController extends _$ActivitiesController {
   ActivitiesService get _service => ref.read(activitiesServiceProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
-
-  // Flag to prevent infinite sync loop on provider invalidation
-  bool _syncTriggered = false;
 
   @override
   FutureOr<List<Activity>> build() async {
@@ -32,37 +30,27 @@ class ActivitiesController extends _$ActivitiesController {
 
     final userId = await ref.read(userIdProvider.future);
 
-    // STALE-WHILE-REVALIDATE: Load cached data immediately
-    final cachedActivities = await _service.getAllActivities(userId);
-
-    // Only sync once per controller instance lifecycle
-    // Prevents infinite loop: build → sync → invalidate → rebuild → (no sync)
-    if (!_syncTriggered) {
-      _syncTriggered = true;
-      unawaited(_syncInBackground(userId));
-    }
-
-    return cachedActivities;
-  }
-
-  /// Sync in background without blocking UI
-  /// Errors are logged but don't show to user (they already see cached data)
-  /// On success, sync coordinator invalidates providers triggering rebuild
-  Future<void> _syncInBackground(String userId) async {
+    // NEW SYNC PATTERN: Ensure activities (and dependencies) are synced
+    // This checks staleness and syncs only when needed (>24h since last sync)
     try {
-      await ref.read(syncCoordinatorProvider.notifier).sync(
-            userId: userId,
-            trigger: SyncTrigger.pullToRefresh,
+      await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
+            'activities',
+            userId,
+            repository: ref.read(activitiesRepositoryProvider),
           );
     } catch (e, stackTrace) {
       _logger.error(
-        'Background sync failed',
+        'Sync failed during activities load',
         context: 'ACTIVITIES_CONTROLLER',
         error: e,
         stackTrace: stackTrace,
       );
-      // Don't show error to user - they already see cached data
+      // Don't rethrow - continue with cached data
+      // User sees cached data, error is logged for debugging
     }
+
+    // Load from local database (now guaranteed to be synced or using cached data)
+    return _service.getAllActivities(userId);
   }
 
   /// Create a new activity

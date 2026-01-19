@@ -9,6 +9,7 @@ import '../../../activities/domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
 
 part 'events_controller.g.dart';
 
@@ -20,9 +21,24 @@ class EventsController extends _$EventsController {
   FutureOr<List<Event>> build() async {
     // Cache service reference before async operations
     final service = ref.read(eventsServiceProvider);
+    final logger = ref.read(appLoggerProvider);
+
+    // Get user ID
+    final userId = await ref.read(userIdProvider.future);
+
+    // Ensure events data is synced (with dependency resolution)
+    try {
+      await ref.read(syncCoordinatorProvider.notifier).ensureSynced('events', userId);
+    } catch (e) {
+      // Log error but continue with cached data
+      logger.warning(
+        'Events sync failed',
+        context: 'EVENTS_CONTROLLER',
+        data: {'error': e.toString()},
+      );
+    }
 
     // Load all events on build
-    final userId = await ref.read(userIdProvider.future);
     return await service.getAllEvents(userId);
   }
 

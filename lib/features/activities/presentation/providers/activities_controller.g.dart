@@ -11,10 +11,10 @@ part of 'activities_controller.dart';
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)
 ///
-/// STALE-WHILE-REVALIDATE PATTERN:
-/// - Loads cached Drift data immediately (0-50ms)
-/// - Syncs in background without blocking UI
-/// - UI refreshes when sync completes (via ref.invalidateSelf)
+/// NEW SYNC PATTERN (Phase 5.1):
+/// - Uses ensureSynced() for dependency-aware, staleness-based sync
+/// - Syncs activities (and users dependency) only when stale (>24h)
+/// - Errors handled gracefully - user sees cached data on failure
 
 @ProviderFor(ActivitiesController)
 const activitiesControllerProvider = ActivitiesControllerProvider._();
@@ -22,19 +22,19 @@ const activitiesControllerProvider = ActivitiesControllerProvider._();
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)
 ///
-/// STALE-WHILE-REVALIDATE PATTERN:
-/// - Loads cached Drift data immediately (0-50ms)
-/// - Syncs in background without blocking UI
-/// - UI refreshes when sync completes (via ref.invalidateSelf)
+/// NEW SYNC PATTERN (Phase 5.1):
+/// - Uses ensureSynced() for dependency-aware, staleness-based sync
+/// - Syncs activities (and users dependency) only when stale (>24h)
+/// - Errors handled gracefully - user sees cached data on failure
 final class ActivitiesControllerProvider
     extends $AsyncNotifierProvider<ActivitiesController, List<Activity>> {
   /// Controller for managing activities
   /// Handles activity CRUD operations (create, read, update, delete)
   ///
-  /// STALE-WHILE-REVALIDATE PATTERN:
-  /// - Loads cached Drift data immediately (0-50ms)
-  /// - Syncs in background without blocking UI
-  /// - UI refreshes when sync completes (via ref.invalidateSelf)
+  /// NEW SYNC PATTERN (Phase 5.1):
+  /// - Uses ensureSynced() for dependency-aware, staleness-based sync
+  /// - Syncs activities (and users dependency) only when stale (>24h)
+  /// - Errors handled gracefully - user sees cached data on failure
   const ActivitiesControllerProvider._()
     : super(
         from: null,
@@ -55,15 +55,15 @@ final class ActivitiesControllerProvider
 }
 
 String _$activitiesControllerHash() =>
-    r'13a2607353041992df5e74c22f0275897d663fb3';
+    r'498062729732dec4f08d7695c444766be61a6ae5';
 
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)
 ///
-/// STALE-WHILE-REVALIDATE PATTERN:
-/// - Loads cached Drift data immediately (0-50ms)
-/// - Syncs in background without blocking UI
-/// - UI refreshes when sync completes (via ref.invalidateSelf)
+/// NEW SYNC PATTERN (Phase 5.1):
+/// - Uses ensureSynced() for dependency-aware, staleness-based sync
+/// - Syncs activities (and users dependency) only when stale (>24h)
+/// - Errors handled gracefully - user sees cached data on failure
 
 abstract class _$ActivitiesController extends $AsyncNotifier<List<Activity>> {
   FutureOr<List<Activity>> build();

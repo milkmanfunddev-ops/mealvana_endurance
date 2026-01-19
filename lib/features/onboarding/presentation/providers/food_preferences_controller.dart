@@ -3,6 +3,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
+import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/services/logging_service.dart';
+import '../../../food_preferences/data/food_preferences_repository.dart';
 
 part 'food_preferences_controller.g.dart';
 
@@ -36,10 +40,38 @@ class FoodPreferencesState {
 class FoodPreferencesController extends _$FoodPreferencesController {
   // Access repositories via ref
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
+  AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
   FutureOr<FoodPreferencesState> build() async {
+    // Ensure food preferences are synced before loading
+    // This follows the new sync architecture pattern
+    await _ensureFoodPreferencesSynced();
+
     return await _loadFoodPreferences();
+  }
+
+  /// Ensure food preferences data is synced from remote
+  /// Uses the new SyncCoordinator.ensureSynced pattern with dependency resolution
+  Future<void> _ensureFoodPreferencesSynced() async {
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      final repository = await ref.read(foodPreferencesRepositoryProvider.future);
+
+      await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
+        'food_preferences',
+        userId,
+        repository: repository,
+      );
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Food preferences sync failed - proceeding with cached data',
+        context: 'FOOD_PREFERENCES_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - best effort sync, user sees cached data
+    }
   }
 
   /// Load all food preferences with timeout protection

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/carb_loading_service.dart';
+import '../../data/carb_loading_repository.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 
 part 'carb_loading_controller.g.dart';
@@ -15,9 +17,27 @@ class CarbLoadingController extends _$CarbLoadingController {
   AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
-  FutureOr<void> build() {
-    // No state to load on build - carb loading days are fetched via separate provider
-    return null;
+  FutureOr<void> build() async {
+    try {
+      // Ensure carb loading data is synced using new sync architecture
+      final userId = await ref.read(userIdProvider.future);
+      final repository = ref.read(carbLoadingRepositoryProvider);
+      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+
+      await syncCoordinator.ensureSynced(
+        'carb_loading_plans',
+        userId,
+        repository: repository,
+      );
+    } catch (e, stackTrace) {
+      // Log sync errors but don't block UI - offline-first means we can work with cached data
+      _logger.error(
+        'Failed to sync carb loading data on controller build',
+        context: 'CARB_LOADING_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Create a carb loading plan for an event
