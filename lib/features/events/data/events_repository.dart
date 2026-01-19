@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -99,10 +98,6 @@ class EventsRepository implements SyncableRepository {
           .select('*')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
-
-      if (response == null) {
-        return SyncResult.successful(0);
-      }
 
       // Cast response to List<Map<String, dynamic>>
       final events = response as List<dynamic>;

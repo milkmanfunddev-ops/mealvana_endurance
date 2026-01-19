@@ -220,9 +220,6 @@ class ActivitiesRepository with SyncableRepository {
         localUpdatedAt: DateTime.now(),
       ));
 
-      //get all Activities
-      final activities = await _database.select(_database.activitiesTable).get();
-
       // Get the activity back from the database with the generated ID
       final savedActivity = await (_database.select(_database.activitiesTable)
             ..where((tbl) => tbl.id.equals(generatedId)))

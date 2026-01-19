@@ -72,7 +72,7 @@ class CoachRepository with SyncableRepository {
           .maybeSingle();
 
       if (coachResponse != null) {
-        final coachJson = coachResponse as Map<String, dynamic>;
+        final coachJson = coachResponse;
         final now = DateTime.now();
 
         // Upsert coach record to local Drift database

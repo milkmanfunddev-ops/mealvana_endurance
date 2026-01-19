@@ -56,10 +56,6 @@ class FeedbackRepository with SyncableRepository {
           .eq('user_name', userId)  // feedback.user_name maps to device_id
           .order('created_at', ascending: false);
 
-      if (response == null) {
-        return SyncResult.successful(0);
-      }
-
       final feedbackRecords = response as List<dynamic>;
 
       // Save to Drift using batch insert
