@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/segmented_control.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';

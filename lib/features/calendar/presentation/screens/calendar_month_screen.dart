@@ -85,7 +85,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
   Widget _buildViewToggle(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: AppRadius.buttonRadius,
       ),
       child: Row(
@@ -362,7 +362,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
   Widget _buildWeekSelector(BuildContext context) {
     final weekDays = _getWeekDays();
     
-    return Container(
+    return SizedBox(
       height: 80,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -671,7 +671,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -686,7 +686,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
               shape: BoxShape.circle,
             ),
             child: Icon(

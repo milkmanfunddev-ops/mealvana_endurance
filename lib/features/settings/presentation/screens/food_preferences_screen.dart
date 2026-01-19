@@ -924,7 +924,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),
                         child: _buildFoodPreferenceItem(context, food, sliderLevel),
                       );
-                    }).toList(),
+                    }),
 
                     // Additional foods - show directly when searching, in expandable section when not
                     if (_filteredAdditionalFoods.isNotEmpty) ...[
@@ -1028,7 +1028,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: _buildUserFoodPreferenceItem(context, food, sliderLevel),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

@@ -35,7 +35,7 @@ class EventSubtypeDropdown extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<EventSubtype>(
-          value: selectedSubtype,
+          initialValue: selectedSubtype,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),

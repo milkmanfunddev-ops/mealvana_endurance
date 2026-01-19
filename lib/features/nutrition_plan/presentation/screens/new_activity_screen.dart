@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/new_activity_coordinator.dart';
 import '../providers/running_input_controller.dart';
 import '../providers/cycling_input_controller.dart';
@@ -16,12 +15,7 @@ import '../widgets/new_activity/cycling_tab_content.dart';
 import '../widgets/new_activity/swimming_tab_content.dart';
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/widgets/app_date_picker.dart';
-import '../providers/macro_targets_controller.dart';
-import '../../../../shared/providers/user_id_provider.dart';
-import '../../../activities/application/activities_service.dart';
-import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../activities/domain/activity.dart' as domain;
 
 /// New Activity Screen - Kyle's Unified Design
 ///

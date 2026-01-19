@@ -23,7 +23,6 @@ import '../../activities/presentation/providers/activities_controller.dart';
 import '../../events/presentation/providers/events_controller.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
-import '../../coach_mode/application/coach_service.dart';
 import '../../../shared/services/dirty_record_backup_service.dart';
 import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';

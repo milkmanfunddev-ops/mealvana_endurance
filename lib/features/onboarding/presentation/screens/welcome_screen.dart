@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
-import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
-import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/services/app_external_deps.dart';
 

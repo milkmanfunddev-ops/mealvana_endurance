@@ -8,10 +8,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../providers/onboarding_controller.dart';
 import '../widgets/onboarding_widgets.dart';
 import '../../../auth/domain/user_preferences.dart';
-import '../../../auth/application/auth_service.dart';
-import '../../../auth/data/user_repository.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 
 /// User Profile Screen - Design System
 /// User setup screen during onboarding - RESTORED with database integration

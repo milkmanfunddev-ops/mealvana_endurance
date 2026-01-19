@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
 import '../../domain/nutrition_plan.dart';

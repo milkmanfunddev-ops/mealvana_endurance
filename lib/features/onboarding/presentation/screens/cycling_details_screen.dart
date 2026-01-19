@@ -9,7 +9,6 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../../shared/widgets/selection/figma_toggle_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Cycling Details Screen - Unified for both onboarding and settings

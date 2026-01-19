@@ -6,7 +6,6 @@ import '../widgets/onboarding_widgets.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Sports Selection Screen - Step 2 of Onboarding

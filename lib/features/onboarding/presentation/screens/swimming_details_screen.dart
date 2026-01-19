@@ -10,7 +10,6 @@ import '../../../../shared/widgets/selection/figma_radio_option_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../auth/application/auth_service.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Swimming Details Screen - Unified for both onboarding and settings

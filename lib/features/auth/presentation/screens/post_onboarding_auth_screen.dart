@@ -629,7 +629,7 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
                 ),
               ],
             ),
-          )).toList(),
+          )),
         ],
       ),
     );

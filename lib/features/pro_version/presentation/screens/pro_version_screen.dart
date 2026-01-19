@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
-import '../../../../theme/kyle_design/app_spacing.dart';
-import '../../../../theme/kyle_design/app_text_styles.dart';
-import '../../../../shared/widgets/kyle_design/cards/base_card.dart';
-import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Mealvana Pro screen showcasing upcoming premium features

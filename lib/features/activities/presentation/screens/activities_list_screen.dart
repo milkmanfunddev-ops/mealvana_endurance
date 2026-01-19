@@ -239,7 +239,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                           return ActivityCard(activity: selectedDateActivities[activityIndex]);
                         }
                       },
-                      childCount: (selectedDateCarbDays.length + selectedDateActivities.length) as int,
+                      childCount: (selectedDateCarbDays.length + selectedDateActivities.length),
                     ),
                   ),
                 ),

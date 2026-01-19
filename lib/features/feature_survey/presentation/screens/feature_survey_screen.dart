@@ -4,10 +4,6 @@ import '../../domain/feature_survey_data.dart';
 import '../providers/feature_survey_controller.dart';
 import '../widgets/feature_checkbox_card.dart';
 import '../widgets/already_voted_view.dart';
-import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
-import '../../../../theme/kyle_design/app_text_styles.dart';
-import '../../../../theme/kyle_design/app_spacing.dart';
 import 'feature_survey_success_screen.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 

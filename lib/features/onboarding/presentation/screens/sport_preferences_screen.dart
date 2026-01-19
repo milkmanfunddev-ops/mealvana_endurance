@@ -362,7 +362,7 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
               Switch(
                 value: _giSensitivity,
                 onChanged: (value) => setState(() => _giSensitivity = value),
-                activeColor: AppColors.orange,
+                activeThumbColor: AppColors.orange,
                 activeTrackColor: AppColors.orange.withOpacity(0.5),
                 inactiveThumbColor: AppColors.cream,
                 inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
@@ -506,7 +506,7 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
               Switch(
                 value: _hasAeroBottle,
                 onChanged: (value) => setState(() => _hasAeroBottle = value),
-                activeColor: AppColors.orange,
+                activeThumbColor: AppColors.orange,
                 activeTrackColor: AppColors.orange.withOpacity(0.5),
                 inactiveThumbColor: AppColors.cream,
                 inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
@@ -546,7 +546,7 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
               Switch(
                 value: _hasBentoBox,
                 onChanged: (value) => setState(() => _hasBentoBox = value),
-                activeColor: AppColors.orange,
+                activeThumbColor: AppColors.orange,
                 activeTrackColor: AppColors.orange.withOpacity(0.5),
                 inactiveThumbColor: AppColors.cream,
                 inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
@@ -722,7 +722,7 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
               Switch(
                 value: _typicalWetsuit,
                 onChanged: (value) => setState(() => _typicalWetsuit = value),
-                activeColor: AppColors.orange,
+                activeThumbColor: AppColors.orange,
                 activeTrackColor: AppColors.orange.withOpacity(0.5),
                 inactiveThumbColor: AppColors.cream,
                 inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),

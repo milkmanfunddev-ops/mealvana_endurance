@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../widgets/onboarding_widgets.dart';
 import '../providers/onboarding_controller.dart';
@@ -12,7 +11,6 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../../shared/widgets/selection/figma_radio_option_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 
 /// Dietary Preference Screen - Unified for both onboarding and settings
 ///

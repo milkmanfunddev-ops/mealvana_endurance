@@ -11,10 +11,6 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../providers/macro_targets_controller.dart';
 import '../../domain/macro_targets.dart' as domain;
 import '../../../../core/utils/debug_logger.dart';
-import '../../../../shared/providers/user_id_provider.dart';
-import '../../../activities/application/activities_service.dart';
-import '../../../activities/presentation/providers/activities_controller.dart';
-import '../../../activities/domain/activity.dart' as activity_domain;
 
 /// Adjust Macros Screen - Refactored with extracted widgets
 /// Simplified from 1,005 lines using extracted components

@@ -145,7 +145,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         print('   (current auth: $currentAuthUserId)');
       }
     } else {
-      _currentUserId = user!.id;
+      _currentUserId = user.id;
       _isUsingTempUserId = false;
 
       if (kDebugMode) {

@@ -8,7 +8,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 // Explicitly import AuthException and LaunchMode to use in catch blocks and web OAuth
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase show AuthException;
-import 'package:supabase_flutter/supabase_flutter.dart' show LaunchMode;
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
