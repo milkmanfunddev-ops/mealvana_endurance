@@ -187,23 +187,23 @@
 
 ## Phase 5: UI Integration
 
-### 5.1 Update ActivitiesController
-- [ ] Call `ensureSynced('activities')` in build()
-- [ ] Handle sync errors gracefully
-- [ ] Show loading indicator during sync
+### 5.1 Update ActivitiesController [DONE: claude-sonnet-4.5-20260118-p5.1]
+- [x] Call `ensureSynced('activities')` in build()
+- [x] Handle sync errors gracefully
+- [x] Show loading indicator during sync (AsyncValue pattern already handles this)
 
-### 5.2 Update EventsController
-- [ ] Call `ensureSynced('events')` in build()
+### 5.2 Update EventsController [DONE: claude-sonnet-4.5-20260118-p5.2]
+- [x] Call `ensureSynced('events')` in build()
 
-### 5.3 Update CarbLoadingController
-- [ ] Call `ensureSynced('carb_loading_plans')` in build()
+### 5.3 Update CarbLoadingController [DONE: claude-sonnet-4.5-20260118-p5.3]
+- [x] Call `ensureSynced('carb_loading_plans')` in build()
 
-### 5.4 Update FoodPreferencesController
-- [ ] Call `ensureSynced('food_preferences')` when preferences screen opens
+### 5.4 Update FoodPreferencesController [DONE: claude-sonnet-4.5-20260118-p5.4]
+- [x] Call `ensureSynced('food_preferences')` when preferences screen opens
 
-### 5.5 Update Pull-to-Refresh
-- [ ] Keep existing behavior OR
-- [ ] Convert to repository-level refresh
+### 5.5 Update Pull-to-Refresh [DONE: claude-sonnet-4.5-20260118-p5.5]
+- [x] Keep existing behavior (DECISION: Keep full sync on pull-to-refresh)
+- [x] Document decision in phase-5.4-5.5-notes.md
 
 ---
 
@@ -221,12 +221,13 @@
 - [ ] Schema version jump (v1 → v3)
 - [ ] Dirty records with FK violations
 
-### 6.3 Documentation
+### 6.3 Documentation [CLAIMED: claude-sonnet-4.5-20260118-docs]
 - [ ] Update CLAUDE.md with new sync patterns
 - [ ] Update /docs/technical/README.md
+- [ ] Create /docs/technical/sync-architecture.md
 - [ ] Archive old sync documentation
 
-### 6.4 Code Cleanup
+### 6.4 Code Cleanup [CLAIMED: claude-sonnet-4.5-20260118-p6.4]
 - [ ] Remove unused imports
 - [ ] Run `flutter analyze`
 - [ ] Run `dart fix --apply`
@@ -242,10 +243,10 @@
 | Phase 2 | 12 | 7 | 5 |
 | Phase 3 | 27 | 14 | 13 |
 | Phase 4 | 9 | 8 | 1 |
-| Phase 5 | 5 | 0 | 5 |
+| Phase 5 | 5 | 3 | 2 |
 | Phase 6 | 12 | 0 | 12 |
-| **Total** | **80** | **30** | **50** |
+| **Total** | **80** | **33** | **47** |
 
 ---
 
-*Last agent activity*: claude-sonnet-4.5-20260118-task3.9 completed Phase 3.9 (CoachRepository with 7 passing tests - dual-write pattern)
+*Last agent activity*: claude-sonnet-4.5-20260118-p5.3 completed Phase 5.3 (CarbLoadingController now uses ensureSynced pattern)

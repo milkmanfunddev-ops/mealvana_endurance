@@ -601,6 +601,280 @@ dart test test/database/migration_test.dart
 4. **Simple rollback** - Delete local DB and resync is acceptable for this architecture
 5. **Test thoroughly** - Use Drift's schema validation tools
 
+## Data Synchronization
+
+### Repository-Level Sync Architecture
+
+**Core Principle**: Data is synced on-demand per repository with automatic dependency resolution, not all at once at startup.
+
+**Key Components:**
+1. **SyncableRepository Mixin**: All repositories implement this to provide sync capabilities
+2. **SyncCoordinator**: Central service managing sync operations and dependency graph
+3. **Staleness Pattern**: Each repository tracks last sync time (24-hour threshold)
+4. **Dirty Record Backup**: Local changes backed up to JSON on sync failure
+
+### SyncableRepository Pattern
+
+Every repository that syncs with Supabase implements the `SyncableRepository` mixin:
+
+```dart
+abstract class SyncableRepository {
+  /// Repository identifier for staleness tracking
+  String get repositoryKey;
+
+  /// Dependencies that must be synced first
+  List<String> get dependencies => [];
+
+  /// Check if data is stale (>24 hours since last sync)
+  Future<bool> isStale();
+
+  /// Sync this repository's data from Supabase
+  Future<SyncResult> syncFromRemote(String userId);
+
+  /// Upload dirty records for this repository
+  Future<UploadResult> uploadDirtyRecords(String userId);
+
+  /// Get last sync timestamp from SharedPreferences
+  Future<DateTime?> getLastSyncTime();
+
+  /// Update last sync timestamp
+  Future<void> setLastSyncTime(DateTime time);
+}
+```
+
+**Example Implementation:**
+```dart
+class ActivitiesRepository with SyncableRepository {
+  final SupabaseClient _supabase;
+  final AppDatabase _db;
+
+  @override
+  String get repositoryKey => 'activities';
+
+  @override
+  List<String> get dependencies => ['users'];
+
+  @override
+  Future<SyncResult> syncFromRemote(String userId) async {
+    // Direct Supabase query (no edge function)
+    final response = await _supabase
+        .from('activities')
+        .select('*')
+        .eq('user_id', userId)
+        .is_('deleted_at', null)
+        .order('created_at', ascending: false);
+
+    // Save to Drift
+    await _db.batch((batch) {
+      for (final activity in response) {
+        batch.insertOrReplace(_db.activitiesTable, activity);
+      }
+    });
+
+    await setLastSyncTime(DateTime.now());
+    return SyncResult.success(count: response.length);
+  }
+
+  @override
+  Future<UploadResult> uploadDirtyRecords(String userId) async {
+    final dirtyRecords = await (_db.select(_db.activitiesTable)
+      ..where((t) => t.needsUpload.equals(true)))
+      .get();
+
+    if (dirtyRecords.isEmpty) {
+      return UploadResult.nothingToUpload();
+    }
+
+    await _supabase
+        .from('activities')
+        .upsert(dirtyRecords.map((r) => r.toJson()).toList());
+
+    // Clear dirty flags
+    await _db.batch((batch) {
+      for (final record in dirtyRecords) {
+        batch.update(
+          _db.activitiesTable,
+          ActivitiesTableCompanion(needsUpload: Value(false)),
+          where: (t) => t.id.equals(record.id),
+        );
+      }
+    });
+
+    return UploadResult.success(count: dirtyRecords.length);
+  }
+}
+```
+
+### Using ensureSynced in Controllers
+
+Controllers call `ensureSynced` in their `build()` method to guarantee fresh data:
+
+```dart
+@riverpod
+class ActivitiesController extends _$ActivitiesController {
+  SyncCoordinator get _syncCoordinator => ref.read(syncCoordinatorProvider);
+  ActivitiesRepository get _repository => ref.read(activitiesRepositoryProvider);
+
+  @override
+  Future<List<Activity>> build(String userId) async {
+    // Ensure data is fresh (syncs dependencies first if needed)
+    await _syncCoordinator.ensureSynced('activities', userId);
+
+    // Return data from local Drift database
+    return _repository.getActivities(userId);
+  }
+}
+```
+
+**What ensureSynced Does:**
+1. Checks if repository data is stale (>24 hours)
+2. If stale, recursively syncs dependencies first
+3. Uploads dirty records (with backup on failure)
+4. Syncs fresh data from Supabase
+5. Updates last sync timestamp
+
+### Dependency Graph
+
+The sync coordinator knows the dependency hierarchy:
+
+```
+Level 0: users
+Level 1: activities, events, food_preferences, user_foods, coaches
+Level 2: coach_athlete_relationships, carb_loading_plans
+Level 3: carb_loading_days, coach_messages
+Level 4: carb_loading_day_meals
+
+Seed Data (Independent): foods, carb_loading_foods, app_content
+```
+
+**Example Flow:**
+```
+Controller: ensureSynced('activities')
+    ↓
+Coordinator: Check staleness
+    ↓
+If stale:
+    ↓
+    Sync dependencies first: ensureSynced('users')
+    ↓
+    Upload dirty user records
+    ↓
+    Sync users from Supabase
+    ↓
+    Now sync activities:
+    ↓
+    Upload dirty activity records
+    ↓
+    Sync activities from Supabase
+    ↓
+    Update timestamps
+```
+
+### Dirty Record Backup
+
+If uploading dirty records fails (network error, server down), they're backed up to JSON:
+
+**Backup Location:**
+```dart
+final appSupport = await getApplicationSupportDirectory();
+final backupFile = File('${appSupport.path}/dirty_records_backup.json');
+```
+
+**Backup Structure:**
+```json
+{
+  "backup_created_at": "2026-01-18T10:30:00Z",
+  "app_version": "1.12.1",
+  "schema_version": 3,
+  "user_id": "uuid-123",
+  "dirty_records": {
+    "activities": [
+      { "id": "uuid-456", "name": "Morning Run", ... }
+    ]
+  },
+  "upload_errors": [
+    { "repository": "activities", "error": "Network timeout", "timestamp": "..." }
+  ]
+}
+```
+
+**Recovery Flow:**
+On app startup, if backup file exists:
+1. Show dialog: "Unsaved data found. Upload now?"
+2. If user chooses "Upload Now", retry upload
+3. Delete backup file after successful upload or user dismissal
+
+### Schema Migration Strategy
+
+**Delete and Resync Approach:**
+
+Instead of step-by-step Drift migrations, schema changes trigger a full resync:
+
+1. App checks `app_config.current_schema_version` on startup
+2. If local schema version != remote schema version:
+   - Upload dirty records (with backup on failure)
+   - Delete local Drift database
+   - Reinitialize with new schema
+   - Full resync from Supabase
+
+**Benefits:**
+- Simpler than complex migration code
+- No risk of migration bugs
+- Clean slate with every schema change
+- Backed by dirty record protection
+
+**Implementation:**
+```dart
+// In AppStartupService
+Future<void> checkSchemaVersion() async {
+  final remoteVersion = await _versionCheckService.getCurrentSchemaVersion();
+  final localVersion = AppDatabase.schemaVersion;
+
+  if (localVersion != remoteVersion) {
+    // Upload dirty records with backup
+    await _syncCoordinator.uploadAllDirtyRecords(userId);
+
+    // Delete database
+    final dbFile = File(await _getDatabasePath());
+    await dbFile.delete();
+
+    // Reinitialize (creates new schema)
+    ref.invalidate(appDatabaseProvider);
+
+    // Full resync
+    await _syncCoordinator.syncAll(userId);
+  }
+}
+```
+
+### Troubleshooting Sync Issues
+
+**Issue**: Controller loads stale data
+
+**Solution**: Ensure `ensureSynced` is called in controller's `build()` method
+
+---
+
+**Issue**: Infinite sync loop
+
+**Solution**: SyncCoordinator tracks `_syncingNow` set to prevent recursive loops
+
+---
+
+**Issue**: Lost local changes
+
+**Solution**: All repositories upload dirty records first, with JSON backup on failure
+
+---
+
+**Issue**: Foreign key violations during sync
+
+**Solution**: Dependencies are synced first (e.g., users before activities)
+
+---
+
+📚 **Complete Documentation**: [/docs/technical/sync-architecture.md](/docs/technical/sync-architecture.md)
+
 ## App Icons and Splash Screens
 
 ### Flutter Launcher Icons Setup

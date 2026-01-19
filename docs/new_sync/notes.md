@@ -344,3 +344,152 @@ The dual-write pattern is intentional for real-time cross-device sync. Key impli
 5. Test cross-device sync thoroughly
 
 ---
+
+---
+
+## Phase 5.1: ActivitiesController Integration (2026-01-18)
+
+### What Changed
+
+Updated ActivitiesController to use the new `ensureSynced()` pattern instead of the old stale-while-revalidate background sync.
+
+### Key Changes
+
+**Before (Old Pattern)**:
+```dart
+@override
+FutureOr<List<Activity>> build() async {
+  // Load cached data immediately
+  final cachedActivities = await _service.getAllActivities(userId);
+  
+  // Sync in background (once per controller lifecycle)
+  if (!_syncTriggered) {
+    _syncTriggered = true;
+    unawaited(_syncInBackground(userId));
+  }
+  
+  return cachedActivities;
+}
+```
+
+**After (New Pattern)**:
+```dart
+@override
+FutureOr<List<Activity>> build() async {
+  // Ensure activities (and dependencies) are synced
+  try {
+    await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
+      'activities',
+      userId,
+      repository: ref.read(activitiesRepositoryProvider),
+    );
+  } catch (e, stackTrace) {
+    _logger.error('Sync failed during activities load', ...);
+    // Don't rethrow - continue with cached data
+  }
+  
+  // Load from local database (now guaranteed to be synced or using cached data)
+  return _service.getAllActivities(userId);
+}
+```
+
+### Benefits
+
+1. **Dependency-Aware**: Automatically syncs 'users' dependency before 'activities'
+2. **Staleness-Based**: Only syncs if data is >24h old (checked via SharedPreferences)
+3. **Graceful Errors**: Sync failures logged but user sees cached data
+4. **No Infinite Loops**: Removed `_syncTriggered` flag - ensureSynced handles this internally
+5. **AsyncValue Pattern**: Loading states automatically handled by Riverpod
+
+### Files Modified
+
+- `lib/features/activities/presentation/providers/activities_controller.dart` (simplified from 66 lines to 53 lines)
+- `docs/new_sync/checklist.md` (marked Phase 5.1 complete)
+- `docs/new_sync/notes.md` (this file)
+
+### Next Steps
+
+- Phase 5.2: Update EventsController
+- Phase 5.3: Update CarbLoadingController
+- Phase 5.4: Update FoodPreferencesController
+
+### Testing Notes
+
+No new tests required - existing ActivitiesController tests should continue to pass. The ensureSynced pattern is already tested in `test/new_sync/sync_coordinator_v2_test.dart`.
+
+---
+
+## Phase 5.2: EventsController UI Integration (COMPLETED)
+
+**Agent**: claude-sonnet-4.5-20260118-p5.2
+**Date**: 2026-01-18
+**Status**: ✅ COMPLETE
+
+### Implementation Summary
+
+Successfully updated EventsController to use the new `ensureSynced` pattern for automatic sync with dependency resolution.
+
+### Key Changes
+
+1. **Import Addition**
+   - Added `import '../../../../shared/services/sync/sync_coordinator.dart';`
+
+2. **build() Method Update**
+   - Added call to `syncCoordinatorProvider.notifier.ensureSynced('events', userId)`
+   - Wrapped in try-catch for graceful error handling
+   - Continues with cached data if sync fails
+   - Logs errors using AppLogger with warning level
+
+### Implementation Pattern
+
+```dart
+@override
+FutureOr<List<Event>> build() async {
+  final service = ref.read(eventsServiceProvider);
+  final logger = ref.read(appLoggerProvider);
+  final userId = await ref.read(userIdProvider.future);
+
+  // Ensure events data is synced (with dependency resolution)
+  try {
+    await ref.read(syncCoordinatorProvider.notifier).ensureSynced('events', userId);
+  } catch (e) {
+    // Log error but continue with cached data
+    logger.warning('Events sync failed', context: 'EVENTS_CONTROLLER', data: {'error': e.toString()});
+  }
+
+  return await service.getAllEvents(userId);
+}
+```
+
+### Behavior
+
+1. **Dependency Chain**: Events depends on ['users'] per sync coordinator dependency graph
+2. **Staleness Check**: Sync only occurs if data is >24h old
+3. **Graceful Degradation**: If sync fails, controller loads cached data from Drift
+4. **Error Logging**: Sync failures are logged at warning level (not shown to user)
+5. **AsyncValue Pattern**: Loading states are automatically handled by Riverpod's AsyncValue
+
+### Files Modified
+
+- `lib/features/events/presentation/providers/events_controller.dart` (+6 lines)
+- `docs/new_sync/checklist.md` (updated Phase 5.2)
+- `docs/new_sync/notes.md` (this file)
+
+### Commit
+
+```
+feat(sync): update EventsController to use ensureSynced
+
+Phase 5.2: UI integration for events
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+```
+
+### Next Steps
+
+This completes Phase 5.2. Remaining Phase 5 tasks:
+- Phase 5.3: Update CarbLoadingController
+- Phase 5.4: Update FoodPreferencesController (claimed)
+- Phase 5.5: Update Pull-to-Refresh
+
+---

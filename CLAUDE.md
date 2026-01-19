@@ -223,6 +223,160 @@ Unified dual database architecture with local-first design and cloud synchroniza
 - [Dev/Prod Setup](/docs/features/dev_prod/README.md) - Environment configuration guide
 - [Implementation Roadmap](/docs/features/dev_prod/roadmap.md) - Step-by-step deployment plan
 
+### Data Synchronization Architecture
+
+**CRITICAL**: The app uses a repository-level, on-demand sync pattern with automatic dependency resolution.
+
+**Key Concepts:**
+- **Staleness Threshold**: Each repository tracks its last sync time; data is considered stale after 24 hours
+- **Lazy Sync**: Data is only synced when needed (when controller calls `ensureSynced`)
+- **Dependency Resolution**: Dependencies are automatically synced first (e.g., activities requires users)
+- **Dirty Record Protection**: Local changes are uploaded first, with JSON backup on failure
+- **Schema Migration**: Delete and resync strategy (no step-by-step migrations)
+
+**SyncableRepository Pattern:**
+```dart
+abstract class SyncableRepository {
+  /// Repository identifier for staleness tracking
+  String get repositoryKey;
+
+  /// Dependencies that must be synced first
+  List<String> get dependencies => [];
+
+  /// Check if data is stale (>24 hours since last sync)
+  Future<bool> isStale();
+
+  /// Sync this repository's data from Supabase
+  Future<SyncResult> syncFromRemote(String userId);
+
+  /// Upload dirty records for this repository
+  Future<UploadResult> uploadDirtyRecords(String userId);
+}
+```
+
+**Controller Pattern with ensureSynced:**
+```dart
+@riverpod
+class ActivitiesController extends _$ActivitiesController {
+  SyncCoordinator get _syncCoordinator => ref.read(syncCoordinatorProvider);
+
+  @override
+  Future<List<Activity>> build(String userId) async {
+    // Ensure data is fresh before returning
+    await _syncCoordinator.ensureSynced('activities', userId);
+
+    // Return data from local Drift database
+    return ref.read(activitiesRepositoryProvider).getActivities(userId);
+  }
+}
+```
+
+**How ensureSynced Works:**
+```
+User opens Activities screen
+    ↓
+Controller calls: ensureSynced('activities', userId)
+    ↓
+Check: Is 'activities' stale (>24h)?
+    ├── No  → Return immediately (data is fresh)
+    └── Yes → Sync activities (and dependencies first)
+        ↓
+        Look up dependencies: activities → ['users']
+        ↓
+        Recursively sync dependencies: ensureSynced('users')
+        ↓
+        Upload dirty user records (if any)
+        ↓
+        Sync users from Supabase → Save to Drift
+        ↓
+        Update 'users_last_sync' timestamp
+        ↓
+        Now sync activities:
+        ↓
+        Upload dirty activity records (if any)
+        ↓
+        Sync activities from Supabase → Save to Drift
+        ↓
+        Update 'activities_last_sync' timestamp
+```
+
+**Dependency Graph:**
+```
+users (Level 0 - no dependencies)
+    ↓
+activities, events, food_preferences, user_foods, coaches (Level 1)
+    ↓
+coach_athlete_relationships, carb_loading_plans (Level 2)
+    ↓
+carb_loading_days, coach_messages (Level 3)
+    ↓
+carb_loading_day_meals (Level 4)
+
+Seed Data (Independent): foods, carb_loading_foods, app_content
+```
+
+**Dirty Record Backup Flow:**
+```
+Repository needs to sync
+    ↓
+Check for dirty records (needs_upload = true)
+    ↓
+Try upload to Supabase (3 retries)
+    ↓
+├── Success → Clear dirty flags → Proceed with sync
+└── All retries failed
+    ↓
+    Save to JSON backup (App Support directory)
+    ↓
+    Log warning (Sentry)
+    ↓
+    Proceed with sync (data is backed up)
+```
+
+**Backup File Structure:**
+```json
+{
+  "backup_created_at": "2026-01-18T10:30:00Z",
+  "app_version": "1.12.1",
+  "schema_version": 3,
+  "user_id": "uuid-123",
+  "dirty_records": {
+    "activities": [
+      { "id": "uuid-456", "name": "Morning Run", ... }
+    ],
+    "events": []
+  },
+  "upload_errors": [
+    { "repository": "activities", "error": "Network timeout", "timestamp": "..." }
+  ]
+}
+```
+
+**Version Check and Force Upgrade:**
+The app checks `app_config` table on startup for:
+- `min_app_version`: Minimum app version allowed (shows ForceUpgradeScreen if below)
+- `current_schema_version`: Expected Drift schema version (triggers delete & resync if mismatch)
+
+**Schema Migration Strategy:**
+```
+App Startup → Check app_config.current_schema_version
+    ↓
+Compare to local Drift schemaVersion
+    ↓
+├── Match → Normal startup
+└── Mismatch
+    ↓
+    Upload dirty records (with backup on failure)
+    ↓
+    Delete local Drift database
+    ↓
+    Reinitialize with new schema
+    ↓
+    Full resync from Supabase
+```
+
+📚 **Complete Sync Documentation**: [/docs/technical/sync-architecture.md](/docs/technical/sync-architecture.md)
+
 ## Development Practices
 
 ### Code Generation
