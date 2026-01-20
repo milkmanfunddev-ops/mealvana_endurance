@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/activities_controller.dart';
+import '../providers/brick_creation_available_provider.dart';
 import '../../../calendar/presentation/providers/calendar_view_provider.dart';
 import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
@@ -14,6 +15,7 @@ import '../../../../shared/widgets/kyle_design/typography/section_header_text.da
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../widgets/activity_card.dart';
 import '../widgets/carb_loading_day_card.dart';
+import '../widgets/create_brick_button.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../domain/activity.dart';
 
@@ -209,12 +211,12 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                   color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.2),
                 ),
               ),
-              // Section Header
+              // Section Header with Create Brick button
               if (hasItems)
-                const SliverToBoxAdapter(
-                  child: SectionHeaderText(
-                    text: "Today's Activities",
-                    topPadding: 0,
+                SliverToBoxAdapter(
+                  child: _buildTodaysActivitiesHeader(
+                    activities,
+                    selectedDate,
                   ),
                 ),
               // Activities and Carb Days List
@@ -303,5 +305,48 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  /// Build the "Today's Activities" header with optional Create Brick button
+  Widget _buildTodaysActivitiesHeader(
+    List<Activity> activities,
+    DateTime selectedDate,
+  ) {
+    final isBrickAvailable = ref.watch(
+      isBrickCreationAvailableProvider(
+        activities: activities,
+        selectedDate: selectedDate,
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const SectionHeaderText(
+            text: "Today's Activities",
+            topPadding: 0,
+            bottomPadding: 0,
+          ),
+          if (isBrickAvailable)
+            CreateBrickButton(
+              onPressed: _handleCreateBrickPressed,
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Handle Create Brick button press
+  /// Enters selection mode to choose activities for brick creation
+  void _handleCreateBrickPressed() {
+    // TODO: Implement selection mode entry (Phase 3.2)
+    // For now, show a placeholder message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Brick creation coming soon! (Selection mode not yet implemented)'),
+      ),
+    );
   }
 }

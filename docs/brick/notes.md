@@ -820,3 +820,123 @@
 - Phase 4.4: Add drag-to-reorder functionality for segments
 
 ---
+
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 11 (Phase 3.2 - BrickSelectionController)
+**Task**: Phase 3.2 - Create BrickSelectionController provider
+
+**Completed**:
+- Created `/lib/features/activities/presentation/providers/brick_selection_controller.dart`:
+  - Implemented `BrickSelectionState` class with:
+    - `isSelectionMode` boolean flag
+    - `selectedActivityIds` list (ordered by selection sequence)
+    - `selectedActivities` list (parallel list for easy access)
+    - `copyWith()`, equality operator, and hashCode methods
+    - Custom `_listEquals()` helper for list comparison
+  - Implemented `BrickSelectionController` extending Riverpod Notifier:
+    - Used synchronous `Notifier<BrickSelectionState>` (not AsyncNotifier) since this is pure UI state
+    - `enterSelectionMode()` - Enables selection mode with empty selections
+    - `exitSelectionMode()` - Disables mode and clears all selections
+    - `toggleActivity(Activity)` - Adds/removes activity from selection (max 3)
+    - `canCreateBrick()` - Validates selection with 4 requirements:
+      - Minimum 2, maximum 3 activities
+      - All activities must be different sports
+      - All activities must be on same calendar day
+      - Returns boolean indicating if brick can be created
+    - `getSelectedOrder()` - Returns activity IDs in selection order for brick creation
+    - `getSelectionOrder(String)` - Returns 1-based order number for an activity (for UI display)
+    - `isActivitySelected(String)` - Checks if activity is currently selected
+    - `getSelectionCount()` - Returns count of selected activities (for "Confirm (n)" button)
+- Ran `flutter pub run build_runner build --delete-conflicting-outputs`:
+  - Generated `brick_selection_controller.g.dart` successfully
+  - 256 outputs written in 23 seconds
+- Verified with `flutter analyze`:
+  - No issues found in the controller file
+  - All code follows proper Riverpod patterns
+
+**Design Decisions**:
+- Used synchronous `Notifier<BrickSelectionState>` instead of `AsyncNotifier` because:
+  - This is pure UI state (no async operations needed)
+  - State changes are immediate (no network calls, no database queries)
+  - Follows pattern from similar UI controllers (ShareFormController)
+- Selection order is tracked in the list itself (insertion order = selection order)
+- Maximum 3 activities enforced in `toggleActivity()` (silently ignores 4th selection)
+- `canCreateBrick()` implements all validation rules from `/docs/brick/ui-flow.md`:
+  - Count validation (2-3 activities)
+  - Sport uniqueness check using Set
+  - Same-day validation by comparing calendar dates
+- Helper methods (`getSelectionOrder`, `isActivitySelected`, `getSelectionCount`) provide convenient access for UI components
+- State is immutable (uses copyWith pattern for updates)
+
+**Implementation Notes**:
+- Fixed initial errors where I used `state.valueOrNull` (AsyncValue pattern)
+- Corrected to use `state` directly since this is synchronous Notifier
+- Removed unnecessary `dart:async` import
+- Removed unused `activity_type.dart` import
+- Controller is auto-dispose (follows Riverpod best practices)
+- All methods are well-documented with comments explaining their purpose
+
+**Next Steps**:
+- Phase 3.2: Add selection mode state to activities list screen
+- Phase 3.2: Implement checkbox UI on activity cards
+- Phase 3.2: Implement numbered order indicators (1, 2, 3)
+- Phase 3.2: Add Cancel/Confirm buttons to header
+
+---
+
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 10 (Phase 3.1 - Create Brick Button)
+**Task**: Phase 3.1 - Implement Create Brick button with visibility logic
+
+**Completed**:
+- Created `/lib/features/activities/presentation/widgets/create_brick_button.dart`:
+  - Orange outline button using `KyleSecondaryButtonSmall` from Kyle design system
+  - Chain link icon (`FontAwesomeIcons.link`) to represent connected sports
+  - Accepts `onPressed` callback for entering selection mode
+  - Follows existing button patterns in the codebase
+- Created `/lib/features/activities/presentation/providers/brick_creation_available_provider.dart`:
+  - Riverpod provider to check if brick creation is available for a given date
+  - Logic: Returns true if 2+ activities of different sports exist on selected date
+  - Filters out brick activities from the check (no nested bricks)
+  - Uses `@riverpod` annotation with code generation
+- Updated `/lib/features/activities/presentation/screens/activities_list_screen.dart`:
+  - Imported `CreateBrickButton` and `brick_creation_available_provider`
+  - Replaced static "Today's Activities" header with `_buildTodaysActivitiesHeader()` method
+  - Header displays button conditionally based on `isBrickCreationAvailableProvider`
+  - Button positioned next to "Today's Activities" section header using Row with spaceBetween
+  - Added `_handleCreateBrickPressed()` placeholder method (shows SnackBar until Phase 3.2 selection mode is implemented)
+- Ran `flutter pub run build_runner build --delete-conflicting-outputs`:
+  - Generated provider code successfully
+  - All outputs clean, no errors
+- Ran `flutter analyze` on modified files:
+  - No issues found
+  - Cleaned up unnecessary imports (flutter_riverpod, activity_type)
+
+**Design Decisions**:
+- Used `KyleSecondaryButtonSmall` for compact orange outline style matching design specs
+- Positioned button using Row with `MainAxisAlignment.spaceBetween` to align with header text
+- Set `topPadding: 0, bottomPadding: 0` on `SectionHeaderText` to allow custom padding in parent Row
+- Provider uses functional approach with parameters (activities, selectedDate) for testability
+- Excluded brick activities from sport type check to prevent creating bricks from existing bricks
+- Placeholder onPressed shows SnackBar indicating selection mode not yet implemented (Phase 3.2)
+
+**Key Files Created**:
+- `/lib/features/activities/presentation/widgets/create_brick_button.dart` - Reusable button widget
+- `/lib/features/activities/presentation/providers/brick_creation_available_provider.dart` - Visibility logic provider
+
+**Key Files Modified**:
+- `/lib/features/activities/presentation/screens/activities_list_screen.dart` - Integrated button into header
+
+**Phase 3.1 Status**: ✅ COMPLETE
+- All visibility logic implemented
+- CreateBrickButton widget created with proper styling
+- Button integrated into activities list header
+- Orange outline with chain link icon as specified
+
+**Next Steps**:
+- Phase 3.2: Implement Selection Mode (checkboxes, numbered indicators, Cancel/Confirm buttons)
+- Phase 3.3: Create BrickGroupCard for displaying grouped brick workouts
+- Phase 3.4: Implement brick creation/ungrouping actions
+
+---
+

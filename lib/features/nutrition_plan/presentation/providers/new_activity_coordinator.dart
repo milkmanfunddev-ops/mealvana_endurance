@@ -12,7 +12,8 @@ part 'new_activity_coordinator.g.dart';
 enum SportTab {
   running,
   cycling,
-  swimming
+  swimming,
+  brick
 }
 
 /// New Activity Coordinator
@@ -65,6 +66,10 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
         break;
       case SportTab.swimming:
         await ref.read(swimmingInputControllerProvider.notifier).fetchLocationIfNeeded();
+        break;
+      case SportTab.brick:
+        // Brick workouts don't need location for macro generation
+        // Location will be handled per-segment if needed
         break;
     }
   }
@@ -126,6 +131,11 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           );
           DebugLogger.info('🎮 COORDINATOR: swimmingInputController.generateMacros returned');
           break;
+        case SportTab.brick:
+          // TODO: Phase 4.5 - Implement brick macro generation
+          // Will call brickInputController.generateMacros() once created
+          DebugLogger.info('🎮 COORDINATOR: Brick macro generation not yet implemented');
+          throw UnimplementedError('Brick macro generation coming in Phase 4.5');
       }
 
       // CRITICAL: Wait for distancePageGutEntryController state to fully update
@@ -153,6 +163,10 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
         return 'assets/images/Biker.png';
       case SportTab.swimming:
         return 'assets/images/Swimmer.png';
+      case SportTab.brick:
+        // TODO: Phase 4 - Add brick-specific hero image
+        // Using triathlon image as fallback for now
+        return 'assets/images/Triathlete.png';
     }
   }
 
@@ -165,6 +179,8 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
         return 'Biking';
       case SportTab.swimming:
         return 'Swimming';
+      case SportTab.brick:
+        return 'Brick';
     }
   }
 }

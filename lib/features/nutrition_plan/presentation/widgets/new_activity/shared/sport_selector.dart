@@ -6,9 +6,9 @@ import '../../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../providers/new_activity_coordinator.dart';
 
-/// Sport Selector - Three icon buttons for selecting sport type
+/// Sport Selector - Four icon buttons for selecting sport type
 ///
-/// Matches Kyle's design: RUNNING | BIKING | SWIMMING
+/// Matches Kyle's design: RUNNING | BIKING | SWIMMING | BRICK
 /// Selected sport has dark background, unselected are outlined
 class SportSelector extends ConsumerWidget {
   const SportSelector({super.key});
@@ -44,6 +44,14 @@ class SportSelector extends ConsumerWidget {
           label: 'SWIMMING',
           isSelected: coordinatorState.selectedTab == SportTab.swimming,
           onTap: () => coordinator.selectTab(SportTab.swimming),
+          isDark: isDark,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        _SportButton(
+          icon: FontAwesomeIcons.link,
+          label: 'BRICK',
+          isSelected: coordinatorState.selectedTab == SportTab.brick,
+          onTap: () => coordinator.selectTab(SportTab.brick),
           isDark: isDark,
         ),
       ],
