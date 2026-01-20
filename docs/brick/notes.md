@@ -24,18 +24,18 @@
 - [DONE] Add `transition` to `category_enum`
 
 ## 1.2 Drift Schema
-- [ ] Update `activities_table.dart` - Add `brickMetadata` TEXT column
-- [ ] Update `activities_table.dart` - Add `brickId` TEXT column
-- [ ] Update `activities_table.dart` - Update CHECK constraint for activity_type (add 'brick')
-- [ ] Update `activities_table.dart` - Update CHECK constraint for status (add 'archived_for_brick')
+- [DONE] Update `activities_table.dart` - Add `brickMetadata` TEXT column
+- [DONE] Update `activities_table.dart` - Add `brickId` TEXT column
+- [DONE] Update `activities_table.dart` - Update CHECK constraint for activity_type (add 'brick')
+- [DONE] Update `activities_table.dart` - Update CHECK constraint for status (add 'archived_for_brick')
 - [ ] Update `app_database.dart` - Ensure new columns are in onCreate (v3 not released yet)
 
 ## 1.3 Domain Models
-- [ ] Update `activity_type.dart` - Add `brick` enum value with displayName, iconName, dbValue
-- [ ] Update `activity_type.dart` - Update `isMultiSport` to include brick
-- [ ] Update `activity_type.dart` - Add `isBrick` helper getter
-- [ ] Create `brick_metadata.dart` - BrickMetadata freezed model
-- [ ] Create `brick_metadata.dart` - BrickSegment freezed model
+- [DONE] Update `activity_type.dart` - Add `brick` enum value with displayName, iconName, dbValue
+- [DONE] Update `activity_type.dart` - Update `isMultiSport` to include brick
+- [DONE] Update `activity_type.dart` - Add `isBrick` helper getter
+- [DONE] Create `brick_metadata.dart` - BrickMetadata model with toJson/fromJson
+- [DONE] Create `brick_metadata.dart` - BrickSegment model with toJson/fromJson
 - [ ] Update `activity.dart` - Add brickMetadata and brickId fields
 - [ ] Update `activity.dart` - Add isBrick getter
 - [ ] Update `activity.dart` - Update toJson() for brick fields
@@ -308,7 +308,38 @@
 ## Agent Work Log
 <!-- Agents should add their work entries here -->
 
-### 2026-01-20 - Claude (Sonnet 4.5)
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 2
+**Task**: Phase 1.3 - Create BrickMetadata domain models
+
+**Completed**:
+- Created `/lib/features/activities/domain/brick_metadata.dart`
+- Implemented `BrickMetadata` class with:
+  - Fields: segmentOrder, segments, originalActivityIds, createdFromExisting, totalDurationMinutes
+  - toJson() and fromJson() methods for database serialization
+  - copyWith(), equals, hashCode, and toString() methods
+- Implemented `BrickSegment` class with:
+  - Required fields: sport, order, durationMinutes, intensity
+  - Swimming fields: distanceMeters, pacePer100mSeconds, poolOrOpenWater, waterTempC
+  - Cycling fields: distanceMiles, speedMph, terrain, indoorOutdoor, elevationGainFt
+  - Running fields: distanceMiles (shared), paceMinutesPerMile
+  - Full toJson/fromJson, copyWith, equals, hashCode, toString support
+- Added helper function `_listEquals` for list equality comparison
+- Verified with `flutter analyze` - no errors
+
+**Design Decisions**:
+- Used plain Dart classes (not freezed) to match existing codebase patterns (see activity.dart)
+- All sport-specific fields are nullable - only populate relevant fields per segment
+- distanceMiles is shared between cycling and running segments
+- JSON keys use snake_case (e.g., segment_order) to match database conventions
+
+**Next Steps**:
+- Update activity_type.dart to add brick enum value
+- Update activity.dart to include brickMetadata and brickId fields
+- Update activities_table.dart for Drift schema changes
+
+---
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 1
 **Task**: Phase 1.1 - Create Supabase migration for brick support
 
 **Completed**:

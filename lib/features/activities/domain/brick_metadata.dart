@@ -1,7 +1,7 @@
-/// Brick workout metadata domain models
-///
-/// This file contains domain models for brick workouts - multi-sport training
-/// sessions where 2-3 sports are performed consecutively (e.g., swim then run).
+// Brick workout metadata domain models
+//
+// This file contains domain models for brick workouts - multi-sport training
+// sessions where 2-3 sports are performed consecutively (e.g., swim then run).
 
 /// Brick workout metadata
 ///
