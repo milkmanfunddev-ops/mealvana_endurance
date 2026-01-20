@@ -361,13 +361,13 @@ class BrickSegment with _$BrickSegment {
 
 ### Phase 2: Drift Schema Migration
 
-1. **Bump schema version to v3:**
+1. **Add brick columns to schema v3** (already at v3, not yet released):
    ```dart
    // lib/shared/database/app_database.dart
    @DriftDatabase(...)
    class AppDatabase extends _$AppDatabase {
      @override
-     int get schemaVersion => 3;  // Was 2
+     int get schemaVersion => 3;  // Already at v3, add brick columns here
 
      @override
      MigrationStrategy get migration => MigrationStrategy(

@@ -30,11 +30,10 @@ A "brick" workout is a multi-sport training session where athletes combine two o
 | Any 3-sport order | 3 sports | User preference |
 
 **Constraints:**
-- Minimum 2 different sports
-- Maximum 3 sports
-- No duplicate sports (no swim/swim)
+- Minimum 2 segments
+- Maximum 3 segments
 - Same calendar day only
-- No duathlon format (run/bike/run)
+- Any sport combination allowed (including run/bike/run for duathlon-style training)
 
 ## Feature Components
 
