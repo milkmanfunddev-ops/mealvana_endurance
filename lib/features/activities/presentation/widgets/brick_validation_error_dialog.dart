@@ -113,7 +113,7 @@ class BrickValidationErrorDialog extends StatelessWidget {
               onPressed: onRetry != null
                   ? () {
                       Navigator.of(context).pop(true);
-                      onRetry();
+                      onRetry!(); // Use null assertion since we checked above
                     }
                   : () => Navigator.of(context).pop(true),
             ),
