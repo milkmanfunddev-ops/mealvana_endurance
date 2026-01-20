@@ -308,6 +308,40 @@
 ## Agent Work Log
 <!-- Agents should add their work entries here -->
 
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 3
+**Task**: Phase 1.2 & 1.3 - Complete Drift Schema and Domain Model updates
+
+**Completed**:
+- Updated `/lib/shared/database/tables/activities_table.dart`:
+  - Added `brickMetadata` TEXT column (nullable, maps to JSONB in Supabase)
+  - Added `brickId` TEXT column (nullable, UUID reference to parent brick activity)
+  - Updated CHECK constraint for `activity_type` to include 'brick'
+  - Updated CHECK constraint for `status` to include 'archived_for_brick'
+- Updated `/lib/shared/domain/activity_type.dart`:
+  - Added `brick` to enum values
+  - Added displayName: "Brick"
+  - Added iconName: "link" (chain link icon representing connected sports)
+  - Added dbValue: 'brick'
+  - Added case to `fromDbValue()` for 'brick'
+  - Updated `isMultiSport` getter to include brick
+  - Added `isBrick` helper getter
+- Ran `flutter analyze --no-pub` to verify no errors in modified files
+
+**Design Decisions**:
+- Followed existing patterns from activities_table.dart for column definitions
+- Used consistent naming conventions (snake_case for database, camelCase for Dart)
+- Comments added to explain brick columns for future developers
+- All CHECK constraints updated to allow new values
+- ActivityType enum now properly recognizes brick as a multi-sport activity
+- Chain link icon ('link') chosen to visually represent the connection between consecutive sports
+
+**Next Steps**:
+- Phase 1.2: Update `app_database.dart` to ensure new columns are in onCreate (v3 not released yet)
+- Phase 1.3: Update `activity.dart` domain model to add brickMetadata and brickId fields
+- Run code generation after activity.dart updates
+
+---
+
 ### 2026-01-20 - Claude (Sonnet 4.5) - Part 2
 **Task**: Phase 1.3 - Create BrickMetadata domain models
 
