@@ -15,13 +15,13 @@
 # PHASE 1: Schema & Domain Models
 
 ## 1.1 Supabase Schema (Run manually by human after Drift is ready)
-- [ ] Create migration file `supabase/migrations/YYYYMMDDHHMMSS_add_brick_support.sql`
-- [ ] Add `brick` to `activity_type_enum`
-- [ ] Add `archived_for_brick` to `activity_status_enum`
-- [ ] Add `brick_metadata` JSONB column to activities
-- [ ] Add `brick_id` UUID column to activities
-- [ ] Add indexes for brick queries
-- [ ] Add `transition` to `category_enum`
+- [DONE] Create migration file `supabase/migrations/YYYYMMDDHHMMSS_add_brick_support.sql`
+- [DONE] Add `brick` to `activity_type_enum`
+- [DONE] Add `archived_for_brick` to `activity_status_enum`
+- [DONE] Add `brick_metadata` JSONB column to activities
+- [DONE] Add `brick_id` UUID column to activities
+- [DONE] Add indexes for brick queries
+- [DONE] Add `transition` to `category_enum`
 
 ## 1.2 Drift Schema
 - [ ] Update `activities_table.dart` - Add `brickMetadata` TEXT column
@@ -307,6 +307,31 @@
 
 ## Agent Work Log
 <!-- Agents should add their work entries here -->
+
+### 2026-01-20 - Claude (Sonnet 4.5)
+**Task**: Phase 1.1 - Create Supabase migration for brick support
+
+**Completed**:
+- Created `/supabase/migrations/20260120000000_add_brick_support.sql`
+- Added `brick` to `activity_type_enum` with idempotent DO block
+- Added `archived_for_brick` to `activity_status_enum` with idempotent DO block
+- Added `brick_metadata` JSONB column (nullable, default NULL)
+- Added `brick_id` UUID column (nullable, FK to activities.id ON DELETE SET NULL)
+- Created partial index `idx_activities_brick_id` for efficient brick_id queries
+- Created partial index `idx_activities_brick_type` for efficient activity_type='brick' queries
+- Ensured `transition` category enum value exists (already added in previous migration)
+- Added comprehensive comments documenting the brick workflow and schema
+
+**Notes**:
+- Followed existing migration patterns from `20250114_expand_category_enum_and_cleanup.sql` and `20260118_create_app_config_table.sql`
+- Used idempotent `DO $$ BEGIN ... EXCEPTION WHEN duplicate_object` blocks to safely add enum values
+- Foreign key constraint uses ON DELETE SET NULL to preserve archived activities if brick is deleted
+- Partial indexes improve query performance for brick-specific lookups
+- Migration is ready to be run manually by human after Drift schema is updated
+
+**Next Steps**:
+- Phase 1.2: Update Drift schema (activities_table.dart and app_database.dart)
+- Phase 1.3: Update domain models (activity_type.dart, brick_metadata.dart, activity.dart)
 
 ---
 *Last updated: 2026-01-20*

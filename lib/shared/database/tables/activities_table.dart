@@ -71,6 +71,10 @@ class ActivitiesTable extends Table {
   // Embedded nutrition plan data (JSONB in Supabase, stored as TEXT in SQLite)
   TextColumn get nutritionPlanData => text().nullable().named('nutrition_plan_data')();
 
+  // Brick workout support (for multi-sport training like swim-to-bike or bike-to-run)
+  TextColumn get brickMetadata => text().nullable().named('brick_metadata')(); // JSONB in Supabase, TEXT in SQLite
+  TextColumn get brickId => text().nullable().named('brick_id')(); // UUID reference to parent brick activity
+
   // Metadata
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().named('created_at')();
@@ -85,8 +89,8 @@ class ActivitiesTable extends Table {
   
   @override
   List<String> get customConstraints => [
-    "CHECK (activity_type IN ('running', 'cycling', 'swimming'))",
-    "CHECK (status IN ('draft', 'planned', 'in_progress', 'completed', 'skipped'))",
+    "CHECK (activity_type IN ('running', 'cycling', 'swimming', 'brick'))",
+    "CHECK (status IN ('draft', 'planned', 'in_progress', 'completed', 'skipped', 'archived_for_brick'))",
     "CHECK (intensity_level IS NULL OR intensity_level IN ('easy', 'moderate', 'hard', 'race'))",
     'CHECK (completion_rating IS NULL OR (completion_rating >= 1 AND completion_rating <= 5))',
   ];

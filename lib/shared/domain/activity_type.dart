@@ -3,13 +3,15 @@
 ///
 /// Single-sport types: running, cycling, swimming
 /// Multi-sport types: triathlon, duathlon, multisport
+/// Brick workouts: brick (combined consecutive training sessions)
 enum ActivityType {
   running,
   cycling,
   swimming,
   triathlon,
   duathlon,
-  multisport;
+  multisport,
+  brick;
 
   /// Get display name for UI
   String get displayName {
@@ -26,6 +28,8 @@ enum ActivityType {
         return 'Duathlon';
       case ActivityType.multisport:
         return 'Multisport';
+      case ActivityType.brick:
+        return 'Brick';
     }
   }
 
@@ -44,6 +48,8 @@ enum ActivityType {
         return 'directions_run'; // Run + Bike
       case ActivityType.multisport:
         return 'sports'; // Generic sports icon
+      case ActivityType.brick:
+        return 'link'; // Chain link icon representing connected sports
     }
   }
 
@@ -62,6 +68,8 @@ enum ActivityType {
         return 'duathlon';
       case ActivityType.multisport:
         return 'multisport';
+      case ActivityType.brick:
+        return 'brick';
     }
   }
 
@@ -76,7 +84,13 @@ enum ActivityType {
   bool get isMultiSport {
     return this == ActivityType.triathlon ||
         this == ActivityType.duathlon ||
-        this == ActivityType.multisport;
+        this == ActivityType.multisport ||
+        this == ActivityType.brick;
+  }
+
+  /// Check if this is a brick workout
+  bool get isBrick {
+    return this == ActivityType.brick;
   }
 
   /// Create ActivityType from database value
@@ -94,6 +108,8 @@ enum ActivityType {
         return ActivityType.duathlon;
       case 'multisport':
         return ActivityType.multisport;
+      case 'brick':
+        return ActivityType.brick;
       default:
         return ActivityType.running; // Default fallback
     }
