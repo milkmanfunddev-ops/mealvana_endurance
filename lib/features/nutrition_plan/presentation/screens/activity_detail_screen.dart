@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/activity_detail/completion_dialog.dart';
+import '../widgets/activity_detail/brick_completion_dialog.dart';
 import '../widgets/activity_detail/expandable_food_item_widget.dart';
 import '../widgets/activity_detail/geometric_pattern_painter.dart';
 import '../widgets/activity_detail/brick_header.dart';
@@ -908,33 +909,65 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   }
 
   void _completeWorkout(BuildContext context, ActivityDetailState state) {
+    final activity = state.activity;
+    final isBrick = activity != null && activity.isBrick;
+
     showDialog(
       context: context,
-      builder: (dialogContext) => CompletionDialog(
-        onComplete: (rating, notes) async {
-          Navigator.of(dialogContext).pop();
-
-          final controller = _getControllerNotifier();
-
-          await controller.completeActivity(
-            overallSatisfaction: rating,
-            textNotes: notes,
+      builder: (dialogContext) {
+        // Use brick-specific dialog if this is a brick workout
+        if (isBrick && activity.brickMetadata != null) {
+          return BrickCompletionDialog(
+            brick: activity,
+            onComplete: (rating, notes) async {
+              Navigator.of(dialogContext).pop();
+              await _handleCompletion(context, state, rating, notes, isBrick: true);
+            },
           );
+        }
 
-          final analytics = ref.read(appExternalDepsProvider);
-          analytics.analytics.track('workout_completed', properties: {
-            'activity_id': state.activity?.id,
-            'rating': rating,
-            'has_notes': notes?.isNotEmpty ?? false,
-            'is_coach_view': widget.isCoachView,
-          });
-
-          if (mounted) {
-            MealvanaSnackbar.showSuccess(context, 'Workout completed successfully!');
-          }
-        },
-      ),
+        // Use standard dialog for single-sport workouts
+        return CompletionDialog(
+          onComplete: (rating, notes) async {
+            Navigator.of(dialogContext).pop();
+            await _handleCompletion(context, state, rating, notes, isBrick: false);
+          },
+        );
+      },
     );
+  }
+
+  /// Handle workout completion after dialog confirmation
+  Future<void> _handleCompletion(
+    BuildContext context,
+    ActivityDetailState state,
+    int rating,
+    String? notes, {
+    required bool isBrick,
+  }) async {
+    final controller = _getControllerNotifier();
+
+    await controller.completeActivity(
+      overallSatisfaction: rating,
+      textNotes: notes,
+    );
+
+    final analytics = ref.read(appExternalDepsProvider);
+    analytics.analytics.track('workout_completed', properties: {
+      'activity_id': state.activity?.id,
+      'rating': rating,
+      'has_notes': notes?.isNotEmpty ?? false,
+      'is_coach_view': widget.isCoachView,
+      'is_brick': isBrick,
+    });
+
+    if (mounted) {
+      // Show brick-specific message if this is a brick workout
+      final message = isBrick
+          ? 'Brick workout completed successfully!'
+          : 'Workout completed successfully!';
+      MealvanaSnackbar.showSuccess(context, message);
+    }
   }
 
   void _swapFood(BuildContext context, ActivityDetailState state, String foodId, String foodName, String category) {

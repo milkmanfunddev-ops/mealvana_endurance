@@ -11,7 +11,9 @@ import '../../domain/run_parameters.dart';
 import '../../domain/macro_targets.dart';
 import '../../data/macro_repository.dart';
 import '../../application/macro_generation_service.dart';
+import '../../application/brick_macro_service.dart';
 import '../../application/nutrition_plan_service.dart';
+import '../../../activities/domain/brick_metadata.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -921,6 +923,129 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId: activityId,
           distanceMiles: distanceMeters / 1609.34,
           paceMinutesPerMile: (distanceMeters / 100.0) * (paceSecondsper100m / 60.0) / (distanceMeters / 1609.34),
+          errorMessage: error.toString(),
+        );
+
+        rethrow; // Re-throw so the screen can handle it
+      }
+    });
+  }
+
+  /// Generate macros for brick workouts
+  Future<void> generateBrickMacros({
+    required List<BrickSegment> segments,
+    required List<String> segmentOrder,
+    required DateTime scheduledDate,
+    required TimeOfDay scheduledTime,
+    String? activityId,
+    String? eventId,
+    String? forUserId, // If provided, create activity for this user (coach creating for athlete)
+  }) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    // Set loading state
+    state = AsyncData(currentState.copyWith(
+      isGeneratingMacros: true,
+      errorMessage: null,
+    ));
+
+    state = await AsyncValue.guard(() async {
+      String deviceId = 'unknown';
+
+      try {
+        // Track plan generation started
+        final user = await _authService.getCurrentUser();
+        deviceId = user?.id ?? 'unknown';
+
+        // Calculate total distance and duration for analytics
+        double totalDistanceMiles = 0.0;
+        int totalDurationMinutes = 0;
+        for (final segment in segments) {
+          if (segment.distanceMiles != null) {
+            totalDistanceMiles += segment.distanceMiles!;
+          }
+          totalDurationMinutes += segment.durationMinutes;
+        }
+
+        await _analytics.trackPlanGenerationStarted(
+          deviceId: deviceId,
+          activityId: activityId,
+          distanceMiles: totalDistanceMiles,
+          paceMinutesPerMile: 0.0, // Not applicable for brick
+          gutTrainingLevel: user?.gutTraining.name ?? 'medium',
+        );
+
+        // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist
+        final scheduledDateTime = DateTime(
+          scheduledDate.year,
+          scheduledDate.month,
+          scheduledDate.day,
+          scheduledTime.hour,
+          scheduledTime.minute,
+        );
+
+        String finalActivityId = activityId ?? '';
+
+        if (finalActivityId.isEmpty) {
+          final activitiesController = ref.read(activitiesControllerProvider.notifier);
+
+          // Build brick title (e.g., "SWIM/RUN BRICK")
+          final sportNames = segmentOrder.map((s) => s.toUpperCase()).join('/');
+          final brickTitle = '$sportNames BRICK';
+
+          finalActivityId = await activitiesController.createActivity(
+            title: brickTitle,
+            scheduledDateTime: scheduledDateTime,
+            forUserId: forUserId,
+            activityType: ActivityType.brick,
+            intensityLevel: domain.IntensityLevel.moderate, // Default
+            notes: 'Draft brick activity - nutrition plan being generated',
+          );
+        }
+
+        // Create the service instance
+        final brickMacroService = BrickMacroService(
+          supabaseClient: ref.read(appExternalDepsProvider).supabaseClient,
+          macroRepository: ref.read(macroRepositoryProvider),
+          authService: _authService,
+          analytics: _analytics,
+        );
+
+        // Call the service
+        final macroTargets = await brickMacroService.generateBrickMacros(
+          activityId: activityId,
+          deviceId: deviceId,
+          segments: segments,
+          segmentOrder: segmentOrder,
+        );
+
+        return currentState.copyWith(
+          isGeneratingMacros: false,
+          macroTargets: macroTargets,
+          activityId: finalActivityId, // Always has a value now (draft created if needed)
+          eventId: eventId,
+          overrideActivityId: true,
+          overrideEventId: true,
+        );
+
+      } catch (error) {
+        DebugLogger.error('❌ DEBUG: Error generating brick macro targets: $error');
+
+        // Track the error
+        await _analytics.track('app_error', properties: {
+          'error_type': 'Brick Macro Targets Generation Error',
+          'error_message': error.toString(),
+          'screen_name': 'Brick Input',
+          'segment_count': segments.length,
+        });
+
+        // Track macro generation failed
+        await _analytics.trackPlanGenerationFailed(
+          deviceId: deviceId,
+          activityId: activityId,
+          distanceMiles: 0.0,
+          paceMinutesPerMile: 0.0,
           errorMessage: error.toString(),
         );
 

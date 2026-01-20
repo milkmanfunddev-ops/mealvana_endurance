@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/calendar_controller.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
 
 /// Calendar week view widget
 class CalendarWeekView extends ConsumerStatefulWidget {
@@ -209,30 +210,7 @@ class _CalendarWeekViewState extends ConsumerState<CalendarWeekView> {
               final isToday = _isToday(date);
               final isSelected = widget.selectedDate != null && _isSameDay(date, widget.selectedDate!);
 
-              // Check if this day has events or carb loading days
-              final hasEvent = calendarState.maybeWhen(
-                data: (state) => state.events.any((event) {
-                  // Check if event has a linked activity
-                  if (event.activityId != null) {
-                    final activity = state.activities.where((a) => a.id == event.activityId).firstOrNull;
-                    if (activity != null) {
-                      return _isSameDay(activity.scheduledDateTime, date);
-                    }
-                  }
-                  // Check if event has a startTime
-                  if (event.startTime != null) {
-                    try {
-                      final eventDate = DateTime.parse(event.startTime!);
-                      return _isSameDay(eventDate, date);
-                    } catch (_) {
-                      return false;
-                    }
-                  }
-                  return false;
-                }),
-                orElse: () => false,
-              );
-
+              // Check if this day has carb loading days
               final hasCarbLoadingDay = calendarState.maybeWhen(
                 data: (state) => state.carbLoadingDays.any((carbDay) =>
                   _isSameDay(carbDay.planDate, date)
@@ -278,35 +256,9 @@ class _CalendarWeekViewState extends ConsumerState<CalendarWeekView> {
                                     : null,
                           ),
                         ),
-                        // Event and carb loading indicators
-                        if (hasEvent || hasCarbLoadingDay) ...[
-                          const SizedBox(height: 2),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (hasEvent)
-                                Container(
-                                  width: 5,
-                                  height: 5,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              if (hasEvent && hasCarbLoadingDay)
-                                const SizedBox(width: 2),
-                              if (hasCarbLoadingDay)
-                                Container(
-                                  width: 5,
-                                  height: 5,
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
+                        // Activity and carb loading indicators
+                        const SizedBox(height: 2),
+                        _buildDayIndicators(calendarState, date, hasCarbLoadingDay),
                       ],
                     ),
                   ),
@@ -455,9 +407,9 @@ class _CalendarWeekViewState extends ConsumerState<CalendarWeekView> {
       case ActivityStatus.planned:
         return Theme.of(context).colorScheme.secondary;
       case ActivityStatus.draft:
-        return Colors.grey.withOpacity(0.5); // Draft activities shown as faded
+        return Colors.grey.withValues(alpha: 0.5); // Draft activities shown as faded
       case ActivityStatus.archivedForBrick:
-        return Colors.grey.withOpacity(0.3); // Archived activities (used in brick) shown as very faded
+        return Colors.grey.withValues(alpha: 0.3); // Archived activities (used in brick) shown as very faded
     }
   }
 
@@ -500,5 +452,95 @@ class _CalendarWeekViewState extends ConsumerState<CalendarWeekView> {
     final now = DateTime.now();
     final currentWeekStart = _getWeekStart(now);
     return _isSameDay(weekStart, currentWeekStart);
+  }
+
+  /// Build day indicators (activity dots and carb loading indicator)
+  Widget _buildDayIndicators(AsyncValue<CalendarState> calendarState, DateTime date, bool hasCarbLoadingDay) {
+    final activities = calendarState.maybeWhen(
+      data: (state) => state.activities.where((activity) {
+        // Exclude archived activities (they're part of a brick)
+        if (activity.status == ActivityStatus.archivedForBrick) {
+          return false;
+        }
+        return _isSameDay(activity.scheduledDateTime, date);
+      }).toList(),
+      orElse: () => <Activity>[],
+    );
+
+    if (activities.isEmpty && !hasCarbLoadingDay) {
+      return const SizedBox.shrink();
+    }
+
+    // Build dots for activities (including multi-sport dots for bricks)
+    final List<Widget> dots = [];
+
+    for (final activity in activities) {
+      if (activity.isBrick && activity.brickMetadata != null) {
+        // Brick activity: show one dot per sport in segment order
+        final segments = activity.brickMetadata!.segments;
+        for (final segment in segments) {
+          dots.add(Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: _getSportColor(segment.sport),
+              shape: BoxShape.circle,
+            ),
+          ));
+          if (segment != segments.last) {
+            dots.add(const SizedBox(width: 2));
+          }
+        }
+      } else {
+        // Single-sport activity: show one dot
+        dots.add(Container(
+          width: 5,
+          height: 5,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            shape: BoxShape.circle,
+          ),
+        ));
+      }
+
+      // Add spacing between different activities
+      if (activity != activities.last) {
+        dots.add(const SizedBox(width: 2));
+      }
+    }
+
+    // Add carb loading indicator if present
+    if (hasCarbLoadingDay) {
+      if (dots.isNotEmpty) {
+        dots.add(const SizedBox(width: 2));
+      }
+      dots.add(Container(
+        width: 5,
+        height: 5,
+        decoration: const BoxDecoration(
+          color: Colors.orange,
+          shape: BoxShape.circle,
+        ),
+      ));
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: dots,
+    );
+  }
+
+  /// Get sport-specific color for brick segment dots
+  Color _getSportColor(String sport) {
+    switch (sport.toLowerCase()) {
+      case 'swimming':
+        return AppColors.electrolyte; // Teal/cyan for swimming
+      case 'cycling':
+        return AppColors.orange; // Orange for cycling
+      case 'running':
+        return AppColors.dragonfruit; // Pink for running
+      default:
+        return AppColors.electrolyte; // Default fallback
+    }
   }
 }

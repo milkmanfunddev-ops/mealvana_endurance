@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/adjust_macros/edit_macros_dialog_widget.dart';
 import '../widgets/adjust_macros/help_bottom_sheet_widget.dart';
+import '../widgets/adjust_macros/brick_macro_summary.dart';
+import '../widgets/adjust_macros/brick_phase_breakdown.dart';
 import '../utils/macro_helpers.dart';
 import '../../../../shared/widgets/generating_plan_overlay.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -11,6 +13,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../providers/macro_targets_controller.dart';
 import '../../domain/macro_targets.dart' as domain;
 import '../../../../core/utils/debug_logger.dart';
+import '../../../../shared/domain/activity_type.dart';
 
 /// Adjust Macros Screen - Refactored with extracted widgets
 /// Simplified from 1,005 lines using extracted components
@@ -184,6 +187,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     MacroTargetsState state,
     domain.MacroTargets macros,
   ) {
+    // Check if this is a brick activity
+    final isBrick = macros.activityType == ActivityType.brick;
+
+    if (isBrick) {
+      // Render brick-specific UI with combined totals and phase breakdown
+      return _buildBrickMacroSection(context, ref, state, macros);
+    }
+
+    // Default single-sport UI
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: MacroTargetsTable(
@@ -205,6 +217,78 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         onInfoPressed: () => _showHelpBottomSheet(context, ref, state),
         backgroundColor: Colors.transparent,
       ),
+    );
+  }
+
+  Widget _buildBrickMacroSection(
+    BuildContext context,
+    WidgetRef ref,
+    MacroTargetsState state,
+    domain.MacroTargets macros,
+  ) {
+    // Calculate combined totals across all phases
+    final totalCarbs = (macros.preRun.carbsG +
+                       macros.duringRun.carbTotalG +
+                       macros.postRun.carbsG).round();
+    final totalProtein = (macros.preRun.proteinG +
+                         macros.postRun.proteinG).round();
+    final totalFat = macros.preRun.fatCapG.round();
+    final totalSodium = (macros.preRun.sodiumMg +
+                        macros.duringRun.sodiumTotalMg +
+                        macros.postRun.sodiumMg).round();
+    final totalHydration = (macros.preRun.fluidsMl +
+                           macros.duringRun.fluidTotalMl +
+                           macros.postRun.fluidsMl).round();
+
+    // Build phase breakdown data
+    // TODO: In a future enhancement, retrieve detailed phase breakdown from edge function response
+    // For now, show simplified before/during/after breakdown
+    final phaseData = {
+      'before': BrickPhaseData(
+        carbsG: macros.preRun.carbsG.round(),
+        proteinG: macros.preRun.proteinG.round(),
+        sodiumMg: macros.preRun.sodiumMg.round(),
+        waterMl: macros.preRun.fluidsMl.round(),
+      ),
+      'during': BrickPhaseData(
+        carbsG: macros.duringRun.carbTotalG.round(),
+        sodiumMg: macros.duringRun.sodiumTotalMg.round(),
+        waterMl: macros.duringRun.fluidTotalMl.round(),
+      ),
+      'after': BrickPhaseData(
+        carbsG: macros.postRun.carbsG.round(),
+        proteinG: macros.postRun.proteinG.round(),
+        sodiumMg: macros.postRun.sodiumMg.round(),
+        waterMl: macros.postRun.fluidsMl.round(),
+      ),
+    };
+
+    return Column(
+      children: [
+        // Combined totals
+        BrickMacroSummary(
+          totalCarbsG: totalCarbs,
+          totalProteinG: totalProtein,
+          totalFatG: totalFat,
+          totalSodiumMg: totalSodium,
+          totalHydrationMl: totalHydration,
+          onInfoPressed: () => _showHelpBottomSheet(context, ref, state),
+          // TODO: Implement per-macro edit functionality for bricks
+          onEditCarbs: null,
+          onEditProtein: null,
+          onEditFat: null,
+          onEditSodium: null,
+          onEditHydration: null,
+        ),
+        const SizedBox(height: 12),
+
+        // Phase breakdown
+        BrickPhaseBreakdown(
+          phases: phaseData,
+          // TODO: Implement per-phase edit functionality
+          onEditPhase: null,
+        ),
+      ],
     );
   }
 

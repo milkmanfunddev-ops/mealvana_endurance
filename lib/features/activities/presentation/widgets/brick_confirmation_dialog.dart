@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../domain/activity.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Brick Confirmation Dialog
@@ -102,10 +103,10 @@ class BrickConfirmationDialog extends StatelessWidget {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    // Activity name
+                    // Activity title
                     Expanded(
                       child: Text(
-                        activity.name,
+                        activity.title,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -168,15 +169,14 @@ class BrickConfirmationDialog extends StatelessWidget {
   }
 
   IconData _getActivityIcon(ActivityType type) {
-    switch (type) {
-      case ActivityType.running:
-        return FontAwesomeIcons.personRunning;
-      case ActivityType.cycling:
-        return FontAwesomeIcons.personBiking;
-      case ActivityType.swimming:
-        return FontAwesomeIcons.personSwimming;
-      case ActivityType.brick:
-        return FontAwesomeIcons.link;
-    }
+    return switch (type) {
+      ActivityType.running => FontAwesomeIcons.personRunning,
+      ActivityType.cycling => FontAwesomeIcons.personBiking,
+      ActivityType.swimming => FontAwesomeIcons.personSwimming,
+      ActivityType.triathlon => FontAwesomeIcons.personSwimming,
+      ActivityType.duathlon => FontAwesomeIcons.personRunning,
+      ActivityType.multisport => FontAwesomeIcons.personSwimming,
+      ActivityType.brick => FontAwesomeIcons.link,
+    };
   }
 }

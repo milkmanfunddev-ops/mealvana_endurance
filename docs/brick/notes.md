@@ -133,8 +133,8 @@
 - [DONE] Handle minimum 2 sports validation
 
 ## 3.5 Calendar Indicators
-- [ ] Update calendar dots for brick activities (show multiple sport colors)
-- [ ] Show dots in segment order
+- [DONE] Update calendar dots for brick activities (show multiple sport colors)
+- [DONE] Show dots in segment order
 
 ## 3.6 Phase 3 Verification
 - [ ] Widget test: Create Brick button visibility
@@ -216,9 +216,9 @@
 - [ ] Update UI for brick context
 
 ## 5.4 Completion Flow
-- [ ] Update completion dialog for brick (mark entire brick complete)
-- [ ] Update activity status
-- [ ] Show completion confirmation
+- [DONE] Update completion dialog for brick (mark entire brick complete)
+- [DONE] Update activity status
+- [DONE] Show completion confirmation
 
 ## 5.5 Phase 5 Verification
 - [ ] Widget test: Brick header display
@@ -1439,3 +1439,116 @@ All Phase 4.4 functionality is already fully implemented and working correctly:
 
 ---
 
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 14 (Phase 5.4 Complete)
+**Task**: Phase 5.4 - Update completion flow for brick workouts
+
+**Completed**:
+- Created `/lib/features/nutrition_plan/presentation/widgets/activity_detail/brick_completion_dialog.dart`:
+  - Specialized completion dialog for brick workouts
+  - Shows chain link icon in orange (brick branding)
+  - Displays segment summary (e.g., "Swim 2000m + Bike 25.0mi + Run 6.2mi")
+  - Rating system (1-5 stars) and optional notes field
+  - "Complete Brick" button text for clarity
+  - Sport-specific distance formatting (meters for swimming, miles for cycling/running)
+- Updated `/lib/features/nutrition_plan/presentation/screens/activity_detail_screen.dart`:
+  - Added import for `brick_completion_dialog.dart`
+  - Updated `_completeWorkout()` to detect brick workouts and show BrickCompletionDialog
+  - Falls back to standard CompletionDialog for single-sport workouts
+  - Extracted completion handler logic to `_handleCompletion()` helper method
+  - Added brick-specific success message: "Brick workout completed successfully!"
+  - Added `is_brick` property to analytics tracking
+- Fixed analyzer warnings:
+  - Removed unused import for activity_type.dart
+  - Fixed null comparison by checking `activity.brickMetadata != null`
+- Ran `flutter analyze` - All files pass with no issues
+
+**Design Decisions**:
+- The existing `completeActivity()` method in the controller already handles brick workouts correctly
+- Completion marks the entire brick activity as completed (status = 'completed'), not individual segments
+- Segment summary is auto-generated from BrickMetadata for better UX
+- Used chain link icon (orange) to visually distinguish from standard completion (green check)
+- Dialog is scrollable in case of long notes or small screens
+- Single-sport activities continue using the existing CompletionDialog (backward compatibility)
+
+**Key Implementation Details**:
+- Brick detection: `activity.isBrick && activity.brickMetadata != null`
+- Segment summary builder: `_buildSegmentSummary()` formats distances per sport
+- Completion flow: Dialog → _handleCompletion() → controller.completeActivity() → SnackBar
+- Analytics tracking includes `is_brick: true` for brick completions
+- Success message is brick-specific for better user feedback
+
+**Phase 5.4 Status**: ✅ COMPLETE
+- All completion flow tasks marked as [DONE]
+- Brick workouts marked complete as single unit (correct behavior)
+- Activity status updated to 'completed'
+- Brick-specific confirmation messages shown
+- No analyzer errors or warnings
+
+**Next Steps**:
+- Phase 5.3: Update Adjust Macros Screen for brick context (combined totals, expandable phase breakdown)
+- Phase 5.5: Add widget/integration tests for brick completion flow
+- Phase 6: Polish, animations, comprehensive testing
+
+---
+
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 15 (Phase 3.5 Complete)
+**Task**: Phase 3.5 - Update calendar indicators for brick activities
+
+**Completed**:
+- Updated `/lib/features/calendar/presentation/widgets/calendar_week_view.dart`:
+  - Added imports for AppColors (sport-specific colors)
+  - Removed old simple event indicator logic
+  - Created `_buildDayIndicators()` method that:
+    - Filters out archived activities (they're part of bricks)
+    - Detects brick activities and renders one dot per sport segment
+    - Shows dots in segment order (matches brick_metadata.segments order)
+    - Uses sport-specific colors: swimming (electrolyte/teal), cycling (orange), running (dragonfruit/pink)
+    - Handles multiple activities on same day with spacing
+    - Includes carb loading indicator (orange dot) when present
+  - Created `_getSportColor()` helper method:
+    - Maps sport string ('swimming', 'cycling', 'running') to AppColors
+    - Returns electrolyte (teal) for swimming
+    - Returns orange for cycling
+    - Returns dragonfruit (pink) for running
+  - Fixed deprecated `withOpacity()` calls to use `withValues(alpha:)` for Flutter 3.24+ compatibility
+  - Removed unused `hasEvent` variable
+- Ran `flutter analyze` - No issues found
+- Updated `/docs/brick/notes.md` checklist: Phase 3.5 marked as [DONE]
+
+**Design Decisions**:
+- Used AppColors from Kyle design system for consistency with app theme
+- Swimming = electrolyte (teal/cyan) - matches water/hydration theme
+- Cycling = orange - matches cycling's energetic nature
+- Running = dragonfruit (pink) - matches intensity/effort theme
+- Dots are 5x5px circles with 2px spacing between them
+- Archived activities (status = archivedForBrick) are excluded from calendar dots since they're part of a brick
+- Multiple activities on same day show separate dot groups with spacing
+- Calendar correctly handles 2-sport bricks (e.g., swim/run: teal + pink) and 3-sport bricks (e.g., swim/bike/run: teal + orange + pink)
+
+**Implementation Notes**:
+- The `_buildDayIndicators()` method is called from the week days header for each date
+- Brick detection uses `activity.isBrick && activity.brickMetadata != null`
+- Segment order comes from `activity.brickMetadata!.segments` list (already sorted by order field)
+- Method handles empty states gracefully with `SizedBox.shrink()` when no activities or carb loading
+- Carb loading indicator remains orange (not sport-colored) to distinguish it from activity dots
+
+**Example Visual Outputs**:
+- Swim/Run brick: 🔵🟣 (electrolyte dot + dragonfruit dot)
+- Bike/Run brick: 🟠🟣 (orange dot + dragonfruit dot)
+- Swim/Bike/Run brick: 🔵🟠🟣 (electrolyte + orange + dragonfruit dots)
+- Brick + carb loading: 🔵🟣🟠 (sport dots + carb loading dot)
+
+**Phase 3.5 Status**: ✅ COMPLETE
+- All calendar indicator tasks completed
+- Multi-sport dots display correctly in segment order
+- Sport-specific colors implemented
+- No analyzer errors or warnings
+
+**Next Steps**:
+- Phase 3.6: Add comprehensive testing (widget tests, integration tests)
+- Phase 4: Continue with brick tab in New Activity Screen
+- Phase 5: Activity Details Screen with multi-phase nutrition sections
+
+---

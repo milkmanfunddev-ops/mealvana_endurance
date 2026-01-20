@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/activity.dart';
 import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
-import '../../../../shared/services/logging/logging_service.dart';
+import '../../../../shared/services/logging_service.dart';
 
 part 'brick_actions_controller.g.dart';
 
@@ -20,7 +20,7 @@ part 'brick_actions_controller.g.dart';
 class BrickActionsController extends _$BrickActionsController {
   ActivitiesService get _service => ref.read(activitiesServiceProvider);
   ActivitiesRepository get _repository => ref.read(activitiesRepositoryProvider);
-  LoggingService get _logger => ref.read(loggingServiceProvider);
+  AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
   FutureOr<void> build() {

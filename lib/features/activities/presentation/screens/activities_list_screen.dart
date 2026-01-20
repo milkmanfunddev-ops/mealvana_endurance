@@ -21,6 +21,7 @@ import '../widgets/carb_loading_day_card.dart';
 import '../widgets/create_brick_button.dart';
 import '../widgets/brick_confirmation_dialog.dart';
 import '../widgets/brick_ungroup_dialog.dart';
+import '../widgets/brick_minimum_warning_dialog.dart';
 import '../widgets/brick_group_card.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../domain/activity.dart';
@@ -487,12 +488,19 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
     // Get segment count for dialog message
     final activitiesState = ref.read(activitiesControllerProvider);
-    final brick = activitiesState.valueOrNull?.firstWhere(
+
+    // Use maybeWhen to safely extract activities list
+    final activities = activitiesState.maybeWhen(
+      data: (activitiesData) => (activitiesData as List).cast<Activity>(),
+      orElse: () => <Activity>[],
+    );
+
+    final brick = activities.firstWhere(
       (a) => a.id == brickId,
       orElse: () => throw StateError('Brick not found'),
     );
 
-    final segmentCount = brick?.brickMetadata?.segments.length ?? 0;
+    final segmentCount = brick.brickMetadata?.segments.length ?? 0;
 
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
@@ -562,12 +570,19 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
     // Get brick activity
     final activitiesState = ref.read(activitiesControllerProvider);
-    final brick = activitiesState.valueOrNull?.firstWhere(
+
+    // Use maybeWhen to safely extract activities list
+    final activities = activitiesState.maybeWhen(
+      data: (activitiesData) => (activitiesData as List).cast<Activity>(),
+      orElse: () => <Activity>[],
+    );
+
+    final brick = activities.firstWhere(
       (a) => a.id == brickId,
       orElse: () => throw StateError('Brick not found'),
     );
 
-    final segmentCount = brick?.brickMetadata?.segments.length ?? 0;
+    final segmentCount = brick.brickMetadata?.segments.length ?? 0;
 
     // If removing this segment would leave only 1 sport, show warning dialog
     if (segmentCount <= 2) {

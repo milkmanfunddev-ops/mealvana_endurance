@@ -59,8 +59,8 @@ class BrickSegmentAccordion extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? AppColors.cream.withOpacity(0.2)
-              : AppColors.blackberry.withOpacity(0.2),
+              ? AppColors.cream.withValues(alpha: 0.2)
+              : AppColors.blackberry.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -83,8 +83,8 @@ class BrickSegmentAccordion extends StatelessWidget {
                     FontAwesomeIcons.gripVertical,
                     size: 20,
                     color: isDark
-                        ? AppColors.cream.withOpacity(0.5)
-                        : AppColors.blackberry.withOpacity(0.5),
+                        ? AppColors.cream.withValues(alpha: 0.5)
+                        : AppColors.blackberry.withValues(alpha: 0.5),
                   ),
                   const SizedBox(width: AppSpacing.md),
 
@@ -107,8 +107,8 @@ class BrickSegmentAccordion extends StatelessWidget {
                         : FontAwesomeIcons.chevronDown,
                     size: 16,
                     color: isDark
-                        ? AppColors.cream.withOpacity(0.7)
-                        : AppColors.blackberry.withOpacity(0.7),
+                        ? AppColors.cream.withValues(alpha: 0.7)
+                        : AppColors.blackberry.withValues(alpha: 0.7),
                   ),
                 ],
               ),

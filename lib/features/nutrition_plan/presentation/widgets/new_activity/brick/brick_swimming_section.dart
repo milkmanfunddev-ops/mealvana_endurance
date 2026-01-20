@@ -221,7 +221,7 @@ class _KyleDropdown extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: isDark
-                ? AppColors.blackberry.withOpacity(0.3)
+                ? AppColors.blackberry.withValues(alpha: 0.3)
                 : AppColors.cream,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(

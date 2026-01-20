@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'running_input_controller.dart';
 import 'cycling_input_controller.dart';
 import 'swimming_input_controller.dart';
+import 'brick_input_controller.dart';
 import 'macro_targets_controller.dart';
 import '../../../../core/utils/debug_logger.dart';
 
@@ -82,6 +83,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
     ref.read(runningInputControllerProvider.notifier).updateDateTime(date, time);
     ref.read(cyclingInputControllerProvider.notifier).updateDateTime(date, time);
     ref.read(swimmingInputControllerProvider.notifier).updateDateTime(date, time);
+    ref.read(brickInputControllerProvider.notifier).updateDateTime(date, time);
   }
 
   /// Generate macros for the active sport
@@ -132,10 +134,24 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           DebugLogger.info('🎮 COORDINATOR: swimmingInputController.generateMacros returned');
           break;
         case SportTab.brick:
-          // TODO: Phase 4.5 - Implement brick macro generation
-          // Will call brickInputController.generateMacros() once created
-          DebugLogger.info('🎮 COORDINATOR: Brick macro generation not yet implemented');
-          throw UnimplementedError('Brick macro generation coming in Phase 4.5');
+          DebugLogger.info('🎮 COORDINATOR: Calling brickInputController to get segments...');
+          final brickController = ref.read(brickInputControllerProvider.notifier);
+          final segments = brickController.getSegments();
+          final segmentOrder = brickController.state.sportOrder;
+          final selectedDate = brickController.state.selectedDate;
+          final selectedTime = brickController.state.selectedTime;
+
+          DebugLogger.info('🎮 COORDINATOR: Got ${segments.length} brick segments, calling macroTargetsController...');
+          await ref.read(macroTargetsControllerProvider.notifier).generateBrickMacros(
+            segments: segments,
+            segmentOrder: segmentOrder,
+            scheduledDate: selectedDate,
+            scheduledTime: selectedTime,
+            activityId: activityId,
+            eventId: eventId,
+            forUserId: forUserId,
+          );
+          DebugLogger.info('🎮 COORDINATOR: macroTargetsController.generateBrickMacros returned');
       }
 
       // CRITICAL: Wait for distancePageGutEntryController state to fully update
