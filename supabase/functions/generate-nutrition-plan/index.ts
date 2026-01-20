@@ -25,6 +25,7 @@ import {
   buildPreferenceSet,
   deduplicateFoods,
   calculateTotals,
+  matchesPreference,
   // Database queries
   getFoodsForPhase,
   getElectrolyteFoods,
@@ -40,6 +41,8 @@ import {
   // Constants
   MACRO_CONSTRAINT_RANGES,
   POST_PROCESS_THRESHOLDS,
+  PREFERENCE_SCORE_MAP,
+  DEFAULT_MAX_SERVINGS,
 } from '../_shared/nutrition/index.ts';
 
 import { roundToIncrement } from '../_shared/utils.ts';
@@ -274,6 +277,371 @@ async function optimizePhase(
 }
 
 // ============================================================================
+// Brick Workout Handler
+// ============================================================================
+
+async function handleBrickNutritionPlan(
+  supabase: ReturnType<typeof createServiceClient>,
+  body: any
+): Promise<Response> {
+  console.log('[BRICK-PLAN] Starting brick nutrition plan generation');
+
+  const userId = body.device_id;
+  const { phases } = body.macro_targets;
+
+  if (!phases) {
+    return errorResponse(
+      'Brick workouts require macro_targets.phases with before, during_segments, transitions, and after',
+      400
+    );
+  }
+
+  // Parse preferences
+  const likedFoods = buildPreferenceSet(body.liked_foods);
+  const willTryFoods = buildPreferenceSet(body.willing_to_try_foods);
+  const dislikedFoods = buildPreferenceSet(body.disliked_foods);
+
+  console.log('[BRICK-PREFERENCES] Received:', {
+    liked: Array.from(likedFoods).slice(0, 5),
+    willing: Array.from(willTryFoods).slice(0, 5),
+    disliked: Array.from(dislikedFoods).slice(0, 5),
+  });
+
+  // Get electrolyte foods for all phases (using brick activity type)
+  const electrolyteFoods = await getElectrolyteFoods(supabase, userId, likedFoods, willTryFoods, 'brick', 'during');
+  console.log(`[BRICK-PLAN] Found ${electrolyteFoods.length} electrolyte options for brick`);
+
+  // 1. Optimize BEFORE phase (standard)
+  console.log('[BRICK-PLAN] Optimizing before phase');
+  const beforeTargets: MacroTargets = {
+    carbs_g: safe(phases.before.carbs_g),
+    protein_g: safe(phases.before.protein_g),
+    sodium_mg: safe(phases.before.sodium_mg),
+    water_ml: safe(phases.before.water_ml),
+  };
+
+  const beforeResult = await optimizePhase(
+    supabase,
+    'before',
+    userId,
+    beforeTargets,
+    likedFoods,
+    willTryFoods,
+    dislikedFoods,
+    electrolyteFoods,
+    'brick'
+  );
+
+  // 2. Optimize DURING SEGMENTS (sport-specific)
+  console.log('[BRICK-PLAN] Optimizing during segments');
+  const duringSegments: Record<number, PhaseResult> = {};
+
+  if (phases.during_segments && Array.isArray(phases.during_segments)) {
+    for (const segment of phases.during_segments) {
+      const segmentOrder = segment.segment_order;
+      const sport = segment.sport; // 'swimming', 'cycling', 'running'
+
+      console.log(`[BRICK-PLAN] Optimizing segment ${segmentOrder} (${sport})`);
+
+      const segmentTargets: MacroTargets = {
+        carbs_g: safe(segment.carbs_g),
+        protein_g: 0, // No protein during exercise
+        sodium_mg: safe(segment.sodium_mg),
+        water_ml: safe(segment.water_ml),
+      };
+
+      // Use sport-specific activity type for food filtering
+      const segmentActivityType = sport === 'swimming' ? 'swimming' : sport === 'cycling' ? 'cycling' : 'running';
+
+      const segmentResult = await optimizePhase(
+        supabase,
+        'during',
+        userId,
+        segmentTargets,
+        likedFoods,
+        willTryFoods,
+        dislikedFoods,
+        electrolyteFoods,
+        segmentActivityType as ActivityType
+      );
+
+      duringSegments[segmentOrder] = segmentResult;
+    }
+  }
+
+  // 3. Optimize TRANSITIONS (T1, T2)
+  console.log('[BRICK-PLAN] Optimizing transitions');
+  const transitions: Record<string, PhaseResult> = {};
+
+  if (phases.transitions && Array.isArray(phases.transitions)) {
+    for (const transition of phases.transitions) {
+      const transitionName = transition.transition_name; // 'T1' or 'T2'
+
+      console.log(`[BRICK-PLAN] Optimizing transition ${transitionName}`);
+
+      const transitionTargets: MacroTargets = {
+        carbs_g: safe(transition.carbs_g),
+        protein_g: 0,
+        sodium_mg: safe(transition.sodium_mg),
+        water_ml: safe(transition.water_ml),
+      };
+
+      // Optimize transition using brick activity type with transition food filtering
+      const transitionResult = await optimizeBrickTransition(
+        supabase,
+        transitionName,
+        userId,
+        transitionTargets,
+        likedFoods,
+        willTryFoods,
+        dislikedFoods,
+        electrolyteFoods
+      );
+
+      transitions[transitionName] = transitionResult;
+    }
+  }
+
+  // 4. Optimize AFTER phase (standard)
+  console.log('[BRICK-PLAN] Optimizing after phase');
+  const afterTargets: MacroTargets = {
+    carbs_g: safe(phases.after.carbs_g),
+    protein_g: safe(phases.after.protein_g),
+    sodium_mg: safe(phases.after.sodium_mg),
+    water_ml: safe(phases.after.water_ml),
+  };
+
+  const afterResult = await optimizePhase(
+    supabase,
+    'after',
+    userId,
+    afterTargets,
+    likedFoods,
+    willTryFoods,
+    dislikedFoods,
+    electrolyteFoods,
+    'brick'
+  );
+
+  // Generate response
+  const planId = crypto.randomUUID();
+
+  return jsonResponse({
+    success: true,
+    plan_id: planId,
+    activity_type: 'brick',
+    detailed_message: 'Optimized brick workout nutrition plan with multi-phase food selection.',
+    plan: {
+      before: beforeResult.items,
+      during_segments: Object.fromEntries(
+        Object.entries(duringSegments).map(([order, result]) => [order, result.items])
+      ),
+      transitions: Object.fromEntries(
+        Object.entries(transitions).map(([name, result]) => [name, result.items])
+      ),
+      after: afterResult.items,
+    },
+    macro_targets: body.macro_targets,
+  });
+}
+
+/**
+ * Optimize a brick transition phase (T1 or T2)
+ * Uses transition-specific food filtering
+ */
+async function optimizeBrickTransition(
+  supabase: ReturnType<typeof createServiceClient>,
+  transitionName: string,
+  userId: string,
+  targets: MacroTargets,
+  likedFoods: Set<string>,
+  willTryFoods: Set<string>,
+  dislikedFoods: Set<string>,
+  electrolyteFoods: Food[]
+): Promise<PhaseResult> {
+  console.log(`[OPTIMIZE-${transitionName}] Starting transition optimization`);
+  console.log(`[OPTIMIZE-${transitionName}] Targets:`, targets);
+
+  // Get foods with 'transition' category
+  const foods = await getTransitionFoods(
+    supabase,
+    userId,
+    likedFoods,
+    willTryFoods,
+    dislikedFoods
+  );
+
+  if (foods.length === 0) {
+    console.log(`[OPTIMIZE-${transitionName}] No transition foods available`);
+    return {
+      items: [],
+      totals: { carbs_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 0, water_ml: 0, calories: 0 },
+    };
+  }
+
+  console.log(`[OPTIMIZE-${transitionName}] Found ${foods.length} transition foods`);
+
+  // Use brick optimization weights for transitions
+  const weights = getOptimizationWeights('brick', 'during');
+
+  // Build and solve LP model
+  const model = buildLPModel(foods, targets, 'during', weights);
+  let solution = solveLPModel(model, foods, 'during');
+
+  // Use greedy fallback if LP solver fails
+  if (!solution) {
+    console.log(`[OPTIMIZE-${transitionName}] LP solver failed, using greedy fallback`);
+    solution = greedyFallback(foods, targets, 'during');
+  }
+
+  console.log(`[OPTIMIZE-${transitionName}] Solution found with ${solution.foods.length} foods`);
+
+  // Post-process to add electrolytes and water as needed
+  const postProcessedFoods = await postProcessPhase(
+    supabase,
+    solution,
+    targets,
+    electrolyteFoods,
+    foods,
+    'during',
+    'brick'
+  );
+
+  // Deduplicate and calculate final totals
+  const finalFoods = deduplicateFoods(postProcessedFoods);
+  const finalTotals = calculateTotals(finalFoods);
+
+  console.log(`[OPTIMIZE-${transitionName}] Final totals:`, finalTotals);
+
+  return {
+    items: finalFoods,
+    totals: finalTotals,
+  };
+}
+
+/**
+ * Get foods with 'transition' category for brick transitions
+ */
+async function getTransitionFoods(
+  supabase: ReturnType<typeof createServiceClient>,
+  userId: string,
+  likedFoods: Set<string>,
+  willTryFoods: Set<string>,
+  dislikedFoods: Set<string>
+): Promise<Food[]> {
+  console.log('[TRANSITION-FOODS] Fetching transition category foods');
+
+  // Get generic transition foods
+  const { data: genericFoods, error: genericError } = await supabase
+    .from('foods')
+    .select(`
+      id, name, display_name, display_name_plural, image_address, description,
+      calories_per_serving, carbs_per_serving, protein_per_serving,
+      fat_per_serving, sodium_mg, fluid_ml_per_serving,
+      serving_amount, product_type,
+      max_servings_during,
+      is_electrolyte, to_exclude_from_solver, is_essential,
+      categories
+    `)
+    .filter('categories', 'cs', '{transition}');
+
+  if (genericError) {
+    console.log('[TRANSITION-FOODS] Error fetching generic transition foods:', genericError);
+  }
+
+  // Get user transition foods
+  const { data: userFoods, error: userError } = await supabase
+    .from('user_foods')
+    .select(`
+      id, name, display_name, display_name_plural, image_address, description,
+      calories_per_serving, carbs_per_serving, protein_per_serving,
+      fat_per_serving, sodium_mg, fluid_ml_per_serving,
+      serving_amount, product_type,
+      is_electrolyte, to_exclude_from_solver, is_deleted,
+      categories
+    `)
+    .eq('user_id', userId)
+    .eq('is_deleted', false)
+    .filter('categories', 'cs', '{transition}');
+
+  if (userError) {
+    console.log('[TRANSITION-FOODS] Error fetching user transition foods:', userError);
+  }
+
+  // Combine and deduplicate foods
+  const allFoodsMap = new Map<string, any>();
+
+  const addFoods = (list: any[], isUserFood = false) => {
+    if (!list) return;
+    for (const food of list) {
+      if (!allFoodsMap.has(food.id)) {
+        allFoodsMap.set(food.id, { ...food, _isUserFood: isUserFood });
+      }
+    }
+  };
+
+  addFoods(genericFoods || [], false);
+  addFoods(userFoods || [], true);
+
+  const allFoods = Array.from(allFoodsMap.values());
+  console.log(`[TRANSITION-FOODS] Found ${allFoods.length} total transition foods`);
+
+  if (allFoods.length === 0) return [];
+
+  // Filter and transform foods (same logic as getFoodsForPhase)
+  return allFoods
+    .filter((f) => {
+      const isUserFood = f._isUserFood === true;
+      const isDisliked = matchesPreference(f, dislikedFoods);
+      const isExcludedFromSolver = f.to_exclude_from_solver === true;
+
+      if (isDisliked && !isUserFood) {
+        console.log(`[TRANSITION-FILTER] Excluding disliked food: ${f.name}`);
+        return false;
+      }
+
+      return !isExcludedFromSolver;
+    })
+    .map((f): Food => {
+      const isUserFood = f._isUserFood === true;
+      const isLiked = isUserFood || matchesPreference(f, likedFoods);
+      const isWilling = matchesPreference(f, willTryFoods);
+
+      let preferenceCategory: 'liked' | 'willing' | 'essential' | 'neutral' = 'neutral';
+      if (isLiked) {
+        preferenceCategory = 'liked';
+      } else if (isWilling) {
+        preferenceCategory = 'willing';
+      }
+
+      const preference_score = PREFERENCE_SCORE_MAP[preferenceCategory];
+
+      return {
+        id: f.id,
+        name: f.name,
+        display_name: f.display_name,
+        display_name_plural: f.display_name_plural,
+        description: f.description,
+        image_address: f.image_address,
+        per_serving: {
+          carbs_g: safe(f.carbs_per_serving),
+          protein_g: safe(f.protein_per_serving),
+          fat_g: safe(f.fat_per_serving),
+          sodium_mg: safe(f.sodium_mg),
+          water_ml: safe(f.fluid_ml_per_serving),
+          calories: safe(f.calories_per_serving),
+        },
+        serving_amount: f.serving_amount,
+        max_servings: f.max_servings_during ?? DEFAULT_MAX_SERVINGS,
+        preference_score,
+        is_electrolyte: f.is_electrolyte || false,
+        is_essential: f.is_essential || false,
+        is_user_food: isUserFood,
+      };
+    });
+}
+
+// ============================================================================
 // Request Handler
 // ============================================================================
 
@@ -294,6 +662,15 @@ serve(async (req) => {
         'Missing required fields: device_id (user UUID) and macro_targets are required',
         400
       );
+    }
+
+    // Get activity type
+    const activityType = (body.activity_type || 'running') as ActivityType;
+
+    // Check if this is a brick workout
+    if (activityType === 'brick') {
+      console.log('[NUTRITION-PLAN] Detected brick workout - using multi-phase logic');
+      return await handleBrickNutritionPlan(supabase, body);
     }
 
     const { pre_run, during_run, post_run } = body.macro_targets;

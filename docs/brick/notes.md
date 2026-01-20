@@ -79,11 +79,11 @@
 - [DONE] Normalize response to match single-sport format
 
 ## 2.2 generate-nutrition-plan Updates
-- [ ] Add brick activity type support
-- [ ] Implement multi-phase food selection
-- [ ] Add transition food category handling
-- [ ] Implement sport-specific during-phase food filtering
-- [ ] Update response schema for brick plans (separate foods per phase)
+- [DONE] Add brick activity type support
+- [DONE] Implement multi-phase food selection
+- [DONE] Add transition food category handling
+- [DONE] Implement sport-specific during-phase food filtering
+- [DONE] Update response schema for brick plans (separate foods per phase)
 
 ## 2.3 Sport Config
 - [DONE] Create `brick.ts` sport config in `supabase/functions/_shared/nutrition/sport-configs/`
@@ -103,13 +103,13 @@
 # PHASE 3: Activities List UI (Create Brick)
 
 ## 3.1 Create Brick Button
-- [ ] Add visibility logic (2+ different sports on same day)
-- [ ] Create `CreateBrickButton` widget
-- [ ] Add button to activities list header (next to "Today's Activities")
-- [ ] Style with orange outline, chain link icon
+- [DONE] Add visibility logic (2+ different sports on same day)
+- [DONE] Create `CreateBrickButton` widget
+- [DONE] Add button to activities list header (next to "Today's Activities")
+- [DONE] Style with orange outline, chain link icon
 
 ## 3.2 Selection Mode
-- [ ] Create `BrickSelectionController` provider
+- [DONE] Create `BrickSelectionController` provider
 - [ ] Add selection mode state to activities list
 - [ ] Implement checkbox UI on activity cards
 - [ ] Implement numbered order indicators (1, 2, 3)
@@ -148,11 +148,11 @@
 # PHASE 4: New Activity Screen (Brick Tab)
 
 ## 4.1 Sport Selector Update
-- [ ] Add 4th brick icon to sport selector
-- [ ] Create combined silhouettes icon asset (or use chain link)
-- [ ] Add `SportTab.brick` to enum
-- [ ] Handle brick tab selection
-- [ ] Update `NewActivityCoordinator` for brick tab
+- [DONE] Add 4th brick icon to sport selector
+- [DONE] Create combined silhouettes icon asset (or use chain link)
+- [DONE] Add `SportTab.brick` to enum
+- [DONE] Handle brick tab selection
+- [DONE] Update `NewActivityCoordinator` for brick tab
 
 ## 4.2 Brick Tab Content
 - [ ] Create `BrickInputController` provider
@@ -707,3 +707,116 @@
 - Phase 3: Build Activities List UI with Create Brick button and selection mode
 - Consider running `/task-checker` to verify comprehensive quality before moving to Phase 2
 
+
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 10 (Phase 2.2 Complete)
+**Task**: Phase 2.2 - Update generate-nutrition-plan edge function for brick support
+
+**Completed**:
+- Updated `/supabase/functions/generate-nutrition-plan/index.ts`:
+  - Added brick activity type detection in main handler
+  - Implemented `handleBrickNutritionPlan()` function for multi-phase optimization:
+    - Parses `macro_targets.phases` structure (before, during_segments, transitions, after)
+    - Optimizes BEFORE phase using brick activity type
+    - Optimizes each DURING SEGMENT with sport-specific food filtering:
+      - Swimming segments use `activityType: 'swimming'` → filters for `during_swim` category
+      - Cycling segments use `activityType: 'cycling'` → filters for `during_bike` category
+      - Running segments use `activityType: 'running'` → filters for `during_run` category
+    - Optimizes TRANSITIONS (T1, T2) using transition-specific food filtering
+    - Optimizes AFTER phase using brick activity type
+  - Implemented `optimizeBrickTransition()` function:
+    - Uses transition-specific food filtering (foods with 'transition' category)
+    - Applies brick optimization weights
+    - Uses LP solver with greedy fallback
+    - Post-processes for electrolytes and water
+  - Implemented `getTransitionFoods()` function:
+    - Queries generic and user foods with 'transition' category
+    - Uses Supabase `.filter('categories', 'cs', '{transition}')` for array contains
+    - Applies preference filtering (liked, willing, disliked)
+    - Excludes foods marked `to_exclude_from_solver`
+    - Returns transformed Food objects with preference scores
+  - Updated imports to include `matchesPreference`, `PREFERENCE_SCORE_MAP`, `DEFAULT_MAX_SERVINGS`
+  - Response schema includes:
+    - `activity_type: 'brick'`
+    - `plan.before`: FoodResult[]
+    - `plan.during_segments`: { [segmentOrder: number]: FoodResult[] }
+    - `plan.transitions`: { T1?: FoodResult[], T2?: FoodResult[] }
+    - `plan.after`: FoodResult[]
+
+**Design Decisions**:
+- Sport-specific food filtering happens at the segment level:
+  - Swimming segments get `during_swim` foods (typically none - can't eat while swimming)
+  - Cycling segments get `during_bike` foods (solid foods, bars, etc.)
+  - Running segments get `during_run` foods (gels, chews, sports drinks)
+- Transition foods are filtered separately using 'transition' category:
+  - Quick-digesting carbs (gels, sports drinks, chews)
+  - Easy to consume in 2-5 minutes
+  - Tagged in database with `categories: ['transition']`
+- Reused existing `optimizePhase()` function for before/after and segment optimization
+- Created new `optimizeBrickTransition()` for transition-specific logic
+- Each phase is optimized independently with its own targets and food pool
+- Response structure matches the generate-macros brick response format
+
+**Key Implementation Details**:
+- Brick detection: `if (activityType === 'brick')` triggers multi-phase handler
+- Sport mapping: `sport === 'swimming' ? 'swimming' : sport === 'cycling' ? 'cycling' : 'running'`
+- Transition query uses `categories.cs.{transition}` (contains operator for PostgreSQL arrays)
+- All food queries include both generic foods and user-created foods
+- Preference scoring applies to all food types (transition, segment-specific, etc.)
+
+**Next Steps**:
+- Phase 2.4: Add edge function tests for brick nutrition plan generation
+- Test transition food selection with various preference combinations
+- Test sport-specific food filtering (verify swimming gets no during foods, cycling gets solid foods, running gets gels)
+
+---
+
+
+---
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 10 (Phase 4.1 Complete)
+**Task**: Phase 4.1 - Update Sport Selector and NewActivityCoordinator for brick tab
+
+**Completed**:
+- Updated `/lib/features/nutrition_plan/presentation/providers/new_activity_coordinator.dart`:
+  - Added `brick` to `SportTab` enum (line 16)
+  - Added brick case to `fetchLocationForActiveTab()` switch statement (line 70-73) with comment explaining brick doesn't need location
+  - Added brick case to `generateMacros()` switch statement (line 134-138) with TODO for Phase 4.5 implementation
+  - Added brick case to `getHeroImagePath()` (line 166-169) using triathlon image as fallback
+  - Added brick case to `getSportLabel()` (line 182-183) returning "Brick"
+- Updated `/lib/features/nutrition_plan/presentation/widgets/new_activity/shared/sport_selector.dart`:
+  - Updated class documentation from "Three icon buttons" to "Four icon buttons" (line 9)
+  - Updated design comment to include BRICK (line 11)
+  - Added 4th brick button to Row widget (line 49-56):
+    - Icon: `FontAwesomeIcons.link` (chain link icon)
+    - Label: "BRICK"
+    - Follows same styling pattern as other sport buttons
+    - Properly wired to `SportTab.brick` selection
+- Ran `flutter pub run build_runner build --delete-conflicting-outputs`:
+  - Successfully regenerated 36 outputs in 19s
+  - Riverpod providers regenerated
+- Ran `flutter analyze` on both modified files:
+  - No issues found
+
+**Design Decisions**:
+- Used `FontAwesomeIcons.link` (chain link) icon to represent brick workouts, symbolizing connected consecutive sports
+- Brick tab doesn't need location fetching since location will be handled per-segment if needed
+- Brick macro generation throws `UnimplementedError` with clear message until Phase 4.5 is implemented
+- Used triathlon hero image (`Triathlete.png`) as fallback for brick workouts
+- Sport label is simply "Brick" to match the concise naming of other sports
+- Followed existing switch statement patterns with exhaustive case handling
+
+**Phase 4.1 Status**: ✅ COMPLETE
+- All tasks marked as [DONE] in checklist
+- Sport selector now displays 4 tabs: RUNNING | BIKING | SWIMMING | BRICK
+- All switch statements in NewActivityCoordinator handle brick case
+- Code generation successful
+- No analyzer errors
+
+**Next Steps**:
+- Phase 4.2: Create BrickInputController provider
+- Phase 4.2: Create BrickTabContent widget with sport checkbox selector
+- Phase 4.3: Implement segment input sections for each sport
+- Phase 4.4: Add drag-to-reorder functionality for segments
+
+---
