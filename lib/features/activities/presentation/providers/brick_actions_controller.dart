@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/activity.dart';
 import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/logging/logging_service.dart';
 
 part 'brick_actions_controller.g.dart';
 
@@ -25,7 +25,7 @@ class BrickActionsController extends _$BrickActionsController {
   @override
   FutureOr<void> build() {
     // No persistent state needed - this is an action controller
-    return;
+    // Return empty value for void AsyncNotifier
   }
 
   /// Create a brick workout from selected activities

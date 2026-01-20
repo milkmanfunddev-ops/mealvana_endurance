@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/brick_input_controller.dart';
+import '../../../providers/brick_input_controller.dart';
 import 'brick_sport_checkbox.dart';
-import '../../../../../../shared/widgets/kyle_design/buttons/kyle_primary_button.dart';
+import '../../../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../../../theme/kyle_design/app_colors.dart';
-import '../../../../../../shared/widgets/kyle_design/text/section_header_text.dart';
+import '../../../../../../shared/widgets/kyle_design/typography/section_header_text.dart';
 
 /// Brick Tab Content
 ///
@@ -48,8 +48,7 @@ class BrickTabContent extends ConsumerWidget {
         // Drag to reorder label
         if (formState.selectedSports.length >= 2) ...[
           const SectionHeaderText(
-            'Drag to reorder:',
-            fontSize: 16,
+            text: 'Drag to reorder:',
             topPadding: 0,
             bottomPadding: 12,
           ),
@@ -63,7 +62,7 @@ class BrickTabContent extends ConsumerWidget {
         // Total duration display (if any segments have data)
         if (totalDuration > 0) ...[
           Text(
-            'Total Duration: ${totalDuration} minutes',
+            'Total Duration: $totalDuration minutes',
             style: AppTextStyles.descriptor.copyWith(
               color: isDark ? AppColors.cream : AppColors.blackberry,
               fontWeight: FontWeight.w600,
@@ -203,7 +202,7 @@ class _SegmentCard extends StatelessWidget {
           else
             Icon(
               Icons.error_outline,
-              color: AppColors.errorColor,
+              color: AppColors.error,
               size: 20,
             ),
         ],

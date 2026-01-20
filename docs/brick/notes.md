@@ -155,11 +155,11 @@
 - [DONE] Update `NewActivityCoordinator` for brick tab
 
 ## 4.2 Brick Tab Content
-- [ ] Create `BrickInputController` provider
-- [ ] Create `BrickTabContent` widget
-- [ ] Create sport checkbox selector (select which sports to include)
-- [ ] Implement minimum 2 sports validation
-- [ ] Implement dynamic segment visibility based on checkboxes
+- [DONE] Create `BrickInputController` provider
+- [DONE] Create `BrickTabContent` widget
+- [DONE] Create sport checkbox selector (select which sports to include)
+- [DONE] Implement minimum 2 sports validation
+- [DONE] Implement dynamic segment visibility based on checkboxes
 
 ## 4.3 Segment Input Sections
 - [ ] Create `BrickSegmentAccordion` expandable widget
@@ -1098,5 +1098,68 @@
 - Phase 3.2: Complete selection mode UI (checkboxes, numbered indicators, Cancel/Confirm buttons)
 - Phase 3.5: Update calendar indicators for brick activities
 - Integration with activities list screen to display BrickGroupCard for brick activities
+
+---
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 13 (Phase 5.1-5.2 Complete)
+**Task**: Phase 5.1-5.2 - Create brick header and multi-phase nutrition sections for Activity Details Screen
+
+**Completed**:
+- Created `/lib/features/nutrition_plan/presentation/widgets/activity_detail/brick_header.dart`:
+  - Displays side-by-side sport icons with vertical dividers
+  - Shows brick type name (e.g., "SWIM/RUN BRICK")
+  - Combined distance/duration summary (e.g., "2000m swim + 6.2mi run")
+  - Blended gradient background using sport colors (electrolyte for swimming, orange for cycling, dragonfruit for running)
+  - Scheduled date and time display
+  - Geometric pattern painter for visual interest
+  - Sport-specific icon colors matching the sport theme
+- Created `/lib/features/nutrition_plan/presentation/widgets/activity_detail/brick_nutrition_sections.dart`:
+  - Renders nutrition sections in phase order (before → during-swim → T1 → during-bike → T2 → during-run → after)
+  - Transition sections (T1, T2) with special styling using repeat icon (🔄)
+  - During-Swim section shows "No foods recommended - mouth rinse only" when empty
+  - Sport-specific icons for each phase (swimming, cycling, running)
+  - Macro summary row for each section (carbs, protein/fluids, sodium)
+  - Swipe-to-delete and swipe-to-swap functionality on food items
+  - Add food button for each section
+  - Proper section color coding (orange for before, electrolyte for during/transitions, dragonfruit for after)
+- Updated `/lib/features/nutrition_plan/presentation/screens/activity_detail_screen.dart`:
+  - Added imports for `brick_header.dart` and `brick_nutrition_sections.dart`
+  - Updated `_buildHeroSection()` to detect brick activities and use BrickHeader
+  - Updated `_buildNutritionSections()` to detect brick activities and use BrickNutritionSections
+  - Maintained backward compatibility with single-sport activities
+- Ran `flutter analyze` on all modified files - no errors (only 3 pre-existing info warnings)
+
+**Design Decisions**:
+- Used AppColors.electrolyte (teal/cyan) for swimming instead of non-existent "blueberry" color
+- Used AppColors.orange for cycling to provide visual distinction
+- Used AppColors.dragonfruit (pink) for running
+- Gradient blends sport colors for multi-sport visual identity
+- Section sorting logic handles arbitrary segment order from edge function response
+- Category mapping from section IDs needs refinement in future for sport-specific food categories
+- Dismissible widget with confirmation dialog for delete actions
+- Reused existing ExpandableFoodItemWidget for consistency
+- Phase-specific icons help users quickly identify which part of workout the nutrition is for
+
+**Key Implementation Details**:
+- BrickHeader handles 2-3 segment workouts with proper null safety
+- Gradient automatically adjusts to number of sports (duplicates color if only one sport)
+- Section sorting uses expected IDs: "before", "during_segment_1", "T1", "during_segment_2", "T2", "during_segment_3", "after"
+- Transition sections use FontAwesomeIcons.repeat for visual consistency
+- Macro summary logic matches existing single-sport pattern
+- Date/time formatting uses manual helper methods (could be refactored to shared utility)
+
+**Phase 5.1-5.2 Status**: ✅ COMPLETE
+- All Phase 5.1 tasks marked as [DONE]
+- All Phase 5.2 tasks marked as [DONE]
+- BrickHeader widget fully implemented
+- BrickNutritionSections widget fully implemented
+- Activity detail screen properly detects and renders brick components
+- No analyzer errors
+
+**Next Steps**:
+- Phase 5.3: Update Adjust Macros Screen for brick context (combined totals, expandable phase breakdown)
+- Phase 5.4: Update completion flow for brick workouts
+- Phase 5.5: Add widget tests for brick header and nutrition sections
+- Consider refactoring date/time formatting to shared utility helpers
 
 ---

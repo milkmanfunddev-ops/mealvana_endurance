@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../../../shared/widgets/kyle_design/text/section_header_text.dart';
-import '../../../../../../core/theme/app_theme.dart';
+import '../../../../../../shared/widgets/kyle_design/typography/section_header_text.dart';
+import '../../../../../../theme/kyle_design/app_colors.dart';
 
 /// Brick Sport Checkbox Selector
 ///
@@ -24,8 +24,7 @@ class BrickSportCheckbox extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeaderText(
-          'Select sports for your brick:',
-          fontSize: 16,
+          text: 'Select sports for your brick:',
           topPadding: 0,
           bottomPadding: 8,
         ),
@@ -38,7 +37,7 @@ class BrickSportCheckbox extends StatelessWidget {
           Text(
             'Select at least 2 sports',
             style: TextStyle(
-              color: AppTheme.errorColor,
+              color: AppColors.error,
               fontSize: 14,
             ),
           ),
@@ -68,7 +67,7 @@ class BrickSportCheckbox extends StatelessWidget {
         ),
       ),
       controlAffinity: ListTileControlAffinity.leading,
-      activeColor: AppTheme.electrolyte,
+      activeColor: AppColors.electrolyte,
       contentPadding: EdgeInsets.zero,
     );
   }

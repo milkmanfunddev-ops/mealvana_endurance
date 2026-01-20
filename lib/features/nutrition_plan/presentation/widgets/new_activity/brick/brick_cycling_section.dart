@@ -67,9 +67,6 @@ class BrickCyclingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     final distanceMiles = segment?.distanceMiles ?? 20.0;
     final durationMinutes = segment?.durationMinutes ?? 60;
     final speedMph = segment?.speedMph ?? 20.0;
@@ -218,7 +215,7 @@ class _KyleDropdown extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: isDark
-                ? AppColors.blackberry.withOpacity(0.3)
+                ? AppColors.blackberry.withValues(alpha: 0.3)
                 : AppColors.cream,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(

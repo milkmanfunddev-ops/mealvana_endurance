@@ -54,8 +54,8 @@ class BrickSegmentAccordion extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark
-            ? AppColors.blackberry.withOpacity(0.3)
-            : AppColors.cream.withOpacity(0.5),
+            ? AppColors.blackberry.withValues(alpha: 0.3)
+            : AppColors.cream.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark

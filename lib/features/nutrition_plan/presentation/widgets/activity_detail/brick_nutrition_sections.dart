@@ -179,10 +179,10 @@ class BrickNutritionSections extends StatelessWidget {
 
     if (section.title.toLowerCase().contains('swim')) {
       iconData = FontAwesomeIcons.personSwimming;
-      iconColor = AppColors.blueberry;
+      iconColor = AppColors.electrolyte;
     } else if (section.title.toLowerCase().contains('bike') || section.title.toLowerCase().contains('cycle')) {
       iconData = FontAwesomeIcons.personBiking;
-      iconColor = AppColors.electrolyte;
+      iconColor = AppColors.orange;
     } else if (section.title.toLowerCase().contains('run')) {
       iconData = FontAwesomeIcons.personRunning;
       iconColor = AppColors.dragonfruit;

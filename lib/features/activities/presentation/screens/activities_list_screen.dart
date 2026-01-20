@@ -254,6 +254,17 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                           final selectionOrder = ref.read(brickSelectionControllerProvider.notifier)
                               .getSelectionOrder(activity.id);
 
+                          // Render brick group card for brick activities (but not in selection mode)
+                          if (activity.isBrick && !isSelectionMode) {
+                            return BrickGroupCard(
+                              brick: activity,
+                              onUngroup: () => _handleUngroupBrick(activity.id),
+                              onViewCombined: () => _handleViewCombinedBrick(activity),
+                              onRemoveSegment: (segmentIndex) => _handleRemoveSegment(activity.id, segmentIndex),
+                            );
+                          }
+
+                          // Render regular activity card
                           return ActivityCard(
                             activity: activity,
                             isSelectionMode: isSelectionMode,
@@ -466,5 +477,118 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         ),
       );
     }
+  }
+
+  /// Handle Ungroup button press on brick group card
+  /// Shows confirmation dialog and ungroups brick back to standalone activities
+  Future<void> _handleUngroupBrick(String brickId) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final actionsController = ref.read(brickActionsControllerProvider.notifier);
+
+    // Get segment count for dialog message
+    final activitiesState = ref.read(activitiesControllerProvider);
+    final brick = activitiesState.valueOrNull?.firstWhere(
+      (a) => a.id == brickId,
+      orElse: () => throw StateError('Brick not found'),
+    );
+
+    final segmentCount = brick?.brickMetadata?.segments.length ?? 0;
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => BrickUngroupDialog(
+        segmentCount: segmentCount,
+      ),
+    );
+
+    if (confirmed != true) {
+      return; // User cancelled
+    }
+
+    try {
+      // Show loading indicator
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Ungrouping brick...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Call controller to ungroup brick
+      await actionsController.ungroupBrick(brickId);
+
+      // Refresh activities list
+      ref.invalidate(activitiesControllerProvider);
+
+      // Show success message
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Brick ungrouped successfully!'),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error ungrouping brick: $e'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  /// Handle View Combined button press on brick group card
+  /// Navigates to activity details screen or new activity screen based on nutrition plan status
+  void _handleViewCombinedBrick(Activity brick) {
+    // TODO: Implement navigation to brick detail screen (Phase 5)
+    // For now, show a placeholder message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('View Combined navigation not yet implemented (Phase 5)'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Handle Remove Segment button press on brick segment card
+  /// Shows warning dialog if this would leave only 1 sport
+  Future<void> _handleRemoveSegment(String brickId, int segmentIndex) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Get brick activity
+    final activitiesState = ref.read(activitiesControllerProvider);
+    final brick = activitiesState.valueOrNull?.firstWhere(
+      (a) => a.id == brickId,
+      orElse: () => throw StateError('Brick not found'),
+    );
+
+    final segmentCount = brick?.brickMetadata?.segments.length ?? 0;
+
+    // If removing this segment would leave only 1 sport, show warning dialog
+    if (segmentCount <= 2) {
+      final shouldUngroup = await showDialog<bool>(
+        context: context,
+        builder: (context) => const BrickMinimumWarningDialog(),
+      );
+
+      if (shouldUngroup == true) {
+        // User wants to ungroup entirely
+        await _handleUngroupBrick(brickId);
+      }
+      return;
+    }
+
+    // If 3+ segments, remove segment is not yet implemented
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Remove segment feature not yet implemented'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 }

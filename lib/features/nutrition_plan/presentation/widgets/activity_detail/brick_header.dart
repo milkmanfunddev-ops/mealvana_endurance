@@ -60,9 +60,9 @@ class BrickHeader extends StatelessWidget {
     final colors = <Color>[];
     for (final segment in metadata.segments) {
       if (segment.sport == 'swimming') {
-        colors.add(AppColors.blueberry.withValues(alpha: 0.3));
-      } else if (segment.sport == 'cycling') {
         colors.add(AppColors.electrolyte.withValues(alpha: 0.3));
+      } else if (segment.sport == 'cycling') {
+        colors.add(AppColors.orange.withValues(alpha: 0.3));
       } else if (segment.sport == 'running') {
         colors.add(AppColors.dragonfruit.withValues(alpha: 0.3));
       }
@@ -115,11 +115,11 @@ class BrickHeader extends StatelessWidget {
     switch (sport) {
       case 'swimming':
         iconData = FontAwesomeIcons.personSwimming;
-        iconColor = AppColors.blueberry;
+        iconColor = AppColors.electrolyte;
         break;
       case 'cycling':
         iconData = FontAwesomeIcons.personBiking;
-        iconColor = AppColors.electrolyte;
+        iconColor = AppColors.orange;
         break;
       case 'running':
         iconData = FontAwesomeIcons.personRunning;

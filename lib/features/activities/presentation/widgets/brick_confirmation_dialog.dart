@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../../../domain/activity.dart';
+import '../../domain/activity.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Brick Confirmation Dialog
@@ -87,7 +87,7 @@ class BrickConfirmationDialog extends StatelessWidget {
                       child: Center(
                         child: Text(
                           '${index + 1}',
-                          style: AppTextStyles.labelMedium.copyWith(
+                          style: AppTextStyles.smallLabel.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),

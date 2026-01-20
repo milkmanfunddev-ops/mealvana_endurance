@@ -5,7 +5,6 @@ import '../providers/new_activity_coordinator.dart';
 import '../providers/running_input_controller.dart';
 import '../providers/cycling_input_controller.dart';
 import '../providers/swimming_input_controller.dart';
-import '../providers/brick_input_controller.dart';
 import '../widgets/new_activity/shared/sport_selector.dart';
 import '../widgets/new_activity/shared/new_activity_app_bar.dart';
 import '../widgets/new_activity/shared/new_activity_hero_section.dart';
