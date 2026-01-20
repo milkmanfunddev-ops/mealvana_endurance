@@ -290,6 +290,7 @@ class ActivityCard extends ConsumerWidget {
       case ActivityType.triathlon:
       case ActivityType.duathlon:
       case ActivityType.multisport:
+      case ActivityType.brick:
         if (activity.distanceMiles != null) {
           parts.add('${activity.distanceMiles!.toStringAsFixed(1)} mi');
         }
@@ -311,6 +312,8 @@ class ActivityCard extends ConsumerWidget {
       case ActivityType.duathlon:
       case ActivityType.multisport:
         return FontAwesomeIcons.trophy;
+      case ActivityType.brick:
+        return FontAwesomeIcons.link; // Chain link icon for brick workouts
     }
   }
 }

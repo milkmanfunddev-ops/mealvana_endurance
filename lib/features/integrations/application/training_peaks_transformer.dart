@@ -409,7 +409,8 @@ class TrainingPeaksTransformer {
       case ActivityType.triathlon:
       case ActivityType.duathlon:
       case ActivityType.multisport:
-        // Multi-sport defaults to running for now
+      case ActivityType.brick:
+        // Multi-sport and brick default to running for now
         return TrainingPeaksDefaults.runningDurationMinutes;
     }
   }
@@ -434,7 +435,8 @@ class TrainingPeaksTransformer {
       case ActivityType.triathlon:
       case ActivityType.duathlon:
       case ActivityType.multisport:
-        // Multi-sport defaults to running for now
+      case ActivityType.brick:
+        // Multi-sport and brick default to running for now
         return TrainingPeaksDefaults.runningDistanceMeters;
     }
   }

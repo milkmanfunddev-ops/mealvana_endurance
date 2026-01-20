@@ -224,7 +224,8 @@ class FinalSurgeTransformer {
       case ActivityType.triathlon:
       case ActivityType.duathlon:
       case ActivityType.multisport:
-        // Multi-sport defaults to running for now
+      case ActivityType.brick:
+        // Multi-sport and brick default to running for now
         return FinalSurgeDefaults.runningDurationMinutes;
     }
   }
@@ -249,7 +250,8 @@ class FinalSurgeTransformer {
         case ActivityType.triathlon:
         case ActivityType.duathlon:
         case ActivityType.multisport:
-          // Multi-sport defaults to running for now
+        case ActivityType.brick:
+          // Multi-sport and brick default to running for now
           return FinalSurgeDefaults.runningDistanceMiles;
       }
     }

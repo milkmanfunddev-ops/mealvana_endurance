@@ -54,7 +54,8 @@ class ActivityDetailHelpers {
       case ActivityType.triathlon:
       case ActivityType.duathlon:
       case ActivityType.multisport:
-        return KyleActivityType.triathlon;
+      case ActivityType.brick:
+        return KyleActivityType.triathlon; // Map brick to triathlon for now
     }
   }
 

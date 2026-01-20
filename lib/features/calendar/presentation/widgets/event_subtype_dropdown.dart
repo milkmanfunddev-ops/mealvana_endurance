@@ -120,6 +120,8 @@ class EventSubtypeDropdown extends StatelessWidget {
       case ActivityType.duathlon:
       case ActivityType.multisport:
         return FontAwesomeIcons.trophy;
+      case ActivityType.brick:
+        return FontAwesomeIcons.link; // Chain link icon for brick workouts
     }
   }
 }

@@ -71,12 +71,12 @@
 # PHASE 2: Edge Function Updates
 
 ## 2.1 generate-macros Updates
-- [DONE] Add brick detection in main handler
-- [DONE] Implement `calculateBrickMacros()` function for cumulative duration-based calculation
-- [DONE] Implement phase breakdown calculation (before, during-swim, T1, during-bike, T2, during-run, after)
-- [DONE] Implement transition macro calculation (T1: 20g carbs, T2: 25g carbs)
-- [DONE] Add brick-specific response schema (include segment macros)
-- [DONE] Normalize response to match single-sport format
+- [ ] Add brick detection in main handler
+- [ ] Implement `calculateBrickMacros()` function for cumulative duration-based calculation
+- [ ] Implement phase breakdown calculation (before, during-swim, T1, during-bike, T2, during-run, after)
+- [ ] Implement transition macro calculation (T1: 20g carbs, T2: 25g carbs)
+- [ ] Add brick-specific response schema (include segment macros)
+- [ ] Normalize response to match single-sport format
 
 ## 2.2 generate-nutrition-plan Updates
 - [ ] Add brick activity type support
@@ -599,111 +599,3 @@
 
 ---
 *Last updated: 2026-01-20*
-
-### 2026-01-20 - Claude (Sonnet 4.5) - Part 7
-**Task**: Phase 2.1 - Update generate-macros edge function for brick support
-
-**Completed**:
-- Added brick detection in main handler (`activityType === 'brick'`)
-- Implemented `calculateBrickMacros()` function with cumulative duration-based calculation:
-  - Uses TOTAL duration across all segments to determine base carb rate
-  - Applies weighted average intensity adjustment based on segment intensities
-  - Applies gut training multiplier (untrained/low: 0.6, moderate: 0.85, trained/high: 1.0)
-  - Caps final carb rate at 90g/hr
-- Implemented phase breakdown calculation:
-  - Before phase: 1.5g/kg carbs, 10g protein, 5g fat, 200mg sodium, 300ml water
-  - During segments: Sport-specific allocation
-    - Swimming: 0g carbs (can't eat while swimming)
-    - Cycling: Higher allocation with 20% boost if followed by run (pre-load strategy)
-    - Running: Conservative allocation, capped at 35g/hr
-  - Transitions: T1 (20g carbs, 150mg sodium, 200ml water), T2 (25g carbs, 100mg sodium, 150ml water)
-  - After phase: 1g/kg carbs, 0.3g/kg protein, 10g fat, 300mg sodium, 500ml water
-- Added brick-specific response schema:
-  - `activity_type: 'brick'`
-  - `brick_type: 'SWIMMING_RUNNING'` (or other combination)
-  - Total macros across all phases
-  - Detailed phase breakdown with segments, transitions, before, and after
-  - Energy expenditure calculated by summing MET-based kcal for each segment
-  - Carb rate per hour
-- Reused existing sport-specific MET calculation functions:
-  - `swimmingMETFromPace()` for swimming segments
-  - `cyclingMETFromSpeed()` with elevation and indoor/outdoor adjustments for cycling
-  - `metFromPace()` for running segments
-
-**Design Decisions**:
-- Followed the cumulative duration approach from `/docs/brick/nutrition-algorithm.md`
-- Used weighted average intensity across all segments to adjust carb rate
-- Allocated carbs proportionally to non-swimming segments (swimming gets 0g)
-- Pre-load strategy: Boost cycling carbs by 20% if followed by running
-- Transition macros are fixed values (not proportional to duration)
-- Response schema is brick-specific (no normalization to single-sport format needed)
-- Reused all existing sport MET calculations for consistency
-
-**Key Formulas**:
-- Base carb rate by total duration: <60min=0, 60-90min=30, 90-150min=45, 150-180min=60, >180min=75 g/hr
-- Intensity multipliers: easy=0.7, moderate=1.0, hard=1.2, race=1.3
-- Gut training multipliers: low/untrained=0.6, moderate=0.85, high/trained=1.0
-- Running max carbs: 35g/hr (reduced gastric tolerance)
-- Cycling pre-load boost: 1.2x if followed by run
-
-**Next Steps**:
-- Phase 2.2: Update generate-nutrition-plan edge function for brick support
-- Phase 2.4: Add edge function tests for brick macro calculations
-
----
-
-### 2026-01-20 - Claude (Sonnet 4.5) - Part 9 (Phase 1.6 Verification)
-**Task**: Phase 1.6 - Run code generation, flutter analyze, and verify app compiles
-
-**Completed**:
-- Ran `flutter pub run build_runner build --delete-conflicting-outputs`:
-  - Generated 286 outputs
-  - All Riverpod providers and Drift database classes regenerated successfully
-- Fixed 9 exhaustive switch statement errors for brick feature:
-  1. `/lib/features/activities/presentation/widgets/activity_card.dart` - Added `ActivityType.brick` to `_formatActivityDetails()` switch (line 258)
-  2. `/lib/features/activities/presentation/widgets/activity_card.dart` - Added `ActivityType.brick` to `_getActivityIcon()` switch (line 303) with `FontAwesomeIcons.link`
-  3. `/lib/features/calendar/presentation/widgets/calendar_week_view.dart` - Added `ActivityStatus.archivedForBrick` case (line 448)
-  4. `/lib/features/calendar/presentation/widgets/event_subtype_dropdown.dart` - Added `ActivityType.brick` case (line 112)
-  5. `/lib/features/calendar/presentation/widgets/sport_category_selector.dart` - Added `ActivityType.brick` case (line 121)
-  6. `/lib/features/integrations/application/final_surge_transformer.dart` - Added `ActivityType.brick` to duration defaults (line 217)
-  7. `/lib/features/integrations/application/final_surge_transformer.dart` - Added `ActivityType.brick` to distance defaults (line 242)
-  8. `/lib/features/integrations/application/training_peaks_transformer.dart` - Added `ActivityType.brick` to duration defaults (line 402)
-  9. `/lib/features/integrations/application/training_peaks_transformer.dart` - Added `ActivityType.brick` to distance defaults (line 427)
-  10. `/lib/features/nutrition_plan/presentation/utils/activity_detail_helpers.dart` - Added `ActivityType.brick` mapping to `KyleActivityType.triathlon` (line 47)
-  11. `/lib/shared/widgets/kyle_design/cards/activity_hero_card.dart` - Added `ActivityType.brick` extension mapping (line 15)
-- Ran `flutter analyze`:
-  - All brick-related errors resolved
-  - Only 2 unrelated test errors remain (MockAppStartupService issues, not brick-related)
-  - 738 total issues (mostly deprecation warnings, no brick errors)
-- Verified app compiles:
-  - `flutter build ios --no-codesign --config-only` started successfully
-  - Pod install completed in 3.4s
-  - Build configuration verified without errors
-
-**Design Decisions**:
-- Used `FontAwesomeIcons.link` (chain link) for brick icon throughout UI
-- Mapped brick to `KyleActivityType.triathlon` in design system (temporary - Kyle may add brick-specific type later)
-- Brick uses same defaults as other multi-sport activities in Training Peaks/Final Surge transformers
-- `ActivityStatus.archivedForBrick` shows as very faded grey (0.3 opacity) in calendar views
-
-**Issues Found and Fixed**:
-- There were TWO calendar_week_view.dart files:
-  - `/lib/features/activities/presentation/widgets/calendar_week_view.dart` (fixed in Part 6)
-  - `/lib/features/calendar/presentation/widgets/calendar_week_view.dart` (fixed in Part 9)
-- Both needed the `archivedForBrick` case added to their status switch statements
-
-**Phase 1 Status**: ✅ COMPLETE
-- All schema changes implemented (Drift + Supabase migration)
-- All domain models updated (ActivityType, BrickMetadata, Activity)
-- All repository methods implemented (CRUD + brick-specific operations)
-- All service methods updated (activities_service.dart)
-- All UI switch statements exhaustive
-- Code generation successful
-- No brick-related errors in flutter analyze
-- App compiles successfully
-
-**Next Steps**:
-- Phase 2: Update edge functions for brick macro generation and nutrition planning
-- Phase 3: Build Activities List UI with Create Brick button and selection mode
-- Consider running `/task-checker` to verify comprehensive quality before moving to Phase 2
-
