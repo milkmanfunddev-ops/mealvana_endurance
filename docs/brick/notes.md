@@ -41,7 +41,7 @@
 - [DONE] Update `activity.dart` - Update toJson() for brick fields
 - [DONE] Update `activity.dart` - Update copyWith() for brick fields
 - [DONE] Update `activity.dart` - Update equality/hashCode for brick fields
-- [ ] Run `flutter pub run build_runner build --delete-conflicting-outputs` for code generation
+- [DONE] Run `flutter pub run build_runner build --delete-conflicting-outputs` for code generation
 
 ## 1.4 Repository Updates
 - [DONE] Update `activities_repository.dart` - Add brick fields to `uploadDirtyRecords()` JSON payload
@@ -307,6 +307,44 @@
 
 ## Agent Work Log
 <!-- Agents should add their work entries here -->
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 6
+**Task**: Phase 1.4 - Add brick repository methods (getArchivedActivitiesForBrick, createBrickFromActivities, ungroupBrick) and add archivedForBrick to ActivityStatus enum
+
+**Completed**:
+- Added `archivedForBrick` to `ActivityStatus` enum in `/lib/features/activities/domain/activity.dart`
+- Added three new brick methods to `/lib/features/activities/data/activities_repository.dart`:
+  1. `getArchivedActivitiesForBrick(String brickId)` - Queries activities where brick_id equals brickId and status is 'archived_for_brick'
+  2. `createBrickFromActivities({required List<Activity> activities, required List<String> segmentOrder})` - Creates brick activity with BrickMetadata, archives originals with needsUpload=true
+  3. `ungroupBrick(String brickId)` - Restores archived activities to 'planned' status, soft deletes brick
+- Ran `flutter pub run build_runner build --delete-conflicting-outputs` to regenerate Drift code
+- Verified with `flutter analyze` - no issues found
+
+**Design Decisions**:
+- `getArchivedActivitiesForBrick` filters on `status='archived_for_brick'` and `brick_id=brickId` and orders by scheduledDateTime
+- `createBrickFromActivities` uses database transactions for atomicity:
+  - Validates 2-3 activities and matching segment order length
+  - Builds BrickSegment list from activities (converts miles to meters for swimming)
+  - Creates BrickMetadata with original activity IDs
+  - Generates brick title like "SWIM/RUN BRICK"
+  - Creates brick activity with auto-generated ID
+  - Archives original activities with `status=archivedForBrick` and `brick_id=<new brick id>`
+  - All changes marked with `needsUpload=true` for offline-first sync
+- `ungroupBrick` also uses transactions:
+  - Gets brick activity (throws StateError if not found)
+  - Gets archived activities
+  - Restores each activity to `status=planned`, clears `brick_id`
+  - Soft deletes brick activity
+  - All changes marked with `needsUpload=true` for sync
+- Followed existing repository patterns for error handling, logging, and transactions
+- Used copyWith pattern for activity updates to preserve all other fields
+
+**Next Steps**:
+- Phase 1.5: Update activities_service.dart to add brick parameters to createActivity() method
+- Phase 1.5: Add createBrickActivity() convenience method
+- Phase 1.6: Run flutter analyze to verify no errors
+
+---
 
 ### 2026-01-20 - Claude (Sonnet 4.5) - Part 5
 **Task**: Phase 1.4 - Complete brick field support in activities_repository.dart

@@ -9595,6 +9595,28 @@ class $ActivitiesTableTable extends ActivitiesTable
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _brickMetadataMeta = const VerificationMeta(
+    'brickMetadata',
+  );
+  @override
+  late final GeneratedColumn<String> brickMetadata = GeneratedColumn<String>(
+    'brick_metadata',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _brickIdMeta = const VerificationMeta(
+    'brickId',
+  );
+  @override
+  late final GeneratedColumn<String> brickId = GeneratedColumn<String>(
+    'brick_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -9679,6 +9701,8 @@ class $ActivitiesTableTable extends ActivitiesTable
     actualDistanceMiles,
     actualDurationMinutes,
     nutritionPlanData,
+    brickMetadata,
+    brickId,
     notes,
     createdAt,
     updatedAt,
@@ -10049,6 +10073,21 @@ class $ActivitiesTableTable extends ActivitiesTable
         ),
       );
     }
+    if (data.containsKey('brick_metadata')) {
+      context.handle(
+        _brickMetadataMeta,
+        brickMetadata.isAcceptableOrUnknown(
+          data['brick_metadata']!,
+          _brickMetadataMeta,
+        ),
+      );
+    }
+    if (data.containsKey('brick_id')) {
+      context.handle(
+        _brickIdMeta,
+        brickId.isAcceptableOrUnknown(data['brick_id']!, _brickIdMeta),
+      );
+    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -10246,6 +10285,14 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.string,
         data['${effectivePrefix}nutrition_plan_data'],
       ),
+      brickMetadata: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brick_metadata'],
+      ),
+      brickId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brick_id'],
+      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -10312,6 +10359,8 @@ class Activity extends DataClass implements Insertable<Activity> {
   final double? actualDistanceMiles;
   final int? actualDurationMinutes;
   final String? nutritionPlanData;
+  final String? brickMetadata;
+  final String? brickId;
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -10357,6 +10406,8 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.actualDistanceMiles,
     this.actualDurationMinutes,
     this.nutritionPlanData,
+    this.brickMetadata,
+    this.brickId,
     this.notes,
     required this.createdAt,
     required this.updatedAt,
@@ -10479,6 +10530,12 @@ class Activity extends DataClass implements Insertable<Activity> {
     if (!nullToAbsent || nutritionPlanData != null) {
       map['nutrition_plan_data'] = Variable<String>(nutritionPlanData);
     }
+    if (!nullToAbsent || brickMetadata != null) {
+      map['brick_metadata'] = Variable<String>(brickMetadata);
+    }
+    if (!nullToAbsent || brickId != null) {
+      map['brick_id'] = Variable<String>(brickId);
+    }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
@@ -10597,6 +10654,12 @@ class Activity extends DataClass implements Insertable<Activity> {
       nutritionPlanData: nutritionPlanData == null && nullToAbsent
           ? const Value.absent()
           : Value(nutritionPlanData),
+      brickMetadata: brickMetadata == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brickMetadata),
+      brickId: brickId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brickId),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -10688,6 +10751,8 @@ class Activity extends DataClass implements Insertable<Activity> {
       nutritionPlanData: serializer.fromJson<String?>(
         json['nutritionPlanData'],
       ),
+      brickMetadata: serializer.fromJson<String?>(json['brickMetadata']),
+      brickId: serializer.fromJson<String?>(json['brickId']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -10748,6 +10813,8 @@ class Activity extends DataClass implements Insertable<Activity> {
       'actualDistanceMiles': serializer.toJson<double?>(actualDistanceMiles),
       'actualDurationMinutes': serializer.toJson<int?>(actualDurationMinutes),
       'nutritionPlanData': serializer.toJson<String?>(nutritionPlanData),
+      'brickMetadata': serializer.toJson<String?>(brickMetadata),
+      'brickId': serializer.toJson<String?>(brickId),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -10796,6 +10863,8 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<double?> actualDistanceMiles = const Value.absent(),
     Value<int?> actualDurationMinutes = const Value.absent(),
     Value<String?> nutritionPlanData = const Value.absent(),
+    Value<String?> brickMetadata = const Value.absent(),
+    Value<String?> brickId = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -10899,6 +10968,10 @@ class Activity extends DataClass implements Insertable<Activity> {
     nutritionPlanData: nutritionPlanData.present
         ? nutritionPlanData.value
         : this.nutritionPlanData,
+    brickMetadata: brickMetadata.present
+        ? brickMetadata.value
+        : this.brickMetadata,
+    brickId: brickId.present ? brickId.value : this.brickId,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -11018,6 +11091,10 @@ class Activity extends DataClass implements Insertable<Activity> {
       nutritionPlanData: data.nutritionPlanData.present
           ? data.nutritionPlanData.value
           : this.nutritionPlanData,
+      brickMetadata: data.brickMetadata.present
+          ? data.brickMetadata.value
+          : this.brickMetadata,
+      brickId: data.brickId.present ? data.brickId.value : this.brickId,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -11068,6 +11145,8 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('actualDistanceMiles: $actualDistanceMiles, ')
           ..write('actualDurationMinutes: $actualDurationMinutes, ')
           ..write('nutritionPlanData: $nutritionPlanData, ')
+          ..write('brickMetadata: $brickMetadata, ')
+          ..write('brickId: $brickId, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -11118,6 +11197,8 @@ class Activity extends DataClass implements Insertable<Activity> {
     actualDistanceMiles,
     actualDurationMinutes,
     nutritionPlanData,
+    brickMetadata,
+    brickId,
     notes,
     createdAt,
     updatedAt,
@@ -11167,6 +11248,8 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.actualDistanceMiles == this.actualDistanceMiles &&
           other.actualDurationMinutes == this.actualDurationMinutes &&
           other.nutritionPlanData == this.nutritionPlanData &&
+          other.brickMetadata == this.brickMetadata &&
+          other.brickId == this.brickId &&
           other.notes == this.notes &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -11214,6 +11297,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<double?> actualDistanceMiles;
   final Value<int?> actualDurationMinutes;
   final Value<String?> nutritionPlanData;
+  final Value<String?> brickMetadata;
+  final Value<String?> brickId;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -11260,6 +11345,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.actualDistanceMiles = const Value.absent(),
     this.actualDurationMinutes = const Value.absent(),
     this.nutritionPlanData = const Value.absent(),
+    this.brickMetadata = const Value.absent(),
+    this.brickId = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -11307,6 +11394,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.actualDistanceMiles = const Value.absent(),
     this.actualDurationMinutes = const Value.absent(),
     this.nutritionPlanData = const Value.absent(),
+    this.brickMetadata = const Value.absent(),
+    this.brickId = const Value.absent(),
     this.notes = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -11359,6 +11448,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<double>? actualDistanceMiles,
     Expression<int>? actualDurationMinutes,
     Expression<String>? nutritionPlanData,
+    Expression<String>? brickMetadata,
+    Expression<String>? brickId,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -11420,6 +11511,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (actualDurationMinutes != null)
         'actual_duration_minutes': actualDurationMinutes,
       if (nutritionPlanData != null) 'nutrition_plan_data': nutritionPlanData,
+      if (brickMetadata != null) 'brick_metadata': brickMetadata,
+      if (brickId != null) 'brick_id': brickId,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -11469,6 +11562,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<double?>? actualDistanceMiles,
     Value<int?>? actualDurationMinutes,
     Value<String?>? nutritionPlanData,
+    Value<String?>? brickMetadata,
+    Value<String?>? brickId,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -11523,6 +11618,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       actualDurationMinutes:
           actualDurationMinutes ?? this.actualDurationMinutes,
       nutritionPlanData: nutritionPlanData ?? this.nutritionPlanData,
+      brickMetadata: brickMetadata ?? this.brickMetadata,
+      brickId: brickId ?? this.brickId,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -11672,6 +11769,12 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     if (nutritionPlanData.present) {
       map['nutrition_plan_data'] = Variable<String>(nutritionPlanData.value);
     }
+    if (brickMetadata.present) {
+      map['brick_metadata'] = Variable<String>(brickMetadata.value);
+    }
+    if (brickId.present) {
+      map['brick_id'] = Variable<String>(brickId.value);
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -11733,6 +11836,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('actualDistanceMiles: $actualDistanceMiles, ')
           ..write('actualDurationMinutes: $actualDurationMinutes, ')
           ..write('nutritionPlanData: $nutritionPlanData, ')
+          ..write('brickMetadata: $brickMetadata, ')
+          ..write('brickId: $brickId, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -25771,6 +25876,8 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<double?> actualDistanceMiles,
       Value<int?> actualDurationMinutes,
       Value<String?> nutritionPlanData,
+      Value<String?> brickMetadata,
+      Value<String?> brickId,
       Value<String?> notes,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -25819,6 +25926,8 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<double?> actualDistanceMiles,
       Value<int?> actualDurationMinutes,
       Value<String?> nutritionPlanData,
+      Value<String?> brickMetadata,
+      Value<String?> brickId,
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -26032,6 +26141,16 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<String> get nutritionPlanData => $composableBuilder(
     column: $table.nutritionPlanData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brickMetadata => $composableBuilder(
+    column: $table.brickMetadata,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brickId => $composableBuilder(
+    column: $table.brickId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26265,6 +26384,16 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get brickMetadata => $composableBuilder(
+    column: $table.brickMetadata,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get brickId => $composableBuilder(
+    column: $table.brickId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -26487,6 +26616,14 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get brickMetadata => $composableBuilder(
+    column: $table.brickMetadata,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get brickId =>
+      $composableBuilder(column: $table.brickId, builder: (column) => column);
+
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
@@ -26573,6 +26710,8 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> actualDistanceMiles = const Value.absent(),
                 Value<int?> actualDurationMinutes = const Value.absent(),
                 Value<String?> nutritionPlanData = const Value.absent(),
+                Value<String?> brickMetadata = const Value.absent(),
+                Value<String?> brickId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -26619,6 +26758,8 @@ class $$ActivitiesTableTableTableManager
                 actualDistanceMiles: actualDistanceMiles,
                 actualDurationMinutes: actualDurationMinutes,
                 nutritionPlanData: nutritionPlanData,
+                brickMetadata: brickMetadata,
+                brickId: brickId,
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -26667,6 +26808,8 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> actualDistanceMiles = const Value.absent(),
                 Value<int?> actualDurationMinutes = const Value.absent(),
                 Value<String?> nutritionPlanData = const Value.absent(),
+                Value<String?> brickMetadata = const Value.absent(),
+                Value<String?> brickId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -26713,6 +26856,8 @@ class $$ActivitiesTableTableTableManager
                 actualDistanceMiles: actualDistanceMiles,
                 actualDurationMinutes: actualDurationMinutes,
                 nutritionPlanData: nutritionPlanData,
+                brickMetadata: brickMetadata,
+                brickId: brickId,
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
