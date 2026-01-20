@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../providers/brick_input_controller.dart';
+import '../../../providers/new_activity_coordinator.dart';
 import 'brick_sport_checkbox.dart';
 import '../../../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../../../theme/kyle_design/app_spacing.dart';
@@ -78,14 +80,7 @@ class BrickTabContent extends ConsumerWidget {
         KylePrimaryButton(
           text: 'Generate Macros',
           onPressed: isFormValid
-              ? () {
-                  // TODO: Phase 4.5 - Implement macro generation for brick
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Brick macro generation coming in Phase 4.5'),
-                    ),
-                  );
-                }
+              ? () => _handleGenerateMacros(context, ref)
               : null,
         ),
 
