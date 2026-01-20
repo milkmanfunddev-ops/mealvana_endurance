@@ -195,19 +195,19 @@
 # PHASE 5: Activity Details Screen (Brick View)
 
 ## 5.1 Brick Header
-- [ ] Create `BrickHeader` widget with side-by-side sport icons
-- [ ] Display brick type name (e.g., "SWIM/RUN BRICK")
-- [ ] Show combined distance/duration summary
-- [ ] Update geometric pattern for multi-sport (blend sport colors)
+- [DONE] Create `BrickHeader` widget with side-by-side sport icons
+- [DONE] Display brick type name (e.g., "SWIM/RUN BRICK")
+- [DONE] Show combined distance/duration summary
+- [DONE] Update geometric pattern for multi-sport (blend sport colors)
 
 ## 5.2 Multi-Phase Nutrition Sections
-- [ ] Modify section rendering to handle dynamic phases
-- [ ] Implement During-Swim section (usually empty - "No food during swim")
-- [ ] Implement T1 Transition section with transition icon
-- [ ] Implement During-Bike section
-- [ ] Implement T2 Transition section (if 3 sports)
-- [ ] Implement During-Run section
-- [ ] Add phase-specific icons and labels
+- [DONE] Modify section rendering to handle dynamic phases
+- [DONE] Implement During-Swim section (usually empty - "No food during swim")
+- [DONE] Implement T1 Transition section with transition icon
+- [DONE] Implement During-Bike section
+- [DONE] Implement T2 Transition section (if 3 sports)
+- [DONE] Implement During-Run section
+- [DONE] Add phase-specific icons and labels
 
 ## 5.3 Adjust Macros Screen Updates
 - [ ] Add combined totals view (top of screen)
@@ -1035,3 +1035,68 @@
 
 ---
 
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 12 (Phase 3.3 - Brick Group Display)
+**Task**: Phase 3.3 - Create BrickGroupCard and BrickSegmentCard widgets
+
+**Completed**:
+- Created `/lib/features/activities/presentation/widgets/brick_segment_card.dart`:
+  - Displays single segment within brick with sport icon, distance/duration details
+  - Shows X button to remove segment from brick (orange outline circle, 32px)
+  - Follows design specs: Electrolyte sport icon (24px), Compadre title (14px), Apercu details (12px)
+  - Slightly lighter background than parent brick card
+  - Sport-specific formatting:
+    - Swimming: meters, pace per 100m (e.g., "2000m · 2:00/100m")
+    - Cycling: miles, speed mph (e.g., "25.0 mi · 20.0 mph")
+    - Running: miles, pace per mile (e.g., "12.0 mi · 9:00/mi")
+  - Props: `BrickSegment segment`, `int order`, `VoidCallback? onRemove`, `bool showRemoveButton`
+- Created `/lib/features/activities/presentation/widgets/brick_group_card.dart`:
+  - Displays brick as grouped card with header, subtitle, and nested segments
+  - Header design:
+    - Dark purple background (AppColors.blackberryDark)
+    - Chain link icon (FontAwesomeIcons.link) in orange
+    - "BRICK WORKOUT" text in orange, Compadre 14px with letter spacing
+    - Two action buttons: "Ungroup" and "View Combined" (orange outline)
+  - Subtitle: "Consecutive activities share nutrition" in gray, Apercu 12px
+  - Nested segment cards with remove buttons (only shown if 3+ segments to maintain minimum 2)
+  - Props: `Activity brick`, `VoidCallback onUngroup`, `VoidCallback onViewCombined`, `Function(int) onRemoveSegment`
+- Ran `flutter analyze` on both files:
+  - Fixed unused import warning (removed activity_type.dart)
+  - Fixed string interpolation warnings (removed unnecessary braces)
+  - No issues found after fixes
+
+**Design Decisions**:
+- Used `KyleSecondaryButtonSmall` and `KyleSecondaryIconButton` from Kyle design system for consistent styling
+- All buttons use orange variant (`SecondaryButtonVariant.orange`)
+- Header uses `AppColors.blackberryDark` for dark purple background
+- Segment cards use `AppColors.blackberry.withValues(alpha: 0.5)` for slightly lighter nested background
+- X buttons only shown when 3+ segments exist (minimum 2 sports required for brick)
+- Sport icons use `FontAwesomeIcons` (personSwimming, personBiking, personRunning)
+- Distance/pace formatting matches existing activity card patterns
+- Widget is stateless for performance (no local state needed)
+
+**Implementation Notes**:
+- BrickSegmentCard is fully reusable - can be used in other contexts if needed
+- BrickGroupCard extracts segments from `brick.brickMetadata?.segments ?? []`
+- Gracefully handles missing metadata with "No segments found" message
+- All text uses Compadre/Apercu fonts matching design system
+- Border radius: 15px for outer card, 12px for segment cards
+- Proper null handling for optional segment fields (distance, pace, etc.)
+- Segment index passed to `onRemoveSegment` callback for easy removal
+
+**Phase 3.3 Status**: ✅ COMPLETE
+- All tasks marked as [DONE] in checklist
+- BrickGroupCard widget created with proper styling
+- BrickSegmentCard widget created with sport-specific formatting
+- X buttons for removing segments (only when 3+ segments)
+- "Consecutive activities share nutrition" label added
+- Dark purple header with chain link icon
+- No analyzer errors
+
+**Next Steps**:
+- Phase 3.4: Implement brick action handlers (create, ungroup, remove segment)
+- Phase 3.2: Complete selection mode UI (checkboxes, numbered indicators, Cancel/Confirm buttons)
+- Phase 3.5: Update calendar indicators for brick activities
+- Integration with activities list screen to display BrickGroupCard for brick activities
+
+---
