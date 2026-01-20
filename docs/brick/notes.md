@@ -57,14 +57,14 @@
 - [DONE] Add `ungroupBrick(String brickId)` method
 
 ## 1.5 Service Updates
-- [ ] Update `activities_service.dart` - Add brick parameters to `createActivity()` method
-- [ ] Add `createBrickActivity()` convenience method
-- [ ] Update `mapToActivityDomain()` for brick fields
+- [DONE] Update `activities_service.dart` - Add brick parameters to `createActivity()` method
+- [DONE] Add `createBrickActivity()` convenience method
+- [DONE] Update `mapToActivityDomain()` for brick fields
 
 ## 1.6 Phase 1 Verification
-- [ ] Run `flutter analyze` - No errors
-- [ ] Run code generation successfully
-- [ ] Verify app compiles without errors
+- [DONE] Run `flutter analyze` - No errors
+- [DONE] Run code generation successfully
+- [DONE] Verify app compiles without errors
 
 ---
 
@@ -307,6 +307,51 @@
 
 ## Agent Work Log
 <!-- Agents should add their work entries here -->
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 8
+**Task**: Phase 1.5 - Update activities_service.dart for brick support
+
+**Completed**:
+- Updated `/lib/features/activities/application/activities_service.dart`:
+  - Added import for `brick_metadata.dart` at the top
+  - Updated `createActivity()` method to accept optional brick parameters:
+    - `BrickMetadata? brickMetadata`
+    - `String? brickId`
+  - Added brick parameters to the Activity domain object creation in createActivity()
+  - Added `createBrickActivity()` convenience method that:
+    - Accepts activities and segmentOrder lists
+    - Validates 2-3 activities and matching segment order length
+    - Delegates to repository's `createBrickFromActivities()` method
+    - Includes proper logging and error handling
+  - Updated `mapToActivityDomain()` to parse brick fields from database:
+    - Added parsing of brickMetadata from JSON string
+    - Added brickId field mapping
+    - Used `_parseBrickMetadata()` helper method
+  - Added `_parseBrickMetadata()` helper method:
+    - Deserializes JSON string to BrickMetadata object
+    - Includes error handling with logging
+    - Mirrors pattern used by `_parseNutritionPlanData()`
+- Ran `flutter pub run build_runner build --delete-conflicting-outputs` successfully
+- Verified with `flutter analyze` on activities_service.dart - no errors or warnings
+- Phase 1.6 verification complete:
+  - flutter analyze: No errors (736 existing warnings in codebase, none related to brick changes)
+  - Code generation: Successful
+  - App compiles: Confirmed
+
+**Design Decisions**:
+- Followed existing patterns from `createCyclingActivity()` and `createSwimmingActivity()` for the convenience method structure
+- `createBrickActivity()` delegates directly to repository rather than calling `createActivity()` with brick fields, since brick creation requires special transaction logic (archiving originals, etc.)
+- Added comprehensive logging in `createBrickActivity()` for debugging and monitoring
+- Brick parameters in `createActivity()` are optional (nullable) since most activities are not bricks
+- The `_parseBrickMetadata()` helper mirrors the `_parseNutritionPlanData()` pattern for consistency
+- Brick metadata stored as JSON string in database, parsed on read to BrickMetadata domain object
+
+**Next Steps**:
+- Phase 2: Update Edge Functions for brick support (generate-macros, generate-nutrition-plan)
+- Phase 3: Implement Activities List UI for creating/managing bricks
+- Phase 4: Add brick tab to New Activity Screen
+
+---
 
 ### 2026-01-20 - Claude (Sonnet 4.5) - Part 7
 **Task**: Phase 2.3 - Create brick sport config for edge functions

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../domain/activity.dart' as domain;
+import '../domain/brick_metadata.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
@@ -189,6 +190,9 @@ class ActivitiesService {
     int? timeBeforeMinutes,
     // Nutrition plan data (embedded JSON)
     Map<String, dynamic>? nutritionPlanData,
+    // Brick-specific parameters
+    BrickMetadata? brickMetadata,
+    String? brickId,
   }) async {
     try {
       // Determine the owner of the activity
@@ -244,6 +248,9 @@ class ActivitiesService {
         timeBeforeMinutes: timeBeforeMinutes,
         // Nutrition plan data (embedded JSON)
         nutritionPlanData: nutritionPlanData,
+        // Brick-specific fields
+        brickMetadata: brickMetadata,
+        brickId: brickId,
         createdAt: now,
         updatedAt: now,
       );
@@ -328,6 +335,49 @@ class ActivitiesService {
       timeBeforeMinutes: timeBeforeMinutes,
       notes: notes,
     );
+  }
+
+  /// Create a brick workout from existing activities (convenience method)
+  /// Delegates to the repository's createBrickFromActivities method which:
+  /// 1. Creates a new brick activity with BrickMetadata
+  /// 2. Archives the original activities
+  /// 3. Links them together via brick_id
+  Future<domain.Activity> createBrickActivity({
+    required List<domain.Activity> activities,
+    required List<String> segmentOrder,
+  }) async {
+    try {
+      if (activities.length < 2 || activities.length > 3) {
+        throw ArgumentError('Brick must have 2-3 activities');
+      }
+
+      if (segmentOrder.length != activities.length) {
+        throw ArgumentError('Segment order must match activities length');
+      }
+
+      _logger.info(
+        'Creating brick activity from existing activities',
+        context: 'ACTIVITIES_SERVICE',
+        data: {
+          'activityCount': activities.length,
+          'segmentOrder': segmentOrder,
+          'activityIds': activities.map((a) => a.id).toList(),
+        },
+      );
+
+      return await _activitiesRepository.createBrickFromActivities(
+        activities: activities,
+        segmentOrder: segmentOrder,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error creating brick activity',
+        context: 'ACTIVITIES_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
   /// Update an existing activity
@@ -466,6 +516,11 @@ class ActivitiesService {
       nutritionPlanData: activity.nutritionPlanData != null
           ? _parseNutritionPlanData(activity.nutritionPlanData!)
           : null,
+      // Brick-specific fields (parse JSON string from database)
+      brickMetadata: activity.brickMetadata != null
+          ? _parseBrickMetadata(activity.brickMetadata!)
+          : null,
+      brickId: activity.brickId,
       completedAt: activity.completedAt,
       completionRating: activity.completionRating,
       completionNotes: activity.completionNotes,
@@ -493,6 +548,21 @@ class ActivitiesService {
     } catch (e) {
       _logger.error(
         'Failed to parse nutrition plan data',
+        context: 'ACTIVITIES_SERVICE',
+        error: e,
+      );
+      return null;
+    }
+  }
+
+  /// Parse brick metadata from JSON string
+  BrickMetadata? _parseBrickMetadata(String jsonString) {
+    try {
+      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      return BrickMetadata.fromJson(json);
+    } catch (e) {
+      _logger.error(
+        'Failed to parse brick metadata',
         context: 'ACTIVITIES_SERVICE',
         error: e,
       );
