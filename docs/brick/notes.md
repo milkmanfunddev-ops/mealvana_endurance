@@ -86,10 +86,10 @@
 - [ ] Update response schema for brick plans (separate foods per phase)
 
 ## 2.3 Sport Config
-- [ ] Create `brick.ts` sport config in `supabase/functions/_shared/nutrition/sport-configs/`
-- [ ] Define phase structure for brick workouts
-- [ ] Define food category mappings per phase
-- [ ] Add transition phase settings
+- [DONE] Create `brick.ts` sport config in `supabase/functions/_shared/nutrition/sport-configs/`
+- [DONE] Define phase structure for brick workouts
+- [DONE] Define food category mappings per phase
+- [DONE] Add transition phase settings
 
 ## 2.4 Phase 2 Verification
 - [ ] Edge function test: Swim/Run brick macro calculation
@@ -307,6 +307,45 @@
 
 ## Agent Work Log
 <!-- Agents should add their work entries here -->
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 7
+**Task**: Phase 2.3 - Create brick sport config for edge functions
+
+**Completed**:
+- Created `/supabase/functions/_shared/nutrition/sport-configs/brick.ts`
+  - Defined phase structure (before, during, after) with brick-specific limits
+  - Set maxFoods: 6 for during phase (higher to accommodate transition foods + segment foods)
+  - Set maxServingsCap: 8 for longer brick workouts
+  - Defined optimization weights balancing multiple sports (carbs: 1.0, sodium: 0.8)
+  - Added comprehensive documentation explaining brick nutrition challenges
+- Updated `/supabase/functions/_shared/nutrition/sport-configs/index.ts`
+  - Imported brickConfig from './brick.ts'
+  - Added brick: brickConfig to sportConfigs registry
+  - getSportConfig() now handles 'brick' activity type
+- Updated `/supabase/functions/_shared/nutrition/types.ts`
+  - Added 'brick' to ActivityType union type
+
+**Design Decisions**:
+- Followed existing sport config patterns (running.ts, cycling.ts, swimming.ts)
+- Used cycling limits as base since bike leg typically allows most variety during brick
+- Higher maxFoods (6) and maxServingsCap (8) to support multi-segment + transition foods
+- Balanced optimization weights (0.85 for both carbs and protein in after phase)
+- Sport-specific food filtering (during_swim, during_bike, during_run, transition) will be handled by edge function logic
+- Config provides sensible defaults that work across all brick combinations (swim/run, bike/run, swim/bike/run)
+- Edge function will handle multi-phase breakdown (T1, T2 transitions) using these base settings
+
+**Notes**:
+- The brick config is simpler than the actual multi-phase brick logic (which includes T1/T2)
+- Edge functions (generate-macros, generate-nutrition-plan) will need to implement the full multi-phase breakdown
+- This config provides the foundation - phase-specific limits and weights that edge functions can build upon
+- Transition foods are already tagged in the database with the 'transition' category
+
+**Next Steps**:
+- Phase 2.1: Update generate-macros edge function to calculate brick macros with phase breakdown
+- Phase 2.2: Update generate-nutrition-plan edge function to handle multi-phase food selection
+- Phase 2.4: Test brick nutrition calculations with edge function tests
+
+---
 
 ### 2026-01-20 - Claude (Sonnet 4.5) - Part 6
 **Task**: Phase 1.4 - Add brick repository methods (getArchivedActivitiesForBrick, createBrickFromActivities, ungroupBrick) and add archivedForBrick to ActivityStatus enum

@@ -18,6 +18,7 @@ import type { ActivityType, Phase } from '../types.ts';
 import { runningConfig } from './running.ts';
 import { cyclingConfig } from './cycling.ts';
 import { swimmingConfig } from './swimming.ts';
+import { brickConfig } from './brick.ts';
 
 // Re-export types
 export * from './types.ts';
@@ -96,6 +97,7 @@ const sportConfigs: SportConfigMap = {
   triathlon: triathlonConfig,
   duathlon: duathlonConfig,
   multisport: multisportConfig,
+  brick: brickConfig,
 };
 
 /**

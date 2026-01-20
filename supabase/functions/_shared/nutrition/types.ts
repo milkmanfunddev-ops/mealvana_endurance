@@ -96,7 +96,7 @@ export interface NutritionPlanResult {
 // Activity Types
 // ============================================================================
 
-export type ActivityType = 'running' | 'cycling' | 'swimming' | 'triathlon' | 'duathlon' | 'multisport';
+export type ActivityType = 'running' | 'cycling' | 'swimming' | 'triathlon' | 'duathlon' | 'multisport' | 'brick';
 export type Phase = 'before' | 'during' | 'after';
 export type PreferenceCategory = 'liked' | 'willing' | 'essential' | 'neutral';
 
