@@ -71,12 +71,12 @@
 # PHASE 2: Edge Function Updates
 
 ## 2.1 generate-macros Updates
-- [ ] Add brick detection in main handler
-- [ ] Implement `calculateBrickMacros()` function for cumulative duration-based calculation
-- [ ] Implement phase breakdown calculation (before, during-swim, T1, during-bike, T2, during-run, after)
-- [ ] Implement transition macro calculation (T1: 20g carbs, T2: 25g carbs)
-- [ ] Add brick-specific response schema (include segment macros)
-- [ ] Normalize response to match single-sport format
+- [DONE] Add brick detection in main handler
+- [DONE] Implement `calculateBrickMacros()` function for cumulative duration-based calculation
+- [DONE] Implement phase breakdown calculation (before, during-swim, T1, during-bike, T2, during-run, after)
+- [DONE] Implement transition macro calculation (T1: 20g carbs, T2: 25g carbs)
+- [DONE] Add brick-specific response schema (include segment macros)
+- [DONE] Normalize response to match single-sport format
 
 ## 2.2 generate-nutrition-plan Updates
 - [ ] Add brick activity type support
@@ -599,3 +599,54 @@
 
 ---
 *Last updated: 2026-01-20*
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 7
+**Task**: Phase 2.1 - Update generate-macros edge function for brick support
+
+**Completed**:
+- Added brick detection in main handler (`activityType === 'brick'`)
+- Implemented `calculateBrickMacros()` function with cumulative duration-based calculation:
+  - Uses TOTAL duration across all segments to determine base carb rate
+  - Applies weighted average intensity adjustment based on segment intensities
+  - Applies gut training multiplier (untrained/low: 0.6, moderate: 0.85, trained/high: 1.0)
+  - Caps final carb rate at 90g/hr
+- Implemented phase breakdown calculation:
+  - Before phase: 1.5g/kg carbs, 10g protein, 5g fat, 200mg sodium, 300ml water
+  - During segments: Sport-specific allocation
+    - Swimming: 0g carbs (can't eat while swimming)
+    - Cycling: Higher allocation with 20% boost if followed by run (pre-load strategy)
+    - Running: Conservative allocation, capped at 35g/hr
+  - Transitions: T1 (20g carbs, 150mg sodium, 200ml water), T2 (25g carbs, 100mg sodium, 150ml water)
+  - After phase: 1g/kg carbs, 0.3g/kg protein, 10g fat, 300mg sodium, 500ml water
+- Added brick-specific response schema:
+  - `activity_type: 'brick'`
+  - `brick_type: 'SWIMMING_RUNNING'` (or other combination)
+  - Total macros across all phases
+  - Detailed phase breakdown with segments, transitions, before, and after
+  - Energy expenditure calculated by summing MET-based kcal for each segment
+  - Carb rate per hour
+- Reused existing sport-specific MET calculation functions:
+  - `swimmingMETFromPace()` for swimming segments
+  - `cyclingMETFromSpeed()` with elevation and indoor/outdoor adjustments for cycling
+  - `metFromPace()` for running segments
+
+**Design Decisions**:
+- Followed the cumulative duration approach from `/docs/brick/nutrition-algorithm.md`
+- Used weighted average intensity across all segments to adjust carb rate
+- Allocated carbs proportionally to non-swimming segments (swimming gets 0g)
+- Pre-load strategy: Boost cycling carbs by 20% if followed by running
+- Transition macros are fixed values (not proportional to duration)
+- Response schema is brick-specific (no normalization to single-sport format needed)
+- Reused all existing sport MET calculations for consistency
+
+**Key Formulas**:
+- Base carb rate by total duration: <60min=0, 60-90min=30, 90-150min=45, 150-180min=60, >180min=75 g/hr
+- Intensity multipliers: easy=0.7, moderate=1.0, hard=1.2, race=1.3
+- Gut training multipliers: low/untrained=0.6, moderate=0.85, high/trained=1.0
+- Running max carbs: 35g/hr (reduced gastric tolerance)
+- Cycling pre-load boost: 1.2x if followed by run
+
+**Next Steps**:
+- Phase 2.2: Update generate-nutrition-plan edge function for brick support
+- Phase 2.4: Add edge function tests for brick macro calculations
+

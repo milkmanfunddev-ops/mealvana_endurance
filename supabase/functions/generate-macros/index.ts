@@ -861,6 +861,338 @@ function calculateSwimmingMacros(input) {
     during_swim_sodium_total_mg: Math.round(duringSodiumTotal)
   };
 }
+// ============================================================================
+// BRICK WORKOUT FORMULAS (NEW)
+// Based on docs/brick/nutrition-algorithm.md
+// ============================================================================
+
+// Calculate total duration from all segments
+function calculateTotalBrickDuration(segments) {
+  return segments.reduce((sum, segment) => sum + segment.duration_minutes, 0);
+}
+
+// Get base carb rate based on total duration
+function getBaseBrickCarbRate(totalDurationMinutes) {
+  if (totalDurationMinutes < 60) {
+    return 0; // Mouth rinse only for <1 hour
+  } else if (totalDurationMinutes < 90) {
+    return 30; // 30g/hr for 1-1.5 hours
+  } else if (totalDurationMinutes < 150) {
+    return 45; // 45g/hr for 1.5-2.5 hours
+  } else if (totalDurationMinutes < 180) {
+    return 60; // 60g/hr for 2.5-3 hours
+  } else {
+    return 75; // 75-90g/hr for 3+ hours
+  }
+}
+
+// Adjust for weighted average intensity across segments
+function adjustBrickCarbRateForIntensity(baseCarbRate, segments) {
+  const totalDuration = calculateTotalBrickDuration(segments);
+  let weightedIntensity = 0;
+
+  const intensityMultipliers = {
+    easy: 0.7,
+    moderate: 1.0,
+    hard: 1.2,
+    race: 1.3,
+  };
+
+  for (const segment of segments) {
+    const multiplier = intensityMultipliers[segment.intensity] || 1.0;
+    weightedIntensity += (segment.duration_minutes / totalDuration) * multiplier;
+  }
+
+  return Math.round(baseCarbRate * weightedIntensity);
+}
+
+// Get MET for a brick segment based on sport
+function getMETForBrickSegment(segment) {
+  const sport = segment.sport;
+
+  if (sport === 'swimming') {
+    // Use swimming MET calculation
+    if (segment.pace_per_100m_seconds) {
+      return swimmingMETFromPace(
+        segment.pace_per_100m_seconds,
+        segment.pool_or_open_water || 'pool',
+        segment.water_temp_c || 26
+      );
+    }
+    // Fallback: assume moderate intensity swimming
+    return 10.0;
+  } else if (sport === 'cycling') {
+    // Use cycling MET calculation
+    if (segment.speed_mph) {
+      const speedKph = segment.speed_mph * MI_TO_KM;
+      let met = cyclingMETFromSpeed(speedKph, segment.terrain || 'flat');
+
+      // Adjust for elevation if provided
+      if (segment.elevation_gain_ft && segment.distance_miles) {
+        met = adjustMETForElevation(met, segment.elevation_gain_ft, segment.distance_miles);
+      }
+
+      // Adjust for indoor/outdoor
+      met = adjustMETForIndoorOutdoor(met, segment.indoor_outdoor === 'indoor');
+
+      return met;
+    }
+    // Fallback: assume moderate intensity cycling
+    return 10.0;
+  } else if (sport === 'running') {
+    // Use running MET calculation
+    if (segment.pace_minutes_per_mile) {
+      return metFromPace(segment.pace_minutes_per_mile);
+    }
+    // Fallback: assume moderate intensity running
+    return 8.0;
+  }
+
+  // Default fallback
+  return 8.0;
+}
+
+// Calculate energy expenditure for brick workout
+function calculateBrickEnergyExpenditure(segments, weightKg) {
+  let totalKcal = 0;
+
+  for (const segment of segments) {
+    const met = getMETForBrickSegment(segment);
+    const kcal = grossKcal(weightKg, segment.duration_minutes, met);
+    totalKcal += kcal;
+  }
+
+  return Math.round(totalKcal);
+}
+
+// Calculate phase breakdown for brick workout
+function calculateBrickPhaseBreakdown(segments, weightKg, duringCarbs, beforeCarbs, afterCarbs, beforeProtein, afterProtein, totalSodium, totalWater, envLabel) {
+  const phases = {
+    before: {
+      carbs_g: Math.round(beforeCarbs),
+      protein_g: beforeProtein,
+      fat_g: 5,
+      sodium_mg: 200,
+      water_ml: 300,
+    },
+    during_segments: [],
+    transitions: [],
+    after: {
+      carbs_g: Math.round(afterCarbs),
+      protein_g: Math.round(afterProtein),
+      fat_g: 10,
+      sodium_mg: 300,
+      water_ml: 500,
+    },
+  };
+
+  // Calculate remaining during carbs (after transitions)
+  let remainingDuringCarbs = duringCarbs;
+
+  // Account for transitions
+  const transitionCount = segments.length - 1;
+  if (transitionCount >= 1) {
+    remainingDuringCarbs -= 20; // T1
+  }
+  if (transitionCount >= 2) {
+    remainingDuringCarbs -= 25; // T2
+  }
+
+  // Allocate carbs to each segment
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+    const sport = segment.sport;
+    const durationH = segment.duration_minutes / 60;
+
+    let segmentCarbs = 0;
+    let segmentSodium = 0;
+    let segmentWater = 0;
+
+    if (sport === 'swimming') {
+      // Swimming: Cannot eat while swimming
+      segmentCarbs = 0;
+      segmentSodium = 0;
+      segmentWater = 0;
+    } else if (sport === 'cycling') {
+      // Cycling: Higher gastric tolerance - maximize intake
+      // Boost bike intake by 20% if followed by run (pre-load strategy)
+      const nextSegmentIsRun = i < segments.length - 1 && segments[i + 1].sport === 'running';
+      const preLoadBoost = nextSegmentIsRun ? 1.2 : 1.0;
+
+      // Calculate proportion of remaining carbs
+      const totalNonSwimDuration = segments
+        .filter(s => s.sport !== 'swimming')
+        .reduce((sum, s) => sum + s.duration_minutes, 0);
+
+      const bikeProportion = segment.duration_minutes / totalNonSwimDuration;
+      segmentCarbs = Math.round(remainingDuringCarbs * bikeProportion * preLoadBoost);
+
+      segmentSodium = Math.round(500 * durationH);
+      segmentWater = Math.round(600 * durationH);
+    } else if (sport === 'running') {
+      // Running: Reduced gastric tolerance - conservative intake
+      const maxRunCarbsPerHour = 35;
+      const maxRunCarbs = maxRunCarbsPerHour * durationH;
+
+      // Calculate proportion of remaining carbs
+      const totalNonSwimDuration = segments
+        .filter(s => s.sport !== 'swimming')
+        .reduce((sum, s) => sum + s.duration_minutes, 0);
+
+      const runProportion = segment.duration_minutes / totalNonSwimDuration;
+      const allocatedCarbs = remainingDuringCarbs * runProportion;
+
+      segmentCarbs = Math.min(Math.round(allocatedCarbs), maxRunCarbs);
+
+      segmentSodium = Math.round(400 * durationH);
+      segmentWater = Math.round(500 * durationH);
+    }
+
+    phases.during_segments.push({
+      segment_order: segment.order,
+      sport: sport,
+      duration_minutes: segment.duration_minutes,
+      carbs_g: segmentCarbs,
+      protein_g: 0,
+      fat_g: 0,
+      sodium_mg: segmentSodium,
+      water_ml: segmentWater,
+      food_categories: [`during_${sport}`],
+    });
+
+    // Add transition after this segment (if not last)
+    if (i < segments.length - 1) {
+      const transitionName = i === 0 ? 'T1' : 'T2';
+      const transitionCarbs = i === 0 ? 20 : 25;
+      const transitionSodium = i === 0 ? 150 : 100;
+      const transitionWater = i === 0 ? 200 : 150;
+
+      phases.transitions.push({
+        transition_name: transitionName,
+        after_sport: sport,
+        before_sport: segments[i + 1].sport,
+        carbs_g: transitionCarbs,
+        protein_g: 0,
+        fat_g: 0,
+        sodium_mg: transitionSodium,
+        water_ml: transitionWater,
+        timing_note: transitionName === 'T1' ? 'Within first 5-10 minutes after swim' : 'Final 5-10 minutes of bike leg',
+        food_categories: ['transition'],
+      });
+    }
+  }
+
+  return phases;
+}
+
+// Main brick macro calculation function
+function calculateBrickMacros(input) {
+  const { weightKg, brickSegments, gutTraining, timeBeforeMinutes, tempC, humidityPct, sweatSodiumCat } = input;
+
+  // 1. Calculate total duration
+  const totalDurationMin = calculateTotalBrickDuration(brickSegments);
+  const totalDurationH = totalDurationMin / 60;
+
+  // 2. Get base carb rate based on TOTAL duration (cumulative approach)
+  const baseCarbRate = getBaseBrickCarbRate(totalDurationMin);
+
+  // 3. Adjust for weighted average intensity
+  const adjustedCarbRate = adjustBrickCarbRateForIntensity(baseCarbRate, brickSegments);
+
+  // 4. Apply gut training multiplier
+  const gutMultiplier = {
+    low: 0.6,
+    untrained: 0.6,
+    moderate: 0.85,
+    high: 1.0,
+    trained: 1.0,
+  }[gutTraining] || 0.85;
+
+  const finalCarbRate = Math.min(adjustedCarbRate * gutMultiplier, 90); // Max 90g/hr
+
+  // 5. Calculate total macros
+  const duringCarbs = finalCarbRate * totalDurationH;
+  const beforeCarbs = weightKg * 1.5; // 1-2g/kg, use 1.5
+  const afterCarbs = weightKg * 1.0; // 1g/kg for recovery
+
+  const beforeProtein = 10; // Light protein before
+  const afterProtein = weightKg * 0.3; // 0.3g/kg post
+
+  // 6. Sodium and hydration
+  const sodiumPerHour = 500; // Default mid-range
+  const totalSodium = Math.round(sodiumPerHour * totalDurationH);
+
+  const waterPerHour = 600; // Default mid-range (ml)
+  const totalWater = Math.round(waterPerHour * totalDurationH);
+
+  // 7. Energy expenditure
+  const energyExpenditure = calculateBrickEnergyExpenditure(brickSegments, weightKg);
+
+  // 8. Environment
+  const [envMult, envLabel] = envMultiplier(tempC, humidityPct);
+
+  // 9. Phase breakdown
+  const phases = calculateBrickPhaseBreakdown(
+    brickSegments,
+    weightKg,
+    duringCarbs,
+    beforeCarbs,
+    afterCarbs,
+    beforeProtein,
+    afterProtein,
+    totalSodium,
+    totalWater,
+    envLabel
+  );
+
+  // 10. Calculate total macros across all phases
+  let totalCarbs = phases.before.carbs_g;
+  let totalProtein = phases.before.protein_g;
+  let totalFat = phases.before.fat_g;
+  let totalSodiumFinal = phases.before.sodium_mg;
+  let totalWaterFinal = phases.before.water_ml;
+
+  phases.during_segments.forEach(seg => {
+    totalCarbs += seg.carbs_g;
+    totalProtein += seg.protein_g;
+    totalFat += seg.fat_g;
+    totalSodiumFinal += seg.sodium_mg;
+    totalWaterFinal += seg.water_ml;
+  });
+
+  phases.transitions.forEach(trans => {
+    totalCarbs += trans.carbs_g;
+    totalProtein += trans.protein_g;
+    totalFat += trans.fat_g;
+    totalSodiumFinal += trans.sodium_mg;
+    totalWaterFinal += trans.water_ml;
+  });
+
+  totalCarbs += phases.after.carbs_g;
+  totalProtein += phases.after.protein_g;
+  totalFat += phases.after.fat_g;
+  totalSodiumFinal += phases.after.sodium_mg;
+  totalWaterFinal += phases.after.water_ml;
+
+  // 11. Generate brick type string
+  const sportNames = brickSegments.map(s => s.sport.toUpperCase());
+  const brickType = sportNames.join('_');
+
+  return {
+    activity_type: 'brick',
+    brick_type: brickType,
+    total_carbs_g: Math.round(totalCarbs),
+    total_protein_g: Math.round(totalProtein),
+    total_fat_g: Math.round(totalFat),
+    total_sodium_mg: Math.round(totalSodiumFinal),
+    total_water_ml: Math.round(totalWaterFinal),
+    phases: phases,
+    total_duration_minutes: totalDurationMin,
+    energy_expenditure_kcal: energyExpenditure,
+    carb_rate_g_per_hour: Math.round(finalCarbRate * 10) / 10,
+  };
+}
+
 serve(async (req)=>{
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -1062,11 +1394,67 @@ serve(async (req)=>{
         during_total_g: macros.during_total_g,
         MET: macros.MET
       });
+    } else if (activityType === 'brick') {
+      // Validate brick-specific fields
+      if (!requestData.weight || !requestData.brick_segments || !Array.isArray(requestData.brick_segments)) {
+        return new Response(JSON.stringify({
+          success: false,
+          message: 'Missing required fields for brick: weight and brick_segments array are required'
+        }), {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+
+      // Validate segment count
+      if (requestData.brick_segments.length < 2 || requestData.brick_segments.length > 3) {
+        return new Response(JSON.stringify({
+          success: false,
+          message: 'Brick workouts must have 2-3 segments'
+        }), {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+
+      // Convert weight to kg if needed
+      const weightKg = toKg(requestData.weight, requestData.weight_unit || 'kg');
+
+      // Prepare brick input
+      const brickInput = {
+        weightKg: weightKg,
+        brickSegments: requestData.brick_segments,
+        gutTraining: requestData.gut_training || 'moderate',
+        timeBeforeMinutes: requestData.time_before_min || 120,
+        tempC: requestData.temp_c || null,
+        humidityPct: requestData.humidity_pct || null,
+        sweatSodiumCat: requestData.sweat_sodium || 'medium'
+      };
+
+      // Calculate brick macros
+      const brickMacros = calculateBrickMacros(brickInput);
+
+      // Return brick-specific response (no normalization needed)
+      macros = brickMacros;
+
+      console.log('✅ DEBUG: Calculated brick macros successfully:', {
+        brick_type: macros.brick_type,
+        total_duration_minutes: macros.total_duration_minutes,
+        carb_rate_g_per_hour: macros.carb_rate_g_per_hour,
+        total_carbs_g: macros.total_carbs_g,
+        phases_count: macros.phases.before ? 1 : 0 + macros.phases.during_segments.length + macros.phases.transitions.length + (macros.phases.after ? 1 : 0)
+      });
     } else {
       // Invalid activity type
       return new Response(JSON.stringify({
         success: false,
-        message: `Invalid activity_type: "${activityType}". Must be "running", "cycling", or "swimming".`
+        message: `Invalid activity_type: "${activityType}". Must be "running", "cycling", "swimming", or "brick".`
       }), {
         status: 400,
         headers: {
