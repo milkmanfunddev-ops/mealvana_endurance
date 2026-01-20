@@ -34,41 +34,53 @@ class BrickSegmentCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.blackberry.withValues(alpha: 0.5)
-            : AppColors.cream.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: (isDark ? AppColors.cream : AppColors.blackberry)
-              .withValues(alpha: 0.1),
-          width: 1,
+    // Build semantic label for the segment
+    final sportName = segment.sport;
+    final distanceInfo = _getSegmentDetails();
+    final semanticLabel = '$sportName segment, $distanceInfo, position $order';
+
+    return Semantics(
+      label: semanticLabel,
+      container: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.blackberry.withValues(alpha: 0.5)
+              : AppColors.cream.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: (isDark ? AppColors.cream : AppColors.blackberry)
+                .withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            _buildSportIcon(),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildSegmentDetails(context, isDark),
-            ),
-            if (showRemoveButton && onRemove != null)
-              _buildRemoveButton(),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              _buildSportIcon(),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildSegmentDetails(context, isDark),
+              ),
+              if (showRemoveButton && onRemove != null)
+                _buildRemoveButton(),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSportIcon() {
-    return Icon(
-      _getIconForSport(segment.sport),
-      color: AppColors.electrolyte,
-      size: 24,
+    // Sport icon is decorative, exclude from semantics
+    return ExcludeSemantics(
+      child: Icon(
+        _getIconForSport(segment.sport),
+        color: AppColors.electrolyte,
+        size: 24,
+      ),
     );
   }
 
@@ -106,11 +118,21 @@ class BrickSegmentCard extends StatelessWidget {
   }
 
   Widget _buildRemoveButton() {
-    return KyleSecondaryIconButton(
-      icon: FontAwesomeIcons.xmark,
-      onPressed: onRemove!,
-      size: 32,
-      variant: SecondaryButtonVariant.orange,
+    return Semantics(
+      label: 'Remove ${segment.sport} from brick',
+      button: true,
+      child: SizedBox(
+        width: 44, // Ensure minimum touch target size
+        height: 44, // Ensure minimum touch target size
+        child: Center(
+          child: KyleSecondaryIconButton(
+            icon: FontAwesomeIcons.xmark,
+            onPressed: onRemove!,
+            size: 32, // Visual size (icon stays 32px)
+            variant: SecondaryButtonVariant.orange,
+          ),
+        ),
+      ),
     );
   }
 

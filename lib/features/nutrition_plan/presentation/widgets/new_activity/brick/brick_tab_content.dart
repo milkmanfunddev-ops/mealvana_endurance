@@ -89,6 +89,54 @@ class BrickTabContent extends ConsumerWidget {
     );
   }
 
+  /// Handle generate macros button press
+  Future<void> _handleGenerateMacros(BuildContext context, WidgetRef ref) async {
+    try {
+      // Validate form
+      final controller = ref.read(brickInputControllerProvider.notifier);
+      if (!controller.isValid()) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please complete all segment details before generating macros'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Show loading indicator
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Generating brick macro targets...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Call coordinator to generate macros
+      final coordinator = ref.read(newActivityCoordinatorProvider.notifier);
+      await coordinator.generateMacros();
+
+      // Navigate to adjust macros screen
+      if (context.mounted) {
+        context.push('/adjust-macros');
+      }
+    } catch (e) {
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating macros: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildSegmentList(
     BuildContext context,
     BrickFormState formState,

@@ -36,25 +36,34 @@ class BrickGroupCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.blackberryLight : Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: (isDark ? AppColors.cream : AppColors.blackberry)
-              .withValues(alpha: 0.1),
-          width: 1,
+    // Build semantic label for the brick workout
+    final segments = brick.brickMetadata?.segments ?? [];
+    final sportNames = segments.map((s) => s.sport).join(' and ');
+    final semanticLabel = 'Brick workout containing $sportNames';
+
+    return Semantics(
+      label: semanticLabel,
+      container: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.blackberryLight : Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: (isDark ? AppColors.cream : AppColors.blackberry)
+                .withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(context, isDark),
-          _buildSubtitle(isDark),
-          _buildSegments(),
-        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(context, isDark),
+            _buildSubtitle(isDark),
+            _buildSegments(),
+          ],
+        ),
       ),
     );
   }
@@ -71,11 +80,13 @@ class BrickGroupCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Chain link icon
-          const Icon(
-            FontAwesomeIcons.link,
-            color: AppColors.orange,
-            size: 20,
+          // Chain link icon (decorative, exclude from semantics)
+          ExcludeSemantics(
+            child: Icon(
+              FontAwesomeIcons.link,
+              color: AppColors.orange,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 8),
 
@@ -97,16 +108,30 @@ class BrickGroupCard extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              KyleSecondaryButtonSmall(
-                text: 'Ungroup',
-                onPressed: onUngroup,
-                variant: SecondaryButtonVariant.orange,
+              Semantics(
+                label: 'Ungroup brick into separate activities',
+                button: true,
+                child: SizedBox(
+                  height: 44, // Ensure minimum touch target height
+                  child: KyleSecondaryButtonSmall(
+                    text: 'Ungroup',
+                    onPressed: onUngroup,
+                    variant: SecondaryButtonVariant.orange,
+                  ),
+                ),
               ),
               const SizedBox(width: 8),
-              KyleSecondaryButtonSmall(
-                text: 'View Combined',
-                onPressed: onViewCombined,
-                variant: SecondaryButtonVariant.orange,
+              Semantics(
+                label: 'View combined nutrition plan',
+                button: true,
+                child: SizedBox(
+                  height: 44, // Ensure minimum touch target height
+                  child: KyleSecondaryButtonSmall(
+                    text: 'View Combined',
+                    onPressed: onViewCombined,
+                    variant: SecondaryButtonVariant.orange,
+                  ),
+                ),
               ),
             ],
           ),

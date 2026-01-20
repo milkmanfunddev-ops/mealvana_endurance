@@ -51,79 +51,93 @@ class BrickSegmentAccordion extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.blackberry.withValues(alpha: 0.3)
-            : AppColors.cream.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
+    return Semantics(
+      label: 'Reorder $sport segment. Currently position $order',
+      container: true,
+      child: Container(
+        decoration: BoxDecoration(
           color: isDark
-              ? AppColors.cream.withValues(alpha: 0.2)
-              : AppColors.blackberry.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header with drag handle, title, and expand/collapse icon
-          InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.md,
-              ),
-              child: Row(
-                children: [
-                  // Drag handle (≡)
-                  Icon(
-                    FontAwesomeIcons.gripVertical,
-                    size: 20,
-                    color: isDark
-                        ? AppColors.cream.withValues(alpha: 0.5)
-                        : AppColors.blackberry.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-
-                  // Order number and sport name
-                  Expanded(
-                    child: Text(
-                      '$order. $sport',
-                      style: AppTextStyles.descriptor.copyWith(
-                        color: isDark ? AppColors.cream : AppColors.blackberry,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-
-                  // Expand/collapse icon
-                  Icon(
-                    expanded
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
-                    size: 16,
-                    color: isDark
-                        ? AppColors.cream.withValues(alpha: 0.7)
-                        : AppColors.blackberry.withValues(alpha: 0.7),
-                  ),
-                ],
-              ),
-            ),
+              ? AppColors.blackberry.withValues(alpha: 0.3)
+              : AppColors.cream.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark
+                ? AppColors.cream.withValues(alpha: 0.2)
+                : AppColors.blackberry.withValues(alpha: 0.2),
+            width: 1,
           ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header with drag handle, title, and expand/collapse icon
+            Semantics(
+              button: true,
+              label: expanded ? 'Collapse $sport segment' : 'Expand $sport segment',
+              child: InkWell(
+                onTap: onToggle,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.md,
+                  ),
+                  child: Row(
+                    children: [
+                      // Drag handle (≡) - decorative since gesture is on whole card
+                      ExcludeSemantics(
+                        child: Icon(
+                          FontAwesomeIcons.gripVertical,
+                          size: 20,
+                          color: isDark
+                              ? AppColors.cream.withValues(alpha: 0.5)
+                              : AppColors.blackberry.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
 
-          // Content (shown when expanded)
-          if (expanded) ...[
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: child,
+                      // Order number and sport name
+                      Expanded(
+                        child: ExcludeSemantics(
+                          child: Text(
+                            '$order. $sport',
+                            style: AppTextStyles.descriptor.copyWith(
+                              color: isDark ? AppColors.cream : AppColors.blackberry,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Expand/collapse icon - decorative since text announces state
+                      ExcludeSemantics(
+                        child: Icon(
+                          expanded
+                              ? FontAwesomeIcons.chevronUp
+                              : FontAwesomeIcons.chevronDown,
+                          size: 16,
+                          color: isDark
+                              ? AppColors.cream.withValues(alpha: 0.7)
+                              : AppColors.blackberry.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
+
+            // Content (shown when expanded)
+            if (expanded) ...[
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: child,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

@@ -18,11 +18,19 @@ class CreateBrickButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return KyleSecondaryButtonSmall(
-      text: "Create Brick",
-      icon: FontAwesomeIcons.link,
-      onPressed: onPressed,
-      variant: SecondaryButtonVariant.orange,
+    return Semantics(
+      label: 'Create brick workout button',
+      button: true,
+      enabled: onPressed != null,
+      child: SizedBox(
+        height: 44, // Ensure minimum touch target height
+        child: KyleSecondaryButtonSmall(
+          text: "Create Brick",
+          icon: FontAwesomeIcons.link,
+          onPressed: onPressed,
+          variant: SecondaryButtonVariant.orange,
+        ),
+      ),
     );
   }
 }

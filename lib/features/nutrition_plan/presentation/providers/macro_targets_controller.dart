@@ -958,14 +958,12 @@ class MacroTargetsController extends _$MacroTargetsController {
         final user = await _authService.getCurrentUser();
         deviceId = user?.id ?? 'unknown';
 
-        // Calculate total distance and duration for analytics
+        // Calculate total distance for analytics
         double totalDistanceMiles = 0.0;
-        int totalDurationMinutes = 0;
         for (final segment in segments) {
           if (segment.distanceMiles != null) {
             totalDistanceMiles += segment.distanceMiles!;
           }
-          totalDurationMinutes += segment.durationMinutes;
         }
 
         await _analytics.trackPlanGenerationStarted(

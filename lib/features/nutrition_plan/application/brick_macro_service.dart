@@ -4,8 +4,10 @@ import '../data/macro_repository.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../../activities/domain/brick_metadata.dart';
+import '../../activities/domain/brick_exceptions.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/analytics/analytics_events.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Service responsible for generating brick macro targets by calling edge functions.
@@ -40,6 +42,9 @@ class BrickMacroService {
   ///
   /// The edge function returns a detailed multi-phase breakdown, but we
   /// normalize it to the standard 3-phase format for the adjust macros screen.
+  ///
+  /// Throws:
+  /// - BrickMacroGenerationException if macro generation fails
   Future<MacroTargets> generateBrickMacros({
     String? activityId,
     required String deviceId,
@@ -48,61 +53,91 @@ class BrickMacroService {
   }) async {
     DebugLogger.info('🧱 BRICK MACRO SERVICE: generateBrickMacros called - ${segments.length} segments');
 
-    // Build request payload
-    final requestData = await _buildBrickRequestData(
-      segments: segments,
-      segmentOrder: segmentOrder,
-    );
-
-    DebugLogger.info('🧱 BRICK MACRO SERVICE: Calling generate-macros edge function...');
-
-    // Call edge function
-    final response = await supabaseClient.functions.invoke(
-      'generate-macros',
-      body: requestData,
-    );
-
-    DebugLogger.info('📥 EDGE FUNCTION: Response status: ${response.status}');
-
-    if (response.status >= 400) {
-      final data = response.data as Map<String, dynamic>?;
-      final errorMessage = data?['message'] ?? 'Failed to generate brick macro targets';
-      DebugLogger.error('❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage');
-      throw Exception(errorMessage);
+    // Validate segments
+    if (segments.isEmpty) {
+      throw BrickMacroGenerationException.invalidSegments();
     }
 
-    final data = response.data as Map<String, dynamic>;
+    try {
+      // Build request payload
+      final requestData = await _buildBrickRequestData(
+        segments: segments,
+        segmentOrder: segmentOrder,
+      );
 
-    if (data['success'] != true) {
-      final errorMessage = data['message'] ?? 'Failed to generate brick macro targets';
-      DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
-      throw Exception(errorMessage);
+      DebugLogger.info('🧱 BRICK MACRO SERVICE: Calling generate-macros edge function...');
+
+      // Call edge function with timeout
+      final response = await supabaseClient.functions.invoke(
+        'generate-macros',
+        body: requestData,
+      );
+
+      DebugLogger.info('📥 EDGE FUNCTION: Response status: ${response.status}');
+
+      // Handle HTTP errors
+      if (response.status >= 400) {
+        final data = response.data as Map<String, dynamic>?;
+        final errorMessage = data?['message'] ?? 'Failed to generate brick macro targets';
+        DebugLogger.error('❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage');
+        throw BrickMacroGenerationException.edgeFunctionError(
+          errorMessage,
+          statusCode: response.status,
+        );
+      }
+
+      final data = response.data as Map<String, dynamic>;
+
+      // Handle application-level errors
+      if (data['success'] != true) {
+        final errorMessage = data['message'] ?? 'Failed to generate brick macro targets';
+        DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
+        throw BrickMacroGenerationException.edgeFunctionError(errorMessage);
+      }
+
+      // Parse brick-specific response
+      final macroTargets = _parseBrickMacroTargets(data);
+
+      // Cache the macro targets
+      await macroRepository.saveMacroTargets(macroTargets);
+
+      // Track analytics
+      await analytics.trackPlanGenerated(
+        deviceId: deviceId,
+        activityId: activityId,
+        activityType: 'brick',
+        distanceMiles: macroTargets.metrics.distanceMi,
+        paceMinutesPerMile: 0.0, // Not applicable for brick
+        totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
+        totalCarbs: _calculateTotalCarbs(macroTargets),
+        beforeRunItems: 1,
+        duringRunItems: segments.length, // One item per segment
+        afterRunItems: 1,
+        isFirstPlan: true,
+      );
+
+      DebugLogger.info('✅ BRICK MACRO SERVICE: Successfully generated brick macro targets');
+
+      return macroTargets;
+    } on BrickMacroGenerationException {
+      // Re-throw brick-specific exceptions as-is
+      rethrow;
+    } on FunctionException catch (e) {
+      // Supabase function invocation error
+      DebugLogger.error('❌ BRICK MACRO SERVICE: Function exception: $e');
+      throw BrickMacroGenerationException.networkError(e);
+    } catch (e, stackTrace) {
+      // Network or parsing errors
+      DebugLogger.error('❌ BRICK MACRO SERVICE: Unexpected error: $e\n$stackTrace');
+
+      if (e.toString().contains('network') ||
+          e.toString().contains('connection') ||
+          e.toString().contains('timeout')) {
+        throw BrickMacroGenerationException.networkError(e);
+      } else {
+        throw BrickMacroGenerationException.parsingError(e);
+      }
     }
-
-    // Parse brick-specific response
-    final macroTargets = _parseBrickMacroTargets(data);
-
-    // Cache the macro targets
-    await macroRepository.saveMacroTargets(macroTargets);
-
-    // Track analytics
-    await analytics.trackPlanGenerated(
-      deviceId: deviceId,
-      activityId: activityId,
-      activityType: 'brick',
-      distanceMiles: macroTargets.metrics.distanceMi,
-      paceMinutesPerMile: 0.0, // Not applicable for brick
-      totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
-      totalCarbs: _calculateTotalCarbs(macroTargets),
-      beforeRunItems: 1,
-      duringRunItems: segments.length, // One item per segment
-      afterRunItems: 1,
-      isFirstPlan: true,
-    );
-
-    DebugLogger.info('✅ BRICK MACRO SERVICE: Successfully generated brick macro targets');
-
-    return macroTargets;
   }
 
   // ========================================

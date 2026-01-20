@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/activity.dart';
+import '../../domain/brick_exceptions.dart';
 
 part 'brick_selection_controller.g.dart';
 
@@ -199,5 +200,103 @@ class BrickSelectionController extends _$BrickSelectionController {
   int getSelectionCount() {
     final currentState = state;
     return currentState.selectedActivityIds.length;
+  }
+
+  /// Validate selection and throw specific exception if validation fails
+  ///
+  /// This method performs the same validation as canCreateBrick(), but throws
+  /// a specific BrickValidationException with a user-friendly message instead
+  /// of returning a boolean.
+  ///
+  /// Use this method before attempting to create a brick to provide detailed
+  /// error feedback to the user.
+  ///
+  /// Throws:
+  /// - BrickValidationException.minimumSports() if less than 2 activities selected
+  /// - BrickValidationException.maximumActivities() if more than 3 activities selected
+  /// - BrickValidationException.duplicateSports() if activities have duplicate sports
+  /// - BrickValidationException.sameDayRequired() if activities are on different days
+  void validateSelection() {
+    final currentState = state;
+    final activities = currentState.selectedActivities;
+
+    // Check minimum count
+    if (activities.length < 2) {
+      throw BrickValidationException.minimumSports();
+    }
+
+    // Check maximum count
+    if (activities.length > 3) {
+      throw BrickValidationException.maximumActivities();
+    }
+
+    // Check that all sports are different
+    final sportTypes = activities.map((a) => a.activityType).toSet();
+    if (sportTypes.length != activities.length) {
+      throw BrickValidationException.duplicateSports();
+    }
+
+    // Check that all activities are on same calendar day
+    if (activities.isNotEmpty) {
+      final firstDate = activities.first.scheduledDateTime;
+      final sameDay = DateTime(firstDate.year, firstDate.month, firstDate.day);
+
+      for (final activity in activities) {
+        final activityDay = DateTime(
+          activity.scheduledDateTime.year,
+          activity.scheduledDateTime.month,
+          activity.scheduledDateTime.day,
+        );
+        if (activityDay != sameDay) {
+          throw BrickValidationException.sameDayRequired();
+        }
+      }
+    }
+  }
+
+  /// Get a user-friendly validation error message, or null if selection is valid
+  ///
+  /// Returns a human-readable error message describing why the current selection
+  /// cannot be used to create a brick workout, or null if the selection is valid.
+  ///
+  /// This is useful for displaying inline validation feedback in the UI.
+  String? getValidationError() {
+    final currentState = state;
+    final activities = currentState.selectedActivities;
+
+    // Check minimum count
+    if (activities.length < 2) {
+      return 'Select at least 2 activities from different sports';
+    }
+
+    // Check maximum count
+    if (activities.length > 3) {
+      return 'Maximum 3 activities allowed per brick';
+    }
+
+    // Check that all sports are different
+    final sportTypes = activities.map((a) => a.activityType).toSet();
+    if (sportTypes.length != activities.length) {
+      return 'All activities must be different sports';
+    }
+
+    // Check that all activities are on same calendar day
+    if (activities.isNotEmpty) {
+      final firstDate = activities.first.scheduledDateTime;
+      final sameDay = DateTime(firstDate.year, firstDate.month, firstDate.day);
+
+      for (final activity in activities) {
+        final activityDay = DateTime(
+          activity.scheduledDateTime.year,
+          activity.scheduledDateTime.month,
+          activity.scheduledDateTime.day,
+        );
+        if (activityDay != sameDay) {
+          return 'All activities must be on the same day';
+        }
+      }
+    }
+
+    return null; // No validation errors
   }
 }

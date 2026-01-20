@@ -10,6 +10,7 @@ Mealvana Endurance is a personalized nutrition planning app for endurance athlet
 
 ### Key Features
 - **Personalized Nutrition Plans**: Algorithm-based plans considering distance, pace, body weight, and gut training
+- **Brick Workout Support**: Multi-sport training sessions (swim/bike/run combinations) with unified nutrition planning and transition phase support
 - **Food Preference Integration**: Respects user's liked/disliked foods
 - **Science-Based Calculations**: Uses ACSM formulas and evidence-based nutrition research
 - **Offline-First Architecture**: Works without internet using Drift SQLite database
@@ -117,23 +118,31 @@ The app implements a "fat backend" strategy where business logic and content are
 mealvana_endurance/
 ├── lib/
 │   ├── features/           # Feature modules (FOA pattern)
+│   │   ├── activities/     # Activity management and brick workouts
 │   │   ├── auth/           # Authentication & user management
 │   │   ├── content/        # Content management system
 │   │   ├── feedback/       # User feedback collection
 │   │   ├── nutrition_plan/ # Core nutrition calculations
 │   │   └── onboarding/     # User onboarding flow
 │   ├── shared/             # Shared utilities and widgets
+│   │   ├── domain/         # Shared domain models (ActivityType, BrickMetadata)
+│   │   └── database/       # Drift SQLite database and tables
 │   ├── theme/              # App theming and styles
 │   └── main.dart           # App entry point
 ├── assets/
 │   ├── config/             # Configuration files
-│   │   └── content_defaults.json  # Default content & algorithm 
+│   │   └── content_defaults.json  # Default content & algorithm
 │   ├── images/             # App images and icons
 │   └── fonts/              # Custom fonts
 ├── docs/
+│   ├── brick/              # Brick workout feature documentation
 │   ├── technical/          # Technical documentation
 │   ├── business_logic/     # Algorithm documentation
+│   ├── database/           # Database schema and sync documentation
 │   └── roadmap.md          # Project roadmap
+├── supabase/
+│   ├── functions/          # Edge functions for nutrition calculations
+│   └── migrations/         # Database migrations
 └── test/                   # Test files
 ```
 
@@ -147,16 +156,20 @@ The app uses a sophisticated **nutrition planning system**
 - **Constraint Solving**: Simultaneous optimization of carbs, protein, fat, sodium, hydration
 - **ACSM Calculations**: Energy expenditure using ACSM running equation for MET calculation
 - **Evidence-Based Guidelines**: Carbohydrate requirements based on gut training levels
+- **Brick Workout Support**: Multi-phase nutrition planning for swim/bike/run combinations with transition periods
 - **Performance Optimized**: Sub-second response times with deterministic calculations
 - **Safety Focused**: Duration-based sodium supplementation and intensity-based hydration
 
 **Key Files**:
 - Service orchestration: `/lib/features/nutrition_plan/application/nutrition_plan_service.dart`
 - AI integration: `/lib/features/nutrition_plan/application/llm_nutrition_plan_service.dart`
+- Brick macro service: `/lib/features/nutrition_plan/application/brick_macro_service.dart`
 - Primary Edge Function: `/supabase/functions/generate-ai-nutrition-plan/index.ts`
-- Fallback Edge Function: `/supabase/functions/run-plan/index.ts`
+- Macro Generation: `/supabase/functions/generate-macros/index.ts`
+- Brick Sport Config: `/supabase/functions/_shared/nutrition/sport-configs/brick.ts`
 
 📚 **Full Business Logic Documentation**: [/docs/business_logic/README.md](/docs/business_logic/README.md)
+📚 **Brick Workout Documentation**: [/docs/brick/README.md](/docs/brick/README.md)
 
 ### Content Management System
 Dynamic content system with backend control:
@@ -191,15 +204,18 @@ Unified dual database architecture with local-first design and cloud synchroniza
 - Offline-first architecture with full schema v1 (27 tables)
 - Type-safe queries and compile-time validation
 - On-demand synchronization with Supabase (no "sync all at startup")
-- Multi-sport support (running, cycling, swimming) in development environment
+- Multi-sport support (running, cycling, swimming, brick workouts) in development environment
+- Brick metadata stored as JSON in activities table with `brick_metadata` and `brick_id` columns
 - Dirty record tracking via `needs_upload` boolean column
 - Staleness tracking via SharedPreferences timestamps
 
 **Cloud Storage (Supabase PostgreSQL)**:
 - **Development**: Full multi-sport schema with 27 tables (cycling/swimming columns in users, activities, foods)
 - **Production**: Partial multi-sport schema with 27 tables (missing cycling/swimming columns in users and activities tables)
+- Brick workout support with `brick_metadata` JSONB column and `brick_id` foreign key in activities table
+- Activity type enum includes 'brick' value, status enum includes 'archived_for_brick' for soft-deleted originals
 - Content management system for dynamic UI text and algorithm parameters
-- Edge functions for AI-powered nutrition plan generation
+- Edge functions for AI-powered nutrition plan generation and brick macro calculations
 - Row Level Security based on device_id and user_id
 - `app_config` table for version control (min_app_version, current_schema_version)
 

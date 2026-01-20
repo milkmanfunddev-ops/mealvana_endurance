@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/activity.dart';
+import '../../domain/brick_exceptions.dart';
 import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../../../shared/services/logging_service.dart';
@@ -41,7 +42,9 @@ class BrickActionsController extends _$BrickActionsController {
   /// - Archives original activities with status='archived_for_brick'
   /// - Sets needs_upload=true for offline-first sync
   ///
-  /// Throws on error (logged to Sentry automatically)
+  /// Throws:
+  /// - BrickValidationException if validation fails
+  /// - BrickCreationException if creation fails
   Future<Activity> createBrickFromSelection({
     required List<Activity> activities,
     required List<String> segmentOrder,
@@ -57,6 +60,11 @@ class BrickActionsController extends _$BrickActionsController {
           'sportTypes': activities.map((a) => a.activityType.name).toList(),
         },
       );
+
+      // Validate segment order matches activities
+      if (segmentOrder.length != activities.length) {
+        throw BrickValidationException.invalidSegmentOrder();
+      }
 
       // Call service to create brick (service delegates to repository)
       final brickActivity = await _service.createBrickActivity(
@@ -74,6 +82,9 @@ class BrickActionsController extends _$BrickActionsController {
       );
 
       return brickActivity;
+    } on BrickValidationException {
+      // Re-throw validation exceptions as-is
+      rethrow;
     } catch (e, stackTrace) {
       _logger.error(
         'Error creating brick from selection',
@@ -84,7 +95,15 @@ class BrickActionsController extends _$BrickActionsController {
           'activityIds': activities.map((a) => a.id).toList(),
         },
       );
-      rethrow;
+
+      // Wrap unknown errors in BrickCreationException
+      if (e.toString().contains('network') || e.toString().contains('connection')) {
+        throw BrickCreationException.networkError(e);
+      } else if (e.toString().contains('database') || e.toString().contains('drift')) {
+        throw BrickCreationException.databaseError(e);
+      } else {
+        throw BrickCreationException.unknown(e);
+      }
     }
   }
 
@@ -99,7 +118,8 @@ class BrickActionsController extends _$BrickActionsController {
   /// - Soft deletes the brick activity (deleted_at = now)
   /// - Sets needs_upload=true for offline-first sync
   ///
-  /// Throws on error (logged to Sentry automatically)
+  /// Throws:
+  /// - BrickUngroupException if ungroup fails
   Future<void> ungroupBrick(String brickId) async {
     try {
       _logger.info(
@@ -116,6 +136,16 @@ class BrickActionsController extends _$BrickActionsController {
         context: 'BRICK_ACTIONS_CONTROLLER',
         data: {'brickId': brickId},
       );
+    } on StateError catch (e, stackTrace) {
+      // Brick not found in database
+      _logger.error(
+        'Brick not found when attempting to ungroup',
+        context: 'BRICK_ACTIONS_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'brickId': brickId},
+      );
+      throw BrickUngroupException.brickNotFound(brickId);
     } catch (e, stackTrace) {
       _logger.error(
         'Error ungrouping brick',
@@ -124,7 +154,13 @@ class BrickActionsController extends _$BrickActionsController {
         stackTrace: stackTrace,
         data: {'brickId': brickId},
       );
-      rethrow;
+
+      // Wrap unknown errors in BrickUngroupException
+      if (e.toString().contains('network') || e.toString().contains('connection')) {
+        throw BrickUngroupException.networkError(e);
+      } else {
+        throw BrickUngroupException.databaseError(e);
+      }
     }
   }
 

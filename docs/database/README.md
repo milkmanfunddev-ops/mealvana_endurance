@@ -17,6 +17,12 @@ Mealvana Endurance uses a unified database architecture with local-first design:
 - Foods table includes sport-specific suitability filtering (dev and prod)
 - User profiles store sport-specific preferences - FTP, CSS (dev only)
 
+**Brick Workout Support (Added 2026-01-19 to Dev):**
+- Activities table includes brick metadata and relationships (dev only)
+- Supports combined swim/bike/run workouts with transition phases
+- Soft-delete architecture for grouping/ungrouping activities
+- Unified nutrition planning across multiple sports
+
 **Dietary Preferences & Allergies (Added 2025-12-14 to Prod):**
 - User profiles store dietary preference (omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb)
 - User profiles store allergies array (dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts)
@@ -368,7 +374,76 @@ Added sport suitability filtering:
 
 **Migration:** `/supabase/migrations/20251015000000_add_cycling_swimming_support.sql`
 
+## Brick Workout Support (v3 - January 2026)
+
+### Activities Table Changes
+Added support for brick workouts (multi-sport training sessions):
+
+**New Columns:**
+- `brick_metadata` JSONB (Supabase) / TEXT (Drift) - Stores segment information for brick workouts
+- `brick_id` UUID (Supabase) / TEXT (Drift) - Links archived activities to their parent brick
+
+**New Enum Values:**
+- `activity_type_enum`: Added 'brick' value for multi-sport workouts
+- `activity_status_enum`: Added 'archived_for_brick' status for soft-deleted original activities
+
+**Brick Metadata JSON Structure:**
+```json
+{
+  "segment_order": ["swimming", "running"],
+  "segments": [
+    {
+      "sport": "swimming",
+      "order": 1,
+      "duration_minutes": 40,
+      "intensity": "moderate",
+      "distance_meters": 2000,
+      "pace_per_100m_seconds": 120,
+      "pool_or_open_water": "pool"
+    },
+    {
+      "sport": "running",
+      "order": 2,
+      "duration_minutes": 55,
+      "intensity": "moderate",
+      "distance_miles": 6.2,
+      "pace_minutes_per_mile": 8.5
+    }
+  ],
+  "original_activity_ids": ["uuid-1", "uuid-2"],
+  "created_from_existing": true,
+  "total_duration_minutes": 95
+}
+```
+
+**Database Indexes:**
+- `idx_activities_brick_id` - Efficient queries for archived activities belonging to a brick
+- `idx_activities_brick_type` - Efficient queries for brick activities
+
+**Key Behaviors:**
+- When creating a brick from existing activities, originals are soft-deleted with `status = 'archived_for_brick'` and `brick_id` pointing to the new brick
+- Ungrouping a brick restores original activities and deletes the brick
+- Brick activities sync as single records with embedded segment metadata
+- Supports 2-3 sport combinations in any order (swim/run, bike/run, swim/bike/run, etc.)
+
+**Migration:** `/supabase/migrations/20260119000000_add_brick_support.sql`
+
+**Documentation:**
+- Feature overview: `/docs/brick/README.md`
+- Schema details: `/docs/brick/schema-changes.md`
+- Nutrition algorithm: `/docs/brick/nutrition-algorithm.md`
+
 ## Schema Version History
+
+### V3 (In Development - January 2026)
+- **Migration Approach**: Proper Drift migrations with version bumps
+- **Key Changes**:
+  - Added brick workout support (brick_metadata and brick_id columns)
+  - Added 'brick' to activity_type_enum and 'archived_for_brick' to activity_status_enum
+  - Added indexes for brick queries
+  - Transition food category support
+- **Schema Location**: `/database_schemas/v3/` (when finalized)
+- **Status**: Development only - not yet released to production
 
 ### V2 (Current - December 2025)
 - **Migration Approach**: Proper Drift migrations with version bumps
