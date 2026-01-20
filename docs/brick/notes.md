@@ -238,10 +238,10 @@
 - [ ] Ungroup animation (cards separate)
 
 ## 6.2 Error Handling
-- [ ] Add error states for all brick operations
-- [ ] Implement validation error dialogs
-- [ ] Add loading states for brick creation/ungrouping
-- [ ] Handle edge cases (no activities, single sport, etc.)
+- [DONE] Add error states for all brick operations
+- [DONE] Implement validation error dialogs
+- [DONE] Add loading states for brick creation/ungrouping
+- [DONE] Handle edge cases (no activities, single sport, etc.)
 
 ## 6.3 Accessibility
 - [DONE] Add screen reader labels for all brick UI
@@ -1849,5 +1849,93 @@ All Phase 4.4 functionality is already fully implemented and working correctly:
 - Phase 3.6: Add comprehensive testing (widget tests, integration tests)
 - Phase 4: Continue with brick tab in New Activity Screen
 - Phase 5: Activity Details Screen with multi-phase nutrition sections
+
+---
+
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 19 (Phase 6.2 Complete)
+**Task**: Phase 6.2 - Add comprehensive error handling for brick operations
+
+**Completed**:
+- Created `/lib/features/activities/domain/brick_exceptions.dart`:
+  - `BrickException` - Base exception class
+  - `BrickValidationException` - For validation errors (minimum sports, maximum activities, same day, duplicate sports, invalid segment order)
+  - `BrickCreationException` - For database/network errors during creation
+  - `BrickUngroupException` - For ungroup operation failures
+  - `BrickMacroGenerationException` - For macro generation errors
+  - Each exception has factory constructors for common error scenarios with user-friendly messages
+- Updated `/lib/features/activities/presentation/providers/brick_selection_controller.dart`:
+  - Added `validateSelection()` method that throws specific BrickValidationException with error codes
+  - Added `getValidationError()` method that returns user-friendly validation error messages
+  - Maintains existing `canCreateBrick()` method for backward compatibility
+- Updated `/lib/features/activities/presentation/providers/brick_actions_controller.dart`:
+  - Enhanced `createBrickFromSelection()` to catch and wrap exceptions in BrickCreationException
+  - Enhanced `ungroupBrick()` to catch and wrap exceptions in BrickUngroupException
+  - Added segment order validation
+  - Improved error logging with proper context
+- Updated `/lib/features/nutrition_plan/application/brick_macro_service.dart`:
+  - Added segments validation (throw BrickMacroGenerationException.invalidSegments if empty)
+  - Enhanced edge function error handling with specific status codes
+  - Wrapped network errors in BrickMacroGenerationException.networkError
+  - Wrapped parsing errors in BrickMacroGenerationException.parsingError
+  - Added FunctionException handling for Supabase-specific errors
+- Created `/lib/features/activities/presentation/widgets/brick_validation_error_dialog.dart`:
+  - `BrickValidationErrorDialog` - Shows user-friendly validation errors with specific icons and titles
+  - `BrickCreationErrorDialog` - Shows creation errors with retry option for network errors
+  - `BrickUngroupErrorDialog` - Shows ungroup errors with retry option for network errors
+  - `BrickMacroGenerationErrorDialog` - Shows macro generation errors with retry option
+  - All dialogs follow existing Kyle design system patterns (KylePrimaryButton, KyleTertiaryButton, AppTextStyles)
+- Updated `/lib/features/activities/presentation/screens/activities_list_screen.dart`:
+  - Added specific exception handling in `_handleConfirmSelection()` for BrickValidationException and BrickCreationException
+  - Added specific exception handling in `_handleUngroupBrick()` for BrickUngroupException
+  - Added context.mounted checks to prevent BuildContext usage across async gaps
+  - Loading states already present via SnackBar indicators
+  - Error dialogs with retry functionality for network errors
+- Ran `flutter pub run build_runner build --delete-conflicting-outputs` successfully
+- Ran `flutter analyze` - Only 3 info warnings remain (use_build_context_synchronously with proper mounted guards)
+
+**Design Decisions**:
+- Used custom exception types instead of generic Exceptions for better error handling and type safety
+- Each exception type has factory constructors for common scenarios to ensure consistent error messages
+- Validation exceptions thrown from selection controller provide immediate feedback before attempting creation
+- Network errors are retryable with explicit retry callbacks in error dialogs
+- Database errors are non-retryable (would require app restart or data correction)
+- Error dialogs follow existing Kyle design system for consistency
+- BuildContext.mounted checks added to prevent warnings about using context across async gaps
+- Loading states use existing SnackBar pattern (consistent with rest of app)
+
+**Error Handling Coverage**:
+1. **Validation Errors**:
+   - Minimum 2 activities required
+   - Maximum 3 activities allowed
+   - All activities must be different sports
+   - All activities must be on same day
+   - Segment order must match selected activities
+2. **Creation Errors**:
+   - Network failures (retryable)
+   - Database errors (non-retryable)
+   - Unknown errors (logged to Sentry)
+3. **Ungroup Errors**:
+   - Brick not found
+   - Network failures (retryable)
+   - Database errors (non-retryable)
+4. **Macro Generation Errors**:
+   - Invalid segments (empty list)
+   - Edge function HTTP errors (with status codes)
+   - Network timeouts (retryable)
+   - Response parsing errors
+   - Supabase function invocation errors
+
+**Phase 6.2 Status**: ✅ COMPLETE
+- All error states implemented with specific exception types
+- Validation error dialogs created with user-friendly messages
+- Loading states present via SnackBar indicators
+- Edge cases handled (no activities, single sport, different days, etc.)
+- Flutter analyze passes with only 3 benign info warnings (properly guarded BuildContext usage)
+
+**Next Steps**:
+- Phase 6.3: Accessibility testing (VoiceOver/TalkBack, color contrast)
+- Phase 6.4: Comprehensive testing (unit tests, widget tests, integration tests)
+- Phase 6.5: Documentation updates
 
 ---

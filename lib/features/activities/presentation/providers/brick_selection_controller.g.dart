@@ -69,7 +69,7 @@ final class BrickSelectionControllerProvider
 }
 
 String _$brickSelectionControllerHash() =>
-    r'29c0120125d1bdab7455d80694ae012448205c07';
+    r'ca557678277c1dff144069238d31ead22bf69328';
 
 /// Controller for managing brick workout selection mode
 ///

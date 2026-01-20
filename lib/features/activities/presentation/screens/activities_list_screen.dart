@@ -22,9 +22,11 @@ import '../widgets/create_brick_button.dart';
 import '../widgets/brick_confirmation_dialog.dart';
 import '../widgets/brick_ungroup_dialog.dart';
 import '../widgets/brick_minimum_warning_dialog.dart';
+import '../widgets/brick_validation_error_dialog.dart';
 import '../widgets/brick_group_card.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../domain/activity.dart';
+import '../../domain/brick_exceptions.dart';
 
 /// Main screen showing calendar date picker and daily activity list.
 ///
@@ -468,11 +470,43 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           duration: Duration(seconds: 3),
         ),
       );
+    } on BrickValidationException catch (e) {
+      // Validation error - show specific dialog
+      messenger.clearSnackBars();
+      if (!context.mounted) return;
+      await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => BrickValidationErrorDialog(
+          exception: e,
+          onRetry: () {
+            // Keep selection mode active so user can adjust selection
+          },
+        ),
+      );
+    } on BrickCreationException catch (e) {
+      // Creation error - show specific dialog with retry option
+      messenger.clearSnackBars();
+      if (!context.mounted) return;
+      final shouldRetry = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => BrickCreationErrorDialog(
+          exception: e,
+          onRetry: () {
+            // Retry callback - will be executed after dialog closes
+          },
+        ),
+      );
+
+      // If user chose to retry, retry immediately
+      if (shouldRetry == true && e.code == 'NETWORK_ERROR' && context.mounted) {
+        await _handleConfirmSelection(activities, selectedDate);
+      }
     } catch (e) {
+      // Unknown error - show generic error message
       messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Error creating brick: $e'),
+          content: Text('Unexpected error creating brick: ${e.toString()}'),
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 4),
         ),
@@ -538,11 +572,30 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           duration: Duration(seconds: 3),
         ),
       );
+    } on BrickUngroupException catch (e) {
+      // Ungroup error - show specific dialog with retry option
+      messenger.clearSnackBars();
+      if (!context.mounted) return;
+      final shouldRetry = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => BrickUngroupErrorDialog(
+          exception: e,
+          onRetry: () {
+            // Retry callback - will be executed after dialog closes
+          },
+        ),
+      );
+
+      // If user chose to retry, retry immediately
+      if (shouldRetry == true && e.code == 'NETWORK_ERROR' && context.mounted) {
+        await _handleUngroupBrick(brickId);
+      }
     } catch (e) {
+      // Unknown error - show generic error message
       messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Error ungrouping brick: $e'),
+          content: Text('Unexpected error ungrouping brick: ${e.toString()}'),
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 4),
         ),

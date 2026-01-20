@@ -1,7 +1,8 @@
-/// Custom exceptions for brick workout operations
+/// Custom exceptions for brick workout operations.
 ///
 /// These exceptions provide specific error types for better error handling
 /// and user-friendly error messages.
+library;
 
 /// Base exception for brick operations
 class BrickException implements Exception {
