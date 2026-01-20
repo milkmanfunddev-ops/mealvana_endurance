@@ -17,6 +17,12 @@ import 'activity_action_buttons.dart';
 /// - Activity title and details (Compadre + Apercu fonts)
 /// - Action buttons (check mark and X)
 ///
+/// Selection Mode Support:
+/// - When isSelectionMode is true, shows checkbox on left side
+/// - When isSelected is true, shows numbered indicator instead of checkbox
+/// - selectionOrder determines the number shown (1, 2, 3)
+/// - onSelectionToggle is called when card is tapped in selection mode
+///
 /// Specifications:
 /// - Border radius: 15px
 /// - Icon: 36px circle, Electrolyte background, Blackberry icon
@@ -27,9 +33,17 @@ class ActivityCard extends ConsumerWidget {
   const ActivityCard({
     super.key,
     required this.activity,
+    this.isSelectionMode = false,
+    this.isSelected = false,
+    this.selectionOrder,
+    this.onSelectionToggle,
   });
 
   final Activity activity;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final int? selectionOrder;
+  final VoidCallback? onSelectionToggle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,27 +62,75 @@ class ActivityCard extends ConsumerWidget {
         ),
       ),
       child: InkWell(
-        onTap: () => _handleTap(context, ref),
+        onTap: () => isSelectionMode ? onSelectionToggle?.call() : _handleTap(context, ref),
         borderRadius: BorderRadius.circular(15),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
+              // Selection indicator (checkbox or numbered order)
+              if (isSelectionMode) ...[
+                _buildSelectionIndicator(isDark),
+                const SizedBox(width: 12),
+              ],
               _buildActivityIcon(),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildActivityDetails(context, isDark),
               ),
-              ActivityActionButtons(
-                isCompleted: activity.status == ActivityStatus.completed,
-                onComplete: () => _handleComplete(context, ref),
-                onDelete: () => _handleDelete(context, ref),
-              ),
+              // Only show action buttons when NOT in selection mode
+              if (!isSelectionMode)
+                ActivityActionButtons(
+                  isCompleted: activity.status == ActivityStatus.completed,
+                  onComplete: () => _handleComplete(context, ref),
+                  onDelete: () => _handleDelete(context, ref),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Build selection indicator - either checkbox or numbered order
+  Widget _buildSelectionIndicator(bool isDark) {
+    if (isSelected && selectionOrder != null) {
+      // Show numbered indicator (①, ②, ③)
+      return Container(
+        width: 32,
+        height: 32,
+        decoration: const BoxDecoration(
+          color: AppColors.electrolyte,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Text(
+            '$selectionOrder',
+            style: const TextStyle(
+              fontFamily: 'Compadre',
+              fontSize: 16,
+              color: AppColors.blackberry,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    } else {
+      // Show empty checkbox
+      return Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: (isDark ? AppColors.cream : AppColors.blackberry)
+                .withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildActivityIcon() {

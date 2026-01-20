@@ -5,6 +5,7 @@ import '../providers/new_activity_coordinator.dart';
 import '../providers/running_input_controller.dart';
 import '../providers/cycling_input_controller.dart';
 import '../providers/swimming_input_controller.dart';
+import '../providers/brick_input_controller.dart';
 import '../widgets/new_activity/shared/sport_selector.dart';
 import '../widgets/new_activity/shared/new_activity_app_bar.dart';
 import '../widgets/new_activity/shared/new_activity_hero_section.dart';
@@ -13,6 +14,7 @@ import '../widgets/new_activity/shared/new_activity_generate_button.dart';
 import '../widgets/new_activity/running_tab_content.dart';
 import '../widgets/new_activity/cycling_tab_content.dart';
 import '../widgets/new_activity/swimming_tab_content.dart';
+import '../widgets/new_activity/brick/brick_tab_content.dart';
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/widgets/app_date_picker.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -343,6 +345,8 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         return const CyclingTabContent();
       case SportTab.swimming:
         return const SwimmingTabContent();
+      case SportTab.brick:
+        return const BrickTabContent();
     }
   }
 

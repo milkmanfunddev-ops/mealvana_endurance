@@ -5,6 +5,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/activity_detail/completion_dialog.dart';
 import '../widgets/activity_detail/expandable_food_item_widget.dart';
 import '../widgets/activity_detail/geometric_pattern_painter.dart';
+import '../widgets/activity_detail/brick_header.dart';
+import '../widgets/activity_detail/brick_nutrition_sections.dart';
 import '../utils/activity_detail_helpers.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -253,6 +255,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final activityType = activity?.activityType ?? ActivityType.running;
     final scheduledDateTime = state.scheduledDateTime ?? DateTime.now();
 
+    // Check if this is a brick workout
+    if (activity != null && activity.isBrick && activity.brickMetadata != null) {
+      return BrickHeader(
+        brick: activity,
+        metadata: activity.brickMetadata!,
+      );
+    }
+
+    // Standard single-sport header
     return Column(
       children: [
         _buildHeroImageWithPattern(context, activityType),
@@ -443,6 +454,22 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   Widget _buildNutritionSections(BuildContext context, ActivityDetailState state) {
     final plan = state.nutritionPlan!;
+    final activity = state.activity;
+
+    // Check if this is a brick workout
+    if (activity != null && activity.isBrick && activity.brickMetadata != null) {
+      return BrickNutritionSections(
+        brick: activity,
+        planData: plan,
+        onAddFood: (category) => _addFood(context, category),
+        onSwapFood: (foodId, foodName, category) => _swapFood(context, state, foodId, foodName, category),
+        onDeleteFood: (foodId, category) => _deleteFood(context, state, foodId, category),
+        onUpdateQuantity: (foodId, category, newQuantity) => _updateFoodQuantity(context, state, foodId, category, newQuantity),
+        showSwipeHint: _consumeSwipeHint(),
+      );
+    }
+
+    // Standard single-sport nutrition sections
     // Get activity type for sport-specific section titles (e.g., "Before Swim", "During Ride")
     final activityType = state.activity?.activityType ?? ActivityType.running;
 

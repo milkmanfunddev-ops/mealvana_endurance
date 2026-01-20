@@ -110,19 +110,19 @@
 
 ## 3.2 Selection Mode
 - [DONE] Create `BrickSelectionController` provider
-- [ ] Add selection mode state to activities list
-- [ ] Implement checkbox UI on activity cards
-- [ ] Implement numbered order indicators (1, 2, 3)
-- [ ] Add Cancel/Confirm buttons to header
-- [ ] Validate selection (2-3 activities, different sports)
+- [DONE] Add selection mode state to activities list
+- [DONE] Implement checkbox UI on activity cards
+- [DONE] Implement numbered order indicators (1, 2, 3)
+- [DONE] Add Cancel/Confirm buttons to header
+- [DONE] Validate selection (2-3 activities, different sports)
 
 ## 3.3 Brick Group Display
-- [ ] Create `BrickGroupCard` widget
-- [ ] Implement brick header with Ungroup/View Combined buttons
-- [ ] Create `BrickSegmentCard` for nested segment display
-- [ ] Add X buttons for removing segments
-- [ ] Add "Consecutive activities share nutrition" label
-- [ ] Style according to design specs (dark purple header)
+- [DONE] Create `BrickGroupCard` widget
+- [DONE] Implement brick header with Ungroup/View Combined buttons
+- [DONE] Create `BrickSegmentCard` for nested segment display
+- [DONE] Add X buttons for removing segments
+- [DONE] Add "Consecutive activities share nutrition" label
+- [DONE] Style according to design specs (dark purple header)
 
 ## 3.4 Brick Actions
 - [ ] Implement "Create Brick" confirmation flow
@@ -937,6 +937,101 @@
 - Phase 3.2: Implement Selection Mode (checkboxes, numbered indicators, Cancel/Confirm buttons)
 - Phase 3.3: Create BrickGroupCard for displaying grouped brick workouts
 - Phase 3.4: Implement brick creation/ungrouping actions
+
+---
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 12 (Phase 3.2 Complete)
+**Task**: Phase 3.2 - Add selection mode UI to activities list
+
+**Completed**:
+- Updated `/lib/features/activities/presentation/screens/activities_list_screen.dart`:
+  - Added import for `brick_selection_controller`
+  - Added import for `secondary_button` (for Cancel/Confirm buttons)
+  - Modified `_buildTodaysActivitiesHeader()` to watch `brickSelectionControllerProvider`
+  - When `isSelectionMode` is true, shows Cancel and Confirm buttons instead of Create Brick button
+  - Cancel button uses `SecondaryButtonVariant.blackberry` (neutral action)
+  - Confirm button shows "Confirm (n)" where n = selected count
+  - Confirm button is disabled when `canCreateBrick()` returns false (< 2 selections or invalid)
+  - Confirm button uses `SecondaryButtonVariant.orange` (emphasis action)
+  - Updated `_handleCreateBrickPressed()` to call `enterSelectionMode()` on controller
+  - Added `_handleCancelSelection()` to exit selection mode
+  - Added `_handleConfirmSelection()` to create brick from selected activities:
+    - Gets selected activity IDs in order
+    - Maps to full Activity objects
+    - Calls `activitiesService.createBrickActivity()`
+    - Shows loading and success/error SnackBars
+    - Refreshes activities list after successful creation
+  - Modified activity card rendering in SliverList to pass selection mode parameters:
+    - Watches `brickSelectionControllerProvider` for each card
+    - Passes `isSelectionMode`, `isSelected`, `selectionOrder` to ActivityCard
+    - Passes `onSelectionToggle` callback that calls `toggleActivity()`
+- Updated `/lib/features/activities/presentation/widgets/activity_card.dart`:
+  - Added 4 optional parameters: `isSelectionMode`, `isSelected`, `selectionOrder`, `onSelectionToggle`
+  - Updated class documentation to describe selection mode support
+  - Modified `build()` method:
+    - When in selection mode, taps call `onSelectionToggle` instead of `_handleTap`
+    - Shows selection indicator (checkbox or number) on left side when `isSelectionMode` is true
+    - Hides action buttons (complete/delete) when in selection mode
+  - Added `_buildSelectionIndicator()` method:
+    - When `isSelected` is true and `selectionOrder` is set: Shows numbered circle (1, 2, 3) with orange background
+    - When not selected: Shows empty circle (checkbox outline)
+    - Uses Compadre font for numbers, 32x32px size
+    - Orange background (AppColors.electrolyte) matches design specs
+- Ran `flutter pub run build_runner build --delete-conflicting-outputs`:
+  - Successfully generated 58 outputs in 21s
+  - All Riverpod providers regenerated
+- Ran `flutter analyze` on modified files:
+  - No issues found
+  - Fixed initial error where I used `SecondaryButtonVariant.grey` (doesn't exist)
+  - Changed to `SecondaryButtonVariant.blackberry` for Cancel button
+
+**Design Decisions**:
+- Followed UI specs from `/docs/brick/ui-flow.md` exactly:
+  - Checkboxes appear on left side when selection mode is active
+  - Selected activities show numbered circle (1, 2, 3) instead of checkbox
+  - Numbers use orange background (Electrolyte color)
+  - Action buttons (complete/delete) are hidden during selection mode
+  - Confirm button shows count and is disabled when invalid selection
+- Used existing `KyleSecondaryButtonSmall` components for Cancel/Confirm buttons
+- Confirm button uses `canCreateBrick()` validation from controller:
+  - Checks 2-3 activities selected
+  - Ensures different sports
+  - Validates same calendar day
+- Selection indicator size (32x32px) is slightly smaller than activity icon (36x36px) for visual hierarchy
+- Tap behavior changes in selection mode: entire card tap toggles selection (no need to tap checkbox)
+
+**Key Implementation Details**:
+- Controller methods used:
+  - `enterSelectionMode()` - Activates selection UI
+  - `exitSelectionMode()` - Clears selections and returns to normal mode
+  - `toggleActivity(Activity)` - Adds/removes activity from selection
+  - `canCreateBrick()` - Validates selection rules
+  - `getSelectedOrder()` - Returns activity IDs in selection order
+  - `getSelectionOrder(String)` - Returns 1-based order number for display
+  - `isActivitySelected(String)` - Checks if activity is selected
+  - `getSelectionCount()` - Returns count for "Confirm (n)" button text
+- Service integration:
+  - Calls `activitiesService.createBrickActivity()` with activities and segment order
+  - Service delegates to repository's `createBrickFromActivities()` method
+  - Repository handles archiving originals and creating brick with transaction atomicity
+- Error handling:
+  - Shows loading SnackBar during brick creation
+  - Shows success SnackBar on completion (green background)
+  - Shows error SnackBar on failure (red background)
+  - Clears previous SnackBars before showing new ones
+
+**Phase 3.2 Status**: ✅ COMPLETE
+- All selection mode UI implemented
+- Checkboxes and numbered indicators working
+- Cancel/Confirm buttons functional
+- Validation rules enforced (2-3 activities, different sports, same day)
+- Brick creation flow integrated with service layer
+- All code follows FOA patterns (UI logic in screen, business logic in controller/service)
+
+**Next Steps**:
+- Phase 3.3: Create BrickGroupCard to display existing brick workouts
+- Phase 3.4: Implement Ungroup brick and Remove segment functionality
+- Phase 3.5: Update calendar indicators to show multi-sport dots for bricks
 
 ---
 

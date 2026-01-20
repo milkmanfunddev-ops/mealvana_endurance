@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/activities_controller.dart';
 import '../providers/brick_creation_available_provider.dart';
+import '../providers/brick_selection_controller.dart';
+import '../providers/brick_actions_controller.dart';
 import '../../../calendar/presentation/providers/calendar_view_provider.dart';
 import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
@@ -12,10 +14,14 @@ import '../../../calendar/presentation/providers/calendar_selected_date_provider
 import '../../../events/presentation/providers/events_controller.dart';
 import '../../../events/presentation/widgets/upcoming_event_card_kyle.dart';
 import '../../../../shared/widgets/kyle_design/typography/section_header_text.dart';
+import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../widgets/activity_card.dart';
 import '../widgets/carb_loading_day_card.dart';
 import '../widgets/create_brick_button.dart';
+import '../widgets/brick_confirmation_dialog.dart';
+import '../widgets/brick_ungroup_dialog.dart';
+import '../widgets/brick_group_card.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../domain/activity.dart';
 
@@ -238,7 +244,26 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                           return CarbLoadingDayCard(carbDay: selectedDateCarbDays[index]);
                         } else {
                           final activityIndex = index - carbDayCount;
-                          return ActivityCard(activity: selectedDateActivities[activityIndex]);
+                          final activity = selectedDateActivities[activityIndex];
+
+                          // Get selection mode state
+                          final selectionState = ref.watch(brickSelectionControllerProvider);
+                          final isSelectionMode = selectionState.isSelectionMode;
+                          final isSelected = ref.read(brickSelectionControllerProvider.notifier)
+                              .isActivitySelected(activity.id);
+                          final selectionOrder = ref.read(brickSelectionControllerProvider.notifier)
+                              .getSelectionOrder(activity.id);
+
+                          return ActivityCard(
+                            activity: activity,
+                            isSelectionMode: isSelectionMode,
+                            isSelected: isSelected,
+                            selectionOrder: selectionOrder,
+                            onSelectionToggle: () {
+                              ref.read(brickSelectionControllerProvider.notifier)
+                                  .toggleActivity(activity);
+                            },
+                          );
                         }
                       },
                       childCount: (selectedDateCarbDays.length + selectedDateActivities.length),
@@ -319,6 +344,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       ),
     );
 
+    final selectionState = ref.watch(brickSelectionControllerProvider);
+    final isSelectionMode = selectionState.isSelectionMode;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -329,9 +357,27 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
             topPadding: 0,
             bottomPadding: 0,
           ),
-          if (isBrickAvailable)
+          if (!isSelectionMode && isBrickAvailable)
             CreateBrickButton(
               onPressed: _handleCreateBrickPressed,
+            ),
+          if (isSelectionMode)
+            Row(
+              children: [
+                KyleSecondaryButtonSmall(
+                  text: "Cancel",
+                  onPressed: _handleCancelSelection,
+                  variant: SecondaryButtonVariant.blackberry,
+                ),
+                const SizedBox(width: 8),
+                KyleSecondaryButtonSmall(
+                  text: "Confirm (${selectionState.selectedActivityIds.length})",
+                  onPressed: ref.read(brickSelectionControllerProvider.notifier).canCreateBrick()
+                      ? () => _handleConfirmSelection(activities, selectedDate)
+                      : null,
+                  variant: SecondaryButtonVariant.orange,
+                ),
+              ],
             ),
         ],
       ),
@@ -341,12 +387,84 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   /// Handle Create Brick button press
   /// Enters selection mode to choose activities for brick creation
   void _handleCreateBrickPressed() {
-    // TODO: Implement selection mode entry (Phase 3.2)
-    // For now, show a placeholder message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Brick creation coming soon! (Selection mode not yet implemented)'),
+    ref.read(brickSelectionControllerProvider.notifier).enterSelectionMode();
+  }
+
+  /// Handle Cancel button press in selection mode
+  /// Exits selection mode and clears all selections
+  void _handleCancelSelection() {
+    ref.read(brickSelectionControllerProvider.notifier).exitSelectionMode();
+  }
+
+  /// Handle Confirm button press in selection mode
+  /// Shows confirmation dialog and creates brick from selected activities
+  Future<void> _handleConfirmSelection(
+    List<Activity> activities,
+    DateTime selectedDate,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final selectionController = ref.read(brickSelectionControllerProvider.notifier);
+    final actionsController = ref.read(brickActionsControllerProvider.notifier);
+
+    // Get selected activity IDs in order
+    final selectedIds = selectionController.getSelectedOrder();
+
+    // Get full Activity objects in the same order
+    final selectedActivities = selectedIds
+        .map((id) => activities.firstWhere((a) => a.id == id))
+        .toList();
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => BrickConfirmationDialog(
+        selectedActivities: selectedActivities,
       ),
     );
+
+    if (confirmed != true) {
+      return; // User cancelled
+    }
+
+    try {
+      // Show loading indicator
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Creating brick workout...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Call controller to create brick (follows FOA pattern - business logic in controller)
+      await actionsController.createBrickFromSelection(
+        activities: selectedActivities,
+        segmentOrder: selectedIds,
+      );
+
+      // Exit selection mode
+      selectionController.exitSelectionMode();
+
+      // Refresh activities list
+      ref.invalidate(activitiesControllerProvider);
+
+      // Show success message
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Brick workout created successfully!'),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error creating brick: $e'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 }
