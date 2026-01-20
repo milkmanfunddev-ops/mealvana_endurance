@@ -36,11 +36,11 @@
 - [DONE] Update `activity_type.dart` - Add `isBrick` helper getter
 - [DONE] Create `brick_metadata.dart` - BrickMetadata model with toJson/fromJson
 - [DONE] Create `brick_metadata.dart` - BrickSegment model with toJson/fromJson
-- [ ] Update `activity.dart` - Add brickMetadata and brickId fields
-- [ ] Update `activity.dart` - Add isBrick getter
-- [ ] Update `activity.dart` - Update toJson() for brick fields
-- [ ] Update `activity.dart` - Update copyWith() for brick fields
-- [ ] Update `activity.dart` - Update equality/hashCode for brick fields
+- [DONE] Update `activity.dart` - Add brickMetadata and brickId fields
+- [DONE] Update `activity.dart` - Add isBrick getter
+- [DONE] Update `activity.dart` - Update toJson() for brick fields
+- [DONE] Update `activity.dart` - Update copyWith() for brick fields
+- [DONE] Update `activity.dart` - Update equality/hashCode for brick fields
 - [ ] Run `flutter pub run build_runner build --delete-conflicting-outputs` for code generation
 
 ## 1.4 Repository Updates
@@ -307,6 +307,40 @@
 
 ## Agent Work Log
 <!-- Agents should add their work entries here -->
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 4
+**Task**: Phase 1.3 - Update activity.dart domain model for brick support
+
+**Completed**:
+- Updated `/lib/features/activities/domain/activity.dart`:
+  - Imported `brick_metadata.dart` at the top of the file
+  - Added `brickMetadata` field (BrickMetadata? - nullable)
+  - Added `brickId` field (String? - nullable)
+  - Added `isBrick` getter that returns `activityType == ActivityType.brick`
+  - Updated constructor to include `brickMetadata` and `brickId` parameters
+  - Updated `toJson()` method to serialize brick fields (`brickMetadata?.toJson()` and `brickId`)
+  - Updated `copyWith()` method to include `brickMetadata` and `brickId` parameters
+  - Updated equality operator (`==`) to compare `brickMetadata` and `brickId`
+  - Updated `hashCode` to include `brickMetadata` and `brickId`
+- Noticed that `ActivityStatus` enum was already updated with `archivedForBrick` value (likely auto-formatted)
+- Ran `flutter analyze --no-pub` on activity.dart - no issues found
+
+**Design Decisions**:
+- Followed existing patterns in activity.dart for consistency:
+  - Grouped brick fields together at the end of constructor parameters (after provider sync fields)
+  - Added inline comments for clarity
+  - Used nullable types (BrickMetadata? and String?) as brick fields are only populated for brick activities
+  - Used `brickMetadata?.toJson()` in toJson() to safely handle null case
+  - Added brick fields to the last Object.hash block in hashCode calculation
+- The `isBrick` getter provides a clean, readable way to check if an activity is a brick workout
+- BrickMetadata is serialized to JSON for storage in the brick_metadata database column
+
+**Next Steps**:
+- Phase 1.2: Still need to update `app_database.dart` to ensure new columns are in onCreate (v3 not released yet)
+- Phase 1.3: Run `flutter pub run build_runner build --delete-conflicting-outputs` for code generation
+- Phase 1.4: Update activities_repository.dart to handle brick fields in all CRUD operations
+
+---
 
 ### 2026-01-20 - Claude (Sonnet 4.5) - Part 3
 **Task**: Phase 1.2 & 1.3 - Complete Drift Schema and Domain Model updates

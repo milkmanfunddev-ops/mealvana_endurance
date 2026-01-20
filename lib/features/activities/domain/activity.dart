@@ -1,4 +1,5 @@
 import '../../../shared/domain/activity_type.dart';
+import 'brick_metadata.dart';
 
 /// Activity domain model for calendar feature
 class Activity {
@@ -66,6 +67,10 @@ class Activity {
     this.workoutSubtype,
     this.paceMinMinutesPerMile,
     this.paceMaxMinutesPerMile,
+
+    // Brick workout fields
+    this.brickMetadata,
+    this.brickId,
   });
 
   final String id;
@@ -132,6 +137,13 @@ class Activity {
   final double? paceMinMinutesPerMile; // Pace range from provider
   final double? paceMaxMinutesPerMile;
 
+  // Brick workout fields
+  final BrickMetadata? brickMetadata; // Brick segment information (JSON)
+  final String? brickId; // Parent brick ID if this is an archived segment
+
+  /// Convenience getter to check if this is a brick activity
+  bool get isBrick => activityType == ActivityType.brick;
+
   /// Serialize activity to JSON for edge function payload
   Map<String, dynamic> toJson() {
     return {
@@ -176,6 +188,8 @@ class Activity {
       'workoutSubtype': workoutSubtype,
       'paceMinMinutesPerMile': paceMinMinutesPerMile,
       'paceMaxMinutesPerMile': paceMaxMinutesPerMile,
+      'brickMetadata': brickMetadata?.toJson(),
+      'brickId': brickId,
     };
   }
 
@@ -223,6 +237,8 @@ class Activity {
     String? workoutSubtype,
     double? paceMinMinutesPerMile,
     double? paceMaxMinutesPerMile,
+    BrickMetadata? brickMetadata,
+    String? brickId,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -268,6 +284,8 @@ class Activity {
       workoutSubtype: workoutSubtype ?? this.workoutSubtype,
       paceMinMinutesPerMile: paceMinMinutesPerMile ?? this.paceMinMinutesPerMile,
       paceMaxMinutesPerMile: paceMaxMinutesPerMile ?? this.paceMaxMinutesPerMile,
+      brickMetadata: brickMetadata ?? this.brickMetadata,
+      brickId: brickId ?? this.brickId,
     );
   }
 
@@ -315,7 +333,9 @@ class Activity {
         other.lastSyncedAt == lastSyncedAt &&
         other.workoutSubtype == workoutSubtype &&
         other.paceMinMinutesPerMile == paceMinMinutesPerMile &&
-        other.paceMaxMinutesPerMile == paceMaxMinutesPerMile;
+        other.paceMaxMinutesPerMile == paceMaxMinutesPerMile &&
+        other.brickMetadata == brickMetadata &&
+        other.brickId == brickId;
   }
 
   @override
@@ -364,6 +384,8 @@ class Activity {
       workoutSubtype,
       paceMinMinutesPerMile,
       paceMaxMinutesPerMile,
+      brickMetadata,
+      brickId,
     );
   }
 
@@ -380,6 +402,7 @@ enum ActivityStatus {
   inProgress,  // Activity in progress
   completed,   // Activity completed
   skipped,     // Activity skipped/cancelled
+  archivedForBrick, // Activity archived as part of a brick workout
 }
 
 /// Intensity level enum
