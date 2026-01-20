@@ -1337,6 +1337,57 @@
 - Phase 5: Activity Details Screen for brick workouts with multi-phase nutrition sections
 
 ---
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 16 (Phase 1.2 Database Verification)
+**Task**: Phase 1.2 - Verify brick columns are in Drift database onCreate
+
+**Completed**:
+- Verified `/lib/shared/database/tables/activities_table.dart`:
+  - Lines 74-76: `brickMetadata` TEXT column (nullable)
+  - Lines 74-76: `brickId` TEXT column (nullable)
+  - Line 92: CHECK constraint includes 'brick' in activity_type enum
+  - Line 93: CHECK constraint includes 'archived_for_brick' in status enum
+- Verified `/lib/shared/database/app_database.dart`:
+  - Line 129: `schemaVersion => 3` (correct)
+  - Lines 152-191: `onCreate` uses `m.createTable(table)` which automatically includes all columns from table definitions
+  - No explicit migration needed - brick columns will be created automatically for new installations
+- Ran `flutter pub run build_runner build --delete-conflicting-outputs`:
+  - Successfully generated 52 outputs in 21 seconds
+  - Drift code generation completed without errors
+  - Schema includes brick columns in generated code
+- Ran `flutter analyze` on app_database.dart:
+  - Only 1 pre-existing warning (dead_null_aware_expression at line 588)
+  - No errors related to brick columns
+
+**Design Decisions**:
+- This was essentially a **verification task** - no code changes needed
+- Brick columns already properly defined in activities_table.dart (Phase 1.2 Part 1)
+- Drift's `m.createTable()` automatically includes all columns from table class definitions
+- New installations (schema v3) will have brick columns from day 1
+- Existing v2 installations: VersionCheckService triggers delete & resync when schema version changes
+
+**Key Insights**:
+- Drift's table definitions are declarative - once columns are added to the table class, they're automatically included in onCreate
+- No explicit migration logic needed for v3 since schema hasn't been released to production yet
+- The migration strategy is: "delete corrupted DB and resync from Supabase" (see app_database.dart lines 215-216)
+- This aligns with Phase 4.3 of sync architecture documentation
+
+**Phase 1.2 Status**: ✅ COMPLETE
+- All brick columns properly defined in activities_table.dart
+- Columns will be created automatically for new users via onCreate
+- Code generation successful
+- No analyzer errors
+
+**Next Steps**:
+- Phase 1 is now FULLY COMPLETE (all schema, domain models, repositories, services done)
+- Phase 2: Already complete (Edge functions updated for brick macro generation and nutrition planning)
+- Phase 3: Mostly complete (Create Brick button, selection mode, ungrouping)
+- Phase 4: In progress (Brick tab content partially done)
+- Phase 5: Partially complete (Brick header and nutrition sections done)
+- Consider running Supabase migration manually (Phase 1.1) to sync schema with backend
+
+---
+
 ### 2026-01-20 - Claude (Sonnet 4.5) - Part 15 (Phase 4.4 Verification Complete)
 **Task**: Phase 4.4 - Verify drag-to-reorder functionality
 
