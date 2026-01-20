@@ -21,7 +21,6 @@ class CreateBrickButton extends ConsumerWidget {
     return Semantics(
       label: 'Create brick workout button',
       button: true,
-      enabled: onPressed != null,
       child: SizedBox(
         height: 44, // Ensure minimum touch target height
         child: KyleSecondaryButtonSmall(

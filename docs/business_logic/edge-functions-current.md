@@ -262,11 +262,62 @@ supabase functions deploy function-name --version v2
 supabase functions deploy function-name --version v1
 ```
 
+#### **4. `generate-macros`**
+**Purpose**: Macro target calculation for single-sport and brick workouts
+
+**Features**:
+- ACSM-based energy expenditure calculations
+- Sport-specific metabolic formulas (running, cycling, swimming)
+- Brick workout support with cumulative duration calculations
+- Multi-phase macro breakdown for transitions (T1, T2)
+
+**Request (Single Sport)**:
+```json
+{
+  "user_id": "uuid",
+  "sport": "running",
+  "distance_miles": 13.1,
+  "duration_minutes": 111,
+  "pace_minutes_per_mile": 8.5,
+  "intensity": "moderate",
+  "weight_lbs": 154.0,
+  "gut_training_level": "moderate"
+}
+```
+
+**Request (Brick Workout)**:
+```json
+{
+  "user_id": "uuid",
+  "activity_type": "brick",
+  "brick_metadata": {
+    "segment_order": ["swimming", "running"],
+    "segments": [
+      {
+        "sport": "swimming",
+        "distance_meters": 2000,
+        "duration_minutes": 40,
+        "intensity": "moderate"
+      },
+      {
+        "sport": "running",
+        "distance_miles": 6.2,
+        "duration_minutes": 55,
+        "intensity": "moderate"
+      }
+    ]
+  },
+  "weight_lbs": 154.0,
+  "gut_training_level": "moderate"
+}
+```
+
+**Response**: Macro targets with phase-specific breakdown (before, during, after, plus T1/T2 for bricks)
+
 ## 📋 **Legacy Functions (Deprecated)**
 
 ### **No Longer Active**
 - ❌ `create-nutrition-plan` - Replaced by `run-plan` and `generate-ai-nutrition-plan`
-- ❌ `generate-macros` - Functionality merged into primary planning functions
 
 These legacy functions have been moved to `/old` directories and should not be used in production.
 

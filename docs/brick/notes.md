@@ -244,8 +244,8 @@
 - [ ] Handle edge cases (no activities, single sport, etc.)
 
 ## 6.3 Accessibility
-- [ ] Add screen reader labels for all brick UI
-- [ ] Ensure touch target sizes (44x44px minimum)
+- [DONE] Add screen reader labels for all brick UI
+- [DONE] Ensure touch target sizes (44x44px minimum)
 - [ ] Test with VoiceOver/TalkBack
 - [ ] Verify color contrast
 
@@ -260,10 +260,10 @@
 - [ ] Manual testing on iOS and Android
 
 ## 6.5 Documentation Updates
-- [ ] Update CLAUDE.md with brick feature
-- [ ] Add brick section to user documentation
-- [ ] Update API documentation
-- [ ] Update database schema docs
+- [DONE] Update CLAUDE.md with brick feature
+- [N/A] Add brick section to user documentation (no user docs exist yet)
+- [DONE] Update API documentation (edge-functions-current.md)
+- [DONE] Update database schema docs (database/README.md)
 
 ## 6.6 Final Verification
 - [DONE] All `flutter analyze` warnings resolved (726 pre-existing warnings, 0 brick-related errors)
