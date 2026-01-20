@@ -162,11 +162,11 @@
 - [DONE] Implement dynamic segment visibility based on checkboxes
 
 ## 4.3 Segment Input Sections
-- [ ] Create `BrickSegmentAccordion` expandable widget
-- [ ] Create `BrickSwimmingSection` (reuse swimming inputs)
-- [ ] Create `BrickCyclingSection` (reuse cycling inputs)
-- [ ] Create `BrickRunningSection` (reuse running inputs)
-- [ ] Implement per-segment intensity selector
+- [DONE] Create `BrickSegmentAccordion` expandable widget
+- [DONE] Create `BrickSwimmingSection` (reuse swimming inputs)
+- [DONE] Create `BrickCyclingSection` (reuse cycling inputs)
+- [DONE] Create `BrickRunningSection` (reuse running inputs)
+- [DONE] Implement per-segment intensity selector
 - [ ] Auto-populate from Training Peaks/Final Surge data (if available)
 
 ## 4.4 Drag to Reorder
@@ -940,6 +940,68 @@
 
 ---
 
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 13 (Phase 4.3 Complete)
+**Task**: Phase 4.3 - Create brick segment input sections for each sport
+
+**Completed**:
+- Created `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_segment_accordion.dart`:
+  - Expandable accordion container for segment inputs
+  - Header shows: drag handle (≡), order number, sport name, expand/collapse icon
+  - Expands to show sport-specific input fields when tapped
+  - Props: sport, order, expanded, onToggle, child
+  - Uses Kyle design system styling with proper dark/light mode support
+- Created `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_swimming_section.dart`:
+  - Swimming-specific input fields following BrickSegment model
+  - Fields: Distance (meters), Duration (minutes), Pace (/100m), Pool or Open Water, Water Temperature (°C), Intensity
+  - Reuses KylePlusMinusControl and KyleSegmentedControl from design system
+  - Custom _KyleDropdown for intensity selection
+  - Wired to update BrickSegment via onChanged callback
+- Created `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_cycling_section.dart`:
+  - Cycling-specific input fields following BrickSegment model
+  - Fields: Distance (miles), Duration (minutes), Speed (mph), Terrain (dropdown), Indoor/Outdoor (dropdown), Elevation Gain (ft), Intensity
+  - Reuses KylePlusMinusDecimalControl from design system
+  - Custom _KyleDropdown for dropdowns
+  - Wired to update BrickSegment via onChanged callback
+- Created `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_running_section.dart`:
+  - Running-specific input fields following BrickSegment model
+  - Fields: Distance (miles), Duration (minutes), Pace (/mile), Intensity
+  - Reuses KylePlusMinusDecimalControl and custom _PaceControl from running_tab_content.dart
+  - Custom _ControlButton for pace controls (copied from running tab)
+  - Pace formatted as M:SS (e.g., 9:00 min/mile)
+  - Wired to update BrickSegment via onChanged callback
+- Ran `flutter analyze` on all 4 new files - No issues found
+
+**Design Decisions**:
+- Each sport section is a standalone widget that accepts a BrickSegment and onChanged callback
+- Followed existing patterns from swimming_tab_content.dart, cycling_tab_content.dart, and running_tab_content.dart
+- Used Kyle design system widgets (KylePlusMinusControl, KyleSegmentedControl, etc.) for consistency
+- Intensity selector implemented as dropdown with 4 levels: Easy, Moderate, Hard, Race
+- Swimming uses segmented control for Pool/Open Water (binary choice)
+- Cycling and Running use dropdowns for terrain and intensity
+- All widgets handle null segments gracefully with sensible defaults
+- Updated deprecated `withOpacity()` to `withValues(alpha:)` for Flutter 3.24+ compatibility
+- Running section includes custom pace control that formats as M:SS and adjusts in 5-second increments
+
+**Key Files Created**:
+- `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_segment_accordion.dart`
+- `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_swimming_section.dart`
+- `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_cycling_section.dart`
+- `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_running_section.dart`
+
+**Phase 4.3 Status**: ✅ COMPLETE
+- All segment input sections created
+- All use Kyle design system patterns
+- All handle BrickSegment updates properly
+- Per-segment intensity selector implemented
+- No analyzer errors or warnings
+
+**Next Steps**:
+- Phase 4.4: Implement drag-to-reorder functionality using ReorderableListView
+- Phase 4.2: Wire these sections into BrickTabContent (when BrickInputController is created)
+- Phase 4.5: Integrate with generate macros button
+
+---
+
 ### 2026-01-20 - Claude (Sonnet 4.5) - Part 12 (Phase 3.2 Complete)
 **Task**: Phase 3.2 - Add selection mode UI to activities list
 
@@ -1161,5 +1223,46 @@
 - Phase 5.4: Update completion flow for brick workouts
 - Phase 5.5: Add widget tests for brick header and nutrition sections
 - Consider refactoring date/time formatting to shared utility helpers
+
+---
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 13 (Phase 4.2 - BrickInputController and BrickTabContent)
+**Task**: Phase 4.2 - Create BrickInputController and BrickTabContent
+
+**Completed**:
+- Created `/lib/features/nutrition_plan/presentation/providers/brick_input_controller.dart`:
+  - Implemented `BrickSegmentInput` class for form data with all sport-specific fields
+  - Implemented `BrickFormState` class tracking selectedSports, sportOrder, segmentInputs
+  - Implemented `BrickInputController` extending `_$BrickInputController` with Riverpod
+  - Methods: toggleSport, reorderSports, updateSegmentInput, getSegments, isValid, getTotalDuration, getBrickType
+  - Used `@Riverpod(keepAlive: true)` with synchronous Notifier (form state, no async needed)
+- Created `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_sport_checkbox.dart`:
+  - Sport checkbox selector (Swimming, Cycling, Running)
+  - Enforces minimum 2 sports (disables checkbox when at minimum)
+  - Shows validation message if < 2 sports selected
+- Created `/lib/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_tab_content.dart`:
+  - Main brick tab content widget with sport selector and segment list
+  - ReorderableListView for drag-to-reorder segments
+  - Segment cards with order number, drag handle, validation icons
+  - Total duration display and Generate Macros button (disabled until valid)
+- Updated `/lib/features/nutrition_plan/presentation/screens/new_activity_screen.dart`:
+  - Added `SportTab.brick` case to `_buildFormFields()` switch
+  - Returns `BrickTabContent()` when brick tab selected
+- Ran `flutter pub run build_runner build --delete-conflicting-outputs` - 52 outputs in 20s
+- Ran `flutter analyze` - No issues found
+
+**Design Decisions**:
+- Used synchronous Notifier (not AsyncNotifier) since this is pure form state
+- Default: swim/run brick with 2 sports selected on init
+- Enforced min 2, max 3 sports via controller and UI logic
+- Segment cards are placeholders (Phase 4.3 will add full input fields)
+- Used Kyle design system components throughout
+
+**Phase 4.2 Status**: ✅ COMPLETE
+
+**Next Steps**:
+- Phase 4.3: Create expandable segment input sections with sport-specific fields
+- Phase 4.4: Already implemented drag-to-reorder (can mark as done)
+- Phase 4.5: Implement Generate Macros for brick workouts
 
 ---
