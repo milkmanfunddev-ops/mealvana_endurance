@@ -17,9 +17,11 @@ import '../domain/integration_exceptions.dart';
 class FinalSurgeApiClient {
   FinalSurgeApiClient({
     required String clientId,
+    required String clientSecret,
     http.Client? httpClient,
     RetryConfig? retryConfig,
   })  : _clientId = clientId,
+        _clientSecret = clientSecret,
         _httpClient = httpClient ?? http.Client(),
         _retryConfig = retryConfig ?? RetryConfig.defaultConfig;
 
@@ -27,23 +29,47 @@ class FinalSurgeApiClient {
   static const _provider = 'final_surge';
 
   final String _clientId;
+  final String _clientSecret;
   final http.Client _httpClient;
   final RetryConfig _retryConfig;
 
   /// Exchange authorization code for access token
   ///
-  /// Called after user completes OAuth flow in browser
+  /// Called after user completes OAuth flow in browser.
   Future<FinalSurgeTokenResponse> exchangeCodeForToken(String code) async {
+    if (kDebugMode) {
+      print('🔄 Exchanging authorization code for token...');
+      print('   Code: ${code.substring(0, code.length > 20 ? 20 : code.length)}...');
+      print('   Client ID: $_clientId');
+    }
+
+    // Build form-encoded body manually to ensure correct encoding
+    // Note: Final Surge does NOT expect redirect-uri in token exchange (per test script)
+    final bodyParams = {
+      'client-id': _clientId,
+      'client-secret': _clientSecret,
+      'code': code,
+    };
+
+    if (kDebugMode) {
+      print('   Request body keys: ${bodyParams.keys.toList()}');
+    }
+
     final response = await _httpClient.post(
       Uri.parse('$_baseUrl/oauth/token'),
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: {
-        'client-id': _clientId,
-        'code': code,
-      },
+      body: bodyParams,
     );
 
+    if (kDebugMode) {
+      print('   Token exchange response status: ${response.statusCode}');
+      print('   Response body: ${response.body}');
+    }
+
     if (response.statusCode != 200) {
+      if (kDebugMode) {
+        print('❌ Token exchange failed: ${response.body}');
+      }
       throw FinalSurgeApiException(
         'Token exchange failed',
         statusCode: response.statusCode,
@@ -52,6 +78,28 @@ class FinalSurgeApiClient {
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (kDebugMode) {
+      print('   JSON keys: ${json.keys.toList()}');
+    }
+
+    // Final Surge returns 200 even on error - check the error field
+    final errorMessage = json['error'] as String?;
+    if (errorMessage != null && errorMessage.isNotEmpty) {
+      if (kDebugMode) {
+        print('❌ Token exchange error: $errorMessage');
+      }
+      throw FinalSurgeApiException(
+        'Token exchange failed: $errorMessage',
+        statusCode: response.statusCode,
+        body: response.body,
+      );
+    }
+
+    if (kDebugMode) {
+      print('✅ Token exchange successful');
+    }
+
     return FinalSurgeTokenResponse.fromJson(json);
   }
 
@@ -209,14 +257,44 @@ class FinalSurgeTokenResponse {
   });
 
   factory FinalSurgeTokenResponse.fromJson(Map<String, dynamic> json) {
+    // Final Surge token response format (based on working test script):
+    // {
+    //   "access_token": "...",
+    //   "id": "athlete-uuid",
+    //   "firstname": "John",
+    //   "lastname": "Doe",
+    //   "error": null
+    // }
+    // Note: Athlete fields are at ROOT level, not nested under 'athlete'
+    // The 'athlete' key exists but may be null
+
+    // Get access token
+    final accessToken = json['access_token'] as String? ??
+                        json['accessToken'] as String? ??
+                        json['token'] as String?;
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw FinalSurgeApiException(
+        'No access token in response. Keys: ${json.keys.toList()}',
+        body: json.toString(),
+      );
+    }
+
+    // Athlete data is at root level (based on working test script)
+    // Fall back to nested 'athlete' object if present (per some docs)
+    final athlete = json['athlete'] as Map<String, dynamic>?;
+
     return FinalSurgeTokenResponse(
-      accessToken: json['access_token'] as String,
-      refreshToken: json['refresh_token'] as String?,
-      expiresIn: json['expires_in'] as int?,
-      athleteId: json['id']?.toString() ?? json['athlete_id']?.toString() ?? '',
-      firstName: json['firstname'] as String?,
-      lastName: json['lastname'] as String?,
-      email: json['email'] as String?,
+      accessToken: accessToken,
+      refreshToken: json['refresh_token'] as String? ?? json['refreshToken'] as String?,
+      expiresIn: json['expires_in'] as int? ?? json['expiresIn'] as int?,
+      // Root level first (test script shows this), then nested as fallback
+      athleteId: json['id']?.toString() ??
+                 athlete?['id']?.toString() ??
+                 json['athlete_id']?.toString() ?? '',
+      firstName: json['firstname'] as String? ?? athlete?['firstname'] as String?,
+      lastName: json['lastname'] as String? ?? athlete?['lastname'] as String?,
+      email: json['email'] as String? ?? athlete?['email'] as String?,
     );
   }
 

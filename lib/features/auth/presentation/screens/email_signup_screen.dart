@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/auth/auth_listener_service.dart';
 import '../../../content/application/content_service.dart';
-import '../../../app_startup/application/app_startup_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
 import '../../domain/auth_exceptions.dart';
@@ -89,14 +89,14 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
-    final appStartupService = ref.read(appStartupServiceProvider);
+    final authListenerService = ref.read(authListenerServiceProvider);
 
     // IMPORTANT: During onboarding signup, we ALWAYS create a NEW user.
     // If there's an existing session (from a previous attempt or old login),
     // sign out first to start fresh.
     // Mark this as an onboarding sign-out to preserve cached onboarding data.
     if (supabase.auth.currentUser != null) {
-      appStartupService.markOnboardingSignOut();
+      authListenerService.markOnboardingSignOut();
       await supabase.auth.signOut();
     }
 

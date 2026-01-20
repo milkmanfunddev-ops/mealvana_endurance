@@ -206,7 +206,16 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<bool> connectFinalSurge() async {
-    if (_currentUserId == null) return false;
+    if (_currentUserId == null) {
+      if (kDebugMode) {
+        print('❌ connectFinalSurge: No current user ID');
+      }
+      return false;
+    }
+
+    if (kDebugMode) {
+      print('🔌 connectFinalSurge: Starting connection for user $_currentUserId');
+    }
 
     state = AsyncData(state.value!.copyWith(
       isConnecting: true,
@@ -218,6 +227,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _trackIntegrationConnectStarted('final_surge');
       final integration = await _finalSurgeOAuth.authenticate(_currentUserId!);
 
+      if (kDebugMode) {
+        print('✅ connectFinalSurge: Authentication successful');
+        print('   Athlete Name: ${integration.providerAthleteName}');
+        print('   Is Active: ${integration.isActive}');
+      }
+
       state = AsyncData(state.value!.copyWith(
         isConnecting: false,
         connectingProvider: null,
@@ -225,9 +240,18 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         finalSurgeAthleteName: integration.providerAthleteName,
       ));
 
+      if (kDebugMode) {
+        print('✅ connectFinalSurge: State updated - isFinalSurgeConnected=true');
+      }
+
       _trackIntegrationConnectSuccess('final_surge', athleteName: integration.providerAthleteName);
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('❌ connectFinalSurge: Error occurred');
+        print('   Error: $e');
+        print('   Stack: $stackTrace');
+      }
       state = AsyncData(state.value!.copyWith(
         isConnecting: false,
         connectingProvider: null,

@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 import '../../../shared/services/device_info_service.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
@@ -17,29 +16,25 @@ import '../../../shared/services/app_config.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
 import '../../nutrition_plan/data/food_repository.dart';
-import '../../auth/data/user_repository.dart';
 import '../../settings/presentation/providers/settings_controller.dart';
-import '../../activities/presentation/providers/activities_controller.dart';
-import '../../events/presentation/providers/events_controller.dart';
-import '../../../shared/providers/user_id_provider.dart';
-import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/dirty_record_backup_service.dart';
 import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
-import 'app_startup_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
-/// Replaces the Hive-based AppStartupService
+///
+/// NOTE: Auth state listening is now handled by AuthListenerService (initialized in RootAppWidget)
+/// This service focuses on non-auth initialization: database, analytics, push notifications, etc.
 class AppStartupService {
   AppStartupService(this.ref);
   final Ref ref;
-  
+
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
   SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
-  
+
   /// Initialize Drift database with v2 migration support and corruption detection
   Future<void> initializeDatabase() async {
     try {
@@ -173,7 +168,7 @@ class AppStartupService {
       }
     }
   }
-  
+
   /// Initialize deferred services after first frame renders.
   /// This includes analytics, device info, and push notifications.
   ///
@@ -224,10 +219,11 @@ class AppStartupService {
 
       // Track app opened event with session ID
       final sessionId = const Uuid().v4();
-      await _analytics.trackAppOpened(
-        deviceId: deviceId,
-        sessionId: sessionId,
-      );
+      await _analytics.track('app_opened', properties: {
+        'device_id': deviceId,
+        'session_id': sessionId,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
     } catch (e, stackTrace) {
       _logger.error(
         'Analytics initialization failed',
@@ -322,283 +318,6 @@ class AppStartupService {
     return DeviceInfoService.instance.deviceId;
   }
 
-  /// Track auth state listener subscription to prevent duplicates
-  StreamSubscription<AuthState>? _authStateSubscription;
-
-  /// Flag to prevent infinite loop when signing out due to session mismatch
-  /// When true, the signedOut handler skips invalidating appStartupProvider
-  /// because we're already handling the state in the startup flow
-  bool _isSigningOutDueToMismatch = false;
-
-  /// Flag to prevent clearing cached onboarding data during onboarding sign-out
-  /// During email signup, we sign out any existing session to create a fresh user.
-  /// This flag prevents the auth listener from invalidating providers and losing
-  /// the cached onboarding data (user profile, sports, preferences, etc.)
-  bool _isOnboardingSignOut = false;
-
-  /// Flag to skip setting up auth listener when in "logged out with local data" state
-  /// This prevents infinite loop: listener setup -> signedOut event -> invalidate -> repeat
-  bool _skipAuthListenerSetup = false;
-
-  /// Mark that the next sign-out is due to onboarding (to preserve cached data)
-  /// Called by email_signup_screen before signing out existing session
-  void markOnboardingSignOut() {
-    _isOnboardingSignOut = true;
-  }
-
-  /// Initialize Supabase Anonymous Authentication
-  /// Creates or restores an anonymous auth session for the user
-  /// This is the foundation for all Supabase Auth-based operations
-  Future<void> initializeSupabaseAuth() async {
-    try {
-      // Check if we already have a session (SDK auto-restores from secure storage)
-      final existingSession = _supabase.auth.currentSession;
-
-      if (existingSession != null) {
-        // Session restored from secure storage - verify it matches local data
-        final database = ref.read(appDatabaseProvider);
-        final sessionUserId = existingSession.user.id;
-        final localProfile = await database.getCurrentUserProfile(
-          currentAuthUserId: sessionUserId,
-        );
-
-        if (localProfile != null && localProfile.onboardingCompleted) {
-          // Profile found matching this session - user is properly authenticated
-          // No mismatch handling needed since getCurrentUserProfile already filters by auth ID
-          // Session always matches here since we filtered by auth ID in getCurrentUserProfile
-        }
-
-        // Session matches local data (or no local data) - proceed normally
-        _sentry.addBreadcrumb(
-          message: 'Supabase session restored',
-          category: 'auth',
-          data: {
-            'user_id': existingSession.user.id,
-          },
-        );
-        // Don't return early - setup listener in finally block
-      } else {
-        // No existing session - create anonymous user for new session
-        // Note: getCurrentUserProfile(currentAuthUserId: null) returns null when no auth,
-        // so we always create a fresh anonymous session here.
-        // If a returning user wants their data back, they login from welcome screen.
-
-        // Create anonymous user for new session
-        final response = await _supabase.auth.signInAnonymously();
-
-        if (response.session == null || response.user == null) {
-          throw Exception('Failed to create anonymous session - null response');
-        }
-
-        // Add Sentry breadcrumb for tracking (analytics is deferred to post-frame)
-        _sentry.addBreadcrumb(
-          message: 'Anonymous Supabase user created',
-          category: 'auth',
-          data: {
-            'user_id': response.user!.id,
-            'auth_provider': 'anonymous',
-          },
-        );
-      }
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Supabase Auth initialization failed',
-        context: 'AUTH',
-        error: e,
-        stackTrace: stackTrace,
-      );
-
-      // Report critical error to Sentry
-      await _sentry.reportCriticalError(
-        e,
-        stackTrace: stackTrace,
-        context: 'supabase_auth_init_failure',
-        tags: {
-          'error_type': 'auth_initialization_failure',
-          'operation': 'sign_in_anonymously',
-        },
-      );
-
-      // Re-throw to trigger error handling in AppStartupWidget
-      // User will see error screen with retry option
-      rethrow;
-    } finally {
-      // Check if we should skip listener setup (logged out with local data state)
-      if (_skipAuthListenerSetup) {
-        _skipAuthListenerSetup = false; // Reset flag
-      } else {
-        // Setup auth state listener ONCE, regardless of path taken
-        // This prevents duplicate listeners that cause race conditions
-        setupAuthStateListener();
-      }
-    }
-  }
-
-  /// Setup auth state change listener for session monitoring
-  /// Tracks token refreshes and sign-out events
-  ///
-  /// Note: With native OAuth, account linking completes synchronously
-  /// within OAuthService methods, so we no longer need OAuth callbacks here
-  ///
-  /// IMPORTANT: This listener is now NON-BLOCKING to prevent race conditions
-  /// during navigation. Heavy operations are deferred to background.
-  void setupAuthStateListener() {
-    // Cancel existing subscription to prevent duplicates
-    _authStateSubscription?.cancel();
-
-    _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) async {
-      final event = data.event;
-      final session = data.session;
-
-      // Handle token refresh events
-      if (event == AuthChangeEvent.tokenRefreshed) {
-        await _analytics.track('auth_token_refreshed', properties: {
-          'user_id': session?.user.id,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-      }
-
-      // Handle sign-out events
-      if (event == AuthChangeEvent.signedOut) {
-        // Check if this is a mismatch-triggered signout (during startup)
-        // or an onboarding signout (creating fresh user during signup)
-        // If so, skip provider invalidation to prevent data loss
-        final wasMismatchSignOut = _isSigningOutDueToMismatch;
-        final wasOnboardingSignOut = _isOnboardingSignOut;
-        _isSigningOutDueToMismatch = false; // Reset flag
-        _isOnboardingSignOut = false; // Reset flag
-
-        // NOTE: session?.user.id is null here because session is already cleared
-        // Sync timestamp is cleared in SettingsController.signOut() BEFORE sign-out
-        // while we still have access to the user ID
-
-        await _analytics.track('user_signed_out', properties: {
-          'timestamp': DateTime.now().toIso8601String(),
-          'was_mismatch_signout': wasMismatchSignOut,
-          'was_onboarding_signout': wasOnboardingSignOut,
-        });
-
-        try {
-          // DON'T clear local data - keep for offline-first architecture
-          // This allows users to sign back in offline and see their data
-          // Data is already isolated by user_id via getCurrentUserProfile()
-
-          // Skip provider invalidation if this was a mismatch or onboarding signout
-          // - Mismatch: The startup flow is already handling the state correctly
-          // - Onboarding: We need to preserve cached onboarding data for saveAllOnboardingData()
-          if (!wasMismatchSignOut && !wasOnboardingSignOut) {
-            // User-initiated signout - invalidate providers so UI shows login screen
-            ref.invalidate(userIdProvider);
-            ref.invalidate(activitiesControllerProvider);
-            ref.invalidate(allEventsProvider);
-            ref.invalidate(nextUpcomingEventProvider);
-            ref.invalidate(settingsControllerProvider);
-            ref.invalidate(appStartupProvider);
-          }
-
-          _sentry.addBreadcrumb(
-            message: wasMismatchSignOut
-                ? 'Mismatch signout - no invalidation needed'
-                : wasOnboardingSignOut
-                    ? 'Onboarding signout - preserving cached data'
-                    : 'User signed out - local data preserved',
-            category: 'auth',
-            data: {
-              'timestamp': DateTime.now().toIso8601String(),
-              'was_mismatch_signout': wasMismatchSignOut,
-            },
-          );
-        } catch (e, stackTrace) {
-          _logger.error(
-            'Failed to handle sign-out',
-            context: 'AUTH',
-            error: e,
-            stackTrace: stackTrace,
-          );
-
-          await _sentry.reportCriticalError(
-            e,
-            stackTrace: stackTrace,
-            context: 'sign_out_handler_failed',
-            tags: {
-              'error_type': 'sign_out_handler_failed',
-              'operation': 'sign_out_handler',
-            },
-          );
-        }
-      }
-
-      // Handle sign-in events - NON-BLOCKING to prevent navigation hangs
-      if (event == AuthChangeEvent.signedIn) {
-        final userId = session?.user.id;
-
-        if (userId != null) {
-          // Only invalidate the identity provider immediately
-          // This allows navigation to proceed without waiting for data sync
-          ref.invalidate(userIdProvider);
-
-          // Defer ALL heavy operations to background
-          // This prevents race conditions during navigation in release mode
-          unawaited(_performPostAuthSync(userId));
-        }
-      }
-    });
-  }
-
-  /// Perform post-authentication sync operations in the background
-  /// This runs AFTER navigation completes to prevent race conditions
-  ///
-  /// UPDATED: Now includes full sync for device-based users who skip OAuth
-  /// OAuth users still get their sync from OAuthService to prevent duplication
-  Future<void> _performPostAuthSync(String userId) async {
-    // CRITICAL: Check if user has completed onboarding before syncing
-    // During onboarding, no user profile exists yet, so sync would fail
-    try {
-      final database = ref.read(appDatabaseProvider);
-      final userProfile = await database.getCurrentUserProfile(
-        currentAuthUserId: userId,
-      );
-
-      if (userProfile == null || userProfile.onboardingCompleted != true) {
-        return;
-      }
-    } catch (e) {
-      _logger.error('Error checking onboarding status, skipping sync', context: 'AUTH', error: e);
-      return;
-    }
-
-    try {
-      final userRepo = await ref.read(userRepositoryProvider.future);
-
-      // Run ALL network calls in PARALLEL for faster sync (~500ms vs 1.5s)
-      // These are independent operations that don't depend on each other
-      await Future.wait([
-        userRepo.fetchAndSaveRemoteProfile(userId),
-        userRepo.fetchAndCacheRemoteFoodPreferences(userId),
-        userRepo.syncUserFoodsFromSupabase(userId),
-      ]);
-
-      // Invalidate settings provider after profile is loaded
-      ref.invalidate(settingsControllerProvider);
-    } catch (e) {
-      _logger.error('Failed to sync remote profile on sign in', context: 'AUTH', error: e);
-    }
-
-    // CRITICAL FIX: Trigger full sync for device-based users (anonymous/email)
-    // OAuth users get their sync from OAuthService, but device-based users need it here
-    // This ensures carb loading foods, nutrition foods, and activities are synced
-    try {
-      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
-      await syncCoordinator.sync(
-        userId: userId,
-        trigger: SyncTrigger.manual,
-      );
-    } catch (e) {
-      _logger.error('Full sync failed after auth', context: 'AUTH', error: e);
-      // Don't rethrow - user can manually sync later
-    }
-  }
-
   /// Check if user has existing session and restore it
   Future<void> checkUserSession() async {
     try {
@@ -625,7 +344,7 @@ class AppStartupService {
       // Continue without user session - this is expected on fresh installs
     }
   }
-  
+
   /// Initialize nutrition plan cache (now using Drift as primary storage)
   Future<void> initializeNutritionPlans() async {
     try {

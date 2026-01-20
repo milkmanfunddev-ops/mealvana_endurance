@@ -34,6 +34,25 @@ class FoodRepository with SyncableRepository {
   @override
   List<String> get dependencies => []; // Level 0 - seed/reference data with no dependencies
 
+  /// Override isStale to force sync when local database is empty.
+  /// This handles the case where SharedPreferences has a "fresh" timestamp
+  /// but the actual data was cleared or never synced.
+  @override
+  Future<bool> isStale() async {
+    // First check if local database has any foods
+    final localFoods = await _database.select(_database.foodsTable).get();
+    if (localFoods.isEmpty) {
+      _logger.debug(
+        'Forcing sync - no local foods found',
+        context: 'FOOD_REPOSITORY',
+      );
+      return true; // Force sync regardless of timestamp
+    }
+
+    // Otherwise, use default staleness check from mixin
+    return await super.isStale();
+  }
+
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {

@@ -7,6 +7,7 @@ import '../../theme/kyle_design/theme_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../core/app_router.dart';
 import '../services/app_config.dart';
+import '../services/auth/auth_listener_service.dart';
 import 'responsive_content_wrapper.dart';
 
 /// Root app widget that handles app initialization and navigation
@@ -23,6 +24,12 @@ class RootAppWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Initialize auth listener ONCE at app startup
+    // This is a singleton that lives for the lifetime of the app
+    // It listens for auth state changes and invalidates user-specific providers
+    // but NEVER invalidates appStartupProvider (to avoid infinite loops)
+    ref.read(authListenerServiceProvider).initialize();
+
     // Watch the theme mode from Kyle's theme provider
     final themeModeAsync = ref.watch(kyleThemeModeProvider);
     // Get router from provider

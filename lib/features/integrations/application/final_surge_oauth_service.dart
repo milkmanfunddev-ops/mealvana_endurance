@@ -37,9 +37,11 @@ class FinalSurgeOAuthService {
     final state = _generateState();
 
     // 2. Build OAuth authorization URL
+    // Try scheme:// format (without path)
+    final redirectUri = '$_callbackUrlScheme://';
     final authUrl = Uri.https('log.finalsurge.com', '/oauth/authorize', {
       'client-id': _clientId,
-      'redirect-uri': '$_callbackUrlScheme://callback',
+      'redirect-uri': redirectUri,
       'state': state,
     });
 
@@ -62,6 +64,14 @@ class FinalSurgeOAuthService {
     final code = callbackUri.queryParameters['code'];
     final returnedState = callbackUri.queryParameters['state'];
 
+    if (kDebugMode) {
+      print('📥 Callback received:');
+      print('   Raw callback: $result');
+      print('   Parsed URI: $callbackUri');
+      print('   Code param: $code');
+      print('   Code length: ${code?.length ?? 0}');
+    }
+
     // Validate state to prevent CSRF
     if (returnedState != state) {
       throw FinalSurgeOAuthException('State mismatch - possible CSRF attack');
@@ -80,15 +90,21 @@ class FinalSurgeOAuthService {
     }
 
     // 5. Exchange code for access token
+    // Note: Final Surge does NOT require redirect-uri in token exchange
     final tokenResponse = await _apiClient.exchangeCodeForToken(code);
 
     if (kDebugMode) {
       print('✅ Token exchange successful');
       print('   Athlete: ${tokenResponse.fullName}');
       print('   Athlete ID: ${tokenResponse.athleteId}');
+      print('   Access Token: ${tokenResponse.accessToken.substring(0, 8)}...');
     }
 
     // 6. Create and store integration
+    if (kDebugMode) {
+      print('📝 Creating integration model for user: $userId');
+    }
+
     final integration = IntegrationModel(
       userId: userId,
       provider: 'final_surge',
@@ -104,11 +120,21 @@ class FinalSurgeOAuthService {
       updatedAt: DateTime.now(),
     );
 
+    if (kDebugMode) {
+      print('   Integration model created: provider=${integration.provider}, isActive=${integration.isActive}');
+    }
+
     // 7. Save to database (upsert - replaces existing if present)
+    if (kDebugMode) {
+      print('💾 Saving integration to database...');
+    }
+
     final savedIntegration = await _repository.upsertIntegration(integration);
 
     if (kDebugMode) {
       print('✅ Integration saved to database');
+      print('   Saved ID: ${savedIntegration.providerAthleteId}');
+      print('   Saved Name: ${savedIntegration.providerAthleteName}');
     }
 
     return savedIntegration;

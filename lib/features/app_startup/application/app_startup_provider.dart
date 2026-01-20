@@ -98,9 +98,9 @@ class AppStartup extends _$AppStartup {
 
       // 1. CRITICAL PATH: Run only essential initializations in parallel
       // Analytics and device info are deferred to avoid Android startup deadlock
+      // NOTE: Auth state listener is now handled by AuthListenerService (initialized in RootAppWidget)
       await Future.wait([
         startupService.initializeDatabase(),
-        startupService.initializeSupabaseAuth(),
         startupService.setSentryUserContext(),
       ]);
 

@@ -43,7 +43,10 @@ String _getCallbackScheme(bool isDev) {
 @Riverpod(keepAlive: true)
 FinalSurgeApiClient finalSurgeApiClient(Ref ref) {
   final config = ref.watch(appConfigProvider);
-  return FinalSurgeApiClient(clientId: config.finalSurgeClientId);
+  return FinalSurgeApiClient(
+    clientId: config.finalSurgeClientId,
+    clientSecret: config.finalSurgeClientSecret,
+  );
 }
 
 /// Provider for integrations repository

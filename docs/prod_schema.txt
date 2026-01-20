@@ -82,6 +82,12 @@ comment on type allergy_enum is 'Common food allergens for user allergy tracking
 
 alter type allergy_enum owner to postgres;
 
+create type phase_enum as enum ('before', 'during', 'after');
+
+comment on type phase_enum is 'Nutrition timing phases: before, during, or after activity';
+
+alter type phase_enum owner to postgres;
+
 create table users
 (
     id                            uuid                     default gen_random_uuid()               not null
@@ -141,7 +147,9 @@ create table users
                    (ARRAY ['monday'::text, 'tuesday'::text, 'wednesday'::text, 'thursday'::text, 'friday'::text, 'saturday'::text, 'sunday'::text])),
     auto_generate_nutrition       boolean                  default true                            not null,
     completion_reminders          boolean                  default true                            not null,
-    sender_name                   text
+    sender_name                   text,
+    first_name                    text,
+    last_name                     text
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -181,6 +189,10 @@ comment on column users.auto_generate_nutrition is 'Whether to auto-generate nut
 comment on column users.completion_reminders is 'Whether to send activity completion reminders';
 
 comment on column users.sender_name is 'Name used when sharing nutrition plans via email';
+
+comment on column users.first_name is 'Optional first name for coach mode athlete identification';
+
+comment on column users.last_name is 'Optional last name for coach mode athlete identification';
 
 alter table users
     owner to postgres;
@@ -1224,6 +1236,122 @@ grant delete, insert, references, select, trigger, truncate, update on coaches t
 grant delete, insert, references, select, trigger, truncate, update on coaches to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on coaches to service_role;
+
+create table food_sport_phases
+(
+    id           uuid                     default gen_random_uuid() not null
+        primary key,
+    food_id      uuid                                               not null
+        references foods
+            on delete cascade,
+    sport        activity_type_enum                                 not null,
+    phase        phase_enum                                         not null,
+    max_servings integer
+        constraint food_sport_phases_max_servings_check
+            check ((max_servings IS NULL) OR (max_servings >= 0)),
+    is_suitable  boolean                  default true              not null,
+    notes        text,
+    created_at   timestamp with time zone default now()             not null,
+    updated_at   timestamp with time zone default now()             not null,
+    constraint uq_food_sport_phase
+        unique (food_id, sport, phase)
+);
+
+comment on table food_sport_phases is 'Junction table enabling sport-specific and phase-specific food settings.
+Allows foods like trail mix to be suitable during cycling but not during running.
+If a food has no entry for a sport+phase, it uses default behavior (suitable with default max_servings).';
+
+comment on column food_sport_phases.food_id is 'Reference to the food in the foods table';
+
+comment on column food_sport_phases.sport is 'Sport type: running, cycling, swimming, triathlon, duathlon, multisport';
+
+comment on column food_sport_phases.phase is 'Activity phase: before, during, or after';
+
+comment on column food_sport_phases.max_servings is 'Maximum servings for this sport+phase. NULL = use default (4). 0 = not recommended.';
+
+comment on column food_sport_phases.is_suitable is 'Whether food is suitable for this sport+phase. false = exclude from recommendations.';
+
+comment on column food_sport_phases.notes is 'Optional notes explaining suitability (e.g., "Too hard to digest while running")';
+
+alter table food_sport_phases
+    owner to postgres;
+
+create index idx_fsp_food_id
+    on food_sport_phases (food_id);
+
+create index idx_fsp_sport_phase
+    on food_sport_phases (sport, phase);
+
+create index idx_fsp_unsuitable
+    on food_sport_phases (food_id, sport, phase)
+    where (is_suitable = false);
+
+create index idx_fsp_custom_servings
+    on food_sport_phases (food_id, sport, phase)
+    where (max_servings IS NOT NULL);
+
+grant delete, insert, references, select, trigger, truncate, update on food_sport_phases to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on food_sport_phases to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on food_sport_phases to service_role;
+
+create table app_config
+(
+    id          uuid                     default gen_random_uuid() not null
+        primary key,
+    key         text                                               not null
+        unique,
+    value       text                                               not null,
+    description text,
+    updated_at  timestamp with time zone default now()
+);
+
+alter table app_config
+    owner to postgres;
+
+create index idx_app_config_key
+    on app_config (key);
+
+grant delete, insert, references, select, trigger, truncate, update on app_config to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on app_config to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on app_config to service_role;
+
+create view v_food_sport_phase_settings
+            (food_id, food_name, display_name, product_type, sport, phase, effective_max_servings, is_suitable, notes,
+             legacy_max_before, legacy_max_during, legacy_max_after)
+as
+SELECT f.id                            AS food_id,
+       f.name                          AS food_name,
+       f.display_name,
+       f.product_type,
+       fsp.sport,
+       fsp.phase,
+       COALESCE(fsp.max_servings, 4)   AS effective_max_servings,
+       COALESCE(fsp.is_suitable, true) AS is_suitable,
+       fsp.notes,
+       f.max_servings_before           AS legacy_max_before,
+       f.max_servings_during           AS legacy_max_during,
+       f.max_servings_after            AS legacy_max_after
+FROM foods f
+         CROSS JOIN (SELECT unnest(ARRAY ['running'::activity_type_enum, 'cycling'::activity_type_enum, 'swimming'::activity_type_enum]) AS sport) sports
+         CROSS JOIN (SELECT unnest(ARRAY ['before'::phase_enum, 'during'::phase_enum, 'after'::phase_enum]) AS phase) phases
+         LEFT JOIN food_sport_phases fsp
+                   ON f.id = fsp.food_id AND fsp.sport = sports.sport AND fsp.phase = phases.phase;
+
+comment on view v_food_sport_phase_settings is 'View showing effective food settings for all sport+phase combinations.
+Uses COALESCE to show defaults when no override exists in food_sport_phases.';
+
+alter table v_food_sport_phase_settings
+    owner to postgres;
+
+grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to service_role;
 
 create function delete_nutrition_plan_by_device_plan_id(p_device_id text, p_plan_id text) returns boolean
     language plpgsql
@@ -2358,6 +2486,37 @@ grant execute on function update_integrations_updated_at() to anon;
 grant execute on function update_integrations_updated_at() to authenticated;
 
 grant execute on function update_integrations_updated_at() to service_role;
+
+create function update_food_sport_phases_updated_at() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+alter function update_food_sport_phases_updated_at() owner to postgres;
+
+grant execute on function update_food_sport_phases_updated_at() to anon;
+
+grant execute on function update_food_sport_phases_updated_at() to authenticated;
+
+grant execute on function update_food_sport_phases_updated_at() to service_role;
+
+create function update_app_config_updated_at() returns trigger
+    language plpgsql
+as
+$$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$;
+
+alter function update_app_config_updated_at() owner to postgres;
+
+grant execute on function update_app_config_updated_at() to anon;
+
+grant execute on function update_app_config_updated_at() to authenticated;
+
+grant execute on function update_app_config_updated_at() to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 

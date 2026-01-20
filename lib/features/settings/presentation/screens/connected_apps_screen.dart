@@ -202,14 +202,13 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
         const SizedBox(height: AppSpacing.lg),
 
-        // Final Surge (Coming Soon in settings)
+        // Final Surge - fully integrated
         // Logo includes wordmark - no separate text label needed
         IntegrationProviderCard(
           name: 'Final Surge',
           iconPath: 'assets/images/integrations/final_surge_wordmark_white.svg',
           logoHeight: 18,
-          isAvailable: false,
-          comingSoonText: 'Coming Soon',
+          isAvailable: true,
           isConnected: data.isFinalSurgeConnected,
           isConnecting: data.isConnecting && data.connectingProvider == 'final_surge',
           isSyncing: data.isImporting && data.isFinalSurgeConnected,
@@ -335,19 +334,22 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   ) {
     return ListView(
       children: [
-        // Final Surge (Coming Soon in onboarding)
+        // Final Surge - fully integrated
         // Logo includes wordmark - no separate text label needed
         IntegrationProviderCard(
           name: 'Final Surge',
           iconPath: 'assets/images/integrations/final_surge_wordmark_white.svg',
           logoHeight: 18,
-          isAvailable: false,
-          comingSoonText: 'Coming Soon',
+          isAvailable: true,
           isConnected: data.isFinalSurgeConnected,
           isConnecting: data.isConnecting && data.connectingProvider == 'final_surge',
           isSyncing: data.isImporting && data.isFinalSurgeConnected,
           athleteName: data.finalSurgeAthleteName,
-          showSyncButton: false,
+          onConnect: () => _connectFinalSurgeOnboarding(context, ref),
+          onSync: () => _syncFinalSurgeWithState(context, ref),
+          onDisconnect: () => _disconnectFinalSurge(context, ref),
+          showSyncButton: true,
+          hasSynced: _finalSurgeSynced,
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -458,6 +460,35 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   // ============================================================
   // Onboarding Mode Connection Methods (with auto-import)
   // ============================================================
+
+  Future<void> _connectFinalSurgeOnboarding(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    final success = await controller.connectFinalSurge();
+
+    if (success && context.mounted) {
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Final Surge connected! Importing workouts...',
+      );
+
+      // Auto-import workouts in onboarding mode
+      await controller.importFinalSurgeWorkouts();
+
+      if (context.mounted) {
+        MealvanaSnackbar.showSuccess(
+          context,
+          'Workouts imported successfully!',
+        );
+      }
+
+      // Mark as synced after auto-import
+      if (mounted) {
+        setState(() {
+          _finalSurgeSynced = true;
+        });
+      }
+    }
+  }
 
   Future<void> _connectTrainingPeaksOnboarding(BuildContext context, WidgetRef ref) async {
     final controller = ref.read(connectTrainingControllerProvider.notifier);

@@ -1,243 +1,121 @@
-Launching lib/main_prod.dart on Pixel 7 in debug mode...
-✓ Built build/app/outputs/flutter-apk/app-prod-debug.apk
-D/FlutterJNI( 7349): Beginning load of flutter...
-D/FlutterJNI( 7349): flutter (null) was loaded normally!
-I/flutter ( 7349): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(62)] Using the Impeller rendering backend (Vulkan).
-D/FlutterGeolocator( 7349): Attaching Geolocator to activity
-D/FlutterGeolocator( 7349): Creating service.
-D/FlutterGeolocator( 7349): Binding to location service.
-D/FlutterGeolocator( 7349): Geolocator foreground service connected
-D/FlutterGeolocator( 7349): Initializing Geolocator services
-D/FlutterGeolocator( 7349): Flutter engine connected. Connected engine count 1
-I/FirebaseApp( 7349): Device unlocked: initializing all Firebase APIs for app ONESIGNAL_SDK_FCM_APP_NAME
-I/alvanaendurance( 7349): Compiler allocated 5145KB to compile void android.view.ViewRootImpl.performTraversals()
-I/HWUI    ( 7349): Using FreeType backend (prop=Auto)
-Connecting to VM Service at ws://127.0.0.1:49440/h_9TF25c9RU=/ws
+Launching lib/main_dev.dart on iphone 15 pro max in debug mode...
+Xcode build done.                                           14.9s
+Connecting to VM Service at ws://127.0.0.1:59782/8Pro_M-edRQ=/ws
 Connected to the VM Service.
-I/Choreographer( 7349): Skipped 52 frames!  The application may be doing too much work on its main thread.
-I/Choreographer( 7349): Skipped 55 frames!  The application may be doing too much work on its main thread.
-I/alvanaendurance( 7349): hiddenapi: Accessing hidden field Landroid/view/Choreographer;->mLastFrameTimeNanos:J (runtime_flags=0, domain=platform, api=unsupported) from Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector; (domain=app, TargetSdkVersion=35) using reflection: allowed
-D/nativeloader( 7349): Load /system/lib64/liblog.so using class loader ns clns-9 (caller=/data/app/~~usNPJkXnvkimCPRwRkhYKA==/com.milkman.mealvanaendurance-sFh_RxZQFz4KCp85CPkM0Q==/base.apk!classes21.dex): ok
-D/nativeloader( 7349): Load /data/app/~~usNPJkXnvkimCPRwRkhYKA==/com.milkman.mealvanaendurance-sFh_RxZQFz4KCp85CPkM0Q==/base.apk!/lib/arm64-v8a/libsentry.so using class loader ns clns-9 (caller=/data/app/~~usNPJkXnvkimCPRwRkhYKA==/com.milkman.mealvanaendurance-sFh_RxZQFz4KCp85CPkM0Q==/base.apk!classes21.dex): ok
-D/nativeloader( 7349): Load /data/app/~~usNPJkXnvkimCPRwRkhYKA==/com.milkman.mealvanaendurance-sFh_RxZQFz4KCp85CPkM0Q==/base.apk!/lib/arm64-v8a/libsentry-android.so using class loader ns clns-9 (caller=/data/app/~~usNPJkXnvkimCPRwRkhYKA==/com.milkman.mealvanaendurance-sFh_RxZQFz4KCp85CPkM0Q==/base.apk!classes21.dex): ok
-W/pool-17-thread-( 7349): type=1400 audit(0.0:72717): avc:  denied  { read } for  name="version" dev="proc" ino=4026532005 scontext=u:r:untrusted_app:s0:c198,c257,c512,c768 tcontext=u:object_r:proc_version:s0 tclass=file permissive=0 app=com.milkman.mealvanaendurance
-I/sentry-native( 7349): using database path "/data/data/com.milkman.mealvanaendurance/cache/sentry/9f5b15b7ae6f78a1b5056948b8ce2792f3498c99/.sentry-native"
-D/sentry-native( 7349): starting backend
-D/sentry-native( 7349): using existing signal stack (size: 32768, flags: 0)
-D/sentry-native( 7349): processing and pruning old runs
-I/flutter ( 7349): supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-I/Choreographer( 7349): Skipped 198 frames!  The application may be doing too much work on its main thread.
-I/HWUI    ( 7349): Davey! duration=3307ms; Flags=1, FrameTimelineVsyncId=4207013, IntendedVsync=23970583715066, Vsync=23973868772666, InputEventId=0, HandleInputStart=23973882932034, AnimationStart=23973882933214, PerformTraversalsStart=23973882933743, DrawStart=23973884174588, FrameDeadline=23970600315066, FrameStartTime=23973882731554, FrameInterval=16591200, WorkloadTarget=16600000, SyncQueued=23973884630968, SyncStart=23973884652289, IssueDrawCommandsStart=23973884786404, SwapBuffers=23973889962836, FrameCompleted=23973891033963, DequeueBufferDuration=3070231, QueueBufferDuration=296753, GpuCompleted=23973891033963, SwapBuffersCompleted=23973890312527, DisplayPresentTime=0, CommandSubmissionCompleted=23973889962836,
-D/ProfileInstaller( 7349): Installing profile for com.milkman.mealvanaendurance
-D/InsetsController( 7349): hide(ime())
-I/ImeTracker( 7349): com.milkman.mealvanaendurance:3567cdf2: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
-D/CompatChangeReporter( 7349): Compat change id reported: 312399441; UID 10454; state: ENABLED
-W/ContextImpl( 7349): Failed to ensure /storage/emulated/0/Android/data/com.milkman.mealvanaendurance/files
-W/ContextImpl( 7349): java.lang.IllegalStateException: Failed to prepare /storage/emulated/0/Android/data/com.milkman.mealvanaendurance/files
-W/ContextImpl( 7349): 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3381)
-W/ContextImpl( 7349): 	at android.os.Parcel.createException(Parcel.java:3357)
-W/ContextImpl( 7349): 	at android.os.Parcel.readException(Parcel.java:3340)
-W/ContextImpl( 7349): 	at android.os.Parcel.readException(Parcel.java:3282)
-W/ContextImpl( 7349): 	at android.os.storage.IStorageManager$Stub$Proxy.mkdirs(IStorageManager.java:1305)
-W/ContextImpl( 7349): 	at android.os.storage.StorageManager.mkdirs(StorageManager.java:1421)
-W/ContextImpl( 7349): 	at android.app.ContextImpl.ensureExternalDirsExistOrFilter(ContextImpl.java:3931)
-W/ContextImpl( 7349): 	at android.app.ContextImpl.getExternalFilesDirs(ContextImpl.java:935)
-W/ContextImpl( 7349): 	at android.app.ContextImpl.getExternalFilesDir(ContextImpl.java:924)
-W/ContextImpl( 7349): 	at android.content.ContextWrapper.getExternalFilesDir(ContextWrapper.java:308)
-W/ContextImpl( 7349): 	at io.sentry.android.core.DeviceInfoUtil.setDeviceIO(DeviceInfoUtil.java:230)
-W/ContextImpl( 7349): 	at io.sentry.android.core.DeviceInfoUtil.collectDeviceInformation(DeviceInfoUtil.java:151)
-W/ContextImpl( 7349): 	at io.sentry.android.core.InternalSentrySdk.serializeScope(InternalSentrySdk.java:93)
-W/ContextImpl( 7349): 	at io.sentry.flutter.SentryFlutterPlugin.loadContexts(SentryFlutterPlugin.kt:474)
-W/ContextImpl( 7349): 	at io.sentry.flutter.SentryFlutterPlugin.onMethodCall(SentryFlutterPlugin.kt:79)
-W/ContextImpl( 7349): 	at io.flutter.plugin.common.MethodChannel$IncomingMethodCallHandler.onMessage(MethodChannel.java:267)
-W/ContextImpl( 7349): 	at io.flutter.embedding.engine.dart.DartMessenger.invokeHandler(DartMessenger.java:292)
-W/ContextImpl( 7349): 	at io.flutter.embedding.engine.dart.DartMessenger.lambda$dispatchMessageToQueue$0$io-flutter-embedding-engine-dart-DartMessenger(DartMessenger.java:319)
-W/ContextImpl( 7349): 	at io.flutter.embedding.engine.dart.DartMessenger$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
-W/ContextImpl( 7349): 	at android.os.Handler.handleCallback(Handler.java:1070)
-W/ContextImpl( 7349): 	at android.os.Handler.dispatchMessage(Handler.java:125)
-W/ContextImpl( 7349): 	at android.os.Looper.dispatchMessage(Looper.java:333)
-W/ContextImpl( 7349): 	at android.os.Looper.loopOnce(Looper.java:263)
-W/ContextImpl( 7349): 	at android.os.Looper.loop(Looper.java:367)
-W/ContextImpl( 7349): 	at android.app.ActivityThread.main(ActivityThread.java:9287)
-W/ContextImpl( 7349): 	at java.lang.reflect.Method.invoke(Native Method)
-W/ContextImpl( 7349): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
-W/ContextImpl( 7349): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
-W/ContextImpl( 7349): Caused by: android.os.RemoteException: Remote stack trace:
-W/ContextImpl( 7349): 	at com.android.server.StorageManagerService.mkdirs(StorageManagerService.java:3770)
-W/ContextImpl( 7349): 	at android.os.storage.IStorageManager$Stub.onTransact(IStorageManager.java:648)
-W/ContextImpl( 7349): 	at android.os.Binder.execTransactInternal(Binder.java:1473)
-W/ContextImpl( 7349): 	at android.os.Binder.execTransact(Binder.java:1418)
-W/ContextImpl( 7349):
-W/ContextImpl( 7349): Failed to ensure /storage/emulated/0/Android/data/com.milkman.mealvanaendurance/files
-W/ContextImpl( 7349): java.lang.IllegalStateException: Failed to prepare /storage/emulated/0/Android/data/com.milkman.mealvanaendurance/files
-W/ContextImpl( 7349): 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3381)
-W/ContextImpl( 7349): 	at android.os.Parcel.createException(Parcel.java:3357)
-W/ContextImpl( 7349): 	at android.os.Parcel.readException(Parcel.java:3340)
-W/ContextImpl( 7349): 	at android.os.Parcel.readException(Parcel.java:3282)
-W/ContextImpl( 7349): 	at android.os.storage.IStorageManager$Stub$Proxy.mkdirs(IStorageManager.java:1305)
-W/ContextImpl( 7349): 	at android.os.storage.StorageManager.mkdirs(StorageManager.java:1421)
-W/ContextImpl( 7349): 	at android.app.ContextImpl.ensureExternalDirsExistOrFilter(ContextImpl.java:3931)
-W/ContextImpl( 7349): 	at android.app.ContextImpl.getExternalFilesDirs(ContextImpl.java:935)
-W/ContextImpl( 7349): 	at android.content.ContextWrapper.getExternalFilesDirs(ContextWrapper.java:313)
-W/ContextImpl( 7349): 	at io.sentry.android.core.DeviceInfoUtil.getExternalStorageDep(DeviceInfoUtil.java:413)
-W/ContextImpl( 7349): 	at io.sentry.android.core.DeviceInfoUtil.getExternalStorageStat(DeviceInfoUtil.java:401)
-W/ContextImpl( 7349): 	at io.sentry.android.core.DeviceInfoUtil.setDeviceIO(DeviceInfoUtil.java:237)
-W/ContextImpl( 7349): 	at io.sentry.android.core.DeviceInfoUtil.collectDeviceInformation(DeviceInfoUtil.java:151)
-W/ContextImpl( 7349): 	at io.sentry.android.core.InternalSentrySdk.serializeScope(InternalSentrySdk.java:93)
-W/ContextImpl( 7349): 	at io.sentry.flutter.SentryFlutterPlugin.loadContexts(SentryFlutterPlugin.kt:474)
-W/ContextImpl( 7349): 	at io.sentry.flutter.SentryFlutterPlugin.onMethodCall(SentryFlutterPlugin.kt:79)
-W/ContextImpl( 7349): 	at io.flutter.plugin.common.MethodChannel$IncomingMethodCallHandler.onMessage(MethodChannel.java:267)
-W/ContextImpl( 7349): 	at io.flutter.embedding.engine.dart.DartMessenger.invokeHandler(DartMessenger.java:292)
-W/ContextImpl( 7349): 	at io.flutter.embedding.engine.dart.DartMessenger.lambda$dispatchMessageToQueue$0$io-flutter-embedding-engine-dart-DartMessenger(DartMessenger.java:319)
-W/ContextImpl( 7349): 	at io.flutter.embedding.engine.dart.DartMessenger$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
-W/ContextImpl( 7349): 	at android.os.Handler.handleCallback(Handler.java:1070)
-W/ContextImpl( 7349): 	at android.os.Handler.dispatchMessage(Handler.java:125)
-W/ContextImpl( 7349): 	at android.os.Looper.dispatchMessage(Looper.java:333)
-W/ContextImpl( 7349): 	at android.os.Looper.loopOnce(Looper.java:263)
-W/ContextImpl( 7349): 	at android.os.Looper.loop(Looper.java:367)
-W/ContextImpl( 7349): 	at android.app.ActivityThread.main(ActivityThread.java:9287)
-W/ContextImpl( 7349): 	at java.lang.reflect.Method.invoke(Native Method)
-W/ContextImpl( 7349): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
-W/ContextImpl( 7349): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
-W/alvanaendurance( 7349): userfaultfd: MOVE ioctl seems unsupported: Connection timed out
-I/flutter ( 7349): ✅ Schema validation passed (20 tables verified)
-I/flutter ( 7349): PushNotificationService: Initialized with app ID: 335e597f...
-D/OneSignal( 7349): [main] initWithContext(context: com.milkman.mealvanaendurance.MainActivity@92912a, appId: 335e597f-9862-4fa1-91f9-506d546ef953)
-D/OneSignal( 7349): [main] initWithContext: SDK already initialized
-D/OneSignal( 7349): [main] InAppMessagesManager.addLifecycleListener(listener: com.onesignal.flutter.OneSignalInAppMessages@4765f2f)
-D/OneSignal( 7349): [main] InAppMessagesManager.addClickListener(listener: com.onesignal.flutter.OneSignalInAppMessages@4765f2f)
-D/OneSignal( 7349): [main] NotificationsManager.addClickListener(handler: com.onesignal.flutter.OneSignalNotifications@4c1093c)
-D/OneSignal( 7349): [main] login(externalId: BP4A.251205.006, jwtBearerToken: null)
-I/flutter ( 7349): PushNotificationService: Logged in user: BP4A.251205.006
-D/OneSignal( 7349): [main] NotificationsManager.addForegroundLifecycleListener(listener: com.onesignal.flutter.OneSignalNotifications@4c1093c)
-D/OneSignal( 7349): [main] NotificationsManager.addPermissionObserver(observer: com.onesignal.flutter.OneSignalNotifications@4c1093c)
-I/flutter ( 7349): PushNotificationService: Permission granted
-D/OneSignal( 7349): [DefaultDispatcher-worker-3] initWithContext(context: android.app.Application@8ddf05, appId: null)
-D/OneSignal( 7349): [DefaultDispatcher-worker-3] initWithContext: SDK already initialized
-I/OneSignal( 7349): [DefaultDispatcher-worker-3] Restoring notifications
-I/WM-WorkerWrapper( 7349): Worker result SUCCESS for Work [ id=715f23dc-db79-43d9-a38d-aa0daf4efae2, tags={ com.onesignal.notifications.internal.restoration.impl.NotificationRestoreWorkManager$NotificationRestoreWorker } ]
-D/WindowOnBackDispatcher( 7349): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@b4ec940
-I/flutter ( 7349): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-I/flutter ( 7349): │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 11:18:51.282 (+0:00:18.573252)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 💡 [AUTH] Post-onboarding auth: Switching to existing Google account
-I/flutter ( 7349): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-I/flutter ( 7349): │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 11:18:51.325 (+0:00:18.616282)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 💡 [OAUTH_NATIVE] Starting native Google Sign-In (Sign In mode)
-I/flutter ( 7349): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-I/flutter ( 7349): │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 11:18:51.330 (+0:00:18.621687)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 💡 [OAUTH_NATIVE] Capturing anonymous user before sign-in
-I/flutter ( 7349): │ 💡 Data: {anonymous_user_id: 55cc425c-aadb-4c0d-949d-c92ef4a1330a, was_anonymous: false}
-I/flutter ( 7349): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-I/flutter ( 7349): │ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 11:18:51.334 (+0:00:18.624910)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 💡 [OAUTH_NATIVE] Initializing Google Sign-In
-I/flutter ( 7349): │ 💡 Data: {platform: android, is_release_build: false, using_client_id: debug}
-I/flutter ( 7349): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/OneSignal( 7349): [main] ApplicationService.onActivityPaused(0,APP_CLOSE): com.milkman.mealvanaendurance.MainActivity@92912a
-D/OneSignal( 7349): [main] ApplicationService.onActivityCreated(0,APP_CLOSE): com.google.android.gms.auth.api.signin.internal.SignInHubActivity@77eaa5d
-D/OneSignal( 7349): [main] ApplicationService.onActivityStarted(0,APP_CLOSE): com.google.android.gms.auth.api.signin.internal.SignInHubActivity@77eaa5d
-D/OneSignal( 7349): [main] ApplicationService: current activity=com.google.android.gms.auth.api.signin.internal.SignInHubActivity@77eaa5d
-D/OneSignal( 7349): [main] ApplicationService.handleFocus: application is now in focus, nextResumeIsFirstActivity=true
-D/OneSignal( 7349): [main] BackgroundManager cancel background sync
-D/OneSignal( 7349): [main] SessionService.onFocus() - fired from start: false
-D/OneSignal( 7349): [main] SessionService: New session started at 1768324731514
-D/OneSignal( 7349): [main] InfluenceManager.restartSessionIfNeeded(entryAction: APP_OPEN):
-D/OneSignal( 7349):  channelTrackers: [ChannelTracker{tag=notification_id, influenceType=UNATTRIBUTED, indirectIds=null, directId=null}, ChannelTracker{tag=iam_id, influenceType=UNATTRIBUTED, indirectIds=null, directId=null}]
-D/OneSignal( 7349): [main] ChannelTracker.getLastReceivedIds: lastChannelObjectReceived: []
-D/OneSignal( 7349): [main] InfluenceManager.restartSessionIfNeeded: lastIds: []
-D/OneSignal( 7349): [main] ChannelTracker.getLastReceivedIds: lastChannelObjectReceived: []
-D/OneSignal( 7349): [main] InfluenceManager.restartSessionIfNeeded: lastIds: []
-D/OneSignal( 7349): [main] OutcomeEventsController.sessionStarted: Cleaning outcomes for new session
-D/OneSignal( 7349): [main] OperationRepo.enqueue(operation: {"name":"track-session-start","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b"}, flush: true)
-D/OneSignal( 7349): [main] OperationRepo.enqueue(operation: {"name":"refresh-user","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b"}, flush: false)
-D/OneSignal( 7349): [OpRepo] processQueueForever:ops:
-D/OneSignal( 7349): [bucket:1, retries:0, operation:{"name":"track-session-start","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b","id":"7a9bdcc0-1589-4d88-8edc-ebce685c14e1"}
-D/OneSignal( 7349): ]
-D/OneSignal( 7349): [OpRepo] UpdateUserOperationExecutor(operation: [{"name":"track-session-start","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b","id":"7a9bdcc0-1589-4d88-8edc-ebce685c14e1"}])
-I/ContentCaptureHelper( 7349): Setting logging level to OFF
-D/OneSignal( 7349): [main] ApplicationService.onActivityResumed(1,APP_OPEN): com.google.android.gms.auth.api.signin.internal.SignInHubActivity@77eaa5d
-D/OneSignal( 7349): [DefaultDispatcher-worker-3] HttpClient: Request Sent = PATCH https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/users/by/onesignal_id/1b02063b-d3ea-40b1-a49b-b0fdbfac833b - Body: {"refresh_device_metadata":true,"deltas":{"session_count":1}} - Headers: Accept=[application/vnd.onesignal.v1+json], Content-Type=[application/json; charset=UTF-8], OneSignal-Install-Id=[7ab08b17-37eb-48e8-94c0-a6c08f3e730c], OneSignal-Subscription-Id=[65091d0d-b1fe-4d94-9170-4dbbf3f3f110], SDK-Version=[onesignal/android/050135], SDK-Wrapper=[onesignal/flutter/050304]
-D/OneSignal( 7349): [main] ApplicationService.onActivityPaused(1,APP_OPEN): com.google.android.gms.auth.api.signin.internal.SignInHubActivity@77eaa5d
-D/WindowOnBackDispatcher( 7349): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@370df32
-D/VRI[SignInHubActivity]( 7349): WindowInsets changed: 1080x2400 statusBars:[0,136,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,168,0,84]
-D/OneSignal( 7349): [DefaultDispatcher-worker-3] HttpClient: Got Response = PATCH https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/users/by/onesignal_id/1b02063b-d3ea-40b1-a49b-b0fdbfac833b - STATUS: 202 - Body: {"properties":{"country":"US","last_active":1768324731,"ip":"164.111.163.1"},"ryw_token":"10000000003534147621","ryw_delay":500}
-D/OneSignal( 7349): [OpRepo] OperationRepo: execute response = SUCCESS
-D/OneSignal( 7349): [OpRepo] retryAfterSeconds: null
-D/OneSignal( 7349): [OpRepo] processQueueForever:ops:
-D/OneSignal( 7349): [bucket:1, retries:0, operation:{"name":"refresh-user","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b","id":"97c15097-75d7-4aae-9360-9dc0f903d081"}
-D/OneSignal( 7349): ]
-D/OneSignal( 7349): [OpRepo] RefreshUserOperationExecutor(operation: [{"name":"refresh-user","appId":"335e597f-9862-4fa1-91f9-506d546ef953","onesignalId":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b","id":"97c15097-75d7-4aae-9360-9dc0f903d081"}])
-D/OneSignal( 7349): [DefaultDispatcher-worker-3] HttpClient: Request Sent = GET https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/users/by/onesignal_id/1b02063b-d3ea-40b1-a49b-b0fdbfac833b - Body: null - Headers: Accept=[application/vnd.onesignal.v1+json], OneSignal-Install-Id=[7ab08b17-37eb-48e8-94c0-a6c08f3e730c], OneSignal-Subscription-Id=[65091d0d-b1fe-4d94-9170-4dbbf3f3f110], SDK-Version=[onesignal/android/050135], SDK-Wrapper=[onesignal/flutter/050304]
-D/OneSignal( 7349): [DefaultDispatcher-worker-1] HttpClient: Request Sent = GET https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/subscriptions/65091d0d-b1fe-4d94-9170-4dbbf3f3f110/iams - Body: null - Headers: Accept=[application/vnd.onesignal.v1+json], OneSignal-Install-Id=[7ab08b17-37eb-48e8-94c0-a6c08f3e730c], OneSignal-Subscription-Id=[65091d0d-b1fe-4d94-9170-4dbbf3f3f110], SDK-Version=[onesignal/android/050135], SDK-Wrapper=[onesignal/flutter/050304]
-D/OneSignal( 7349): [DefaultDispatcher-worker-3] HttpClient: Got Response = GET https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/users/by/onesignal_id/1b02063b-d3ea-40b1-a49b-b0fdbfac833b - STATUS: 200 - Body: {"properties":{"language":"en","timezone_id":"America/Chicago","country":"US","first_active":1766098280,"last_active":1768324731,"ip":"164.111.163.1"},"identity":{"external_id":"BP4A.251205.006","onesignal_id":"1b02063b-d3ea-40b1-a49b-b0fdbfac833b"},"subscriptions":[{"id":"65091d0d-b1fe-4d94-9170-4dbbf3f3f110","app_id":"335e597f-9862-4fa1-91f9-506d546ef953","type":"AndroidPush","token":"dTZvyiRqQYGhs9NIDSSMZL:APA91bGJA3DqJlzd27mbs33cqczz3eXIsvj3Ka1mV6vdT8IliQJygUKRGf2I8mN7681yrASG6yAmBvqY0kp6xt5ZyF3Buzv-LLpaOEQDu30IjpPSJxe1J_Y","enabled":true,"notification_types":1,"session_time":558,"session_count":9,"sdk":"050135","device_model":"Pixel 7","device_os":"16","rooted":false,"test_type":0,"app_version":"63","net_type":0,"carrier":"Verizon ","web_auth":"","web_p256":""},{"id":"8a571da6-58e0-4726-8d7a-b315d69abcd3","app_id":"335e597f-9862-4fa1-91f9-506d546ef953","type":"AndroidPush","token":"dcuxGzLgR22OgGcJNMne1u:APA91bHRIQBAEcszaTrFjgnBOYcNInjgN7x0XUqnriz0mGbqSssEcs0IKq5qhU9tt5wCuaZYmE6ldhLNhrC3Ph-z8fFu7f_Oz0NH8CudqUnx7SY9cYQwGuM","enabled":true,"notification_types":1,"session_time":735,"session_count":10,"sdk":"050135","device_model":"Pixel 7","device_os":"16","rooted":false,"test_type":0,"app_version":"55","net_type":0,"carrier":"Verizon ","web_auth":"","web_p256":""},{"id":"a8728b7e-299d-455e-a315-e1a535100b26","app_id":"335e597f-9862-4fa1-91f9-506d546ef953","type":"AndroidPush","token":"fqz4W311R_iubmmUYlZbtU:APA91bH-j_ahtjXQ6HzzNSqcfSjrg2qdYv_G1mdMLscL2gCoja6ZzVz4wacu1su9pofCJc2iUlYfHlZ5HoVAV9zGx9fzflZTzR_Dd5id9hkNJ_yGGdGXGhY","enabled":true,"notification_types":1,"session_time":654,"session_count":8,"sdk":"050135","device_model":"Pixel 7","device_os":"16","rooted":false,"test_type":0,"app_version":"63","net_type":0,"carrier":"Verizon ","web_auth":"","web_p256":""},{"id":"afa16126-0c07-498e-8949-002d460fb7bb","app_id":"335e597f-9862-4fa1-91f9-506d546ef953","type":"AndroidPush","token":"fc9K1q7cR_CzkEC5qoNyk0:APA91bFvp_7sdQAc44SPDWAWqnwnM4unlpKeCrl_r3pMJau9tq9uwdwpVm_iZ3NNbwvmEBBgFzKwT-A8qAwOM1rKqTjFceJmU9DT09XNu2rluvIoqgG3flg","enabled":true,"notification_types":1,"session_time":828,"session_count":4,"sdk":"050135","device_model":"Pixel 7","device_os":"16","rooted":false,"test_type":0,"app_version":"49","net_type":0,"carrier":"Verizon ","web_auth":"","web_p256":""}]}
-D/OneSignal( 7349): [OpRepo] OperationRepo: execute response = SUCCESS
-D/OneSignal( 7349): [OpRepo] retryAfterSeconds: null
-D/OneSignal( 7349): [DefaultDispatcher-worker-1] HttpClient: Got Response = GET https://api.onesignal.com/apps/335e597f-9862-4fa1-91f9-506d546ef953/subscriptions/65091d0d-b1fe-4d94-9170-4dbbf3f3f110/iams - STATUS: 200 - Body: {"in_app_messages":[]}
-D/OneSignal( 7349): [Thread-24] InAppMessagesManager.evaluateInAppMessages()
-D/OneSignal( 7349): [OpRepo] processQueueForever:ops:
-D/OneSignal( 7349): null
-D/OneSignal( 7349): [main] ApplicationService.onActivityResumed(1,APP_OPEN): com.milkman.mealvanaendurance.MainActivity@92912a
-D/OneSignal( 7349): [main] ApplicationService: current activity=com.milkman.mealvanaendurance.MainActivity@92912a
-I/flutter ( 7349): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): │ PlatformException(sign_in_failed, com.google.android.gms.common.api.ApiException: 10: , null, null)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-I/flutter ( 7349): │ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:185:5)
-I/flutter ( 7349): │ #2   OAuthService.signInWithGoogle (package:mealvana_endurance/features/auth/application/oauth_service.dart:629:15)
-I/flutter ( 7349): │ #3   <asynchronous suspension>
-I/flutter ( 7349): │ #4   PostOnboardingAuthController.signInWithGoogle.<anonymous closure> (package:mealvana_endurance/features/auth/presentation/providers/post_onboarding_auth_controller.dart:146:7)
-I/flutter ( 7349): │ #5   <asynchronous suspension>
-I/flutter ( 7349): │ #6   AsyncValue.guard (package:riverpod/src/core/async_value.dart:505:30)
-I/flutter ( 7349): │ #7   <asynchronous suspension>
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 11:18:53.248 (+0:00:20.539195)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ ⛔ [OAUTH_NATIVE] Google Sign-In failed
-I/flutter ( 7349): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 7349): │ PlatformException(sign_in_failed, com.google.android.gms.common.api.ApiException: 10: , null, null)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-I/flutter ( 7349): │ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:185:5)
-I/flutter ( 7349): │ #2   PostOnboardingAuthController.signInWithGoogle (package:mealvana_endurance/features/auth/presentation/providers/post_onboarding_auth_controller.dart:150:15)
-I/flutter ( 7349): │ #3   <asynchronous suspension>
-I/flutter ( 7349): │ #4   _PostOnboardingAuthScreenState._handleGoogleSignIn (package:mealvana_endurance/features/auth/presentation/screens/post_onboarding_auth_screen.dart:94:26)
-I/flutter ( 7349): │ #5   <asynchronous suspension>
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ 11:18:53.256 (+0:00:20.547591)
-I/flutter ( 7349): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 7349): │ ⛔ [AUTH] Post-onboarding auth: Google Sign-In failed
-I/flutter ( 7349): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/VRI[SignInHubActivity]( 7349): visibilityChanged oldVisibility=true newVisibility=false
-D/OneSignal( 7349): [main] ApplicationService.onActivityStopped(1,APP_OPEN): com.google.android.gms.auth.api.signin.internal.SignInHubActivity@77eaa5d
-D/OneSignal( 7349): [main] ApplicationService: current activity=null
-D/OneSignal( 7349): [main] ApplicationService.handleLostFocus: application is now out of focus
-D/OneSignal( 7349): [main] LocationController scheduleUpdate not possible, location shared not enabled
-D/OneSignal( 7349): [main] OSBackgroundSync scheduleSyncServiceAsJob:atTime: 30000
-I/OneSignal( 7349): [main] OSBackgroundSync scheduleSyncServiceAsJob:result: 1
-D/OneSignal( 7349): [main] SessionService.onUnfocused adding time 1862 for total: 1862
-D/OneSignal( 7349): [main] ApplicationService.onActivityDestroyed(0,APP_CLOSE): com.google.android.gms.auth.api.signin.internal.SignInHubActivity@77eaa5d
-D/WindowOnBackDispatcher( 7349): setTopOnBackInvokedCallback (unwrapped): null
-D/ViewRootImpl( 7349): Skipping stats log for color mode
-D/InsetsController( 7349): hide(ime())
-I/ImeTracker( 7349): com.milkman.mealvanaendurance:7721a4ff: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
-D/OneSignal( 7349): [OpRepo] processQueueForever:ops:
-D/OneSignal( 7349): null
+flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 09:27:19.821 (+0:00:00.007601)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] AuthListenerService initialized - listening for auth state changes\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 09:27:20.020 (+0:00:00.206156)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {event: initialSession, has_session: true, user_id: 8873ba8f-b15a-4e1a-b011-fbcd64e619d9}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 09:27:21.092 (+0:00:01.278098)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [VERSION_CHECK] Version check passed - continuing with normal startup\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: ✅ Schema validation passed (20 tables verified)
+flutter: PushNotificationService: Initialized with app ID: 335e597f...
+flutter: PushNotificationService: Logged in user: CFE4E1BA-469D-4CBE-8F9C-ACD143C1E7F5
+flutter: PushNotificationService: Permission granted
+flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 09:28:08.750 (+0:00:48.936701)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {event: signedOut, has_session: false, user_id: null}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 09:28:08.755 (+0:00:48.941287)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] User-specific providers invalidated after sign-out\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 09:28:09.146 (+0:00:49.332209)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {event: signedIn, has_session: true, user_id: a2f5742e-4475-4619-957f-f6b0e6795386}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 09:28:09.149 (+0:00:49.335257)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] User signed in - triggering background sync\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {user_id: a2f5742e-4475-4619-957f-f6b0e6795386}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 09:28:09.155 (+0:00:49.341445)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] User has not completed onboarding - skipping sync\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: 🆕 Generated new temp user ID for onboarding: f36974d9-b66a-4944-8547-582336c12878
+flutter: 🔑 ConnectTrainingController: Using temp user ID: f36974d9-b66a-4944-8547-582336c12878
+flutter:    (user profile exists: false, onboardingCompleted: null)
+flutter:    (current auth: a2f5742e-4475-4619-957f-f6b0e6795386)
+flutter: 🔌 connectFinalSurge: Starting connection for user f36974d9-b66a-4944-8547-582336c12878
+flutter: 🔐 Starting Final Surge OAuth flow...
+flutter:    Auth URL: https://log.finalsurge.com/oauth/authorize?client-id=BD5D0C2B-7507-405B-8A3F-DB161288E6FC&redirect-uri=com.milkman.mealvanaendurance%3A%2F%2F&state=b06f0534836fc514b1a0e56f867a0e0848303da100b6d3d841f3599bc75d233c
+flutter: 📥 Callback received:
+flutter:    Raw callback: com.milkman.mealvanaendurance://?state=b06f0534836fc514b1a0e56f867a0e0848303da100b6d3d841f3599bc75d233c&code=Xlk4JQXa7XVv
+flutter:    Parsed URI: com.milkman.mealvanaendurance://?state=b06f0534836fc514b1a0e56f867a0e0848303da100b6d3d841f3599bc75d233c&code=Xlk4JQXa7XVv
+flutter:    Code param: Xlk4JQXa7XVv
+flutter:    Code length: 12
+flutter: ✅ Received authorization code
+flutter: 🔄 Exchanging authorization code for token...
+flutter:    Code: Xlk4JQXa7XVv...
+flutter:    Client ID: BD5D0C2B-7507-405B-8A3F-DB161288E6FC
+flutter:    Redirect URI: com.milkman.mealvanaendurance://
+flutter:    Request body keys: [client-id, client-secret, code, redirect-uri]
+flutter:    Token exchange response status: 200
+flutter:    Response body: {
+  "token_type": "bearer",
+  "access_token": null,
+  "athlete": null,
+  "error": "Client Authorization Error or Code Not Found"
+}
+flutter:    JSON keys: [token_type, access_token, athlete, error]
+flutter: ❌ Token exchange error: Client Authorization Error or Code Not Found
+flutter: ❌ connectFinalSurge: Error occurred
+flutter:    Error: FinalSurgeApiException: Token exchange failed: Client Authorization Error or Code Not Found (status: 200)
+Body: {
+  "token_type": "bearer",
+  "access_token": null,
+  "athlete": null,
+  "error": "Client Authorization Error or Code Not Found"
+}
+flutter:    Stack: #0      FinalSurgeApiClient.exchangeCodeForToken (package:mealvana_endurance/features/integrations/data/final_surge_api_client.dart:98:7)
+<asynchronous suspension>
+#1      FinalSurgeOAuthService.authenticate (package:mealvana_endurance/features/integrations/application/final_surge_oauth_service.dart:94:27)
+<asynchronous suspension>
+#2      ConnectTrainingController.connectFinalSurge (package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart:228:27)
+<asynchronous suspension>
+#3      _ConnectedAppsScreenState._connectFinalSurgeOnboarding (package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart:466:21)
+<asynchronous suspension>

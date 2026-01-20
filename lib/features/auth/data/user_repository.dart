@@ -1650,23 +1650,49 @@ class UserRepository with SyncableRepository {
 
   /// Handle fresh login (fetch remote profile or create new in Supabase)
   Future<void> _handleFreshLogin(String userId, String authProvider) async {
+    sentry.addBreadcrumb(
+      message: 'Starting fresh login flow',
+      category: 'auth',
+      data: {'user_id': userId, 'auth_provider': authProvider},
+    );
+
     // Fetch user profile from Supabase (for existing accounts)
     final remoteProfile = await fetchAndSaveRemoteProfile(userId);
 
     if (remoteProfile != null) {
-      // User exists in Supabase - update auth provider locally
+      // User exists in Supabase - update profile directly (no second lookup)
+      // This fixes the "No current user found" error by avoiding getCurrentUser() race condition
       sentry.addBreadcrumb(
-        message: 'Fresh login - profile found in Supabase',
+        message: 'Fresh login - profile found in Supabase, updating directly',
         category: 'auth',
         data: {
           'user_id': userId,
+          'remote_auth_user_id': remoteProfile.authUserId,
           'onboarding_completed': remoteProfile.onboardingCompleted,
+          'auth_provider': authProvider,
         },
       );
 
-      await updateAuthProvider(
+      // Directly update the fetched profile with current auth session values
+      // This avoids calling updateAuthProvider() which does a getCurrentUser() lookup
+      // that can fail if authUserId doesn't match the new session yet
+      final updatedProfile = remoteProfile.copyWith(
+        authUserId: userId, // Ensure authUserId matches current Supabase session
         authProvider: authProvider,
         isAnonymous: false,
+        updatedAt: DateTime.now(),
+      );
+
+      await saveUserProfile(updatedProfile);
+
+      sentry.addBreadcrumb(
+        message: 'Fresh login - profile updated successfully',
+        category: 'auth',
+        data: {
+          'user_id': userId,
+          'auth_user_id': updatedProfile.authUserId,
+          'is_anonymous': updatedProfile.isAnonymous,
+        },
       );
     } else {
       // 🚨 CRITICAL: Profile not found in Supabase - create it NOW

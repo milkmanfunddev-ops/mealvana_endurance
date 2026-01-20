@@ -67,6 +67,15 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// Track last sync times per repository for staleness checks
   final Map<String, DateTime> _lastSyncTimes = {};
 
+  /// Track last failed sync attempt per repository (for rate limiting)
+  final Map<String, DateTime> _lastFailedAttempt = {};
+
+  /// Track consecutive failure count per repository (for rate limiting)
+  final Map<String, int> _failureCount = {};
+
+  /// Cooldown period after a sync failure before retrying
+  static const _failureCooldown = Duration(minutes: 2);
+
   /// Sync lock to prevent concurrent syncs
   bool _syncInProgress = false;
 
@@ -124,7 +133,21 @@ class SyncCoordinator extends _$SyncCoordinator {
       return;
     }
 
-    // 2. Check if data is stale - if fresh, return immediately
+    // 2. Rate limiting - skip if recently failed (cooldown period)
+    if (_isInFailureCooldown(repoKey)) {
+      _logger.debug(
+        'Skipping sync - in failure cooldown',
+        context: 'SYNC_COORDINATOR',
+        data: {
+          'repoKey': repoKey,
+          'failureCount': _failureCount[repoKey] ?? 0,
+          'cooldownRemaining': _getCooldownRemaining(repoKey),
+        },
+      );
+      return;
+    }
+
+    // 3. Check if data is stale - if fresh, return immediately
     if (!await _isStale(repoKey, repository)) {
       _logger.debug(
         'Skipping sync - data is fresh',
@@ -134,28 +157,29 @@ class SyncCoordinator extends _$SyncCoordinator {
       return;
     }
 
-    // 3. Mark as syncing
+    // 4. Mark as syncing
     _syncingNow.add(repoKey);
 
     try {
-      // 4. Sync dependencies FIRST (recursive)
+      // 5. Sync dependencies FIRST (recursive)
       final deps = _dependencies[repoKey] ?? [];
       for (final dep in deps) {
         await ensureSynced(dep, userId);
       }
 
-      // 5. Upload dirty records (if repository provided)
+      // 6. Upload dirty records (if repository provided)
       if (repository != null) {
         await repository.uploadDirtyRecords(userId);
       }
 
-      // 6. Sync this repository (if repository provided)
+      // 7. Sync this repository (if repository provided)
       if (repository != null) {
         await repository.syncFromRemote(userId);
       }
 
-      // 7. Update timestamp
+      // 8. Update timestamp and clear failure tracking on success
       _lastSyncTimes[repoKey] = DateTime.now();
+      _clearFailureTracking(repoKey);
 
       _logger.info(
         'Repository synced successfully',
@@ -163,12 +187,19 @@ class SyncCoordinator extends _$SyncCoordinator {
         data: {'repoKey': repoKey},
       );
     } catch (e, stackTrace) {
+      // Record failure for rate limiting
+      _recordFailure(repoKey);
+
       _logger.error(
         'Repository sync failed',
         context: 'SYNC_COORDINATOR',
         error: e,
         stackTrace: stackTrace,
-        data: {'repoKey': repoKey, 'userId': userId},
+        data: {
+          'repoKey': repoKey,
+          'userId': userId,
+          'failureCount': _failureCount[repoKey] ?? 1,
+        },
       );
       // Don't rethrow - best effort sync
     } finally {
@@ -196,6 +227,47 @@ class SyncCoordinator extends _$SyncCoordinator {
 
     const staleDuration = Duration(hours: 24);
     return DateTime.now().difference(lastSync) > staleDuration;
+  }
+
+  // ========================================================================
+  // Rate Limiting Helpers (in-memory, resets on app restart)
+  // ========================================================================
+
+  /// Check if a repository is in failure cooldown and should skip sync.
+  ///
+  /// Returns true if:
+  /// - Repository has failed at least once
+  /// - Last failure was within [_failureCooldown] period
+  bool _isInFailureCooldown(String repoKey) {
+    final lastFailure = _lastFailedAttempt[repoKey];
+    if (lastFailure == null) return false;
+
+    final timeSinceFailure = DateTime.now().difference(lastFailure);
+    return timeSinceFailure < _failureCooldown;
+  }
+
+  /// Get remaining cooldown time as a human-readable string (for logging).
+  String _getCooldownRemaining(String repoKey) {
+    final lastFailure = _lastFailedAttempt[repoKey];
+    if (lastFailure == null) return 'none';
+
+    final elapsed = DateTime.now().difference(lastFailure);
+    final remaining = _failureCooldown - elapsed;
+    if (remaining.isNegative) return 'none';
+
+    return '${remaining.inSeconds}s';
+  }
+
+  /// Record a sync failure for rate limiting.
+  void _recordFailure(String repoKey) {
+    _lastFailedAttempt[repoKey] = DateTime.now();
+    _failureCount[repoKey] = (_failureCount[repoKey] ?? 0) + 1;
+  }
+
+  /// Clear failure tracking after successful sync.
+  void _clearFailureTracking(String repoKey) {
+    _lastFailedAttempt.remove(repoKey);
+    _failureCount.remove(repoKey);
   }
 
   /// Single entry point for ALL sync operations (LEGACY - kept for backwards compatibility)

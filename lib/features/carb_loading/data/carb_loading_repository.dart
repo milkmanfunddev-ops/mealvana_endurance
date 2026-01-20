@@ -54,11 +54,12 @@ class CarbLoadingRepository with SyncableRepository {
       );
 
       // 1. Sync carb_loading_plans for this user
+      // Note: carb_loading_plans has no created_at column - use start_date for ordering
       final plansResponse = await _supabase
           .from('carb_loading_plans')
           .select('*')
           .eq('user_id', userId)
-          .order('created_at', ascending: false);
+          .order('start_date', ascending: false);
 
       final plans = plansResponse as List<dynamic>;
 
@@ -344,25 +345,25 @@ class CarbLoadingRepository with SyncableRepository {
             ? Value(updates['carbTargetGrams'] as int)
             : const Value.absent(),
         carbProtocolGPerKg: updates.containsKey('carbProtocolGPerKg')
-            ? Value(updates['carbProtocolGPerKg'] as double)
+            ? Value((updates['carbProtocolGPerKg'] as num).toDouble())
             : const Value.absent(),
         breakfastPercent: updates.containsKey('breakfastPercent')
-            ? Value(updates['breakfastPercent'] as double)
+            ? Value((updates['breakfastPercent'] as num).toDouble())
             : const Value.absent(),
         morningSnackPercent: updates.containsKey('morningSnackPercent')
-            ? Value(updates['morningSnackPercent'] as double)
+            ? Value((updates['morningSnackPercent'] as num).toDouble())
             : const Value.absent(),
         lunchPercent: updates.containsKey('lunchPercent')
-            ? Value(updates['lunchPercent'] as double)
+            ? Value((updates['lunchPercent'] as num).toDouble())
             : const Value.absent(),
         afternoonSnackPercent: updates.containsKey('afternoonSnackPercent')
-            ? Value(updates['afternoonSnackPercent'] as double)
+            ? Value((updates['afternoonSnackPercent'] as num).toDouble())
             : const Value.absent(),
         dinnerPercent: updates.containsKey('dinnerPercent')
-            ? Value(updates['dinnerPercent'] as double)
+            ? Value((updates['dinnerPercent'] as num).toDouble())
             : const Value.absent(),
         eveningSnackPercent: updates.containsKey('eveningSnackPercent')
-            ? Value(updates['eveningSnackPercent'] as double)
+            ? Value((updates['eveningSnackPercent'] as num).toDouble())
             : const Value.absent(),
         completed: updates.containsKey('completed')
             ? Value(updates['completed'] as bool)
@@ -814,7 +815,7 @@ class CarbLoadingRepository with SyncableRepository {
           ? Value(json['algorithm_version'] as String)
           : const Value.absent(),
       adherenceScore: json['adherence_score'] != null
-          ? Value(json['adherence_score'] as double)
+          ? Value((json['adherence_score'] as num).toDouble())
           : const Value.absent(),
       completedAt: json['completed_at'] != null ? Value(DateTime.parse(json['completed_at'] as String)) : const Value.absent(),
       needsUpload: const Value(false), // Coming from server, not dirty
@@ -831,15 +832,15 @@ class CarbLoadingRepository with SyncableRepository {
       dayNumber: json['day_number'] as int,
       carbTargetGrams: json['carb_target_grams'] as int,
       carbProtocolGPerKg: json['carb_protocol_g_per_kg'] != null
-          ? Value(json['carb_protocol_g_per_kg'] as double)
+          ? Value((json['carb_protocol_g_per_kg'] as num).toDouble())
           : const Value.absent(),
       mealCount: Value(json['meal_count'] as int? ?? 6),
-      breakfastPercent: Value(json['breakfast_percent'] as double? ?? 16.67),
-      morningSnackPercent: Value(json['morning_snack_percent'] as double? ?? 16.67),
-      lunchPercent: Value(json['lunch_percent'] as double? ?? 16.67),
-      afternoonSnackPercent: Value(json['afternoon_snack_percent'] as double? ?? 16.67),
-      dinnerPercent: Value(json['dinner_percent'] as double? ?? 16.67),
-      eveningSnackPercent: Value(json['evening_snack_percent'] as double? ?? 16.67),
+      breakfastPercent: Value((json['breakfast_percent'] as num?)?.toDouble() ?? 16.67),
+      morningSnackPercent: Value((json['morning_snack_percent'] as num?)?.toDouble() ?? 16.67),
+      lunchPercent: Value((json['lunch_percent'] as num?)?.toDouble() ?? 16.67),
+      afternoonSnackPercent: Value((json['afternoon_snack_percent'] as num?)?.toDouble() ?? 16.67),
+      dinnerPercent: Value((json['dinner_percent'] as num?)?.toDouble() ?? 16.67),
+      eveningSnackPercent: Value((json['evening_snack_percent'] as num?)?.toDouble() ?? 16.67),
       loggedCarbsGrams: json['logged_carbs_grams'] != null
           ? Value(json['logged_carbs_grams'] as int)
           : const Value.absent(),

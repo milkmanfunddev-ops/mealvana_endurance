@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/carb_loading_food_service.dart';
 import '../../application/food_import_service.dart';
 import '../../application/food_selection_service.dart';
+import '../../data/carb_loading_food_repository.dart';
 import '../../domain/carb_loading_food.dart';
 import '../../domain/carb_loading_user_food.dart';
 import '../../domain/carb_loading_day_meal.dart';
@@ -13,6 +14,7 @@ import '../../../barcode_scanning/application/open_food_facts_search_service.dar
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../../shared/utils/search_strategy.dart';
 
 part 'carb_loading_food_selection_controller.g.dart';
@@ -128,6 +130,15 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
     // Load all food sources
     final deviceId = await ref.read(userIdProvider.future);
     final database = ref.read(appDatabaseProvider);
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final carbLoadingFoodRepo = ref.read(carbLoadingFoodRepositoryProvider);
+
+    // Ensure carb loading foods are synced (global table, userId ignored but required by interface)
+    await syncCoordinator.ensureSynced(
+      'carb_loading_foods',
+      deviceId,
+      repository: carbLoadingFoodRepo,
+    );
 
     // Load carb loading specific foods
     final carbLoadingFoods = await _carbLoadingFoodService.getDefaultFoodsForMealType(params.mealType);

@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/auth/auth_listener_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
-import '../../../app_startup/application/app_startup_service.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
@@ -41,13 +41,13 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
-    final appStartupService = ref.read(appStartupServiceProvider);
+    final authListenerService = ref.read(authListenerServiceProvider);
 
     // For signup mode (onboarding), sign out any existing session first
     // This ensures we create a fresh new user, not link to an old one
     // Mark this as an onboarding sign-out to preserve cached onboarding data
     if (!isLogin && supabase.auth.currentUser != null) {
-      appStartupService.markOnboardingSignOut();
+      authListenerService.markOnboardingSignOut();
       await supabase.auth.signOut();
     }
 
@@ -80,13 +80,13 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
-    final appStartupService = ref.read(appStartupServiceProvider);
+    final authListenerService = ref.read(authListenerServiceProvider);
 
     // For signup mode (onboarding), sign out any existing session first
     // This ensures we create a fresh new user, not link to an old one
     // Mark this as an onboarding sign-out to preserve cached onboarding data
     if (!isLogin && supabase.auth.currentUser != null) {
-      appStartupService.markOnboardingSignOut();
+      authListenerService.markOnboardingSignOut();
       await supabase.auth.signOut();
     }
 
