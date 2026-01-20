@@ -10,6 +10,7 @@ import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/activity.dart' as domain;
+import '../domain/brick_metadata.dart';
 
 part 'activities_repository.g.dart';
 
@@ -159,6 +160,8 @@ class ActivitiesRepository with SyncableRepository {
           'workout_subtype': record.workoutSubtype,
           'pace_min_minutes_per_mile': record.paceMinMinutesPerMile,
           'pace_max_minutes_per_mile': record.paceMaxMinutesPerMile,
+          'brick_metadata': record.brickMetadata,
+          'brick_id': record.brickId,
           'created_at': record.createdAt.toIso8601String(),
           'updated_at': record.updatedAt.toIso8601String(),
         };
@@ -353,6 +356,10 @@ class ActivitiesRepository with SyncableRepository {
         'nutrition_plan_data': activity.nutritionPlanData != null
             ? jsonEncode(activity.nutritionPlanData)
             : null,
+        'brick_metadata': activity.brickMetadata != null
+            ? jsonEncode(activity.brickMetadata!.toJson())
+            : null,
+        'brick_id': activity.brickId,
         'updated_at': DateTime.now().toIso8601String(),
       };
 
@@ -495,6 +502,11 @@ class ActivitiesRepository with SyncableRepository {
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at'] as String) : null,
+      // Brick fields
+      brickMetadata: json['brick_metadata'] != null
+          ? _parseBrickMetadata(json['brick_metadata'] as String)
+          : null,
+      brickId: json['brick_id'] as String?,
       // Reminder fields (default to false/null since these might not be relevant for coach view)
       reminderEnabled: false,
       needsUpload: false,
@@ -700,6 +712,13 @@ class ActivitiesRepository with SyncableRepository {
         reminderDaysBefore: Value(activity.reminderDaysBefore),
         reminderTimeOfDay: Value(activity.reminderTimeOfDay),
         reminderRecurring: Value(activity.reminderRecurring),
+        // Brick fields
+        brickMetadata: Value(
+          activity.brickMetadata != null
+              ? jsonEncode(activity.brickMetadata!.toJson())
+              : null,
+        ),
+        brickId: Value(activity.brickId),
         // Sync tracking
         needsUpload: Value(activity.needsUpload ?? false),
         localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
@@ -773,6 +792,13 @@ class ActivitiesRepository with SyncableRepository {
         reminderDaysBefore: Value(activity.reminderDaysBefore),
         reminderTimeOfDay: Value(activity.reminderTimeOfDay),
         reminderRecurring: Value(activity.reminderRecurring),
+        // Brick fields
+        brickMetadata: Value(
+          activity.brickMetadata != null
+              ? jsonEncode(activity.brickMetadata!.toJson())
+              : null,
+        ),
+        brickId: Value(activity.brickId),
         // Sync tracking
         needsUpload: Value(activity.needsUpload ?? false),
         localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
@@ -849,6 +875,11 @@ class ActivitiesRepository with SyncableRepository {
         'nutrition_plan_data': activity.nutritionPlanData != null
             ? jsonEncode(activity.nutritionPlanData)
             : null,
+        // Brick fields
+        'brick_metadata': activity.brickMetadata != null
+            ? jsonEncode(activity.brickMetadata!.toJson())
+            : null,
+        'brick_id': activity.brickId,
         // Timestamps
         'created_at': activity.createdAt.toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
@@ -929,6 +960,11 @@ class ActivitiesRepository with SyncableRepository {
       'nutrition_plan_data': activity.nutritionPlanData != null
           ? jsonEncode(activity.nutritionPlanData)
           : null,
+      // Brick fields
+      'brick_metadata': activity.brickMetadata != null
+          ? jsonEncode(activity.brickMetadata!.toJson())
+          : null,
+      'brick_id': activity.brickId,
       // Timestamps
       'created_at': activity.createdAt.toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
@@ -1044,6 +1080,11 @@ class ActivitiesRepository with SyncableRepository {
       reminderDaysBefore: activity.reminderDaysBefore,
       reminderTimeOfDay: activity.reminderTimeOfDay,
       reminderRecurring: activity.reminderRecurring,
+      // Brick fields
+      brickMetadata: activity.brickMetadata != null
+          ? _parseBrickMetadata(activity.brickMetadata!)
+          : null,
+      brickId: activity.brickId,
       // Sync fields
       needsUpload: activity.needsUpload,
       localUpdatedAt: activity.localUpdatedAt,
@@ -1065,6 +1106,21 @@ class ActivitiesRepository with SyncableRepository {
     } catch (e) {
       _logger.error(
         'Failed to parse nutrition plan data',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+      );
+      return null;
+    }
+  }
+
+  /// Parse brick metadata JSON string from database
+  BrickMetadata? _parseBrickMetadata(String jsonString) {
+    try {
+      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      return BrickMetadata.fromJson(json);
+    } catch (e) {
+      _logger.error(
+        'Failed to parse brick metadata',
         context: 'ACTIVITIES_REPOSITORY',
         error: e,
       );
@@ -1110,6 +1166,12 @@ class ActivitiesRepository with SyncableRepository {
       reminderDaysBefore: Value(activity.reminderDaysBefore),
       reminderTimeOfDay: Value(activity.reminderTimeOfDay),
       reminderRecurring: Value(activity.reminderRecurring),
+      brickMetadata: Value(
+        activity.brickMetadata != null
+            ? jsonEncode(activity.brickMetadata!.toJson())
+            : null,
+      ),
+      brickId: Value(activity.brickId),
       syncedFromProvider: Value(activity.syncedFromProvider),
       providerWorkoutId: Value(activity.providerWorkoutId),
       providerWorkoutUrl: Value(activity.providerWorkoutUrl),

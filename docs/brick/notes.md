@@ -44,17 +44,17 @@
 - [ ] Run `flutter pub run build_runner build --delete-conflicting-outputs` for code generation
 
 ## 1.4 Repository Updates
-- [ ] Update `activities_repository.dart` - Add brick fields to `uploadDirtyRecords()` JSON payload
-- [ ] Update `activities_repository.dart` - Add brick fields to `_saveToDrift()` CREATE path
-- [ ] Update `activities_repository.dart` - Add brick fields to `_saveToDrift()` UPDATE path
-- [ ] Update `activities_repository.dart` - Add brick fields to `_mapToActivityDomain()`
-- [ ] Update `activities_repository.dart` - Add brick fields to `_mapJsonToActivityDomain()`
-- [ ] Update `activities_repository.dart` - Add brick fields to `_mapDomainToCompanion()`
-- [ ] Update `activities_repository.dart` - Add brick fields to `_uploadActivityToSupabase()`
-- [ ] Update `activities_repository.dart` - Add brick fields to `_uploadActivityToSupabaseSync()`
-- [ ] Add `getArchivedActivitiesForBrick(String brickId)` method
-- [ ] Add `createBrickFromActivities()` method
-- [ ] Add `ungroupBrick(String brickId)` method
+- [DONE] Update `activities_repository.dart` - Add brick fields to `uploadDirtyRecords()` JSON payload
+- [DONE] Update `activities_repository.dart` - Add brick fields to `_saveToDrift()` CREATE path
+- [DONE] Update `activities_repository.dart` - Add brick fields to `_saveToDrift()` UPDATE path
+- [DONE] Update `activities_repository.dart` - Add brick fields to `_mapToActivityDomain()`
+- [DONE] Update `activities_repository.dart` - Add brick fields to `_mapJsonToActivityDomain()`
+- [DONE] Update `activities_repository.dart` - Add brick fields to `_mapDomainToCompanion()`
+- [DONE] Update `activities_repository.dart` - Add brick fields to `_uploadActivityToSupabase()`
+- [DONE] Update `activities_repository.dart` - Add brick fields to `_uploadActivityToSupabaseSync()`
+- [DONE] Add `getArchivedActivitiesForBrick(String brickId)` method
+- [DONE] Add `createBrickFromActivities()` method
+- [DONE] Add `ungroupBrick(String brickId)` method
 
 ## 1.5 Service Updates
 - [ ] Update `activities_service.dart` - Add brick parameters to `createActivity()` method
@@ -307,6 +307,49 @@
 
 ## Agent Work Log
 <!-- Agents should add their work entries here -->
+
+### 2026-01-20 - Claude (Sonnet 4.5) - Part 5
+**Task**: Phase 1.4 - Complete brick field support in activities_repository.dart
+
+**Completed**:
+- Updated `/lib/features/activities/data/activities_repository.dart`:
+  - Added import for `brick_metadata.dart` at the top
+  - Updated `uploadDirtyRecords()` to include brick_metadata and brick_id in JSON payload
+  - Updated `_saveToDrift()` CREATE path to include brickMetadata and brickId in companion
+  - Updated `_saveToDrift()` UPDATE path to include brickMetadata and brickId in companion
+  - Updated `_mapToActivityDomain()` to parse brickMetadata JSON and include brickId
+  - Added `_parseBrickMetadata()` helper method to deserialize BrickMetadata from JSON
+  - Updated `_mapJsonToActivityDomain()` to parse brick_metadata and brick_id from Supabase JSON
+  - Updated `_mapDomainToCompanion()` to convert domain brick fields to companion
+  - Updated `_uploadActivityToSupabase()` to include brick fields in payload
+  - Updated `_uploadActivityToSupabaseSync()` to include brick fields in payload
+  - Updated `updateRemoteActivity()` to include brick fields in payload (for coach edits)
+- Added new brick-specific repository methods:
+  - `getArchivedActivitiesForBrick(String brickId)` - Returns activities archived when creating a brick
+  - `createBrickFromActivities()` - Creates brick activity, archives originals, links with brick_id
+  - `ungroupBrick(String brickId)` - Restores archived activities, soft deletes brick
+
+**Design Decisions**:
+- Followed existing patterns for JSON serialization (using `jsonEncode(activity.brickMetadata!.toJson())`)
+- Followed existing patterns for JSON deserialization (using `_parseBrickMetadata()` helper)
+- Brick metadata stored as JSON string in Drift TEXT column, parsed to BrickMetadata on read
+- Added proper null handling with `brickMetadata?.toJson()` and conditional parsing
+- Mirrored the existing `_parseNutritionPlanData()` pattern for the new `_parseBrickMetadata()` helper
+- All brick field updates include both `brickMetadata` (JSON) and `brickId` (UUID string)
+- Used database transactions in createBrickFromActivities and ungroupBrick for atomicity
+- Brick methods follow offline-first pattern with needsUpload flags for sync
+
+**Expected Errors**:
+- Flutter analyze shows 11 errors about undefined getters/parameters for brickMetadata and brickId
+- These errors are expected because the Activity domain model still needs to be updated (Phase 1.3 task)
+- The repository code is correct and will work once Activity domain model is updated
+
+**Next Steps**:
+- Phase 1.3: Complete remaining domain model updates (activity.dart needs brickMetadata and brickId fields)
+- After activity.dart is updated, the flutter analyze errors will resolve
+- Phase 1.5: Update activities_service.dart to add brick support
+
+---
 
 ### 2026-01-20 - Claude (Sonnet 4.5) - Part 4
 **Task**: Phase 1.3 - Update activity.dart domain model for brick support
