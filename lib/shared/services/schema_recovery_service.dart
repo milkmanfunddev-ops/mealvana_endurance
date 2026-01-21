@@ -8,8 +8,26 @@ import 'logging_service.dart';
 final schemaRecoveryServiceProvider = Provider<SchemaRecoveryService>((ref) {
   return SchemaRecoveryService(
     logger: ref.read(appLoggerProvider),
+    // Store the ref for later use in invalidation
+    providerRef: ref,
   );
 });
+
+/// Exception thrown after schema recovery completes, signaling that the
+/// operation should be retried. The database has been deleted and will
+/// be recreated on next access.
+class SchemaRecoveryCompleteException implements Exception {
+  final String message;
+  final String? context;
+
+  SchemaRecoveryCompleteException({
+    this.message = 'Schema recovery complete. Please retry the operation.',
+    this.context,
+  });
+
+  @override
+  String toString() => 'SchemaRecoveryCompleteException: $message';
+}
 
 /// Global service for handling database schema errors with automatic recovery.
 ///
@@ -23,8 +41,11 @@ final schemaRecoveryServiceProvider = Provider<SchemaRecoveryService>((ref) {
 /// Future<Activity> createSomething() async {
 ///   return ref.read(schemaRecoveryServiceProvider).withSchemaRecovery(
 ///     operation: () => _service.doSomething(),
-///     ref: ref,
-///     invalidateProviders: [myRepositoryProvider, myServiceProvider],
+///     onRetryNeeded: () async {
+///       // Invalidate your providers and retry
+///       ref.invalidate(myRepositoryProvider);
+///       return _service.doSomething();
+///     },
 ///   );
 /// }
 /// ```
@@ -32,9 +53,12 @@ final schemaRecoveryServiceProvider = Provider<SchemaRecoveryService>((ref) {
 class SchemaRecoveryService {
   SchemaRecoveryService({
     required AppLogger logger,
-  }) : _logger = logger;
+    required Ref providerRef,
+  })  : _logger = logger,
+        _providerRef = providerRef;
 
   final AppLogger _logger;
+  final Ref _providerRef;
 
   /// Circuit breaker: only attempt recovery once per app session
   static bool _recoveryAttemptedThisSession = false;
@@ -52,22 +76,18 @@ class SchemaRecoveryService {
   ///
   /// If a [DatabaseSchemaException] is thrown:
   /// 1. Checks circuit breaker (only one recovery attempt per session)
-  /// 2. Invalidates the database provider to create fresh instance
-  /// 3. Calls [onRecovery] to invalidate dependent providers
-  /// 4. Retries the operation once
+  /// 2. Invalidates the database provider using the service's own ref
+  /// 3. Calls [onRetryNeeded] to let the caller retry with fresh providers
   ///
   /// Parameters:
   /// - [operation]: The async function to execute
-  /// - [ref]: Riverpod ref for provider invalidation
-  /// - [onRecovery]: Callback to invalidate dependent providers after DB is recreated
+  /// - [onRetryNeeded]: Callback that returns the retry result (caller invalidates their providers and retries)
   /// - [context]: Optional context string for logging
   ///
-  /// Returns the result of [operation] on success.
-  /// Throws the original error if recovery fails or circuit breaker is tripped.
+  /// Returns the result of [operation] on success, or [onRetryNeeded] after recovery.
   Future<T> withSchemaRecovery<T>({
     required Future<T> Function() operation,
-    required Ref ref,
-    void Function()? onRecovery,
+    required Future<T> Function() onRetryNeeded,
     String? context,
   }) async {
     try {
@@ -76,9 +96,7 @@ class SchemaRecoveryService {
       return _handleSchemaException<T>(
         exception: e,
         stackTrace: stackTrace,
-        operation: operation,
-        ref: ref,
-        onRecovery: onRecovery,
+        onRetryNeeded: onRetryNeeded,
         context: context,
       );
     }
@@ -88,9 +106,7 @@ class SchemaRecoveryService {
   Future<T> _handleSchemaException<T>({
     required DatabaseSchemaException exception,
     required StackTrace stackTrace,
-    required Future<T> Function() operation,
-    required Ref ref,
-    void Function()? onRecovery,
+    required Future<T> Function() onRetryNeeded,
     String? context,
   }) async {
     // Circuit breaker: prevent infinite loops
@@ -116,26 +132,21 @@ class SchemaRecoveryService {
       data: {'context': context},
     );
 
+    // Step 1: Invalidate the database provider using the SERVICE's ref (not caller's)
+    // This is safe because the service's ref won't be disposed by this invalidation
+    _providerRef.invalidate(appDatabaseProvider);
+
+    // Step 2: Trigger creation of new database
+    _providerRef.read(appDatabaseProvider);
+
+    _logger.info(
+      'Database recreated - calling retry callback',
+      context: context ?? 'SCHEMA_RECOVERY',
+    );
+
+    // Step 3: Call the retry callback - caller handles their own provider invalidation
     try {
-      // Step 1: Invalidate the database provider to create fresh instance
-      // Note: The database was already closed and files deleted by handleSchemaError
-      ref.invalidate(appDatabaseProvider);
-
-      // Step 2: Trigger creation of new database
-      ref.read(appDatabaseProvider);
-
-      // Step 3: Call recovery callback to invalidate dependent providers
-      if (onRecovery != null) {
-        onRecovery();
-      }
-
-      _logger.info(
-        'Database reinitialized - retrying operation',
-        context: context ?? 'SCHEMA_RECOVERY',
-      );
-
-      // Step 4: Retry the operation with fresh database
-      return await operation();
+      return await onRetryNeeded();
     } catch (retryError, retryStackTrace) {
       _logger.error(
         'Operation failed even after schema recovery',

@@ -75,11 +75,15 @@ class BrickActionsController extends _$BrickActionsController {
           activities: activities,
           segmentOrder: segmentOrder,
         ),
-        ref: ref,
-        onRecovery: () {
+        onRetryNeeded: () async {
           // Invalidate dependent providers so they use the new database
           ref.invalidate(activitiesRepositoryProvider);
           ref.invalidate(activitiesServiceProvider);
+          // Retry the operation with fresh providers
+          return ref.read(activitiesServiceProvider).createBrickActivity(
+            activities: activities,
+            segmentOrder: segmentOrder,
+          );
         },
         context: 'BRICK_ACTIONS_CONTROLLER.createBrickFromSelection',
       );
