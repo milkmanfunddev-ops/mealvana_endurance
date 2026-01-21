@@ -400,7 +400,7 @@ class ActivitiesRepository with SyncableRepository {
         ..where((tbl) =>
             tbl.userId.lower().equals(userId.toLowerCase()) &
             tbl.deletedAt.isNull() &
-            tbl.status.equals('archived_for_brick').not())
+            tbl.status.equals('archivedForBrick').not())
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();
@@ -528,7 +528,7 @@ class ActivitiesRepository with SyncableRepository {
             tbl.userId.lower().equals(userId.toLowerCase()) &
             tbl.id.equals(activityId) &
             tbl.deletedAt.isNull() &
-            tbl.status.equals('archived_for_brick').not());
+            tbl.status.equals('archivedForBrick').not());
 
       final activity = await query.getSingleOrNull();
       return activity != null ? _mapToActivityDomain(activity) : null;
@@ -557,7 +557,7 @@ class ActivitiesRepository with SyncableRepository {
             tbl.userId.lower().equals(userId.toLowerCase()) &
             tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
             tbl.deletedAt.isNull() &
-            tbl.status.equals('archived_for_brick').not())
+            tbl.status.equals('archivedForBrick').not())
         ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();
@@ -593,7 +593,7 @@ class ActivitiesRepository with SyncableRepository {
             tbl.syncedFromProvider.equals(provider) &
             tbl.providerWorkoutId.equals(providerWorkoutId) &
             tbl.deletedAt.isNull() &
-            tbl.status.equals('archived_for_brick').not());
+            tbl.status.equals('archivedForBrick').not());
 
       final activity = await query.getSingleOrNull();
       return activity != null ? _mapToActivityDomain(activity) : null;
@@ -1255,7 +1255,7 @@ class ActivitiesRepository with SyncableRepository {
         ..where((tbl) =>
             tbl.syncedFromProvider.equals(provider) &
             tbl.deletedAt.isNull() &
-            tbl.status.equals('archived_for_brick').not());
+            tbl.status.equals('archivedForBrick').not());
 
       final results = await query.get();
       return results.map(_mapToActivityDomain).toList();
@@ -1278,14 +1278,14 @@ class ActivitiesRepository with SyncableRepository {
   /// Get archived activities for a specific brick
   ///
   /// Returns all activities that were archived when creating the specified brick.
-  /// These activities have status='archived_for_brick' and brick_id pointing to
+  /// These activities have status='archivedForBrick' and brick_id pointing to
   /// the parent brick activity.
   Future<List<domain.Activity>> getArchivedActivitiesForBrick(String brickId) async {
     try {
       final query = _database.select(_database.activitiesTable)
         ..where((tbl) =>
             tbl.brickId.equals(brickId) &
-            tbl.status.equals('archived_for_brick') &
+            tbl.status.equals('archivedForBrick') &
             tbl.deletedAt.isNull())
         ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]);
 
@@ -1307,7 +1307,7 @@ class ActivitiesRepository with SyncableRepository {
   ///
   /// This method:
   /// 1. Creates a new brick activity with type='brick' and brick_metadata JSON
-  /// 2. Marks the original activities as archived (status='archived_for_brick')
+  /// 2. Marks the original activities as archived (status='archivedForBrick')
   /// 3. Links archived activities to the brick via brick_id
   /// 4. Saves all changes to Drift with needsUpload=true for sync
   ///
