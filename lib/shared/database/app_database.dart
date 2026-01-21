@@ -208,10 +208,6 @@ class AppDatabase extends _$AppDatabase {
           await _validateSchemaIntegrity();
         }
 
-        // Ensure activities table has brick support (CHECK constraints)
-        // This handles databases created before brick feature was added
-        await _ensureBrickConstraints();
-
         // Normalize any legacy timestamp strings in user_foods to Unix millis
         await _normalizeUserFoodTimestamps();
       },
@@ -224,50 +220,6 @@ class AppDatabase extends _$AppDatabase {
   /// Note: categories, meal_types, and product_types are now enums in the database
   Future<void> _populateDefaultData() async {
     // No longer need to populate default data - using enums now
-  }
-
-  /// Ensure activities table has brick workout support (columns and CHECK constraints)
-  ///
-  /// This handles databases created before the brick feature was added.
-  /// If ANY schema issue is detected, we delete the database and resync from Supabase.
-  /// This is the failsafe - we never error out on schema mismatches.
-  Future<void> _ensureBrickConstraints() async {
-    try {
-      // Check if CHECK constraints include brick values by trying to insert a test value
-      // We use a savepoint that we rollback to avoid any actual data changes
-      // Note: status uses camelCase to match Dart enum .name (e.g., 'archivedForBrick')
-      await customStatement("SAVEPOINT brick_check");
-      await customStatement('''
-        INSERT INTO activities (id, user_id, activity_type, title, scheduled_date_time, status, created_at, updated_at)
-        VALUES ('__brick_check__', '__test__', 'brick', 'test', 0, 'archivedForBrick', 0, 0)
-      ''');
-      // If we get here, constraints are fine - rollback the test row
-      await customStatement("ROLLBACK TO brick_check");
-      await customStatement("RELEASE brick_check");
-
-      // Schema is correct, nothing to do
-      return;
-    } catch (e) {
-      // Any error means schema mismatch - try to rollback savepoint then delete & resync
-      try {
-        await customStatement("ROLLBACK TO brick_check");
-        await customStatement("RELEASE brick_check");
-      } catch (_) {
-        // Ignore rollback errors
-      }
-
-      if (kDebugMode) {
-        print('🧱 Schema mismatch detected - deleting database and resyncing');
-        print('   Error: $e');
-      }
-
-      // Delete the database and throw exception to trigger resync
-      await deleteAndResync();
-      throw DatabaseSchemaException(
-        'Schema mismatch detected (brick constraints). Database deleted - app will resync.',
-        errors: [e.toString()],
-      );
-    }
   }
 
   /// Validate schema integrity on database open
@@ -1709,6 +1661,64 @@ class AppDatabase extends _$AppDatabase {
     } catch (e) {
       return false;
     }
+  }
+
+  /// Check if an exception is a schema-related SQLite error
+  ///
+  /// Returns true for errors that indicate schema mismatch:
+  /// - CHECK constraint failed (code 275 / SQLITE_CONSTRAINT_CHECK)
+  /// - No such column (code 1 / SQLITE_ERROR with column message)
+  /// - Table doesn't exist
+  /// - Foreign key constraint failed (code 787 / SQLITE_CONSTRAINT_FOREIGNKEY)
+  static bool isSchemaError(Object error) {
+    final errorString = error.toString().toLowerCase();
+
+    // Check for common schema-related error patterns
+    return errorString.contains('check constraint failed') ||
+           errorString.contains('no such column') ||
+           errorString.contains('no such table') ||
+           errorString.contains('foreign key constraint failed') ||
+           errorString.contains('constraint failed') ||
+           errorString.contains('has no column named') ||
+           errorString.contains('table') && errorString.contains('has no column');
+  }
+
+  /// Handle a schema error by deleting the database and triggering resync
+  ///
+  /// Call this from repositories when catching exceptions that might be schema-related.
+  /// If the error is a schema error, this deletes the database and throws
+  /// [DatabaseSchemaException] to trigger a full resync.
+  ///
+  /// Example usage in a repository:
+  /// ```dart
+  /// try {
+  ///   await db.into(db.activities).insert(companion);
+  /// } catch (e) {
+  ///   if (AppDatabase.isSchemaError(e)) {
+  ///     await AppDatabase.handleSchemaError(e);
+  ///   }
+  ///   rethrow;
+  /// }
+  /// ```
+  static Future<void> handleSchemaError(Object error, {String? context}) async {
+    if (!isSchemaError(error)) {
+      return; // Not a schema error, don't handle
+    }
+
+    if (kDebugMode) {
+      print('🔧 Schema error detected - deleting database and resyncing');
+      print('   Context: ${context ?? 'unknown'}');
+      print('   Error: $error');
+    }
+
+    // Delete the database
+    await deleteAndResync();
+
+    // Throw exception to signal app needs to restart/resync
+    throw DatabaseSchemaException(
+      'Schema mismatch detected. Database deleted - app will resync.',
+      errors: [error.toString()],
+    );
   }
 
   /// Delete corrupted database and trigger full resync

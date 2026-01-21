@@ -1440,6 +1440,12 @@ class ActivitiesRepository with SyncableRepository {
           'segmentOrder': segmentOrder,
         },
       );
+
+      // Check if this is a schema error - if so, delete DB and trigger resync
+      if (AppDatabase.isSchemaError(e)) {
+        await AppDatabase.handleSchemaError(e, context: 'createBrickFromActivities');
+      }
+
       rethrow;
     }
   }
