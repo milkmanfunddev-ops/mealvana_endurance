@@ -53,10 +53,11 @@ COMMENT ON COLUMN activities.brick_metadata IS 'For brick activities: stores seg
 -- ============================================================================
 -- STEP 4: Add brick_id column to activities table
 -- Links archived activities to their parent brick
+-- Note: Using TEXT type to match activities.id column type
 -- ============================================================================
 
 ALTER TABLE activities
-ADD COLUMN IF NOT EXISTS brick_id UUID DEFAULT NULL;
+ADD COLUMN IF NOT EXISTS brick_id TEXT DEFAULT NULL;
 
 -- Add foreign key constraint (ON DELETE SET NULL to preserve archived activities if brick is deleted)
 DO $$ BEGIN

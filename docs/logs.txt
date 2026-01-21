@@ -1,121 +1,413 @@
 Launching lib/main_dev.dart on iphone 15 pro max in debug mode...
-Xcode build done.                                           14.9s
-Connecting to VM Service at ws://127.0.0.1:59782/8Pro_M-edRQ=/ws
-Connected to the VM Service.
-flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:27:19.821 (+0:00:00.007601)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] AuthListenerService initialized - listening for auth state changes\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:27:20.020 (+0:00:00.206156)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {event: initialSession, has_session: true, user_id: 8873ba8f-b15a-4e1a-b011-fbcd64e619d9}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:27:21.092 (+0:00:01.278098)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [VERSION_CHECK] Version check passed - continuing with normal startup\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Schema validation passed (20 tables verified)
-flutter: PushNotificationService: Initialized with app ID: 335e597f...
-flutter: PushNotificationService: Logged in user: CFE4E1BA-469D-4CBE-8F9C-ACD143C1E7F5
-flutter: PushNotificationService: Permission granted
-flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:08.750 (+0:00:48.936701)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {event: signedOut, has_session: false, user_id: null}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:08.755 (+0:00:48.941287)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] User-specific providers invalidated after sign-out\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:09.146 (+0:00:49.332209)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {event: signedIn, has_session: true, user_id: a2f5742e-4475-4619-957f-f6b0e6795386}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:09.149 (+0:00:49.335257)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] User signed in - triggering background sync\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {user_id: a2f5742e-4475-4619-957f-f6b0e6795386}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:09.155 (+0:00:49.341445)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] User has not completed onboarding - skipping sync\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🆕 Generated new temp user ID for onboarding: f36974d9-b66a-4944-8547-582336c12878
-flutter: 🔑 ConnectTrainingController: Using temp user ID: f36974d9-b66a-4944-8547-582336c12878
-flutter:    (user profile exists: false, onboardingCompleted: null)
-flutter:    (current auth: a2f5742e-4475-4619-957f-f6b0e6795386)
-flutter: 🔌 connectFinalSurge: Starting connection for user f36974d9-b66a-4944-8547-582336c12878
-flutter: 🔐 Starting Final Surge OAuth flow...
-flutter:    Auth URL: https://log.finalsurge.com/oauth/authorize?client-id=BD5D0C2B-7507-405B-8A3F-DB161288E6FC&redirect-uri=com.milkman.mealvanaendurance%3A%2F%2F&state=b06f0534836fc514b1a0e56f867a0e0848303da100b6d3d841f3599bc75d233c
-flutter: 📥 Callback received:
-flutter:    Raw callback: com.milkman.mealvanaendurance://?state=b06f0534836fc514b1a0e56f867a0e0848303da100b6d3d841f3599bc75d233c&code=Xlk4JQXa7XVv
-flutter:    Parsed URI: com.milkman.mealvanaendurance://?state=b06f0534836fc514b1a0e56f867a0e0848303da100b6d3d841f3599bc75d233c&code=Xlk4JQXa7XVv
-flutter:    Code param: Xlk4JQXa7XVv
-flutter:    Code length: 12
-flutter: ✅ Received authorization code
-flutter: 🔄 Exchanging authorization code for token...
-flutter:    Code: Xlk4JQXa7XVv...
-flutter:    Client ID: BD5D0C2B-7507-405B-8A3F-DB161288E6FC
-flutter:    Redirect URI: com.milkman.mealvanaendurance://
-flutter:    Request body keys: [client-id, client-secret, code, redirect-uri]
-flutter:    Token exchange response status: 200
-flutter:    Response body: {
-  "token_type": "bearer",
-  "access_token": null,
-  "athlete": null,
-  "error": "Client Authorization Error or Code Not Found"
-}
-flutter:    JSON keys: [token_type, access_token, athlete, error]
-flutter: ❌ Token exchange error: Client Authorization Error or Code Not Found
-flutter: ❌ connectFinalSurge: Error occurred
-flutter:    Error: FinalSurgeApiException: Token exchange failed: Client Authorization Error or Code Not Found (status: 200)
-Body: {
-  "token_type": "bearer",
-  "access_token": null,
-  "athlete": null,
-  "error": "Client Authorization Error or Code Not Found"
-}
-flutter:    Stack: #0      FinalSurgeApiClient.exchangeCodeForToken (package:mealvana_endurance/features/integrations/data/final_surge_api_client.dart:98:7)
-<asynchronous suspension>
-#1      FinalSurgeOAuthService.authenticate (package:mealvana_endurance/features/integrations/application/final_surge_oauth_service.dart:94:27)
-<asynchronous suspension>
-#2      ConnectTrainingController.connectFinalSurge (package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart:228:27)
-<asynchronous suspension>
-#3      _ConnectedAppsScreenState._connectFinalSurgeOnboarding (package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart:466:21)
-<asynchronous suspension>
+Xcode build done.                                           42.2s
+Failed to build iOS app
+Error output from Xcode build:
+↳
+    --- xcodebuild: WARNING: Using the first of multiple matching destinations:
+    { platform:iOS Simulator, arch:arm64, id:336CB945-DD5C-4AE3-AFA6-82F66F9D48E1, OS:18.4, name:iphone 15 pro max }
+    { platform:iOS Simulator, arch:x86_64, id:336CB945-DD5C-4AE3-AFA6-82F66F9D48E1, OS:18.4, name:iphone 15 pro max }
+    ** BUILD FAILED **
+
+Xcode's output:
+↳
+    Writing result bundle at path:
+    	/var/folders/_h/z539vggx4539lqwll49ztflc0000gn/T/flutter_tools.tWHQPs/flutter_ios_build_temp_dir0hXn0L/temporary_xcresult_bundle
+
+    /Users/leemartin/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3/ios/url_launcher_ios/Sources/url_launcher_ios/URLLauncherPlugin.swift:22:26: warning: 'keyWindow' was deprecated in iOS 13.0: Should not be used for applications that support multiple scenes as it returns a key window across all connected scenes
+        UIApplication.shared.keyWindow?.rootViewController?.topViewController
+                             ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/sign_in_with_apple-6.1.4/ios/Classes/SignInWithAppleError.swift:99:13: warning: switch must be exhaustive
+                switch code {
+                ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/sign_in_with_apple-6.1.4/ios/Classes/SignInWithAppleError.swift:99:13: note: add missing case: '.credentialImport'
+                switch code {
+                ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/sign_in_with_apple-6.1.4/ios/Classes/SignInWithAppleError.swift:99:13: note: add missing case: '.credentialExport'
+                switch code {
+                ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/sign_in_with_apple-6.1.4/ios/Classes/SignInWithAppleError.swift:99:13: note: add missing cases
+                switch code {
+                ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/printing-5.14.2/ios/Classes/PrintJob.swift:269:70: warning: 'keyWindow' was deprecated in iOS 13.0: Should not be used for applications that support multiple scenes as it returns a key window across all connected scenes
+                let controller: UIViewController? = UIApplication.shared.keyWindow?.rootViewController
+                                                                         ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/printing-5.14.2/ios/Classes/PrintJob.swift:273:30: warning: 'keyWindow' was deprecated in iOS 13.0: Should not be used for applications that support multiple scenes as it returns a key window across all connected scenes
+            UIApplication.shared.keyWindow?.rootViewController?.present(activityViewController, animated: true)
+                                 ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/printing-5.14.2/ios/Classes/PrintJob.swift:356:74: warning: 'keyWindow' was deprecated in iOS 13.0: Should not be used for applications that support multiple scenes as it returns a key window across all connected scenes
+                let viewController: UIViewController? = UIApplication.shared.keyWindow?.rootViewController
+                                                                             ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/mobile_scanner-7.0.1/darwin/mobile_scanner/Sources/mobile_scanner/MobileScannerPlugin.swift:866:20: warning: immutable value 'device' was never used; consider replacing with '_' or removing it
+                   let device = object as? AVCaptureDevice {
+                   ~~~~^~~~~~
+                   _
+    /Users/leemartin/.pub-cache/hosted/pub.dev/mobile_scanner-7.0.1/darwin/mobile_scanner/Sources/mobile_scanner/MobileScannerPlugin.swift:778:9: warning: code after 'return' will never be executed
+            let argReader = MapArgumentReader(call.arguments as? [String: Any])
+            ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_web_auth_2-4.1.0/ios/Classes/SwiftFlutterWebAuth2Plugin.swift:31:31: warning: unnecessary check for 'iOS'; enclosing scope ensures guard will always be true
+                        } else if #available(iOS 11, *) {
+                                  ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_web_auth_2-4.1.0/ios/Classes/SwiftFlutterWebAuth2Plugin.swift:29:21: note: enclosing scope here
+                        if #available(iOS 12, *) {
+                        ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_web_auth_2-4.1.0/ios/Classes/SwiftFlutterWebAuth2Plugin.swift:125:23: warning: unnecessary check for 'iOS'; enclosing scope ensures guard will always be true
+                } else if #available(iOS 11, *) {
+                          ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_web_auth_2-4.1.0/ios/Classes/SwiftFlutterWebAuth2Plugin.swift:64:13: note: enclosing scope here
+                if #available(iOS 12, *) {
+                ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_web_auth_2-4.1.0/ios/Classes/SwiftFlutterWebAuth2Plugin.swift:158:1: warning: extension declares a conformance of imported type 'FlutterViewController' to imported protocol 'ASWebAuthenticationPresentationContextProviding'; this will not behave correctly if the owners of 'Flutter' introduce this conformance in the future
+    extension FlutterViewController: ASWebAuthenticationPresentationContextProviding {
+    ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_web_auth_2-4.1.0/ios/Classes/SwiftFlutterWebAuth2Plugin.swift:158:1: note: add '@retroactive' to silence this warning
+    extension FlutterViewController: ASWebAuthenticationPresentationContextProviding {
+    ^                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                     @retroactive ASWebAuthenticationPresentationContextProviding
+    /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_web_auth_2-4.1.0/ios/Classes/SwiftFlutterWebAuth2Plugin.swift:46:33: warning: 'SFAuthenticationError' was deprecated in iOS 12.0: Use ASWebAuthenticationSessionErrorCode instead
+                            if case SFAuthenticationError.canceledLogin = err {
+                                    ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_web_auth_2-4.1.0/ios/Classes/SwiftFlutterWebAuth2Plugin.swift:97:67: warning: 'keyWindow' was deprecated in iOS 13.0: Should not be used for applications that support multiple scenes as it returns a key window across all connected scenes
+                            rootViewController = UIApplication.shared.keyWindow?.rootViewController
+                                                                      ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/Performance/IO/Data+SentryTracing.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/Performance/IO/FileManager+SentryTracing.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryBreadcrumbCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryDebugMetaCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryEventCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryExceptionCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/Performance/IO/SentryFileIOTracker+SwiftHelpers.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryFrameCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryGeoCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Tools/SentryLog+Configure.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryMechanismCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryMechanismMetaCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryMessage.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryNSErrorCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/SentryOnDemandReplay.swift:5:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/SentryReplayEvent.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryRequestCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/RRWeb/SentryRRWebEvent.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/RRWeb/SentryRRWebOptionsEvent.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Persistence/SentryScopeContextPersistentStore.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/SentrySessionListener.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/SentrySessionReplay.swift:3:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/SentrySRDefaultBreadcrumbConverter.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryStacktraceCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryThreadCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/SessionReplay/SentryTouchTracker.swift:3:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Protocol/Codable/SentryUserCodable.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/UserFeedback/SentryUserFeedbackFormViewModel.swift:5:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/UserFeedback/SentryUserFeedbackIntegrationDriver.swift:3:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/UserFeedback/SentryUserFeedbackWidgetButtonMegaphoneIconView.swift:3:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/UserFeedback/SentryUserFeedbackWidgetButtonView.swift:3:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Core/Tools/ViewCapture/SentryViewPhotographer.swift:4:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Sentry/Sources/Swift/Integrations/WatchdogTerminations/Processors/SentryWatchdogTerminationContextProcessor.swift:1:22: warning: using '@_implementationOnly' without enabling library evolution for 'Sentry' may lead to instability during execution
+    @_implementationOnly import _SentryPrivate
+                         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Mixpanel-swift/Sources/MixpanelInstance.swift:1248:23: warning: result of call to 'write(closure:)' is unused
+            readWriteLock.write {
+                          ^     ~
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Mixpanel-swift/Sources/MixpanelLogger.swift:73:23: warning: result of call to 'write(closure:)' is unused
+            readWriteLock.write {
+                          ^     ~
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Mixpanel-swift/Sources/MixpanelLogger.swift:80:23: warning: result of call to 'write(closure:)' is unused
+            readWriteLock.write {
+                          ^     ~
+    260511:36: warning: implicit conversion loses integer precision: 'long' to 'int' [-Wshorten-64-to-32]
+     260511 |     rc = xToken(pCtx, 0, aBuf, zOut-aBuf, aStart[0], iNext);
+            |          ~~~~~~                ~~~~^~~~~
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/sqlite3/sqlite-src-3500400/sqlite3.c:262165:18: warning: ambiguous expansion of macro 'MIN' [-Wambiguous-macro]
+     262165 |       int nCmp = MIN(nTerm, pCsr->nLeTerm);
+            |                  ^
+    In module 'Darwin' imported from /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/sqlite3/sqlite-src-3500400/sqlite3.c:27196:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/usr/include/sys/param.h:215:9: note: expanding this definition of 'MIN'
+      215 | #define MIN(a, b) (((a)<(b))?(a):(b))
+          |         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/sqlite3/sqlite-src-3500400/sqlite3.c:15198:10: note: other definition of 'MIN'
+     15198 | # define MIN(A,B) ((A)<(B)?(A):(B))
+           |          ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/sqlite3/sqlite-src-3500400/sqlite3.c:262239:20: warning: ambiguous expansion of macro 'MIN' [-Wambiguous-macro]
+     262239 |         int nCmp = MIN(nTerm, pCsr->nLeTerm);
+            |                    ^
+    In module 'Darwin' imported from /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/sqlite3/sqlite-src-3500400/sqlite3.c:27196:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/usr/include/sys/param.h:215:9: note: expanding this definition of 'MIN'
+      215 | #define MIN(a, b) (((a)<(b))?(a):(b))
+          |         ^
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/sqlite3/sqlite-src-3500400/sqlite3.c:15198:10: note: other definition of 'MIN'
+     15198 | # define MIN(A,B) ((A)<(B)?(A):(B))
+           |          ^
+    169 warnings generated.
+    /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/PermissionHandler.m:40:31: warning: 'authorizationStatus' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
+       40 |     return [CLLocationManager authorizationStatus];
+          |                               ^~~~~~~~~~~~~~~~~~~
+          |                               authorizationStatus
+    In module 'CoreLocation' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/../include/geolocator_apple/Handlers/PermissionHandler.h:11:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/System/Library/Frameworks/CoreLocation.framework/Headers/CLLocationManager.h:231:1: note: 'authorizationStatus' has been explicitly marked deprecated here
+      231 | + (CLAuthorizationStatus)authorizationStatus API_DEPRECATED_WITH_REPLACEMENT("-authorizationStatus", ios(4.2, 14.0), macos(10.7, 11.0), watchos(1.0, 7.0), tvos(9.0, 14.0));
+          | ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/PermissionHandler.m:47:65: warning: 'authorizationStatus' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
+       47 |   CLAuthorizationStatus authorizationStatus = CLLocationManager.authorizationStatus;
+          |                                                                 ^~~~~~~~~~~~~~~~~~~
+          |                                                                 authorizationStatus
+    In module 'CoreLocation' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/../include/geolocator_apple/Handlers/PermissionHandler.h:11:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/System/Library/Frameworks/CoreLocation.framework/Headers/CLLocationManager.h:231:1: note: 'authorizationStatus' has been explicitly marked deprecated here
+      231 | + (CLAuthorizationStatus)authorizationStatus API_DEPRECATED_WITH_REPLACEMENT("-authorizationStatus", ios(4.2, 14.0), macos(10.7, 11.0), watchos(1.0, 7.0), tvos(9.0, 14.0));
+          | ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/PermissionHandler.m:47:65: warning: 'authorizationStatus' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
+       47 |   CLAuthorizationStatus authorizationStatus = CLLocationManager.authorizationStatus;
+          |                                                                 ^~~~~~~~~~~~~~~~~~~
+          |                                                                 authorizationStatus
+    In module 'CoreLocation' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/../include/geolocator_apple/Handlers/PermissionHandler.h:11:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/System/Library/Frameworks/CoreLocation.framework/Headers/CLLocationManager.h:231:1: note: 'authorizationStatus' has been explicitly marked deprecated here
+      231 | + (CLAuthorizationStatus)authorizationStatus API_DEPRECATED_WITH_REPLACEMENT("-authorizationStatus", ios(4.2, 14.0), macos(10.7, 11.0), watchos(1.0, 7.0), tvos(9.0, 14.0));
+          | ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/PermissionHandler.m:107:1: warning: implementing deprecated method [-Wdeprecated-implementations]
+      107 | - (void) locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
+          | ^
+    In module 'CoreLocation' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/../include/geolocator_apple/Handlers/PermissionHandler.h:11:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/System/Library/Frameworks/CoreLocation.framework/Headers/CLLocationManagerDelegate.h:208:1: note: method 'locationManager:didChangeAuthorizationStatus:' declared here
+      208 | - (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status API_DEPRECATED_WITH_REPLACEMENT("-locationManagerDidChangeAuthorization:", ios(4.2, 14.0), macos(10.7, 11.0), watchos(1.0, 7.0), tvos(9.0, 14.0));
+          | ^
+    4 warnings generated.
+    /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/LocationServiceStreamHandler.m:36:1: warning: implementing deprecated method [-Wdeprecated-implementations]
+       36 | - (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status{
+          | ^
+    In module 'CoreLocation' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13/darwin/geolocator_apple/Sources/geolocator_apple/Handlers/LocationServiceStreamHandler.m:9:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/System/Library/Frameworks/CoreLocation.framework/Headers/CLLocationManagerDelegate.h:208:1: note: method 'locationManager:didChangeAuthorizationStatus:' declared here
+      208 | - (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status API_DEPRECATED_WITH_REPLACEMENT("-locationManagerDidChangeAuthorization:", ios(4.2, 14.0), macos(10.7, 11.0), watchos(1.0, 7.0), tvos(9.0, 14.0));
+          | ^
+    1 warning generated.
+    /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_local_notifications-19.4.1/ios/flutter_local_notifications/Sources/flutter_local_notifications/FlutterLocalNotificationsPlugin.m:940:30: warning: 'UNNotificationPresentationOptionAlert' is deprecated: first deprecated in iOS 14.0 [-Wdeprecated-declarations]
+      940 |       presentationOptions |= UNNotificationPresentationOptionAlert;
+          |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          |                              UNNotificationPresentationOptionList | UNNotificationPresentationOptionBanner
+    In module 'UserNotifications' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/flutter_local_notifications-19.4.1/ios/flutter_local_notifications/Sources/flutter_local_notifications/./include/flutter_local_notifications/FlutterLocalNotificationsPlugin.h:2:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/System/Library/Frameworks/UserNotifications.framework/Headers/UNUserNotificationCenter.h:84:5: note: 'UNNotificationPresentationOptionAlert' has been explicitly marked deprecated here
+       84 |     UNNotificationPresentationOptionAlert API_DEPRECATED_WITH_REPLACEMENT("UNNotificationPresentationOptionList | UNNotificationPresentationOptionBanner", macos(10.14, 11.0), ios(10.0, 14.0), watchos(3.0, 7.0), tvos(10.0, 14.0)) = (1 << 2),
+          |     ^
+    1 warning generated.
+    /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OneSignalPlugin.m:61:27: warning: null passed to a callee that requires a non-null argument [-Wnonnull]
+       61 |     [OneSignal initialize:nil withLaunchOptions:nil];
+          |                           ^~~
+    In module 'Foundation' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterDebug.h:29:
+    In module 'CoreFoundation' imported from /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h:6:
+    In module 'Darwin' imported from /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFBase.h:75:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/usr/include/MacTypes.h:96:19: note: expanded from macro 'nil'
+       96 |       #define nil __DARWIN_NULL
+          |                   ^~~~~~~~~~~~~
+    In module 'Foundation' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterDebug.h:29:
+    In module 'CoreFoundation' imported from /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h:6:
+    In module 'sys_types' imported from /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CoreFoundation.h:18:
+    In module 'DarwinFoundation' imported from /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/usr/include/sys/types.h:72:
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.4.sdk/usr/include/sys/_types.h:52:23: note: expanded from macro '__DARWIN_NULL'
+       52 | #define __DARWIN_NULL NULL
+          |                       ^~~~
+    In module 'Foundation' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterDebug.h:29:
+    In module 'CoreFoundation' imported from /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h:6:
+    In module 'sys_types' imported from /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CoreFoundation.h:18:
+    In module 'DarwinFoundation' imported from /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/usr/include/sys/types.h:72:
+    In module '_Builtin_stddef' imported from /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include/stddef.h:93:
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include/__stddef_null.h:26:14: note: expanded from macro 'NULL'
+       26 | #define NULL ((void*)0)
+          |              ^~~~~~~~~~
+    1 warning generated.
+    /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterUser.m:96:35: warning: incompatible pointer types sending 'NSDictionary *' to parameter of type 'NSArray<NSString *> * _Nonnull' [-Wincompatible-pointer-types]
+       96 |     [OneSignal.User removeAliases:aliases];
+          |                                   ^~~~~~~
+    In module 'OneSignalUser' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterUser.m:30:
+    /Users/leemartin/development/mealvana_endurance_brick/build/ios/dev-Debug-iphonesimulator/XCFrameworkIntermediates/OneSignalXCFramework/OneSignalUser/OneSignalUser.framework/Headers/OneSignalUser-Swift.h:368:55: note: passing argument to parameter 'labels' here
+      368 | - (void)removeAliases:(NSArray<NSString *> * _Nonnull)labels;
+          |                                                       ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterUser.m:108:32: warning: incompatible pointer types sending 'NSDictionary *' to parameter of type 'NSArray<NSString *> * _Nonnull' [-Wincompatible-pointer-types]
+      108 |     [OneSignal.User removeTags:tags];
+          |                                ^~~~
+    In module 'OneSignalUser' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterUser.m:30:
+    /Users/leemartin/development/mealvana_endurance_brick/build/ios/dev-Debug-iphonesimulator/XCFrameworkIntermediates/OneSignalXCFramework/OneSignalUser/OneSignalUser.framework/Headers/OneSignalUser-Swift.h:372:52: note: passing argument to parameter 'tags' here
+      372 | - (void)removeTags:(NSArray<NSString *> * _Nonnull)tags;
+          |                                                    ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterUser.m:141:33: warning: sending 'OSFlutterUser *const __strong' to parameter of incompatible type 'id<OSUserStateObserver> _Nonnull'
+      141 |     [OneSignal.User addObserver:self];
+          |                                 ^~~~
+    In module 'OneSignalUser' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterUser.m:30:
+    /Users/leemartin/development/mealvana_endurance_brick/build/ios/dev-Debug-iphonesimulator/XCFrameworkIntermediates/OneSignalXCFramework/OneSignalUser/OneSignalUser.framework/Headers/OneSignalUser-Swift.h:363:56: note: passing argument to parameter 'observer' here
+      363 | - (void)addObserver:(id <OSUserStateObserver> _Nonnull)observer;
+          |                                                        ^
+    /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterUser.m:174:16: warning: incompatible pointer types returning 'NSNull * _Nonnull' from a function with result type 'NSString *' [-Wincompatible-pointer-types]
+      174 |         return [NSNull null];
+          |                ^~~~~~~~~~~~~
+    4 warnings generated.
+    /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterPushSubscription.m:33:17: warning: method definition for 'sharedInstance' not found [-Wincomplete-implementation]
+       33 | @implementation OSFlutterPushSubscription
+          |                 ^
+    In file included from /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterPushSubscription.m:28:
+    /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterPushSubscription.h:35:1: note: method 'sharedInstance' declared here
+       35 | + (instancetype)sharedInstance;
+          | ^
+    1 warning generated.
+    /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterLiveActivities.m:120:17: warning: comparison of distinct pointer types ('NSDictionary *' and 'NSNull * _Nonnull') [-Wcompare-distinct-pointer-types]
+      120 |     if (options != [NSNull null]) {
+          |         ~~~~~~~ ^  ~~~~~~~~~~~~~
+    1 warning generated.
+    /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterInAppMessages.m:104:47: warning: incompatible pointer types sending 'OSFlutterInAppMessages *' to parameter of type 'NSObject<OSInAppMessageClickListener> * _Nullable' [-Wincompatible-pointer-types]
+      104 |     [OneSignal.InAppMessages addClickListener:OSFlutterInAppMessages.sharedInstance];
+          |                                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    In module 'OneSignalFramework' imported from /Users/leemartin/.pub-cache/hosted/pub.dev/onesignal_flutter-5.3.4/ios/Classes/OSFlutterInAppMessages.h:31:
+    In module 'OneSignalCore' imported from /Users/leemartin/development/mealvana_endurance_brick/build/ios/dev-Debug-iphonesimulator/XCFrameworkIntermediates/OneSignalXCFramework/OneSignal/OneSignalFramework.framework/Headers/OneSignalFramework.h:46:
+    /Users/leemartin/development/mealvana_endurance_brick/build/ios/dev-Debug-iphonesimulator/XCFrameworkIntermediates/OneSignalXCFramework/OneSignalCore/OneSignalCore.framework/Headers/OSInAppMessages.h:134:76: note: passing argument to parameter 'listener' here
+      134 | + (void)addClickListener:(NSObject<OSInAppMessageClickListener> *_Nullable)listener NS_REFINED_FOR_SWIFT;
+          |                                                                            ^
+    1 warning generated.
+    /Users/leemartin/.pub-cache/hosted/pub.dev/sentry_flutter-9.6.0/ios/sentry_flutter/Sources/sentry_flutter/SentryFlutterPlugin.swift:670:58: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+                guard let windowScene = UIApplication.shared.windows.first?.windowScene else {
+                                                             ^
+    No file or variants found for asset: .env.
+
+    Target debug_ios_bundle_flutter_assets failed: Exception: Failed to bundle asset files.
+    Failed to package /Users/leemartin/development/mealvana_endurance_brick.
+    Command PhaseScriptExecution failed with a nonzero exit code
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 11.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'OneSignalXCFramework' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'OneSignalXCFramework' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'url_launcher_ios-url_launcher_ios_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'shared_preferences_foundation-shared_preferences_foundation_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'url_launcher_ios' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'sqlite3_flutter_libs' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'sqlite3' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'speech_to_text' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'sign_in_with_apple' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'shared_preferences_foundation' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'sentry_flutter' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'printing' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'path_provider_foundation-path_provider_foundation_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'path_provider_foundation' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'package_info_plus-package_info_plus_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'package_info_plus' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'onesignal_flutter' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'mobile_scanner-mobile_scanner_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'mobile_scanner' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'mixpanel_flutter' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'integration_test' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'google_sign_in_ios-google_sign_in_ios_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'google_sign_in_ios' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 11.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'geolocator_apple-geolocator_apple_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'geolocator_apple-geolocator_apple_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'geolocator_apple' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'flutter_web_auth_2' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'flutter_native_splash-flutter_native_splash_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'flutter_native_splash-flutter_native_splash_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'flutter_native_splash' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 11.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'flutter_local_notifications-flutter_local_notifications_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'flutter_local_notifications-flutter_local_notifications_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'flutter_local_notifications' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'device_info_plus-device_info_plus_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'device_info_plus' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'connectivity_plus-connectivity_plus_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'connectivity_plus' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'app_links-app_links_ios_privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'app_links' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 11.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'Sentry-Sentry' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'Sentry-Sentry' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 11.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'Sentry' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'Sentry' from project 'Pods')
+    note: Run script build phase 'Run Script' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Runner' from project 'Runner')
+    note: Run script build phase 'Thin Binary' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Runner' from project 'Runner')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'PromisesObjC-FBLPromises_Privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'PromisesObjC-FBLPromises_Privacy' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'PromisesObjC' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'PromisesObjC' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'Pods-Runner' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'Mixpanel-swift-Mixpanel' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'Mixpanel-swift' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'GoogleUtilities-GoogleUtilities_Privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'GoogleUtilities' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'GoogleSignIn-GoogleSignIn' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'GoogleSignIn' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 10.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'GTMSessionFetcher-GTMSessionFetcher_Full_Privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'GTMSessionFetcher-GTMSessionFetcher_Full_Privacy' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 10.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'GTMSessionFetcher-GTMSessionFetcher_Core_Privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'GTMSessionFetcher-GTMSessionFetcher_Core_Privacy' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 10.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'GTMSessionFetcher' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'GTMSessionFetcher' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 10.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'GTMAppAuth-GTMAppAuth_Privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'GTMAppAuth-GTMAppAuth_Privacy' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 10.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'GTMAppAuth' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'GTMAppAuth' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'CwlCatchExceptionSupport' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'CwlCatchException' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'AppCheckCore' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'AppAuth-AppAuthCore_Privacy' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'AppAuth-AppAuthCore_Privacy' from project 'Pods')
+    /Users/leemartin/development/mealvana_endurance_brick/ios/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 12.0 to 18.4.99. (in target 'AppAuth' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'AppAuth' from project 'Pods')
+    note: Disabling previews because SWIFT_VERSION is set and SWIFT_OPTIMIZATION_LEVEL=-O, expected -Onone (in target 'Flutter' from project 'Pods')
+
+Could not build the application for the simulator.
+Error launching application on iphone 15 pro max.
+
+Exited (1).
