@@ -486,7 +486,10 @@ class ActivitiesService {
       ),
       title: activity.title,
       scheduledDateTime: activity.scheduledDateTime,
-      status: domain.ActivityStatusDb.fromDbValue(activity.status),
+      status: domain.ActivityStatus.values.firstWhere(
+        (s) => s.name == activity.status,
+        orElse: () => domain.ActivityStatus.planned,
+      ),
       distanceMiles: activity.distanceMiles,
       durationMinutes: activity.durationMinutes,
       paceTargetMinutesPerMile: activity.paceTargetMinutesPerMile,
