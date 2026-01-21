@@ -126,7 +126,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  int get schemaVersion => 4; // v4: Added brick workout support (brick activity_type, archived_for_brick status)
+  int get schemaVersion => 3; // v3: Added integrations, sweat_rate, sync columns, AND coach mode (is_coach, relationships, messages)
 
   /// Generate a proper UUID v4 for new records
   /// Uses the uuid package to ensure RFC 4122 compliance and exact 36-character length
@@ -208,18 +208,15 @@ class AppDatabase extends _$AppDatabase {
           await _validateSchemaIntegrity();
         }
 
+        // Ensure activities table has brick support (CHECK constraints)
+        // This handles databases created before brick feature was added
+        await _ensureBrickConstraints();
+
         // Normalize any legacy timestamp strings in user_foods to Unix millis
         await _normalizeUserFoodTimestamps();
       },
 
-      // onUpgrade for schema migrations
-      onUpgrade: (Migrator m, int from, int to) async {
-        // v3 -> v4: Add brick workout support (new CHECK constraints)
-        // SQLite doesn't allow ALTER on CHECK constraints, so we recreate the table
-        if (from < 4) {
-          await _migrateActivitiesTableForBrickSupport();
-        }
-      },
+      // No onUpgrade - schema changes trigger delete & resync via VersionCheckService
     );
   }
 
@@ -229,27 +226,23 @@ class AppDatabase extends _$AppDatabase {
     // No longer need to populate default data - using enums now
   }
 
-  /// Migrate activities table for brick workout support (v3 -> v4)
+  /// Ensure activities table has brick workout support (columns and CHECK constraints)
   ///
-  /// SQLite doesn't allow modifying CHECK constraints directly, so we need to:
-  /// 1. Create a new temporary table with the correct CHECK constraints
-  /// 2. Copy all data from the old activities table
-  /// 3. Drop the old activities table
-  /// 4. Rename the temporary table to "activities"
+  /// This handles databases created before the brick feature was added.
+  /// SQLite doesn't allow modifying CHECK constraints directly, so we need to
+  /// recreate the table if the constraints are outdated.
   ///
-  /// New CHECK constraints added:
-  /// - activity_type now includes 'brick'
-  /// - status now includes 'archived_for_brick'
-  Future<void> _migrateActivitiesTableForBrickSupport() async {
-    if (kDebugMode) {
-      print('🔄 Migrating activities table for brick support (v3 -> v4)...');
-    }
-
+  /// Required constraints:
+  /// - activity_type includes 'brick'
+  /// - status includes 'archived_for_brick'
+  Future<void> _ensureBrickConstraints() async {
     // First, check if brick_metadata and brick_id columns exist
     final columnsResult = await customSelect(
       "PRAGMA table_info('activities')",
     ).get();
     final existingColumns = columnsResult.map((r) => r.read<String>('name')).toSet();
+
+    bool needsTableRecreation = false;
 
     // Add brick_metadata column if it doesn't exist
     if (!existingColumns.contains('brick_metadata')) {
@@ -257,7 +250,7 @@ class AppDatabase extends _$AppDatabase {
         "ALTER TABLE activities ADD COLUMN brick_metadata TEXT DEFAULT NULL",
       );
       if (kDebugMode) {
-        print('  ✅ Added brick_metadata column');
+        print('🧱 Added brick_metadata column to activities');
       }
     }
 
@@ -267,11 +260,40 @@ class AppDatabase extends _$AppDatabase {
         "ALTER TABLE activities ADD COLUMN brick_id TEXT DEFAULT NULL",
       );
       if (kDebugMode) {
-        print('  ✅ Added brick_id column');
+        print('🧱 Added brick_id column to activities');
       }
     }
 
-    // Now recreate the table to update CHECK constraints
+    // Check if CHECK constraints include brick values by trying to insert a test value
+    // We use a transaction that we rollback to avoid any actual data changes
+    try {
+      await customStatement("SAVEPOINT brick_check");
+      await customStatement('''
+        INSERT INTO activities (id, user_id, activity_type, title, scheduled_date_time, status, created_at, updated_at)
+        VALUES ('__brick_check__', '__test__', 'brick', 'test', 0, 'archived_for_brick', 0, 0)
+      ''');
+      // If we get here, constraints are fine - rollback the test row
+      await customStatement("ROLLBACK TO brick_check");
+      await customStatement("RELEASE brick_check");
+    } catch (e) {
+      // CHECK constraint failed - need to recreate table
+      await customStatement("ROLLBACK TO brick_check");
+      await customStatement("RELEASE brick_check");
+      needsTableRecreation = true;
+      if (kDebugMode) {
+        print('🧱 Activities table needs CHECK constraint update for brick support');
+      }
+    }
+
+    if (!needsTableRecreation) {
+      return; // Constraints are already correct
+    }
+
+    if (kDebugMode) {
+      print('🔄 Recreating activities table with brick CHECK constraints...');
+    }
+
+    // Recreate the table with correct CHECK constraints
     // SQLite doesn't allow modifying CHECK constraints, so we must recreate
     await customStatement('''
       CREATE TABLE activities_new (
@@ -366,7 +388,7 @@ class AppDatabase extends _$AppDatabase {
     ''');
 
     if (kDebugMode) {
-      print('  ✅ Activities table migrated successfully with brick support');
+      print('  ✅ Activities table updated with brick support');
     }
   }
 
