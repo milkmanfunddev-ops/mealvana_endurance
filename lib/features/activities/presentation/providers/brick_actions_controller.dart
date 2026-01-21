@@ -5,6 +5,8 @@ import '../../domain/brick_exceptions.dart';
 import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/database/app_database.dart' show DatabaseSchemaException;
+import '../../../../shared/database/database_provider.dart';
 
 part 'brick_actions_controller.g.dart';
 
@@ -85,6 +87,31 @@ class BrickActionsController extends _$BrickActionsController {
     } on BrickValidationException {
       // Re-throw validation exceptions as-is
       rethrow;
+    } on DatabaseSchemaException catch (e, stackTrace) {
+      // Schema error detected - database has been closed and deleted
+      // Reinitialize the database provider to create a fresh database
+      _logger.warning(
+        'Schema error during brick creation - reinitializing database',
+        context: 'BRICK_ACTIONS_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
+      // Invalidate the database provider to create a fresh instance
+      ref.invalidate(appDatabaseProvider);
+
+      // Trigger creation of new database
+      ref.read(appDatabaseProvider);
+
+      _logger.info(
+        'Database reinitialized after schema error - please retry operation',
+        context: 'BRICK_ACTIONS_CONTROLLER',
+      );
+
+      // Throw a user-friendly error indicating retry is needed
+      throw BrickCreationException.databaseError(
+        Exception('Database was reset due to schema mismatch. Please try again.'),
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Error creating brick from selection',
