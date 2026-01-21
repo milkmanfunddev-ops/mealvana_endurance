@@ -1441,9 +1441,13 @@ class ActivitiesRepository with SyncableRepository {
         },
       );
 
-      // Check if this is a schema error - if so, delete DB and trigger resync
+      // Check if this is a schema error - if so, close DB, delete files, and trigger resync
       if (AppDatabase.isSchemaError(e)) {
-        await AppDatabase.handleSchemaError(e, context: 'createBrickFromActivities');
+        await AppDatabase.handleSchemaError(
+          e,
+          context: 'createBrickFromActivities',
+          database: _database,
+        );
       }
 
       rethrow;

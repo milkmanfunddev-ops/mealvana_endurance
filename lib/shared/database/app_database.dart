@@ -1689,24 +1689,31 @@ class AppDatabase extends _$AppDatabase {
            errorString.contains('table') && errorString.contains('has no column');
   }
 
-  /// Handle a schema error by deleting the database and triggering resync
+  /// Handle a schema error by closing DB, deleting files, and triggering resync
   ///
   /// Call this from repositories when catching exceptions that might be schema-related.
-  /// If the error is a schema error, this deletes the database and throws
-  /// [DatabaseSchemaException] to trigger a full resync.
+  /// If the error is a schema error, this closes the database, deletes the files,
+  /// and throws [DatabaseSchemaException] to trigger app reinitialization.
+  ///
+  /// IMPORTANT: Pass the database instance so the connection can be closed before
+  /// deleting files. Otherwise the in-memory connection will recreate the old schema.
   ///
   /// Example usage in a repository:
   /// ```dart
   /// try {
-  ///   await db.into(db.activities).insert(companion);
+  ///   await _database.into(_database.activities).insert(companion);
   /// } catch (e) {
   ///   if (AppDatabase.isSchemaError(e)) {
-  ///     await AppDatabase.handleSchemaError(e);
+  ///     await AppDatabase.handleSchemaError(e, database: _database);
   ///   }
   ///   rethrow;
   /// }
   /// ```
-  static Future<void> handleSchemaError(Object error, {String? context}) async {
+  static Future<void> handleSchemaError(
+    Object error, {
+    String? context,
+    AppDatabase? database,
+  }) async {
     if (!isSchemaError(error)) {
       return; // Not a schema error, don't handle
     }
@@ -1732,12 +1739,27 @@ class AppDatabase extends _$AppDatabase {
       print('   Error: $error');
     }
 
-    // Delete the database
+    // CRITICAL: Close the database connection BEFORE deleting files
+    // Otherwise the in-memory connection recreates the old schema
+    if (database != null) {
+      try {
+        await database.close();
+        if (kDebugMode) {
+          print('🔧 Database connection closed');
+        }
+      } catch (closeError) {
+        if (kDebugMode) {
+          print('🔧 Warning: Error closing database: $closeError');
+        }
+      }
+    }
+
+    // Delete the database files
     await deleteAndResync();
 
-    // Throw exception to signal app needs to restart/resync
+    // Throw exception to signal app needs to reinitialize database
     throw DatabaseSchemaException(
-      'Schema mismatch detected. Database deleted - app will resync.',
+      'Schema mismatch detected. Database deleted - app will resync on restart.',
       errors: [error.toString()],
     );
   }
