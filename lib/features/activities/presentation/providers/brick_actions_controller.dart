@@ -89,9 +89,9 @@ class BrickActionsController extends _$BrickActionsController {
       rethrow;
     } on DatabaseSchemaException catch (e, stackTrace) {
       // Schema error detected - database has been closed and deleted
-      // Reinitialize the database provider to create a fresh database
+      // Reinitialize the database and retry the operation transparently
       _logger.warning(
-        'Schema error during brick creation - reinitializing database',
+        'Schema error during brick creation - reinitializing database and retrying',
         context: 'BRICK_ACTIONS_CONTROLLER',
         error: e,
         stackTrace: stackTrace,
@@ -103,14 +103,19 @@ class BrickActionsController extends _$BrickActionsController {
       // Trigger creation of new database
       ref.read(appDatabaseProvider);
 
+      // Invalidate dependent providers so they use the new database
+      ref.invalidate(activitiesRepositoryProvider);
+      ref.invalidate(activitiesServiceProvider);
+
       _logger.info(
-        'Database reinitialized after schema error - please retry operation',
+        'Database reinitialized - retrying brick creation',
         context: 'BRICK_ACTIONS_CONTROLLER',
       );
 
-      // Throw a user-friendly error indicating retry is needed
-      throw BrickCreationException.databaseError(
-        Exception('Database was reset due to schema mismatch. Please try again.'),
+      // Retry the operation with fresh database (user just sees loading spinner)
+      return _service.createBrickActivity(
+        activities: activities,
+        segmentOrder: segmentOrder,
       );
     } catch (e, stackTrace) {
       _logger.error(
