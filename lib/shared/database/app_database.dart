@@ -266,11 +266,12 @@ class AppDatabase extends _$AppDatabase {
 
     // Check if CHECK constraints include brick values by trying to insert a test value
     // We use a transaction that we rollback to avoid any actual data changes
+    // Note: status uses camelCase to match Dart enum .name (e.g., 'archivedForBrick' not 'archived_for_brick')
     try {
       await customStatement("SAVEPOINT brick_check");
       await customStatement('''
         INSERT INTO activities (id, user_id, activity_type, title, scheduled_date_time, status, created_at, updated_at)
-        VALUES ('__brick_check__', '__test__', 'brick', 'test', 0, 'archived_for_brick', 0, 0)
+        VALUES ('__brick_check__', '__test__', 'brick', 'test', 0, 'archivedForBrick', 0, 0)
       ''');
       // If we get here, constraints are fine - rollback the test row
       await customStatement("ROLLBACK TO brick_check");
@@ -292,6 +293,11 @@ class AppDatabase extends _$AppDatabase {
     if (kDebugMode) {
       print('🔄 Recreating activities table with brick CHECK constraints...');
     }
+
+    // First, convert any snake_case status values to camelCase
+    // This handles data that may have been synced from Supabase with snake_case values
+    await customStatement("UPDATE activities SET status = 'inProgress' WHERE status = 'in_progress'");
+    await customStatement("UPDATE activities SET status = 'archivedForBrick' WHERE status = 'archived_for_brick'");
 
     // Recreate the table with correct CHECK constraints
     // SQLite doesn't allow modifying CHECK constraints, so we must recreate
@@ -344,7 +350,7 @@ class AppDatabase extends _$AppDatabase {
         updated_at INTEGER NOT NULL,
         deleted_at INTEGER,
         CHECK (activity_type IN ('running', 'cycling', 'swimming', 'brick')),
-        CHECK (status IN ('draft', 'planned', 'in_progress', 'completed', 'skipped', 'archived_for_brick')),
+        CHECK (status IN ('draft', 'planned', 'inProgress', 'completed', 'skipped', 'archivedForBrick')),
         CHECK (intensity_level IS NULL OR intensity_level IN ('easy', 'moderate', 'hard', 'race')),
         CHECK (completion_rating IS NULL OR (completion_rating >= 1 AND completion_rating <= 5))
       )

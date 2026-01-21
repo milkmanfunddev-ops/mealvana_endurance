@@ -90,7 +90,8 @@ class ActivitiesTable extends Table {
   @override
   List<String> get customConstraints => [
     "CHECK (activity_type IN ('running', 'cycling', 'swimming', 'brick'))",
-    "CHECK (status IN ('draft', 'planned', 'in_progress', 'completed', 'skipped', 'archived_for_brick'))",
+    // Status uses camelCase to match Dart enum .name property (e.g., ActivityStatus.archivedForBrick.name)
+    "CHECK (status IN ('draft', 'planned', 'inProgress', 'completed', 'skipped', 'archivedForBrick'))",
     "CHECK (intensity_level IS NULL OR intensity_level IN ('easy', 'moderate', 'hard', 'race'))",
     'CHECK (completion_rating IS NULL OR (completion_rating >= 1 AND completion_rating <= 5))',
   ];
