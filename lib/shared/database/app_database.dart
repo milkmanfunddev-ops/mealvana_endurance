@@ -229,45 +229,13 @@ class AppDatabase extends _$AppDatabase {
   /// Ensure activities table has brick workout support (columns and CHECK constraints)
   ///
   /// This handles databases created before the brick feature was added.
-  /// SQLite doesn't allow modifying CHECK constraints directly, so we need to
-  /// recreate the table if the constraints are outdated.
-  ///
-  /// Required constraints:
-  /// - activity_type includes 'brick'
-  /// - status includes 'archived_for_brick'
+  /// If ANY schema issue is detected, we delete the database and resync from Supabase.
+  /// This is the failsafe - we never error out on schema mismatches.
   Future<void> _ensureBrickConstraints() async {
-    // First, check if brick_metadata and brick_id columns exist
-    final columnsResult = await customSelect(
-      "PRAGMA table_info('activities')",
-    ).get();
-    final existingColumns = columnsResult.map((r) => r.read<String>('name')).toSet();
-
-    bool needsTableRecreation = false;
-
-    // Add brick_metadata column if it doesn't exist
-    if (!existingColumns.contains('brick_metadata')) {
-      await customStatement(
-        "ALTER TABLE activities ADD COLUMN brick_metadata TEXT DEFAULT NULL",
-      );
-      if (kDebugMode) {
-        print('🧱 Added brick_metadata column to activities');
-      }
-    }
-
-    // Add brick_id column if it doesn't exist
-    if (!existingColumns.contains('brick_id')) {
-      await customStatement(
-        "ALTER TABLE activities ADD COLUMN brick_id TEXT DEFAULT NULL",
-      );
-      if (kDebugMode) {
-        print('🧱 Added brick_id column to activities');
-      }
-    }
-
-    // Check if CHECK constraints include brick values by trying to insert a test value
-    // We use a transaction that we rollback to avoid any actual data changes
-    // Note: status uses camelCase to match Dart enum .name (e.g., 'archivedForBrick' not 'archived_for_brick')
     try {
+      // Check if CHECK constraints include brick values by trying to insert a test value
+      // We use a savepoint that we rollback to avoid any actual data changes
+      // Note: status uses camelCase to match Dart enum .name (e.g., 'archivedForBrick')
       await customStatement("SAVEPOINT brick_check");
       await customStatement('''
         INSERT INTO activities (id, user_id, activity_type, title, scheduled_date_time, status, created_at, updated_at)
@@ -276,120 +244,29 @@ class AppDatabase extends _$AppDatabase {
       // If we get here, constraints are fine - rollback the test row
       await customStatement("ROLLBACK TO brick_check");
       await customStatement("RELEASE brick_check");
+
+      // Schema is correct, nothing to do
+      return;
     } catch (e) {
-      // CHECK constraint failed - need to recreate table
-      await customStatement("ROLLBACK TO brick_check");
-      await customStatement("RELEASE brick_check");
-      needsTableRecreation = true;
-      if (kDebugMode) {
-        print('🧱 Activities table needs CHECK constraint update for brick support');
+      // Any error means schema mismatch - try to rollback savepoint then delete & resync
+      try {
+        await customStatement("ROLLBACK TO brick_check");
+        await customStatement("RELEASE brick_check");
+      } catch (_) {
+        // Ignore rollback errors
       }
-    }
 
-    if (!needsTableRecreation) {
-      return; // Constraints are already correct
-    }
+      if (kDebugMode) {
+        print('🧱 Schema mismatch detected - deleting database and resyncing');
+        print('   Error: $e');
+      }
 
-    if (kDebugMode) {
-      print('🔄 Recreating activities table with brick CHECK constraints...');
-    }
-
-    // Recreate the table with correct CHECK constraints
-    // SQLite doesn't allow modifying CHECK constraints, so we must recreate
-    await customStatement('''
-      CREATE TABLE activities_new (
-        id TEXT NOT NULL PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        activity_type TEXT NOT NULL,
-        title TEXT NOT NULL,
-        scheduled_date_time INTEGER NOT NULL,
-        status TEXT NOT NULL DEFAULT 'planned',
-        distance_miles REAL,
-        duration_minutes INTEGER,
-        pace_target_minutes_per_mile REAL,
-        intensity_level TEXT,
-        cycling_speed_mph REAL,
-        cycling_terrain TEXT,
-        cycling_indoor_outdoor TEXT,
-        cycling_elevation_gain_ft INTEGER,
-        cycling_session_goal TEXT,
-        swimming_pace_per_100m_seconds INTEGER,
-        swimming_pool_or_open_water TEXT,
-        swimming_water_temp_c REAL,
-        intensity_target TEXT,
-        time_before_minutes INTEGER,
-        reminder_enabled INTEGER NOT NULL DEFAULT 0,
-        reminder_days_before INTEGER,
-        reminder_time_of_day TEXT,
-        reminder_recurring INTEGER NOT NULL DEFAULT 0,
-        needs_upload INTEGER,
-        local_updated_at INTEGER,
-        synced_from_provider TEXT,
-        provider_workout_id TEXT,
-        provider_workout_url TEXT,
-        last_synced_at INTEGER,
-        workout_subtype TEXT,
-        pace_min_minutes_per_mile REAL,
-        pace_max_minutes_per_mile REAL,
-        distance_meters REAL,
-        completed_at INTEGER,
-        completion_rating INTEGER,
-        completion_notes TEXT,
-        actual_distance_miles REAL,
-        actual_duration_minutes INTEGER,
-        nutrition_plan_data TEXT,
-        brick_metadata TEXT,
-        brick_id TEXT,
-        notes TEXT,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        deleted_at INTEGER,
-        CHECK (activity_type IN ('running', 'cycling', 'swimming', 'brick')),
-        CHECK (status IN ('draft', 'planned', 'inProgress', 'completed', 'skipped', 'archivedForBrick')),
-        CHECK (intensity_level IS NULL OR intensity_level IN ('easy', 'moderate', 'hard', 'race')),
-        CHECK (completion_rating IS NULL OR (completion_rating >= 1 AND completion_rating <= 5))
-      )
-    ''');
-
-    // Copy all data from old table to new table
-    await customStatement('''
-      INSERT INTO activities_new SELECT
-        id, user_id, activity_type, title, scheduled_date_time, status,
-        distance_miles, duration_minutes, pace_target_minutes_per_mile, intensity_level,
-        cycling_speed_mph, cycling_terrain, cycling_indoor_outdoor, cycling_elevation_gain_ft, cycling_session_goal,
-        swimming_pace_per_100m_seconds, swimming_pool_or_open_water, swimming_water_temp_c,
-        intensity_target, time_before_minutes,
-        reminder_enabled, reminder_days_before, reminder_time_of_day, reminder_recurring,
-        needs_upload, local_updated_at,
-        synced_from_provider, provider_workout_id, provider_workout_url, last_synced_at,
-        workout_subtype, pace_min_minutes_per_mile, pace_max_minutes_per_mile, distance_meters,
-        completed_at, completion_rating, completion_notes, actual_distance_miles, actual_duration_minutes,
-        nutrition_plan_data, brick_metadata, brick_id,
-        notes, created_at, updated_at, deleted_at
-      FROM activities
-    ''');
-
-    // Drop old table
-    await customStatement('DROP TABLE activities');
-
-    // Rename new table to activities
-    await customStatement('ALTER TABLE activities_new RENAME TO activities');
-
-    // Recreate indexes
-    await customStatement('''
-      CREATE INDEX IF NOT EXISTS idx_activities_brick_id
-      ON activities(brick_id)
-      WHERE brick_id IS NOT NULL
-    ''');
-
-    await customStatement('''
-      CREATE INDEX IF NOT EXISTS idx_activities_brick_type
-      ON activities(activity_type)
-      WHERE activity_type = 'brick'
-    ''');
-
-    if (kDebugMode) {
-      print('  ✅ Activities table updated with brick support');
+      // Delete the database and throw exception to trigger resync
+      await deleteAndResync();
+      throw DatabaseSchemaException(
+        'Schema mismatch detected (brick constraints). Database deleted - app will resync.',
+        errors: [e.toString()],
+      );
     }
   }
 
