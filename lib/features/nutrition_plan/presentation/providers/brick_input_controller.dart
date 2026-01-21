@@ -341,4 +341,54 @@ class BrickInputController extends _$BrickInputController {
 
     return '${sportNames.join('/')} BRICK';
   }
+
+  /// Initialize form from existing brick metadata
+  /// Called when opening an existing brick activity that needs a nutrition plan
+  void initializeFromBrickMetadata(BrickMetadata metadata, DateTime activityDate) {
+    DebugLogger.info('🧱 BRICK CONTROLLER: Initializing from existing brick metadata');
+
+    // Extract sports and order from segments
+    final sports = <String>{};
+    final sportOrder = <String>[];
+    final segmentInputs = <String, BrickSegmentInput>{};
+
+    for (final segment in metadata.segments) {
+      sports.add(segment.sport);
+      if (!sportOrder.contains(segment.sport)) {
+        sportOrder.add(segment.sport);
+      }
+
+      // Convert BrickSegment to BrickSegmentInput
+      segmentInputs[segment.sport] = BrickSegmentInput(
+        sport: segment.sport,
+        order: segment.order,
+        durationMinutes: segment.durationMinutes,
+        intensity: segment.intensity,
+        // Swimming fields
+        distanceMeters: segment.distanceMeters,
+        pacePer100mSeconds: segment.pacePer100mSeconds,
+        poolOrOpenWater: segment.poolOrOpenWater,
+        waterTempC: segment.waterTempC,
+        // Cycling fields
+        distanceMiles: segment.distanceMiles,
+        speedMph: segment.speedMph,
+        terrain: segment.terrain,
+        indoorOutdoor: segment.indoorOutdoor,
+        elevationGainFt: segment.elevationGainFt,
+        // Running fields
+        paceMinutesPerMile: segment.paceMinutesPerMile,
+      );
+    }
+
+    // Update state with loaded data
+    state = BrickFormState(
+      selectedSports: sports,
+      sportOrder: sportOrder,
+      segmentInputs: segmentInputs,
+      selectedDate: activityDate,
+      selectedTime: TimeOfDay(hour: activityDate.hour, minute: activityDate.minute),
+    );
+
+    DebugLogger.info('🧱 BRICK CONTROLLER: Loaded ${sports.length} segments in order: $sportOrder');
+  }
 }

@@ -625,9 +625,26 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   }
 
   /// Handle View Combined button press on brick group card
-  /// Navigates to activity detail screen for the brick
+  /// Navigates based on whether brick has a nutrition plan:
+  /// - With plan: Go to Activity Detail screen to view combined nutrition
+  /// - Without plan: Go to New Activity screen with Brick tab to complete setup
   void _handleViewCombinedBrick(Activity brick) {
-    context.push('/activity-detail/${brick.id}');
+    if (brick.nutritionPlanData != null) {
+      // Has nutrition plan - go to activity detail screen
+      context.push('/plan', extra: {
+        'mode': 'view',
+        'activityId': brick.id,
+      });
+    } else {
+      // No nutrition plan - go to new activity screen with brick tab
+      // Pass brick metadata to pre-populate the form
+      context.push('/distancepacegut', extra: {
+        'activityId': brick.id,
+        'initialDate': brick.scheduledDateTime,
+        'activityType': 'brick',
+        // Brick metadata will be loaded from the activity by the screen
+      });
+    }
   }
 
   /// Handle Remove Segment button press on brick segment card

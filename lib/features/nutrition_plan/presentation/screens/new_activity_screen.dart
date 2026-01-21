@@ -5,6 +5,9 @@ import '../providers/new_activity_coordinator.dart';
 import '../providers/running_input_controller.dart';
 import '../providers/cycling_input_controller.dart';
 import '../providers/swimming_input_controller.dart';
+import '../providers/brick_input_controller.dart';
+import '../../../activities/data/activities_repository.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../widgets/new_activity/shared/sport_selector.dart';
 import '../widgets/new_activity/shared/new_activity_app_bar.dart';
 import '../widgets/new_activity/shared/new_activity_hero_section.dart';
@@ -157,6 +160,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       case 'swimming':
         _initializeSwimmingController();
         break;
+      case 'brick':
+        _initializeBrickController();
+        break;
       case 'running':
       default:
         _initializeRunningController();
@@ -181,6 +187,8 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         return SportTab.cycling;
       case 'swimming':
         return SportTab.swimming;
+      case 'brick':
+        return SportTab.brick;
       default:
         return null;
     }
@@ -242,6 +250,52 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
     if (widget.timeBeforeMinutes != null) {
       controller.updatePreSwimMinutes(widget.timeBeforeMinutes!);
+    }
+  }
+
+  /// Initialize brick controller from existing brick activity
+  /// Loads the activity by ID and populates the form with brick metadata
+  void _initializeBrickController() {
+    if (widget.activityId == null) {
+      DebugLogger.info('🧱 NEW ACTIVITY: No activityId for brick - starting fresh');
+      return;
+    }
+
+    DebugLogger.info('🧱 NEW ACTIVITY: Loading existing brick activity: ${widget.activityId}');
+
+    // Load the activity asynchronously and initialize the form
+    _loadExistingBrickActivity();
+  }
+
+  /// Load existing brick activity data and populate the form
+  Future<void> _loadExistingBrickActivity() async {
+    try {
+      // Get current user ID
+      final userId = await ref.read(userIdProvider.future);
+
+      final repository = ref.read(activitiesRepositoryProvider);
+      final activity = await repository.getActivityById(userId, widget.activityId!);
+
+      if (activity == null) {
+        DebugLogger.warning('🧱 NEW ACTIVITY: Activity not found: ${widget.activityId}');
+        return;
+      }
+
+      if (activity.brickMetadata == null) {
+        DebugLogger.warning('🧱 NEW ACTIVITY: Activity has no brick metadata: ${widget.activityId}');
+        return;
+      }
+
+      // Initialize the brick controller with existing data
+      final brickController = ref.read(brickInputControllerProvider.notifier);
+      brickController.initializeFromBrickMetadata(
+        activity.brickMetadata!,
+        activity.scheduledDateTime,
+      );
+
+      DebugLogger.info('🧱 NEW ACTIVITY: Brick form initialized from existing activity');
+    } catch (e) {
+      DebugLogger.error('🧱 NEW ACTIVITY: Error loading brick activity: $e');
     }
   }
 
