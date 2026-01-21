@@ -22,7 +22,9 @@ create type gut_training_enum as enum ('low', 'moderate', 'high');
 
 alter type gut_training_enum owner to postgres;
 
-create type activity_status_enum as enum ('planned', 'in_progress', 'completed', 'skipped');
+create type activity_status_enum as enum ('planned', 'in_progress', 'completed', 'skipped', 'archived_for_brick');
+
+comment on type activity_status_enum is 'Activity workflow states. archived_for_brick indicates an activity was combined into a brick workout and should not appear in normal queries.';
 
 alter type activity_status_enum owner to postgres;
 
@@ -42,7 +44,9 @@ create type cycling_goal_enum as enum ('endurance', 'tempo', 'intervals');
 
 alter type cycling_goal_enum owner to postgres;
 
-create type category_enum as enum ('before_run', 'during_run', 'after_run');
+create type category_enum as enum ('before_run', 'during_run', 'after_run', 'transition');
+
+comment on type category_enum is 'Food category phases for multi-sport workouts. Includes: before, during_run, during_bike, during_swim, after, transition (for brick T1/T2).';
 
 alter type category_enum owner to postgres;
 
@@ -58,7 +62,9 @@ create type event_subtype_enum as enum ('5k', '10k', '15k', '10_mile', 'half_mar
 
 alter type event_subtype_enum owner to postgres;
 
-create type activity_type_enum as enum ('running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport');
+create type activity_type_enum as enum ('running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport', 'brick');
+
+comment on type activity_type_enum is 'Supported activity types: running, cycling, swimming, triathlon, duathlon, multisport, brick. Brick is a multi-sport workout with 2-3 sequential segments.';
 
 alter type activity_type_enum owner to postgres;
 
@@ -521,10 +527,15 @@ create table activities
     workout_subtype                text,
     pace_min_minutes_per_mile      real,
     pace_max_minutes_per_mile      real,
-    distance_meters                real
+    distance_meters                real,
+    brick_metadata                 jsonb,
+    brick_id                       text
+        constraint fk_activities_brick_id
+            references activities
+            on delete set null
 );
 
-comment on table activities is 'All calendar entries including workouts and events';
+comment on table activities is 'User activities including single-sport (run/bike/swim) and multi-sport (brick/triathlon/duathlon). Brick activities store segment details in brick_metadata and link to archived originals via brick_id.';
 
 comment on column activities.status is 'Current status: planned, in_progress, completed, skipped';
 
@@ -560,6 +571,10 @@ comment on column activities.nutrition_plan_data is 'Full JSON payload for the n
 
 comment on column activities.activity_type is 'Sport category using shared activity_type enum: running, cycling, swimming, triathlon, duathlon, multisport';
 
+comment on column activities.brick_metadata is 'For brick activities: stores segment_order, segments array, original_activity_ids, created_from_existing, and total_duration_minutes. See BrickMetadata domain model for structure.';
+
+comment on column activities.brick_id is 'For archived activities: references the parent brick activity. When brick is ungrouped, this is set to NULL and status is restored to planned.';
+
 alter table activities
     owner to postgres;
 
@@ -580,6 +595,14 @@ create index idx_activities_status
 create index idx_activities_provider_sync
     on activities (synced_from_provider, provider_workout_id)
     where (synced_from_provider IS NOT NULL);
+
+create index idx_activities_brick_id
+    on activities (brick_id)
+    where (brick_id IS NOT NULL);
+
+create index idx_activities_brick_type
+    on activities (activity_type)
+    where (activity_type = 'brick'::activity_type_enum);
 
 grant delete, insert, references, select, trigger, truncate, update on activities to anon;
 

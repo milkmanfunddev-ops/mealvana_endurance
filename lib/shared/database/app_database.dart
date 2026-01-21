@@ -294,11 +294,6 @@ class AppDatabase extends _$AppDatabase {
       print('🔄 Recreating activities table with brick CHECK constraints...');
     }
 
-    // First, convert any snake_case status values to camelCase
-    // This handles data that may have been synced from Supabase with snake_case values
-    await customStatement("UPDATE activities SET status = 'inProgress' WHERE status = 'in_progress'");
-    await customStatement("UPDATE activities SET status = 'archivedForBrick' WHERE status = 'archived_for_brick'");
-
     // Recreate the table with correct CHECK constraints
     // SQLite doesn't allow modifying CHECK constraints, so we must recreate
     await customStatement('''
