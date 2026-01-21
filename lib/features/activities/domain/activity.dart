@@ -152,7 +152,7 @@ class Activity {
       'activityType': activityType.name,
       'title': title,
       'scheduledDateTime': scheduledDateTime.toIso8601String(),
-      'status': status.name,
+      'status': status.toDbValue,
       'distanceMiles': distanceMiles,
       'durationMinutes': durationMinutes,
       'paceTargetMinutesPerMile': paceTargetMinutesPerMile,
@@ -403,6 +403,47 @@ enum ActivityStatus {
   completed,   // Activity completed
   skipped,     // Activity skipped/cancelled
   archivedForBrick, // Activity archived as part of a brick workout
+}
+
+/// Extension to convert ActivityStatus to/from snake_case database values
+extension ActivityStatusDb on ActivityStatus {
+  /// Convert to snake_case string for database storage (matches Supabase enum)
+  String get toDbValue {
+    switch (this) {
+      case ActivityStatus.draft:
+        return 'draft';
+      case ActivityStatus.planned:
+        return 'planned';
+      case ActivityStatus.inProgress:
+        return 'in_progress';
+      case ActivityStatus.completed:
+        return 'completed';
+      case ActivityStatus.skipped:
+        return 'skipped';
+      case ActivityStatus.archivedForBrick:
+        return 'archived_for_brick';
+    }
+  }
+
+  /// Parse from snake_case database value
+  static ActivityStatus fromDbValue(String value) {
+    switch (value) {
+      case 'draft':
+        return ActivityStatus.draft;
+      case 'planned':
+        return ActivityStatus.planned;
+      case 'in_progress':
+        return ActivityStatus.inProgress;
+      case 'completed':
+        return ActivityStatus.completed;
+      case 'skipped':
+        return ActivityStatus.skipped;
+      case 'archived_for_brick':
+        return ActivityStatus.archivedForBrick;
+      default:
+        return ActivityStatus.planned; // Safe default
+    }
+  }
 }
 
 /// Intensity level enum
