@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/activities_controller.dart';
 import '../providers/brick_creation_available_provider.dart';
@@ -272,6 +273,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                             onUngroup: () => _handleUngroupBrick(activity.id),
                             onViewCombined: () => _handleViewCombinedBrick(activity),
                             onRemoveSegment: (segmentIndex) => _handleRemoveSegment(activity.id, segmentIndex),
+                            onDelete: () => _handleDeleteBrick(activity.id),
                           );
                         }
 
@@ -532,7 +534,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   /// Shows confirmation dialog and ungroups brick back to standalone activities
   Future<void> _handleUngroupBrick(String brickId) async {
     final messenger = ScaffoldMessenger.of(context);
-    final actionsController = ref.read(brickActionsControllerProvider.notifier);
 
     // Get segment count for dialog message
     final activitiesState = ref.read(activitiesControllerProvider);
@@ -562,6 +563,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       return; // User cancelled
     }
 
+    // Check if widget is still mounted after async gap
+    if (!mounted) return;
+
     try {
       // Show loading indicator
       messenger.showSnackBar(
@@ -570,6 +574,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           duration: Duration(seconds: 2),
         ),
       );
+
+      // Read controller FRESH after async gap to avoid disposal issues
+      final actionsController = ref.read(brickActionsControllerProvider.notifier);
 
       // Call controller to ungroup brick
       await actionsController.ungroupBrick(brickId);
@@ -618,16 +625,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   }
 
   /// Handle View Combined button press on brick group card
-  /// Navigates to activity details screen or new activity screen based on nutrition plan status
+  /// Navigates to activity detail screen for the brick
   void _handleViewCombinedBrick(Activity brick) {
-    // TODO: Implement navigation to brick detail screen (Phase 5)
-    // For now, show a placeholder message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('View Combined navigation not yet implemented (Phase 5)'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    context.push('/activity-detail/${brick.id}');
   }
 
   /// Handle Remove Segment button press on brick segment card
@@ -672,5 +672,81 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  /// Handle Delete Brick button press
+  /// Shows confirmation dialog and deletes brick workout and nutrition plan
+  Future<void> _handleDeleteBrick(String brickId) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Brick Workout?'),
+        content: const Text(
+          'Delete this brick workout? This will also delete the nutrition plan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return; // User cancelled
+    }
+
+    // Check if widget is still mounted after async gap
+    if (!mounted) return;
+
+    try {
+      // Show loading indicator
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Deleting brick...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Read controller FRESH after async gap to avoid disposal issues
+      final activitiesController = ref.read(activitiesControllerProvider.notifier);
+
+      // Call controller to delete brick
+      await activitiesController.deleteActivity(brickId);
+
+      // Check if still mounted after async operation
+      if (!mounted) return;
+
+      // Refresh activities list
+      ref.invalidate(activitiesControllerProvider);
+
+      // Show success message
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Brick deleted successfully'),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      // Unknown error - show generic error message
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error deleting brick: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 }

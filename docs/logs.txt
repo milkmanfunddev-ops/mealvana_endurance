@@ -1,13 +1,13 @@
 Launching lib/main_dev.dart on iphone 15 pro max in debug mode...
-Xcode build done.                                           16.8s
-Connecting to VM Service at ws://127.0.0.1:51837/mRtgKQGED34=/ws
+Xcode build done.                                           18.2s
+Connecting to VM Service at ws://127.0.0.1:55180/niH6O3wLl4k=/ws
 Connected to the VM Service.
 flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 12:17:31.505 (+0:00:00.005285)\^[[0m
+flutter: \^[[38;5;12m│ 14:18:05.379 (+0:00:00.004074)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] AuthListenerService initialized - listening for auth state changes\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
@@ -15,7 +15,7 @@ flutter: \^[[38;5;12m┌──────────────────�
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 12:17:31.710 (+0:00:00.209850)\^[[0m
+flutter: \^[[38;5;12m│ 14:18:05.571 (+0:00:00.195952)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
 flutter: \^[[38;5;12m│ 💡 Data: {event: initialSession, has_session: true, user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
@@ -24,7 +24,7 @@ flutter: \^[[38;5;12m┌──────────────────�
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 12:17:32.637 (+0:00:01.137549)\^[[0m
+flutter: \^[[38;5;12m│ 14:18:06.692 (+0:00:01.316544)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [VERSION_CHECK] Version check passed - continuing with normal startup\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
@@ -34,7 +34,7 @@ flutter: ┌──────────────────────�
 flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
 flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:135:5)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 12:17:33.607 (+0:00:02.106873)
+flutter: │ 14:18:07.476 (+0:00:02.101173)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 flutter: │ 🐛 [SYNC_COORDINATOR] Skipping sync - data is fresh
 flutter: │ 🐛 Data: {repoKey: activities}
@@ -43,7 +43,7 @@ flutter: ┌──────────────────────�
 flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
 flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:135:5)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 12:17:33.609 (+0:00:02.108813)
+flutter: │ 14:18:07.485 (+0:00:02.110257)
 flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 flutter: │ 🐛 [SYNC_COORDINATOR] Skipping sync - data is fresh
 flutter: │ 🐛 Data: {repoKey: activities}
@@ -54,93 +54,61 @@ flutter: \^[[38;5;12m┌──────────────────�
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 12:21:01.898 (+0:03:30.398207)\^[[0m
+flutter: \^[[38;5;12m│ 14:18:17.751 (+0:00:12.376131)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [BRICK_ACTIONS_CONTROLLER] Creating brick from selected activities\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {activityCount: 2, segmentOrder: [384c741b-1ade-477c-99e4-c9d182b85ac1, b2e23811-e67a-49e4-9d76-726868c5b6a0], activityIds: [384c741b-1ade-477c-99e4-c9d182b85ac1, b2e23811-e67a-49e4-9d76-726868c5b6a0], sportTypes: [swimming, running]}\^[[0m
+flutter: \^[[38;5;12m│ 💡 [BRICK_ACTIONS_CONTROLLER] Ungrouping brick activity\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {brickId: 4dcbe7cb-f0ae-406b-b14d-f6c0cfd18fc3}\^[[0m
+flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:167:5)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ 14:18:17.775 (+0:00:12.399436)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ [ACTIVITIES_REPOSITORY] No archived activities found for brick\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ Data: {brickId: 4dcbe7cb-f0ae-406b-b14d-f6c0cfd18fc3}\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
+flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 14:18:17.775 (+0:00:12.400292)\^[[0m
+flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_REPOSITORY] Restored archived activities\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {brickId: 4dcbe7cb-f0ae-406b-b14d-f6c0cfd18fc3, restoredCount: 0}\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 12:21:01.902 (+0:03:30.402350)\^[[0m
+flutter: \^[[38;5;12m│ 14:18:17.780 (+0:00:12.405212)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_SERVICE] Creating brick activity from existing activities\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {activityCount: 2, segmentOrder: [384c741b-1ade-477c-99e4-c9d182b85ac1, b2e23811-e67a-49e4-9d76-726868c5b6a0], activityIds: [384c741b-1ade-477c-99e4-c9d182b85ac1, b2e23811-e67a-49e4-9d76-726868c5b6a0]}\^[[0m
+flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_REPOSITORY] Deleted brick activity\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {brickId: 4dcbe7cb-f0ae-406b-b14d-f6c0cfd18fc3}\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:135:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 12:21:01.940 (+0:03:30.439904)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [ACTIVITIES_REPOSITORY] Saving activity without nutrition plan data
-flutter: │ 🐛 Data: {activityId: , hasNutritionPlan: false}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:135:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 12:21:01.959 (+0:03:30.459253)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [ACTIVITIES_REPOSITORY] Created new activity
-flutter: │ 🐛 Data: {activityId: 1597c3d8-a1a9-4d85-9c2b-65e7dd824720}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 12:21:01.960 (+0:03:30.460527)\^[[0m
+flutter: \^[[38;5;12m│ 14:18:27.586 (+0:00:22.210824)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [ACTIVITIES_REPOSITORY] Created brick activity\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {brickId: 1597c3d8-a1a9-4d85-9c2b-65e7dd824720, segmentCount: 2, totalDuration: 35}\^[[0m
+flutter: \^[[38;5;12m│ 💡 [BRICK_ACTIONS_CONTROLLER] Ungrouping brick activity\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {brickId: 4dcbe7cb-f0ae-406b-b14d-f6c0cfd18fc3}\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)
-flutter: │ #1   PrettyAppLogger.debug (package:mealvana_endurance/shared/services/logging_service.dart:135:5)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 12:21:01.963 (+0:03:30.462749)
-flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-flutter: │ 🐛 [ACTIVITIES_REPOSITORY] Saving activity without nutrition plan data
-flutter: │ 🐛 Data: {activityId: 384c741b-1ade-477c-99e4-c9d182b85ac1, hasNutritionPlan: false}
-flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ SqliteException(275): while executing statement, CHECK constraint failed: status IN ('draft', 'planned', 'in_progress', 'completed', 'skipped', 'archived_for_brick'), constraint failed (code 275)\^[[0m
-flutter: \^[[38;5;196m│   Causing statement: UPDATE "activities" SET "id" = ?, "user_id" = ?, "activity_type" = ?, "title" = ?, "scheduled_date_time" = ?, "status" = ?, "distance_miles" = ?, "duration_minutes" = ?, "pace_target_minutes_per_mile" = ?, "intensity_level" = ?, "cycling_speed_mph" = ?, "cycling_terrain" = ?, "cycling_indoor_outdoor" = ?, "cycling_elevation_gain_ft" = ?, "cycling_session_goal" = ?, "swimming_pace_per_100m_seconds" = ?, "swimming_pool_or_open_water" = ?, "swimming_water_temp_c" = ?, "intensity_target" = ?, "time_before_minutes" = ?, "reminder_enabled" = ?, "reminder_days_before" = ?, "reminder_time_of_day" = ?, "reminder_recurring" = ?, "needs_upload" = ?, "local_updated_at" = ?, "synced_from_provider" = ?, "provider_workout_id" = ?, "provider_workout_url" = ?, "last_synced_at" = ?, "workout_subtype" = ?, "pace_min_minutes_per_mile" = ?, "pace_max_minutes_per_mile" = ?, "completed_at" = ?, "completion_rating" = ?, "completion_notes" = ?, "actual_distance_miles" = ?, "actu<…>
+flutter: \^[[38;5;196m│ Bad state: Brick activity not found: 4dcbe7cb-f0ae-406b-b14d-f6c0cfd18fc3\^[[0m
 flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ #0   package:sqlite3/src/implementation/exception.dart 95:3                                                     throwException\^[[0m
-flutter: \^[[38;5;196m│ #1   package:sqlite3/src/implementation/statement.dart 109:7                                                    StatementImplementation._execute\^[[0m
-flutter: \^[[38;5;196m│ #2   package:sqlite3/src/implementation/statement.dart 289:5                                                    StatementImplementation.executeWith\^[[0m
-flutter: \^[[38;5;196m│ #3   package:sqlite3/src/statement.dart 81:12                                                                   CommonPreparedStatement.execute\^[[0m
-flutter: \^[[38;5;196m│ #4   package:drift/src/sqlite3/database.dart 149:14                                                             Sqlite3Delegate.runWithArgsSync\^[[0m
-flutter: \^[[38;5;196m│ #5   package:drift/native.dart 439:7                                                                            _NativeDelegate.runUpdate.<fn>\^[[0m
-flutter: \^[[38;5;196m│ #6   package:drift/native.dart 438:19                                                                           _NativeDelegate.runUpdate\^[[0m
-flutter: \^[[38;5;196m│ #7   package:drift/src/runtime/executor/helpers/engines.dart 97:19                                              _BaseExecutor.runDelete.<fn>\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 12:21:01.987 (+0:03:30.487368)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [ACTIVITIES_REPOSITORY] Failed to create brick from activities\^[[0m
-flutter: \^[[38;5;196m│ ⛔ Data: {activityCount: 2, segmentOrder: [384c741b-1ade-477c-99e4-c9d182b85ac1, b2e23811-e67a-49e4-9d76-726868c5b6a0]}\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🔧 Schema error detected - deleting database and resyncing (one-time recovery)
-flutter:    Context: createBrickFromActivities
-flutter:    Error: SqliteException(275): while executing statement, CHECK constraint failed: status IN ('draft', 'planned', 'in_progress', 'completed', 'skipped', 'archived_for_brick'), constraint failed (code 275)
-  Causing statement: UPDATE "activities" SET "id" = ?, "user_id" = ?, "activity_type" = ?, "title" = ?, "scheduled_date_time" = ?, "status" = ?, "distance_miles" = ?, "duration_minutes" = ?, "pace_target_minutes_per_mile" = ?, "intensity_level" = ?, "cycling_speed_mph" = ?, "cycling_terrain" = ?, "cycling_indoor_outdoor" = ?, "cycling_elevation_gain_ft" = ?, "cycling_session_goal" = ?, "swimming_pace_per_100m_seconds" = ?, "swimming_pool_or_open_water" = ?, "swimming_water_temp_c" = ?, "intensity_target" = ?, "time_before_minutes" = ?, "reminder_enabled" = ?, "reminder_days_before" = ?, "reminder_time_of_day" = ?, "reminder_recurring" = ?, "needs_upload" = ?, "local_updated_at" = ?, "synced_from_provider" = ?, "provider_workout_id" = ?, "provider_workout_url" = ?, "last_synced_at" = ?, "wo<…>
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ DatabaseSchemaException: Schema mismatch detected. Database deleted - app will resync.\^[[0m
-flutter: \^[[38;5;196m│ Errors: SqliteException(275): while executing statement, CHECK constraint failed: status IN ('draft', 'planned', 'in_progress', 'completed', 'skipped', 'archived_for_brick'), constraint failed (code 275)\^[[0m
-flutter: \^[[38;5;196m│   Causing statement: UPDATE "activities" SET "id" = ?, "user_id" = ?, "activity_type" = ?, "title" = ?, "scheduled_date_time" = ?, "status" = ?, "distance_miles" = ?, "duration_minutes" = ?, "pace_target_minutes_per_mile" = ?, "intensity_level" = ?, "cycling_speed_mph" = ?, "cycling_terrain" = ?, "cycling_indoor_outdoor" = ?, "cycling_elevation_gain_ft" = ?, "cycling_session_goal" = ?, "swimming_pace_per_100m_seconds" = ?, "swimming_pool_or_open_water" = ?, "swimming_water_temp_c" = ?, "intensity_target" = ?, "time_before_minutes" = ?, "reminder_enabled" = ?, "reminder_days_before" = ?, "reminder_time_of_day" = ?, "reminder_recurring" = ?, "needs_upload" = ?, "local_updated_at" = ?, "synced_from_provider" = ?, "provider_workout_id" = ?, "provider_workout_url" = ?, "last_synced_at" = ?, "workout_subtype" = ?, "pace_min_minutes_per_mile" = ?, "pace_max_minutes_per_mile" = ?, "completed_at" = ?, "completion_rating" = ?, "completion_notes" = ?, "actual_distance_miles" = ?, "actu<…>
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ #0   AppDatabase.handleSchemaError (package:mealvana_endurance/shared/database/app_database.dart:1739:5)\^[[0m
+flutter: \^[[38;5;196m│ #0   ActivitiesRepository.ungroupBrick.<anonymous closure> (package:mealvana_endurance/features/activities/data/activities_repository.dart:1487:11)\^[[0m
 flutter: \^[[38;5;196m│ #1   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #2   ActivitiesRepository.createBrickFromActivities (package:mealvana_endurance/features/activities/data/activities_repository.dart:1446:9)\^[[0m
+flutter: \^[[38;5;196m│ #2   DatabaseConnectionUser.transaction.<anonymous closure>.<anonymous closure> (package:drift/src/runtime/api/connection_user.dart:505:26)\^[[0m
 flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #4   ActivitiesService.createBrickActivity (package:mealvana_endurance/features/activities/application/activities_service.dart:368:14)\^[[0m
+flutter: \^[[38;5;196m│ #4   DatabaseConnectionUser.transaction (package:drift/src/runtime/api/connection_user.dart:496:12)\^[[0m
 flutter: \^[[38;5;196m│ #5   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m│ #6   BrickActionsController.createBrickFromSelection (package:mealvana_endurance/features/activities/presentation/providers/brick_actions_controller.dart:70:29)\^[[0m
+flutter: \^[[38;5;196m│ #6   ActivitiesRepository.ungroupBrick (package:mealvana_endurance/features/activities/data/activities_repository.dart:1480:7)\^[[0m
 flutter: \^[[38;5;196m│ #7   <asynchronous suspension>\^[[0m
 flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 12:21:02.029 (+0:03:30.529150)\^[[0m
+flutter: \^[[38;5;196m│ 14:18:27.604 (+0:00:22.228395)\^[[0m
 flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [ACTIVITIES_SERVICE] Error creating brick activity\^[[0m
+flutter: \^[[38;5;196m│ ⛔ [ACTIVITIES_REPOSITORY] Failed to ungroup brick\^[[0m
+flutter: \^[[38;5;196m│ ⛔ Data: {brickId: 4dcbe7cb-f0ae-406b-b14d-f6c0cfd18fc3}\^[[0m
 flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m

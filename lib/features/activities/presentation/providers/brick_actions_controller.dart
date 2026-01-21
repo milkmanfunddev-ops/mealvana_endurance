@@ -51,7 +51,13 @@ class BrickActionsController extends _$BrickActionsController {
     required List<Activity> activities,
     required List<String> segmentOrder,
   }) async {
-    _logger.info(
+    // CRITICAL: Capture references at start to avoid "ref disposed" errors
+    // if the provider rebuilds during async operations
+    final service = _service;
+    final logger = _logger;
+    final schemaRecovery = _schemaRecovery;
+
+    logger.info(
       'Creating brick from selected activities',
       context: 'BRICK_ACTIONS_CONTROLLER',
       data: {
@@ -70,17 +76,16 @@ class BrickActionsController extends _$BrickActionsController {
     try {
       // Use schema recovery wrapper - automatically handles schema errors
       // by reinitializing database and retrying (user just sees loading spinner)
-      final brickActivity = await _schemaRecovery.withSchemaRecovery(
-        operation: () => _service.createBrickActivity(
+      final brickActivity = await schemaRecovery.withSchemaRecovery(
+        operation: () => service.createBrickActivity(
           activities: activities,
           segmentOrder: segmentOrder,
         ),
         onRetryNeeded: () async {
-          // Invalidate dependent providers so they use the new database
-          ref.invalidate(activitiesRepositoryProvider);
-          ref.invalidate(activitiesServiceProvider);
-          // Retry the operation with fresh providers
-          return ref.read(activitiesServiceProvider).createBrickActivity(
+          // SchemaRecoveryService uses its own ref for invalidation
+          // We just need to get fresh service instance and retry
+          final freshService = ref.read(activitiesServiceProvider);
+          return freshService.createBrickActivity(
             activities: activities,
             segmentOrder: segmentOrder,
           );
@@ -88,7 +93,7 @@ class BrickActionsController extends _$BrickActionsController {
         context: 'BRICK_ACTIONS_CONTROLLER.createBrickFromSelection',
       );
 
-      _logger.info(
+      logger.info(
         'Successfully created brick activity',
         context: 'BRICK_ACTIONS_CONTROLLER',
         data: {
@@ -102,7 +107,7 @@ class BrickActionsController extends _$BrickActionsController {
       // Re-throw validation exceptions as-is
       rethrow;
     } catch (e, stackTrace) {
-      _logger.error(
+      logger.error(
         'Error creating brick from selection',
         context: 'BRICK_ACTIONS_CONTROLLER',
         error: e,
@@ -137,24 +142,29 @@ class BrickActionsController extends _$BrickActionsController {
   /// Throws:
   /// - BrickUngroupException if ungroup fails
   Future<void> ungroupBrick(String brickId) async {
+    // CRITICAL: Capture references at start to avoid "ref disposed" errors
+    // if the provider rebuilds during async operations
+    final repository = _repository;
+    final logger = _logger;
+
     try {
-      _logger.info(
+      logger.info(
         'Ungrouping brick activity',
         context: 'BRICK_ACTIONS_CONTROLLER',
         data: {'brickId': brickId},
       );
 
       // Call repository to ungroup brick
-      await _repository.ungroupBrick(brickId);
+      await repository.ungroupBrick(brickId);
 
-      _logger.info(
+      logger.info(
         'Successfully ungrouped brick activity',
         context: 'BRICK_ACTIONS_CONTROLLER',
         data: {'brickId': brickId},
       );
     } on StateError catch (e, stackTrace) {
       // Brick not found in database
-      _logger.error(
+      logger.error(
         'Brick not found when attempting to ungroup',
         context: 'BRICK_ACTIONS_CONTROLLER',
         error: e,
@@ -163,7 +173,7 @@ class BrickActionsController extends _$BrickActionsController {
       );
       throw BrickUngroupException.brickNotFound(brickId);
     } catch (e, stackTrace) {
-      _logger.error(
+      logger.error(
         'Error ungrouping brick',
         context: 'BRICK_ACTIONS_CONTROLLER',
         error: e,

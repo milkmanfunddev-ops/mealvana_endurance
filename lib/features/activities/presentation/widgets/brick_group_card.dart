@@ -8,12 +8,13 @@ import 'brick_segment_card.dart';
 /// Brick group card widget
 ///
 /// Displays a brick workout as a grouped card with header, subtitle,
-/// and nested segment cards. Provides Ungroup and View Combined actions.
+/// and nested segment cards. The entire card is tappable for navigation.
+/// Provides Ungroup, Delete, and Remove Segment actions.
 ///
 /// Design Specs:
 /// - Header background: Dark purple/navy (Blackberry)
 /// - Chain link icon: Orange, 24px
-/// - "BRICK WORKOUT" text: Orange, Compadre 14px
+/// - "BRICK" text: Orange, Compadre 14px
 /// - Buttons: Orange outline, 12px text
 /// - Subtitle: Gray text, Apercu 12px
 /// - Nested segment cards: Slightly lighter background
@@ -24,12 +25,14 @@ class BrickGroupCard extends StatelessWidget {
     required this.onUngroup,
     required this.onViewCombined,
     required this.onRemoveSegment,
+    required this.onDelete,
   });
 
   final Activity brick;
   final VoidCallback onUngroup;
   final VoidCallback onViewCombined;
   final Function(int segmentIndex) onRemoveSegment;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -44,25 +47,29 @@ class BrickGroupCard extends StatelessWidget {
     return Semantics(
       label: semanticLabel,
       container: true,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.blackberryLight : Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: (isDark ? AppColors.cream : AppColors.blackberry)
-                .withValues(alpha: 0.1),
-            width: 1,
+      child: InkWell(
+        onTap: onViewCombined,
+        borderRadius: BorderRadius.circular(15),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.blackberryLight : Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: (isDark ? AppColors.cream : AppColors.blackberry)
+                  .withValues(alpha: 0.1),
+              width: 1,
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(context, isDark),
-            _buildSubtitle(isDark),
-            _buildSegments(),
-          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(context, isDark),
+              _buildSubtitle(isDark),
+              _buildSegments(),
+            ],
+          ),
         ),
       ),
     );
@@ -90,10 +97,10 @@ class BrickGroupCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
 
-          // "BRICK WORKOUT" text
+          // "BRICK" text
           const Expanded(
             child: Text(
-              'BRICK WORKOUT',
+              'BRICK',
               style: TextStyle(
                 fontFamily: 'Compadre',
                 fontSize: 14,
@@ -109,6 +116,24 @@ class BrickGroupCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Semantics(
+                label: 'Delete brick workout',
+                button: true,
+                child: SizedBox(
+                  height: 44, // Ensure minimum touch target height
+                  child: IconButton(
+                    icon: const FaIcon(
+                      FontAwesomeIcons.xmark,
+                      size: 18,
+                      color: AppColors.orange,
+                    ),
+                    onPressed: onDelete,
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Semantics(
                 label: 'Ungroup brick into separate activities',
                 button: true,
                 child: SizedBox(
@@ -116,19 +141,6 @@ class BrickGroupCard extends StatelessWidget {
                   child: KyleSecondaryButtonSmall(
                     text: 'Ungroup',
                     onPressed: onUngroup,
-                    variant: SecondaryButtonVariant.orange,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Semantics(
-                label: 'View combined nutrition plan',
-                button: true,
-                child: SizedBox(
-                  height: 44, // Ensure minimum touch target height
-                  child: KyleSecondaryButtonSmall(
-                    text: 'View Combined',
-                    onPressed: onViewCombined,
                     variant: SecondaryButtonVariant.orange,
                   ),
                 ),

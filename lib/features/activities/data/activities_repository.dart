@@ -395,8 +395,12 @@ class ActivitiesRepository with SyncableRepository {
       );
 
       // CRITICAL FIX: Use case-insensitive comparison for userId
+      // Exclude deleted activities and archived brick originals
       final query = _database.select(_database.activitiesTable)
-        ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()) & tbl.deletedAt.isNull())
+        ..where((tbl) =>
+            tbl.userId.lower().equals(userId.toLowerCase()) &
+            tbl.deletedAt.isNull() &
+            tbl.status.equals('archived_for_brick').not())
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();
@@ -518,11 +522,13 @@ class ActivitiesRepository with SyncableRepository {
   Future<domain.Activity?> getActivityById(String userId, String activityId) async {
     try {
       // CRITICAL FIX: Use case-insensitive comparison for userId
+      // Exclude deleted activities and archived brick originals
       final query = _database.select(_database.activitiesTable)
         ..where((tbl) =>
             tbl.userId.lower().equals(userId.toLowerCase()) &
             tbl.id.equals(activityId) &
-            tbl.deletedAt.isNull());
+            tbl.deletedAt.isNull() &
+            tbl.status.equals('archived_for_brick').not());
 
       final activity = await query.getSingleOrNull();
       return activity != null ? _mapToActivityDomain(activity) : null;
@@ -545,11 +551,13 @@ class ActivitiesRepository with SyncableRepository {
   ) async {
     try {
       // CRITICAL FIX: Use case-insensitive comparison for userId
+      // Exclude deleted activities and archived brick originals
       final query = _database.select(_database.activitiesTable)
         ..where((tbl) =>
             tbl.userId.lower().equals(userId.toLowerCase()) &
             tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
-            tbl.deletedAt.isNull())
+            tbl.deletedAt.isNull() &
+            tbl.status.equals('archived_for_brick').not())
         ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();
@@ -578,12 +586,14 @@ class ActivitiesRepository with SyncableRepository {
     try {
       // CRITICAL: Filter by user_id to allow per-user deduplication
       // Without this, User B cannot import workouts that User A already imported
+      // Exclude deleted activities and archived brick originals
       final query = _database.select(_database.activitiesTable)
         ..where((tbl) =>
             tbl.userId.lower().equals(userId.toLowerCase()) &
             tbl.syncedFromProvider.equals(provider) &
             tbl.providerWorkoutId.equals(providerWorkoutId) &
-            tbl.deletedAt.isNull());
+            tbl.deletedAt.isNull() &
+            tbl.status.equals('archived_for_brick').not());
 
       final activity = await query.getSingleOrNull();
       return activity != null ? _mapToActivityDomain(activity) : null;
@@ -1240,9 +1250,12 @@ class ActivitiesRepository with SyncableRepository {
   /// the user profile was finalized.
   Future<List<domain.Activity>> getActivitiesByProvider(String provider) async {
     try {
+      // Exclude deleted activities and archived brick originals
       final query = _database.select(_database.activitiesTable)
         ..where((tbl) =>
-            tbl.syncedFromProvider.equals(provider) & tbl.deletedAt.isNull());
+            tbl.syncedFromProvider.equals(provider) &
+            tbl.deletedAt.isNull() &
+            tbl.status.equals('archived_for_brick').not());
 
       final results = await query.get();
       return results.map(_mapToActivityDomain).toList();
