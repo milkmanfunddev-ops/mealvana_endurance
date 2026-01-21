@@ -56,18 +56,19 @@ COMMENT ON COLUMN activities.brick_metadata IS 'For brick activities: stores seg
 -- Note: Using TEXT type to match activities.id column type
 -- ============================================================================
 
-ALTER TABLE activities
-ADD COLUMN IF NOT EXISTS brick_id TEXT DEFAULT NULL;
+-- Drop existing constraint and column if they exist (cleanup from failed migrations)
+ALTER TABLE activities DROP CONSTRAINT IF EXISTS fk_activities_brick_id;
+ALTER TABLE activities DROP COLUMN IF EXISTS brick_id;
+
+-- Add brick_id as TEXT to match activities.id type
+ALTER TABLE activities ADD COLUMN brick_id TEXT DEFAULT NULL;
 
 -- Add foreign key constraint (ON DELETE SET NULL to preserve archived activities if brick is deleted)
-DO $$ BEGIN
-  ALTER TABLE activities
-  ADD CONSTRAINT fk_activities_brick_id
-  FOREIGN KEY (brick_id)
-  REFERENCES activities(id)
-  ON DELETE SET NULL;
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+ALTER TABLE activities
+ADD CONSTRAINT fk_activities_brick_id
+FOREIGN KEY (brick_id)
+REFERENCES activities(id)
+ON DELETE SET NULL;
 
 COMMENT ON COLUMN activities.brick_id IS 'For archived activities: references the parent brick activity. When brick is ungrouped, this is set to NULL and status is restored to planned.';
 
