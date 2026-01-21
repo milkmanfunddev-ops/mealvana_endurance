@@ -121,31 +121,31 @@ class BrickConfirmationDialog extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
 
             // Info message
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.electrolyte.withValues(alpha: 0.1),
-                borderRadius: AppRadius.inputRadius,
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    FontAwesomeIcons.circleInfo,
-                    size: AppIconSizes.sm,
-                    color: AppColors.electrolyte,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'Original activities will be archived',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Container(
+            //   padding: const EdgeInsets.all(AppSpacing.md),
+            //   decoration: BoxDecoration(
+            //     color: AppColors.electrolyte.withValues(alpha: 0.1),
+            //     borderRadius: AppRadius.inputRadius,
+            //   ),
+            //   child: Row(
+            //     children: [
+            //       const Icon(
+            //         FontAwesomeIcons.circleInfo,
+            //         size: AppIconSizes.sm,
+            //         color: AppColors.electrolyte,
+            //       ),
+            //       const SizedBox(width: AppSpacing.sm),
+            //       Expanded(
+            //         child: Text(
+            //           'Original activities will be archived',
+            //           style: AppTextStyles.bodySmall.copyWith(
+            //             color: Theme.of(context).colorScheme.onSurfaceVariant,
+            //           ),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
 
             const SizedBox(height: AppSpacing.lg),
 

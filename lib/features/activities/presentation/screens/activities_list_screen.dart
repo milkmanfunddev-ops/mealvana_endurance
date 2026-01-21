@@ -190,8 +190,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           return _isSameDay(carbDay.planDate, selectedDate);
         }).toList();
 
-        final hasItems = selectedDateActivities.isNotEmpty || selectedDateCarbDays.isNotEmpty;
-
         return RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(activitiesControllerProvider);
@@ -220,67 +218,76 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                   color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.2),
                 ),
               ),
-              // Section Header with Create Brick button
-              if (hasItems)
+              // Carb Loading Days Section (separate from activities)
+              if (selectedDateCarbDays.isNotEmpty) ...[
+                const SliverToBoxAdapter(
+                  child: SectionHeaderText(text: "Carb Loading"),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => CarbLoadingDayCard(carbDay: selectedDateCarbDays[index]),
+                      childCount: selectedDateCarbDays.length,
+                    ),
+                  ),
+                ),
+              ],
+              // Activities Section Header with Create Brick button
+              if (selectedDateActivities.isNotEmpty)
                 SliverToBoxAdapter(
                   child: _buildTodaysActivitiesHeader(
                     activities,
                     selectedDate,
                   ),
                 ),
-              // Activities and Carb Days List
-              if (!hasItems)
+              // Activities List (only activities, not carb days)
+              if (selectedDateActivities.isEmpty && selectedDateCarbDays.isEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
                     child: _buildEmptyState(selectedDate),
                   ),
                 )
-              else
+              else if (selectedDateActivities.isNotEmpty)
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        final carbDayCount = selectedDateCarbDays.length;
-                        if (index < carbDayCount) {
-                          return CarbLoadingDayCard(carbDay: selectedDateCarbDays[index]);
-                        } else {
-                          final activityIndex = index - carbDayCount;
-                          final activity = selectedDateActivities[activityIndex];
+                        final activity = selectedDateActivities[index];
 
-                          // Get selection mode state
-                          final selectionState = ref.watch(brickSelectionControllerProvider);
-                          final isSelectionMode = selectionState.isSelectionMode;
-                          final isSelected = ref.read(brickSelectionControllerProvider.notifier)
-                              .isActivitySelected(activity.id);
-                          final selectionOrder = ref.read(brickSelectionControllerProvider.notifier)
-                              .getSelectionOrder(activity.id);
+                        // Get selection mode state
+                        final selectionState = ref.watch(brickSelectionControllerProvider);
+                        final isSelectionMode = selectionState.isSelectionMode;
+                        final isSelected = ref.read(brickSelectionControllerProvider.notifier)
+                            .isActivitySelected(activity.id);
+                        final selectionOrder = ref.read(brickSelectionControllerProvider.notifier)
+                            .getSelectionOrder(activity.id);
 
-                          // Render brick group card for brick activities (but not in selection mode)
-                          if (activity.isBrick && !isSelectionMode) {
-                            return BrickGroupCard(
-                              brick: activity,
-                              onUngroup: () => _handleUngroupBrick(activity.id),
-                              onViewCombined: () => _handleViewCombinedBrick(activity),
-                              onRemoveSegment: (segmentIndex) => _handleRemoveSegment(activity.id, segmentIndex),
-                            );
-                          }
-
-                          // Render regular activity card
-                          return ActivityCard(
-                            activity: activity,
-                            isSelectionMode: isSelectionMode,
-                            isSelected: isSelected,
-                            selectionOrder: selectionOrder,
-                            onSelectionToggle: () {
-                              ref.read(brickSelectionControllerProvider.notifier)
-                                  .toggleActivity(activity);
-                            },
+                        // Render brick group card for brick activities (but not in selection mode)
+                        if (activity.isBrick && !isSelectionMode) {
+                          return BrickGroupCard(
+                            brick: activity,
+                            onUngroup: () => _handleUngroupBrick(activity.id),
+                            onViewCombined: () => _handleViewCombinedBrick(activity),
+                            onRemoveSegment: (segmentIndex) => _handleRemoveSegment(activity.id, segmentIndex),
                           );
                         }
+
+                        // Render regular activity card
+                        return ActivityCard(
+                          activity: activity,
+                          isSelectionMode: isSelectionMode,
+                          isSelected: isSelected,
+                          selectionOrder: selectionOrder,
+                          onSelectionToggle: () {
+                            ref.read(brickSelectionControllerProvider.notifier)
+                                .toggleActivity(activity);
+                          },
+                        );
                       },
-                      childCount: (selectedDateCarbDays.length + selectedDateActivities.length),
+                      childCount: selectedDateActivities.length,
                     ),
                   ),
                 ),
@@ -417,11 +424,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     DateTime selectedDate,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
-    final selectionController = ref.read(brickSelectionControllerProvider.notifier);
-    final actionsController = ref.read(brickActionsControllerProvider.notifier);
 
-    // Get selected activity IDs in order
-    final selectedIds = selectionController.getSelectedOrder();
+    // Get selected activity IDs in order (read notifier fresh each time)
+    final selectedIds = ref.read(brickSelectionControllerProvider.notifier).getSelectedOrder();
 
     // Get full Activity objects in the same order
     final selectedActivities = selectedIds
@@ -440,6 +445,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       return; // User cancelled
     }
 
+    // Check if widget is still mounted after async gap
+    if (!mounted) return;
+
     try {
       // Show loading indicator
       messenger.showSnackBar(
@@ -449,14 +457,20 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         ),
       );
 
+      // Read controllers fresh after async gap to avoid disposal issues
+      final actionsController = ref.read(brickActionsControllerProvider.notifier);
+
       // Call controller to create brick (follows FOA pattern - business logic in controller)
       await actionsController.createBrickFromSelection(
         activities: selectedActivities,
         segmentOrder: selectedIds,
       );
 
-      // Exit selection mode
-      selectionController.exitSelectionMode();
+      // Check if still mounted after async operation
+      if (!mounted) return;
+
+      // Exit selection mode (read fresh to avoid disposal)
+      ref.read(brickSelectionControllerProvider.notifier).exitSelectionMode();
 
       // Refresh activities list
       ref.invalidate(activitiesControllerProvider);
