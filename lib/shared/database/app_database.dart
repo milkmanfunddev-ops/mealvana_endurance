@@ -1663,6 +1663,12 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  /// Circuit breaker: prevents infinite loops when schema recovery fails
+  ///
+  /// If we delete and recreate the database but the Drift schema itself is wrong,
+  /// we'd loop forever. This flag ensures we only attempt recovery ONCE per app session.
+  static bool _schemaRecoveryAttempted = false;
+
   /// Check if an exception is a schema-related SQLite error
   ///
   /// Returns true for errors that indicate schema mismatch:
@@ -1705,8 +1711,23 @@ class AppDatabase extends _$AppDatabase {
       return; // Not a schema error, don't handle
     }
 
+    // Circuit breaker: only attempt recovery once per app session
+    if (_schemaRecoveryAttempted) {
+      if (kDebugMode) {
+        print('🔧 Schema error detected but recovery already attempted this session');
+        print('   Context: ${context ?? 'unknown'}');
+        print('   Error: $error');
+        print('   → Not retrying to prevent infinite loop. Please fix the Drift schema.');
+      }
+      // Don't retry, just rethrow the original error
+      return;
+    }
+
+    // Mark that we're attempting recovery (before we actually do it)
+    _schemaRecoveryAttempted = true;
+
     if (kDebugMode) {
-      print('🔧 Schema error detected - deleting database and resyncing');
+      print('🔧 Schema error detected - deleting database and resyncing (one-time recovery)');
       print('   Context: ${context ?? 'unknown'}');
       print('   Error: $error');
     }
