@@ -5,8 +5,7 @@ import '../../domain/brick_exceptions.dart';
 import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../../../shared/services/logging_service.dart';
-import '../../../../shared/database/app_database.dart' show DatabaseSchemaException;
-import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/services/schema_recovery_service.dart';
 
 part 'brick_actions_controller.g.dart';
 
@@ -24,6 +23,7 @@ class BrickActionsController extends _$BrickActionsController {
   ActivitiesService get _service => ref.read(activitiesServiceProvider);
   ActivitiesRepository get _repository => ref.read(activitiesRepositoryProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
+  SchemaRecoveryService get _schemaRecovery => ref.read(schemaRecoveryServiceProvider);
 
   @override
   FutureOr<void> build() {
@@ -51,27 +51,37 @@ class BrickActionsController extends _$BrickActionsController {
     required List<Activity> activities,
     required List<String> segmentOrder,
   }) async {
+    _logger.info(
+      'Creating brick from selected activities',
+      context: 'BRICK_ACTIONS_CONTROLLER',
+      data: {
+        'activityCount': activities.length,
+        'segmentOrder': segmentOrder,
+        'activityIds': activities.map((a) => a.id).toList(),
+        'sportTypes': activities.map((a) => a.activityType.name).toList(),
+      },
+    );
+
+    // Validate segment order matches activities
+    if (segmentOrder.length != activities.length) {
+      throw BrickValidationException.invalidSegmentOrder();
+    }
+
     try {
-      _logger.info(
-        'Creating brick from selected activities',
-        context: 'BRICK_ACTIONS_CONTROLLER',
-        data: {
-          'activityCount': activities.length,
-          'segmentOrder': segmentOrder,
-          'activityIds': activities.map((a) => a.id).toList(),
-          'sportTypes': activities.map((a) => a.activityType.name).toList(),
+      // Use schema recovery wrapper - automatically handles schema errors
+      // by reinitializing database and retrying (user just sees loading spinner)
+      final brickActivity = await _schemaRecovery.withSchemaRecovery(
+        operation: () => _service.createBrickActivity(
+          activities: activities,
+          segmentOrder: segmentOrder,
+        ),
+        ref: ref,
+        onRecovery: () {
+          // Invalidate dependent providers so they use the new database
+          ref.invalidate(activitiesRepositoryProvider);
+          ref.invalidate(activitiesServiceProvider);
         },
-      );
-
-      // Validate segment order matches activities
-      if (segmentOrder.length != activities.length) {
-        throw BrickValidationException.invalidSegmentOrder();
-      }
-
-      // Call service to create brick (service delegates to repository)
-      final brickActivity = await _service.createBrickActivity(
-        activities: activities,
-        segmentOrder: segmentOrder,
+        context: 'BRICK_ACTIONS_CONTROLLER.createBrickFromSelection',
       );
 
       _logger.info(
@@ -87,36 +97,6 @@ class BrickActionsController extends _$BrickActionsController {
     } on BrickValidationException {
       // Re-throw validation exceptions as-is
       rethrow;
-    } on DatabaseSchemaException catch (e, stackTrace) {
-      // Schema error detected - database has been closed and deleted
-      // Reinitialize the database and retry the operation transparently
-      _logger.warning(
-        'Schema error during brick creation - reinitializing database and retrying',
-        context: 'BRICK_ACTIONS_CONTROLLER',
-        error: e,
-        stackTrace: stackTrace,
-      );
-
-      // Invalidate the database provider to create a fresh instance
-      ref.invalidate(appDatabaseProvider);
-
-      // Trigger creation of new database
-      ref.read(appDatabaseProvider);
-
-      // Invalidate dependent providers so they use the new database
-      ref.invalidate(activitiesRepositoryProvider);
-      ref.invalidate(activitiesServiceProvider);
-
-      _logger.info(
-        'Database reinitialized - retrying brick creation',
-        context: 'BRICK_ACTIONS_CONTROLLER',
-      );
-
-      // Retry the operation with fresh database (user just sees loading spinner)
-      return _service.createBrickActivity(
-        activities: activities,
-        segmentOrder: segmentOrder,
-      );
     } catch (e, stackTrace) {
       _logger.error(
         'Error creating brick from selection',
