@@ -210,7 +210,7 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
       return await query.get();
     } on FormatException {
       // Legacy rows may store timestamps as TEXT; normalize and retry
-      await _normalizeUserFoodTimestamps();
+      await normalizeUserFoodTimestamps();
       return await query.get();
     }
   }
@@ -388,8 +388,9 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
     );
   }
 
-  /// Normalize legacy TEXT timestamps in user_foods to Unix millis
-  Future<void> _normalizeUserFoodTimestamps() async {
+  /// Normalize legacy TEXT timestamps in user_foods to Unix millis.
+  /// Called from AppDatabase migration's beforeOpen to handle legacy data.
+  Future<void> normalizeUserFoodTimestamps() async {
     const timestampColumns = [
       'created_at',
       'updated_at',

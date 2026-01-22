@@ -26,7 +26,7 @@ Future<String> userId(Ref ref) async {
     // During guest flow, the user's id (primary key) may differ from authUserId
     // Example: id=23a9302f..., authUserId=4ecdb31c...
     final existingProfile =
-        await database.getUserProfileByAuthUserId(supabaseUser.id);
+        await database.userDao.getUserProfileByAuthUserId(supabaseUser.id);
     if (existingProfile != null) {
       return existingProfile.id;
     }
@@ -48,7 +48,7 @@ Future<String> userId(Ref ref) async {
   // Without an authenticated user, there's no current profile.
   // Note: getCurrentUserProfile(currentAuthUserId: null) returns null,
   // which is correct - no auth session means no current user.
-  final cachedProfile = await database.getCurrentUserProfile(
+  final cachedProfile = await database.userDao.getCurrentUserProfile(
     currentAuthUserId: null,
   );
   if (cachedProfile != null) {

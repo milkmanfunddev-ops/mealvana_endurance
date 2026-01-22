@@ -109,7 +109,7 @@ void main() {
         ),
       );
 
-      final updatedProfile = await database.getCurrentUserProfile();
+      final updatedProfile = await database.userDao.getCurrentUserProfile();
 
       logTestResult('weight_pounds', updatedProfile?.weightPounds);
       logTestResult('runs_with_water_bottle', updatedProfile?.runsWithWaterBottle);
@@ -178,7 +178,7 @@ void main() {
         ),
       );
 
-      var profile = await database.getCurrentUserProfile();
+      var profile = await database.userDao.getCurrentUserProfile();
       logTestResult('gut_training_level', profile?.gutTrainingLevel);
 
       expect(profile?.gutTrainingLevel, equals(GutTrainingLevel.moderate));
@@ -195,7 +195,7 @@ void main() {
         ),
       );
 
-      profile = await database.getCurrentUserProfile();
+      profile = await database.userDao.getCurrentUserProfile();
       logTestResult('gut_training_level', profile?.gutTrainingLevel);
 
       logAssertion(

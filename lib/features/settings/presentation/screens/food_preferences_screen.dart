@@ -122,7 +122,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
       // Get current user's device ID for user foods
       DebugLogger.info('[FOOD_PREFS] 🔍 Getting current user profile...');
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.userDao.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
       DebugLogger.info('[FOOD_PREFS] ✅ User profile retrieved, deviceId: $deviceId');
 
@@ -144,7 +144,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         }(),
         () async {
           DebugLogger.info('[FOOD_PREFS] 💾 Fetching user foods from local database...');
-          final userFoods = await database.getUserFoods(deviceId);
+          final userFoods = await database.foodsDao.getUserFoods(deviceId);
           DebugLogger.info('[FOOD_PREFS] ✅ User foods loaded: ${userFoods.length} items');
           return userFoods;
         }(),
@@ -187,7 +187,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       DebugLogger.info('[FOOD_PREFS] 🔄 Converting user foods to FoodItems...');
       // Convert user foods to FoodItems
       final userFoods = userFoodsData
-          .map((userFood) => database.convertUserFoodToFoodItem(userFood))
+          .map((userFood) => database.foodsDao.convertUserFoodToFoodItem(userFood))
           .cast<FoodItem>()
           .toList();
 
@@ -575,7 +575,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   }) async {
     try {
       final database = ref.read(appDatabaseProvider);
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.userDao.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
@@ -599,7 +599,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       final finalProductType = productType ?? foodItem.productTypeId ?? 'import';
 
       // 1. Save to local Drift database first (for offline access)
-      await database.saveUserFood(
+      await database.foodsDao.saveUserFood(
         deviceId: deviceId,
         userId: deviceId,
         id: foodId,
@@ -676,12 +676,12 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   Future<void> _deleteUserFood(FoodItem food) async {
     try {
       final database = ref.read(appDatabaseProvider);
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.userDao.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
       // 1. Delete from local Drift database first
-      await database.deleteUserFood(food.id);
+      await database.foodsDao.deleteUserFood(food.id);
 
       // 2. Sync deletion to Supabase (direct delete)
       try {

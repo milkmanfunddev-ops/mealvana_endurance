@@ -667,7 +667,7 @@ class OnboardingController extends _$OnboardingController {
       DebugLogger.info('🔄 Migrating ALL onboarding data from temp user $tempUserId to new user $newUserId');
 
       // Use the consolidated migration method that handles ALL user-scoped tables
-      await database.migrateUserData(tempUserId, newUserId);
+      await database.diagnosticDao.migrateUserData(tempUserId, newUserId);
 
       // Clear the temp user ID from preferences
       await prefs.remove(_onboardingTempUserIdKey);

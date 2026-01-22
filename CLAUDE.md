@@ -247,7 +247,7 @@ Unified dual database architecture with local-first design and cloud synchroniza
 **CRITICAL**: The app uses a repository-level, on-demand sync pattern with automatic dependency resolution. This replaces the previous "sync all at startup" approach.
 
 **Key Concepts:**
-- **Staleness Threshold**: Each repository tracks its last sync time in SharedPreferences; data is considered stale after 24 hours
+- **Staleness Threshold**: Each repository tracks its last sync time in SharedPreferences; data is considered stale after 1 hour
 - **Lazy Sync**: Data is only synced when needed (when controller calls `ensureSynced()`)
 - **Dependency Resolution**: Dependencies are automatically synced first using a dependency graph
 - **Dirty Record Protection**: Local changes are uploaded first, with JSON backup on failure
@@ -265,7 +265,7 @@ mixin SyncableRepository {
   /// Example: activities → ['users']
   List<String> get dependencies => [];
 
-  /// Check if data is stale (>24 hours since last sync)
+  /// Check if data is stale (>1 hour since last sync)
   Future<bool> isStale();
 
   /// Sync this repository's data from Supabase
@@ -291,7 +291,7 @@ class ActivitiesController extends _$ActivitiesController {
     final userId = await ref.read(userIdProvider.future);
 
     // Ensure activities (and dependencies) are synced
-    // Only syncs if stale (>24h since last sync)
+    // Only syncs if stale (>1h since last sync)
     await _syncCoordinator.ensureSynced(
       'activities',
       userId,
@@ -311,7 +311,7 @@ Controller calls: ensureSynced('activities', userId, repository: repo)
 1. Check: Is 'activities' currently syncing?
    └── Yes → Return immediately (prevent infinite loops)
     ↓
-2. Check: Is 'activities' stale (>24h since last sync in SharedPreferences)?
+2. Check: Is 'activities' stale (>1h since last sync in SharedPreferences)?
    ├── No  → Return immediately (data is fresh)
    └── Yes → Continue to step 3
     ↓

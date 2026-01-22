@@ -82,7 +82,7 @@ class _ActivityCoachFeedbackWidgetState extends ConsumerState<ActivityCoachFeedb
     try {
       final db = ref.read(appDatabaseProvider);
       final currentAuthUserId = Supabase.instance.client.auth.currentUser?.id;
-      final profile = await db.getCurrentUserProfile(
+      final profile = await db.userDao.getCurrentUserProfile(
         currentAuthUserId: currentAuthUserId,
       );
 

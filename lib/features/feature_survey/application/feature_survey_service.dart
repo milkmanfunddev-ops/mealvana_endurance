@@ -25,14 +25,14 @@ class FeatureSurveyService {
 
   /// Check if the current device has already voted
   Future<bool> hasVoted() async {
-    final user = await _database.getCurrentUserProfile();
+    final user = await _database.userDao.getCurrentUserProfile();
     final deviceId = user?.id ?? 'anonymous';
     return await _repository.hasVoted(deviceId);
   }
 
   /// Get previous votes for the current device
   Future<FeatureSurveyResponse?> getPreviousVotes() async {
-    final user = await _database.getCurrentUserProfile();
+    final user = await _database.userDao.getCurrentUserProfile();
     final deviceId = user?.id ?? 'anonymous';
     return await _repository.getPreviousVotes(deviceId);
   }
@@ -45,7 +45,7 @@ class FeatureSurveyService {
     }
 
     // 1. Get device ID
-    final user = await _database.getCurrentUserProfile();
+    final user = await _database.userDao.getCurrentUserProfile();
     final deviceId = user?.id ?? 'anonymous';
 
     // 2. Create survey response with unique session ID
@@ -101,7 +101,7 @@ class FeatureSurveyService {
 
   /// Delete survey response (for testing or future "reset vote" feature)
   Future<void> deleteSurveyResponse() async {
-    final user = await _database.getCurrentUserProfile();
+    final user = await _database.userDao.getCurrentUserProfile();
     final deviceId = user?.id ?? 'anonymous';
     await _repository.deleteSurveyResponse(deviceId);
   }

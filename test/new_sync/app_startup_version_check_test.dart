@@ -97,7 +97,7 @@ void main() {
         (_) async => const VersionCheckResult.ok(),
       );
       when(() => mockAppStartupService.initializeDatabase()).thenAnswer((_) async {});
-      when(() => mockAppStartupService.initializeSupabaseAuth()).thenAnswer((_) async {});
+      // initializeSupabaseAuth was removed - Supabase init happens in main.dart
       when(() => mockAppStartupService.setSentryUserContext()).thenAnswer((_) async {});
       when(() => mockAppStartupService.initializeDeferredServices()).thenAnswer((_) async {});
       when(() => mockAppStartupService.checkForPendingFeedback()).thenAnswer((_) async => null);
@@ -121,7 +121,7 @@ void main() {
         ],
       );
 
-      when(() => mockDatabase.getCurrentUserProfile(currentAuthUserId: any(named: 'currentAuthUserId')))
+      when(() => mockDatabase.userDao.getCurrentUserProfile(currentAuthUserId: any(named: 'currentAuthUserId')))
           .thenAnswer((_) async => null);
       when(() => mockDatabase.schemaVersion).thenReturn(2);
 
@@ -204,7 +204,7 @@ void main() {
         (_) async => const VersionCheckResult.ok(), // Cached result
       );
       when(() => mockAppStartupService.initializeDatabase()).thenAnswer((_) async {});
-      when(() => mockAppStartupService.initializeSupabaseAuth()).thenAnswer((_) async {});
+      // initializeSupabaseAuth was removed - Supabase init happens in main.dart
       when(() => mockAppStartupService.setSentryUserContext()).thenAnswer((_) async {});
       when(() => mockAppStartupService.initializeDeferredServices()).thenAnswer((_) async {});
       when(() => mockAppStartupService.checkForPendingFeedback()).thenAnswer((_) async => null);
@@ -226,7 +226,7 @@ void main() {
         ],
       );
 
-      when(() => mockDatabase.getCurrentUserProfile(currentAuthUserId: any(named: 'currentAuthUserId')))
+      when(() => mockDatabase.userDao.getCurrentUserProfile(currentAuthUserId: any(named: 'currentAuthUserId')))
           .thenAnswer((_) async => null);
       when(() => mockDatabase.schemaVersion).thenReturn(2);
 

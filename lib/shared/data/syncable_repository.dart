@@ -56,7 +56,7 @@ class UploadResult {
 /// Mixin for repositories that support synchronization.
 ///
 /// This mixin provides the core interface for repository-level sync with:
-/// - Staleness tracking (24-hour threshold by default)
+/// - Staleness tracking (1-hour threshold by default)
 /// - SharedPreferences-based timestamp storage
 /// - Dependency declaration for sync ordering
 /// - Upload and download operations
@@ -82,8 +82,8 @@ mixin SyncableRepository {
 
   /// Duration after which data is considered stale and requires resync.
   ///
-  /// Default: 24 hours
-  static const staleDuration = Duration(hours: 24);
+  /// Default: 1 hour (reduced from 24h to ensure athletes see coach changes quickly)
+  static const staleDuration = Duration(hours: 1);
 
   /// Check if this repository's data is stale and needs syncing.
   ///

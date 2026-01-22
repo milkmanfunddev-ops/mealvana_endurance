@@ -104,7 +104,7 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// ```
   ///
   /// How it works:
-  /// 1. Checks if repository data is stale (>24h since last sync)
+  /// 1. Checks if repository data is stale (>1h since last sync)
   /// 2. If fresh, returns immediately (no-op)
   /// 3. If stale, recursively syncs dependencies FIRST
   /// 4. Uploads dirty records for this repository
@@ -117,7 +117,7 @@ class SyncCoordinator extends _$SyncCoordinator {
   ///
   /// Returns immediately if:
   /// - Already syncing this repository (prevents infinite loops)
-  /// - Data is fresh (<24h since last sync)
+  /// - Data is fresh (<1h since last sync)
   Future<void> ensureSynced(
     String repoKey,
     String userId, {
@@ -211,7 +211,7 @@ class SyncCoordinator extends _$SyncCoordinator {
   ///
   /// Data is stale if:
   /// - Never been synced (no timestamp in memory)
-  /// - Last sync was more than 24 hours ago
+  /// - Last sync was more than 1 hour ago
   ///
   /// If repository instance is provided, delegates to repository.isStale()
   /// which checks SharedPreferences. Otherwise uses in-memory cache.
@@ -225,7 +225,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     final lastSync = _lastSyncTimes[repoKey];
     if (lastSync == null) return true;
 
-    const staleDuration = Duration(hours: 24);
+    const staleDuration = Duration(hours: 1);
     return DateTime.now().difference(lastSync) > staleDuration;
   }
 
@@ -359,4 +359,125 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   /// Get last successful sync time (for debugging)
   DateTime? get lastSyncTime => _lastSyncTime;
+
+  /// Force sync a repository, bypassing the staleness check.
+  ///
+  /// Use this for pull-to-refresh when user explicitly wants fresh data,
+  /// or when an athlete needs to see coach-made changes immediately.
+  ///
+  /// This method:
+  /// 1. Syncs dependencies first (respecting their staleness)
+  /// 2. Uploads dirty records
+  /// 3. Force syncs this repository (bypasses staleness check)
+  /// 4. Invalidates related providers
+  ///
+  /// [repoKey] - Repository identifier from dependency graph
+  /// [userId] - Current user ID for scoped queries
+  /// [repository] - Repository instance for actual sync
+  Future<void> forceSyncRepository(
+    String repoKey,
+    String userId, {
+    required SyncableRepository repository,
+  }) async {
+    // Prevent concurrent syncs of the same repo
+    if (_syncingNow.contains(repoKey)) {
+      _logger.debug(
+        'Force sync skipped - already in progress',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey},
+      );
+      return;
+    }
+
+    // Check network connectivity
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      _logger.warning(
+        'Force sync skipped - no network',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey},
+      );
+      return;
+    }
+
+    _syncingNow.add(repoKey);
+
+    try {
+      _logger.info(
+        'Force sync started',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey},
+      );
+
+      // 1. Sync dependencies FIRST (these respect staleness)
+      final deps = _dependencies[repoKey] ?? [];
+      for (final dep in deps) {
+        await ensureSynced(dep, userId);
+      }
+
+      // 2. Upload dirty records FIRST (protect user data)
+      await repository.uploadDirtyRecords(userId);
+
+      // 3. Force sync from remote (bypass staleness)
+      await repository.syncFromRemote(userId);
+
+      // 4. Update timestamp and clear failure tracking
+      _lastSyncTimes[repoKey] = DateTime.now();
+      _clearFailureTracking(repoKey);
+
+      _logger.info(
+        'Force sync completed successfully',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey},
+      );
+    } catch (e, stackTrace) {
+      _recordFailure(repoKey);
+      _logger.error(
+        'Force sync failed',
+        context: 'SYNC_COORDINATOR',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'repoKey': repoKey, 'userId': userId},
+      );
+      // Don't rethrow - best effort sync
+    } finally {
+      _syncingNow.remove(repoKey);
+    }
+  }
+
+  /// Force sync multiple repositories for a full refresh.
+  ///
+  /// Use this when athlete needs to see all coach changes.
+  /// Syncs in dependency order: activities → events → carb_loading_plans
+  Future<void> forceFullSync(String userId, {
+    SyncableRepository? activitiesRepo,
+    SyncableRepository? eventsRepo,
+    SyncableRepository? carbLoadingPlansRepo,
+  }) async {
+    _logger.info(
+      'Full force sync started',
+      context: 'SYNC_COORDINATOR',
+      data: {'userId': userId},
+    );
+
+    // Sync in dependency order
+    if (activitiesRepo != null) {
+      await forceSyncRepository('activities', userId, repository: activitiesRepo);
+    }
+    if (eventsRepo != null) {
+      await forceSyncRepository('events', userId, repository: eventsRepo);
+    }
+    if (carbLoadingPlansRepo != null) {
+      await forceSyncRepository('carb_loading_plans', userId, repository: carbLoadingPlansRepo);
+    }
+
+    // Invalidate all related providers
+    _invalidateAllProviders();
+
+    _logger.info(
+      'Full force sync completed',
+      context: 'SYNC_COORDINATOR',
+      data: {'userId': userId},
+    );
+  }
 }

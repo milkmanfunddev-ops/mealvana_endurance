@@ -78,7 +78,7 @@ void main() {
 
       // The appStartupProvider will fail because it needs Supabase auth
       // For this test, we'll verify that the database starts empty
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.userDao.getCurrentUserProfile();
 
       logTestResult('user_profile', userProfile);
 
@@ -128,7 +128,7 @@ void main() {
       });
 
       // Verify user was inserted
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.userDao.getCurrentUserProfile();
 
       logTestResult('user_profile', userProfile?.id);
       logTestResult('onboarding_completed', userProfile?.onboardingCompleted);
@@ -187,7 +187,7 @@ void main() {
       });
 
       // Verify user was inserted
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.userDao.getCurrentUserProfile();
 
       logTestResult('user_profile', userProfile?.id);
       logTestResult('onboarding_completed', userProfile?.onboardingCompleted);
@@ -298,7 +298,7 @@ void main() {
 
       // This test verifies that the database is empty
       // (not affected by previous tests)
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.userDao.getCurrentUserProfile();
 
       logTestResult('user_in_new_db', userProfile);
 

@@ -74,6 +74,9 @@ class CoachDashboardController extends _$CoachDashboardController {
       // This ensures we see requests created by athletes on other devices
       await _coachService.syncRelationshipsFromSupabase();
 
+      // Also sync athlete profiles so we have their names for display
+      await _coachService.syncMyAthletesProfiles();
+
       final activeAthletes = await _coachService.getMyAthletes();
       final pendingRequests = await _coachService.getPendingAthleteRequests();
 

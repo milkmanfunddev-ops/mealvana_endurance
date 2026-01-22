@@ -41,7 +41,7 @@ class UserFoodsRepository with SyncableRepository {
           .eq('is_deleted', false);
 
       // Replace local user foods with fresh data from Supabase
-      await database.replaceUserFoods(userId, List<Map<String, dynamic>>.from(response));
+      await database.foodsDao.replaceUserFoods(userId, List<Map<String, dynamic>>.from(response));
 
       // Update last sync timestamp
       await setLastSyncTime(DateTime.now());
@@ -193,7 +193,7 @@ class UserFoodsRepository with SyncableRepository {
           .eq('user_id', userId)
           .eq('is_deleted', false);
 
-      await database.replaceUserFoods(userId, List<Map<String, dynamic>>.from(response));
+      await database.foodsDao.replaceUserFoods(userId, List<Map<String, dynamic>>.from(response));
 
       sentry.addBreadcrumb(
         message: 'User foods synced from Supabase',

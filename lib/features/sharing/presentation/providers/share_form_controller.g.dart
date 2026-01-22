@@ -51,7 +51,7 @@ final class ShareFormControllerProvider
 }
 
 String _$shareFormControllerHash() =>
-    r'16137842d56673fde0420c8ee17cf4158e5f6c5e';
+    r'b7e70f438cfa80b16ff089b1d2a9c9571f456670';
 
 final class ShareFormControllerFamily extends $Family
     with

@@ -109,7 +109,7 @@ class FoodPreferencesRepository with SyncableRepository {
       // Get all food preference entries for this user
       // Note: Food preferences don't have a needs_upload flag yet
       // For now, we just upload all preferences (this is safe since it's a small dataset)
-      final allPreferences = await database.getAllFoodPreferenceEntries(userId);
+      final allPreferences = await database.foodPreferencesDao.getAllFoodPreferenceEntries(userId);
 
       if (allPreferences.isEmpty) {
         return UploadResult.nothingToUpload();
@@ -175,7 +175,7 @@ class FoodPreferencesRepository with SyncableRepository {
     String source = 'manual',
   }) async {
     try {
-      await database.saveFoodPreferences(
+      await database.foodPreferencesDao.saveFoodPreferences(
         userId,
         preferences,
         sliderLevels: sliderLevels,
@@ -208,7 +208,7 @@ class FoodPreferencesRepository with SyncableRepository {
   /// Returns the number of preferences removed
   Future<int> removeFoodPreferencesBySource(String userId, String source) async {
     try {
-      final count = await database.removeFoodPreferencesBySource(userId, source);
+      final count = await database.foodPreferencesDao.removeFoodPreferencesBySource(userId, source);
 
       sentry.addBreadcrumb(
         message: 'Removed food preferences by source',
@@ -235,7 +235,7 @@ class FoodPreferencesRepository with SyncableRepository {
   /// Get food preferences with their sources for a user
   Future<Map<String, String>> getFoodPreferenceSources(String userId) async {
     try {
-      return await database.getFoodPreferenceSources(userId);
+      return await database.foodPreferencesDao.getFoodPreferenceSources(userId);
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -250,7 +250,7 @@ class FoodPreferencesRepository with SyncableRepository {
   /// Get food preferences for a user
   Future<Map<String, FoodPreference>> getFoodPreferences(String userId) async {
     try {
-      return await database.getUserFoodPreferences(userId);
+      return await database.foodPreferencesDao.getUserFoodPreferences(userId);
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -265,7 +265,7 @@ class FoodPreferencesRepository with SyncableRepository {
   /// Get stored slider levels for each food preference
   Future<Map<String, int>> getFoodPreferenceLevels(String userId) async {
     try {
-      return await database.getUserFoodPreferenceLevels(userId);
+      return await database.foodPreferencesDao.getUserFoodPreferenceLevels(userId);
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -317,7 +317,7 @@ class FoodPreferencesRepository with SyncableRepository {
   /// Get liked foods for a user
   Future<List<String>> getLikedFoods(String userId) async {
     try {
-      return await database.getLikedFoods(userId);
+      return await database.foodPreferencesDao.getLikedFoods(userId);
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -332,7 +332,7 @@ class FoodPreferencesRepository with SyncableRepository {
   /// Get disliked foods for a user
   Future<List<String>> getDislikedFoods(String userId) async {
     try {
-      return await database.getDislikedFoods(userId);
+      return await database.foodPreferencesDao.getDislikedFoods(userId);
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,

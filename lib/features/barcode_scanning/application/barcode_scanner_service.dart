@@ -103,7 +103,7 @@ class BarcodeScannerService {
       final foodData = _convertFoodToDatabaseFormat(food);
 
       // Cache to database
-      await _database.cacheFoods([foodData]);
+      await _database.foodsDao.cacheFoods([foodData]);
 
     } catch (e) {
       _logger.error(

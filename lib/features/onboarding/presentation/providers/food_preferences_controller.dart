@@ -77,7 +77,7 @@ class FoodPreferencesController extends _$FoodPreferencesController {
   /// Load all food preferences with timeout protection
   Future<FoodPreferencesState> _loadFoodPreferences() async {
     final database = ref.read(appDatabaseProvider);
-    final userProfile = await database.getCurrentUserProfile();
+    final userProfile = await database.userDao.getCurrentUserProfile();
     final userId = userProfile?.id ?? 'unknown';
 
     final results = await Future.wait([
@@ -115,10 +115,10 @@ class FoodPreferencesController extends _$FoodPreferencesController {
   /// Load user foods
   Future<List<FoodItem>> _loadUserFoods(String userId) async {
     final database = ref.read(appDatabaseProvider);
-    final userFoodsData = await database.getUserFoods(userId);
+    final userFoodsData = await database.foodsDao.getUserFoods(userId);
 
     return userFoodsData
-        .map((userFood) => database.convertUserFoodToFoodItem(userFood))
+        .map((userFood) => database.foodsDao.convertUserFoodToFoodItem(userFood))
         .toList();
   }
 

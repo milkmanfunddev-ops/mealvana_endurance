@@ -40,7 +40,7 @@ Mealvana Endurance uses a **repository-level, on-demand sync architecture** that
 | **Trigger** | Manual (OAuth or pull-to-refresh) | Automatic (on controller build) |
 | **Granularity** | All-or-nothing | Per-repository |
 | **Dependencies** | Implicit (edge function ordering) | Explicit (dependency graph) |
-| **Staleness** | No tracking | 24-hour threshold per repo |
+| **Staleness** | No tracking | 1-hour threshold per repo |
 | **Dirty Records** | Upload or lose | Backup to JSON on failure |
 | **Schema Migrations** | 500+ lines of step-by-step code | Delete & resync |
 | **Edge Functions** | Required for sync | Optional (direct Supabase queries) |
@@ -56,7 +56,7 @@ Mealvana Endurance uses a **repository-level, on-demand sync architecture** that
 
 ### 2. On-Demand Sync
 - Controllers call `ensureSynced(repoKey, userId)` in their `build()` method
-- Sync only happens if data is stale (>24 hours)
+- Sync only happens if data is stale (>1 hour)
 - Fresh data returns immediately (no network call)
 
 ### 3. Dependency Awareness
@@ -119,7 +119,7 @@ abstract class SyncableRepository {
   /// Example: activities → ['users']
   List<String> get dependencies => [];
 
-  /// Check if data is stale (>24 hours since last sync)
+  /// Check if data is stale (>1 hour since last sync)
   Future<bool> isStale();
 
   /// Sync this repository's data from Supabase
@@ -159,7 +159,7 @@ class ActivitiesRepository with SyncableRepository {
     final lastSync = await getLastSyncTime();
     if (lastSync == null) return true;
 
-    const staleDuration = Duration(hours: 24);
+    const staleDuration = Duration(hours: 1);
     return DateTime.now().difference(lastSync) > staleDuration;
   }
 
@@ -478,10 +478,10 @@ Call: _syncCoordinator.ensureSynced('activities', userId)
     ↓
 SyncCoordinator checks: Is 'activities' stale?
     ↓
-├── No (synced <24h ago)
+├── No (synced <1h ago)
 │   └── Return immediately (no network call)
 │
-└── Yes (synced >24h ago OR never synced)
+└── Yes (synced >1h ago OR never synced)
     ↓
     Check dependencies: activities → ['users']
     ↓
@@ -1078,7 +1078,7 @@ static const Map<String, List<String>> _dependencies = {
 - Check batch insert performance
 
 **Solutions**:
-1. **Reduce frequency**: Increase staleness threshold to 48 hours
+1. **Reduce frequency**: Increase staleness threshold (default is 1 hour)
 2. **Optimize queries**: Add indexes on Supabase tables
 3. **Batch inserts**: Use `db.batch()` for multiple inserts
 
@@ -1197,7 +1197,7 @@ For each repository:
 - [ ] Implement `uploadDirtyRecords()` with retry logic
 - [ ] Update controller to call `ensureSynced()` in `build()`
 - [ ] Remove manual sync triggers (pull-to-refresh can stay)
-- [ ] Test staleness behavior (force timestamp >24h ago)
+- [ ] Test staleness behavior (force timestamp >1h ago)
 - [ ] Test dependency resolution (verify parent syncs first)
 - [ ] Test dirty record backup (disconnect network, create record, sync)
 
@@ -1209,7 +1209,7 @@ The new sync architecture provides:
 
 ✅ **On-Demand Sync**: Data synced only when needed
 ✅ **Automatic Dependencies**: Parents synced before children
-✅ **Staleness Tracking**: 24-hour threshold per repository
+✅ **Staleness Tracking**: 1-hour threshold per repository (ensures athletes see coach changes quickly)
 ✅ **Dirty Record Protection**: JSON backup on upload failure
 ✅ **Simplified Migrations**: Delete & resync on schema changes
 ✅ **Force Upgrade**: Server-controlled minimum app version
@@ -1220,6 +1220,11 @@ The new sync architecture provides:
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-18
+**Document Version**: 1.1
+**Last Updated**: 2026-01-21
 **Authors**: Claude Code, Lee Martin
+
+### Changelog
+
+- **v1.1 (2026-01-21)**: Changed staleness threshold from 24 hours to 1 hour to ensure athletes see coach changes quickly
+- **v1.0 (2026-01-18)**: Initial sync architecture documentation

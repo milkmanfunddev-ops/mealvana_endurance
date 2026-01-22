@@ -137,7 +137,8 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
 
           return RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(eventsControllerProvider);
+              // Force sync from Supabase to get coach changes
+              await ref.read(eventsControllerProvider.notifier).forceRefresh();
               ref.invalidate(activitiesControllerProvider);
             },
             color: AppColors.electrolyte,

@@ -46,7 +46,7 @@ class CoachService {
 
   /// Helper method to get current user profile with auth context
   Future<domain.UserProfile?> _getCurrentProfile() async {
-    return await _database.getCurrentUserProfile(
+    return await _database.userDao.getCurrentUserProfile(
       currentAuthUserId: _currentAuthUserId,
     );
   }
@@ -786,6 +786,41 @@ class CoachService {
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to sync my coaches data',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - this is not critical for app functionality
+    }
+  }
+
+  /// Sync athlete profiles for the current coach's athletes
+  /// This ensures we have athlete names (first_name, last_name) in local DB for the dashboard
+  Future<void> syncMyAthletesProfiles() async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) return;
+
+      // Check if user is a coach first
+      final isCoach = await _repository.isUserApprovedCoach(profile.id);
+      if (!isCoach) return;
+
+      // Get all relationships where user is coach
+      final relationships = await _repository.getRelationshipsForCoach(profile.id);
+
+      // Extract unique athlete user IDs
+      final athleteUserIds = relationships
+          .map((r) => r.athleteUserId)
+          .toSet()
+          .toList();
+
+      if (athleteUserIds.isEmpty) return;
+
+      // Sync athlete profiles from Supabase
+      await _repository.syncAthleteProfilesFromSupabase(athleteUserIds);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync my athletes profiles',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,

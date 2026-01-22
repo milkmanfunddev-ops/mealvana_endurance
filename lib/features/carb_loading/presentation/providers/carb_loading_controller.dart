@@ -135,7 +135,37 @@ class CarbLoadingController extends _$CarbLoadingController {
     }
   }
 
-  // No refresh needed - use separate providers that can be invalidated independently
+  /// Force refresh carb loading data from Supabase (bypasses staleness check).
+  ///
+  /// Use this for pull-to-refresh when user explicitly wants fresh data,
+  /// or when athlete needs to see coach-made changes immediately.
+  Future<void> forceRefresh() async {
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      final repository = ref.read(carbLoadingRepositoryProvider);
+      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+
+      // Force sync from Supabase (bypasses 24h staleness check)
+      await syncCoordinator.forceSyncRepository(
+        'carb_loading_plans',
+        userId,
+        repository: repository,
+      );
+
+      // Invalidate to reload with fresh data
+      ref.invalidateSelf();
+      ref.invalidate(carbLoadingDaysForRangeProvider);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error during force refresh',
+        context: 'CARB_LOADING_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Still invalidate to show whatever data we have
+      ref.invalidateSelf();
+    }
+  }
 }
 
 /// Provider for getting carb loading plan for a specific event
