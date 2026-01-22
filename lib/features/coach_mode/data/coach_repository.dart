@@ -870,6 +870,53 @@ class CoachRepository with SyncableRepository {
     }
   }
 
+  /// Sync athlete profiles from Supabase to local database
+  /// This should be called when loading the Coach Dashboard to ensure we have athlete names
+  Future<void> syncAthleteProfilesFromSupabase(List<String> athleteUserIds) async {
+    if (athleteUserIds.isEmpty) return;
+
+    try {
+      // Fetch athlete profiles from Supabase users table
+      final response = await _supabase
+          .from('users')
+          .select('id, first_name, last_name, sender_name')
+          .inFilter('id', athleteUserIds);
+
+      final List<dynamic> results = response as List<dynamic>;
+
+      for (final r in results) {
+        final id = r['id'] as String?;
+        if (id == null) continue;
+
+        // Upsert into local user_profiles table (only name fields)
+        final companion = UserProfilesTableCompanion(
+          id: Value(id),
+          firstName: Value(r['first_name'] as String?),
+          lastName: Value(r['last_name'] as String?),
+          senderName: Value(r['sender_name'] as String?),
+          updatedAt: Value(DateTime.now()),
+        );
+
+        await _database
+            .into(_database.userProfilesTable)
+            .insertOnConflictUpdate(companion);
+      }
+
+      _logger.info(
+        'Synced ${results.length} athlete profiles from Supabase',
+        context: 'COACH_REPOSITORY',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync athlete profiles from Supabase',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't rethrow - this is not critical for app functionality
+    }
+  }
+
   // ============================================================================
   // MESSAGE OPERATIONS (bidirectional messaging)
   // ============================================================================

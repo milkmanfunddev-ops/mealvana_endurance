@@ -67,6 +67,25 @@ class AthleteDetailController extends _$AthleteDetailController {
 
   @override
   FutureOr<AthleteDetailState> build(String relationshipId) async {
+    // First, get the relationship to find the athlete user ID
+    final relationships = await _coachService.getMyAthletes();
+    final relationship = relationships.firstWhere(
+      (r) => r.id == relationshipId,
+      orElse: () => _createPlaceholderRelationship(relationshipId),
+    );
+
+    // Automatically sync athlete data from Supabase on initial load
+    // This ensures fresh data when coach views athlete details
+    if (relationship.athleteUserId.isNotEmpty) {
+      await ref.read(
+        athleteDataSyncProvider(
+          relationshipId,
+          relationship.athleteUserId,
+        ).future,
+      );
+    }
+
+    // Now load from local database (which has fresh synced data)
     return _loadAthleteDetails(relationshipId);
   }
 
@@ -89,7 +108,7 @@ class AthleteDetailController extends _$AthleteDetailController {
       final db = ref.read(appDatabaseProvider);
 
       // Load athlete profile by user ID
-      final athleteProfile = await db.getUserProfileById(relationship.athleteUserId);
+      final athleteProfile = await db.userDao.getUserProfileById(relationship.athleteUserId);
 
       // Debug logging
       print('🔍 DEBUG: Loading athlete ${relationship.athleteUserId}');
@@ -115,12 +134,14 @@ class AthleteDetailController extends _$AthleteDetailController {
       final activities = activityEntries.map((a) => _mapActivityEntry(a)).toList();
 
       // Load athlete carb loading plans using Drift select syntax
-      // NOTE: Carb loading plans currently disabled due to schema mismatch.
-      // Database table (carb_loading_plans) schema doesn't match domain model (CarbLoadingPlan).
-      // Table has: totalDays, startDate, endDate, dailyCarbTargetGrams
-      // Domain expects: raceDate, raceDistance, trainingVolume, dailyCarbTargetG, daySelections
-      // This requires schema migration or repository layer transformation.
-      final carbLoadingPlans = <CarbLoadingPlan>[];
+      // Note: Database schema differs from domain model, so we map available fields
+      final carbLoadingPlanEntries = await (db.select(db.carbLoadingPlansTable)
+            ..where((t) => t.userId.equals(relationship.athleteUserId))
+            ..orderBy([(t) => OrderingTerm.desc(t.generatedAt)]))
+          .get();
+      final carbLoadingPlans = carbLoadingPlanEntries
+          .map((e) => _mapCarbLoadingPlanEntry(e))
+          .toList();
 
       return AthleteDetailState(
         relationship: relationship,
@@ -200,6 +221,36 @@ class AthleteDetailController extends _$AthleteDetailController {
       requestedAt: DateTime.now(),
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+    );
+  }
+
+  /// Map carb loading plan from database entry to domain model
+  /// Since database schema differs, we map available fields with sensible defaults
+  CarbLoadingPlan _mapCarbLoadingPlanEntry(dynamic entry) {
+    // Database has: totalDays, startDate, endDate, dailyCarbTargetGrams
+    // Domain expects: raceDate, raceDistance, trainingVolume, dailyCarbTargetG, etc.
+    // We use endDate as raceDate and provide defaults for unmapped fields
+    final dailyCarbTargetG = entry.dailyCarbTargetGrams;
+    final dailyServingsTarget = (dailyCarbTargetG / 50).round();
+
+    return CarbLoadingPlan(
+      id: entry.id,
+      userId: entry.userId,
+      raceDate: entry.endDate, // Use endDate as race date
+      raceDistance: RaceDistance.marathon, // Default since not stored in DB
+      trainingVolume: TrainingVolume.moderate, // Default since not stored in DB
+      dailyCarbTargetG: dailyCarbTargetG,
+      dailyServingsTarget: dailyServingsTarget,
+      bodyWeightKg: 70.0, // Default since not stored in this table
+      carbsPerKgTarget: 8.0, // Standard carb loading target
+      daySelections: {
+        -2: DayFoodSelections.empty(),
+        -1: DayFoodSelections.empty(),
+        0: DayFoodSelections.empty(),
+      },
+      createdAt: entry.generatedAt,
+      updatedAt: entry.localUpdatedAt,
+      isActive: entry.completedAt == null, // Active if not completed
     );
   }
 

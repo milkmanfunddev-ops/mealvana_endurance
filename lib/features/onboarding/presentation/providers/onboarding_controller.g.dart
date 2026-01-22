@@ -37,7 +37,7 @@ final class OnboardingControllerProvider
 }
 
 String _$onboardingControllerHash() =>
-    r'db1d9e26e0bfd9a24856b10d9be323c0251c982e';
+    r'a4507ed07962a565b55071c046ecea2ba23d9e29';
 
 /// Controller for managing onboarding flow state
 

@@ -101,6 +101,7 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         weightPounds: Value(profile.weightPounds),
         runsWithWaterBottle: Value(profile.runsWithWaterBottle),
         gutTrainingLevel: Value(profile.gutTraining.name),
+        sweatRate: Value(profile.sweatRate.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
         createdAt: Value(profile.createdAt),
         updatedAt: Value(profile.updatedAt),
@@ -114,6 +115,9 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
               : profile.dietaryPreference!.dbValue,
         ),
         allergies: Value(Allergy.toDbArray(profile.allergies)),
+        // Optional name fields for coach mode athlete identification
+        firstName: Value(profile.firstName),
+        lastName: Value(profile.lastName),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -142,6 +146,7 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         weightPounds: Value(profile.weightPounds),
         runsWithWaterBottle: Value(profile.runsWithWaterBottle),
         gutTrainingLevel: Value(profile.gutTraining.name),
+        sweatRate: Value(profile.sweatRate.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
         updatedAt: Value(DateTime.now()),
         appVersion: Value(profile.appVersion),
@@ -154,6 +159,9 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
               : profile.dietaryPreference!.dbValue,
         ),
         allergies: Value(Allergy.toDbArray(profile.allergies)),
+        // Optional name fields for coach mode athlete identification
+        firstName: Value(profile.firstName),
+        lastName: Value(profile.lastName),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -244,6 +252,10 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         (g) => g.name == dbUser.gutTrainingLevel,
         orElse: () => domain.GutTraining.moderate,
       ),
+      sweatRate: domain.SweatRateCat.values.firstWhere(
+        (s) => s.name == dbUser.sweatRate,
+        orElse: () => domain.SweatRateCat.medium,
+      ),
       onboardingCompleted: dbUser.onboardingCompleted,
       createdAt: dbUser.createdAt,
       updatedAt: dbUser.updatedAt,
@@ -255,6 +267,11 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
           DietaryPreference.fromDbValue(dbUser.dietaryPreference) ??
               DietaryPreference.none,
       allergies: Allergy.fromDbArray(dbUser.allergies),
+      // Sharing preferences
+      senderName: dbUser.senderName,
+      // Optional name fields for coach mode athlete identification
+      firstName: dbUser.firstName,
+      lastName: dbUser.lastName,
     );
   }
 }

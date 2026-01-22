@@ -39,7 +39,7 @@ final class EventsControllerProvider
   EventsController create() => EventsController();
 }
 
-String _$eventsControllerHash() => r'c4497b6040a9214ae06218a7da25c2bbd64c46a7';
+String _$eventsControllerHash() => r'0b904eae0b608a709a00377fc7efaecde604cd9b';
 
 /// Controller for managing events
 /// Handles event CRUD operations (create, read, update, delete)

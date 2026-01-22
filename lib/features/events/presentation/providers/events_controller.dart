@@ -10,6 +10,7 @@ import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
+import '../../data/events_repository.dart';
 
 part 'events_controller.g.dart';
 
@@ -218,9 +219,37 @@ class EventsController extends _$EventsController {
     }
   }
 
-  /// Refresh events list
+  /// Refresh events list (uses cached data, respects staleness)
   Future<void> refresh() async {
     ref.invalidateSelf();
+  }
+
+  /// Force refresh events from Supabase (bypasses staleness check).
+  ///
+  /// Use this for pull-to-refresh when user explicitly wants fresh data,
+  /// or when athlete needs to see coach-made changes immediately.
+  Future<void> forceRefresh() async {
+    final logger = ref.read(appLoggerProvider);
+
+    try {
+      final userId = await ref.read(userIdProvider.future);
+
+      // Force sync from Supabase (bypasses 24h staleness check)
+      await ref.read(syncCoordinatorProvider.notifier).forceSyncRepository(
+            'events',
+            userId,
+            repository: ref.read(eventsRepositoryProvider),
+          );
+
+      // Invalidate to reload with fresh data
+      ref.invalidateSelf();
+      ref.invalidate(nextUpcomingEventProvider);
+      ref.invalidate(allEventsProvider);
+    } catch (e) {
+      logger.error('Error during force refresh', error: e);
+      // Still invalidate to show whatever data we have
+      ref.invalidateSelf();
+    }
   }
 }
 

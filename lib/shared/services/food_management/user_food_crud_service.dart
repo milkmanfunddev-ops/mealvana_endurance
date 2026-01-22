@@ -34,7 +34,7 @@ class UserFoodCrudService {
   /// Load user foods for a user
   Future<List<Food>> getUserFoods(String userId) async {
     try {
-      final userFoodsData = await _database.getUserFoods(userId);
+      final userFoodsData = await _database.foodsDao.getUserFoods(userId);
 
       // Convert to Food domain objects
       final foods = userFoodsData
@@ -62,7 +62,7 @@ class UserFoodCrudService {
         logger: _logger,
       );
       // Get current user's ID
-      final userProfile = await _database.getCurrentUserProfile();
+      final userProfile = await _database.userDao.getCurrentUserProfile();
       final userId = userProfile?.id ?? 'unknown';
       final deviceId = userProfile?.deviceId ?? userId; // Use userId as fallback
       // Generate unique UUID for this food
@@ -71,7 +71,7 @@ class UserFoodCrudService {
       final categoryNames = _mapCategoryIdsToNames(categoryIds);
 
       // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
-      await _database.saveUserFood(
+      await _database.foodsDao.saveUserFood(
         deviceId: deviceId, // Keep for backwards compatibility
         userId: userId, // Use actual user UUID
         id: foodId,
@@ -138,7 +138,7 @@ class UserFoodCrudService {
           : null;
 
       // OFFLINE-FIRST: Update Drift IMMEDIATELY
-      final success = await _database.updateUserFood(
+      final success = await _database.foodsDao.updateUserFood(
         id: foodId,
         name: name,
         displayName: displayName,
@@ -190,11 +190,11 @@ class UserFoodCrudService {
   Future<void> deleteUserFood(String foodId) async {
     try {
       // Get current user's device ID
-      final userProfile = await _database.getCurrentUserProfile();
+      final userProfile = await _database.userDao.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
 
       // OFFLINE-FIRST: Delete from Drift IMMEDIATELY
-      await _database.deleteUserFood(foodId);
+      await _database.foodsDao.deleteUserFood(foodId);
 
       // Attempt background upload (non-blocking)
       unawaited(_uploadUserFoodDeletion(deviceId, foodId));
@@ -352,10 +352,10 @@ class UserFoodCrudService {
   /// Check if food exists in user_foods
   Future<bool> isUserFood(String foodId) async {
     try {
-      final userProfile = await _database.getCurrentUserProfile();
+      final userProfile = await _database.userDao.getCurrentUserProfile();
       final userId = userProfile?.id ?? 'unknown';
 
-      final userFoods = await _database.getUserFoods(userId);
+      final userFoods = await _database.foodsDao.getUserFoods(userId);
       return userFoods.any((userFood) => userFood.clientFoodId == foodId || userFood.id == foodId);
     } catch (e) {
       _logger.error('Error checking if food is user food',

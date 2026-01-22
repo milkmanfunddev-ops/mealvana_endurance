@@ -155,6 +155,9 @@ class UserRepository with SyncableRepository {
           DietaryPreference.fromDbValue(dbUser.dietaryPreference) ??
               DietaryPreference.none,
       allergies: Allergy.fromDbArray(dbUser.allergies),
+      // Optional name fields for coach mode athlete identification
+      firstName: dbUser.firstName,
+      lastName: dbUser.lastName,
     );
   }
 
@@ -164,7 +167,7 @@ class UserRepository with SyncableRepository {
   /// [needsUpload] - If true, marks profile for background upload to Supabase (for new registrations)
   Future<void> saveUserProfile(UserProfile profile, {bool needsUpload = false}) async {
     try {
-      await database.saveUserProfile(profile, needsUpload: needsUpload);
+      await database.userDao.saveUserProfile(profile, needsUpload: needsUpload);
       sentry.addBreadcrumb(
         message: 'User profile saved successfully',
         category: 'database',
@@ -205,7 +208,7 @@ class UserRepository with SyncableRepository {
 
       // Pass the auth user ID to find the matching profile
       // Without this, the database returns null (by design for logout scenarios)
-      return await database.getCurrentUserProfile(
+      return await database.userDao.getCurrentUserProfile(
         currentAuthUserId: currentAuthUserId,
       );
     } catch (e, stackTrace) {
@@ -224,7 +227,7 @@ class UserRepository with SyncableRepository {
   Future<void> updateUserProfile(UserProfile profile, {bool needsUpload = false}) async {
     try {
       final updatedProfile = profile.copyWith(updatedAt: DateTime.now());
-      await database.updateUserProfile(updatedProfile, needsUpload: needsUpload);
+      await database.userDao.updateUserProfile(updatedProfile, needsUpload: needsUpload);
 
       // Skip immediate Supabase sync if marked for background upload
       if (!needsUpload) {
@@ -325,7 +328,7 @@ class UserRepository with SyncableRepository {
   /// Get profile by Supabase auth user ID (auth_user_id column)
   Future<UserProfile?> getUserProfileByAuthUserId(String authUserId) async {
     try {
-      return await database.getUserProfileByAuthUserId(authUserId);
+      return await database.userDao.getUserProfileByAuthUserId(authUserId);
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -340,7 +343,7 @@ class UserRepository with SyncableRepository {
   /// Get profile by primary key/ID
   Future<UserProfile?> getUserProfileById(String userId) async {
     try {
-      return await database.getUserProfileById(userId);
+      return await database.userDao.getUserProfileById(userId);
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -354,12 +357,12 @@ class UserRepository with SyncableRepository {
 
   /// Delete user profile
   Future<bool> deleteUserProfile(String userId) async {
-    return await database.deleteUserProfile(userId);
+    return await database.userDao.deleteUserProfile(userId);
   }
 
   /// Check if user exists
   Future<bool> userExists(String userId) async {
-    final user = await database.getCurrentUserProfile();
+    final user = await database.userDao.getCurrentUserProfile();
     return user != null && user.id == userId;
   }
 
@@ -378,7 +381,7 @@ class UserRepository with SyncableRepository {
     bool mergeMode = false,
     String source = 'manual',
   }) async {
-    await database.saveFoodPreferences(
+    await database.foodPreferencesDao.saveFoodPreferences(
       userId,
       preferences,
       sliderLevels: sliderLevels,
@@ -392,22 +395,22 @@ class UserRepository with SyncableRepository {
   /// Used when allergies or dietary preferences are removed to undo auto-avoids
   /// Returns the number of preferences removed
   Future<int> removeFoodPreferencesBySource(String userId, String source) async {
-    return await database.removeFoodPreferencesBySource(userId, source);
+    return await database.foodPreferencesDao.removeFoodPreferencesBySource(userId, source);
   }
 
   /// Get food preferences with their sources for a user
   Future<Map<String, String>> getFoodPreferenceSources(String userId) async {
-    return await database.getFoodPreferenceSources(userId);
+    return await database.foodPreferencesDao.getFoodPreferenceSources(userId);
   }
 
   /// Get food preferences for a user
   Future<Map<String, FoodPreference>> getFoodPreferences(String userId) async {
-    return await database.getUserFoodPreferences(userId);
+    return await database.foodPreferencesDao.getUserFoodPreferences(userId);
   }
 
   /// Get stored slider levels for each food preference
   Future<Map<String, int>> getFoodPreferenceLevels(String userId) async {
-    return await database.getUserFoodPreferenceLevels(userId);
+    return await database.foodPreferencesDao.getUserFoodPreferenceLevels(userId);
   }
 
   /// Update a single food preference
@@ -428,12 +431,12 @@ class UserRepository with SyncableRepository {
 
   /// Get liked foods for a user
   Future<List<String>> getLikedFoods(String userId) async {
-    return await database.getLikedFoods(userId);
+    return await database.foodPreferencesDao.getLikedFoods(userId);
   }
 
   /// Get disliked foods for a user
   Future<List<String>> getDislikedFoods(String userId) async {
-    return await database.getDislikedFoods(userId);
+    return await database.foodPreferencesDao.getDislikedFoods(userId);
   }
 
   /// Pull custom foods from Supabase and cache locally
@@ -445,7 +448,7 @@ class UserRepository with SyncableRepository {
           .eq('user_id', userId)
           .eq('is_deleted', false);
 
-      await database.replaceUserFoods(userId, List<Map<String, dynamic>>.from(response));
+      await database.foodsDao.replaceUserFoods(userId, List<Map<String, dynamic>>.from(response));
     } catch (e, stackTrace) {
       await sentry.reportNetworkError(
         e,
@@ -458,7 +461,7 @@ class UserRepository with SyncableRepository {
 
   /// Clear all user data (for testing/reset)
   Future<void> clearAllData() async {
-    await database.clearAllData();
+    await database.diagnosticDao.clearAllData();
   }
 
   /// Reset to new anonymous user after sign-out
@@ -730,7 +733,7 @@ class UserRepository with SyncableRepository {
       // SAFETY CHECK: Don't wipe local data if server returned empty
       // This prevents data loss from RLS issues, network problems, or timing issues
       if (preferences.isEmpty) {
-        final localPrefs = await database.getUserFoodPreferences(userId);
+        final localPrefs = await database.foodPreferencesDao.getUserFoodPreferences(userId);
         if (localPrefs.isNotEmpty) {
           DebugLogger.warning(
             'Server returned empty food_preferences but local has ${localPrefs.length} items - keeping local data',
@@ -1337,7 +1340,7 @@ class UserRepository with SyncableRepository {
   }) async {
     // STEP 1: Update user_id in all local child tables (activities, events, etc.)
     // This must happen BEFORE deleting the anonymous user profile
-    await database.migrateUserData(fromUserId, toUserId);
+    await database.diagnosticDao.migrateUserData(fromUserId, toUserId);
 
     // Note: migrateUserData already deletes the anonymous user profile from the local DB
     // Now we just need to create/update the OAuth user profile

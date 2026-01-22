@@ -36,7 +36,7 @@ class NutritionPlanRepository {
   final ActivitiesRepository activitiesRepository;
 
   Future<Activity?> _getActivityRowWithPlan(String activityId) async {
-    final activity = await database.getActivityByIdLocal(activityId);
+    final activity = await database.activityDao.getActivityByIdLocal(activityId);
     if (activity == null || activity.nutritionPlanData == null) {
       return null;
     }
@@ -69,7 +69,7 @@ class NutritionPlanRepository {
       );
 
       final planJson = json.encode(plan.toJson());
-      await database.setActivityNutritionPlan(
+      await database.activityDao.setActivityNutritionPlan(
         activityId: activityId,
         planData: planJson,
       );
@@ -128,7 +128,7 @@ class NutritionPlanRepository {
     try {
       DebugLogger.info('🗑️ Clearing nutrition plan for activity $activityId');
 
-      await database.clearActivityNutritionPlan(activityId);
+      await database.activityDao.clearActivityNutritionPlan(activityId);
 
       return true;
     } catch (e, stackTrace) {
@@ -140,7 +140,7 @@ class NutritionPlanRepository {
   /// Get latest cached plan (local only)
   Future<domain.NutritionPlan?> getLatestCachedPlan(String userId) async {
     try {
-      final activity = await database.getLatestActivityWithNutritionPlan(userId);
+      final activity = await database.activityDao.getLatestActivityWithNutritionPlan(userId);
       if (activity?.nutritionPlanData == null) {
         return null;
       }
@@ -169,7 +169,7 @@ class NutritionPlanRepository {
       if (notes != null) planJson['journalNotes'] = notes;
       planJson.remove('runDateTime');
 
-      await database.setActivityNutritionPlan(
+      await database.activityDao.setActivityNutritionPlan(
         activityId: activity.id,
         planData: jsonEncode(planJson),
       );
@@ -195,7 +195,7 @@ class NutritionPlanRepository {
       final planJson = _decodePlanJson(activity.nutritionPlanData!);
       planJson['runDateTime'] = runDateTime.toIso8601String();
 
-      await database.setActivityNutritionPlan(
+      await database.activityDao.setActivityNutritionPlan(
         activityId: activity.id,
         planData: jsonEncode(planJson),
       );

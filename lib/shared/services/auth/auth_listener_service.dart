@@ -232,7 +232,7 @@ class AuthListenerService {
     // Check if user has completed onboarding before syncing
     try {
       final database = _ref.read(appDatabaseProvider);
-      final userProfile = await database.getCurrentUserProfile(
+      final userProfile = await database.userDao.getCurrentUserProfile(
         currentAuthUserId: userId,
       );
 

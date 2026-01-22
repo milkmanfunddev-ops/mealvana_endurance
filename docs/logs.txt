@@ -1,13 +1,13 @@
 Launching lib/main_dev.dart on iphone 15 pro max in debug mode...
-Xcode build done.                                           14.9s
-Connecting to VM Service at ws://127.0.0.1:59782/8Pro_M-edRQ=/ws
+Xcode build done.                                           15.8s
+Connecting to VM Service at ws://127.0.0.1:55785/7GGXyvfTjHg=/ws
 Connected to the VM Service.
 flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:27:19.821 (+0:00:00.007601)\^[[0m
+flutter: \^[[38;5;12m│ 14:36:11.096 (+0:00:00.004426)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] AuthListenerService initialized - listening for auth state changes\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
@@ -15,107 +15,61 @@ flutter: \^[[38;5;12m┌──────────────────�
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:27:20.020 (+0:00:00.206156)\^[[0m
+flutter: \^[[38;5;12m│ 14:36:11.287 (+0:00:00.194661)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {event: initialSession, has_session: true, user_id: 8873ba8f-b15a-4e1a-b011-fbcd64e619d9}\^[[0m
+flutter: \^[[38;5;12m│ 💡 Data: {event: initialSession, has_session: true, user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
 flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
 flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:27:21.092 (+0:00:01.278098)\^[[0m
+flutter: \^[[38;5;12m│ 14:36:12.955 (+0:00:01.863137)\^[[0m
 flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
 flutter: \^[[38;5;12m│ 💡 [VERSION_CHECK] Version check passed - continuing with normal startup\^[[0m
 flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: ✅ Schema validation passed (20 tables verified)
+flutter: ❌ Schema validation failed: Table "brands_table" does not exist
+flutter: 🗑️ Deleting corrupted database to force fresh sync...
+flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;196m│ DatabaseSchemaException: Database schema is corrupted or incomplete. The app will resync data from the server.\^[[0m
+flutter: \^[[38;5;196m│ Errors: Table "brands_table" does not exist\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ #0   package:mealvana_endurance/shared/database/app_database.dart 259:7                           AppDatabase._validateSchemaIntegrity\^[[0m
+flutter: \^[[38;5;196m│ #1   package:mealvana_endurance/shared/database/app_database.dart 194:11                          AppDatabase.migration.<fn>\^[[0m
+flutter: \^[[38;5;196m│ #2   package:drift/src/runtime/api/db_base.dart 137:7                                             GeneratedDatabase.beforeOpen.<fn>\^[[0m
+flutter: \^[[38;5;196m│ #3   package:drift/src/remote/client_impl.dart 59:17                                              DriftClient._handleRequest.<fn>\^[[0m
+flutter: \^[[38;5;196m│ #4   package:drift/src/remote/communication.dart 165:20                                           DriftCommunication.setRequestHandler.<fn>\^[[0m
+flutter: \^[[38;5;196m│ #5   ===== asynchronous gap ===========================\^[[0m
+flutter: \^[[38;5;196m│ #6   package:drift/src/remote/communication.dart 113:66                                           DriftCommunication.request\^[[0m
+flutter: \^[[38;5;196m│ #7   package:drift/src/remote/server_impl.dart 309:24                                             _ServerDbUser.beforeOpen\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ 14:36:14.759 (+0:00:03.667560)\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ ⛔ [DATABASE] Database initialization failed\^[[0m
+flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
+flutter: Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+flutter: Here is the stacktrace from when the database was opened a second time:
+flutter: #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+flutter: #1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+flutter: #2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+flutter: #3      new _$AppDatabase (package:mealvana_endurance/shared/database/app_database.g.dart:22242:36)
+flutter: #4      new AppDatabase (package:mealvana_endurance/shared/database/app_database.dart:117:19)
+flutter: #5      appDatabaseProvider.<anonymous closure> (package:mealvana_endurance/shared/database/database_provider.dart:10:10)
+flutter: #6      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
+flutter: #7      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
+flutter: #8      ProviderElement.buildState (package:riverpod/src/core/element.dart:633:28)
+flutter: #9      ProviderElement._performRebuild (package:riverpod/src/core/element.dart:548:5)
+flutter: #10     ProviderElement.flush (package:riverpod/src/core/element.dart:595:7)
+flutter: #11     $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:117:24)
+flutter: #12     ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:954:26)
+flutter: #13     ProviderContainer.read (package:riverpod/src/core/provider_container.dart:911:17)
+flutter: #14     Ref.read (package:riverpod/src/core/ref.dart:481:30)
+flutter: #15     AppStartup.build (package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart:116:28)
+flutter: <asynchronous suspension>
+flutter: #16     ElementWithFuture.handleFuture.<anonymous closure>.<anonymous closure> (package:riverpod/src/core/element.dart:220:9)
+flutter: <asynchronous suspension>
+flutter: This warning will only appear on debug builds.
 flutter: PushNotificationService: Initialized with app ID: 335e597f...
 flutter: PushNotificationService: Logged in user: CFE4E1BA-469D-4CBE-8F9C-ACD143C1E7F5
 flutter: PushNotificationService: Permission granted
-flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:08.750 (+0:00:48.936701)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {event: signedOut, has_session: false, user_id: null}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:08.755 (+0:00:48.941287)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] User-specific providers invalidated after sign-out\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:09.146 (+0:00:49.332209)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] Auth state changed\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {event: signedIn, has_session: true, user_id: a2f5742e-4475-4619-957f-f6b0e6795386}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:09.149 (+0:00:49.335257)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] User signed in - triggering background sync\^[[0m
-flutter: \^[[38;5;12m│ 💡 Data: {user_id: a2f5742e-4475-4619-957f-f6b0e6795386}\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;12m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:358:15)\^[[0m
-flutter: \^[[38;5;12m│ #1   PrettyAppLogger.info (package:mealvana_endurance/shared/services/logging_service.dart:151:5)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 09:28:09.155 (+0:00:49.341445)\^[[0m
-flutter: \^[[38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;12m│ 💡 [AUTH_LISTENER] User has not completed onboarding - skipping sync\^[[0m
-flutter: \^[[38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: 🆕 Generated new temp user ID for onboarding: f36974d9-b66a-4944-8547-582336c12878
-flutter: 🔑 ConnectTrainingController: Using temp user ID: f36974d9-b66a-4944-8547-582336c12878
-flutter:    (user profile exists: false, onboardingCompleted: null)
-flutter:    (current auth: a2f5742e-4475-4619-957f-f6b0e6795386)
-flutter: 🔌 connectFinalSurge: Starting connection for user f36974d9-b66a-4944-8547-582336c12878
-flutter: 🔐 Starting Final Surge OAuth flow...
-flutter:    Auth URL: https://log.finalsurge.com/oauth/authorize?client-id=BD5D0C2B-7507-405B-8A3F-DB161288E6FC&redirect-uri=com.milkman.mealvanaendurance%3A%2F%2F&state=b06f0534836fc514b1a0e56f867a0e0848303da100b6d3d841f3599bc75d233c
-flutter: 📥 Callback received:
-flutter:    Raw callback: com.milkman.mealvanaendurance://?state=b06f0534836fc514b1a0e56f867a0e0848303da100b6d3d841f3599bc75d233c&code=Xlk4JQXa7XVv
-flutter:    Parsed URI: com.milkman.mealvanaendurance://?state=b06f0534836fc514b1a0e56f867a0e0848303da100b6d3d841f3599bc75d233c&code=Xlk4JQXa7XVv
-flutter:    Code param: Xlk4JQXa7XVv
-flutter:    Code length: 12
-flutter: ✅ Received authorization code
-flutter: 🔄 Exchanging authorization code for token...
-flutter:    Code: Xlk4JQXa7XVv...
-flutter:    Client ID: BD5D0C2B-7507-405B-8A3F-DB161288E6FC
-flutter:    Redirect URI: com.milkman.mealvanaendurance://
-flutter:    Request body keys: [client-id, client-secret, code, redirect-uri]
-flutter:    Token exchange response status: 200
-flutter:    Response body: {
-  "token_type": "bearer",
-  "access_token": null,
-  "athlete": null,
-  "error": "Client Authorization Error or Code Not Found"
-}
-flutter:    JSON keys: [token_type, access_token, athlete, error]
-flutter: ❌ Token exchange error: Client Authorization Error or Code Not Found
-flutter: ❌ connectFinalSurge: Error occurred
-flutter:    Error: FinalSurgeApiException: Token exchange failed: Client Authorization Error or Code Not Found (status: 200)
-Body: {
-  "token_type": "bearer",
-  "access_token": null,
-  "athlete": null,
-  "error": "Client Authorization Error or Code Not Found"
-}
-flutter:    Stack: #0      FinalSurgeApiClient.exchangeCodeForToken (package:mealvana_endurance/features/integrations/data/final_surge_api_client.dart:98:7)
-<asynchronous suspension>
-#1      FinalSurgeOAuthService.authenticate (package:mealvana_endurance/features/integrations/application/final_surge_oauth_service.dart:94:27)
-<asynchronous suspension>
-#2      ConnectTrainingController.connectFinalSurge (package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart:228:27)
-<asynchronous suspension>
-#3      _ConnectedAppsScreenState._connectFinalSurgeOnboarding (package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart:466:21)
-<asynchronous suspension>

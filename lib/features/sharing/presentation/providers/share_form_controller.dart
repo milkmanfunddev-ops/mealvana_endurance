@@ -61,7 +61,7 @@ class ShareFormController extends _$ShareFormController {
   @override
   FutureOr<ShareFormState> build(NutritionPlan nutritionPlan) async {
     // Get sender name from database
-    final user = await _database.getCurrentUserProfile();
+    final user = await _database.userDao.getCurrentUserProfile();
     final userEntry = user != null
         ? await (_database.select(_database.userProfilesTable)
             ..where((u) => u.id.equals(user.id))
@@ -151,7 +151,7 @@ class ShareFormController extends _$ShareFormController {
       if (result.success) {
         // Save sender name to database if provided
         if (currentState.senderName.isNotEmpty) {
-          final user = await _database.getCurrentUserProfile();
+          final user = await _database.userDao.getCurrentUserProfile();
           if (user != null) {
             await (_database.update(_database.userProfilesTable)
               ..where((u) => u.id.equals(user.id))

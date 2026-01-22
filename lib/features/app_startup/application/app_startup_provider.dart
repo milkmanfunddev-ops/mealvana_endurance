@@ -122,7 +122,7 @@ class AppStartup extends _$AppStartup {
 
       // CRITICAL: Pass currentAuthUserId to getCurrentUserProfile
       // Without this, it returns null even when a valid session exists!
-      final user = await database.getCurrentUserProfile(
+      final user = await database.userDao.getCurrentUserProfile(
         currentAuthUserId: currentAuthUserId,
       );
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;

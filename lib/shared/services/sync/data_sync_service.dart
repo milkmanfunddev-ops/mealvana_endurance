@@ -250,11 +250,13 @@ class DataSyncService {
         );
       }
 
-      if (eventsData.isNotEmpty) {
-        await _syncAthleteEvents(eventsData);
-      }
+      // Sync activities BEFORE events because events may reference activities
+      // via activity_id foreign key
       if (activitiesData.isNotEmpty) {
         await _syncAthleteActivities(activitiesData);
+      }
+      if (eventsData.isNotEmpty) {
+        await _syncAthleteEvents(eventsData);
       }
       if (carbLoadingData.isNotEmpty) {
         await _syncAthleteCarbLoadingPlans(carbLoadingData);
@@ -290,7 +292,7 @@ class DataSyncService {
     try {
 
       // Get the current user profile from local database for this auth user
-      var localUser = await _database.getCurrentUserProfile(
+      var localUser = await _database.userDao.getCurrentUserProfile(
         currentAuthUserId: userId,
       );
 
@@ -311,7 +313,7 @@ class DataSyncService {
           await _saveRemoteUserProfile(remoteUser, userId);
 
           // Re-fetch the local user after saving
-          localUser = await _database.getCurrentUserProfile(
+          localUser = await _database.userDao.getCurrentUserProfile(
             currentAuthUserId: userId,
           );
         } else {
@@ -870,17 +872,10 @@ class DataSyncService {
       final supabaseUpdatedAt = DateTime.parse(data['updated_at'] as String);
 
       if (existingEvent == null || existingEvent.updatedAt.isBefore(supabaseUpdatedAt)) {
-        String? activityId;
-        final rawActivityId = _toStringId(data['activity_id']);
-        if (rawActivityId != null) {
-          final activity = await (_database.select(_database.activitiesTable)
-                ..where((tbl) => tbl.id.equals(rawActivityId)))
-              .getSingleOrNull();
-          if (activity == null || activity.userId != userId) {
-            return;
-          }
-          activityId = activity.id;
-        }
+        // Keep activity_id from the data even if activity doesn't exist locally yet
+        // This is important for coach sync scenarios where activities may be synced after events
+        // The activity might be synced later, and the foreign key relationship will be valid
+        final activityId = _toStringId(data['activity_id']);
 
         final companion = EventsTableCompanion.insert(
           id: Value(eventId),
@@ -1096,7 +1091,7 @@ class DataSyncService {
 
       // SAFETY CHECK: Don't wipe local data if server returned empty
       if (preferences.isEmpty) {
-        final localPrefs = await _database.getUserFoodPreferences(userId);
+        final localPrefs = await _database.foodPreferencesDao.getUserFoodPreferences(userId);
         if (localPrefs.isNotEmpty) {
           _logger.warning(
             'Server returned empty food_preferences but local has ${localPrefs.length} items - keeping local data',
@@ -1107,7 +1102,7 @@ class DataSyncService {
       }
 
       // Use merge mode to preserve local preferences not in server response
-      await _database.saveFoodPreferences(
+      await _database.foodPreferencesDao.saveFoodPreferences(
         userId,
         preferences,
         sliderLevels: sliderLevels.isEmpty ? null : sliderLevels,
@@ -2582,7 +2577,7 @@ class DataSyncService {
   Future<void> _uploadFoodPreferences(String userId) async {
     try {
       // Get all food preference entries from local database
-      final entries = await _database.getAllFoodPreferenceEntries(userId);
+      final entries = await _database.foodPreferencesDao.getAllFoodPreferenceEntries(userId);
 
       if (entries.isEmpty) {
         return;

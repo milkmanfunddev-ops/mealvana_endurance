@@ -98,7 +98,7 @@ void main() {
 
       logSection('Verifying user profile in database');
 
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.userDao.getCurrentUserProfile();
 
       logTestResult('user_id', userProfile?.id);
       logTestResult('gender', userProfile?.gender);
@@ -185,7 +185,7 @@ void main() {
         ),
       );
 
-      final updatedProfile = await database.getCurrentUserProfile();
+      final updatedProfile = await database.userDao.getCurrentUserProfile();
 
       logTestResult('gut_training_level', updatedProfile?.gutTrainingLevel);
 
@@ -359,7 +359,7 @@ void main() {
         ),
       );
 
-      final completedProfile = await database.getCurrentUserProfile();
+      final completedProfile = await database.userDao.getCurrentUserProfile();
 
       logTestResult('onboarding_completed', completedProfile?.onboardingCompleted);
 

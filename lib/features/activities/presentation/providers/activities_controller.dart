@@ -180,9 +180,33 @@ class ActivitiesController extends _$ActivitiesController {
     }
   }
 
-  /// Refresh activities list
+  /// Refresh activities list (uses cached data, respects staleness)
   Future<void> refresh() async {
     ref.invalidateSelf();
+  }
+
+  /// Force refresh activities from Supabase (bypasses staleness check).
+  ///
+  /// Use this for pull-to-refresh when user explicitly wants fresh data,
+  /// or when athlete needs to see coach-made changes immediately.
+  Future<void> forceRefresh() async {
+    try {
+      final userId = await ref.read(userIdProvider.future);
+
+      // Force sync from Supabase (bypasses 24h staleness check)
+      await ref.read(syncCoordinatorProvider.notifier).forceSyncRepository(
+            'activities',
+            userId,
+            repository: ref.read(activitiesRepositoryProvider),
+          );
+
+      // Invalidate to reload with fresh data
+      ref.invalidateSelf();
+    } catch (e) {
+      _logger.error('Error during force refresh', error: e);
+      // Still invalidate to show whatever data we have
+      ref.invalidateSelf();
+    }
   }
 }
 

@@ -230,7 +230,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       DebugLogger.info('✅ _saveSearchedFood - Database connection obtained');
 
       DebugLogger.info('🔄 _saveSearchedFood - Getting user profile...');
-      final userProfile = await database.getCurrentUserProfile();
+      final userProfile = await database.userDao.getCurrentUserProfile();
       final deviceId = userProfile?.id ?? 'unknown';
       DebugLogger.info('✅ _saveSearchedFood - Device ID: $deviceId');
 
@@ -238,7 +238,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       DebugLogger.info('🔄 _saveSearchedFood - Checking for duplicates...');
       final barcode = foodItem.description?.replaceAll('Scanned from barcode ', '') ?? '';
       DebugLogger.info('📊 _saveSearchedFood - Extracted barcode: "$barcode"');
-      final hasDuplicate = await database.hasUserFoodWithBarcode(deviceId, barcode);
+      final hasDuplicate = await database.foodsDao.hasUserFoodWithBarcode(deviceId, barcode);
       DebugLogger.info('📊 _saveSearchedFood - Has duplicate: $hasDuplicate');
 
       if (hasDuplicate) {
@@ -275,7 +275,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       // Use user-selected product type if provided, otherwise fall back to 'import'
       final finalProductType = productType ?? foodItem.productTypeId ?? 'import';
 
-      await database.saveUserFood(
+      await database.foodsDao.saveUserFood(
         deviceId: deviceId,
         userId: deviceId,
         id: foodItem.id,

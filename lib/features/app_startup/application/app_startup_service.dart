@@ -120,7 +120,7 @@ class AppStartupService {
 
       // CRITICAL: Run database health check after initialization
       // This detects SQLite corruption early before it causes crashes
-      final isHealthy = await db.isDatabaseHealthy();
+      final isHealthy = await db.diagnosticDao.isDatabaseHealthy();
 
       if (!isHealthy) {
         _logger.warning(
@@ -139,7 +139,7 @@ class AppStartupService {
         final freshDb = ref.read(appDatabaseProvider);
 
         // Verify fresh database is healthy
-        final isFreshHealthy = await freshDb.canExecuteQueries();
+        final isFreshHealthy = await freshDb.diagnosticDao.canExecuteQueries();
         if (!isFreshHealthy) {
           throw Exception('Fresh database creation failed after corruption recovery');
         }
@@ -322,7 +322,7 @@ class AppStartupService {
   Future<void> checkUserSession() async {
     try {
       final database = ref.read(appDatabaseProvider);
-      final user = await database.getCurrentUserProfile();
+      final user = await database.userDao.getCurrentUserProfile();
 
       if (user != null) {
         // User exists locally - identify them properly in analytics
@@ -352,7 +352,7 @@ class AppStartupService {
       final currentAuthUserId = _supabase.auth.currentUser?.id;
 
       // Check if we have a current user
-      final user = await database.getCurrentUserProfile(
+      final user = await database.userDao.getCurrentUserProfile(
         currentAuthUserId: currentAuthUserId,
       );
 
@@ -408,14 +408,14 @@ class AppStartupService {
       final currentAuthUserId = _supabase.auth.currentUser?.id;
 
       // Check if we have a current user
-      final user = await database.getCurrentUserProfile(
+      final user = await database.userDao.getCurrentUserProfile(
         currentAuthUserId: currentAuthUserId,
       );
       if (user == null) return null;
 
       // Get plans that have a run date/time in the past but no feedback yet
       final now = DateTime.now();
-      final planActivities = await database.getActivitiesWithNutritionPlans(user.id);
+      final planActivities = await database.activityDao.getActivitiesWithNutritionPlans(user.id);
 
       for (final activity in planActivities) {
         final planDataRaw = activity.nutritionPlanData;

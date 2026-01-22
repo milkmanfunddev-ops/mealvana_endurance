@@ -96,10 +96,10 @@ class FeedbackService {
       String? activityId;
       try {
         final database = ref.read(appDatabaseProvider);
-        final currentUser = await database.getCurrentUserProfile();
+        final currentUser = await database.userDao.getCurrentUserProfile();
         if (currentUser != null) {
           final latestPlanActivity =
-              await database.getLatestActivityWithNutritionPlan(currentUser.id);
+              await database.activityDao.getLatestActivityWithNutritionPlan(currentUser.id);
           activityId = latestPlanActivity?.id;
         }
       } catch (e) {

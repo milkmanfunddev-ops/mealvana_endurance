@@ -126,7 +126,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
     // Get user profile for current auth session
     // Returns null if no auth session or no matching profile
-    final user = await database.getCurrentUserProfile(
+    final user = await database.userDao.getCurrentUserProfile(
       currentAuthUserId: currentAuthUserId,
     );
 

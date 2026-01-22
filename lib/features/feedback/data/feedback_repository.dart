@@ -162,7 +162,7 @@ class FeedbackRepository with SyncableRepository {
     final localId = DateTime.now().millisecondsSinceEpoch.toString();
     
     // Save to local database first (for offline access)
-    await _database.saveSurveyResponse(
+    await _database.contentDao.saveSurveyResponse(
       id: localId,
       confidenceLevel: response.confidenceLevel.value,
       confidenceLabel: response.confidenceLevel.label,
@@ -250,7 +250,7 @@ class FeedbackRepository with SyncableRepository {
 
   /// Get latest survey response for device
   Future<FeedbackEntry?> getLatestSurveyResponse(String deviceId) async {
-    return await _database.getLatestSurveyResponse(deviceId);
+    return await _database.contentDao.getLatestSurveyResponse(deviceId);
   }
 
   /// Update user notification preferences
@@ -258,7 +258,7 @@ class FeedbackRepository with SyncableRepository {
     required String userId,
     required NotificationPreference preference,
   }) async {
-    await _database.updateUserNotificationPreferences(
+    await _database.userDao.updateUserNotificationPreferences(
       userId: userId,
       notificationsEnabled: true, // User explicitly requested notifications
       defaultReminderDay: preference.dayOfWeek ?? 4, // Default to Thursday if null
@@ -271,7 +271,7 @@ class FeedbackRepository with SyncableRepository {
   /// Check if user has submitted survey recently
   /// Rate limits to one survey per 24 hours per device to prevent spam/abuse
   Future<bool> hasRecentSurveyResponse(String deviceId) async {
-    final latestResponse = await _database.getLatestSurveyResponse(deviceId);
+    final latestResponse = await _database.contentDao.getLatestSurveyResponse(deviceId);
     if (latestResponse == null) return false;
 
     final hoursSinceLastResponse = DateTime.now()

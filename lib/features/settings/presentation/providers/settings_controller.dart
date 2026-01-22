@@ -640,7 +640,7 @@ class SettingsController extends _$SettingsController {
 
       // Clear user's local data with forceDelete = true
       // This deletes ONLY this user's data (WHERE user_id = currentUserId)
-      await database.clearUserScopedData(
+      await database.diagnosticDao.clearUserScopedData(
         userId: currentUserId,
         forceDelete: true,
       );

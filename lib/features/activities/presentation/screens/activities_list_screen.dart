@@ -183,7 +183,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
         return RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(activitiesControllerProvider);
+            // Force sync from Supabase to get coach changes
+            await ref.read(activitiesControllerProvider.notifier).forceRefresh();
+            // Also refresh related providers
             ref.invalidate(carbLoadingControllerProvider);
             ref.invalidate(nextUpcomingEventProvider);
           },

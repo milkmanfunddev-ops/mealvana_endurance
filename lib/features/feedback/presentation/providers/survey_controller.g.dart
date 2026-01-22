@@ -33,7 +33,7 @@ final class SurveyControllerProvider
   SurveyController create() => SurveyController();
 }
 
-String _$surveyControllerHash() => r'8b44db19cd8b8bee6aec9f9fc4001933a7221399';
+String _$surveyControllerHash() => r'e352bbc9654d4749af1ae103ad52bbaa039af204';
 
 abstract class _$SurveyController extends $AsyncNotifier<SurveyState> {
   FutureOr<SurveyState> build();

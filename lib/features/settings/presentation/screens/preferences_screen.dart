@@ -309,7 +309,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 child: _buildTextField(
                   context: context,
                   controller: _firstNameController,
-                  hint: 'First name (optional)',
+                  hint: 'First name',
                   icon: FontAwesomeIcons.user,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
@@ -320,7 +320,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 child: _buildTextField(
                   context: context,
                   controller: _lastNameController,
-                  hint: 'Last name (optional)',
+                  hint: 'Last name',
                   icon: FontAwesomeIcons.user,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,

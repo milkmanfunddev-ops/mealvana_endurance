@@ -4,9 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/athlete_detail_controller.dart';
+import '../../../calendar/presentation/providers/calendar_view_provider.dart';
+import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
+import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
+import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
+import '../../../calendar/domain/calendar_day_indicators.dart';
 
 /// Screen showing detailed view of an athlete for coaches
-class AthleteDetailScreen extends ConsumerWidget {
+class AthleteDetailScreen extends ConsumerStatefulWidget {
   final String relationshipId;
 
   const AthleteDetailScreen({
@@ -15,9 +20,17 @@ class AthleteDetailScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AthleteDetailScreen> createState() => _AthleteDetailScreenState();
+}
+
+class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
+  // Selected date for the calendar in Activities tab
+  DateTime _selectedDate = DateTime.now();
+
+  @override
+  Widget build(BuildContext context) {
     final detailAsync = ref.watch(
-      athleteDetailControllerProvider(relationshipId),
+      athleteDetailControllerProvider(widget.relationshipId),
     );
 
     return Scaffold(
@@ -29,7 +42,7 @@ class AthleteDetailScreen extends ConsumerWidget {
             icon: const Icon(Icons.chat),
             tooltip: 'Open Chat',
             onPressed: () {
-              context.push('/chat/$relationshipId');
+              context.push('/chat/${widget.relationshipId}');
             },
           ),
           // Refresh button - syncs athlete data from Supabase
@@ -46,7 +59,7 @@ class AthleteDetailScreen extends ConsumerWidget {
                 ? null
                 : () {
                     ref
-                        .read(athleteDetailControllerProvider(relationshipId).notifier)
+                        .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
                         .refresh();
                   },
           ),
@@ -54,8 +67,8 @@ class AthleteDetailScreen extends ConsumerWidget {
       ),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => _buildErrorView(context, error.toString(), ref),
-        data: (state) => _buildContent(context, state, ref),
+        error: (error, stack) => _buildErrorView(context, error.toString()),
+        data: (state) => _buildContent(context, state),
       ),
       floatingActionButton: detailAsync.maybeWhen(
         data: (state) => _buildCreateWorkoutFab(context, state),
@@ -64,7 +77,7 @@ class AthleteDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorView(BuildContext context, String error, WidgetRef ref) {
+  Widget _buildErrorView(BuildContext context, String error) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -86,7 +99,7 @@ class AthleteDetailScreen extends ConsumerWidget {
             ElevatedButton.icon(
               onPressed: () {
                 ref
-                    .read(athleteDetailControllerProvider(relationshipId).notifier)
+                    .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
                     .refresh();
               },
               icon: const Icon(Icons.refresh),
@@ -101,7 +114,6 @@ class AthleteDetailScreen extends ConsumerWidget {
   Widget _buildContent(
     BuildContext context,
     AthleteDetailState state,
-    WidgetRef ref,
   ) {
     return DefaultTabController(
       length: 4,
@@ -445,37 +457,161 @@ class AthleteDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildActivitiesTab(BuildContext context, AthleteDetailState state) {
-    if (state.activities.isEmpty) {
-      return _buildEmptyView(
-        context,
-        'No Activities',
-        'This athlete has no activities yet.',
-        Icons.directions_run,
-      );
-    }
+    final calendarMode = ref.watch(calendarViewProvider);
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: state.activities.length,
-      itemBuilder: (context, index) {
-        final activity = state.activities[index];
-        return Card(
-          child: ListTile(
-            leading: const Icon(Icons.directions_run),
-            title: Text(activity.title),
-            subtitle: Text(
-              '${activity.distanceMiles?.toStringAsFixed(1) ?? "-"} mi - ${_formatDate(activity.scheduledDateTime)}',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              context.push('/plan', extra: {
-                'activityId': activity.id,
-                'isCoachView': true,
+    // Build day indicators map from athlete data
+    final dayIndicators = _buildDayIndicatorsMap(state);
+
+    // Filter activities for selected date
+    final selectedDateActivities = state.activities.where((activity) {
+      return _isSameDay(activity.scheduledDateTime, _selectedDate);
+    }).toList();
+    // Sort by time (ascending) so morning activities appear before afternoon
+    selectedDateActivities.sort((a, b) =>
+        a.scheduledDateTime.compareTo(b.scheduledDateTime));
+
+    return Column(
+      children: [
+        const SizedBox(height: 4),
+        // Calendar view toggle
+        CalendarViewToggle(
+          selectedMode: calendarMode,
+          onModeChanged: (mode) {
+            ref.read(calendarViewProvider.notifier).setView(mode);
+          },
+        ),
+        const SizedBox(height: 8),
+        // Calendar (week or month view)
+        if (calendarMode == CalendarViewMode.week)
+          CalendarWeekViewKyle(
+            selectedDate: _selectedDate,
+            onDateSelected: (date) {
+              setState(() {
+                _selectedDate = date;
               });
             },
+            dayIndicators: dayIndicators,
+          )
+        else
+          CalendarMonthViewKyle(
+            selectedDate: _selectedDate,
+            onDateSelected: (date) {
+              setState(() {
+                _selectedDate = date;
+              });
+            },
+            dayIndicators: dayIndicators,
           ),
+        const SizedBox(height: 8),
+        // Activities list for selected date
+        Expanded(
+          child: selectedDateActivities.isEmpty
+              ? _buildEmptyActivitiesForDate(context)
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: selectedDateActivities.length,
+                  itemBuilder: (context, index) {
+                    final activity = selectedDateActivities[index];
+                    return Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.directions_run),
+                        title: Text(activity.title),
+                        subtitle: Text(
+                          '${activity.distanceMiles?.toStringAsFixed(1) ?? "-"} mi - ${_formatDate(activity.scheduledDateTime)}',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          context.push('/plan', extra: {
+                            'activityId': activity.id,
+                            'isCoachView': true,
+                          });
+                        },
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  /// Build day indicators map for the calendar from athlete data
+  Map<DateTime, Set<DayIndicatorType>> _buildDayIndicatorsMap(
+      AthleteDetailState state) {
+    final map = <DateTime, Set<DayIndicatorType>>{};
+
+    // Add activity indicators
+    for (final activity in state.activities) {
+      final date = DateTime(
+        activity.scheduledDateTime.year,
+        activity.scheduledDateTime.month,
+        activity.scheduledDateTime.day,
+      );
+      map.putIfAbsent(date, () => {}).add(DayIndicatorType.activity);
+    }
+
+    // Add event indicators
+    for (final event in state.events) {
+      if (event.eventDate != null) {
+        final date = DateTime(
+          event.eventDate!.year,
+          event.eventDate!.month,
+          event.eventDate!.day,
         );
-      },
+        map.putIfAbsent(date, () => {}).add(DayIndicatorType.event);
+      }
+    }
+
+    // Add carb loading indicators
+    for (final plan in state.carbLoadingPlans) {
+      final raceDate = DateTime(
+        plan.raceDate.year,
+        plan.raceDate.month,
+        plan.raceDate.day,
+      );
+      map.putIfAbsent(raceDate, () => {}).add(DayIndicatorType.carbLoading);
+    }
+
+    return map;
+  }
+
+  /// Check if two dates are the same day
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  /// Empty state when no activities on selected date
+  Widget _buildEmptyActivitiesForDate(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.calendar_today,
+              size: 48,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No activities on ${_formatDate(_selectedDate)}',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Select another date or create a new activity',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -576,7 +712,7 @@ class AthleteDetailScreen extends ConsumerWidget {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    return '${date.month}/${date.day}/${date.year}';
   }
 
   Widget _buildCreateWorkoutFab(BuildContext context, AthleteDetailState state) {

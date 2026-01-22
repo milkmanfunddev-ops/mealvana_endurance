@@ -221,7 +221,7 @@ class SurveyController extends _$SurveyController {
 
     try {
       // Get current user profile to get device ID
-      final user = await _database.getCurrentUserProfile();
+      final user = await _database.userDao.getCurrentUserProfile();
       final deviceId = user?.id ?? 'anonymous';
       final response = currentState.toSurveyResponse(deviceId: deviceId, planName: planName);
       
