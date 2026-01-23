@@ -10,7 +10,7 @@
  * - transition: Triathlon transition zone
  */
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { safe } from '../utils.ts';
 import type { Food, Phase, ActivityType } from './types.ts';
 import { PREFERENCE_SCORE_MAP, DEFAULT_MAX_SERVINGS, getCategoryForPhase } from './constants.ts';
