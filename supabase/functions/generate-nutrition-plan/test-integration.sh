@@ -4,9 +4,15 @@
 
 set -e
 
-# Configuration
-SUPABASE_URL="${SUPABASE_URL:-https://vlmtsdzpnjnavdgytcmi.supabase.co}"
-SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbXRzZHpwbmpuYXZkZ3l0Y21pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4NTI3OTAsImV4cCI6MjA3NTQyODc5MH0._7t1pjG_1zk4xkfseu2ACqYXdwEJKcRUWyvY4ZXs35o}"
+# Configuration - set these environment variables before running:
+#   export SUPABASE_URL="https://your-project.supabase.co"
+#   export SUPABASE_ANON_KEY="your-anon-key"
+if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+    echo "Error: SUPABASE_URL and SUPABASE_ANON_KEY environment variables must be set."
+    echo "  export SUPABASE_URL=\"https://your-project.supabase.co\""
+    echo "  export SUPABASE_ANON_KEY=\"your-anon-key\""
+    exit 1
+fi
 EDGE_FUNCTION_URL="${SUPABASE_URL}/functions/v1/generate-nutrition-plan"
 
 # Colors for output
@@ -20,8 +26,9 @@ PASSED=0
 FAILED=0
 WARNINGS=0
 
-# Known fallback indicators
-FALLBACK_PATTERNS="gels/chews|fluids + electrolytes|carbs + electrolytes|generic carbs|generic fuel|electrolyte drink|carbohydrate source"
+# Known fallback indicators (specific placeholders, not real food names)
+# Note: "electrolyte drink mix" is a real food, not a fallback
+FALLBACK_PATTERNS="gels/chews|fluids \+ electrolytes|carbs \+ electrolytes|generic carbs|generic fuel|carbohydrate source"
 
 # Helper function to call edge function
 call_edge_function() {
