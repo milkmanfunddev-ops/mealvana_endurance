@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
@@ -9,6 +10,8 @@ import '../../domain/food_item_data.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/app_external_deps.dart';
+import '../../application/nutrition_plan_service.dart';
 import '../../data/nutrition_plan_repository.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
@@ -309,11 +312,59 @@ class ActivityDetailController extends _$ActivityDetailController {
   // UNIFIED FOOD MODIFICATION METHODS
   // ============================================================================
 
-  /// Check if a category matches a section title
-  bool _categoryMatchesSection(String category, String sectionTitle) {
-    return (category == 'before_run' && sectionTitle == 'Before Run') ||
-           (category == 'during_run' && sectionTitle == 'During Run') ||
-           (category == 'after_run' && sectionTitle == 'After Run');
+  /// Check if a category matches a section by ID or title using flexible prefix matching
+  ///
+  /// Supports all activity types: running, cycling, swimming, brick
+  /// Categories: 'before_run', 'during_run', 'during_swim', 'during_cycling', 'transition', 'after_run'
+  bool _categoryMatchesSection(String category, String sectionId, String sectionTitle) {
+    final categoryLower = category.toLowerCase();
+    final sectionIdLower = sectionId.toLowerCase();
+    final titleLower = sectionTitle.toLowerCase();
+
+    // Handle transition category (brick-specific)
+    if (categoryLower == 'transition') {
+      return sectionIdLower.startsWith('t') && sectionIdLower.length <= 2; // T1, T2
+    }
+
+    // Handle sport-specific during categories (brick workouts)
+    if (categoryLower.startsWith('during_')) {
+      final sportSuffix = categoryLower.replaceFirst('during_', '');
+
+      // Must be a during section
+      if (!sectionIdLower.contains('during') && !titleLower.startsWith('during')) {
+        return false;
+      }
+
+      // Match sport from title
+      if (sportSuffix == 'swim' || sportSuffix == 'swimming') {
+        return titleLower.contains('swim');
+      }
+      if (sportSuffix == 'cycling' || sportSuffix == 'bike' || sportSuffix == 'ride') {
+        return titleLower.contains('bike') || titleLower.contains('cycle') || titleLower.contains('ride');
+      }
+      if (sportSuffix == 'run' || sportSuffix == 'running') {
+        // For 'during_run', match any during section that contains 'run' OR
+        // any during section that doesn't contain swim/bike/cycle (backward compat)
+        return titleLower.contains('run') ||
+               (!titleLower.contains('swim') && !titleLower.contains('bike') && !titleLower.contains('cycle'));
+      }
+    }
+
+    // Extract phase prefix (e.g., 'before' from 'before_run')
+    final phasePrefix = categoryLower.split('_').first;
+
+    // Flexible prefix matching for before/after
+    if (phasePrefix == 'before') {
+      return sectionIdLower.contains('before') || titleLower.startsWith('before');
+    }
+    if (phasePrefix == 'after') {
+      return sectionIdLower.contains('after') || titleLower.startsWith('after');
+    }
+    if (phasePrefix == 'during') {
+      return sectionIdLower.contains('during') || titleLower.startsWith('during');
+    }
+
+    return false;
   }
 
   /// Create a FoodItemData from a food object with optional custom amount
@@ -365,7 +416,7 @@ class ActivityDetailController extends _$ActivityDetailController {
     try {
       // Update sections, using copyWith to preserve all section properties (including targets)
       final updatedSections = currentPlan.sections.map((section) {
-        if (_categoryMatchesSection(category, section.title)) {
+        if (_categoryMatchesSection(category, section.id, section.title)) {
           final updatedItems = transform(section.foodItems);
           return section.copyWith(foodItems: updatedItems);
         }
@@ -528,5 +579,114 @@ class ActivityDetailController extends _$ActivityDetailController {
         return item;
       }).toList(),
     );
+  }
+
+  // ============================================================================
+  // BUSINESS LOGIC METHODS (moved from ActivityDetailScreen for FOA compliance)
+  // ============================================================================
+
+  /// Regenerate nutrition plan after schedule change
+  /// Returns true on success, false on failure
+  Future<bool> regenerateNutritionPlan() async {
+    final currentState = state.value;
+    if (currentState?.activity == null) return false;
+
+    final activity = currentState!.activity!;
+
+    try {
+      final nutritionService = ref.read(nutritionPlanServiceProvider);
+      await nutritionService.regenerateForScheduleChange(activity);
+
+      // Refresh controller data from database
+      ref.invalidateSelf();
+
+      _trackAnalytics('nutrition_plan_regenerated_after_schedule_change', {
+        'activity_id': activity.id,
+        'activity_type': activity.activityType.name,
+        'provider': activity.syncedFromProvider ?? 'manual',
+        'distance_miles': activity.distanceMiles?.toString(),
+        'duration_minutes': activity.durationMinutes?.toString(),
+      });
+
+      return true;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to regenerate nutrition plan',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'activityId': activity.id},
+      );
+      return false;
+    }
+  }
+
+  /// Delete the current activity
+  /// Returns true on success, false on failure
+  Future<bool> deleteActivity() async {
+    try {
+      final user = await _authService.getCurrentUser();
+      if (user == null) return false;
+
+      await _activitiesService.deleteActivity(
+        deviceId: user.id,
+        activityId: activityId,
+      );
+
+      _trackAnalytics('activity_deleted', {
+        'activity_id': activityId,
+        'deleted_from': 'activity_detail_screen',
+      });
+
+      return true;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to delete activity',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'activityId': activityId},
+      );
+      return false;
+    }
+  }
+
+  /// Track an analytics event
+  void _trackAnalytics(String event, Map<String, dynamic> properties) {
+    try {
+      final analytics = ref.read(appExternalDepsProvider);
+      analytics.analytics.track(event, properties: properties);
+    } catch (e) {
+      // Silently fail analytics
+    }
+  }
+
+  /// Track a user-facing analytics event (callable from UI)
+  void trackEvent(String event, Map<String, dynamic> properties) {
+    _trackAnalytics(event, properties);
+  }
+
+  // ============================================================================
+  // SWIPE HINT STATE MANAGEMENT
+  // ============================================================================
+
+  static const String swipeHintShownKey = 'activity_detail_swipe_hint_shown';
+
+  /// Check if the swipe hint has been shown before
+  bool checkSwipeHintShown(SharedPreferences prefs) {
+    try {
+      return prefs.getBool(swipeHintShownKey) ?? false;
+    } catch (e) {
+      return true; // Assume shown on error
+    }
+  }
+
+  /// Mark the swipe hint as shown
+  Future<void> markSwipeHintShown(SharedPreferences prefs) async {
+    try {
+      await prefs.setBool(swipeHintShownKey, true);
+    } catch (e) {
+      // Silently fail
+    }
   }
 }

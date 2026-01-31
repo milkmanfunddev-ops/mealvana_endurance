@@ -3,9 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity.dart';
 import '../../../domain/nutrition_plan.dart';
-import '../../../domain/food_item_data.dart';
-import '../../utils/activity_detail_helpers.dart';
-import 'expandable_food_item_widget.dart';
+import 'dismissible_food_item.dart';
+import 'macro_summary_row.dart';
 
 /// BrickNutritionSections widget - renders multi-phase nutrition sections for brick workouts
 ///
@@ -22,6 +21,7 @@ class BrickNutritionSections extends StatelessWidget {
     required this.onDeleteFood,
     required this.onUpdateQuantity,
     this.showSwipeHint = false,
+    this.useImperial = false,
   });
 
   final Activity brick;
@@ -31,6 +31,7 @@ class BrickNutritionSections extends StatelessWidget {
   final Function(String foodId, String category) onDeleteFood;
   final Function(String foodId, String category, double newQuantity) onUpdateQuantity;
   final bool showSwipeHint;
+  final bool useImperial;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +89,7 @@ class BrickNutritionSections extends StatelessWidget {
   Widget _buildSection(BuildContext context, PlanSection section) {
     final isTransition = section.id.startsWith('T');
     final isSwimming = section.title.toLowerCase().contains('swim');
-    final category = _getCategoryFromSectionId(section.id);
+    final category = _getCategoryFromSection(section.id, section.title);
     final sectionColor = _getSectionColor(section.id);
 
     return Container(
@@ -115,7 +116,12 @@ class BrickNutritionSections extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          _buildMacroSummaryRow(context, section, category),
+          MacroSummaryRow(
+            foods: section.foodItems,
+            section: section,
+            category: category,
+            useImperial: useImperial,
+          ),
           const SizedBox(height: AppSpacing.md),
           if (isSwimming && section.foodItems.isEmpty)
             _buildNoFoodsDuringSwimMessage(context)
@@ -127,10 +133,13 @@ class BrickNutritionSections extends StatelessWidget {
                 padding: EdgeInsets.only(
                   bottom: index < section.foodItems.length - 1 ? AppSpacing.sm : 0,
                 ),
-                child: _buildExpandableFoodItem(
-                  context,
-                  food,
-                  category,
+                child: DismissibleFoodItem(
+                  food: food,
+                  category: category,
+                  onSwap: () => onSwapFood(food.id, food.name, category),
+                  onDelete: () => onDeleteFood(food.id, category),
+                  onQuantityChange: (newQuantity) => onUpdateQuantity(food.id, category, newQuantity),
+                  showSwipeHint: showSwipeHint,
                 ),
               );
             }),
@@ -218,244 +227,29 @@ class BrickNutritionSections extends StatelessWidget {
     );
   }
 
-  /// Build macro summary row for section
-  Widget _buildMacroSummaryRow(BuildContext context, PlanSection section, String category) {
-    // Calculate totals
-    int totalCarbs = 0;
-    int totalProtein = 0;
-    int totalSodium = 0;
-    double totalFluids = 0;
-
-    for (final food in section.foodItems) {
-      if (food.nutritionalInfo != null) {
-        totalCarbs += food.nutritionalInfo!.carbs ?? 0;
-        totalProtein += food.nutritionalInfo!.protein ?? 0;
-        totalSodium += food.nutritionalInfo!.sodium ?? 0;
-        totalFluids += food.nutritionalInfo!.fluids ?? 0;
-      }
-    }
-
-    // Get targets
-    int targetCarbs = section.carbsTarget?.round() ?? totalCarbs;
-    int targetProtein = section.proteinTarget?.round() ?? totalProtein;
-    int targetSodium = section.sodiumTarget?.round() ?? totalSodium;
-    int targetFluids = section.fluidsTarget?.round() ?? totalFluids.round();
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildMacroSummaryItem(
-          context: context,
-          actual: totalCarbs,
-          target: targetCarbs,
-          unit: 'g',
-          label: 'CARBS',
-        ),
-        if (category.contains('during'))
-          _buildMacroSummaryItem(
-            context: context,
-            actual: totalFluids.round(),
-            target: targetFluids,
-            unit: 'mL',
-            label: 'FLUIDS',
-          )
-        else
-          _buildMacroSummaryItem(
-            context: context,
-            actual: totalProtein,
-            target: targetProtein,
-            unit: 'g',
-            label: 'PROTEIN',
-          ),
-        _buildMacroSummaryItem(
-          context: context,
-          actual: totalSodium,
-          target: targetSodium,
-          unit: 'mg',
-          label: 'SODIUM',
-        ),
-      ],
-    );
-  }
-
-  /// Build individual macro summary item
-  Widget _buildMacroSummaryItem({
-    required BuildContext context,
-    required int actual,
-    required int target,
-    required String unit,
-    required String label,
-  }) {
-    final actualColor = ActivityDetailHelpers.getMacroDeviationColor(context, actual, target);
-    final targetColor = Theme.of(context).colorScheme.onSurface;
-
-    return Column(
-      children: [
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: '$actual',
-                style: AppTextStyles.dataNumber.copyWith(
-                  color: actualColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: '/',
-                style: AppTextStyles.dataNumber.copyWith(
-                  color: targetColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: '$target',
-                style: AppTextStyles.dataNumber.copyWith(
-                  color: targetColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: unit,
-                style: AppTextStyles.dataNumber.copyWith(
-                  color: targetColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xxs),
-        Text(
-          label,
-          style: AppTextStyles.smallLabel.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 10,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Build expandable food item with swipe actions
-  Widget _buildExpandableFoodItem(
-    BuildContext context,
-    FoodItemData food,
-    String category,
-  ) {
-    return Dismissible(
-      key: Key(food.id),
-      background: Container(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: AppColors.dragonfruit,
-          borderRadius: AppRadius.smRadius,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              FontAwesomeIcons.trash,
-              color: Colors.white,
-              size: AppIconSizes.md,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              'Delete',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-      secondaryBackground: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: AppColors.electrolyte,
-          borderRadius: AppRadius.smRadius,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              'Swap',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Icon(
-              FontAwesomeIcons.arrowRightArrowLeft,
-              color: Colors.white,
-              size: AppIconSizes.md,
-            ),
-          ],
-        ),
-      ),
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          final confirmed = await showDialog<bool>(
-            context: context,
-            builder: (dialogContext) => AlertDialog(
-              title: const Text('Delete Food Item'),
-              content: Text('Remove ${food.name} from this section?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: Text(
-                    'Delete',
-                    style: TextStyle(color: AppColors.dragonfruit),
-                  ),
-                ),
-              ],
-            ),
-          );
-
-          if (confirmed == true) {
-            onDeleteFood(food.id, category);
-          }
-          return false;
-        } else if (direction == DismissDirection.endToStart) {
-          onSwapFood(food.id, food.name, category);
-          return false;
-        }
-        return false;
-      },
-      child: ExpandableFoodItemWidget(
-        food: food,
-        getFoodIcon: ActivityDetailHelpers.getFoodIcon,
-        isUserImportedFood: ActivityDetailHelpers.isUserImportedFood,
-        getFoodIconColor: ActivityDetailHelpers.getFoodIconColor,
-        onSwap: () => onSwapFood(food.id, food.name, category),
-        onRemove: () => onDeleteFood(food.id, category),
-        showSwipeHint: showSwipeHint,
-        onQuantityChange: (newQuantity) => onUpdateQuantity(food.id, category, newQuantity),
-      ),
-    );
-  }
-
-  /// Get category from section ID for food operations
-  String _getCategoryFromSectionId(String sectionId) {
+  /// Get category from section ID and title for food operations
+  ///
+  /// For brick during segments, extracts sport type from section title:
+  /// - "During Swim" -> 'during_swim'
+  /// - "During Bike" / "During Cycle" -> 'during_cycling'
+  /// - "During Run" -> 'during_run'
+  String _getCategoryFromSection(String sectionId, String sectionTitle) {
     if (sectionId == 'before') return 'before_run';
     if (sectionId == 'after') return 'after_run';
     if (sectionId.startsWith('T')) return 'transition';
+
     if (sectionId.startsWith('during_segment')) {
-      // Would need to determine sport type from section title
-      // For now, default to during_run
+      final titleLower = sectionTitle.toLowerCase();
+      if (titleLower.contains('swim')) {
+        return 'during_swim';
+      }
+      if (titleLower.contains('bike') || titleLower.contains('cycle') || titleLower.contains('ride')) {
+        return 'during_cycling';
+      }
+      // Default to during_run for running segments
       return 'during_run';
     }
+
     return 'during_run';
   }
 

@@ -5,8 +5,12 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/constants/bottle_constants.dart';
 import '../../auth/application/auth_service.dart';
 import '../../../shared/domain/activity_type.dart';
+import '../../activities/domain/activity.dart' as domain;
+import '../../activities/domain/brick_metadata.dart';
+import '../../activities/data/activities_repository.dart';
 import '../data/food_repository.dart';
 import '../data/nutrition_plan_repository.dart';
 import '../domain/food_item.dart';
@@ -23,6 +27,7 @@ class NutritionPlanService {
   /// Get repositories and services
   Future<NutritionPlanRepository> get _planRepository async => await ref.read(nutritionPlanRepositoryProvider.future);
   AuthService get _authService => ref.read(authServiceProvider);
+  ActivitiesRepository get _activitiesRepository => ref.read(activitiesRepositoryProvider);
   // Content service removed since algorithm logic moved to Edge Functions
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
   LLMNutritionPlanService get _llmService => ref.read(llmNutritionPlanServiceProvider);
@@ -286,7 +291,7 @@ class NutritionPlanService {
     final post = macroTargets.postRun;
 
     final gelsNeeded = ((during.carbTotalG) / 25).ceil().clamp(1, 12);
-    final bottlesNeeded = ((during.fluidTotalMl) / 500).ceil().clamp(1, 12);
+    final bottlesNeeded = ((during.fluidTotalMl) / kStandardBottleMl).ceil().clamp(1, 12);
 
     final preSection = PlanSection(
       id: 'before_run',
@@ -388,12 +393,14 @@ class NutritionPlanService {
   Future<NutritionPlan> generatePlanFromMacrosWithFallback({
     required MacroTargets macroTargets,
     String? activityId,
+    BrickMetadata? brickMetadata,
   }) async {
     try {
       // FIRST: Try LLM-based generation using the adjusted macros
       final llmPlan = await _llmService.generateLLMNutritionPlanFromMacros(
         macroTargets: macroTargets,
         activityId: activityId,
+        brickMetadata: brickMetadata,
       );
 
       if (llmPlan != null) {
@@ -453,6 +460,168 @@ class NutritionPlanService {
   /// Search foods by query
   Future<List<FoodItem>> searchFoods(String query) async {
     return await _foodRepository.searchFoods(query);
+  }
+
+  /// Regenerate nutrition plan after schedule change from provider
+  ///
+  /// Called when an activity's schedule has changed (e.g., time, duration, distance)
+  /// and the existing nutrition plan is now stale. This method:
+  /// 1. Extracts parameters from the updated activity
+  /// 2. Generates a new nutrition plan using the updated parameters
+  /// 3. Updates the activity with the new nutrition plan
+  /// 4. Clears the needsNutritionRefresh flag
+  /// 5. Returns the updated activity with fresh nutrition plan
+  ///
+  /// User food preferences are preserved during regeneration (handled by LLM service).
+  Future<domain.Activity> regenerateForScheduleChange(domain.Activity activity) async {
+    try {
+      _logger.info(
+        'Regenerating nutrition plan after schedule change',
+        context: 'NUTRITION_PLAN_SERVICE',
+        data: {
+          'activityId': activity.id,
+          'activityType': activity.activityType.name,
+          'provider': activity.syncedFromProvider,
+        },
+      );
+
+      // Extract parameters from activity
+      final distanceMiles = activity.distanceMiles ?? 0;
+      final durationMinutes = activity.durationMinutes ?? 0;
+
+      // Calculate pace from distance and duration
+      final paceMinutesPerMile = distanceMiles > 0 && durationMinutes > 0
+          ? durationMinutes / distanceMiles
+          : 8.0; // Default to 8 min/mile if not calculable
+
+      // Calculate time before run from scheduled date/time
+      // Default to 2 hours if activity is in the future
+      final now = DateTime.now();
+      final timeBeforeRunHours = activity.scheduledDateTime.isAfter(now)
+          ? 2.0
+          : 2.0; // Always use 2 hours as default for regeneration
+
+      // Get user for context
+      final user = await _authService.getCurrentUser();
+      if (user == null) {
+        throw Exception('User not found during nutrition plan regeneration');
+      }
+
+      // Generate new nutrition plan with updated parameters
+      // This calls the LLM service which preserves user food preferences
+      final newPlan = await generateNutritionPlan(
+        distanceMiles: distanceMiles,
+        paceMinutesPerMile: paceMinutesPerMile,
+        timeBeforeRunHours: timeBeforeRunHours,
+        activityId: activity.id,
+        // Use user preferences from profile
+        sweatRate: user.sweatRate.value,
+        gutTrainingLevel: user.gutTraining.value,
+        giSensitivity: null, // GI sensitivity not stored as string in user profile
+      );
+
+      _logger.info(
+        'Nutrition plan regenerated successfully',
+        context: 'NUTRITION_PLAN_SERVICE',
+        data: {
+          'activityId': activity.id,
+          'planId': newPlan.id,
+        },
+      );
+
+      // Update activity with new nutrition plan data
+      final updatedActivity = activity.copyWith(
+        nutritionPlanData: {
+          'id': newPlan.id,
+          'name': newPlan.name,
+          'sections': newPlan.sections.map((s) => {
+            'id': s.id,
+            'title': s.title,
+            'subtitle': s.subtitle,
+            'timing': s.timing,
+            'food_items': s.foodItems.map((f) => {
+              'id': f.id,
+              'name': f.name,
+              'quantity': f.quantity,
+              'description': f.description,
+            }).toList(),
+            'carbs_target': s.carbsTarget,
+            'protein_target': s.proteinTarget,
+            'fat_target': s.fatTarget,
+            'sodium_target': s.sodiumTarget,
+            'fluids_target': s.fluidsTarget,
+          }).toList(),
+          'macro_targets': newPlan.macroTargets != null ? {
+            'calories': newPlan.macroTargets!.calories,
+            'carbs': newPlan.macroTargets!.carbs,
+            'protein': newPlan.macroTargets!.protein,
+            'fat': newPlan.macroTargets!.fat,
+            'sodium': newPlan.macroTargets!.sodium,
+            'fluids': newPlan.macroTargets!.fluids,
+            'carbs_range': newPlan.macroTargets!.carbsRange,
+            'protein_range': newPlan.macroTargets!.proteinRange,
+            'fat_range': newPlan.macroTargets!.fatRange,
+          } : null,
+          'notes': newPlan.notes,
+          'created_at': newPlan.createdAt?.toIso8601String(),
+          'updated_at': newPlan.updatedAt?.toIso8601String(),
+        },
+      );
+
+      // Save updated activity with new nutrition plan
+      await _activitiesRepository.updateActivity(
+        deviceId: user.id,
+        activity: updatedActivity,
+      );
+
+      // Clear the nutrition refresh flag
+      await _activitiesRepository.clearNutritionRefreshFlag(activity.id);
+
+      _logger.info(
+        'Activity updated with regenerated nutrition plan',
+        context: 'NUTRITION_PLAN_SERVICE',
+        data: {
+          'activityId': activity.id,
+          'needsNutritionRefresh': false,
+        },
+      );
+
+      // Track analytics for regeneration
+      _sentry.addBreadcrumb(
+        message: 'Nutrition plan regenerated after schedule change',
+        category: 'nutrition_plan',
+        data: {
+          'activity_id': activity.id,
+          'activity_type': activity.activityType.name,
+          'provider': activity.syncedFromProvider ?? 'manual',
+          'distance_miles': distanceMiles.toString(),
+          'duration_minutes': durationMinutes.toString(),
+        },
+      );
+
+      return updatedActivity;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to regenerate nutrition plan after schedule change',
+        context: 'NUTRITION_PLAN_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'activityId': activity.id},
+      );
+
+      // Report error to Sentry for monitoring
+      await _sentry.reportCriticalError(
+        e,
+        stackTrace: stackTrace,
+        context: 'nutrition_plan_regeneration_failed',
+        tags: {
+          'activity_id': activity.id,
+          'operation': 'regenerate_after_schedule_change',
+        },
+      );
+
+      rethrow;
+    }
   }
 
   // All sync and versioning logic removed - Edge Functions handle storage directly

@@ -10,6 +10,7 @@ import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../activities/domain/brick_metadata.dart';
 
 /// Service for generating nutrition plans using LLM (GPT-4o-mini)
 class LLMNutritionPlanService {
@@ -257,13 +258,25 @@ class LLMNutritionPlanService {
     String userId, {
     String? activityId,
     targets.MacroTargets? inputMacroTargets,
+    BrickMetadata? brickMetadata,
   }) async {
+    // Check if this is a brick workout response
+    // Primary: edge function returns activity_type: 'brick'
+    // Fallback: inputMacroTargets or brickMetadata indicate brick
+    final activityType = data['activity_type'] as String?;
+    final isBrick = activityType == 'brick' ||
+        inputMacroTargets?.activityType == ActivityType.brick ||
+        brickMetadata != null;
+    if (isBrick) {
+      return _convertBrickResponseToPlan(data, userId, activityId: activityId, inputMacroTargets: inputMacroTargets, brickMetadata: brickMetadata);
+    }
+
     final planData = data['plan'] as Map<String, dynamic>;
     final macroTargets = data['macro_targets'] as Map<String, dynamic>;
     final detailedMessage = data['detailed_message'] as String? ?? 'AI-generated nutrition plan';
-    final planId = data['plan_id'] as String? ?? 
+    final planId = data['plan_id'] as String? ??
                    'llm-plan-${DateTime.now().millisecondsSinceEpoch}';
-                   
+
     final beforeItems = <FoodItemData>[];
     for (final item in planData['before'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
@@ -272,11 +285,11 @@ class LLMNutritionPlanService {
       final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
       beforeItems.add(transformedFoodItem);
     }
-    
+
     // Validation logging: Track sodium and fluids for before section
     final beforeSodiumTotal = beforeItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0));
     final beforeFluidsTotal = beforeItems.fold<double>(0.0, (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0));
-    
+
     final duringItems = <FoodItemData>[];
     for (final item in planData['during'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
@@ -285,11 +298,11 @@ class LLMNutritionPlanService {
       final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
       duringItems.add(transformedFoodItem);
     }
-    
+
     // Validation logging: Track sodium and fluids for during section
     final duringSodiumTotal = duringItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0));
     final duringFluidsTotal = duringItems.fold<double>(0.0, (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0));
-    
+
     final afterItems = <FoodItemData>[];
     for (final item in planData['after'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
@@ -298,11 +311,11 @@ class LLMNutritionPlanService {
       final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
       afterItems.add(transformedFoodItem);
     }
-    
+
     // Validation logging: Track sodium and fluids for after section
     final afterSodiumTotal = afterItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0));
     final afterFluidsTotal = afterItems.fold<double>(0.0, (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0));
-    
+
 
     // Calculate total macros from phase targets (using correct field names)
     final preRun = macroTargets['pre_run'] as Map<String, dynamic>;
@@ -397,7 +410,7 @@ class LLMNutritionPlanService {
     final postRunProteinTarget = inputMacroTargets?.postRun.proteinG ?? postRunProtein.toDouble();
 
     // Get activity type from macro targets, defaulting to running
-    final activityType = inputMacroTargets?.activityType ?? ActivityType.running;
+    final planActivityType = inputMacroTargets?.activityType ?? ActivityType.running;
 
     // Create the nutrition plan
     final plan = NutritionPlan(
@@ -408,7 +421,7 @@ class LLMNutritionPlanService {
       sections: [
         PlanSection(
           id: 'before-run',
-          title: activityType.getSectionTitle('before'),
+          title: planActivityType.getSectionTitle('before'),
           subtitle: '${preRunCarbsTarget.round()}g carbs, ${preRunProteinTarget.round()}g protein, ${preRunSodiumTarget.round()}mg sodium',
           timing: 'Before',
           foodItems: beforeItems,
@@ -420,7 +433,7 @@ class LLMNutritionPlanService {
         ),
         PlanSection(
           id: 'during-run',
-          title: activityType.getSectionTitle('during'),
+          title: planActivityType.getSectionTitle('during'),
           subtitle: 'Total: ${duringRunCarbsTarget.round()}g carbs, ${duringRunFluidsTarget.round()}ml fluids',
           timing: 'During',
           foodItems: duringItems,
@@ -432,7 +445,7 @@ class LLMNutritionPlanService {
         ),
         PlanSection(
           id: 'after-run',
-          title: activityType.getSectionTitle('after'),
+          title: planActivityType.getSectionTitle('after'),
           subtitle: 'Recovery (${postRunCarbsTarget.round()}g carbs, ${postRunProteinTarget.round()}g protein)',
           timing: 'Within 30min',
           foodItems: afterItems,
@@ -476,6 +489,7 @@ class LLMNutritionPlanService {
   Future<NutritionPlan?> generateLLMNutritionPlanFromMacros({
     required targets.MacroTargets macroTargets,
     String? activityId,
+    BrickMetadata? brickMetadata,
   }) async {
     try {
       // Get current user
@@ -522,11 +536,15 @@ class LLMNutritionPlanService {
           'postRunCarbs': macroTargets.postRun.carbsG,
           'postRunProtein': macroTargets.postRun.proteinG,
           'totalExpectedCarbs': macroTargets.preRun.carbsG + macroTargets.duringRun.carbTotalG + macroTargets.postRun.carbsG,
+          'activityType': macroTargets.activityType.name,
         },
       );
 
+      // Check if this is a brick workout
+      final isBrick = macroTargets.activityType == ActivityType.brick;
+
       // Prepare request data with macro_targets structure
-      final requestData = {
+      final Map<String, dynamic> requestData = {
         'device_id': user.id,
         'age': age,
         'gender': user.gender.value,
@@ -540,7 +558,97 @@ class LLMNutritionPlanService {
         'willing_to_try_foods': willingToTryFoods,
         'disliked_foods': dislikedFoods,
         'using_default_preferences': preferenceResult.usedDefaults,
-        'macro_targets': {
+      };
+
+      if (isBrick && macroTargets.brickSegments != null && macroTargets.brickSegments!.isNotEmpty) {
+        // Brick workout - send activity_type and phases structure with actual segment data
+        requestData['activity_type'] = 'brick';
+
+        // Build during_segments with actual sport and segment info
+        final segments = macroTargets.brickSegments!;
+        final segmentCount = segments.length;
+
+        // Calculate per-segment macro distribution based on duration
+        final totalDurationMin = segments.fold<int>(0, (sum, s) => sum + s.durationMinutes);
+        final duringSegmentsList = <Map<String, dynamic>>[];
+
+        for (final segment in segments) {
+          // Distribute macros proportionally based on segment duration
+          final durationRatio = totalDurationMin > 0 ? segment.durationMinutes / totalDurationMin : 1.0 / segmentCount;
+
+          duringSegmentsList.add({
+            'segment_order': segment.order,
+            'sport': segment.sport,
+            'duration_minutes': segment.durationMinutes,
+            'carbs_g': macroTargets.duringRun.carbTotalG * durationRatio,
+            'sodium_mg': macroTargets.duringRun.sodiumTotalMg * durationRatio,
+            'water_ml': macroTargets.duringRun.fluidTotalMl * durationRatio,
+          });
+        }
+
+        // Build transitions (T1 between segments 1-2, T2 between segments 2-3)
+        final transitionsList = <Map<String, dynamic>>[];
+        for (int i = 0; i < segmentCount - 1; i++) {
+          transitionsList.add({
+            'transition_name': 'T${i + 1}',
+            'carbs_g': 15, // Default transition carbs
+            'sodium_mg': 100,
+            'water_ml': 100,
+          });
+        }
+
+        requestData['macro_targets'] = {
+          'phases': {
+            'before': {
+              'carbs_g': macroTargets.preRun.carbsG,
+              'protein_g': macroTargets.preRun.proteinG,
+              'fat_g': macroTargets.preRun.fatCapG,
+              'water_ml': macroTargets.preRun.fluidsMl,
+              'sodium_mg': macroTargets.preRun.sodiumMg,
+            },
+            'during_segments': duringSegmentsList,
+            'transitions': transitionsList,
+            'after': {
+              'carbs_g': macroTargets.postRun.carbsG,
+              'protein_g': macroTargets.postRun.proteinG,
+              'fat_g': 0.0,
+              'water_ml': macroTargets.postRun.fluidsMl,
+              'sodium_mg': macroTargets.postRun.sodiumMg,
+            },
+          },
+        };
+
+        _logger.info('📤 Brick request built with ${segments.length} segments: ${segments.map((s) => s.sport).join(", ")}');
+      } else if (isBrick) {
+        // Brick without segment data - fallback (shouldn't happen with proper flow)
+        _logger.warning('⚠️ Brick workout without segment data - using fallback distribution');
+        requestData['activity_type'] = 'brick';
+        requestData['macro_targets'] = {
+          'phases': {
+            'before': {
+              'carbs_g': macroTargets.preRun.carbsG,
+              'protein_g': macroTargets.preRun.proteinG,
+              'fat_g': macroTargets.preRun.fatCapG,
+              'water_ml': macroTargets.preRun.fluidsMl,
+              'sodium_mg': macroTargets.preRun.sodiumMg,
+            },
+            'during_segments': [
+              {'segment_order': 1, 'sport': 'running', 'carbs_g': macroTargets.duringRun.carbTotalG / 2, 'sodium_mg': macroTargets.duringRun.sodiumTotalMg / 2, 'water_ml': macroTargets.duringRun.fluidTotalMl / 2},
+              {'segment_order': 2, 'sport': 'cycling', 'carbs_g': macroTargets.duringRun.carbTotalG / 2, 'sodium_mg': macroTargets.duringRun.sodiumTotalMg / 2, 'water_ml': macroTargets.duringRun.fluidTotalMl / 2},
+            ],
+            'transitions': [{'transition_name': 'T1', 'carbs_g': 15, 'sodium_mg': 100, 'water_ml': 100}],
+            'after': {
+              'carbs_g': macroTargets.postRun.carbsG,
+              'protein_g': macroTargets.postRun.proteinG,
+              'fat_g': 0.0,
+              'water_ml': macroTargets.postRun.fluidsMl,
+              'sodium_mg': macroTargets.postRun.sodiumMg,
+            },
+          },
+        };
+      } else {
+        // Single sport activity - use standard format
+        requestData['macro_targets'] = {
           'pre_run': {
             'carbs_g': macroTargets.preRun.carbsG,
             'protein_g': macroTargets.preRun.proteinG,
@@ -560,8 +668,8 @@ class LLMNutritionPlanService {
             'water_ml': macroTargets.postRun.fluidsMl,
             'sodium_mg': macroTargets.postRun.sodiumMg,
           },
-        },
-      };
+        };
+      }
 
       if (activityId != null) {
         requestData['activity_id'] = activityId;
@@ -609,6 +717,7 @@ class LLMNutritionPlanService {
         user.id,
         activityId: activityId,
         inputMacroTargets: macroTargets,
+        brickMetadata: brickMetadata,
       );
 
       // Track success in Sentry
@@ -639,6 +748,173 @@ class LLMNutritionPlanService {
 
       // Return null to indicate fallback to algorithm
       return null;
+    }
+  }
+
+  /// Convert brick workout response to NutritionPlan
+  /// Handles the multi-phase structure: before, during_segments, transitions, after
+  Future<NutritionPlan> _convertBrickResponseToPlan(
+    Map<String, dynamic> data,
+    String userId, {
+    String? activityId,
+    targets.MacroTargets? inputMacroTargets,
+    BrickMetadata? brickMetadata,
+  }) async {
+    final planData = data['plan'] as Map<String, dynamic>;
+    final detailedMessage = data['detailed_message'] as String? ?? 'Brick workout nutrition plan';
+    final planId = data['plan_id'] as String? ??
+                   'brick-plan-${DateTime.now().millisecondsSinceEpoch}';
+
+    final sections = <PlanSection>[];
+
+    // 1. Before section
+    final beforeItems = <FoodItemData>[];
+    final beforeList = planData['before'] as List<dynamic>? ?? [];
+    for (final item in beforeList) {
+      final itemMap = item as Map<String, dynamic>;
+      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      beforeItems.add(transformedFoodItem);
+    }
+    sections.add(PlanSection(
+      id: 'before',
+      title: 'Before Brick',
+      subtitle: '1-4 hours before your workout',
+      foodItems: beforeItems,
+      carbsTarget: inputMacroTargets?.preRun.carbsG,
+      proteinTarget: inputMacroTargets?.preRun.proteinG,
+      sodiumTarget: inputMacroTargets?.preRun.sodiumMg,
+      fluidsTarget: inputMacroTargets?.preRun.fluidsMl,
+    ));
+
+    // 2. During segments (keyed by segment order: "1", "2", "3")
+    final duringSegmentsData = planData['during_segments'] as Map<String, dynamic>? ?? {};
+
+    // Build sport name map from macroTargets.brickSegments if available,
+    // falling back to brickMetadata.segments for sport name resolution
+    final sportNameMap = <int, String>{};
+    if (inputMacroTargets?.brickSegments != null) {
+      for (final segment in inputMacroTargets!.brickSegments!) {
+        sportNameMap[segment.order] = _getSportDisplayName(segment.sport);
+      }
+    }
+    if (sportNameMap.isEmpty && brickMetadata != null) {
+      for (final segment in brickMetadata.segments) {
+        sportNameMap[segment.order] = _getSportDisplayName(segment.sport);
+      }
+    }
+
+    int segmentIndex = 0;
+    for (final entry in duringSegmentsData.entries) {
+      final segmentOrder = entry.key;
+      final segmentItems = entry.value as List<dynamic>? ?? [];
+
+      final foodItems = <FoodItemData>[];
+      for (final item in segmentItems) {
+        final itemMap = item as Map<String, dynamic>;
+        final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+        foodItems.add(transformedFoodItem);
+      }
+
+      // Use actual sport name from segments, or fallback to generic name
+      final orderInt = int.tryParse(segmentOrder) ?? (segmentIndex + 1);
+      final sportName = sportNameMap[orderInt] ?? 'Segment $segmentOrder';
+      sections.add(PlanSection(
+        id: 'during_segment_$segmentOrder',
+        title: 'During $sportName',
+        subtitle: null,
+        foodItems: foodItems,
+        // During segments don't have protein target
+        carbsTarget: null, // These would need to be passed per-segment
+        sodiumTarget: null,
+        fluidsTarget: null,
+      ));
+
+      // Add transition after each segment (except the last)
+      final transitionsData = planData['transitions'] as Map<String, dynamic>? ?? {};
+      final transitionKey = 'T${segmentIndex + 1}';
+      if (transitionsData.containsKey(transitionKey)) {
+        final transitionItems = transitionsData[transitionKey] as List<dynamic>? ?? [];
+        final transitionFoodItems = <FoodItemData>[];
+        for (final item in transitionItems) {
+          final itemMap = item as Map<String, dynamic>;
+          final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+          transitionFoodItems.add(transformedFoodItem);
+        }
+
+        sections.add(PlanSection(
+          id: transitionKey,
+          title: 'Transition ($transitionKey)',
+          subtitle: 'Quick refuel between segments',
+          foodItems: transitionFoodItems,
+        ));
+      }
+
+      segmentIndex++;
+    }
+
+    // 3. After section
+    final afterItems = <FoodItemData>[];
+    final afterList = planData['after'] as List<dynamic>? ?? [];
+    for (final item in afterList) {
+      final itemMap = item as Map<String, dynamic>;
+      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      afterItems.add(transformedFoodItem);
+    }
+    sections.add(PlanSection(
+      id: 'after',
+      title: 'After Brick',
+      subtitle: 'Within 30-60 minutes post-workout',
+      foodItems: afterItems,
+      carbsTarget: inputMacroTargets?.postRun.carbsG,
+      proteinTarget: inputMacroTargets?.postRun.proteinG,
+      sodiumTarget: inputMacroTargets?.postRun.sodiumMg,
+      fluidsTarget: inputMacroTargets?.postRun.fluidsMl,
+    ));
+
+    // Calculate totals from food items
+    int totalCarbs = 0;
+    int totalProtein = 0;
+    int totalFat = 0;
+    int totalSodium = 0;
+    double totalFluids = 0;
+    int totalCalories = 0;
+
+    for (final section in sections) {
+      for (final food in section.foodItems) {
+        if (food.nutritionalInfo != null) {
+          totalCarbs += food.nutritionalInfo!.carbs ?? 0;
+          totalProtein += food.nutritionalInfo!.protein ?? 0;
+          totalFat += food.nutritionalInfo!.fat ?? 0;
+          totalSodium += food.nutritionalInfo!.sodium ?? 0;
+          totalFluids += food.nutritionalInfo!.fluids ?? 0;
+          totalCalories += food.nutritionalInfo!.calories ?? 0;
+        }
+      }
+    }
+
+    return NutritionPlan(
+      id: planId,
+      name: 'Brick Workout Nutrition Plan',
+      sections: sections,
+      totalCalories: totalCalories,
+      notes: detailedMessage,
+      activityId: activityId,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  /// Get display name for a sport type
+  String _getSportDisplayName(String sport) {
+    switch (sport) {
+      case 'swimming':
+        return 'Swim';
+      case 'cycling':
+        return 'Bike';
+      case 'running':
+        return 'Run';
+      default:
+        return sport.substring(0, 1).toUpperCase() + sport.substring(1);
     }
   }
 
